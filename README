@@ -24,19 +24,18 @@ This file provides some hints how to install and run dlvhex.
   additional packages to satisfy all required software dependencies.
 
 ** Dependencies
-*** DLV
-    dlvhex uses the answer-set solver DLV, which can be downloaded
-    from <http://www.dlvsystem.com/>. Put the downloaded binary in
-    your path so that it is executable on your system (don't forget to
-    "chmod +x" it!).  dlvhex is looking for `dlv', so you might want
-    to rename the downloaded binary or create a softlink to it.
-*** libgringo / libclasp
-    You can use libgringo / libclasp to use them as genuine grounder resp. solver.
+*** libgringo / libclasp (shipped with this package, default)
+    If you just run ./configure without extra parameters, it will unpack
+    gringo and clasp which is contained in this package, and build it and
+    configure dlvhex to use it as solver engine (if dlv is present, both
+    can be used with the --solver argument).
 
-    You might want to use the script checkout_build_potassco.sh in this package
-    to prepare gringo and clasp libraries to be used by dlvhex.
+    This uses gringo and clasp as genuine grounder resp. solver for hex.
 
     If something fails, see the following information.
+
+    You can also use the script checkout_build_potassco.sh in this package
+    to prepare gringo and clasp libraries to be used by dlvhex.
 
     Use the configure option
     `--with-libgringo=<gringo-trunk-dir>' resp.
@@ -48,7 +47,15 @@ This file provides some hints how to install and run dlvhex.
     - you might need to hack CMakeLists.txt to accept your boost version
     - CMakeLists.txt should be modified to force the usage of multithreaded boost
       (change OFF to ON in the respective line) because dlvhex requires multithreaded boost libraries
-*** libclingo
+
+*** DLV (optional)
+    dlvhex uses the answer-set solver DLV, which can be downloaded
+    from <http://www.dlvsystem.com/>. Put the downloaded binary in
+    your path so that it is executable on your system (don't forget to
+    "chmod +x" it!).  dlvhex is looking for `dlv', so you might want
+    to rename the downloaded binary or create a softlink to it.
+
+*** libclingo (optional)
     Alternatively, you can use libclingo as background model
     builder. Use the configure option
     `--with-libclingo=<gringo-trunk-dir>' to specify the directory
@@ -124,6 +131,7 @@ This file provides some hints how to install and run dlvhex.
     dlvhex configure script where you have installed it with
 
     $ ./configure --with-boost=/path/to/boost-prefix
+
 *** libcurl
     libcurl is a multi-protocol file transfer library. dlvhex uses it
     to retrieve programs specified by http-scheme URLs. This library

@@ -36,6 +36,7 @@ DIST_SUBDIRS = buildclaspgringo ${SUBDIRS}
 EXTRA_DIST = \
     bm3.7.0 \
     COPYING.LESSER \
+    COPYING.clasp.gringo \
     clasp-2.0.5-source.tar.gz \
     gringo-3.0.4-source.tar.gz \
     build_potassco.sh \
