@@ -121,6 +121,8 @@ public:
 		InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
 		SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
+	virtual ~UnfoundedSetChecker() {}
+
 	/**
 	* Returns an unfounded set of groundProgram wrt. compatibleSet;
 	* If the empty set is returned,
@@ -159,6 +161,150 @@ public:
 
 typedef UnfoundedSetChecker::Ptr UnfoundedSetCheckerPtr;
 typedef UnfoundedSetChecker::ConstPtr UnfoundedSetCheckerConstPtr;
+
+
+
+
+
+
+
+
+
+
+#if 0
+
+class UnfoundedSetCheckerOld : public UnfoundedSetChecker{
+public:
+	virtual std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>());
+	virtual void learnNogoodsFromMainSearch();
+private:
+/*
+  BaseModelGenerator* mg;
+
+  enum Mode{
+    // consider external atoms as ordinary ones
+    Ordinary,
+    // consider external atoms as such (requires ggncmg to be set)
+    WithExt
+  };
+  Mode mode;
+
+  ProgramCtx& ctx;
+  RegistryPtr reg;
+
+  // problem specification
+  const OrdinaryASPProgram& groundProgram;
+  AnnotatedGroundProgram agp;
+  InterpretationConstPtr componentAtoms;
+  SimpleNogoodContainerPtr ngc;
+*/
+  InterpretationConstPtr compatibleSet;
+  InterpretationConstPtr compatibleSetWithoutAux;
+  std::set<ID> skipProgram;
+
+  // ufs detection problem
+  NogoodSet ufsDetectionProblem;
+//  InterpretationPtr domain; // domain of all problem variables
+  std::vector<ID> ufsProgram;
+
+  SATSolverPtr solver; // defined while getUnfoundedSet() runs, otherwise 0
+
+  /**
+   * Constructs the nogood set used for unfounded set detection
+   */
+  void constructUFSDetectionProblem();
+  void constructUFSDetectionProblemNecessaryPart();
+  void constructUFSDetectionProblemOptimizationPart();
+  void constructUFSDetectionProblemOptimizationPartRestrictToCompatibleSet();
+  void constructUFSDetectionProblemOptimizationPartBasicEAKnowledge();
+  void constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch();
+  void constructUFSDetectionProblemOptimizationPartEAEnforement();
+
+  /**
+   * Checks if an UFS candidate is actually an unfounded set
+   * @param ufsCandidate A candidate compatible set (solution to the nogood set created by getUFSDetectionProblem)
+   * @param bool True iff ufsCandidate is an unfounded set
+   */
+//  bool isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate);
+
+  /**
+   * Transforms a nogood (valid input-output relationship of some external atom) learned in the main search for being used in the UFS search
+   */
+  std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr assignment);
+
+public:
+  /**
+   * \brief Initialization for UFS search considering external atoms as ordinary ones
+   * @param groundProgram Ground program over which the ufs check is done
+   * @param compatibleSet A compatible set with external atom auxiliaries
+   * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
+   * @param componentAtoms The atoms in the strongly connected component in the atom dependency graph; if 0, then all atoms in groundProgram are considered to be in the SCC
+   */
+  UnfoundedSetCheckerOld(	ProgramCtx& ctx,
+			const OrdinaryASPProgram& groundProgram,
+			InterpretationConstPtr interpretation,
+			std::set<ID> skipProgram = std::set<ID>(),
+			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
+			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
+
+  /**
+   * \brief Initialization for UFS search under consideration of the semantics of external atoms
+   * @param ggncmg Reference to the G&C model generator for which this UnfoundedSetChecker runs
+   * @param ctx ProgramCtx
+   * @param groundProgram Ground program over which the ufs check is done
+   * @param agp Annotated version of the ground program; may be a superset of groundProgram, but must contain meta information about all external atoms in groundProgram
+   * @param compatibleSet A compatible set with external atom auxiliaries
+   * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
+   * @param componentAtoms The atoms in the strongly connected component in the atom dependency graph; if 0, then all atoms in groundProgram are considered to be in the SCC
+   * @param ngc Set of valid input-output relationships learned in the main search (to be extended by this UFS checker)
+   */
+  UnfoundedSetCheckerOld(	
+			BaseModelGenerator& mg,
+			ProgramCtx& ctx,
+			const OrdinaryASPProgram& groundProgram,
+			const AnnotatedGroundProgram& agp,
+			InterpretationConstPtr compatibleSet,
+			std::set<ID> skipProgram = std::set<ID>(),
+			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
+			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
+
+  virtual ~UnfoundedSetCheckerOld() {}
+
+  // Returns an unfounded set of groundProgram wrt. compatibleSet;
+  // If the empty set is returned,
+  // then there does not exist a greater (nonempty) unfounded set.
+  // 
+  // The method supports also unfounded set detection over partial interpretations.
+  // For this purpose, skipProgram specifies all rules which shall be ignored
+  // in the search. The interpretation must be complete and compatible over the non-ignored part.
+  // Each detected unfounded set will remain an unfounded set for all possible
+  // completions of the interpretation.
+  std::vector<IDAddress> getUnfoundedSet();
+
+  // constructs a nogood which encodes the essence of an unfounded set
+  Nogood getUFSNogood(
+			std::vector<IDAddress> ufs,
+			InterpretationConstPtr interpretation);
+};
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class EncodingBasedUnfoundedSetChecker : public UnfoundedSetChecker{
 private:
