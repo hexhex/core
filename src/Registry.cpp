@@ -72,6 +72,7 @@ DLVHEX_NAMESPACE_BEGIN
  * 'd': domain predicates for auto strong safety
  * 'g': aggregate input (internal AggregatePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
+ * 'x': reserved for local use
  */
 
 namespace
