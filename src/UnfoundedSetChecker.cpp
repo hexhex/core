@@ -66,6 +66,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	  ctx(ctx),
 	  groundProgram(groundProgram),
 	  componentAtoms(componentAtoms),
+	  ngc(ngc),
 	  domain(new Interpretation(ctx.registry())){
 
 	reg = ctx.registry();
@@ -85,6 +86,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	  groundProgram(groundProgram),
 	  agp(agp),
 	  componentAtoms(componentAtoms),
+	  ngc(ngc),
 	  domain(new Interpretation(ctx.registry())){
 
 	reg = ctx.registry();
@@ -1349,7 +1351,7 @@ std::vector<Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nog
 			// S=negative, C=false --> nogood will always fire (wrt. this literal), skip the literal
 			if (!id.isNaf()){
 				// positive
-				ngAdd.insert(NogoodContainer::createLiteral(interpretationShadow[id.address], false));
+				ngAdd.insert(NogoodContainer::createLiteral(interpretationShadow[id.address], true));
 				// true in I --> nogood fires if X does not contain the atom
 				if ( domain->getFact(id.address) ){
 					DBGLOG(DBG, "Inserting ordinary -" << id.address << " because it is true in I");
@@ -1380,7 +1382,6 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(){
 	if (ngc){
 		// detect resets of the nogood container
 		if (learnedNogoodsFromMainSearch > ngc->getNogoodCount()) learnedNogoodsFromMainSearch = 0;
-
 		DBGLOG(DBG, "O: Adding valid input-output relationships from nogood container");
 		for (int i = learnedNogoodsFromMainSearch; i < ngc->getNogoodCount(); ++i){
 			const Nogood& ng = ngc->getNogood(i);
