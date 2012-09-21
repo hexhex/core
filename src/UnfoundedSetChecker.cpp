@@ -1749,8 +1749,9 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 
 	// construct the UFS detection problem
 	{
-		// TODO: This BENCHMARK macro causes strange seg faults in mcsie plugin (when starting the DLV process)!
-//		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
+		// TODO: September 20, 2012: This BENCHMARK macro causes strange seg faults in mcsie plugin (when starting the DLV process)!
+		//       September 21, 2012: Update: This should now be fixed by the lock in BenchmarkController::getInstrumentationID
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
 		NogoodSet ufsDetectionProblem;
 		constructUFSDetectionProblem(ufsDetectionProblem, compatibleSet, compatibleSetWithoutAux, skipProgram, ufsProgram);
 
@@ -2208,8 +2209,9 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemBasicEABeha
 
 void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstantiateSolver(){
 
-	// TODO: This BENCHMARK macro causes strange seg faults in mcsie plugin (when starting the DLV process)!
-//	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
+	// TODO: September 20, 2012: This BENCHMARK macro causes strange seg faults in mcsie plugin (when starting the DLV process)!
+	//       September 21, 2012: Update: This should now be fixed by the lock in BenchmarkController::getInstrumentationID
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
 	NogoodSet ufsDetectionProblem;
 
 #ifndef NDEBUG
@@ -2241,8 +2243,9 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 
 void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
 
-	// TODO: This BENCHMARK macro causes strange seg faults in mcsie plugin (when starting the DLV process)!
-//	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
+	// TODO: September 20, 2012: This BENCHMARK macro causes strange seg faults in mcsie plugin (when starting the DLV process)!
+	//       September 21, 2012: Update: This should now be fixed by the lock in BenchmarkController::getInstrumentationID
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
 	std::vector<ID> assumptions;
 
 	bm::bvector<>::enumerator en = domain->getStorage().first();
