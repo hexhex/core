@@ -254,6 +254,10 @@ private:
 	boost::unordered_map<IDAddress, IDAddress> residualShadow;
 	// a special atom "a_f" for each atom "a" in the program, representing a change from of the truth value of a from true in I to false in I u -X
 	boost::unordered_map<IDAddress, IDAddress> becomeFalse;
+	// a special atom "a_{IandU}" for each atom "a" in the program, representing that a is true in I and member of U
+	boost::unordered_map<IDAddress, IDAddress> IandU;
+	// a special atom "a_{\overline{I}orU}" for each atom "a" in the program, representing that a is false in I or member of U
+	boost::unordered_map<IDAddress, IDAddress> nIorU;
 
 	// counter for auxiliary atoms
 	int atomcnt;
@@ -264,10 +268,7 @@ private:
 	void constructDomain();							// Goes through EDB and IDB and sets all facts in domain
 	void constructUFSDetectionProblemFacts(NogoodSet& ns);			// Encodes that facts cannot be in the unfounded set
 	void constructUFSDetectionProblemCreateAuxAtoms();			// sets up interpretationShadow and residualShadow
-	void constructUFSDetectionProblemDefineResidualShadow(NogoodSet& ns);	// Defines: a_r = a_i \and -a,
-										// where a_r = residualShadow[a] and a_i = interpretationShadow[a]
-	void constructUFSDetectionProblemDefineBecomeFalse(NogoodSet& ns);	// Defines: a_f = a_i \and a,
-										// where a_f = becomeFalse[a] and a_i = interpretationShadow[a]
+	void constructUFSDetectionProblemDefineAuxiliaries(NogoodSet& ns);	// Defines the auxiliary variables
 	void constructUFSDetectionProblemRule(NogoodSet& ns, ID ruleID);	// Encodes a given program rule
 	void constructUFSDetectionProblemNonempty(NogoodSet& ns);		// Encodes that we are looking for a nonempty unfounded set
 	void constructUFSDetectionProblemRestrictToSCC(NogoodSet& ns);		// Restricts the search to the current strongly connected component
