@@ -15,4 +15,4 @@ all-local:
 	fi
 
 
-EXTRA_DIST = gringo.patch
+EXTRA_DIST = gringo.patch gringo-clang.patch
