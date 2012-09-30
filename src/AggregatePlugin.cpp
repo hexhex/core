@@ -46,6 +46,9 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 AggregatePlugin::CtxData::CtxData():
@@ -67,7 +70,10 @@ AggregatePlugin::~AggregatePlugin()
 void AggregatePlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --aggregate-enable     Enable aggregate plugin." << std::endl;
+	o << "     --aggregate-enable       Enable aggregate plugin." << std::endl;
+	o << "     --max-variable-share=<N> Defines the maximum number N of variables" << std::endl
+	  << "                              in an aggregate which can be shared with" << std::endl
+	  << "                              other body atoms in the rule." << std::endl;
 }
 
 // accepted options: --higherorder-enable
@@ -91,6 +97,11 @@ void AggregatePlugin::processOptions(
 		if( str == "--aggregate-enable" )
 		{
 			ctxdata.enabled = true;
+			processed = true;
+		}
+		if( boost::starts_with(str, "--max-variable-share=") )
+		{
+			ctxdata.maxArity = boost::lexical_cast<int>(str.substr(std::string("--max-variable-share=").length()));
 			processed = true;
 		}
 

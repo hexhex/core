@@ -1,3 +1,9 @@
+2012-09-30  Christoph Redl  <redl@kr.tuwien.ac.at>
+
+	* UnfoundedSetChecker.cpp: Enable new assumption-based UFS checker
+	* UnfoundedSetChecker.h: Likewise.
+	* dlvhex.cpp: Likewise.
+
 2012-09-04  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* bootstrap-extra.sh: Downloading gringo and clasp tarballs to ship them with dlvhex source.

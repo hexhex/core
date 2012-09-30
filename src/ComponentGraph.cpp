@@ -565,133 +565,135 @@ bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
 
 	// now check output variables
 
-	// we again only consider inner rules (positive domain expansion feedback
-	// cannot happen through constraints as they cannot generate symbols)
-	BOOST_FOREACH(ID rid, ci.innerRules)
-	{
-		if( !rid.doesRuleContainExtatoms() )
+	// here we need to check inner rules and inner constraints
+	std::vector<ID>* ruleSets[] = {&ci.innerRules, &ci.innerConstraints};
+	BOOST_FOREACH (std::vector<ID>* ruleSet, ruleSets){
+		BOOST_FOREACH(ID rid, *ruleSet)
 		{
-			continue;
-		}
-
-		const Rule& rule = reg->rules.getByID(rid);
-
-		// find all variable outputs in all eatoms in this rule's body
-		std::set<ID> varsToCheck;
-		BOOST_FOREACH(ID lid, rule.body)
-		{
-			if( !lid.isExternalAtom() )
-				continue;
-
-			const ExternalAtom& eatom = reg->eatoms.getByID(lid);
-			BOOST_FOREACH(ID tid, eatom.tuple)
+			if( !rid.doesRuleContainExtatoms() )
 			{
-				if( tid.isVariableTerm() )
-					varsToCheck.insert(tid);
+				continue;
 			}
-		}
 
-		// for each variable:
-		// if it is part of a positive body atom of r
-		// and this positive body atom of r does not unify with any rule head in c
-		// then e is safe
-		BOOST_FOREACH(ID vid, varsToCheck)
-		{
-			// check strong safety of variable vid
-			DBGLOG(DBG,"checking fixed domain of variable " << 
-					printToString<RawPrinter>(vid,reg));
+			const Rule& rule = reg->rules.getByID(rid);
 
-			bool variableSafe = false;
+			// find all variable outputs in all eatoms in this rule's body
+			std::set<ID> varsToCheck;
 			BOOST_FOREACH(ID lid, rule.body)
 			{
-				// skip negative bodies
-				if( lid.isNaf() )
+				if( !lid.isExternalAtom() )
 					continue;
 
-				// skip external atoms,
-				// they could but cannot in general be assumed to limit the domain
-				// (and that's the reason we need to check strong safety)
-				if( lid.isExternalAtom() )
-					continue;
-
-				// skip non-ordinary atoms
-				#warning can we use aggregates to limit the domain for strong safety?
-				#warning can we use builtin atoms to limit the domain for strong safety?
-				if( lid.isAggregateAtom() ||
-						lid.isBuiltinAtom() )
-					continue;
-
-				assert(lid.isOrdinaryAtom());
-
-				// check if this body literal contains the variable
-				// and does not unify with any head
-				// (only then the variable is safe)
-				bool containsVariable = false;
-				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(lid);
-				assert(!oatom.tuple.empty());
-				Tuple::const_iterator itv = oatom.tuple.begin();
-				itv++;
-				while( itv != oatom.tuple.end() )
+				const ExternalAtom& eatom = reg->eatoms.getByID(lid);
+				BOOST_FOREACH(ID tid, eatom.tuple)
 				{
-					if( *itv == vid )
-					{
-						containsVariable = true;
-						break;
-					}
-					itv++;
-				}
-
-				if( !containsVariable )
-				{
-					continue;
-				}
-
-				// oatom 'oatom' was retrieved using ID 'lid'
-				DBGLOG(DBG,"checking unifications of body literal " <<
-						printToString<RawPrinter>(lid, reg) << " with component rule heads");
-				bool doesNotUnify = true;
-				BOOST_FOREACH(ID hid, headAtomIDs)
-				{
-					DBGLOG(DBG,"checking against " <<
-							printToString<RawPrinter>(hid, reg));
-					assert(hid.isOrdinaryAtom());
-					const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
-					if( oatom.unifiesWith(hoatom) )
-					{
-						DBGLOG(DBG,"unification successful "
-								"-> literal does not limit the domain");
-						doesNotUnify = false;
-						break;
-					}
-				}
-
-				if( doesNotUnify )
-				{
-					DBGLOG(DBG, "variable safe!");
-					variableSafe = true;
-					break;
+					if( tid.isVariableTerm() )
+						varsToCheck.insert(tid);
 				}
 			}
 
-			if( !variableSafe )
+			// for each variable:
+			// if it is part of a positive body atom of r
+			// and this positive body atom of r does not unify with any rule head in c
+			// then e is safe
+			BOOST_FOREACH(ID vid, varsToCheck)
 			{
-				// check if the variable occurs in an external atom with unstratified nonmonotonic parameters
-				bool nonmonotonicEA = false;
+				// check strong safety of variable vid
+				DBGLOG(DBG,"checking fixed domain of variable " << 
+						printToString<RawPrinter>(vid,reg));
+
+				bool variableSafe = false;
 				BOOST_FOREACH(ID lid, rule.body)
 				{
-					if(!lid.isNaf() && lid.isExternalAtom()){
-						if (ci.stratifiedLiterals.find(rid) == ci.stratifiedLiterals.end() ||
-						    std::find(ci.stratifiedLiterals.at(rid).begin(), ci.stratifiedLiterals.at(rid).end(), lid) == ci.stratifiedLiterals.at(rid).end()){
-							nonmonotonicEA = true;
+					// skip negative bodies
+					if( lid.isNaf() )
+						continue;
+
+					// skip external atoms,
+					// they could but cannot in general be assumed to limit the domain
+					// (and that's the reason we need to check strong safety)
+					if( lid.isExternalAtom() )
+						continue;
+
+					// skip non-ordinary atoms
+					#warning can we use aggregates to limit the domain for strong safety?
+					#warning can we use builtin atoms to limit the domain for strong safety?
+					if( lid.isAggregateAtom() ||
+							lid.isBuiltinAtom() )
+						continue;
+
+					assert(lid.isOrdinaryAtom());
+
+					// check if this body literal contains the variable
+					// and does not unify with any head
+					// (only then the variable is safe)
+					bool containsVariable = false;
+					const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(lid);
+					assert(!oatom.tuple.empty());
+					Tuple::const_iterator itv = oatom.tuple.begin();
+					itv++;
+					while( itv != oatom.tuple.end() )
+					{
+						if( *itv == vid )
+						{
+							containsVariable = true;
+							break;
+						}
+						itv++;
+					}
+
+					if( !containsVariable )
+					{
+						continue;
+					}
+
+					// oatom 'oatom' was retrieved using ID 'lid'
+					DBGLOG(DBG,"checking unifications of body literal " <<
+							printToString<RawPrinter>(lid, reg) << " with component rule heads");
+					bool doesNotUnify = true;
+					BOOST_FOREACH(ID hid, headAtomIDs)
+					{
+						DBGLOG(DBG,"checking against " <<
+								printToString<RawPrinter>(hid, reg));
+						assert(hid.isOrdinaryAtom());
+						const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+						if( oatom.unifiesWith(hoatom) )
+						{
+							DBGLOG(DBG,"unification successful "
+									"-> literal does not limit the domain");
+							doesNotUnify = false;
 							break;
 						}
 					}
+
+					if( doesNotUnify )
+					{
+						DBGLOG(DBG, "variable safe!");
+						variableSafe = true;
+						break;
+					}
 				}
 
-				fd = false;
-			}else{
-				DBGLOG(DBG, "Variable " << vid << " is strongly safe in rule " << rid << " (" << &ci << ")");
-				ci.stronglySafeVariables[rid].insert(vid);
+				if( !variableSafe )
+				{
+					// check if the variable occurs in an external atom with unstratified nonmonotonic parameters
+					bool nonmonotonicEA = false;
+					BOOST_FOREACH(ID lid, rule.body)
+					{
+						if(!lid.isNaf() && lid.isExternalAtom()){
+							if (ci.stratifiedLiterals.find(rid) == ci.stratifiedLiterals.end() ||
+							    std::find(ci.stratifiedLiterals.at(rid).begin(), ci.stratifiedLiterals.at(rid).end(), lid) == ci.stratifiedLiterals.at(rid).end()){
+								nonmonotonicEA = true;
+								break;
+							}
+						}
+					}
+
+					fd = false;
+				}else{
+					DBGLOG(DBG, "Variable " << vid << " is strongly safe in rule " << rid << " (" << &ci << ")");
+					ci.stronglySafeVariables[rid].insert(vid);
+				}
 			}
 		}
 	}
