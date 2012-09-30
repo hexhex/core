@@ -23,7 +23,7 @@
 
 /**
  * @file   UnfoundedSetChecker.cpp
- * @author Chrisoph Redl <redl@kr.tuwien.ac.at>
+ * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
  * @brief  Unfounded set checker for programs with disjunctions and external atoms.
  */
@@ -49,8 +49,6 @@
 #include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN
-
-
 
 /*
  * UnfoundedSetChecker
@@ -143,12 +141,13 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		// evaluate
 		DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification, ngc=" << (!!ngc ? "true" : "false"));
 
-		if (ngc){
+		if (!!ngc && !!solver){
 			// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
 			int oldNogoodCount = ngc->getNogoodCount();
 			mg->evaluateExternalAtom(ctx, eatom, eaInput, cb, ngc);
 			DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
+
 				const Nogood& ng = ngc->getNogood(i);
 				if (ng.isGround()){
 					DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
@@ -594,7 +593,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	std::vector<ID>& ufsProgram){
 
 	// add the learned nogoods (in transformed form)
-	if (ngc){
+	if (!!ngc){
 		DBGLOG(DBG, "O: Adding valid input-output relationships from nogood container");
 		for (int i = 0; i < ngc->getNogoodCount(); ++i){
 			const Nogood& ng = ngc->getNogood(i);
@@ -792,7 +791,7 @@ std::vector<Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(Nogoo
 
 void EncodingBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(){
 	// nothing to do
-	// (it is useless to learn nogoods now, because they will be forgetting anyway when the next UFS search is setup)
+	// (it is useless to learn nogoods now, because they will be forgetten anyway when the next UFS search is setup)
 }
 
 std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
@@ -978,6 +977,14 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemCreateAuxAt
 			OrdinaryAtom becomeFalseAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
 			becomeFalseAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 			becomeFalse[*en] = reg->storeOrdinaryGAtom(becomeFalseAtom).address;
+
+			OrdinaryAtom aIandU(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			aIandU.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
+			IandU[*en] = reg->storeOrdinaryGAtom(aIandU).address;
+
+			OrdinaryAtom anIorU(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			anIorU.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
+			nIorU[*en] = reg->storeOrdinaryGAtom(anIorU).address;
 		}
 
 		en++;
@@ -1045,38 +1052,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 		BOOST_FOREACH (ID b, rule.body){
 			if (!b.isExternalAuxiliary() || mode == Ordinary){
 				if (!b.isNaf()){
-					ID is = reg->ogatoms.getIDByAddress(interpretationShadow[b.address]);
-
-					// we define a new atom b_rel, which serves as a replacement for b, as follows:
-					//   1. if is is false, then b_rel is false
-					//   2. if is is true and b is false, then b_rel is false
-					//   3. otherwise (is is true and b is true) b_rel is true
-
-					OrdinaryAtom brelatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-					brelatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
-					ID brel = reg->storeOrdinaryGAtom(brelatom);
-
-					ng.insert(NogoodContainer::createLiteral(brel.address, false));
-
-					// 1.
-					Nogood ng1;
-					ng1.insert(NogoodContainer::createLiteral(is.address, false));
-					ng1.insert(NogoodContainer::createLiteral(brel.address, true));
-					ufsDetectionProblem.addNogood(ng1);
-
-					// 2.
-					Nogood ng2;
-					ng2.insert(NogoodContainer::createLiteral(is.address, true));
-					ng2.insert(NogoodContainer::createLiteral(b.address, false));
-					ng2.insert(NogoodContainer::createLiteral(brel.address, true));
-					ufsDetectionProblem.addNogood(ng2);
-
-					// 3.
-					Nogood ng3;
-					ng3.insert(NogoodContainer::createLiteral(is.address, true));
-					ng3.insert(NogoodContainer::createLiteral(b.address, true));
-					ng3.insert(NogoodContainer::createLiteral(brel.address, false));
-					ufsDetectionProblem.addNogood(ng3);
+					ng.insert(NogoodContainer::createLiteral(IandU[b.address], false));
 				}
 			}else{
 				// external literal
@@ -1088,37 +1064,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 		// That is: It must not happen, that all positive head atoms, which are true in I, are in the unfounded set (then the condition is not satisfied)
 		DBGLOG(DBG, "Condition 3");
 		BOOST_FOREACH (ID h, rule.head){
-			// we define a new atom h_rel, which serves as a replacement for h, as follows:
-			//   1. if is is false, then h_rel is true
-			//   2. if is is true and h is true, then b_rel is true
-			//   3. otherwise (is is true and h is false) h_rel is false
-			ID is = reg->ogatoms.getIDByAddress(interpretationShadow[h.address]);
-
-			OrdinaryAtom hrelatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-			hrelatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
-			ID hrel = reg->storeOrdinaryGAtom(hrelatom);
-
-			ng.insert(NogoodContainer::createLiteral(hrel.address, true));
-
-			// 1.
-			Nogood ng1;
-			ng1.insert(NogoodContainer::createLiteral(is.address, false));
-			ng1.insert(NogoodContainer::createLiteral(hrel.address, false));
-			ufsDetectionProblem.addNogood(ng1);
-
-			// 2.
-			Nogood ng2;
-			ng2.insert(NogoodContainer::createLiteral(is.address, true));
-			ng2.insert(NogoodContainer::createLiteral(h.address, true));
-			ng2.insert(NogoodContainer::createLiteral(hrel.address, false));
-			ufsDetectionProblem.addNogood(ng2);
-
-			// 3.
-			Nogood ng3;
-			ng3.insert(NogoodContainer::createLiteral(is.address, true));
-			ng3.insert(NogoodContainer::createLiteral(h.address, false));
-			ng3.insert(NogoodContainer::createLiteral(hrel.address, true));
-			ufsDetectionProblem.addNogood(ng3);
+			ng.insert(NogoodContainer::createLiteral(nIorU[h.address], true));
 		}
 
 		DBGLOG(DBG, "Checking conditions 1, 2, 3");
@@ -1126,8 +1072,8 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 	}
 }
 
-void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineResidualShadow(NogoodSet& ufsDetectionProblem){
-	// we want a nonempty UFS
+void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxiliaries(NogoodSet& ufsDetectionProblem){
+
 	DBGLOG(DBG, "N: Define residual shadow");
 	{
 		bm::bvector<>::enumerator en = domain->getStorage().first();
@@ -1161,10 +1107,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineResid
 			en++;
 		}
 	}
-}
 
-void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineBecomeFalse(NogoodSet& ufsDetectionProblem){
-	// we want a nonempty UFS
 	DBGLOG(DBG, "N: Define \"become false\"");
 	{
 		bm::bvector<>::enumerator en = domain->getStorage().first();
@@ -1192,6 +1135,79 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineBecom
 					Nogood ng3;
 					ng3.insert(NogoodContainer::createLiteral(*en, false));
 					ng3.insert(NogoodContainer::createLiteral(bf.address, true));
+					ufsDetectionProblem.addNogood(ng3);
+				}
+			}
+			en++;
+		}
+	}
+
+	// for all ordinary atoms a
+	// define: a_{IandU} := a_I \wedge a
+	// define: a_{\overline{I}orU} := \neg a_I \or a
+	DBGLOG(DBG, "N: Define a_{IandU} :- a_I \wedge a   and   a_{\overline{I}orU} :- \neg a_I \vee a");
+	{
+		bm::bvector<>::enumerator en = domain->getStorage().first();
+		bm::bvector<>::enumerator en_end = domain->getStorage().end();
+		while (en < en_end){
+			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
+				ID is = reg->ogatoms.getIDByAddress(interpretationShadow[*en]);
+
+				// define: a_{IandU} := a_I \wedge a
+				// we define a new atom a_{IandU}, which serves as a replacement for a, as follows:
+				//   1. if a_I is false, then a_{IandU} is false
+				//   2. if a_I is true and a is false, then a_{IandU} is false
+				//   3. otherwise (a_I is true and a is true) a_{IandU} is true
+				{
+					IDAddress aIandU_IDA = IandU[*en];
+
+					// 1.
+					Nogood ng1;
+					ng1.insert(NogoodContainer::createLiteral(is.address, false));
+					ng1.insert(NogoodContainer::createLiteral(aIandU_IDA, true));
+					ufsDetectionProblem.addNogood(ng1);
+
+					// 2.
+					Nogood ng2;
+					ng2.insert(NogoodContainer::createLiteral(is.address, true));
+					ng2.insert(NogoodContainer::createLiteral(*en, false));
+					ng2.insert(NogoodContainer::createLiteral(aIandU_IDA, true));
+					ufsDetectionProblem.addNogood(ng2);
+
+					// 3.
+					Nogood ng3;
+					ng3.insert(NogoodContainer::createLiteral(is.address, true));
+					ng3.insert(NogoodContainer::createLiteral(*en, true));
+					ng3.insert(NogoodContainer::createLiteral(aIandU_IDA, false));
+					ufsDetectionProblem.addNogood(ng3);
+				}
+
+				// define: a_{\overline{I}orU} := \neg a_I \or a
+				// we define a new atom a_{\overline{I}orU}, which serves as a replacement for a, as follows:
+				//   1. if a_I is false, then a_{\overline{I}orU} is true
+				//   2. if a_I is true and a is true, then a_{\overline{I}orU} is true
+				//   3. otherwise (a_I is true and a is false) a_{\overline{I}orU} is false
+				{
+					IDAddress anIorU_IDA = nIorU[*en];
+
+					// 1.
+					Nogood ng1;
+					ng1.insert(NogoodContainer::createLiteral(is.address, false));
+					ng1.insert(NogoodContainer::createLiteral(anIorU_IDA, false));
+					ufsDetectionProblem.addNogood(ng1);
+
+					// 2.
+					Nogood ng2;
+					ng2.insert(NogoodContainer::createLiteral(is.address, true));
+					ng2.insert(NogoodContainer::createLiteral(*en, true));
+					ng2.insert(NogoodContainer::createLiteral(anIorU_IDA, false));
+					ufsDetectionProblem.addNogood(ng2);
+
+					// 3.
+					Nogood ng3;
+					ng3.insert(NogoodContainer::createLiteral(is.address, true));
+					ng3.insert(NogoodContainer::createLiteral(*en, false));
+					ng3.insert(NogoodContainer::createLiteral(anIorU_IDA, true));
 					ufsDetectionProblem.addNogood(ng3);
 				}
 			}
@@ -1298,8 +1314,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 	constructDomain();
 	constructUFSDetectionProblemFacts(ufsDetectionProblem);
 	constructUFSDetectionProblemCreateAuxAtoms();
-	constructUFSDetectionProblemDefineResidualShadow(ufsDetectionProblem);
-	constructUFSDetectionProblemDefineBecomeFalse(ufsDetectionProblem);
+	constructUFSDetectionProblemDefineAuxiliaries(ufsDetectionProblem);
 	constructUFSDetectionProblemNonempty(ufsDetectionProblem);
 	constructUFSDetectionProblemRestrictToSCC(ufsDetectionProblem);
 	constructUFSDetectionProblemBasicEABehavior(ufsDetectionProblem);

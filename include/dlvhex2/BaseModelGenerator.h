@@ -79,6 +79,7 @@ protected:
 class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
+  friend class UnfoundedSetCheckerOld;
   friend class UnfoundedSetChecker;
   friend class EncodingBasedUnfoundedSetChecker;
   friend class AssumptionBasedUnfoundedSetChecker;

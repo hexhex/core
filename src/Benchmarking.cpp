@@ -38,6 +38,7 @@
 #include "dlvhex2/Benchmarking.h"
 #include <boost/foreach.hpp>
 #include <iostream>
+#include <boost/thread/mutex.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -102,15 +103,14 @@ void BenchmarkController::setPrintInterval(Count skip)
 // get ID or register new one
 ID BenchmarkController::getInstrumentationID(const std::string& name)
 {
+  boost::mutex::scoped_lock lock(mutex);
   std::map<std::string, ID>::const_iterator it = name2id.find(name);
   if( it == name2id.end() )
   {
-    // @todo multithreading critical section start
     ID newid = maxID;
     instrumentations.push_back(Stat(name));
     name2id[name] = newid;
     maxID++;
-    // @todo multithreading critical section end
     return newid;
   }
   else
