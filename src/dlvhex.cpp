@@ -1054,6 +1054,10 @@ void processOptionsPrePlugin(
 					pctx.config.setOption("UFSCheck", 1);
 					pctx.config.setOption("UFSCheckMonolithic", 1);
 					pctx.config.setOption("UFSCheckAssumptionBased", 1);
+				}else if( check == "none" )
+				{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 0);
 				}else{
 					throw GeneralError("Invalid FLP check option: \"" + check + "\"");
 				}
