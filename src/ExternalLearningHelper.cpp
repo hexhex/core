@@ -236,6 +236,53 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 	}
 }
 
+void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods){
+
+	// learning of negative information
+	if (nogoods){ 
+	    if (query.ctx->config.getOption("ExternalLearningNeg")){
+		// iterate over negative output atoms
+		bm::bvector<>::enumerator en = query.extinterpretation->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.extinterpretation->getStorage().end();
+		ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
+		ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.eatom->predicate);
+		while (en < en_end){
+			const OrdinaryAtom& atom = query.ctx->registry()->ogatoms.getByAddress(*en);
+			if (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate){
+				bool paramMatch = true;
+				for (int i = 1; i < 1 + query.input.size(); i++){
+					if (atom.tuple[i] != query.input[i - 1]){
+						paramMatch = false;
+						break;
+					}
+				}
+				if (paramMatch){
+					// check if this tuple is _not_ in the answer
+					Tuple t;
+					for (int i = 1 + query.input.size(); i < atom.tuple.size(); i++){
+						t.push_back(atom.tuple[i]);
+					}
+
+					if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()){
+						// construct positive output atom
+						OrdinaryAtom posatom = atom;
+						posatom.tuple[0] = posOutPredicate;
+						ID posAtomID = query.ctx->registry()->storeOrdinaryGAtom(posatom);
+
+						// construct nogood
+						Nogood ng = ExternalLearningHelper::getInputNogood(query, prop, true);
+						ng.insert(NogoodContainer::createLiteral(posAtomID.address));
+						nogoods->addNogood(ng);
+						DBGLOG(DBG, "Learned negative nogood: " << ng);
+					}
+				}
+			}
+			en++;
+		}
+	}
+    }
+}
+
 void ExternalLearningHelper::learnFromGroundRule(const PluginAtom::Query& query, ID groundRule, NogoodContainerPtr nogoods){
 
 	RegistryPtr reg = query.ctx->registry();

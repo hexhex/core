@@ -209,6 +209,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 
     // query
     PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom);
+    query.extinterpretation = inputi;
     PluginAtom::Answer answer;
     assert(globalpc);
     if( globalpc->config.getOption("UseExtAtomCache") ){
@@ -221,48 +222,6 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
       pluginAtom->retrieve(query, answer, nogoods);
     }
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
-
-    if (query.ctx->config.getOption("ExternalLearningNeg")){
-	// learning of negative information
-	if (nogoods){ 
-		// iterate over negative output atoms
-		bm::bvector<>::enumerator en = inputi->getStorage().first();
-		bm::bvector<>::enumerator en_end = inputi->getStorage().end();
-		ID negOutPredicate = ctx.registry()->getAuxiliaryConstantSymbol('n', eatom.predicate);
-		ID posOutPredicate = ctx.registry()->getAuxiliaryConstantSymbol('r', eatom.predicate);
-		while (en < en_end){
-			const OrdinaryAtom& atom = ctx.registry()->ogatoms.getByAddress(*en);
-			bool paramMatch = true;
-			for (int i = 1; i < 1 + eatom.inputs.size(); i++){
-				if (atom.tuple[i] != inputtuple[i - 1]){
-					paramMatch = false;
-					break;
-				}
-			}
-			if (paramMatch && (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate)){
-				// check if this tuple is _not_ in the answer
-				Tuple t;
-				for (int i = 1 + eatom.inputs.size(); i < atom.tuple.size(); i++){
-					t.push_back(atom.tuple[i]);
-				}
-
-				if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()){
-					// construct positive output atom
-					OrdinaryAtom posatom = atom;
-					posatom.tuple[0] = posOutPredicate;
-					ID posAtomID = ctx.registry()->storeOrdinaryGAtom(posatom);
-
-					// construct nogood
-					Nogood ng = ExternalLearningHelper::getInputNogood(query, eatom.getExtSourceProperties(), true);
-					ng.insert(NogoodContainer::createLiteral(posAtomID.address));
-					nogoods->addNogood(ng);
-					DBGLOG(DBG, "Learned negative nogood: " << ng);
-				}
-			}
-			en++;
-		}
-	}
-    }
 
     if( !answer.get().empty() )
     {

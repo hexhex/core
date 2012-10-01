@@ -669,6 +669,16 @@ public:
 	 */
     InterpretationConstPtr interpretation;
 
+    /**
+	 * \brief Bitset of ground atoms representing current (partial) model.
+	 *
+	 * This model might be more complete than "interpretation", i.e., it
+	 * might contain atoms which are not relevant for computing the result of
+	 * the external atom. However, some learning techniques may make use of
+	 * them since they give a hint which atoms might be relevant for the program.
+	 */
+    InterpretationConstPtr extinterpretation;
+
 	/**
 	 * \brief Input constant vector.
 	 *

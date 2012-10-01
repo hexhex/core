@@ -331,6 +331,8 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr
 		// overall answer is the union of the atomic answers
 		answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
 	}
+
+	ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
 }
 
 std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const ExtSourceProperties& prop){

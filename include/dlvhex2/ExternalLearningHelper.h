@@ -103,6 +103,15 @@ public:
   static void learnFromFunctionality(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, std::vector<Tuple>& recordedTuples, NogoodContainerPtr nogoods);
 
   /**
+   * \brief Learns nogoods from atoms which are NOT in the answer.
+   * \@param query Query
+   * \@param answer Answer
+   * \@param prop Properties of the external atom
+   * \@param nogoods The nogood container where learned nogoods shall be added
+   */
+  static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods);
+
+  /**
    * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
    *        the external atom. Such a rule encodes that, whenever a is in the extension of the 1-st input parameter, but not in the extension
    *        of the second, it will always be in the output. The learning rule must be ground.
