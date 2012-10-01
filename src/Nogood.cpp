@@ -234,10 +234,22 @@ void NogoodSet::defragment(){
 			addCount.pop_back();
 			nogoodsWithHash[nogoods[free].getHash()].erase(used);
 			nogoodsWithHash[nogoods[free].getHash()].insert(free);
+			freeIndices.erase(free);
 			free++;
 			used--;
 		}
 	}
+#ifndef NDEBUG
+	// there must not be pointers to non-existing nogoods
+	{
+		typedef std::pair<size_t, Set<int> > Pair;
+		BOOST_FOREACH (Pair p, nogoodsWithHash){
+			BOOST_FOREACH (int i, p.second){
+				assert (i < nogoods.size());
+			}
+		}
+	}
+#endif
 	freeIndices.clear();
 }
 
@@ -250,6 +262,7 @@ int NogoodSet::addNogood(Nogood ng){
 	BOOST_FOREACH (int i, nogoodsWithHash[ng.getHash()]){
 		if (nogoods[i] == ng){
 			addCount[i]++;
+			DBGLOG(DBG, "Already contained with index " << i);
 			return i;
 		}
 	}
@@ -266,6 +279,7 @@ int NogoodSet::addNogood(Nogood ng){
 		addCount[index] = 1;
 		freeIndices.erase(index);
 	}
+	DBGLOG(DBG, "Adding with index " << index);
 	nogoodsWithHash[ng.getHash()].insert(index);
 	return index;
 }
@@ -291,6 +305,7 @@ void NogoodSet::removeNogood(Nogood ng){
 	// check if ng is present
 	BOOST_FOREACH (int i, nogoodsWithHash[ng.getHash()]){
 		if (nogoods[i] == ng){
+			DBGLOG(DBG, "Deleting nogood " << ng << " (index: " << i << ")");
 			// yes: delete it
 			removeNogood(i);
 			return;
@@ -312,7 +327,7 @@ void NogoodSet::forgetLeastFrequentlyAdded(){
 	// delete those with an add count of less than 20% of the maximum add count
 	for (int i = 0; i < nogoods.size(); i++){
 		if (addCount[i] < mac * 0.05){
-			DBGLOG(DBG, "Forgetting nogood ");
+			DBGLOG(DBG, "Forgetting nogood " << nogoods[i]);
 			removeNogood(i);
 		}
 	}
