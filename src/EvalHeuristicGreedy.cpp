@@ -47,30 +47,10 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-/*
-int EvalHeuristicGreedy::isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const{
-
-	// check if wellfounded model generator: must not be used (-1), can be used (0), must be used (+1)
-	if (ci.innerEatoms.empty()){
-		// no inner external atom, therefore wellfounded mg is not required: check if we CAN use it
-		// we must not use it for negation in cycles or disjunctive heads
-		if (ci.negationInCycles || ci.disjunctiveHeads) return -1;
-		else return 0;
-	}else{
-		// plain mg is not allowed
-		// if inner external atoms have no fixed domain, then we need the wellfounded mg
-		if (!ci.fixedDomain) return 1;
-		// we must not use it for nonmonotinic inner external atoms, for negation in cycles, or for disjunctive heads
-		else if (ci.innerEatomsNonmonotonic || ci.negationInCycles || ci.disjunctiveHeads) return -1;
-		// otherwise we CAN use it
-		return 0;
-	}
-}
-*/
-
 bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2) const{
 
-//	if (ci1.outerEatoms.empty() != ci2.outerEatoms.empty()) return false;
+	// never merge components with outer external atoms (they could become inner ones)
+	if (!ci1.outerEatoms.empty() || !ci2.outerEatoms.empty()) return false;
 
 	// if both components have a fixed domain we can safely merge them
 	// (both can be solved by guess&check mg)

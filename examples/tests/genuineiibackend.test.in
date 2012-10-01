@@ -1,5 +1,5 @@
 3col.hex 3col.out --solver=genuineii
-# TODO why does this not work with genuineii? agg1.hex agg1.out --solver=genuineii --aggregate-enable
+agg1.hex agg1.out --solver=genuineii --aggregate-enable
 agg2.hex agg2.out --solver=genuineii --aggregate-enable
 agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable
 agg4.hex agg4.out --nofacts --solver=genuineii --aggregate-enable
