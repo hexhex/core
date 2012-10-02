@@ -43,7 +43,11 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-Nogood ExternalLearningHelper::getInputNogood(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool negateMonotonicity){
+bool ExternalLearningHelper::DefaultInputNogoodProvider::dependsOnOutputTuple() const{
+	return false;
+}
+
+Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const{
 
 	// store for each predicate term ID the index of the corresponding parameter in input
 	std::map<ID, int> inputPredicateTable;
@@ -67,7 +71,53 @@ Nogood ExternalLearningHelper::getInputNogood(const PluginAtom::Query& query, co
 
 		// positive atoms are only required for non-antimonotonic input parameters
 		// negative atoms are only required for non-monotonic input parameters
-		if (query.interpretation->getFact(*en) != negateMonotonicity){
+		if (query.interpretation->getFact(*en) != false){
+			// positive
+			if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")){
+				extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+			}
+		}else{
+			// negative
+			if (!prop.isMonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")){
+				extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+			}
+		}
+
+		en++;
+	}
+
+	return extNgInput;
+}
+
+bool ExternalLearningHelper::NegatedDefaultInputNogoodProvider::dependsOnOutputTuple() const{
+	return false;
+}
+
+Nogood ExternalLearningHelper::NegatedDefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const{
+
+	// store for each predicate term ID the index of the corresponding parameter in input
+	std::map<ID, int> inputPredicateTable;
+	int index = 0;
+	BOOST_FOREACH (ID inp, query.input){
+		inputPredicateTable[inp] = index++;
+	}
+
+	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
+	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
+
+	Nogood extNgInput;
+
+	while (en < en_end){
+		// get the predicate of the current input atom
+		ID pred = query.interpretation->getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en)).tuple[0];
+
+		// find the parameter index of this atom
+		int index = inputPredicateTable.find(pred)->second;
+
+		// positive atoms are only required for non-antimonotonic input parameters
+		// negative atoms are only required for non-monotonic input parameters
+		if (query.interpretation->getFact(*en) != true){
 			// positive
 			if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")){
 				extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
@@ -186,17 +236,20 @@ ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string lear
 }
 
 
-void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods){
+void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp){
 
 	if (nogoods){
 		if (query.ctx->config.getOption("ExternalLearningIOBehavior")){
 			DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
-			Nogood extNgInput = ExternalLearningHelper::getInputNogood(query, prop);
+			Nogood extNgInput;
+			if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true);
 
 			Set<ID> out = ExternalLearningHelper::getOutputAtoms(query, answer, false);
 			BOOST_FOREACH (ID oid, out){
-				Nogood extNg = extNgInput;
+				Nogood extNg = !inp->dependsOnOutputTuple()
+						? extNgInput
+						: (*inp)(query, prop, true, query.ctx->registry()->ogatoms.getByID(oid).tuple);
 				extNg.insert(oid);
 				DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
 				nogoods->addNogood(extNg);
@@ -236,11 +289,15 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 	}
 }
 
-void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods){
+void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp){
 
 	// learning of negative information
 	if (nogoods){ 
 	    if (query.ctx->config.getOption("ExternalLearningNeg")){
+
+		Nogood extNgInput;
+		if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true);
+
 		// iterate over negative output atoms
 		bm::bvector<>::enumerator en = query.extinterpretation->getStorage().first();
 		bm::bvector<>::enumerator en_end = query.extinterpretation->getStorage().end();
@@ -270,7 +327,9 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 						ID posAtomID = query.ctx->registry()->storeOrdinaryGAtom(posatom);
 
 						// construct nogood
-						Nogood ng = ExternalLearningHelper::getInputNogood(query, prop, true);
+						Nogood ng = !inp->dependsOnOutputTuple()
+								? extNgInput
+								: (*inp)(query, prop, true, t);
 						ng.insert(NogoodContainer::createLiteral(posAtomID.address));
 						nogoods->addNogood(ng);
 						DBGLOG(DBG, "Learned negative nogood " << ng.getStringRepresentation(query.ctx->registry()));

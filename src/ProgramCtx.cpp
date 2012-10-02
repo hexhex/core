@@ -183,7 +183,7 @@ void ProgramCtx::parse() { state->parse(this); }
 void ProgramCtx::moduleSyntaxCheck() { state->moduleSyntaxCheck(this); }
 void ProgramCtx::mlpSolver() { state->mlpSolver(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
-void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
+void ProgramCtx::safetyCheck() { /*state->safetyCheck(this);*/ }
 void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }
 void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
 void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }

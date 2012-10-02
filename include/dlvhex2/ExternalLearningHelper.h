@@ -38,21 +38,42 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Nogood.h"
 
+#include <boost/shared_ptr.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 class ExternalLearningHelper{
 public:
 
   /**
-   * \brief Construct a nogood consisting of all input atoms from query. For monotonic parameters only the positive atoms will be included,
-   *        for antimonotonic ones only negative atoms will be included,
-   *        for nonmonotonic ones all atoms are included.
-   * \@param query Query
-   * \@param prop Properties of the external atom
-   * \@param negateMonotonicity Include negative (positive) atoms for monotonic (antimonotonic) parameters instead of positive (negative) ones.
-   * \@return Nogood The nogoods representation of the input atoms
+   * Extracts the relevant part of a query which is the reason for some tuple to be in the output or not
    */
-  static Nogood getInputNogood(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool negateMonotonicity = false);
+  class InputNogoodProvider{
+  public:
+    /**
+     * Defines if the input tuple depends on the current output tuple; if not, then the same reason may be used for all output atoms.
+     */
+    virtual bool dependsOnOutputTuple() const { return true; }
+
+    /**
+     * Computes the reason for a tuple to be in the output or not.
+     * @param query External atom query
+     * @param prop Properties of the external source
+     * @param contained Specified whether we want a reason for a tuple to be contained in the output (true) or not (false)
+     * @param tuple The output tuple for which we want to compute the reason
+     */
+    virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const = 0;
+  };
+  typedef boost::shared_ptr<InputNogoodProvider> InputNogoodProviderConstPtr;
+
+  class DefaultInputNogoodProvider : public InputNogoodProvider{
+    virtual bool dependsOnOutputTuple() const;
+    virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const;
+  };
+  class NegatedDefaultInputNogoodProvider : public InputNogoodProvider{
+    virtual bool dependsOnOutputTuple() const;
+    virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const;
+  };
 
   /**
    * \brief Construct a set of output (replacement) atoms corresponding to the output rules in answer;
@@ -89,8 +110,9 @@ public:
    * \@param answer Answer
    * \@param prop Properties of the external atom
    * \@param nogoods The nogood container where learned nogoods shall be added
+   * \@param inp Input nogood provider
    */
-  static void learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods);
+  static void learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider()));
 
   /**
    * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
@@ -108,8 +130,9 @@ public:
    * \@param answer Answer
    * \@param prop Properties of the external atom
    * \@param nogoods The nogood container where learned nogoods shall be added
+   * \@param inp Input nogood provider
    */
-  static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods);
+  static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new NegatedDefaultInputNogoodProvider()));
 
   /**
    * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
