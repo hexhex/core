@@ -22,10 +22,11 @@
  */
 
 /**
- * @file   UnfoundedSetChecker.cpp
- * @author Chrisoph Redl <redl@kr.tuwien.ac.at>
+ * @file   ExternalLearningHelper.cpp
+ * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
- * @brief  Unfounded set checker for programs with disjunctions and external atoms.
+ * @brief  Provides helper functions for writing learning functions.
+ *         Consider TestPlugin.cpp to see how these methods are used.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -42,6 +43,9 @@
 #include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+ExternalLearningHelper::DefaultInputNogoodProvider::DefaultInputNogoodProvider(bool negateMonotonicity) : negateMonotonicity(negateMonotonicity){
+}
 
 bool ExternalLearningHelper::DefaultInputNogoodProvider::dependsOnOutputTuple() const{
 	return false;
@@ -71,53 +75,7 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
 
 		// positive atoms are only required for non-antimonotonic input parameters
 		// negative atoms are only required for non-monotonic input parameters
-		if (query.interpretation->getFact(*en) != false){
-			// positive
-			if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")){
-				extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
-			}
-		}else{
-			// negative
-			if (!prop.isMonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")){
-				extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
-			}
-		}
-
-		en++;
-	}
-
-	return extNgInput;
-}
-
-bool ExternalLearningHelper::NegatedDefaultInputNogoodProvider::dependsOnOutputTuple() const{
-	return false;
-}
-
-Nogood ExternalLearningHelper::NegatedDefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const{
-
-	// store for each predicate term ID the index of the corresponding parameter in input
-	std::map<ID, int> inputPredicateTable;
-	int index = 0;
-	BOOST_FOREACH (ID inp, query.input){
-		inputPredicateTable[inp] = index++;
-	}
-
-	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
-	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
-
-	Nogood extNgInput;
-
-	while (en < en_end){
-		// get the predicate of the current input atom
-		ID pred = query.interpretation->getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en)).tuple[0];
-
-		// find the parameter index of this atom
-		int index = inputPredicateTable.find(pred)->second;
-
-		// positive atoms are only required for non-antimonotonic input parameters
-		// negative atoms are only required for non-monotonic input parameters
-		if (query.interpretation->getFact(*en) != true){
+		if (query.interpretation->getFact(*en) != negateMonotonicity){
 			// positive
 			if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")){
 				extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
@@ -296,7 +254,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 	    if (query.ctx->config.getOption("ExternalLearningNeg")){
 
 		Nogood extNgInput;
-		if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true);
+		if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false);
 
 		// iterate over negative output atoms
 		bm::bvector<>::enumerator en = query.extinterpretation->getStorage().first();
@@ -329,7 +287,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 						// construct nogood
 						Nogood ng = !inp->dependsOnOutputTuple()
 								? extNgInput
-								: (*inp)(query, prop, true, t);
+								: (*inp)(query, prop, false, t);
 						ng.insert(NogoodContainer::createLiteral(posAtomID.address));
 						nogoods->addNogood(ng);
 						DBGLOG(DBG, "Learned negative nogood " << ng.getStringRepresentation(query.ctx->registry()));
