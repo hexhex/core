@@ -273,7 +273,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 						Nogood ng = ExternalLearningHelper::getInputNogood(query, prop, true);
 						ng.insert(NogoodContainer::createLiteral(posAtomID.address));
 						nogoods->addNogood(ng);
-						DBGLOG(DBG, "Learned negative nogood: " << ng);
+						DBGLOG(DBG, "Learned negative nogood " << ng.getStringRepresentation(query.ctx->registry()));
 					}
 				}
 			}

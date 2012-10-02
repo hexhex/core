@@ -321,7 +321,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			ExternalAtom eaReplacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
 			std::stringstream eaName;
 			eaName << aggregateFunctionToExternalAtomName(aatom.tuple[2]);
-//			eaName << "c";	// haveDesiredFunctionValue
 			eaName << bodyVarsOfSymbolicSet.size();
 			Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, eaName.str());
 			eaReplacement.predicate = reg->storeTerm(exPred);
@@ -346,7 +345,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			}
 			// o2
 			eaReplacement.tuple.push_back(valueVariable);
-//			eaReplacement.inputs.push_back(valueVariable);
 
 			// store external atom and add its ID to the rule body
 			newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
@@ -433,11 +431,8 @@ class AggAtom : public PluginAtom
 {
 	protected:
 		int arity;
-		bool haveDesiredFunctionValue;
 
 		virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) = 0;
-
-		virtual void analyzeFailure(const Query& query, Tuple& key, std::vector<Tuple>& input, int desiredFunctionValue, NogoodContainerPtr ngc) {}
 
 		std::string getName(std::string aggFunction, int ar){
 			std::stringstream ss;
@@ -447,34 +442,78 @@ class AggAtom : public PluginAtom
 
 	public:
 
-		AggAtom(std::string aggFunction, int arity, bool haveDesiredFunctionValue = false)
+		AggAtom(std::string aggFunction, int arity)
 			: PluginAtom(getName(aggFunction, arity), false),
-			arity(arity),
-			haveDesiredFunctionValue(haveDesiredFunctionValue)
+			arity(arity)
 		{
 			prop.functional = true;
 
 			addInputPredicate();
 			addInputPredicate();
 			addInputConstant();
-			if (haveDesiredFunctionValue) addInputConstant();
 
-			setOutputArity(arity + (haveDesiredFunctionValue ? 0 : 1));
+			setOutputArity(arity + 1);
 		}
-/*
+
+		virtual std::vector<Query>
+		splitQuery(const Query& query, const ExtSourceProperties& prop)
+		{
+			std::vector<Query> atomicQueries;
+
+			// we can answer the query separately for each key
+
+			// go through all input atoms
+			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+
+			boost::unordered_map<Tuple, InterpretationPtr> subQueries;
+			while (en < en_end){
+				const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en);
+
+				// extract the key of this atom
+				Tuple key;
+				key.clear();
+				if (oatom.tuple[0] == query.input[1]){
+					// take the first "arity" terms
+					for (int i = 1; i <= arity; ++i){
+						key.push_back(oatom.tuple[i]);
+					}
+				}else if (oatom.tuple[0] == query.input[0]){
+					// take the first "arity" terms
+					for (int i = 1; i <= arity; ++i){
+						key.push_back(oatom.tuple[i]);
+					}
+				}else{
+					assert (false);
+				}
+				if (subQueries.count(key) == 0){
+					subQueries[key] = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
+				}
+				assert(!!subQueries[key]);
+				subQueries[key]->setFact(*en);
+
+				en++;
+			}
+
+			// prepare a separate subquery for each key
+			typedef std::pair<Tuple, InterpretationPtr> Pair;
+			BOOST_FOREACH (Pair p, subQueries){
+				Query qa = query;
+				qa.predicateInputMask = p.second;
+				InterpretationPtr intr(new Interpretation(query.interpretation->getRegistry()));
+				intr->getStorage() |= query.interpretation->getStorage();
+				intr->getStorage() &= p.second->getStorage();
+//				qa.interpretation = p.second;
+				atomicQueries.push_back(qa);
+			}
+
+			return atomicQueries;
+		}
+
 		virtual void
 		retrieve(const Query& query, Answer& answer) throw (PluginError)
 		{
-			retrieve(query, answer, NogoodContainerPtr());
-		}
-*/
-		virtual void
-		retrieve(const Query& query, Answer& answer/*, NogoodContainerPtr ngc*/) throw (PluginError)
-		{
 			Registry &registry = *getRegistry();
-
-			// extract the value which is compared to the result of this aggregate function
-			int desiredFunctionValue = haveDesiredFunctionValue ? query.input[3].address : 0;
 
 			// go through all input atoms
 			bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
@@ -513,40 +552,19 @@ class AggAtom : public PluginAtom
 				en++;
 			}
 
-			if (tuples.size() == 0 && arity == 0){
+			// compute for each key in tuples the aggregate function
+			typedef std::pair<Tuple, std::vector<Tuple> > Pair;
+			BOOST_FOREACH (Tuple key, keys){
 				bool def = false;
 				unsigned int functionValue = 0;
-				compute(std::vector<Tuple>(), &functionValue, &def);
+				compute(tuples[key], &functionValue, &def);
+
+				// output
 				if (def){
-					Tuple result;
+					Tuple result = key;
+					// compute the function value or just a truth value?
 					result.push_back(ID::termFromInteger(functionValue));
 					answer.get().push_back(result);
-				}
-			}else{
-				// compute for each key in tuples the aggregate function
-				typedef std::pair<Tuple, std::vector<Tuple> > Pair;
-				BOOST_FOREACH (Tuple key, keys){
-					bool def = false;
-					unsigned int functionValue = 0;
-					compute(tuples[key], &functionValue, &def);
-
-					// output
-					if (def){
-						Tuple result = key;
-						// compute the function value or just a truth value?
-						if (!haveDesiredFunctionValue){
-							// function value
-							result.push_back(ID::termFromInteger(functionValue));
-							answer.get().push_back(result);
-						}else{
-							// truth value
-							if (functionValue == desiredFunctionValue){
-								answer.get().push_back(result);
-							}else{
-//								if (!!ngc) analyzeFailure(query, key, tuples[key], desiredFunctionValue, ngc);
-							}
-						}
-					}
 				}
 			}
 		}
@@ -566,7 +584,7 @@ class MaxAtom : public AggAtom
 		}
 
 	public:
-		MaxAtom(int arity, bool haveDesiredFunctionValue = false) : AggAtom(haveDesiredFunctionValue ? "maxc" : "max", arity, haveDesiredFunctionValue) {}
+		MaxAtom(int arity) : AggAtom("max", arity) {}
 };
 
 class MinAtom : public AggAtom
@@ -583,27 +601,7 @@ class MinAtom : public AggAtom
 		}
 
 	public:
-		MinAtom(int arity, bool haveDesiredFunctionValue = false) : AggAtom(haveDesiredFunctionValue ? "minc" : "min", arity, haveDesiredFunctionValue) {}
-
-		virtual void analyzeFailure(const Query& query, Tuple& key, std::vector<Tuple>& input, int desiredFunctionValue, NogoodContainerPtr ngc) {
-			// if we want function value V and we have an input value > V, then this input value is a reason for the failure
-			BOOST_FOREACH (Tuple ituple, input){
-				if (ituple[0].address > desiredFunctionValue){
-					Nogood ng;
-					ID outputAtom = ExternalLearningHelper::getOutputAtom(query, key, true);
-					ng.insert(outputAtom);
-
-					Tuple t;
-					t.push_back(query.input[1]);
-					for (int j = 0; j < key.size(); ++j) t.push_back(key[j]);
-					for (int j = 0; j < ituple.size(); ++j) t.push_back(ituple[j]);
-					ng.insert(NogoodContainer::createLiteral(query.ctx->registry()->ogatoms.getIDByTuple(t).address, true));
-
-					ngc->addNogood(ng);
-					break;
-				}
-			}
-		}
+		MinAtom(int arity) : AggAtom("min", arity) {}
 };
 
 class SumAtom : public AggAtom
@@ -619,28 +617,7 @@ class SumAtom : public AggAtom
 		}
 
 	public:
-		SumAtom(int arity, bool haveDesiredFunctionValue = false) : AggAtom(haveDesiredFunctionValue ? "sumc" : "sum", arity, haveDesiredFunctionValue) {}
-
-		virtual void analyzeFailure(const Query& query, Tuple& key, std::vector<Tuple>& input, int desiredFunctionValue, NogoodContainerPtr ngc) {
-			// if we want function value V and we have a value > V, then a set of large input atoms is a reason for the failure
-			int intsum = 0;
-			Nogood ng;
-			ID outputAtom = ExternalLearningHelper::getOutputAtom(query, key, true);
-			ng.insert(outputAtom);
-			BOOST_FOREACH (Tuple ituple, input){
-				if (intsum > desiredFunctionValue) break;
-
-				Tuple t;
-				t.push_back(query.input[1]);
-				for (int j = 0; j < key.size(); ++j) t.push_back(key[j]);
-				for (int j = 0; j < ituple.size(); ++j) t.push_back(ituple[j]);
-				ng.insert(NogoodContainer::createLiteral(query.ctx->registry()->ogatoms.getIDByTuple(t).address, true));
-
-				intsum += ituple[0].address;
-			}
-
-			if (intsum > desiredFunctionValue) ngc->addNogood(ng);
-		}
+		SumAtom(int arity) : AggAtom("sum", arity) {}
 };
 
 class TimesAtom : public AggAtom
@@ -657,7 +634,7 @@ class TimesAtom : public AggAtom
 		}
 
 	public:
-		TimesAtom(int arity, bool haveDesiredFunctionValue = false) : AggAtom(haveDesiredFunctionValue ? "timesc" : "times", arity, haveDesiredFunctionValue) {}
+		TimesAtom(int arity) : AggAtom("times", arity) {}
 };
 
 class AvgAtom : public AggAtom
@@ -677,7 +654,7 @@ class AvgAtom : public AggAtom
 		}
 
 	public:
-		AvgAtom(int arity, bool haveDesiredFunctionValue = false) : AggAtom(haveDesiredFunctionValue ? "avgc" : "avg", arity, haveDesiredFunctionValue) {}
+		AvgAtom(int arity) : AggAtom("avg", arity) {}
 };
 
 class CountAtom : public AggAtom
@@ -692,24 +669,7 @@ class CountAtom : public AggAtom
 		}
 
 	public:
-		CountAtom(int arity, bool haveDesiredFunctionValue = false) : AggAtom(haveDesiredFunctionValue ? "countc" : "count", arity, haveDesiredFunctionValue) {}
-
-		virtual void analyzeFailure(const Query& query, Tuple& key, std::vector<Tuple>& input, int desiredFunctionValue, NogoodContainerPtr ngc) {
-			// if we want function value V and we have > V input atoms, take V+1 arbitrary input atoms as the reason for the failure
-			if (input.size() > desiredFunctionValue){
-				Nogood ng;
-				ID outputAtom = ExternalLearningHelper::getOutputAtom(query, key, true);
-				ng.insert(outputAtom);
-				for (int i = 0; i < desiredFunctionValue + 1; ++i){
-					Tuple t;
-					t.push_back(query.input[1]);
-					for (int j = 0; j < key.size(); ++j) t.push_back(key[j]);
-					for (int j = 0; j < input[i].size(); ++j) t.push_back(input[i][j]);
-					ng.insert(NogoodContainer::createLiteral(query.ctx->registry()->ogatoms.getIDByTuple(t).address, true));
-				}
-				ngc->addNogood(ng);
-			}
-		}
+		CountAtom(int arity) : AggAtom("count", arity) {}
 };
 
 }
@@ -719,27 +679,16 @@ std::vector<PluginAtomPtr> AggregatePlugin::createAtoms(ProgramCtx& ctx) const{
 
 	// we have to do the program rewriting already here because it creates some side information that we need
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
-	AggregateRewriter ar(ctxdata);
-	ar.prepareRewrittenProgram(ctx);
 
 	// return smart pointer with deleter (i.e., delete code compiled into this plugin)
 	DBGLOG(DBG, "Adding aggregate external atoms with an input arity of up to " << ctxdata.maxArity);
 	for (int i = 0; i <= ctxdata.maxArity; ++i){
-		// numeric functions
 		ret.push_back(PluginAtomPtr(new MaxAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new MinAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new SumAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new TimesAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new AvgAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new CountAtom(i), PluginPtrDeleter<PluginAtom>()));
-
-		// boolean functions
-		ret.push_back(PluginAtomPtr(new MaxAtom(i, true), PluginPtrDeleter<PluginAtom>()));
-		ret.push_back(PluginAtomPtr(new MinAtom(i, true), PluginPtrDeleter<PluginAtom>()));
-		ret.push_back(PluginAtomPtr(new SumAtom(i, true), PluginPtrDeleter<PluginAtom>()));
-		ret.push_back(PluginAtomPtr(new TimesAtom(i, true), PluginPtrDeleter<PluginAtom>()));
-		ret.push_back(PluginAtomPtr(new AvgAtom(i, true), PluginPtrDeleter<PluginAtom>()));
-		ret.push_back(PluginAtomPtr(new CountAtom(i, true), PluginPtrDeleter<PluginAtom>()));
 	}
 
 	return ret;
