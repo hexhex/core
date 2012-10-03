@@ -23,7 +23,7 @@
 
 /**
  * @file   ExternalLearningHelper.h
- * @author Chrisoph Redl <redl@kr.tuwien.ac.at>
+ * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
  * @brief  Provides helper functions for writing learning functions.
  *         Consider TestPlugin.cpp to see how these methods are used.
@@ -67,10 +67,9 @@ public:
   typedef boost::shared_ptr<InputNogoodProvider> InputNogoodProviderConstPtr;
 
   class DefaultInputNogoodProvider : public InputNogoodProvider{
-    virtual bool dependsOnOutputTuple() const;
-    virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const;
-  };
-  class NegatedDefaultInputNogoodProvider : public InputNogoodProvider{
+    bool negateMonotonicity;
+  public:
+    DefaultInputNogoodProvider(bool negateMonotonicity);
     virtual bool dependsOnOutputTuple() const;
     virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const;
   };
@@ -112,7 +111,7 @@ public:
    * \@param nogoods The nogood container where learned nogoods shall be added
    * \@param inp Input nogood provider
    */
-  static void learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider()));
+  static void learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider(false)));
 
   /**
    * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
@@ -132,7 +131,7 @@ public:
    * \@param nogoods The nogood container where learned nogoods shall be added
    * \@param inp Input nogood provider
    */
-  static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new NegatedDefaultInputNogoodProvider()));
+  static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider(true)));
 
   /**
    * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
