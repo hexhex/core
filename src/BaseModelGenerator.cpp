@@ -374,6 +374,7 @@ InterpretationPtr BaseModelGenerator::projectEAtomInputInterpretation(RegistryPt
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::projectEAII");
   eatom.updatePredicateInputMask();
+
   InterpretationPtr ret;
   if( full == 0 )
     ret.reset(new Interpretation(reg));

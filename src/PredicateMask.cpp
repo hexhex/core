@@ -150,16 +150,19 @@ void PredicateMask::updateMask()
   assert(knownAddresses == (it - it_begin));
   for(;missingBits != 0; it++, missingBits--)
   {
-    assert(it != reg->ogatoms.getAllByAddress().second);
-    const OrdinaryAtom& oatom = *it;
-    //DBGLOG(DBG,"checking " << oatom.tuple.front());
-    IDAddress addr = oatom.tuple.front().address;
-    if( predicates.find(addr) != predicates.end() )
-    {
-      bits.set(it - it_begin);
+    if (!reg->ogatoms.getIDByAddress(knownAddresses).isHiddenAtom()){
+      assert(it != reg->ogatoms.getAllByAddress().second);
+      const OrdinaryAtom& oatom = *it;
+      //DBGLOG(DBG,"checking " << oatom.tuple.front());
+      IDAddress addr = oatom.tuple.front().address;
+      if( predicates.find(addr) != predicates.end() )
+      {
+        bits.set(it - it_begin);
+      }
     }
+    knownAddresses++;
   }
-  knownAddresses += missingBits;
+//  knownAddresses += missingBits;
   DBGLOG(DBG,"updateMask created new set of relevant ogatoms: " << *maski << " and knownAddresses is " << knownAddresses);
 }
 

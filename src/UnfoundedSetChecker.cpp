@@ -94,8 +94,6 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sida, "ISUFS");
-
 	// ordinary mode generates only real unfounded sets, hence there is no check required
 	assert(mode == WithExt);
 
@@ -125,13 +123,16 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 	// construct: compatibleSetWithoutAux - ufsCandidate
 	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
 	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(reg));
-	eaInput->add(*compatibleSet);	// do not remove auxiliaries here because this prevents negative learning!
-	eaInput->getStorage() -= ufsCandidate->getStorage();
+	// remove the UFS from the compatible set, but do not remove EA auxiliaries
+	// this does not hurt because EA auxiliaries can never be in the input to an external atom, but keeping them has the advantage that negative learning is more effective
+	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
+//	eaInput->add(*compatibleSet);	// do not remove auxiliaries here because this prevents negative learning!
+//	eaInput->getStorage() -= ufsCandidate->getStorage();
+////	eaInput->getStorage() |= (compatibleSet->getStorage() - compatibleSetWithoutAux->getStorage());
 
 	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
-	eaResult->add(*compatibleSetWithoutAux);
-	eaResult->getStorage() -= ufsCandidate->getStorage();
-
+//	eaResult->add(*compatibleSetWithoutAux);
+//	eaResult->getStorage() -= ufsCandidate->getStorage();
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
 
 	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
@@ -402,7 +403,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 		BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
 
 		// Create two unique predicates and atoms for this rule
-		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 		hratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, auxatomcnt++)));
 		ID hr = reg->storeOrdinaryGAtom(hratom);
 
@@ -637,7 +638,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	BOOST_FOREACH (ID ruleID, ufsProgram){
 		const Rule& rule = reg->rules.getByID(ruleID);
 
-		OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 		cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, auxatomcnt++)));
 		ID cr = reg->storeOrdinaryGAtom(cratom);
 		ruleToAux[ruleID] = cr.address;
@@ -976,24 +977,24 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemCreateAuxAt
 	bm::bvector<>::enumerator en = domain->getStorage().first();
 	bm::bvector<>::enumerator en_end = domain->getStorage().end();
 	while (en < en_end){
-		OrdinaryAtom interpretationShadowAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		OrdinaryAtom interpretationShadowAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 		interpretationShadowAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 		interpretationShadow[*en] = reg->storeOrdinaryGAtom(interpretationShadowAtom).address;
 
 		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
-			OrdinaryAtom residualShadowAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			OrdinaryAtom residualShadowAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 			residualShadowAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 			residualShadow[*en] = reg->storeOrdinaryGAtom(residualShadowAtom).address;
 
-			OrdinaryAtom becomeFalseAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			OrdinaryAtom becomeFalseAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 			becomeFalseAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 			becomeFalse[*en] = reg->storeOrdinaryGAtom(becomeFalseAtom).address;
 
-			OrdinaryAtom aIandU(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			OrdinaryAtom aIandU(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 			aIandU.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 			IandU[*en] = reg->storeOrdinaryGAtom(aIandU).address;
 
-			OrdinaryAtom anIorU(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			OrdinaryAtom anIorU(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 			anIorU.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 			nIorU[*en] = reg->storeOrdinaryGAtom(anIorU).address;
 		}
@@ -1017,7 +1018,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 	// Create a unique predicate and atom h_r for this rule
 	ID hr;
 	{
-		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
 		hratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
 		hr = reg->storeOrdinaryGAtom(hratom);
 	}

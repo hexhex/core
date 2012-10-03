@@ -84,6 +84,9 @@ struct ID:
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
 	//                                             0x00FF0000
+	static const IDKind PROPERTY_ATOM_HIDDEN     = 0x00010000;	// hidden atoms are excluded from predicate masks
+									// the property is used for a large number of temporary atoms needed in the UFS check
+									// (this would otherwise slow down predicate masks in the whole system)
 	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ       = 0x00100000;
@@ -149,6 +152,7 @@ struct ID:
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
   // true for ground or nonground ordinary atoms
   // (special bit trick)
+	inline bool isHiddenAtom() const  { assert(isAtom() || isLiteral()); return (kind & PROPERTY_ATOM_HIDDEN) == PROPERTY_ATOM_HIDDEN; }
 	inline bool isOrdinaryAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_ATOM_BUILTIN) != SUBKIND_ATOM_BUILTIN; }
 	inline bool isOrdinaryGroundAtom() const     { assert(isAtom() || isLiteral()); return !(kind & SUBKIND_MASK); }
 	inline bool isOrdinaryNongroundAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_ORDINARYN; }
