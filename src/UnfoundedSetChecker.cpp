@@ -94,13 +94,15 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sida, "ISUFS");
+
 	// ordinary mode generates only real unfounded sets, hence there is no check required
 	assert(mode == WithExt);
 
 	DBGLOG(DBG, "Checking if " << *ufsCandidate << " is an unfounded set");
 
 	// check for each EA auxiliary in the UFS, if the atom is indeed unfounded
-	std::vector<IDAddress> auxiliariesToVerify;		// the auxiliaries which's falsity needs to be checked
+	std::vector<IDAddress> auxiliariesToVerify;		// the auxiliaries which's new truth value needs to be checked
 	std::vector<std::set<ID> > auxiliaryDependsOnEA;	// stores for each auxiliary A the external atoms which are remain to be evaluated before the truth/falsity of A is certain
 	std::map<ID, std::vector<int> > eaToAuxIndex;		// stores for each external atom index the indices in the above vector which depend on this external atom
 
@@ -132,10 +134,15 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
 
-	// now evaluate one external atom after the other and check if the new truth value is justified
+	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
 	DBGLOG(DBG, "Evaluating external atoms");
+	int evalCnt = 0;
 	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		ID eaID = agp.getIndexedEAtom(eaIndex);
+		// we only evaluate external atoms which are relevant for some auxiliaries
+		if (eaToAuxIndex.find(eaID) == eaToAuxIndex.end()){
+			continue;
+		}
 		const ExternalAtom& eatom = reg->eatoms.getByID(eaID);
 
 		// evaluate
@@ -162,6 +169,10 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 			mg->evaluateExternalAtom(ctx, eatom, eaInput, cb);
 		}
 
+#ifndef NDEBUG
+		evalCnt++;
+#endif
+
 		// remove the external atom from the remaining lists
 		BOOST_FOREACH (int i, eaToAuxIndex[eaID]){
 			if ( !auxiliaryDependsOnEA[i].empty() ){
@@ -172,7 +183,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 					if (eaResult->getFact(auxiliariesToVerify[i]) != ufsCandidate->getFact(auxiliariesToVerify[i])){
 						// wrong guess: the auxiliary is _not_ unfounded
 						DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is not justified --> Candidate is not an unfounded set");
-						DBGLOG(DBG, "Evaluated " << i << " of " << agp.getIndexedEAtoms().size() << " external atoms");
+						DBGLOG(DBG, "Evaluated " << evalCnt << " of " << agp.getIndexedEAtoms().size() << " external atoms");
 						return false;
 					}else{
 						DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is justified");
@@ -1331,7 +1342,6 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 
 void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
 	std::vector<ID> assumptions;
 
 	bm::bvector<>::enumerator en = domain->getStorage().first();
@@ -1728,6 +1738,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 	}
 
 	if (ctx.config.getOption("UFSCheckMonolithic")){
+		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
 		if (mg && agp.hasECycles()){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			if (preparedUnfoundedSetCheckers.size() == 0){
@@ -1759,7 +1770,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		}
 	}else{
 		// search in each component for unfounded sets
-		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSetAssumptionBased");
+		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
 			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp))){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
