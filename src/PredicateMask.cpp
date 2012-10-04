@@ -88,9 +88,9 @@ void PredicateMask::setRegistry(RegistryPtr reg)
 
 void PredicateMask::addPredicate(ID pred)
 {
-  assert(knownAddresses == 0 && "TODO implement incremental addition of predicates to mask"); // should be easy
   assert(pred.isTerm() && pred.isConstantTerm() && "predicate masks can only be done on constant terms");
   predicates.insert(pred.address);
+  knownAddresses = 0;	// scan the whole address space again
 }
 
 void PredicateMask::updateMask()

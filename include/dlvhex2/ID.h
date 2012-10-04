@@ -82,6 +82,7 @@ struct ID:
 	static const IDKind SUBKIND_RULE_REGULAR =        0x00000000;
 	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
+	static const IDKind SUBKIND_RULE_WEIGHT =         0x03000000;	// lparse weight rules (not to be confused with weak constraints!)
 
 	//                                             0x00FF0000
 	static const IDKind PROPERTY_ATOM_HIDDEN     = 0x00010000;	// hidden atoms are excluded from predicate masks
@@ -171,6 +172,7 @@ struct ID:
 	inline bool isRegularRule() const   { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_REGULAR; }
 	inline bool isConstraint() const    { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_CONSTRAINT; }
 	inline bool isWeakConstraint() const{ assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEAKCONSTRAINT; }
+	inline bool isWeightRule() const    { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEIGHT; }
 
 	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
 	inline bool doesRuleContainModatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_MODATOMS) == PROPERTY_RULE_MODATOMS; }

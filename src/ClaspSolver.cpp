@@ -509,9 +509,155 @@ void ClaspSolver::runClasp(){
 	}
 }
 
-bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
+void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
 
-	const int false_ = 1;	// 1 is our constant "false"
+	const Rule& rule = reg->rules.getByID(ruleId);
+	if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
+		// shifting
+		DBGLOG(DBG, "Shifting disjunctive rule" << ruleId);
+		for (int keep = 0; keep < rule.head.size(); ++keep){
+			pb.startRule(Clasp::BASICRULE);
+			int hi = 0;
+			BOOST_FOREACH (ID h, rule.head){
+				if (hi == keep){
+					// add literal to head
+					pb.addHead(hexToClasp[h.address].var());
+				}
+				hi++;
+			}
+			BOOST_FOREACH (ID b, rule.body){
+				// add literal to body	BOOST_FOREACH(ID bodyLit, ruleBody){
+				if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
+				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			}
+			// shifted head atoms
+			hi = 0;
+			BOOST_FOREACH (ID h, rule.head){
+				if (hi != keep){
+					// add literal to head
+					pb.addToBody(hexToClasp[h.address].var(), false);
+				}
+				hi++;
+			}
+			pb.endRule();
+		}
+	}else if (dm == ChoiceRules){
+		int atLeastOneAtom = nextVarIndex++;
+
+		DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
+		// ============================== Choice rule ==============================
+		// derive head atoms
+		pb.startRule(Clasp::CHOICERULE);
+		BOOST_FOREACH (ID h, rule.head){
+			pb.addHead(hexToClasp[h.address].var());
+		}
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
+			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+		}
+		pb.endRule();
+
+		// derive special atom if at least one head atom is true
+		pb.startRule(Clasp::CONSTRAINTRULE, 1);
+		pb.addHead(atLeastOneAtom);
+		BOOST_FOREACH (ID h, rule.head){
+			pb.addToBody(hexToClasp[h.address].var(), true);
+		}
+		pb.endRule();
+
+		// forbid that the body is true if the special atom is false (i.e. no head atom is true)
+		pb.startRule(Clasp::BASICRULE);
+		pb.addHead(false_);
+		BOOST_FOREACH (ID b, rule.body){
+			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+		}
+		pb.addToBody(atLeastOneAtom, false);
+		pb.endRule();
+	}
+}
+
+void ClaspSolver::sendWeightRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
+
+	const Rule& rule = reg->rules.getByID(ruleId);
+	pb.startRule(Clasp::WEIGHTRULE, rule.bound.address);
+	assert(rule.head.size() != 0);
+	BOOST_FOREACH (ID h, rule.head){
+		// add literal to head
+		pb.addHead(hexToClasp[h.address].var());
+	}
+	for (int i = 0; i < rule.body.size(); ++i){
+		// add literal to body
+		pb.addToBody(hexToClasp[rule.body[i].address].var(), !rule.body[i].isNaf(), rule.bodyWeightVector[i].address);
+	}
+	pb.endRule();
+}
+
+void ClaspSolver::sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
+
+	const Rule& rule = reg->rules.getByID(ruleId);
+	pb.startRule(Clasp::BASICRULE);
+	if (rule.head.size() == 0){
+		pb.addHead(false_);
+	}
+	BOOST_FOREACH (ID h, rule.head){
+		// add literal to head
+		pb.addHead(hexToClasp[h.address].var());
+	}
+	BOOST_FOREACH (ID b, rule.body){
+		// add literal to body
+		pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+	}
+	pb.endRule();
+}
+
+void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, std::map<IDAddress, std::vector<int> >& singletonNogoods, ID ruleId){
+
+	const Rule& rule = reg->rules.getByID(ruleId);
+
+	if (ID(rule.kind, 0).isWeakConstraint()) throw GeneralError("clasp-based solver does not support weak constraints");
+
+#ifndef NDEBUG
+	std::stringstream rulestr;
+	rulestr << rule;
+	DBGLOG(DBG, "Sending rule to clasp: " + rulestr.str());
+#endif
+	// distinct by the type of the rule
+	if (rule.head.size() > 1){
+		sendDisjunctiveRuleToClasp(p, dm, nextVarIndex, ruleId);
+	}else{
+		if (ID(rule.kind, 0).isWeightRule()){
+			sendWeightRuleToClasp(p, dm, nextVarIndex, ruleId);
+		}else{
+			sendOrdinaryRuleToClasp(p, dm, nextVarIndex, ruleId);
+		}
+	}
+
+
+	// for non-shifted disjunctive rules, check support of singleton atoms
+	// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
+	DBGLOG(DBG, "Generating singleton loop nogoods");
+	if (!ruleId.isWeightRule()){
+		BOOST_FOREACH (ID h, rule.head){
+			// shiftedBody is true iff the original body is true and all other head atoms are false
+			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(nextVarIndex);
+			BOOST_FOREACH (ID b, rule.body){
+				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			}
+			BOOST_FOREACH (ID hshifted, rule.head){
+				if (h != hshifted){
+					pb.addToBody(hexToClasp[hshifted.address].var(), false);
+				}
+			}
+			pb.endRule();
+
+			// remember supporting shifted rule
+			singletonNogoods[h.address].push_back(nextVarIndex++);
+		}
+	}
+}
+
+bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
 
 	pb.startProgram(claspInstance, eqOptions);
 	pb.setCompute(false_, false);
@@ -550,138 +696,8 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 
 	std::map<IDAddress, std::vector<int> > singletonNogoods; // check support of singletons using shifted rules
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
-		int atLeastOneAtom = nextVarIndex++;
-
-		if (ruleId.isWeakConstraint()) throw GeneralError("clasp-based solver does not support weak constraints");
-		const Rule& rule = reg->rules.getByID(ruleId);
-#ifndef NDEBUG
-		programstring << (rule.head.size() == 0 ? "(constraint)" : "(rule)") << " ";
-		printer.print(ruleId);
-		programstring << std::endl;
-#endif
-		if (rule.head.size() > 1){
-			if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
-				// shifting
-				DBGLOG(DBG, "Shifting disjunctive rule " << ruleId);
-				for (int keep = 0; keep < rule.head.size(); ++keep){
-					pb.startRule(Clasp::BASICRULE);
-					int hi = 0;
-					BOOST_FOREACH (ID h, rule.head){
-						if (hi == keep){
-							// add literal to head
-							pb.addHead(hexToClasp[h.address].var());
-						}
-						hi++;
-					}
-					BOOST_FOREACH (ID b, rule.body){
-						// add literal to body	BOOST_FOREACH(ID bodyLit, ruleBody){
-						if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
-						pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
-					}
-					// shifted head atoms
-					hi = 0;
-					BOOST_FOREACH (ID h, rule.head){
-						if (hi != keep){
-							// add literal to head
-							pb.addToBody(hexToClasp[h.address].var(), false);
-						}
-						hi++;
-					}
-					pb.endRule();
-				}
-			}else if (dm == ChoiceRules){
-				DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
-				// ============================== Choice rule ==============================
-				// derive head atoms
-				pb.startRule(Clasp::CHOICERULE);
-				BOOST_FOREACH (ID h, rule.head){
-					pb.addHead(hexToClasp[h.address].var());
-				}
-				BOOST_FOREACH (ID b, rule.body){
-					if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
-					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
-				}
-				pb.endRule();
-
-				// derive special atom if at least one head atom is true
-				pb.startRule(Clasp::CONSTRAINTRULE, 1);
-				pb.addHead(atLeastOneAtom);
-				BOOST_FOREACH (ID h, rule.head){
-					pb.addToBody(hexToClasp[h.address].var(), true);
-				}
-				pb.endRule();
-
-				// forbid that the body is true if the special atom is false (i.e. no head atom is true)
-				pb.startRule(Clasp::BASICRULE);
-				pb.addHead(false_);
-				BOOST_FOREACH (ID b, rule.body){
-					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
-				}
-				pb.addToBody(atLeastOneAtom, false);
-				pb.endRule();
-			}
-		}else{
-			pb.startRule(Clasp::BASICRULE);
-			if (rule.head.size() == 0){
-				pb.addHead(false_);
-			}
-			BOOST_FOREACH (ID h, rule.head){
-				// add literal to head
-				pb.addHead(hexToClasp[h.address].var());
-			}
-			BOOST_FOREACH (ID b, rule.body){
-				// add literal to body
-				if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
-				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
-			}
-			pb.endRule();
-		}
-
-
-		// ============================== Singleton loop nogoods ==============================
-		// for non-shifted disjunctive rules, check support of singleton atoms
-		DBGLOG(DBG, "Generating singleton loop nogoods");
-		BOOST_FOREACH (ID h, rule.head){
-#if 0	// these constraints model nogoods which are necessary in theory; however, since we work with rules instead of nogoods they are implicitly fulfilled by foundedness
-			// derive shiftedBody iff all atoms in the shifted body are true
-			BOOST_FOREACH (ID b, rule.body){	// shiftedBody is false if a body literal is false
-				pb.startRule(Clasp::BASICRULE);
-				pb.addHead(false_);
-				pb.addToBody(nextVarIndex, true);
-				pb.addToBody(hexToClasp[b.address].var(), b.isNaf());
-				pb.endRule();
-			}
-			BOOST_FOREACH (ID hshifted, rule.head){
-				if (h != hshifted){		// shiftedBody is false if a head atom is true, i.e. a body literal in the shifted rule is false
-					pb.startRule(Clasp::BASICRULE);
-					pb.addHead(false_);
-					pb.addToBody(nextVarIndex, true);
-					pb.addToBody(hexToClasp[hshifted.address].var(), true);
-					pb.endRule();
-				pb.addToBody(nextVarIndex, true);
-				}
-			}
-#endif
-
-			// otherwise shiftedBody is true
-			pb.startRule(Clasp::BASICRULE);
-			pb.addHead(nextVarIndex);
-			BOOST_FOREACH (ID b, rule.body){
-				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
-			}
-			BOOST_FOREACH (ID hshifted, rule.head){
-				if (h != hshifted){
-					pb.addToBody(hexToClasp[hshifted.address].var(), false);
-				}
-			}
-			pb.endRule();
-
-			// remember supporting shifted rule
-			singletonNogoods[h.address].push_back(nextVarIndex++);
-		}
+		sendRuleToClasp(p, dm, nextVarIndex, singletonNogoods, ruleId);
 	}
-
-	// ============================== Singleton loop nogoods ==============================
 
 	// an atom is not true if no supporting shifted rule fires
 	typedef std::pair<IDAddress, std::vector<int> > Pair;
@@ -781,8 +797,6 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 }
 
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
-
-	const int false_ = 1;	// 1 is our constant "false"
 
 	buildInitialSymbolTable(ns);
 

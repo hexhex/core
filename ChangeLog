@@ -1,3 +1,16 @@
+2012-10-04  Christoph Redl  <redl@kr.tuwien.ac.at>
+
+	* AggregatePlugin.cpp: Implement a simplification strategy for
+	aggregates
+	* AggregatePluginh: Likewise.
+	* GringoGrounder.cpp: Add genuine support for aggregates
+	(no translation to external atoms needed).
+	* ClaspSolver.cpp: Add support for weight rules
+	(used for aggregate implementation).
+	* ClaspSolver.h: Likewise.
+	* Rule.h: Add support for lparse weight rules.
+	* ID.h: Likewise.
+
 2012-09-30  Christoph Redl  <redl@kr.tuwien.ac.at>
 
 	* UnfoundedSetChecker.cpp: Enable new assumption-based UFS checker

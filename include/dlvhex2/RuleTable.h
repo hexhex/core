@@ -113,7 +113,7 @@ RuleTable::getByID(
   ID id) const throw ()
 {
 	assert(id.isRule());
-	assert(id.isRegularRule() || id.isConstraint() || id.isWeakConstraint());
+	assert(id.isRegularRule() || id.isConstraint() || id.isWeakConstraint() || id.isWeightRule());
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
@@ -147,7 +147,8 @@ ID RuleTable::storeAndGetID(
 	assert(ID(rule.kind,0).isRule());
 	assert(ID(rule.kind,0).isRegularRule() ||
     ID(rule.kind,0).isConstraint() ||
-    ID(rule.kind,0).isWeakConstraint());
+    ID(rule.kind,0).isWeakConstraint() ||
+    ID(rule.kind,0).isWeightRule());
 	assert(!(rule.head.empty() && rule.body.empty()));
 	assert(!(rule.head.empty() && ID(rule.kind,0).isRegularRule()));
 	assert(!(rule.head.size() > 1 && !ID(rule.kind,0).isRuleDisjunctive()));

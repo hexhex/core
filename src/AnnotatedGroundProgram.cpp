@@ -165,10 +165,11 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph(){
 		}
 
 		// add an arc from all head atoms to all positive body literals
+		// literals in weight rules always count as positive body atoms, even if they are default negated (because the weighted body as a whole is positive)
 		DBGLOG(DBG, "Adding ordinary edges");
 		BOOST_FOREACH (ID h, rule.head){
 			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf() && !b.isExternalAuxiliary()){
+				if ((!b.isNaf() || ruleID.isWeightRule()) && !b.isExternalAuxiliary()){
 					DBGLOG(DBG, "Adding dependency from " << h.address << " to " << b.address);
 					boost::add_edge(depNodes[h.address], depNodes[b.address], depGraph);
 				}

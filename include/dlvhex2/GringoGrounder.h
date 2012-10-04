@@ -83,11 +83,17 @@ private:
 		InterpretationPtr mask;
 
 		struct LParseRule{
-			AtomVec head;
-			AtomVec pos;
-			AtomVec neg;
-			LParseRule(AtomVec h, AtomVec p, AtomVec n) : head(h), pos(p), neg(n){}
-			LParseRule(int h, AtomVec p, AtomVec n) : pos(p), neg(n){
+			enum Type{ Regular, Weight };
+			Type type;
+
+			AtomVec head, pos, neg;
+			WeightVec wpos, wneg;
+			int bound;
+			LParseRule(const AtomVec& h, const AtomVec& p, const AtomVec& n) : head(h), pos(p), neg(n), bound(0), type(Regular){}
+			LParseRule(int h, const AtomVec& p, const AtomVec& n) : pos(p), neg(n), bound(0), type(Regular){
+				head.push_back(h);
+			}
+			LParseRule(int h, const AtomVec& p, const AtomVec& n, const WeightVec& wp, const WeightVec& wn, int bound) : pos(p), neg(n), wpos(wp), wneg(wn), bound(bound), type(Weight){
 				head.push_back(h);
 			}
 		};

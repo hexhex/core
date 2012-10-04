@@ -53,7 +53,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 AggregatePlugin::CtxData::CtxData():
-	enabled(false), maxArity(0)
+	enabled(false), maxArity(0), mode(ExtRewrite)
 {
 }
 
@@ -74,7 +74,10 @@ void AggregatePlugin::printUsage(std::ostream& o) const
 	o << "     --aggregate-enable       Enable aggregate plugin." << std::endl;
 	o << "     --max-variable-share=<N> Defines the maximum number N of variables" << std::endl
 	  << "                              in an aggregate which can be shared with" << std::endl
-	  << "                              other body atoms in the rule." << std::endl;
+	  << "                              other body atoms in the rule." << std::endl
+	  << "     --aggregate-mode={ext,simplify}" << std::endl
+	  << "                              ext=rewrite aggregates to external atoms" << std::endl
+	  << "                              simplify=keep aggregates but simplify them" << std::endl;
 }
 
 // accepted options: --higherorder-enable
@@ -103,6 +106,16 @@ void AggregatePlugin::processOptions(
 		if( boost::starts_with(str, "--max-variable-share=") )
 		{
 			ctxdata.maxArity = boost::lexical_cast<int>(str.substr(std::string("--max-variable-share=").length()));
+			processed = true;
+		}
+		if( boost::starts_with(str, "--aggregate-mode=") )
+		{
+			std::string m = str.substr(std::string("--aggregate-mode=").length());
+			if (m == "ext"){
+				ctxdata.mode = CtxData::ExtRewrite;
+			}else if (m == "simplify"){
+				ctxdata.mode = CtxData::Simplify;
+			}
 			processed = true;
 		}
 
@@ -160,6 +173,7 @@ std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunctio
 void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const Rule& rule){
 
 	RegistryPtr reg = ctx.registry();
+	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
 
 	// take the rule head as it is
 	Rule newRule = rule;
@@ -259,7 +273,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				//   2. for all variables X from the disjunction of the symbolic set:
 				//	  if X occurs also in the remaining body of the rule
 				//          add it to the tuple of p
-				//   3. add all variables of the symbolic set to the tuple of p
+				//   3. add all variables of the symbolic set to the tuple of p in reverse order
 				// B. The body consists of:
 				//   1. the conjunction of the symbolic set
 				//   2. the set of all atoms from the body of the current rule,
@@ -278,8 +292,8 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 					oatom.tuple.push_back(var);
 				}
 				//   3.
-				BOOST_FOREACH (ID c, aatom.variables){
-					oatom.tuple.push_back(c);
+				for (int i = aatom.variables.size() - 1; i >= 0; i--){
+					oatom.tuple.push_back(aatom.variables[i]);
 				}
 				inputRule.head.push_back(reg->storeOrdinaryNAtom(oatom));
 				// B.
@@ -309,45 +323,84 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			rewriteRule(ctx, idb, keyRule);
 			rewriteRule(ctx, idb, inputRule);
 
-			// Construct the external atom as follows:
-			// Input is
-			// i1. the predicate name of the key rule generated above
-			// i2. the predicate name of the input rule generated above
-			// i3. the number of variables determined above in step A2
-			// Output is
-			// o1. the list of variables determined above in step A2
-			// o2. the function value
-			DBGLOG(DBG, "Constructing aggregate replacing external atom");
-			ExternalAtom eaReplacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
-			std::stringstream eaName;
-			eaName << aggregateFunctionToExternalAtomName(aatom.tuple[2]);
-			eaName << bodyVarsOfSymbolicSet.size();
-			Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, eaName.str());
-			eaReplacement.predicate = reg->storeTerm(exPred);
-			// i1
-			eaReplacement.inputs.push_back(keyPredID);
-			// i2
-			eaReplacement.inputs.push_back(inputPredID);
-			// i3
-			eaReplacement.inputs.push_back(ID::termFromInteger(bodyVarsOfSymbolicSet.size()));
-			// o1
-			BOOST_FOREACH (ID t, bodyVarsOfSymbolicSet){
-				eaReplacement.tuple.push_back(t);
-			}
 			ID valueVariable;
-			// in case of = comparison, reuse the existing variable
-			if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[0];
-			else if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[4];
-			else{
-				std::stringstream var;
-				var << prefix << aggIndex++;
-				valueVariable = reg->storeVariableTerm(var.str());
-			}
-			// o2
-			eaReplacement.tuple.push_back(valueVariable);
+			switch (ctxdata.mode){
+			case AggregatePlugin::CtxData::ExtRewrite:
+				{
+				// Construct the external atom as follows:
+				// Input is
+				// i1. the predicate name of the key rule generated above
+				// i2. the predicate name of the input rule generated above
+				// i3. the number of variables determined above in step A2
+				// Output is
+				// o1. the list of variables determined above in step A2
+				// o2. the function value
+				DBGLOG(DBG, "Constructing aggregate replacing external atom");
+				ExternalAtom eaReplacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+				std::stringstream eaName;
+				eaName << aggregateFunctionToExternalAtomName(aatom.tuple[2]);
+				eaName << bodyVarsOfSymbolicSet.size();
+				Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, eaName.str());
+				eaReplacement.predicate = reg->storeTerm(exPred);
+				// i1
+				eaReplacement.inputs.push_back(keyPredID);
+				// i2
+				eaReplacement.inputs.push_back(inputPredID);
+				// i3
+				eaReplacement.inputs.push_back(ID::termFromInteger(bodyVarsOfSymbolicSet.size()));
+				// o1
+				BOOST_FOREACH (ID t, bodyVarsOfSymbolicSet){
+					eaReplacement.tuple.push_back(t);
+				}
+				// in case of = comparison, reuse the existing variable
+				if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[0];
+				else if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[4];
+				else{
+					std::stringstream var;
+					var << prefix << aggIndex++;
+					valueVariable = reg->storeVariableTerm(var.str());
+				}
+				// o2
+				eaReplacement.tuple.push_back(valueVariable);
 
-			// store external atom and add its ID to the rule body
-			newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
+				// store external atom and add its ID to the rule body
+				newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
+
+				// make the rule know that it contains an external atom
+				newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+				}
+				break;
+			case AggregatePlugin::CtxData::Simplify:
+				{
+				// in case of = comparison, reuse the existing variable
+				if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[0];
+				else if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[4];
+				else{
+					std::stringstream var;
+					var << prefix << aggIndex++;
+					valueVariable = reg->storeVariableTerm(var.str());
+				}
+
+				AggregateAtom simplifiedaatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+				simplifiedaatom.tuple[0] = valueVariable;
+				simplifiedaatom.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
+				simplifiedaatom.tuple[2] = aatom.tuple[2];
+				simplifiedaatom.tuple[3] = ID_FAIL;
+				simplifiedaatom.tuple[4] = ID_FAIL;
+
+				OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+				oatom.tuple.push_back(inputPredID);
+				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet) oatom.tuple.push_back(var);
+				for (int i = aatom.variables.size() - 1; i >= 0; i--){
+					simplifiedaatom.variables.push_back(aatom.variables[i]);
+					oatom.tuple.push_back(aatom.variables[i]);
+				}
+				simplifiedaatom.literals.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryNAtom(oatom)));
+
+				newRule.body.push_back(ID::posLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)));
+				}
+				break;
+			}
 
 			// add (at most) two atoms reflecting the original left and right comparator
 			if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address != ID::TERM_BUILTIN_EQ){
@@ -364,9 +417,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				bi.tuple.push_back(aatom.tuple[4]);
 				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
 			}
-
-			// make the rule know that it contains an external atom
-			newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
 		}else{
 			// take it as it is
 			newRule.body.push_back(b);
@@ -578,7 +628,7 @@ class MaxAtom : public AggAtom
 			*defined = false;
 			*returnValue = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue = t[0].address > *returnValue ? t[0].address : *returnValue;
+				*returnValue = t[t.size() - 1].address > *returnValue ? t[t.size() - 1].address : *returnValue;
 				*defined = true;
 			}
 		}
@@ -595,7 +645,7 @@ class MinAtom : public AggAtom
 			*defined = false;
 			*returnValue = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue = t[0].address < *returnValue || !(*defined) ? t[0].address : *returnValue;
+				*returnValue = t[t.size() - 1].address < *returnValue || !(*defined) ? t[t.size() - 1].address : *returnValue;
 				*defined = true;
 			}
 		}
@@ -612,7 +662,7 @@ class SumAtom : public AggAtom
 			*defined = true;
 			*returnValue = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue += t[0].address;
+				*returnValue += t[t.size() - 1].address;
 			}
 		}
 /*
@@ -718,7 +768,7 @@ class TimesAtom : public AggAtom
 			*defined = false;
 			*returnValue = 1;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue *= t[0].address;
+				*returnValue *= t[t.size() - 1].address;
 				*defined = true;
 			}
 		}
@@ -736,7 +786,7 @@ class AvgAtom : public AggAtom
 			*returnValue = 0;
 			int cnt = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue += t[0].address;
+				*returnValue += t[t.size() - 1].address;
 				cnt++;
 				*defined = true;
 			}

@@ -49,22 +49,29 @@ struct Rule:
   // the IDs of literals in the body of this rule
   Tuple body;
 
+  // only for lparse weight rules (not to be confused with weak constraints!)
+  Tuple bodyWeightVector;
+  ID bound;
+
   // additional information for weak constraints (ID_FAIL if unused)
   ID weight;
   ID level;
 
   Rule(IDKind kind):
-    kind(kind), head(), body(), weight(ID_FAIL), level(ID_FAIL)
+    kind(kind), head(), body(), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isRule()); }
   Rule(IDKind kind, const Tuple& head, const Tuple& body):
-    kind(kind), head(head), body(body), weight(ID_FAIL), level(ID_FAIL)
+    kind(kind), head(head), body(body), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isRule()); }
   Rule(IDKind kind, const Tuple& head, const Tuple& body, ID weight, ID level):
-    kind(kind), head(head), body(body), weight(weight), level(level)
+    kind(kind), head(head), body(body), bound(ID_FAIL), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
   Rule(IDKind kind, ID weight, ID level):
-    kind(kind), head(), body(), weight(weight), level(level)
+    kind(kind), head(), body(), bound(ID_FAIL), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
+  Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& bodyWeightVector, ID bound):
+    kind(kind), head(head), body(body), bodyWeightVector(bodyWeightVector), bound(bound), weight(ID_FAIL), level(ID_FAIL)
+      { assert(ID(kind,0).isWeightRule()); assert(body.size() == bodyWeightVector.size()); }
   inline bool isEAGuessingRule() const
     { return head.size() == 2 && head[0].isExternalAuxiliary() && head[1].isExternalAuxiliary(); }
   inline bool isEAAuxInputRule() const
@@ -73,6 +80,8 @@ struct Rule:
     { o << "Rule(" << printvector(head) << " <- " << printvector(body);
       if( weight != ID_FAIL || level != ID_FAIL )
         o << " [" << weight << ":" << level << "]";
+      if ( ID(kind,0).isWeightRule() )
+        o << "; " << printvector(bodyWeightVector) << " >= " << bound.address;
       return o << ")"; }
 };
 

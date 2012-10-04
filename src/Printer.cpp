@@ -256,6 +256,23 @@ void RawPrinter::print(ID id)
 				out << "]";
 			}
 			break;
+		case ID::SUBKIND_RULE_WEIGHT:
+			{
+				const Rule& r = registry->rules.getByID(id);
+				printmany(r.head, " v ");
+				if( !r.body.empty() )
+				{
+					out << " :- ";
+					out << r.bound.address << " ";
+					for (int i = 0; i < r.body.size(); ++i){
+						out << (i > 0 ? ", " : "");
+						print(r.body[i]);
+						out << "=" << r.bodyWeightVector[i].address;
+					}
+				}
+				out << ".";
+			}
+			break;
 		default:
 			assert(false);
 		}

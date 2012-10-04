@@ -51,6 +51,9 @@ public:
 		// maximum input arity used
 		int maxArity;
 
+		enum Mode { ExtRewrite, Simplify };
+		Mode mode;
+
 		CtxData();
 		virtual ~CtxData() {};
 	};

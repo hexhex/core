@@ -54,6 +54,7 @@ DLVHEX_NAMESPACE_BEGIN
 // 3. head must not be false if body is true
 void InternalGroundASPSolver::createNogoodsForRule(ID ruleBodyAtomID, ID ruleID){
 
+	if (ruleID.isWeightRule()) throw GeneralError("Internal solver does not support weight rules");
 	const Rule& r = reg->rules.getByID(ruleID);
 
 	// 1 and 2

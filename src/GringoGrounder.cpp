@@ -72,7 +72,7 @@ void GringoGrounder::Printer::print(ID id){
 		BOOST_FOREACH (ID b, r.body){
 			if (b.isBuiltinAtom()){
 				const BuiltinAtom& bi = registry->batoms.getByID(b);
-				if (bi.tuple.size() == 3 && bi.tuple[0] == ID::TERM_BUILTIN_EQ){
+				if (bi.tuple.size() == 3 && bi.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ)){
 					if ((bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
 						if (bi.tuple[1] != bi.tuple[2]){
 							// skip rule
@@ -90,7 +90,10 @@ void GringoGrounder::Printer::print(ID id){
 			out << " :- ";
 			bool first = true;
 			BOOST_FOREACH (ID b, r.body){
-				if (b.isAggregateAtom()) throw GeneralError("Gringo-based grounder does not support aggregate atoms");
+//				if (b.isAggregateAtom()){
+//					throw GeneralError("Gringo-based grounder does not support aggregate atoms");
+//				}
+
 				// gringo does not accept equalities of type constant=Variable, so reverse them
 				// also remove equlities between equal ground terms
 				if (b.isBuiltinAtom()){
@@ -116,9 +119,38 @@ void GringoGrounder::Printer::print(ID id){
 				first = false;
 				print(b);
 			}
-//printmany(r.body, ", ");
 		}
 		out << ".";
+	}else if((id.isAtom() || id.isLiteral()) && id.isAggregateAtom()){
+		const AggregateAtom& aatom = registry->aatoms.getByID(id);
+
+		ID lowerbound, upperbound;
+		if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+		    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
+			lowerbound = aatom.tuple[0];
+			upperbound = aatom.tuple[4];
+		}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) &&
+		   	 aatom.tuple[4] == ID_FAIL){
+			lowerbound = aatom.tuple[0];
+			upperbound = aatom.tuple[0];
+		}else{
+			throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...}");
+		}
+		print(lowerbound);
+		print(aatom.tuple[2]);
+		if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
+			out << "{";
+			print(aatom.literals[0]);
+			out << "}";
+		}else{
+			out << "[";
+			print(aatom.literals[0]);
+			out << "=";
+			const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
+			print(oatom.tuple[oatom.tuple.size() - 1]);
+			out << "]";
+		}
+		print(upperbound);
 	}else{
 		Base::print(id);
 	}
@@ -177,86 +209,96 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 	groundProgram.edb = edb;
 	groundProgram.idb.clear();
 	BOOST_FOREACH (LParseRule lpr, rules){
-		if (lpr.head.size() == 1 && lpr.pos.size() == 0 && lpr.neg.size() == 0){
-			// facts
-			if (lpr.head[0] == false_){
-				// special case: unsatisfiable rule:  F :- T
-				// set some (arbitrary) atom A and make a constraint :- A
+		Rule r(ID::MAINKIND_RULE);
+		switch (lpr.type){
+			case LParseRule::Weight:
+				r.kind |= ID::SUBKIND_RULE_WEIGHT;
+				BOOST_FOREACH (uint32_t w, lpr.wpos) r.bodyWeightVector.push_back(ID::termFromInteger(w));
+				BOOST_FOREACH (uint32_t w, lpr.wneg) r.bodyWeightVector.push_back(ID::termFromInteger(w));
+				r.bound = ID::termFromInteger(lpr.bound);
+				// do not break here!
+			case LParseRule::Regular:
+				if (lpr.head.size() == 1 && lpr.pos.size() == 0 && lpr.neg.size() == 0){
+					// facts
+					if (lpr.head[0] == false_){
+						// special case: unsatisfiable rule:  F :- T
+						// set some (arbitrary) atom A and make a constraint :- A
 
-				OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-				ogatom.text = "sat";
-				Term term(ID::MAINKIND_TERM, "sat");	// it is no problem if this term does already exist
-				ID tid = ctx.registry()->storeTerm(term);
-				assert(tid != ID_FAIL);
-				assert(!tid.isVariableTerm());
-				if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-				ogatom.tuple.push_back(tid);
-				ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
-				if (aid == ID_FAIL){
-					aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
-				}
-				assert(aid != ID_FAIL);
+						OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+						ogatom.text = "sat";
+						Term term(ID::MAINKIND_TERM, "sat");	// it is no problem if this term does already exist
+						ID tid = ctx.registry()->storeTerm(term);
+						assert(tid != ID_FAIL);
+						assert(!tid.isVariableTerm());
+						if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+						ogatom.tuple.push_back(tid);
+						ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
+						if (aid == ID_FAIL){
+							aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+						}
+						assert(aid != ID_FAIL);
 
-				Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-				r.body.push_back(aid);
-				ID rid = ctx.registry()->storeRule(r);
-				DBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
-				groundProgram.idb.push_back(rid);
-				edb->setFact(aid.address);
-			}else{
-				// make sure that the fact is in the symbol table
-				addSymbol(lpr.head[0]);
+						r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+						r.body.push_back(aid);
+						ID rid = ctx.registry()->storeRule(r);
+						DBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
+						groundProgram.idb.push_back(rid);
+						edb->setFact(aid.address);
+					}else{
+						// make sure that the fact is in the symbol table
+						addSymbol(lpr.head[0]);
 
-				// skip facts which are not in the symbol table
-				DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
-				edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
-			}
-		}else{
-			// rules
-			Rule r(ID::MAINKIND_RULE);
-			BOOST_FOREACH (uint32_t h, lpr.head){
-				if (h != false_){
-					addSymbol(h);
-
-					if (indexToGroundAtomID.find(h) == indexToGroundAtomID.end()){
-						std::stringstream ss;
-						ss << "Grounding Error: Symbol '" << h << "' not found in symbol table";
-						throw GeneralError(ss.str());
+						// skip facts which are not in the symbol table
+						DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
+						edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
 					}
-					r.head.push_back(indexToGroundAtomID[h]);
+				}else{
+					// rules
+					BOOST_FOREACH (uint32_t h, lpr.head){
+						if (h != false_){
+							addSymbol(h);
+
+							if (indexToGroundAtomID.find(h) == indexToGroundAtomID.end()){
+								std::stringstream ss;
+								ss << "Grounding Error: Symbol '" << h << "' not found in symbol table";
+								throw GeneralError(ss.str());
+							}
+							r.head.push_back(indexToGroundAtomID[h]);
+						}
+					}
+					BOOST_FOREACH (uint32_t p, lpr.pos){
+						addSymbol(p);
+
+						if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end()){
+							std::stringstream ss;
+							ss << "Grounding Error: Symbol '" << p << "' not found in symbol table";
+							throw GeneralError(ss.str());
+
+						}
+						r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[p], false));
+					}
+					BOOST_FOREACH (uint32_t n, lpr.neg){
+						addSymbol(n);
+
+						if (indexToGroundAtomID.find(n) == indexToGroundAtomID.end()){
+							std::stringstream ss;
+							ss << "Grounding Error: Symbol '" << n << "' not found in symbol table";
+							throw GeneralError(ss.str());
+
+						}
+						r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[n], true));
+					}
+
+					if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+					else{
+						r.kind |= ID::SUBKIND_RULE_REGULAR;
+						if (r.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
+					}
+					ID rid = ctx.registry()->storeRule(r);
+					DBGLOG(DBG, "Adding rule " << rid);
+					groundProgram.idb.push_back(rid);
 				}
-			}
-			BOOST_FOREACH (uint32_t p, lpr.pos){
-				addSymbol(p);
-
-				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end()){
-					std::stringstream ss;
-					ss << "Grounding Error: Symbol '" << p << "' not found in symbol table";
-					throw GeneralError(ss.str());
-
-				}
-				r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[p], false));
-			}
-			BOOST_FOREACH (uint32_t n, lpr.neg){
-				addSymbol(n);
-
-				if (indexToGroundAtomID.find(n) == indexToGroundAtomID.end()){
-					std::stringstream ss;
-					ss << "Grounding Error: Symbol '" << n << "' not found in symbol table";
-					throw GeneralError(ss.str());
-
-				}
-				r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[n], true));
-			}
-
-			if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
-			else{
-				r.kind |= ID::SUBKIND_RULE_REGULAR;
-				if (r.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
-			}
-			ID rid = ctx.registry()->storeRule(r);
-			DBGLOG(DBG, "Adding rule " << rid);
-			groundProgram.idb.push_back(rid);
+				break;
 		}
 	}
 }
@@ -266,7 +308,10 @@ void GringoGrounder::GroundHexProgramBuilder::printBasicRule(int head, const Ato
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg){
-	rules.push_back(LParseRule(head, pos, neg));
+	WeightVec wpos, wneg;
+	BOOST_FOREACH (uint32_t p, pos) wpos.push_back(1);
+	BOOST_FOREACH (uint32_t n, neg) wneg.push_back(1);
+	rules.push_back(LParseRule(head, pos, neg, wpos, wneg, bound));
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg){
@@ -274,8 +319,7 @@ void GringoGrounder::GroundHexProgramBuilder::printChoiceRule(const AtomVec &hea
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg){
-	// @TODO: weights
-	rules.push_back(LParseRule(head, pos, neg));
+	rules.push_back(LParseRule(head, pos, neg, wPos, wNeg, bound));
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg){
@@ -389,8 +433,10 @@ int GringoGrounder::doRun()
 		}
 		printer.printmany(nongroundProgram.idb, "\n");
 		programStream << std::endl;
+
+		//programStream << "p(1) :- not p(2). p(2) :- not p(1). d(1..10). a :- not b.  b :- not a. res(Z) :- Z #sum[ p(X)=X, a=1 ] Z, d(Z). ";
+
 		DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
-//std::cout << ">> " << programStream.str() << std::endl;
 
 		// grounding
 		std::auto_ptr<Output> o(output());
