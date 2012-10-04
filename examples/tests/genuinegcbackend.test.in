@@ -1,8 +1,8 @@
 3col.hex 3col.out --solver=genuinegc
-agg1.hex agg1.out --solver=genuinegc --aggregate-enable
-agg2.hex agg2.out --solver=genuinegc --aggregate-enable
-agg3.hex agg3.out --nofacts --solver=genuinegc --aggregate-enable
-agg4.hex agg4.out --nofacts --solver=genuinegc --aggregate-enable
+agg1.hex agg1.out --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
+agg2.hex agg2.out --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
+agg3.hex agg3.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
+agg4.hex agg4.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuinegc
 builtin_safety1.hex builtin_safety1.stderr --solver=genuinegc
 builtin_safety1a.hex builtin_safety1a.stderr --solver=genuinegc

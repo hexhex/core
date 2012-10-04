@@ -90,10 +90,6 @@ void GringoGrounder::Printer::print(ID id){
 			out << " :- ";
 			bool first = true;
 			BOOST_FOREACH (ID b, r.body){
-//				if (b.isAggregateAtom()){
-//					throw GeneralError("Gringo-based grounder does not support aggregate atoms");
-//				}
-
 				// gringo does not accept equalities of type constant=Variable, so reverse them
 				// also remove equlities between equal ground terms
 				if (b.isBuiltinAtom()){
@@ -121,7 +117,13 @@ void GringoGrounder::Printer::print(ID id){
 			}
 		}
 		out << ".";
+	}else if(id.isTerm() && id.isBuiltinTerm() && id == ID::termFromBuiltin(ID::TERM_BUILTIN_INT)){
+		// replace #int by a standard but unique predicate
+		print(intPred);
 	}else if((id.isAtom() || id.isLiteral()) && id.isAggregateAtom()){
+		// we support aggregates of one of the two kinds:
+		// 1. l <= #agg{...} <= u
+		// 2. v = #agg{...}
 		const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
 		ID lowerbound, upperbound;
@@ -136,6 +138,7 @@ void GringoGrounder::Printer::print(ID id){
 		}else{
 			throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...}");
 		}
+		if (id.isLiteral() && id.isNaf()) out << "not ";
 		print(lowerbound);
 		print(aatom.tuple[2]);
 		if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
@@ -156,7 +159,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred){
 	// Note: We do NOT use shifting but ground disjunctive rules as they are.
 	//       Shifting is instead done in ClaspSolver (as clasp does not support disjunctions)
 	//       This allows for using also other solver-backends which support disjunctive programs.
@@ -251,6 +254,11 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						// skip facts which are not in the symbol table
 						DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
 						edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
+
+						// project dummy integer facts
+						if (ctx.registry()->ogatoms.getByAddress(indexToGroundAtomID[lpr.head[0]].address).tuple[0] == intPred){
+							mask->setFact(indexToGroundAtomID[lpr.head[0]].address);
+						}
 					}
 				}else{
 					// rules
@@ -397,7 +405,7 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 
 Output *GringoGrounder::output()
 {
-	return new GroundHexProgramBuilder(ctx, groundProgram);
+	return new GroundHexProgramBuilder(ctx, groundProgram, intPred);
 }
 
 const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
@@ -421,8 +429,9 @@ int GringoGrounder::doRun()
 	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());
 
 	try{
+		intPred = ctx.registry()->getNewConstantTerm("int");
 		std::ostringstream programStream;
-		Printer printer(programStream, ctx.registry());
+		Printer printer(programStream, ctx.registry(), intPred);
 
 		// print nonground program
 		if( nongroundProgram.edb != 0 )
@@ -431,10 +440,12 @@ int GringoGrounder::doRun()
 			nongroundProgram.edb->printAsFacts(programStream);
 			programStream << "\n";
 		}
+
+		// define integer predicate
 		printer.printmany(nongroundProgram.idb, "\n");
 		programStream << std::endl;
-
-		//programStream << "p(1) :- not p(2). p(2) :- not p(1). d(1..10). a :- not b.  b :- not a. res(Z) :- Z #sum[ p(X)=X, a=1 ] Z, d(Z). ";
+		printer.print(intPred);
+		programStream << "(0.." << ctx.maxint << ").";
 
 		DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
 

@@ -72,12 +72,14 @@ void AggregatePlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --aggregate-enable       Enable aggregate plugin." << std::endl;
+	o << "     --aggregate-mode={ext,simplify}" << std::endl
+	  << "                              ext=rewrite aggregates to external atoms" << std::endl
+	  << "                              simplify=keep aggregates but simplify them" << std::endl
+	  << "                                       (which is necessary for gringo backend)" << std::endl;
 	o << "     --max-variable-share=<N> Defines the maximum number N of variables" << std::endl
 	  << "                              in an aggregate which can be shared with" << std::endl
-	  << "                              other body atoms in the rule." << std::endl
-	  << "     --aggregate-mode={ext,simplify}" << std::endl
-	  << "                              ext=rewrite aggregates to external atoms" << std::endl
-	  << "                              simplify=keep aggregates but simplify them" << std::endl;
+	  << "                              other body atoms in the rule" << std::endl
+	  << "                              (only relevant for --aggregate-mode=ext)" << std::endl;
 }
 
 // accepted options: --higherorder-enable
@@ -397,7 +399,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				}
 				simplifiedaatom.literals.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryNAtom(oatom)));
 
-				newRule.body.push_back(ID::posLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)));
+				newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)) : ID::posLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)));
 				}
 				break;
 			}

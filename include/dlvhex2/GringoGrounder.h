@@ -58,6 +58,7 @@ private:
 	ProgramCtx& ctx;
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
+	ID intPred;
 
 	GringoOptions gringo;
 //	::Module *base_;
@@ -67,7 +68,8 @@ private:
 	class Printer : public RawPrinter{
 	public:
 		typedef RawPrinter Base;
-		Printer(std::ostream& out, RegistryPtr registry) : RawPrinter(out, registry) {}
+		ID intPred;
+		Printer(std::ostream& out, RegistryPtr registry, ID intPred) : RawPrinter(out, registry), intPred(intPred) {}
 
 		virtual void print(ID id);
 	};
@@ -81,6 +83,7 @@ private:
 		ProgramCtx& ctx;
 		OrdinaryASPProgram& groundProgram;
 		InterpretationPtr mask;
+		ID intPred;
 
 		struct LParseRule{
 			enum Type{ Regular, Weight };
@@ -103,7 +106,7 @@ private:
 		std::map<int, ID> indexToGroundAtomID;
 		std::vector<LParseRule> rules;
 	public:
-		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram);
+		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred);
 		void doFinalize();
 
 		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);

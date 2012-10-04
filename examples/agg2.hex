@@ -3,6 +3,8 @@
 % testA returns "foo" if the extension of its input predicate is empty
 % testA returns "bar" if the extension of its input predicate has one member
 
+#maxint=2.
+
 c(1).
 pred(c).
 pred(d).
@@ -10,4 +12,4 @@ pred(d).
 in(X) :- &testA[c](X).
 in(X) :- &testA[d](X).
 
-num_in(N) :- #count{ X : in(X) } = N.
+num_in(N) :- #count{ X : in(X) } = N, #int(N).

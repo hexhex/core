@@ -1,5 +1,7 @@
+#maxint=6.
+
 ok(C) :- #count{X,Y : a(X,Z,k),b(e,Z,Y)} = 3, p(C).
-p(W) :- #min{S : c(S)} = W.
+p(W) :- #min{S : c(S)} = W, #int(W).
 b(e,h,r) :- on.
 on v off.
 a(f,g,k).

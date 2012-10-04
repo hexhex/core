@@ -3,8 +3,9 @@
 	* AggregatePlugin.cpp: Implement a simplification strategy for
 	aggregates
 	* AggregatePluginh: Likewise.
-	* GringoGrounder.cpp: Add genuine support for aggregates
+	* GringoGrounder.cpp: 1. Add genuine support for aggregates
 	(no translation to external atoms needed).
+	2. add support for #int and #maxint
 	* ClaspSolver.cpp: Add support for weight rules
 	(used for aggregate implementation).
 	* ClaspSolver.h: Likewise.
