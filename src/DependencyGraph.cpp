@@ -317,8 +317,9 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     // (this can become recursive)
     BOOST_FOREACH(ID idlit_recursive, aatom.literals)
     {
+      // @TODO Consider passing true as the last argument to add negative dependencies to atoms in aggregates
       createNodesAndIntraRuleDependenciesForBody(
-          idlit_recursive, idrule, aatom.literals, nrule, hbh, createdAuxRules, true);
+          idlit_recursive, idrule, aatom.literals, nrule, hbh, createdAuxRules /*, true*/);
     }
   } // treat aggregate body atoms
   else
