@@ -436,6 +436,8 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 		// well-justified FLP: fixpoint iteration
 		InterpretationPtr fixpoint = getFixpoint(compatibleSet, grounder->getGroundProgram());
 		InterpretationPtr reference = InterpretationPtr(new Interpretation(*compatibleSet));
+		factory.gpMask.updateMask();
+		factory.gnMask.updateMask();
 		reference->getStorage() -= factory.gpMask.mask()->getStorage();
 		reference->getStorage() -= factory.gnMask.mask()->getStorage();
 

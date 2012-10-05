@@ -1157,6 +1157,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 	// create a bitset of all ground atoms and prepare the set of all remaining rules (initially all rules)
 	std::set<ID> remainingRules;
 	InterpretationPtr allAtoms = InterpretationPtr(new Interpretation(*program.edb));
+	allAtoms->getStorage() -= program.mask->getStorage();
 	BOOST_FOREACH (ID ruleID, program.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID h, rule.head) allAtoms->setFact(h.address);
@@ -1167,6 +1168,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 			remainingRules.insert(ruleID);
 		}
 	}
+	DBGLOG(DBG, "All atoms: " << *allAtoms);
 
 	// now construct the fixpoint
 	InterpretationPtr fixpoint = InterpretationPtr(new Interpretation(reg));
@@ -1178,6 +1180,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 	assigned->getStorage() |= program.edb->getStorage();
 	fixpoint->getStorage() |= program.edb->getStorage();
 	DBGLOG(DBG, "Initial interpretation: " << *fixpoint);
+	DBGLOG(DBG, "Initially assigned: " << *assigned);
 
 	// fixpoint iteration
 	bool changed = true;
@@ -1193,6 +1196,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 				DBGLOG(DBG, "Checking if external atom " << eatomID << " is verified");
 				const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
 				eatom.updatePredicateInputMask();
+				DBGLOG(DBG, "Predicate input mask: " << *eatom.getPredicateInputMask());
 				if ((eatom.getPredicateInputMask()->getStorage() & assigned->getStorage()).count() == eatom.getPredicateInputMask()->getStorage().count()){
 					DBGLOG(DBG, "external atom " << eatomID << " is verified");
 					// set all output atoms as verified
@@ -1200,6 +1204,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 					bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
 					bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
 					while (en < en_end){
+						DBGLOG(DBG, "Checking if " << *en << " is an output auxiliary of this external atom");
 						if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 							DBGLOG(DBG, "External atom " << eatomID << " implies " << *en << "=" << interpretation->getFact(*en));
 							assigned->setFact(*en);
@@ -1273,6 +1278,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 	}
 
 	// remove external auxiliaries
+	fixpoint->getStorage() -= program.mask->getStorage();
 	bm::bvector<>::enumerator en = fixpoint->getStorage().first();
 	bm::bvector<>::enumerator en_end = fixpoint->getStorage().end();
 	while (en < en_end){
