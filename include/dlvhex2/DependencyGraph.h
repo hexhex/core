@@ -344,7 +344,8 @@ protected:
           ID idat, const Rule& rule, Node nrule, HeadBodyHelper& hbh);
       void createNodesAndIntraRuleDependenciesForBody(
           ID idlit, ID idrule, const Tuple& body, Node nrule,
-          HeadBodyHelper& hbh, std::vector<ID>& createdAuxRules);
+          HeadBodyHelper& hbh, std::vector<ID>& createdAuxRules,
+          bool inAggregateBody = false);
     // this method creates an auxiliary rule for the eatom wrt a rule body (not a rule!)
     // this way we can use the method both for grounding aggregate bodies as well as rule bodies
     void createAuxiliaryRuleIfRequired(

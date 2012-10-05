@@ -618,8 +618,9 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 
 #ifndef NDEBUG
 	std::stringstream rulestr;
-	rulestr << rule;
-	DBGLOG(DBG, "Sending rule to clasp: " + rulestr.str());
+	RawPrinter printer(rulestr, reg);
+	printer.print(ruleId);
+	DBGLOG(DBG, rulestr.str());
 #endif
 	// distinct by the type of the rule
 	if (rule.head.size() > 1){
@@ -682,7 +683,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 		en++;
 	}
 #ifndef NDEBUG
-	programstring << *p.getGroundProgram().edb << std::endl;
+	DBGLOG(DBG, *p.getGroundProgram().edb);
 #endif
 
 	// transfer idb
@@ -713,10 +714,6 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 		}
 		pb.endRule();
 	}
-
-#ifndef NDEBUG
-	DBGLOG(DBG, "Program is: " << std::endl << programstring.str());
-#endif
 
 	// Once all rules are defined, call endProgram() to load the (simplified)
 	bool initiallyInconsistent = !pb.endProgram();

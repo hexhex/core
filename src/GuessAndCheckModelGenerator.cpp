@@ -188,7 +188,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
       inserter, boost::bind(&GuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
 
   // transform xidb for flp calculation
-  createFLPRules();
+  if (ctx.config.getOption("FLPCheck")) createFLPRules();
 
   // output rules
   {

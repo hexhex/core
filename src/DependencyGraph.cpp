@@ -183,8 +183,12 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRuleAddHead(
 
 void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     ID idlit, ID idrule, const Tuple& body, Node nrule,
-    HeadBodyHelper& hbh, std::vector<ID>& createdAuxRules)
+    HeadBodyHelper& hbh, std::vector<ID>& createdAuxRules,
+    bool inAggregateBody)
 {
+  // inAggregateBody is true if the currently processed literal idlit
+  // occurs in the body of some aggregate atom:
+  // in this case we need to add positive and negative dependencies
   const HeadBodyHelper::IDIndex& hbh_ididx = hbh.infos.get<IDTag>();
 
   DBGLOG(DBG,"adding body literal " << idlit);
@@ -203,11 +207,11 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
       HeadBodyInfo hbi(&(registry->lookupOrdinaryAtom(idat)));
       hbi.id = idat;
       hbi.inBody = true;
-      if( naf )
+      if( naf || inAggregateBody )
       {
         hbi.inNegBodyOfRules.push_back(nrule);
       }
-      else
+      if ( !naf || inAggregateBody )
       {
         if( idrule.isRegularRule() )
           hbi.inPosBodyOfRegularRules.push_back(nrule);
@@ -222,11 +226,11 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
       HeadBodyInfo hbi(*it);
       assert(hbi.id == idat);
       hbi.inBody = true;
-      if( naf )
+      if( naf || inAggregateBody )
       {
         hbi.inNegBodyOfRules.push_back(nrule);
       }
-      else
+      if ( !naf || inAggregateBody )
       {
         if( idrule.isRegularRule() )
           hbi.inPosBodyOfRegularRules.push_back(nrule);
@@ -286,10 +290,10 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
         " with monotonic=" << monotonic << ", naf=" << naf);
 
     DependencyInfo diExternal;
-    // positive dependency whenever positive or nonmonotonic
-    diExternal.positiveExternal = (!monotonic || !naf);
-    // negative dependency whenever negative or nonmonotonic
-    diExternal.negativeExternal = (!monotonic || naf);
+    // positive dependency whenever positive or nonmonotonic or in an aggregate atom
+    diExternal.positiveExternal = (!monotonic || !naf || inAggregateBody);
+    // negative dependency whenever negative or nonmonotonic or in an aggregate atom
+    diExternal.negativeExternal = (!monotonic || naf || inAggregateBody);
 
     Dependency dep;
     bool success;
@@ -314,7 +318,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     BOOST_FOREACH(ID idlit_recursive, aatom.literals)
     {
       createNodesAndIntraRuleDependenciesForBody(
-          idlit_recursive, idrule, aatom.literals, nrule, hbh, createdAuxRules);
+          idlit_recursive, idrule, aatom.literals, nrule, hbh, createdAuxRules, true);
     }
   } // treat aggregate body atoms
   else

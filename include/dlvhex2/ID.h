@@ -85,7 +85,7 @@ struct ID:
 	static const IDKind SUBKIND_RULE_WEIGHT =         0x03000000;	// lparse weight rules (not to be confused with weak constraints!)
 
 	//                                             0x00FF0000
-	static const IDKind PROPERTY_ATOM_HIDDEN     = 0x00010000;	// hidden atoms are excluded from predicate masks
+	static const IDKind PROPERTY_ATOM_HIDDEN     = 0x00010000;	// hidden atoms are skipped when printed for the user and excluded from predicate masks
 									// the property is used for a large number of temporary atoms needed in the UFS check
 									// (this would otherwise slow down predicate masks in the whole system)
 	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;

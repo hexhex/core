@@ -639,6 +639,7 @@ bool Registry::printAtomForUser(std::ostream& o, IDAddress address, const std::s
   if( !getAuxiliaryGroundAtomMask()->getFact(address) )
   {
     // fast direct output
+    if (ogatoms.getIDByAddress(address).isHiddenAtom()) return false;
     o << prefix << ogatoms.getByAddress(address).text;
     return true;
   }

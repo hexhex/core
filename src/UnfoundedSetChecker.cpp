@@ -388,6 +388,16 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 
 		const Rule& rule = reg->rules.getByID(ruleID);
 
+		if (ruleID.isWeightRule()){
+			// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+			if (compatibleSet->getFact(rule.head[0].address)){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
+				ufsDetectionProblem.addNogood(ng);
+			}
+			break;
+		}
+
 		// condition 1 is handled directly: skip rules with unsatisfied body
 		bool unsatisfied = false;
 		BOOST_FOREACH (ID b, rule.body){
@@ -1014,6 +1024,15 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 	printer.print(ruleID);
 	DBGLOG(DBG, "Processing rule " << programstring.str());
 #endif
+
+	if (ruleID.isWeightRule()){
+		// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+		Nogood ng;
+		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
+		ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
+		ufsDetectionProblem.addNogood(ng);
+		return;
+	}
 
 	// Create a unique predicate and atom h_r for this rule
 	ID hr;

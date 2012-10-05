@@ -58,7 +58,7 @@ private:
 	ProgramCtx& ctx;
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
-	ID intPred;
+	ID intPred, anonymousPred;
 
 	GringoOptions gringo;
 //	::Module *base_;
@@ -71,6 +71,9 @@ private:
 		ID intPred;
 		Printer(std::ostream& out, RegistryPtr registry, ID intPred) : RawPrinter(out, registry), intPred(intPred) {}
 
+		void printRule(ID id);
+		void printAggregate(ID id);
+		void printInt(ID id);
 		virtual void print(ID id);
 	};
 
@@ -84,6 +87,7 @@ private:
 		OrdinaryASPProgram& groundProgram;
 		InterpretationPtr mask;
 		ID intPred;
+		ID anonymousPred;
 
 		struct LParseRule{
 			enum Type{ Regular, Weight };
@@ -106,7 +110,7 @@ private:
 		std::map<int, ID> indexToGroundAtomID;
 		std::vector<LParseRule> rules;
 	public:
-		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred);
+		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
 		void doFinalize();
 
 		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);

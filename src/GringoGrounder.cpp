@@ -62,104 +62,145 @@ namespace
 
 DLVHEX_NAMESPACE_BEGIN
 
+void GringoGrounder::Printer::printRule(ID id){
+
+	const Rule& r = registry->rules.getByID(id);
+
+	// check if there is an unsatisfied ground atom
+	BOOST_FOREACH (ID b, r.body){
+		if (b.isBuiltinAtom()){
+			const BuiltinAtom& bi = registry->batoms.getByID(b);
+			if (bi.tuple.size() == 3 && bi.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ)){
+				if ((bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
+					if (bi.tuple[1] != bi.tuple[2]){
+						// skip rule
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	// disjunction in rule heads is | not v
+	printmany(r.head, " | ");
+	if( !r.body.empty() )
+	{
+		out << " :- ";
+		bool first = true;
+		BOOST_FOREACH (ID b, r.body){
+			// gringo does not accept equalities of type constant=Variable, so reverse them
+			// also remove equlities between equal ground terms
+			if (b.isBuiltinAtom()){
+				const BuiltinAtom& bi = registry->batoms.getByID(b);
+				if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
+					if (bi.tuple[0].address == ID::TERM_BUILTIN_EQ && bi.tuple[1] == bi.tuple[2] ||
+					    bi.tuple[0].address == ID::TERM_BUILTIN_NE && bi.tuple[1] != bi.tuple[2]){
+						// skip
+						continue;
+					}
+				}else if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && bi.tuple[2].isVariableTerm()){
+					BuiltinAtom bi2 = bi;
+					bi2.tuple[1] = bi.tuple[2];
+					bi2.tuple[2] = bi.tuple[1];
+					if (!first) out << ", ";
+					first = false;
+					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
+					continue;
+				}
+			}
+
+			if (!first) out << ", ";
+			first = false;
+			print(b);
+		}
+	}
+	out << ".";
+}
+
+void GringoGrounder::Printer::printAggregate(ID id){
+
+	// we support aggregates of one of the two kinds:
+	// 1. l <= #agg{...} <= u
+	// 2. v = #agg{...}
+	const AggregateAtom& aatom = registry->aatoms.getByID(id);
+
+	ID lowerbound, upperbound;
+	if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+	    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
+		lowerbound = aatom.tuple[0];
+		upperbound = aatom.tuple[4];
+		// gringo expects a domain predicate: use #int
+		if (lowerbound.isVariableTerm()){
+			print(intPred);
+			out << "(";
+			print(lowerbound);
+			out << "), ";
+		}
+		if (upperbound.isVariableTerm()){
+			print(intPred);
+			out << "(";
+			print(upperbound);
+			out << "), ";
+		}
+	}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) &&
+	   	 aatom.tuple[4] == ID_FAIL){
+		lowerbound = aatom.tuple[0];
+		upperbound = aatom.tuple[0];
+		// gringo expects a domain predicate: use #int
+		if (lowerbound.isVariableTerm()){
+			print(intPred);
+			out << "(";
+			print(lowerbound);
+			out << "), ";
+		}
+	}else{
+		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...}");
+	}
+	if (id.isLiteral() && id.isNaf()) out << "not ";
+	print(lowerbound);
+	print(aatom.tuple[2]);
+	const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
+	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
+		out << "{";
+		print(aatom.literals[0]);
+		out << "}";
+	}else{
+		out << "[";
+		print(aatom.literals[0]);
+		out << "=";
+		print(oatom.tuple[oatom.tuple.size() - 1]);
+		out << "]";
+	}
+	print(upperbound);
+	// make the value variable safe
+	if (oatom.tuple[oatom.tuple.size() - 1].isVariableTerm() && false){
+		out << ", ";
+		print(intPred);
+		out << "(";
+		print(oatom.tuple[oatom.tuple.size() - 1]);
+		out << ")";
+	}
+}
+
+void GringoGrounder::Printer::printInt(ID id){
+	// replace #int by a standard but unique predicate
+	print(intPred);
+}
+
 void GringoGrounder::Printer::print(ID id){
 	if(id.isRule()){
 		if (id.isWeakConstraint()) throw GeneralError("Gringo-based grounder does not support weak constraints");
-
-		const Rule& r = registry->rules.getByID(id);
-
-		// check if there is an unsatisfied ground atom
-		BOOST_FOREACH (ID b, r.body){
-			if (b.isBuiltinAtom()){
-				const BuiltinAtom& bi = registry->batoms.getByID(b);
-				if (bi.tuple.size() == 3 && bi.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ)){
-					if ((bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
-						if (bi.tuple[1] != bi.tuple[2]){
-							// skip rule
-							return;
-						}
-					}
-				}
-			}
-		}
-
-		// disjunction in rule heads is | not v
-		printmany(r.head, " | ");
-		if( !r.body.empty() )
-		{
-			out << " :- ";
-			bool first = true;
-			BOOST_FOREACH (ID b, r.body){
-				// gringo does not accept equalities of type constant=Variable, so reverse them
-				// also remove equlities between equal ground terms
-				if (b.isBuiltinAtom()){
-					const BuiltinAtom& bi = registry->batoms.getByID(b);
-					if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
-						if (bi.tuple[0].address == ID::TERM_BUILTIN_EQ && bi.tuple[1] == bi.tuple[2] ||
-						    bi.tuple[0].address == ID::TERM_BUILTIN_NE && bi.tuple[1] != bi.tuple[2]){
-							// skip
-							continue;
-						}
-					}else if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && bi.tuple[2].isVariableTerm()){
-						BuiltinAtom bi2 = bi;
-						bi2.tuple[1] = bi.tuple[2];
-						bi2.tuple[2] = bi.tuple[1];
-						if (!first) out << ", ";
-						first = false;
-						print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
-						continue;
-					}
-				}
-
-				if (!first) out << ", ";
-				first = false;
-				print(b);
-			}
-		}
-		out << ".";
-	}else if(id.isTerm() && id.isBuiltinTerm() && id == ID::termFromBuiltin(ID::TERM_BUILTIN_INT)){
-		// replace #int by a standard but unique predicate
-		print(intPred);
+		printRule(id);
 	}else if((id.isAtom() || id.isLiteral()) && id.isAggregateAtom()){
-		// we support aggregates of one of the two kinds:
-		// 1. l <= #agg{...} <= u
-		// 2. v = #agg{...}
-		const AggregateAtom& aatom = registry->aatoms.getByID(id);
-
-		ID lowerbound, upperbound;
-		if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
-		    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
-			lowerbound = aatom.tuple[0];
-			upperbound = aatom.tuple[4];
-		}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) &&
-		   	 aatom.tuple[4] == ID_FAIL){
-			lowerbound = aatom.tuple[0];
-			upperbound = aatom.tuple[0];
-		}else{
-			throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...}");
-		}
-		if (id.isLiteral() && id.isNaf()) out << "not ";
-		print(lowerbound);
-		print(aatom.tuple[2]);
-		if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
-			out << "{";
-			print(aatom.literals[0]);
-			out << "}";
-		}else{
-			out << "[";
-			print(aatom.literals[0]);
-			out << "=";
-			const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
-			print(oatom.tuple[oatom.tuple.size() - 1]);
-			out << "]";
-		}
-		print(upperbound);
+		printAggregate(id);
+	}else if(id.isTerm() && id.isBuiltinTerm() && id == ID::termFromBuiltin(ID::TERM_BUILTIN_INT)){
+		printInt(id);
 	}else{
 		Base::print(id);
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred){
 	// Note: We do NOT use shifting but ground disjunctive rules as they are.
 	//       Shifting is instead done in ClaspSolver (as clasp does not support disjunctions)
 	//       This allows for using also other solver-backends which support disjunctive programs.
@@ -174,18 +215,24 @@ GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx
 }
 
 void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
+
 	// check if the symbol is in the list
 	if (indexToGroundAtomID.find(symbol) != indexToGroundAtomID.end()){
 		// nothing to do
 	}else{
-		// create a propositional atom with this name
-		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		ID tid = ctx.registry()->getNewConstantTerm("unnamedPred");
-		ogatom.text = ctx.registry()->terms.getByID(tid).symbol;
+		// this is static because the name needs to be unique only wrt. the whole dlvhex instance (also if we have nested HEX programs)
+		static ID tid = anonymousPred;
 		assert(tid != ID_FAIL);
 		assert(!tid.isVariableTerm());
+
+		// create a propositional atom with this name
+		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_HIDDEN);
+		std::stringstream name;
+		name << ctx.registry()->terms.getByID(tid).symbol << "(" << symbol << ")";
+		ogatom.text = name.str();
 		if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
 		ogatom.tuple.push_back(tid);
+		ogatom.tuple.push_back(ID::termFromInteger(symbol));
 		ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
 		if (aid == ID_FAIL){
 			aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
@@ -196,7 +243,7 @@ void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
 		indexToGroundAtomID[symbol] = aid;
 
 		// remove dummy atoms from models
-		mask->setFact(aid.address);
+//		mask->setFact(aid.address);
 	}
 }
 
@@ -405,7 +452,7 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 
 Output *GringoGrounder::output()
 {
-	return new GroundHexProgramBuilder(ctx, groundProgram, intPred);
+	return new GroundHexProgramBuilder(ctx, groundProgram, intPred, anonymousPred);
 }
 
 const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
@@ -429,7 +476,11 @@ int GringoGrounder::doRun()
 	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());
 
 	try{
+		// we need a unique integer and a unique anonymous predicate
+		// note: without nested hex programs we could make the initialization static because the names only need to be unique wrt. the program
 		intPred = ctx.registry()->getNewConstantTerm("int");
+		anonymousPred = ctx.registry()->getNewConstantTerm("anonymous");
+
 		std::ostringstream programStream;
 		Printer printer(programStream, ctx.registry(), intPred);
 

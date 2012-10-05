@@ -97,7 +97,7 @@ GenuineGuessAndCheckModelGeneratorAsyncFactory::GenuineGuessAndCheckModelGenerat
       inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorAsyncFactory::convertRule, this, reg, _1));
 
   // transform xidb for flp calculation
-  createFLPRules();
+  if (ctx.config.getOption("FLPCheck")) createFLPRules();
 
   // output rules
   {
@@ -471,7 +471,16 @@ void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 			solver->addNogood(learnedEANogoods->getNogood(i));
 		}
 	}
-	learnedEANogoods->forgetLeastFrequentlyAdded();
+	// for encoding-based UFS checkers, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
+	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
+	if (factory.ctx.config.getOption("UFSCheckAssumptionBased")){
+		// assumption-based
+		ufscm->learnNogoodsFromMainSearch();
+		learnedEANogoods->clear();
+	}else{
+		// encoding-based
+		learnedEANogoods->forgetLeastFrequentlyAdded();
+	}
 	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
 }
 
