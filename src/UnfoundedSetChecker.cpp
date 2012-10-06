@@ -395,7 +395,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 				ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
 				ufsDetectionProblem.addNogood(ng);
 			}
-			break;
+			continue;
 		}
 
 		// condition 1 is handled directly: skip rules with unsatisfied body
