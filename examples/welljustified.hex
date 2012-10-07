@@ -1,0 +1,20 @@
+% This example shows a difference between the FLP and the well-justified FLP semantics.
+% Under the FLP semantics we have the answer sets (modulo p1, p2, n1):
+% I1 = {s}
+% I2 = {t, p(0), p(1)}
+%   f P^I2:
+%     p(0) :- &testDisj[p, p2, n1](), not s.
+%     p(1) :- p(0), not s.
+%     t :- not s.
+% Under the well-justified FLP semantics only I1 is an answer set.
+
+p1(1).
+p2(1). p2(2).
+n1(0).
+
+p(2) :- p(2), &testDisj[p, p1, n1]().	% The external atom implements: p(1) v not p(0)
+p(0) :- &testDisj[p, p2, n1](), not s.	% The external atom implements: p(1) v p(2) v not p(0)
+p(1) :- p(0), not s.
+
+t :- not s.
+s :- not t.

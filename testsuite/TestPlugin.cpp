@@ -1034,6 +1034,55 @@ public:
   }
 };
 
+class TestDisjAtom:
+  public PluginAtom
+{
+public:
+  TestDisjAtom():
+    PluginAtom("testDisj", false)
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();	// interpretation i
+    addInputPredicate();	// positive p
+    addInputPredicate();	// negative n
+    // The external atom implements the following disjunction:
+    // (bigvee_{\vec{t} \in ext(p)} i(\vec{t})) \vee (bigvee_{\vec{t} \in ext(n)} \naf i(\vec{t}))
+    // Example: &testDisj[i, p, n]() with p(1), p(2), n(0) is true iff i(1) \vee i(2) \vee \naf i(0) holds
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (atom.tuple[0] == query.input[1]){
+			OrdinaryAtom iatom = atom;
+			iatom.tuple[0] = query.input[0];
+			if (query.interpretation->getFact(getRegistry()->storeOrdinaryGAtom(iatom).address)){
+				Tuple t;
+				answer.get().push_back(t);
+				return;
+			}
+		}
+		if (atom.tuple[0] == query.input[2]){
+			OrdinaryAtom iatom = atom;
+			iatom.tuple[0] = query.input[0];
+			if (!query.interpretation->getFact(getRegistry()->storeOrdinaryGAtom(iatom).address)){
+				Tuple t;
+				answer.get().push_back(t);
+				return;
+			}
+		}
+		en++;
+	}
+  }
+};
+
+
 class TestFinalCallback:
 	public FinalCallback
 {
@@ -1143,6 +1192,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestTransitiveClosureAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestCycleAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestAppendAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestDisjAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
