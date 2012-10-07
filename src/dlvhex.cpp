@@ -106,7 +106,6 @@ printLogo()
 		<< std::endl;
 }
 
-
 /**
  * @brief Print usage help.
  */

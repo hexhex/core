@@ -39,7 +39,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/graph/breadth_first_search.hpp>
-#include <boost/graph/visitors.hpp> 
+#include <boost/graph/visitors.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/properties.hpp>
