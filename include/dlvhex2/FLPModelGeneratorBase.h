@@ -267,7 +267,7 @@ protected:
       std::vector<ID>& idb);
 
   // used for the well-justified semantics
-  InterpretationPtr getFixpoint(InterpretationConstPtr interpretation, const OrdinaryASPProgram& program);
+  InterpretationPtr getFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program);
 };
 
 DLVHEX_NAMESPACE_END

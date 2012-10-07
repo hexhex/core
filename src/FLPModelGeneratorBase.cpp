@@ -1149,7 +1149,7 @@ void FLPModelGeneratorBase::createFoundingRules(
 }
 
 
-InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr interpretation, const OrdinaryASPProgram& program){
+InterpretationPtr FLPModelGeneratorBase::getFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program){
 
 	RegistryPtr reg = interpretation->getRegistry();
 
@@ -1182,13 +1182,25 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 	DBGLOG(DBG, "Initial interpretation: " << *fixpoint);
 	DBGLOG(DBG, "Initially assigned: " << *assigned);
 
+	InterpretationPtr eares = InterpretationPtr(new Interpretation(reg));
+
 	// fixpoint iteration
 	bool changed = true;
 	std::vector<bool> eaVerified;
 	for (int i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
 	while (remainingRules.size() > 0 && changed){
 		changed = false;
-
+#if 0
+		DBGLOG(DBG, "Eval EA under " << *fixpoint);
+		fixpoint->getStorage() -= eares->getStorage();
+		assigned->getStorage() -= eares->getStorage();
+		IntegrateExternalAnswerIntoInterpretationCB cb(eares);
+		evaluateExternalAtoms(	ctx, factory.innerEatoms, fixpoint, cb);
+		assigned->getStorage() |= eares->getStorage();
+		fixpoint->getStorage() |= eares->getStorage();
+		DBGLOG(DBG, "New assigned: " << *assigned);
+#endif
+//#if 0
 		// check if an external atom is verified
 		int eaIndex = 0;
 		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
@@ -1219,6 +1231,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 			}
 			eaIndex++;
 		}
+//#endif
 
 		// search for a rule with satisfied body
 		BOOST_FOREACH (ID ruleID, remainingRules){
