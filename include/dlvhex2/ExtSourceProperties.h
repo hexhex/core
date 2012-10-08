@@ -86,12 +86,19 @@ struct ExtSourceProperties
 	std::vector<int> monotonicInputPredicates;
 	std::vector<int> antimonotonicInputPredicates;
 	std::vector<int> predicateParameterNameIndependence;
+
+	// if an external source is functional, then there must not exist multiple output tuples simultanously;
+	// "functionalStart" defines the number of non-functional output terms before the functional output starts
+	// That is: Suppose a source has a ternery output, such that the third element is unique for each pair of elements in the first and second position;
+	//          Then functionalStart=2 and the source may generate e.g. (a,b,c), (b,b,d), (b,a,d) but not (a,b,c), (a,b,d)
 	bool functional;
+	int functionalStart;
+
 	bool atomlevellinear;
 	bool tuplelevellinear;
 	bool usesEnvironment;
 
-	ExtSourceProperties() : ea(0), pa(0){
+	ExtSourceProperties() : ea(0), pa(0), functionalStart(0){
 		functional = false;
 		atomlevellinear = false;
 		tuplelevellinear = false;

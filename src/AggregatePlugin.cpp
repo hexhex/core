@@ -499,6 +499,7 @@ class AggAtom : public PluginAtom
 			arity(arity)
 		{
 			prop.functional = true;
+			prop.functionalStart = arity;
 
 			addInputPredicate();
 			addInputPredicate();
