@@ -1,0 +1,9 @@
+% This program has two compatible sets:
+% {p(2), q(a), p(1)}
+% {p(2)}
+% Only the second is subset-minimal, i.e., {q(a), p(1)} is an unfounded set wrt. the first compatible set.
+% This is currently only detected with --aggregate-mode=ext, because --aggregate-mode=simplify is only currect for stratified aggregates.
+p(3) :- not p(2).
+p(2) :- not p(3).
+q(a) :- #sum{ X : p(X) } == 3.
+p(1) :- &id[q](a).

@@ -230,6 +230,16 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 
 				// go through all output tuples which have been generated so far
 				BOOST_FOREACH (Tuple t, recordedTuples){
+					// compare the non-functional prefix
+					bool match = true;
+					for (int i = 0; i < prop.functionalStart; ++i){
+						if (otuples[0][i] != t[i]){
+							match = false;
+							break;
+						}
+					}
+					if (!match) continue;
+
 					ID id = ExternalLearningHelper::getOutputAtom(query, t, true);
 					if (id != uniqueOut){
 						Nogood excludeOthers;
