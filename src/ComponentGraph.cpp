@@ -447,6 +447,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 		{
 			ci.negationInCycles = true;
 		}
+
     // components are never monotonic if they contain disjunctions or nonmonotonic external atoms
     if (ci.disjunctiveHeads || ci.innerEatomsNonmonotonic || ci.outerEatomsNonmonotonic){
       ci.componentIsMonotonic = false;
@@ -454,6 +455,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 
     // compute if this component has a fixed domain
     ci.fixedDomain = calculateFixedDomain(ci);
+
+    // check, if the component contains recursive aggregates
+    ci.recursiveAggregates = computeRecursiveAggregatesInComponent(ci);
 
     // compute stratification of default-negated literals and predicate input parameters
     calculateStratificationInfo(ci);
@@ -700,6 +704,56 @@ bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
 	return fd;
 }
 
+
+bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci)
+{
+	// get all head predicates
+	std::set<ID> headPredicates;
+	BOOST_FOREACH (ID ruleID, ci.innerRules){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID h, rule.head){
+			const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(h);
+			headPredicates.insert(oatom.tuple[0]);
+		}
+	}
+
+	// go through all aggregate atoms
+	std::set<ID> aatoms;
+	BOOST_FOREACH (ID ruleID, ci.innerRules){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isAggregateAtom()){
+				aatoms.insert(b);
+			}
+		}
+	}
+
+	// recursively check if the aggregate depend on head atoms from this component
+	while (!aatoms.empty()){
+		const AggregateAtom& aatom = reg->aatoms.getByID(*aatoms.begin());
+		aatoms.erase(*aatoms.begin());
+		BOOST_FOREACH (ID b, aatom.literals){
+			if (b.isOrdinaryAtom()){
+				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(b);	
+				if (headPredicates.find(oatom.tuple[0]) != headPredicates.end()) return true;
+			}
+			if (b.isExternalAtom()){
+				const ExternalAtom& eatom = reg->eatoms.getByID(b);
+				int i = 0;
+				BOOST_FOREACH (ID inp, eatom.inputs){
+					if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE && headPredicates.find(eatom.inputs[0]) != headPredicates.end()) return true;
+					i++;
+				}
+			}
+			if (b.isAggregateAtom()){
+				aatoms.insert(b);
+			}
+		}
+	}
+
+	return false;
+}
+
 bool ComponentGraph::calculateStratificationInfo(ComponentInfo& ci)
 {
 	DBGLOG(DBG, "calculateStratificationInfo");
@@ -891,6 +945,7 @@ ComponentGraph::collapseComponents(
 		ci.componentIsMonotonic &= cio.componentIsMonotonic;
 		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty())) ci.fixedDomain &= cio.fixedDomain;	// pure external components shall have no influence on this property
 														// because domain restriction is always done in successor components
+    ci.recursiveAggregates |= cio.recursiveAggregates;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -1011,6 +1066,8 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 
     if( ci.fixedDomain )
       o << "{fixed domain}|";
+    if( ci.recursiveAggregates )
+      o << "{recursive aggregates}|";
 		o << "}";
   }
   else

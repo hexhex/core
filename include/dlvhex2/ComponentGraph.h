@@ -93,6 +93,7 @@ public:
 		bool outerEatomsNonmonotonic;
 		bool componentIsMonotonic;
 		bool fixedDomain;
+		bool recursiveAggregates;
 
 		// previous:
     //bool innerEatomsMonotonicAndOnlyPositiveCycles;
@@ -104,7 +105,8 @@ public:
 			innerEatomsNonmonotonic(false),
 	outerEatomsNonmonotonic(false),
 	componentIsMonotonic(true),
-	fixedDomain(true){}
+	fixedDomain(true),
+	recursiveAggregates(false){}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -247,6 +249,7 @@ protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
   bool calculateFixedDomain(ComponentInfo& ci);
+  bool computeRecursiveAggregatesInComponent(ComponentInfo& ci);
   bool calculateStratificationInfo(ComponentInfo& ci);
 };
 

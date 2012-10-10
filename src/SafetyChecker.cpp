@@ -60,6 +60,11 @@ namespace
 		case ID::TERM_BUILTIN_ADD:
 		case ID::TERM_BUILTIN_INT:
 		case ID::TERM_BUILTIN_SUCC:
+		// October 10, 2012: added the following three cases;
+		// it seems that all backends can handle this
+		case ID::TERM_BUILTIN_SUB:
+		case ID::TERM_BUILTIN_DIV:
+		case ID::TERM_BUILTIN_MOD:
 			return true;
 		default:
 			return false;
