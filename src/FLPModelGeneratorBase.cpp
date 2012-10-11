@@ -1165,7 +1165,17 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(ProgramCtx& ctx, Interpreta
 		if (rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()){
 			// skip EA guessing rules
 		}else{
-			remainingRules.insert(ruleID);
+			// skip rules with unsatisfied body
+			bool inReduct = true;
+			BOOST_FOREACH (ID b, rule.body){
+				if (interpretation->getFact(b.address) != !b.isNaf()){
+					inReduct = false;
+					break;
+				}
+			}
+			if (inReduct){
+				remainingRules.insert(ruleID);
+			}
 		}
 	}
 	DBGLOG(DBG, "All atoms: " << *allAtoms);
