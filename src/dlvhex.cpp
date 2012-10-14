@@ -135,8 +135,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
+      << "     --extlearn[=none,iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
+      << "                        none (default): Deactivate external learning" << std::endl
       << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
@@ -159,12 +160,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --eaevalheuristics=[always,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
-      << "                      never: Only evaluate at the end" << std::endl
+      << "                      never (default): Only evaluate at the end" << std::endl
       << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
-      << "                      post: Do UFS check only over complete interpretations" << std::endl
+      << "                      post (default): Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
       << "                      periodic: Do UFS check in periodic intervals" << std::endl
-      << " --modelqueuesize=N   Size of the model queue, i.e. number of models which can be computed in parallel" << std::endl
+      << " --modelqueuesize=N   Size of the model queue, i.e. number of models which can be computed in parallel; default is 5" << std::endl
       << "                        (only useful for clasp solver)" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
@@ -962,6 +963,8 @@ void processOptionsPrePlugin(
 
 		case 18:
 			{
+				bool noneToken = false;
+				bool enableToken = false;
 				if (optarg){
 					boost::char_separator<char> sep(",");
 					std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
@@ -971,33 +974,50 @@ void processOptionsPrePlugin(
 							f != tok.end(); ++f)
 					{
 						const std::string& token = *f;
-						if (token == "iobehavior" )
+						if (token == "none" )
+						{
+							pctx.config.setOption("ExternalLearningIOBehavior", 0);
+							pctx.config.setOption("ExternalLearningMonotonicity", 0);
+							pctx.config.setOption("ExternalLearningFunctionality", 0);
+							pctx.config.setOption("ExternalLearningLinearity", 0);
+							pctx.config.setOption("ExternalLearningNeg", 0);
+							pctx.config.setOption("ExternalLearningUser", 0);
+							noneToken = true;
+						}
+						else if (token == "iobehavior" )
 						{
 							pctx.config.setOption("ExternalLearningIOBehavior", 1);
+							enableToken = true;
 						}
 						else if( token == "monotonicity" )
 						{
 							pctx.config.setOption("ExternalLearningMonotonicity", 1);
+							enableToken = true;
 						}
 						else if( token == "functionality" )
 						{
 							pctx.config.setOption("ExternalLearningFunctionality", 1);
+							enableToken = true;
 						}
 						else if( token == "linearity" )
 						{
 							pctx.config.setOption("ExternalLearningLinearity", 1);
+							enableToken = true;
 						}
                                                 else if( token == "neg" )
 						{
 							pctx.config.setOption("ExternalLearningNeg", 1);
+							enableToken = true;
 						}
                                                 else if( token == "user" )
 						{
 							pctx.config.setOption("ExternalLearningUser", 1);
+							enableToken = true;
 						}
                                                 else if( token == "generalize" )
 						{
 							pctx.config.setOption("ExternalLearningGeneralize", 1);
+							enableToken = true;
 						}
 						else
 						{
@@ -1014,9 +1034,12 @@ void processOptionsPrePlugin(
 					pctx.config.setOption("ExternalLearningUser", 1);
 					//pctx.config.setOption("ExternalLearningGeneralize", 1);	// do not activate by default (it is mostly counterproductive)
 				}
-			}
+				if (noneToken && enableToken){
+					throw GeneralError("--extlearn: Value \"none\" cannot be used simultanously with other options");
+				}
 
-			pctx.config.setOption("ExternalLearning", 1);
+				pctx.config.setOption("ExternalLearning", noneToken ? 0 : 1);
+			}
 
 			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
 			break;
