@@ -10,6 +10,7 @@ pkginclude_HEADERS = \
   AnswerSetPrinterCallback.h \
   ASPSolver.h \
   ASPSolverManager.h \
+  AsynchronousModelGenerator.h \
   Atoms.h \
   BaseModelGenerator.h \
   Benchmarking.h \
