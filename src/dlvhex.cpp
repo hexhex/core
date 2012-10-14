@@ -156,7 +156,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
-      << "     --eaheuristics=[always,never]" << std::endl
+      << "     --eaevalheuristics=[always,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      never: Only evaluate at the end" << std::endl
