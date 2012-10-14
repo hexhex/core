@@ -124,6 +124,7 @@ protected:
   GenuineGroundSolverPtr solver;	// solver
   NogoodGrounderPtr nogoodGrounder;	// grounder for nonground nogoods
   SimpleNogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
+  boost::mutex transferMutex;		// synchronized access of learned EA data structures
   int learnedEANogoodsTransferredIndex;	// the highest index in learnedEANogoods which has already been transferred to the solver
   UnfoundedSetCheckerManagerPtr ufscm;	// unfounded set checker
   InterpretationPtr programMask;	// all atoms in the program

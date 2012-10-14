@@ -458,6 +458,8 @@ void GenuineGuessAndCheckModelGeneratorAsync::generalizeNogoods(){
 
 void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 
+	boost::mutex::scoped_lock lock(transferMutex);
+
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned IO-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
