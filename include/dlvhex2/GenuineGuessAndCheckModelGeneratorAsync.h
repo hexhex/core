@@ -112,6 +112,7 @@ protected:
   boost::unordered_map<IDAddress, std::vector<int> > unverifyWatchList;
   boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList;
   ExternalAtomEvaluationHeuristicsPtr externalAtomEvalHeuristics;
+  boost::mutex ufsCheckMutex;
   UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms

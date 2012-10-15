@@ -477,6 +477,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased")){
 		// assumption-based
+		boost::mutex::scoped_lock lock(ufsCheckMutex);
 		ufscm->learnNogoodsFromMainSearch();
 		learnedEANogoods->clear();
 	}else{
@@ -580,21 +581,26 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-				if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
-				if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
-				transferLearnedEANogoods();
-				if (ufs.size() > 0){
-					DBGLOG(DBG, "Got a UFS");
-					if (factory.ctx.config.getOption("UFSLearning")){
-						DBGLOG(DBG, "Learn from UFS");
-						Nogood ufsng = ufscm->getLastUFSNogood();
-						solver->addNogood(ufsng);
+				bool ret;
+				{
+					boost::mutex::scoped_lock lock(ufsCheckMutex);
+					std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+					if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
+					if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
+					if (ufs.size() > 0){
+						DBGLOG(DBG, "Got a UFS");
+						if (factory.ctx.config.getOption("UFSLearning")){
+							DBGLOG(DBG, "Learn from UFS");
+							Nogood ufsng = ufscm->getLastUFSNogood();
+							solver->addNogood(ufsng);
+						}
+						ret = false;
+					}else{
+						ret = true;
 					}
-					return false;
-				}else{
-					return true;
 				}
+				transferLearnedEANogoods();
+				return ret;
 			}
 
 			// no check
@@ -613,7 +619,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::partialUFSCheck(InterpretationCons
 		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(partialInterpretation, factWasSet, changed);
 
 		if (decision.first){
-
+			boost::mutex::scoped_lock lock(ufsCheckMutex);
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
@@ -770,6 +776,8 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(partialInterpretation, factWasSet, changed);
 	transferLearnedEANogoods();
 
+	// if the input to the external atom was complete, then remember the verification result
+	// (for incomplete input we cannot yet decide this)
 	if (!factWasSet ||
 	    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
 
