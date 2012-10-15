@@ -547,7 +547,7 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 	return false;
 }
 
-IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
+ID GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
 
 	bm::bvector<>::enumerator eaDepAtoms = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
 	bm::bvector<>::enumerator eaDepAtoms_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
@@ -555,11 +555,11 @@ IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, Int
 	while (eaDepAtoms < eaDepAtoms_end){
 		if (search->getFact(*eaDepAtoms) == truthValue){
 			DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
-			return *eaDepAtoms;
+			return reg->ogatoms.getIDByAddress(*eaDepAtoms);
 		}
 		eaDepAtoms++;
 	}
-	assert(false);
+	return ID_FAIL;
 }
 
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
@@ -585,10 +585,14 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 
 				if (!factWasSet->getFact(*en)){
 					// watch a yet unassigned atom such that the external atom depends on it
-					verifyWatchList[getWatchedLiteral(eaIndex, factWasSet, false)].push_back(eaIndex);
+					ID id = getWatchedLiteral(eaIndex, factWasSet, false);
+					assert(id != ID_FAIL);
+					verifyWatchList[id.address].push_back(eaIndex);
 				}else{
 					// watch a changed atom
-					verifyWatchList[getWatchedLiteral(eaIndex, changed, true)].push_back(eaIndex);
+					ID id = getWatchedLiteral(eaIndex, changed, true);
+					assert(id != ID_FAIL);
+					verifyWatchList[id.address].push_back(eaIndex);
 				}
 			}
 		}
@@ -602,22 +606,18 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 		if (factWasSet->getFact(*en)){
 			BOOST_FOREACH (int eaIndex, verifyWatchList[*en]){
 				if (!eaEvaluated[eaIndex]){
-					// check if all atoms relevant to this external atom are assigned
-					if (!factWasSet ||
-					    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
-
-						// evaluate external atom if the heuristics decides so
-						const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-						if (externalAtomEvalHeuristics->doEvaluate(eatom, partialInterpretation, factWasSet, changed)){
-							// evaluate it
-							conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
-						}
-					}else{
+					// evaluate external atom if the heuristics decides so
+					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+					if (externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed)){
+						// evaluate it
+						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
+					}
+					if (!eaEvaluated[eaIndex]){
 						// find a new yet unassigned atom to watch
-						verifyWatchList[getWatchedLiteral(eaIndex, factWasSet, false)].push_back(eaIndex);
+						ID id = getWatchedLiteral(eaIndex, factWasSet, false);
+						if (id != ID_FAIL) verifyWatchList[id.address].push_back(eaIndex);
 					}
 				}
-
 			}
 			// current atom was set, so remove all watches
 			verifyWatchList[*en].clear();
@@ -632,7 +632,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	// we need all relevant atoms to be assigned before we can do the verification
-	assert(!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()));
+//	assert(!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()));
 
 	// prepare EA evaluation
 	InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
@@ -661,13 +661,20 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(partialInterpretation, factWasSet, changed);
 	transferLearnedEANogoods();
 
-	// remember the verification result
-	bool verify = vcb.verify();
-	DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
-	eaVerified[eaIndex] = verify;
-	eaEvaluated[eaIndex] = true;
+	// if the input to the external atom was complete, then remember the verification result
+	// (for incomplete input we cannot yet decide this)
+	if (!factWasSet ||
+	    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
 
-	return !verify;
+		bool verify = vcb.verify();
+		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
+		eaVerified[eaIndex] = verify;
+		eaEvaluated[eaIndex] = true;
+
+		return !verify;
+	}else{
+		return false;
+	}
 }
 
 const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram(){

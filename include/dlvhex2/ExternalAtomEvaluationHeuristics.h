@@ -59,12 +59,13 @@ public:
 	/**
 	* Decides if the reasoner shall evaluate a given external atom at this point.
 	* @param eatom The external atom in question
+	* @param programMask All atoms in the program
 	* @param partialInterpretation The current (partial) interpretation
 	* @param factWasSet The current set of assigned atoms; if 0, then the interpretation is complete
 	* @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
 	* @return bool True if the heuristics suggests to evaluate the external atom, otherwise false
 	*/
-	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
+	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
 };
 
 typedef boost::shared_ptr<ExternalAtomEvaluationHeuristics> ExternalAtomEvaluationHeuristicsPtr;
@@ -84,10 +85,24 @@ typedef boost::shared_ptr<ExternalAtomEvaluationHeuristicsFactory> ExternalAtomE
 class ExternalAtomEvaluationHeuristicsAlways : public ExternalAtomEvaluationHeuristics{
 public:
 	ExternalAtomEvaluationHeuristicsAlways(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg);
-	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 };
 
 class ExternalAtomEvaluationHeuristicsAlwaysFactory : public ExternalAtomEvaluationHeuristicsFactory{
+	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg);
+};
+
+// ============================== InputComplete ==============================
+
+// Evaluates always when the heuristics is asked and the input to the external atom is complete
+
+class ExternalAtomEvaluationHeuristicsInputComplete : public ExternalAtomEvaluationHeuristics{
+public:
+	ExternalAtomEvaluationHeuristicsInputComplete(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg);
+	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+};
+
+class ExternalAtomEvaluationHeuristicsInputCompleteFactory : public ExternalAtomEvaluationHeuristicsFactory{
 	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg);
 };
 
@@ -97,7 +112,7 @@ class ExternalAtomEvaluationHeuristicsAlwaysFactory : public ExternalAtomEvaluat
 class ExternalAtomEvaluationHeuristicsNever : public ExternalAtomEvaluationHeuristics{
 public:
 	ExternalAtomEvaluationHeuristicsNever(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg);
-	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 };
 
 class ExternalAtomEvaluationHeuristicsNeverFactory : public ExternalAtomEvaluationHeuristicsFactory{

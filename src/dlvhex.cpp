@@ -157,9 +157,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
-      << "     --eaevalheuristics=[always,never]" << std::endl
+      << "     --eaevalheuristics=[always,inputcomplete,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
+      << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
       << "                      never (default): Only evaluate at the end" << std::endl
       << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
       << "                      post (default): Do UFS check only over complete interpretations" << std::endl
@@ -1103,6 +1104,10 @@ void processOptionsPrePlugin(
 				if (heur == "always")
 				{
 					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
+				}
+				else if (heur == "inputcomplete")
+				{
+					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
 				}
 				else if (heur == "never")
 				{

@@ -206,9 +206,9 @@ protected:
    * @pre Some atom in the scope of the external atom is yet unassigned
    * @param search Search interpretation; can be 0 to indicate that all atoms of the EA's mask are eligable
    * @param truthValue Indicates whether to search for a true or a false atom in search
-   * @return IDAddress An atom to watch
+   * @return ID ID of an atom to watch or ID_FAIL if none exists
    */
-  IDAddress getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue);
+  ID getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue);
 
   /**
    * Heuristically decides if and which external atoms we evaluate.

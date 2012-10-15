@@ -45,7 +45,7 @@ ExternalAtomEvaluationHeuristics::ExternalAtomEvaluationHeuristics(HeuristicsMod
 ExternalAtomEvaluationHeuristicsAlways::ExternalAtomEvaluationHeuristicsAlways(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
 }
 
-bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 	return true;
 }
 
@@ -53,12 +53,29 @@ ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsAlwaysFactor
 	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsAlways(mg, reg));
 }
 
+// ============================== InputComplete ==============================
+
+ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsInputComplete(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
+}
+
+bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+
+	eatom.updatePredicateInputMask();
+	return !factWasSet ||
+		(eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() ==
+		    (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count();
+}
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsInputCompleteFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
+	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsInputComplete(mg, reg));
+}
+
 // ============================== Never ==============================
 
 ExternalAtomEvaluationHeuristicsNever::ExternalAtomEvaluationHeuristicsNever(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
 }
 
-bool ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 	return false;
 }
 
