@@ -134,6 +134,7 @@ protected:
   boost::thread* modelProducer;		// generates ordinary ASP models
 
   boost::mutex ordinaryModelsMutex;	// exclusive access of ordinaryModels
+  boost::mutex verificationValidatedMutex;	// thread-safe access of the two boolean vectors in ordinaryModels
   boost::condition waitForOrdinaryModelsCondition;
   boost::condition waitForOrdinaryModelsQueueSpaceCondition;
   std::queue<std::pair<InterpretationPtr, std::pair<std::vector<bool>, std::vector<bool> > > > ordinaryModels;	// stores an ordinary ASP model together with
