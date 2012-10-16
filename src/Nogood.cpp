@@ -274,13 +274,12 @@ int NogoodSet::addNogood(Nogood ng){
 		addCount.push_back(1);
 		index = nogoods.size() - 1;
 	}else{
-		index = *freeIndices.begin();
+		int index = *freeIndices.begin();
 		nogoods[index] = ng;
 		addCount[index] = 1;
 		freeIndices.erase(index);
 	}
 	DBGLOG(DBG, "Adding with index " << index);
-
 	nogoodsWithHash[ng.getHash()].insert(index);
 	return index;
 }
@@ -384,7 +383,6 @@ void SimpleNogoodContainer::clear(){
 }
 
 void SimpleNogoodContainer::forgetLeastFrequentlyAdded(){
-	boost::mutex::scoped_lock lock(mutex);
 	DBGLOG(DBG, "Nogood count before forgetting " << ngg.getNogoodCount());
 	ngg.forgetLeastFrequentlyAdded();
 	ngg.defragment();

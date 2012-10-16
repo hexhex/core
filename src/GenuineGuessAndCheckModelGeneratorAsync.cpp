@@ -538,12 +538,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::finalCompatibilityCheck(Interpreta
 }
 
 void GenuineGuessAndCheckModelGeneratorAsync::finalExternalAtomEvaluation(int eaIndex, InterpretationConstPtr modelCandidate, std::vector<bool>* eaVerified){
-
-	bool b = !verifyExternalAtom(eaIndex, modelCandidate);
-
-	boost::mutex::scoped_lock lock(verificationValidatedMutex);	// accessing boolean vectors for writing is not thread-safe!
-									// (even if we access different locations, because booleans are stored in compressed form)
-	(*eaVerified)[eaIndex] = b;
+	(*eaVerified)[eaIndex] = !verifyExternalAtom(eaIndex, modelCandidate);
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr compatibleSet){
