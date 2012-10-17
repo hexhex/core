@@ -201,13 +201,14 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 }
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+//	return true;
 	return prop(s);
 }
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
 	// (see postcondition in clasp/constraint.h)
-	return prop(s, true);
+	return prop(s, true) && s.numFreeVars() == 0;
 }
 
 uint32 ClaspSolver::ExternalPropagator::priority() const{

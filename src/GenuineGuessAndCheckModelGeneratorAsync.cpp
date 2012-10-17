@@ -458,6 +458,8 @@ void GenuineGuessAndCheckModelGeneratorAsync::generalizeNogoods(){
 
 void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 
+	boost::mutex::scoped_lock lock(transferMutex);
+
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned IO-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
@@ -475,6 +477,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased")){
 		// assumption-based
+		boost::mutex::scoped_lock lock(ufsCheckMutex);
 		ufscm->learnNogoodsFromMainSearch();
 		learnedEANogoods->clear();
 	}else{
@@ -535,7 +538,12 @@ bool GenuineGuessAndCheckModelGeneratorAsync::finalCompatibilityCheck(Interpreta
 }
 
 void GenuineGuessAndCheckModelGeneratorAsync::finalExternalAtomEvaluation(int eaIndex, InterpretationConstPtr modelCandidate, std::vector<bool>* eaVerified){
-	(*eaVerified)[eaIndex] = !verifyExternalAtom(eaIndex, modelCandidate);
+
+	bool b = !verifyExternalAtom(eaIndex, modelCandidate);
+
+	boost::mutex::scoped_lock lock(verificationValidatedMutex);	// accessing boolean vectors for writing is not thread-safe!
+									// (even if we access different locations, because booleans are stored in compressed form)
+	(*eaVerified)[eaIndex] = b;
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr compatibleSet){
@@ -578,21 +586,26 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-				if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
-				if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
-				transferLearnedEANogoods();
-				if (ufs.size() > 0){
-					DBGLOG(DBG, "Got a UFS");
-					if (factory.ctx.config.getOption("UFSLearning")){
-						DBGLOG(DBG, "Learn from UFS");
-						Nogood ufsng = ufscm->getLastUFSNogood();
-						solver->addNogood(ufsng);
+				bool ret;
+				{
+					boost::mutex::scoped_lock lock(ufsCheckMutex);
+					std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+					if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
+					if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
+					if (ufs.size() > 0){
+						DBGLOG(DBG, "Got a UFS");
+						if (factory.ctx.config.getOption("UFSLearning")){
+							DBGLOG(DBG, "Learn from UFS");
+							Nogood ufsng = ufscm->getLastUFSNogood();
+							solver->addNogood(ufsng);
+						}
+						ret = false;
+					}else{
+						ret = true;
 					}
-					return false;
-				}else{
-					return true;
 				}
+				transferLearnedEANogoods();
+				return ret;
 			}
 
 			// no check
@@ -611,7 +624,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::partialUFSCheck(InterpretationCons
 		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(partialInterpretation, factWasSet, changed);
 
 		if (decision.first){
-
+			boost::mutex::scoped_lock lock(ufsCheckMutex);
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
@@ -654,7 +667,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isVerified(ID eaAux, Interpretatio
 	return false;
 }
 
-IDAddress GenuineGuessAndCheckModelGeneratorAsync::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
+ID GenuineGuessAndCheckModelGeneratorAsync::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
 
 	bm::bvector<>::enumerator eaDepAtoms = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
 	bm::bvector<>::enumerator eaDepAtoms_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
@@ -662,11 +675,11 @@ IDAddress GenuineGuessAndCheckModelGeneratorAsync::getWatchedLiteral(int eaIndex
 	while (eaDepAtoms < eaDepAtoms_end){
 		if (search->getFact(*eaDepAtoms) == truthValue){
 			DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
-			return *eaDepAtoms;
+			return reg->ogatoms.getIDByAddress(*eaDepAtoms);
 		}
 		eaDepAtoms++;
 	}
-	assert(false);
+	return ID_FAIL;
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
@@ -691,10 +704,14 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(Interpretation
 				eaEvaluated[eaIndex] = false;
 				if (!factWasSet->getFact(*en)){
 					// watch a yet unassigned atom such that the external atom depends on it
-					verifyWatchList[getWatchedLiteral(eaIndex, factWasSet, false)].push_back(eaIndex);
+					ID id = getWatchedLiteral(eaIndex, factWasSet, false);
+					assert(id != ID_FAIL);
+					verifyWatchList[id.address].push_back(eaIndex);
 				}else{
 					// watch a changed atom
-					verifyWatchList[getWatchedLiteral(eaIndex, changed, true)].push_back(eaIndex);
+					ID id = getWatchedLiteral(eaIndex, changed, true);
+					assert(id != ID_FAIL);
+					verifyWatchList[id.address].push_back(eaIndex);
 				}
 			}
 		}
@@ -708,24 +725,19 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(Interpretation
 		if (factWasSet->getFact(*en)){
 			BOOST_FOREACH (int eaIndex, verifyWatchList[*en]){
 				if (!eaEvaluated[eaIndex]){
-					// check if all atoms relevant to this external atom are assigned
-					if (!factWasSet ||
-					    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
+					// evaluate external atom if the heuristics decides so
+					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+					if (externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed)){
+						// evaluate it
+						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
 
-						// evaluate external atom if the heuristics decides so
-						const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-						if (externalAtomEvalHeuristics->doEvaluate(eatom, partialInterpretation, factWasSet, changed)){
-							// evaluate it
-							eaEvaluated[eaIndex] = true;
-							eaVerified[eaIndex] = !verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed);
-							conflict |= !eaVerified[eaIndex];
-						}
-					}else{
+					}
+					if (!eaEvaluated[eaIndex]){
 						// find a new yet unassigned atom to watch
-						verifyWatchList[getWatchedLiteral(eaIndex, factWasSet, false)].push_back(eaIndex);
+						ID id = getWatchedLiteral(eaIndex, factWasSet, false);
+						if (id != ID_FAIL) verifyWatchList[id.address].push_back(eaIndex);
 					}
 				}
-
 			}
 			// current atom was set, so remove all watches
 			verifyWatchList[*en].clear();
@@ -738,9 +750,6 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(Interpretation
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-
-	// we need all relevant atoms to be assigned before we can do the verification
-	assert(!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()));
 
 	// prepare EA evaluation
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
@@ -772,11 +781,19 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(partialInterpretation, factWasSet, changed);
 	transferLearnedEANogoods();
 
-	// remember the verification result
-	bool verify = vcb.verify();
-	DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
+	// if the input to the external atom was complete, then remember the verification result
+	// (for incomplete input we cannot yet decide this)
+	if (!factWasSet ||
+	    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
 
-	return !verify;
+		// remember the verification result
+		bool verify = vcb.verify();
+		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
+
+		return !verify;
+	}else{
+		return false;
+	}
 }
 
 const OrdinaryASPProgram& GenuineGuessAndCheckModelGeneratorAsync::getGroundProgram(){
