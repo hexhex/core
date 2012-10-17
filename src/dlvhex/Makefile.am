@@ -152,7 +152,7 @@ libaspsolver_la_SOURCES = \
 #   3. Programs may need to be changed, recompiled, relinked in order
 #   to use the new version. Bump current, set revision and age to 0.
 #
-libdlvhexbase_la_LDFLAGS = -version-info 6:1:0
+libdlvhexbase_la_LDFLAGS = -version-info 6:2:0
 libaspsolver_la_LDFLAGS = -version-info 2:1:0
 
 libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
