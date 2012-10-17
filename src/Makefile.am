@@ -200,10 +200,10 @@ libdlvhex2_internalplugins_la_SOURCES = \
 #   3. Programs may need to be changed, recompiled, relinked in order
 #   to use the new version. Bump current, set revision and age to 0.
 #
-libdlvhex2_base_la_LDFLAGS = -version-info 7:0:0
-libdlvhex2_mlpsolver_la_LDFLAGS = -version-info 1:0:0
-libdlvhex2_aspsolver_la_LDFLAGS = -version-info 3:0:0
-libdlvhex2_internalplugins_la_LDFLAGS = -version-info 1:0:0
+libdlvhex2_base_la_LDFLAGS = -version-info 8:0:1
+libdlvhex2_mlpsolver_la_LDFLAGS = -version-info 2:0:1
+libdlvhex2_aspsolver_la_LDFLAGS = -version-info 4:0:1
+libdlvhex2_internalplugins_la_LDFLAGS = -version-info 2:0:1
 
 libdlvhex2_base_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 
