@@ -143,7 +143,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
     ProgramCtx& ctx,
     const ComponentInfo& ci,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
-  FLPModelGeneratorFactoryBase(ctx.registry()),
+  FLPModelGeneratorFactoryBase(ctx),
   externalEvalConfig(externalEvalConfig),
   ctx(ctx),
   ci(ci),
@@ -158,7 +158,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
     deidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     deidb.insert(deidb.end(), ci.innerRules.begin(), ci.innerRules.end());
     deidb.insert(deidb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-    createDomainExplorationProgram(ci, reg, deidb);
+    createDomainExplorationProgram(ci, ctx, deidb);
 
     // add domain predicates
     idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
@@ -177,15 +177,15 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules();
+  createEatomGuessingRules(ctx);
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-      inserter, boost::bind(&GuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
+      inserter, boost::bind(&GuessAndCheckModelGeneratorFactory::convertRule, this, ctx, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-      inserter, boost::bind(&GuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
+      inserter, boost::bind(&GuessAndCheckModelGeneratorFactory::convertRule, this, ctx, _1));
 
   // transform xidb for flp calculation
   if (ctx.config.getOption("FLPCheck")) createFLPRules();

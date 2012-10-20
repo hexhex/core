@@ -379,6 +379,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("AutoStrongSafety",0);
   pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
+  pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
 	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary

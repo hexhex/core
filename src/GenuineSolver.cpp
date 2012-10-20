@@ -118,7 +118,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 	case 1: case 2:	// internal grounder or Gringo + internal solver
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx.registry(), p)) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx.registry(), p)));
+		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p)) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p)));
 		return ptr;
 		}
 		break;
@@ -126,7 +126,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx.registry(), p), interleavedThreading) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx.registry(), p), interleavedThreading, ClaspSolver::ChoiceRules));
+		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, ClaspSolver::ChoiceRules));
 		return ptr;
 		}
 #else

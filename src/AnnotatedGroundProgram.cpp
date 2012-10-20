@@ -1,5 +1,6 @@
 #include "dlvhex2/AnnotatedGroundProgram.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/ProgramCtx.h"
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp> 
@@ -10,17 +11,17 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-AnnotatedGroundProgram::AnnotatedGroundProgram() : groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), haveGrounding(false){
+AnnotatedGroundProgram::AnnotatedGroundProgram() : ctx(0), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), haveGrounding(false){
 }
 
-AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms) :
-	reg(reg), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true){
+AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms) :
+	ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true){
 
 	initialize();
 }
 
-AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, std::vector<ID> indexedEatoms) :
-	reg(reg), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), indexedEatoms(indexedEatoms), haveGrounding(false){
+AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms) :
+	ctx(&ctx), reg(ctx.registry()), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), indexedEatoms(indexedEatoms), haveGrounding(false){
 
 	initialize();
 }
@@ -68,7 +69,7 @@ void AnnotatedGroundProgram::createEAMasks(){
 		// create an EAMask for each inner external atom
 		eaMasks[eaIndex] = boost::shared_ptr<ExternalAtomMask>(new ExternalAtomMask);
 		ExternalAtomMask& eaMask = *eaMasks[eaIndex];
-		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundProgram.idb);
+		eaMask.setEAtom(*ctx, reg->eatoms.getByID(eatom), groundProgram.idb);
 		eaMask.updateMask();
 		eaIndex++;
 	}
@@ -80,7 +81,7 @@ void AnnotatedGroundProgram::mapAuxToEAtoms(){
 	BOOST_FOREACH (ID eatom, indexedEatoms){
 		// create an EAMask for each inner external atom
 		ExternalAtomMask& eaMask = *eaMasks[eaIndex];
-		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundProgram.idb);
+		eaMask.setEAtom(*ctx, reg->eatoms.getByID(eatom), groundProgram.idb);
 		eaMask.updateMask();
 
 		// map external auxiliaries back to their external atoms
