@@ -1,3 +1,10 @@
+2012-10-17  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	Release 2.1.0
+	* NEWS: summarizing changes
+	* src/Makefile.am: Increasing Version numbers.
+	* configure.ac: Likewise.
+
 2012-10-04  Christoph Redl  <redl@kr.tuwien.ac.at>
 
 	* AggregatePlugin.cpp: Implement a simplification strategy for
