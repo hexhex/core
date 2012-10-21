@@ -49,11 +49,13 @@ class FLPModelGeneratorFactoryBase:
   public BaseModelGeneratorFactory
 {
 public:
-  FLPModelGeneratorFactoryBase(RegistryPtr reg);
+  FLPModelGeneratorFactoryBase(ProgramCtx& ctx);
   virtual ~FLPModelGeneratorFactoryBase() {}
 
 protected:
   // data
+
+  ProgramCtx& ctx;
 
   // for getting auxiliaries and registering FLP replacements
   RegistryPtr reg;
@@ -96,10 +98,10 @@ protected:
 #endif
 protected:
   // create guessing rules for external atom values
-  void createEatomGuessingRules();
+  void createEatomGuessingRules(const ProgramCtx& ctx);
 
   // initializes deidb and innerEatoms
-  void createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, std::vector<ID>& idb);
+  void createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb);
 
   // create rules from xidb
   // * for evaluating which bodies are satisfied -> xidbflphead

@@ -81,10 +81,10 @@ PlainModelGeneratorFactory::PlainModelGeneratorFactory(
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
       inserter, boost::bind(
-        &PlainModelGeneratorFactory::convertRule, this, reg, _1));
+        &PlainModelGeneratorFactory::convertRule, this, ctx, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
       inserter, boost::bind(
-        &PlainModelGeneratorFactory::convertRule, this, reg, _1));
+        &PlainModelGeneratorFactory::convertRule, this, ctx, _1));
 
   #ifndef NDEBUG
   {

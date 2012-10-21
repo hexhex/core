@@ -57,8 +57,8 @@ extern dlvhex::ProgramCtx* globalpc;
 DLVHEX_NAMESPACE_BEGIN
 
 FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
-    RegistryPtr reg):
-  reg(reg)
+    ProgramCtx& ctx):
+  ctx(ctx), reg(ctx.registry())
 {
   gpMask.setRegistry(reg);
   gnMask.setRegistry(reg);
@@ -73,7 +73,7 @@ FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
  * * build rule <aux_ext_eatompos>(<all variables>) v <aux_ext_eatomneg>(<all variables>) :- <all bodies>
  * * store into gidb
  */
-void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
+void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ctx)
 {
   std::set<ID> innerEatomsSet(innerEatoms.begin(), innerEatoms.end());
   assert((innerEatomsSet.empty() ||
@@ -115,6 +115,9 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
       replacement.tuple.push_back(pospredicate);
       gpMask.addPredicate(pospredicate);
       gnMask.addPredicate(negpredicate);
+
+      if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && eatom.auxInputPredicate != ID_FAIL)
+        replacement.tuple.push_back(eatom.auxInputPredicate);
 
       // build (nonground) replacement and harvest all variables
       std::set<ID> variables;
@@ -213,7 +216,9 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
   }
 }
 
-void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, std::vector<ID>& idb){
+void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb){
+
+	RegistryPtr reg = ctx.registry();
 
 	// construct the positive subprogram where all default-negated atoms and strongly safe external atoms are removed
 	DBGLOG(DBG, "createDomainExplorationProgram");
@@ -262,7 +267,7 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 					positiverule.body.push_back(b);
 				}
 			}
-			ID rid = convertRule(reg, reg->storeRule(positiverule));
+			ID rid = convertRule(ctx, reg->storeRule(positiverule));
 #ifndef NDEBUG
 			{
 			std::stringstream s;
@@ -570,7 +575,7 @@ FLPModelGeneratorBase::FLPModelGeneratorBase(
     FLPModelGeneratorFactoryBase& _factory, InterpretationConstPtr input):
   BaseModelGenerator(input),
   factory(_factory),
-  annotatedGroundProgram(_factory.reg, _factory.innerEatoms)
+  annotatedGroundProgram(_factory.ctx, _factory.innerEatoms)
 {
 }
 

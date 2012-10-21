@@ -54,7 +54,7 @@ GenuineGuessAndCheckModelGeneratorAsyncFactory::GenuineGuessAndCheckModelGenerat
     ProgramCtx& ctx,
     const ComponentInfo& ci,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
-  FLPModelGeneratorFactoryBase(ctx.registry()),
+  FLPModelGeneratorFactoryBase(ctx),
   externalEvalConfig(externalEvalConfig),
   ctx(ctx),
   ci(ci),
@@ -69,7 +69,7 @@ GenuineGuessAndCheckModelGeneratorAsyncFactory::GenuineGuessAndCheckModelGenerat
     deidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     deidb.insert(deidb.end(), ci.innerRules.begin(), ci.innerRules.end());
     deidb.insert(deidb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-    createDomainExplorationProgram(ci, reg, deidb);
+    createDomainExplorationProgram(ci, ctx, deidb);
 
     // add domain predicates
     idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
@@ -88,13 +88,13 @@ GenuineGuessAndCheckModelGeneratorAsyncFactory::GenuineGuessAndCheckModelGenerat
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules();
+  createEatomGuessingRules(ctx);
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(idb.begin(), idb.end(),
-      inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorAsyncFactory::convertRule, this, reg, _1));
+      inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorAsyncFactory::convertRule, this, ctx, _1));
 
   // transform xidb for flp calculation
   if (ctx.config.getOption("FLPCheck")) createFLPRules();
@@ -248,7 +248,7 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
 	grounder = GenuineGrounder::getInstance(factory.ctx, program);
-        annotatedGroundProgram = AnnotatedGroundProgram(reg, grounder->getGroundProgram(), factory.innerEatoms);
+        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 	solver = GenuineGroundSolver::getInstance(
 						factory.ctx, annotatedGroundProgram,
 						false,
@@ -757,17 +757,19 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 
 	// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
 	InterpretationPtr evalIntr = InterpretationPtr(new Interpretation(*partialInterpretation));
-	BOOST_FOREACH (Tuple t, annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputTuples()){
-		OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		oa.tuple.push_back(eatom.auxInputPredicate);
-		oa.tuple.insert(oa.tuple.end(), t.begin(), t.end());
-		ID oaid = reg->storeOrdinaryGAtom(oa);
+	if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+		BOOST_FOREACH (Tuple t, annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputTuples()){
+			OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+			oa.tuple.push_back(eatom.auxInputPredicate);
+			oa.tuple.insert(oa.tuple.end(), t.begin(), t.end());
+			ID oaid = reg->storeOrdinaryGAtom(oa);
 #ifndef NDEBUG
-		if (!evalIntr->getFact(oaid.address)){
-			DBGLOG(DBG, "Setting aux input " << oaid.address);
-		}
+			if (!evalIntr->getFact(oaid.address)){
+				DBGLOG(DBG, "Setting aux input " << oaid.address);
+			}
 #endif
-		evalIntr->setFact(oaid.address);
+			evalIntr->setFact(oaid.address);
+		}
 	}
 
 	// evaluate the external atom (and learn nogoods if external learning is used)

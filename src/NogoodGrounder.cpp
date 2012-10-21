@@ -55,6 +55,7 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 
 	// go through all nonground nogoods which have not been instantiated so far
 	int max = watched->getNogoodCount();
+	if (instantiatedNongroundNogoodsIndex >= max) instantiatedNongroundNogoodsIndex = 0;
 	for (int i = instantiatedNongroundNogoodsIndex; i < max; ++i){
 		Nogood ng = watched->getNogood(i);
 		if (ng.isGround()) continue;
@@ -129,6 +130,7 @@ void LazyNogoodGrounder::update(InterpretationConstPtr partialInterpretation, In
 	// Watch for all new nonground nogoods the literal which binds the highest number of variables
 	DBGLOG(DBG, "Updating watches of nonground nogoods");
 	int max = watched->getNogoodCount();
+	if (watchedNogoodsCount >= max) watchedNogoodsCount = 0;
 	for (int i = watchedNogoodsCount; i < max; ++i){
 		Nogood ng = watched->getNogood(i);
 		if (ng.isGround()) continue;

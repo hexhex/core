@@ -225,7 +225,12 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 
     if( !answer.get().empty() )
     {
-      if( !cb.input(inputtuple) )
+      Tuple it;
+      if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && eatom.auxInputPredicate != ID_FAIL){
+        it.push_back(eatom.auxInputPredicate);
+      }
+      BOOST_FOREACH (ID i, inputtuple) it.push_back(i);
+      if( !cb.input(it) )
       {
         LOG(DBG,"callback aborted for input tuple " << printrange(inputtuple));
         return false;
@@ -448,9 +453,10 @@ void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
 // (works recursively for aggregate atoms,
 // will create additional "auxiliary" aggregate atoms in registry)
 void BaseModelGeneratorFactory::convertRuleBody(
-    RegistryPtr reg, const Tuple& body, Tuple& convbody)
+    ProgramCtx& ctx, const Tuple& body, Tuple& convbody)
 {
   assert(convbody.empty());
+  RegistryPtr reg = ctx.registry();
   for(Tuple::const_iterator itlit = body.begin();
       itlit != body.end(); ++itlit)
   {
@@ -462,7 +468,7 @@ void BaseModelGeneratorFactory::convertRuleBody(
       const AggregateAtom& aatom = reg->aatoms.getByID(*itlit);
       AggregateAtom convaatom(aatom);
       convaatom.literals.clear();
-      convertRuleBody(reg, aatom.literals, convaatom.literals);
+      convertRuleBody(ctx, aatom.literals, convaatom.literals);
       if( convaatom.literals != aatom.literals )
       {
         // really create new aggregate atom
@@ -492,6 +498,9 @@ void BaseModelGeneratorFactory::convertRuleBody(
       replacement.tuple.push_back(
           reg->getAuxiliaryConstantSymbol('r',
             pluginAtom->getPredicateID()));
+      if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && eatom.auxInputPredicate != ID_FAIL){
+        replacement.tuple.push_back(eatom.auxInputPredicate);
+      }
       replacement.tuple.insert(replacement.tuple.end(),
           eatom.inputs.begin(), eatom.inputs.end());
       replacement.tuple.insert(replacement.tuple.end(),
@@ -569,8 +578,9 @@ ID BaseModelGeneratorFactory::addDomainPredicatesWhereNecessary(const ComponentG
 // get rule
 // rewrite all eatoms in body to auxiliary replacement atoms
 // store and return id
-ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
+ID BaseModelGeneratorFactory::convertRule(ProgramCtx& ctx, ID ruleid)
 {
+  RegistryPtr reg = ctx.registry();
   if( !ruleid.doesRuleContainExtatoms() )
   {
     DBGLOG(DBG,"not converting rule " << ruleid << " (does not contain extatoms)");
@@ -595,7 +605,7 @@ ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
   newrule.body.clear();
 
   // convert (recursively in aggregates)
-  convertRuleBody(reg, rule.body, newrule.body);
+  convertRuleBody(ctx, rule.body, newrule.body);
 
   // store as rule
   ID newruleid = reg->storeRule(newrule);

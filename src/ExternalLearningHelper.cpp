@@ -101,6 +101,12 @@ Set<ID> ExternalLearningHelper::getOutputAtoms(const PluginAtom::Query& query, c
 	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
 	replacement.tuple.resize(1);
 	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
+	
+	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
+//		replacement.tuple.push_back(query.ctx->registry()->storeVariableTerm("X"));
+//		replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		replacement.tuple.push_back(query.eatom->auxInputPredicate);
+	}
 	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
 	int s = replacement.tuple.size();
 
@@ -110,7 +116,7 @@ Set<ID> ExternalLearningHelper::getOutputAtoms(const PluginAtom::Query& query, c
 		// add current output
 		replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 		// get ID of this replacement atom
-		ID idreplacement = NogoodContainer::createLiteral(query.ctx->registry()->storeOrdinaryGAtom(replacement));
+		ID idreplacement = NogoodContainer::createLiteral(query.ctx->registry()->storeOrdinaryAtom(replacement));
 		out.insert(idreplacement);
 	}
 
@@ -123,13 +129,18 @@ ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, Tuple o
 	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
 	replacement.tuple.resize(1);
 	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
+	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
+//		replacement.tuple.push_back(query.ctx->registry()->storeVariableTerm("X"));
+//		replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		replacement.tuple.push_back(query.eatom->auxInputPredicate);
+	}
 	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
 	int s = replacement.tuple.size();
 
 	// add output tuple
 	replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 
-	ID idreplacement = NogoodContainer::createLiteral(query.ctx->registry()->storeOrdinaryGAtom(replacement));
+	ID idreplacement = NogoodContainer::createLiteral(query.ctx->registry()->storeOrdinaryAtom(replacement));
 	return idreplacement;
 }
 
@@ -275,16 +286,27 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 			const OrdinaryAtom& atom = query.ctx->registry()->ogatoms.getByAddress(*en);
 			if (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate){
 				bool paramMatch = true;
-				for (int i = 1; i < 1 + query.input.size(); i++){
-					if (atom.tuple[i] != query.input[i - 1]){
+
+				// compare auxiliary predicate input
+				int aux = 0;
+				if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries")){
+					if (query.eatom->auxInputPredicate != ID_FAIL){
+						aux = 1;
+						if (atom.tuple[1] != query.eatom->auxInputPredicate) paramMatch = false; 
+					}
+				}
+				// compare other inputs
+				for (int i = 0; i < query.input.size(); i++){
+					if (atom.tuple[aux + 1 + i] != query.input[i]){
 						paramMatch = false;
 						break;
 					}
 				}
+
 				if (paramMatch){
 					// check if this tuple is _not_ in the answer
 					Tuple t;
-					for (int i = 1 + query.input.size(); i < atom.tuple.size(); i++){
+					for (int i = aux + 1 + query.input.size(); i < atom.tuple.size(); i++){
 						t.push_back(atom.tuple[i]);
 					}
 

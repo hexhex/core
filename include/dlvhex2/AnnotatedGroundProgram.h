@@ -57,6 +57,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 class AnnotatedGroundProgram{
 
+	ProgramCtx* ctx;
 	RegistryPtr reg;
 	OrdinaryASPProgram groundProgram;
 	bool haveGrounding;	// true if groundProgram is initialized, otherwise false (then we have only information about ground external atoms in the program but not about the entire program)
@@ -100,8 +101,8 @@ class AnnotatedGroundProgram{
 	void computeECycles();
 public:
 	AnnotatedGroundProgram();
-	AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
-	AnnotatedGroundProgram(RegistryPtr reg, std::vector<ID> indexedEatoms);
+	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
+	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
   const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
 

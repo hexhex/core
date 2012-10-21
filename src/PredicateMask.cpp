@@ -41,6 +41,7 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/OrdinaryAtomTable.h"
 #include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/ProgramCtx.h"
 
 #include <boost/foreach.hpp>
 
@@ -166,15 +167,16 @@ void PredicateMask::updateMask()
   DBGLOG(DBG,"updateMask created new set of relevant ogatoms: " << *maski << " and knownAddresses is " << knownAddresses);
 }
 
-ExternalAtomMask::ExternalAtomMask() : PredicateMask(), eatom(0){
+ExternalAtomMask::ExternalAtomMask() : PredicateMask(), ctx(0), eatom(0){
 }
 
 ExternalAtomMask::~ExternalAtomMask(){
 }
 
-void ExternalAtomMask::setEAtom(const ExternalAtom& eatom, const std::vector<ID>& groundidb){
+void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb){
 
     this->eatom = &eatom;
+    this->ctx = &ctx;
     setRegistry(eatom.pluginAtom->getRegistry());
 
     // mask contains input (predicate and constant) and output of the external atom
@@ -264,10 +266,15 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     std::map<ID, ID> varBinding;
 
     // check predicate and constant input
+    int aux = 0;
+    if (ctx->config.getOption("IncludeAuxInputInAuxiliaries") && eatom->auxInputPredicate != ID_FAIL){
+      if (togatom[1] != eatom->auxInputPredicate) return false;
+      aux = 1;
+    }
     for (int p = 0; p < eatom->inputs.size(); ++p){
       if (eatom->pluginAtom->getInputType(p) == PluginAtom::PREDICATE ||
           eatom->pluginAtom->getInputType(p) == PluginAtom::CONSTANT && !eatom->inputs[p].isVariableTerm()){
-        if (togatom[p + 1] != eatom->inputs[p]){
+        if (togatom[p + aux + 1] != eatom->inputs[p]){
           DBGLOG(DBG, "Predicate or constant input mismatch");
           return false;
         }
@@ -284,7 +291,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
         bool match = true;
         for (int i = 0; i < tinp.size(); ++i){
           BOOST_FOREACH (unsigned pos, eatom->auxInputMapping[i]){
-            if (togatom[1 + pos] != tinp[i]){
+            if (togatom[aux + 1 + pos] != tinp[i]){
               match = false;
               break;
             }
@@ -306,14 +313,14 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     for (int o = 0; o < eatom->tuple.size(); ++o){
       if (eatom->tuple[o].isVariableTerm()){
         if (varBinding.find(eatom->tuple[o]) == varBinding.end()){
-          varBinding[eatom->tuple[o]] = togatom[1 + eatom->inputs.size() + o];
+          varBinding[eatom->tuple[o]] = togatom[aux + 1 + eatom->inputs.size() + o];
         }else{
-          if (varBinding[eatom->tuple[o]] != togatom[1 + eatom->inputs.size() + o]){
+          if (varBinding[eatom->tuple[o]] != togatom[aux + 1 + eatom->inputs.size() + o]){
             return false;
           }
         }
       }else if (eatom->tuple[o].isConstantTerm() || eatom->tuple[o].isIntegerTerm()){
-        if (togatom[1 + eatom->inputs.size() + o] != eatom->tuple[o]){
+        if (togatom[aux + 1 + eatom->inputs.size() + o] != eatom->tuple[o]){
           return false;
         }
       }else{

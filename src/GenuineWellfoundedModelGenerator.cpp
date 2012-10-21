@@ -78,10 +78,10 @@ GenuineWellfoundedModelGeneratorFactory::GenuineWellfoundedModelGeneratorFactory
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
       inserter, boost::bind(
-        &GenuineWellfoundedModelGeneratorFactory::convertRule, this, reg, _1));
+        &GenuineWellfoundedModelGeneratorFactory::convertRule, this, ctx, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
       inserter, boost::bind(
-        &GenuineWellfoundedModelGeneratorFactory::convertRule, this, reg, _1));
+        &GenuineWellfoundedModelGeneratorFactory::convertRule, this, ctx, _1));
 
   // this calls print()
   DBGLOG(DBG,"GenuineWellfoundedModelGeneratorFactory(): " << *this);

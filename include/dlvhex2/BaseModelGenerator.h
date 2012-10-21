@@ -65,12 +65,12 @@ protected:
   virtual ID addDomainPredicatesWhereNecessary(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid);
   // rewrite all eatoms in body to auxiliary replacement atoms
   // store into registry and return id
-  virtual ID convertRule(RegistryPtr reg, ID ruleid);
+  virtual ID convertRule(ProgramCtx& ctx, ID ruleid);
   // rewrite all eatoms in body tuple to auxiliary replacement atoms
   // store new body into convbody
   // (works recursively for aggregate atoms,
   // will create additional "auxiliary" aggregate atoms in registry)
-  virtual void convertRuleBody(RegistryPtr reg, const Tuple& body, Tuple& convbody);
+  virtual void convertRuleBody(ProgramCtx& ctx, const Tuple& body, Tuple& convbody);
 };
 
 //
