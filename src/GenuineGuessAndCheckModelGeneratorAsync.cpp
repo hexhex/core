@@ -551,7 +551,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 	// which semantics?
 	if (factory.ctx.config.getOption("WellJustified")){
 		// well-justified FLP: fixpoint iteration
-		InterpretationPtr fixpoint = getFixpoint(factory.ctx, compatibleSet, grounder->getGroundProgram());
+		InterpretationPtr fixpoint = welljustifiedSemanticsGetFixpoint(factory.ctx, compatibleSet, grounder->getGroundProgram());
 		InterpretationPtr reference = InterpretationPtr(new Interpretation(*compatibleSet));
 		reference->getStorage() -= factory.gpMask.mask()->getStorage();
 		reference->getStorage() -= factory.gnMask.mask()->getStorage();
