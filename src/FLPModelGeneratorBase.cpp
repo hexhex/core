@@ -1270,7 +1270,7 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 			InterpretationPtr verified = welljustifiedSemanticsGetVerifiedEAOutput(ctx, eatom, fixpoint, assigned);
 			DBGLOG(DBG, "Verified atoms: " << *verified);
 			assigned->getStorage() |= verified->getStorage();
-			fixpoint->getStorage() |= fixpoint->getStorage();
+			fixpoint->getStorage() |= verified->getStorage();
 			eaIndex++;
 		}
 
