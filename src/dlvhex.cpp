@@ -221,6 +221,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      eval   - Evaluation Graph (once per program)" << std::endl
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
+      << "                      attr   - Attribute dependency graph (once per program)" << std::endl
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
@@ -367,6 +368,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("DumpEvalGraph",0);
   pctx.config.setOption("DumpModelGraph",0);
   pctx.config.setOption("DumpIModelGraph",0);
+  pctx.config.setOption("DumpAttrGraph",0);
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
   pctx.config.setOption("NumberOfModels",0);
@@ -931,6 +933,10 @@ void processOptionsPrePlugin(
 							else if( token == "imodel" )
 							{
 								pctx.config.setOption("DumpIModelGraph",1);
+							}
+							else if( token == "attr" )
+							{
+								pctx.config.setOption("DumpAttrGraph",1);
 							}
 							else
 								throw UsageError("unknown graphviz graph type '"+token+"'");

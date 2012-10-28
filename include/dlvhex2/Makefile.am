@@ -12,6 +12,7 @@ pkginclude_HEADERS = \
   ASPSolverManager.h \
   AsynchronousModelGenerator.h \
   Atoms.h \
+  AttributeGraph.h \
   BaseModelGenerator.h \
   Benchmarking.h \
   ClaspSolver.h \
