@@ -48,7 +48,21 @@ DLVHEX_NAMESPACE_BEGIN
 
 class AttributeGraph{
 public:
-	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, std::vector<ID> > Graph;
+	struct Attribute{
+		enum Type{
+			Ordinary, External
+		};
+		Type type;
+		ID predicate;
+		std::vector<ID> inputList;
+		ID ruleID;
+		bool input;
+		int argIndex;
+
+		bool operator==(const Attribute& at2) const;
+	};
+
+	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, Attribute > Graph;
 	typedef boost::graph_traits<Graph> Traits;
 
 	typedef Graph::vertex_descriptor Node;
@@ -63,29 +77,30 @@ private:
 	const std::vector<ID>& idb;
 
 	Graph ag;
+	boost::unordered_map<ID, std::vector<Attribute> > attributesOfPredicate;
 
 	struct NodeInfoTag {};
 	struct NodeMappingInfo
 	{
-		std::vector<ID> ni;
+		Attribute at;
 		Node node;
-		NodeMappingInfo(std::vector<ID> ni, Node node): ni(ni), node(node) {}
+		NodeMappingInfo(Attribute at, Node node): at(at), node(node) {}
 	};
 	typedef boost::multi_index_container<
 			NodeMappingInfo,
 			boost::multi_index::indexed_by<
 				boost::multi_index::hashed_unique<
 					boost::multi_index::tag<NodeInfoTag>,
-					BOOST_MULTI_INDEX_MEMBER(NodeMappingInfo,std::vector<ID>,ni)
+					BOOST_MULTI_INDEX_MEMBER(NodeMappingInfo,Attribute,at)
 				>
 			>
 		> NodeMapping;
 	NodeMapping nm;
 	typedef NodeMapping::index<NodeInfoTag>::type NodeNodeInfoIndex;
 
-
-	Node getNode(ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);
-	Node getNode(ID predicate, int argumentIndex);
+	Attribute getAttribute(ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);
+	Attribute getAttribute(ID predicate, int argumentIndex);
+	Node getNode(Attribute at);
 
 	void createDependencies();
 public:
@@ -95,6 +110,7 @@ public:
 	virtual void writeGraphViz(std::ostream& o, bool verbose) const;
 };
 
+std::size_t hash_value(const AttributeGraph::Attribute& at);
 
 DLVHEX_NAMESPACE_END
 
