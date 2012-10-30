@@ -40,7 +40,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
-
+#include <boost/intrusive/unordered_set.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
@@ -48,10 +48,11 @@ DLVHEX_NAMESPACE_BEGIN
 
 class AttributeGraph{
 public:
-	struct Attribute{
+	struct Attribute : private ostream_printable<Attribute>{
 		enum Type{
 			Ordinary, External
 		};
+		RegistryPtr reg;
 		Type type;
 		ID predicate;
 		std::vector<ID> inputList;
@@ -60,9 +61,11 @@ public:
 		int argIndex;
 
 		bool operator==(const Attribute& at2) const;
+		bool operator<(const Attribute& at2) const;
+		std::ostream& print(std::ostream& o) const;
 	};
 
-	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, Attribute > Graph;
+	typedef boost::adjacency_list<boost::setS, boost::vecS, boost::bidirectionalS, Attribute > Graph;
 	typedef boost::graph_traits<Graph> Traits;
 
 	typedef Graph::vertex_descriptor Node;
@@ -72,13 +75,15 @@ public:
 	typedef Traits::out_edge_iterator PredecessorIterator;
 	typedef Traits::in_edge_iterator SuccessorIterator;
 
+	typedef std::pair<ID, ID> VariableLocation;	// stores rule ID and variable ID
+	typedef std::pair<ID, ID> AtomLocation;		// stores rule ID and atom ID
 private:
 	RegistryPtr reg;
 	const std::vector<ID>& idb;
 
+	// attribute graph
 	Graph ag;
 	boost::unordered_map<ID, std::vector<Attribute> > attributesOfPredicate;
-
 	struct NodeInfoTag {};
 	struct NodeMappingInfo
 	{
@@ -98,19 +103,48 @@ private:
 	NodeMapping nm;
 	typedef NodeMapping::index<NodeInfoTag>::type NodeNodeInfoIndex;
 
+	// some indices
+	typedef std::pair<std::set<VariableLocation>, boost::unordered_set<Attribute> > SafetyPreconditions;	// stores which variables still need to be bounded
+														// and which attributes need to become safe
+														// in order to make another attribute safe
+	boost::unordered_map<Attribute, SafetyPreconditions> safetyPreconditions;				// stores for each attributes the preconditios for becoming safe
+
+	boost::unordered_map<VariableLocation, boost::unordered_set<Attribute> > attributesSafeByVariable;	// stores for each variable the attributes whose safety depends on this variable
+	boost::unordered_map<Attribute, boost::unordered_set<Attribute> > attributesSafeByAttribute;		// stores for each attribute the attributes whose safety depends on this attribute
+
+	boost::unordered_map<Attribute, std::set<AtomLocation> > attributeOccursIn;				// stores for each attribute the atoms where it occurs
+
+	// output
+	boost::unordered_map<ID, int> predicateArity;								// arity of a given (ordinary) predciate
+	std::set<Node> cyclicAttributes;
+	boost::unordered_set<VariableLocation> boundedVariables;						// currently bounded variables
+	boost::unordered_set<Attribute> domainExpansionSafeAttributes;						// current domain-expansion safe attributes
+
 	Attribute getAttribute(ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);
 	Attribute getAttribute(ID predicate, int argumentIndex);
 	Node getNode(Attribute at);
 
+	// helper
+	bool isNewlySafe(Attribute at);
+	void addBoundedVariable(VariableLocation vl);
+	void addDomainExpansionSafeAttribute(Attribute at);
+
+	// initialization
 	void createDependencies();
+	void createIndices();
+	void computeDomainExpansionSafety();
 public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);
+
+	bool isDomainExpansionSafe() const;
 
 	// output graph as graphviz source
 	virtual void writeGraphViz(std::ostream& o, bool verbose) const;
 };
 
 std::size_t hash_value(const AttributeGraph::Attribute& at);
+std::size_t hash_value(const AttributeGraph::VariableLocation& vl);
+
 
 DLVHEX_NAMESPACE_END
 
