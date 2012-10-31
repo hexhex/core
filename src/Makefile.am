@@ -50,6 +50,7 @@ libdlvhex2_base_la_SOURCES = \
     ASPSolverManager.cpp \
     AsynchronousModelGenerator.cpp \
     Atoms.cpp \
+    AttributeGraph.cpp \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \

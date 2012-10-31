@@ -1153,8 +1153,64 @@ void FLPModelGeneratorBase::createFoundingRules(
 	}
 }
 
+InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, const ExternalAtom& eatom, InterpretationConstPtr intr, InterpretationConstPtr assigned){
 
-InterpretationPtr FLPModelGeneratorBase::getFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program){
+	// get the set of undefined input atoms
+	InterpretationPtr undefInput = InterpretationPtr(new Interpretation(intr->getRegistry()));
+	undefInput->getStorage() = eatom.getPredicateInputMask()->getStorage() - assigned->getStorage();
+	DBGLOG(DBG, "Undefined EA input: " << *undefInput);
+	bm::bvector<>::enumerator en = undefInput->getStorage().first();
+	bm::bvector<>::enumerator en_end = undefInput->getStorage().end();
+	std::vector<IDAddress> undefAtoms;
+	std::vector<bool> undefValues;
+	while (en < en_end){
+		undefAtoms.push_back(*en);
+		undefValues.push_back(false);
+		en++;
+	}
+
+	// now iterate over all (exponentially many) possible assignments
+	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(intr->getRegistry()));
+	InterpretationPtr verified;
+	eaInput->getStorage() = intr->getStorage();
+	DBGLOG(DBG, "Trying all exponentially many completions of the assignment");
+	while (true){
+		if (!!verified) DBGLOG(DBG, "Currently verified atoms: " << *verified);
+		DBGLOG(DBG, "Increment interpretation");
+		for (int i = undefAtoms.size() - 1; i >= 0; --i){
+			if (undefValues[i] == true){
+				undefValues[i] = false;
+			}else{
+				if (!!verified) undefValues[i] = true;
+				break;
+			}
+			if (i == 0){
+				if (!verified) verified = InterpretationPtr(new Interpretation(intr->getRegistry()));
+				DBGLOG(DBG, "Verified EA output: " << *verified);
+				return verified;
+			}
+		}
+
+		// add the current assignment to the EA input interpretation
+		DBGLOG(DBG, "Setting interpretation");
+		for (int i = undefAtoms.size() - 1; i >= 0; --i){
+			if (undefValues[i]) eaInput->setFact(undefAtoms[i]);
+			else eaInput->clearFact(undefAtoms[i]);
+		}
+
+		// eval EA
+		InterpretationPtr eares = InterpretationPtr(new Interpretation(intr->getRegistry()));
+		IntegrateExternalAnswerIntoInterpretationCB cb(eares);
+		DBGLOG(DBG, "Calling EA with input: " << *eaInput);
+		evaluateExternalAtom(ctx, eatom, eaInput, cb);
+		if (!verified) verified = eares;
+		else verified->getStorage() &= eares->getStorage();
+
+		if (undefAtoms.size() == 0) return verified;
+	}
+}
+
+InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program){
 
 	RegistryPtr reg = interpretation->getRegistry();
 
@@ -1205,6 +1261,19 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(ProgramCtx& ctx, Interpreta
 	for (int i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
 	while (remainingRules.size() > 0 && changed){
 		changed = false;
+
+		// check if some EA output atoms can already be verified over the partial interpretation
+		int eaIndex = 0;
+		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
+			DBGLOG(DBG, "Eval EA under " << *fixpoint);
+			const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
+			InterpretationPtr verified = welljustifiedSemanticsGetVerifiedEAOutput(ctx, eatom, fixpoint, assigned);
+			DBGLOG(DBG, "Verified atoms: " << *verified);
+			assigned->getStorage() |= verified->getStorage();
+			fixpoint->getStorage() |= verified->getStorage();
+			eaIndex++;
+		}
+
 #if 0
 		DBGLOG(DBG, "Eval EA under " << *fixpoint);
 		fixpoint->getStorage() -= eares->getStorage();
@@ -1217,7 +1286,7 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(ProgramCtx& ctx, Interpreta
 #endif
 //#if 0
 		// check if an external atom is verified
-		int eaIndex = 0;
+		eaIndex = 0;
 		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
 			if (!eaVerified[eaIndex]){
 				DBGLOG(DBG, "Checking if external atom " << eatomID << " is verified");

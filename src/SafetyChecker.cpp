@@ -38,6 +38,9 @@
 #include "dlvhex2/SafetyChecker.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/AttributeGraph.h"
+
+#include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -393,6 +396,17 @@ SafetyChecker::operator() () const throw (SyntaxError)
 
   RegistryPtr reg = ctx.registry();
   assert(!!reg);
+
+
+
+  if( ctx.config.getOption("DumpAttrGraph") )
+  {
+    std::string fnamev = ctx.config.getStringOption("DebugPrefix")+"_AttrGraphVerbose.dot";
+    LOG(INFO,"dumping verbose attribute graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    AttributeGraph ag(reg, ctx.idb);
+    ag.writeGraphViz(filev, true);
+  }
 
   //
   // testing for simple rule safety:
