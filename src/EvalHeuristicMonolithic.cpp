@@ -82,20 +82,20 @@ void EvalHeuristicMonolithic::build(EvalGraphBuilder& builder)
   //
   // do topological sort
   //
-  ComponentContainer comps;
-  std::back_insert_iterator<ComponentContainer> compinserter(comps);
+  ComponentContainer ccomps;
+  std::back_insert_iterator<ComponentContainer> compinserter(ccomps);
   boost::topological_sort(
       compgraph.getInternalGraph(),
       compinserter,
       boost::color_map(CompColorMap(ccHashMap)));
 
-  std::list<Component> comps, ccomps;
-  for(ComponentContainer::const_iterator it = comps.begin();
-      it != comps.end(); ++it)
+  std::list<Component> comps, constraintcomps;
+  for(ComponentContainer::const_iterator it = ccomps.begin();
+      it != ccomps.end(); ++it)
   {
 		comps.push_back(*it);
   }
-  EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+  EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, constraintcomps);
   LOG(ANALYZE,"got since eval unit " << u);
 }
 

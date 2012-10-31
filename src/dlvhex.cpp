@@ -59,6 +59,7 @@
 #include "dlvhex2/EvalHeuristicTrivial.h"
 #include "dlvhex2/EvalHeuristicEasy.h"
 #include "dlvhex2/EvalHeuristicGreedy.h"
+#include "dlvhex2/EvalHeuristicMonolithic.h"
 #include "dlvhex2/EvalHeuristicFromFile.h"
 #include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
 #include "dlvhex2/UnfoundedSetCheckHeuristics.h"
@@ -200,7 +201,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
 			<< "                      greedy - (default) heuristics with advantages for external behavior learning" << std::endl
-			<< "                      monolithic - put everything into one unit (for testing purposes, does not work in general)" << std::endl
+			<< "                      monolithic - put everything into one unit" << std::endl
+			<< "                                   (for testing purposes, does [currently] not work in general)" << std::endl
 			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
@@ -731,6 +733,10 @@ void processOptionsPrePlugin(
 				else if( heuri == "greedy" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
+				}
+				else if( heuri == "monolithic" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
