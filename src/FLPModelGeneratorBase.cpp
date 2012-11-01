@@ -1161,7 +1161,10 @@ void FLPModelGeneratorBase::createFoundingRules(
 	}
 }
 
-InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, const ExternalAtom& eatom, InterpretationConstPtr intr, InterpretationConstPtr assigned){
+std::pair<InterpretationPtr, InterpretationPtr>
+FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, int eaIndex, InterpretationConstPtr intr, InterpretationConstPtr assigned){
+
+	const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(factory.innerEatoms[eaIndex]);
 
 	// get the set of undefined input atoms
 	InterpretationPtr undefInput = InterpretationPtr(new Interpretation(intr->getRegistry()));
@@ -1177,10 +1180,21 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutp
 		en++;
 	}
 
-	// now iterate over all (exponentially many) possible assignments
 	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(intr->getRegistry()));
 	InterpretationPtr verified;
+	InterpretationPtr falsified = InterpretationPtr(new Interpretation(intr->getRegistry()));
 	eaInput->getStorage() = intr->getStorage();
+
+	// assume that all output atoms are falsified
+	annotatedGroundProgram.getEAMask(eaIndex)->updateMask();
+	en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+	en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
+	while (en < en_end){
+		if (ctx.registry()->ogatoms.getIDByAddress(*en).isExternalAuxiliary()) falsified->setFact(*en);
+		en++;
+	}
+
+	// now iterate over all (exponentially many) possible assignments
 	DBGLOG(DBG, "Trying all exponentially many completions of the assignment");
 	while (true){
 		if (!!verified) DBGLOG(DBG, "Currently verified atoms: " << *verified);
@@ -1195,7 +1209,7 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutp
 			if (i == 0){
 				if (!verified) verified = InterpretationPtr(new Interpretation(intr->getRegistry()));
 				DBGLOG(DBG, "Verified EA output: " << *verified);
-				return verified;
+				return std::pair<InterpretationPtr, InterpretationPtr>(verified, falsified);
 			}
 		}
 
@@ -1213,8 +1227,9 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutp
 		evaluateExternalAtom(ctx, eatom, eaInput, cb);
 		if (!verified) verified = eares;
 		else verified->getStorage() &= eares->getStorage();
+		falsified->getStorage() -= eares->getStorage();
 
-		if (undefAtoms.size() == 0) return verified;
+		if (undefAtoms.size() == 0) return std::pair<InterpretationPtr, InterpretationPtr>(verified, falsified);
 	}
 }
 
@@ -1253,8 +1268,13 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 	InterpretationPtr fixpoint = InterpretationPtr(new Interpretation(reg));
 	InterpretationPtr assigned = InterpretationPtr(new Interpretation(reg));
 
-	// all false atoms and all facts are immediately set
-	assigned->getStorage() |= (interpretation->getStorage() ^ allAtoms->getStorage());
+	// all false ordinary atoms and all facts are immediately set
+	bm::bvector<>::enumerator en = allAtoms->getStorage().first();
+	bm::bvector<>::enumerator en_end = allAtoms->getStorage().end();
+	while (en < en_end){
+		if (!interpretation->getFact(*en) && !reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()) assigned->setFact(*en);
+		en++;
+	}
 	DBGLOG(DBG, "Initially false: " << *assigned);
 	assigned->getStorage() |= program.edb->getStorage();
 	fixpoint->getStorage() |= program.edb->getStorage();
@@ -1275,24 +1295,15 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
 			DBGLOG(DBG, "Eval EA under " << *fixpoint);
 			const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
-			InterpretationPtr verified = welljustifiedSemanticsGetVerifiedEAOutput(ctx, eatom, fixpoint, assigned);
-			DBGLOG(DBG, "Verified atoms: " << *verified);
-			assigned->getStorage() |= verified->getStorage();
-			fixpoint->getStorage() |= verified->getStorage();
+			std::pair<InterpretationPtr, InterpretationPtr> verfals = welljustifiedSemanticsGetVerifiedEAOutput(ctx, eaIndex, fixpoint, assigned);
+			DBGLOG(DBG, "Verified atoms: " << *verfals.first);
+			DBGLOG(DBG, "Falsified atoms: " << *verfals.second);
+			assigned->getStorage() |= verfals.first->getStorage();
+			assigned->getStorage() |= verfals.second->getStorage();
+			fixpoint->getStorage() |= verfals.first->getStorage();
 			eaIndex++;
 		}
 
-#if 0
-		DBGLOG(DBG, "Eval EA under " << *fixpoint);
-		fixpoint->getStorage() -= eares->getStorage();
-		assigned->getStorage() -= eares->getStorage();
-		IntegrateExternalAnswerIntoInterpretationCB cb(eares);
-		evaluateExternalAtoms(	ctx, factory.innerEatoms, fixpoint, cb);
-		assigned->getStorage() |= eares->getStorage();
-		fixpoint->getStorage() |= eares->getStorage();
-		DBGLOG(DBG, "New assigned: " << *assigned);
-#endif
-//#if 0
 		// check if an external atom is verified
 		eaIndex = 0;
 		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
@@ -1323,7 +1334,6 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 			}
 			eaIndex++;
 		}
-//#endif
 
 		// search for a rule with satisfied body
 		BOOST_FOREACH (ID ruleID, remainingRules){
@@ -1384,8 +1394,8 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 
 	// remove external auxiliaries
 	fixpoint->getStorage() -= program.mask->getStorage();
-	bm::bvector<>::enumerator en = fixpoint->getStorage().first();
-	bm::bvector<>::enumerator en_end = fixpoint->getStorage().end();
+	en = fixpoint->getStorage().first();
+	en_end = fixpoint->getStorage().end();
 	while (en < en_end){
 		if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 			fixpoint->clearFact(*en);

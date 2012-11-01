@@ -269,7 +269,7 @@ protected:
       std::vector<ID>& idb);
 
   // used for the well-justified semantics
-  InterpretationPtr welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, const ExternalAtom& eatom, InterpretationConstPtr intr, InterpretationConstPtr assigned);
+  std::pair<InterpretationPtr, InterpretationPtr> welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, int eaIndex, InterpretationConstPtr intr, InterpretationConstPtr assigned);
   InterpretationPtr welljustifiedSemanticsGetFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program);
 };
 
