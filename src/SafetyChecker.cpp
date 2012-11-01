@@ -397,17 +397,6 @@ SafetyChecker::operator() () const throw (SyntaxError)
   RegistryPtr reg = ctx.registry();
   assert(!!reg);
 
-
-
-  if( ctx.config.getOption("DumpAttrGraph") )
-  {
-    std::string fnamev = ctx.config.getStringOption("DebugPrefix")+"_AttrGraphVerbose.dot";
-    LOG(INFO,"dumping verbose attribute graph to " << fnamev);
-    std::ofstream filev(fnamev.c_str());
-    AttributeGraph ag(reg, ctx.idb);
-    ag.writeGraphViz(filev, true);
-  }
-
   //
   // testing for simple rule safety:
   // * a constant is safe
@@ -566,6 +555,24 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 
   RegistryPtr reg = ctx.registry();
   assert(!!reg);
+
+
+  AttributeGraph ag(reg, ctx.idb);
+  if( ctx.config.getOption("DumpAttrGraph") )
+  {
+    std::string fnamev = ctx.config.getStringOption("DebugPrefix")+"_AttrGraphVerbose.dot";
+    LOG(INFO,"dumping verbose attribute graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    ag.writeGraphViz(filev, true);
+  }
+
+  if (ctx.config.getOption("DomainExpansionSafety"))
+  {
+    if (!ag.isDomainExpansionSafe()){
+      throw SyntaxError("Program is not domain-expansion safe");
+    }
+    return;
+  }
 
 	// at this point we may (and do) assume that all rules are safe
 

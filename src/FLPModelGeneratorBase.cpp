@@ -258,8 +258,16 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
 					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
 						std::stringstream ss;
-						ss << "Could not determine the domain of external atom " << b << " because it is unstratified and not strongly safe";
-						throw GeneralError(ss.str());
+						RawPrinter printer(ss, reg);
+						ss << "External atom ";
+						printer.print(b);
+						ss << " in rule " << std::endl;
+						ss  << "   ";
+						printer.print(ruleid);
+						ss << std::endl;
+						ss << "   is unstratified in the evaluation unit and not strongly safe, which can decrease performance significantly." << std::endl;
+						ss << "   Consider using a different heuristics or make it strongly safe.";
+						LOG(WARNING,  ss.str());
 					}
 					positiverule.body.push_back(b);
 					deidbInnerEatoms.push_back(b);

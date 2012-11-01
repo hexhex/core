@@ -301,7 +301,10 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			const ExternalAtom& ea = factory.reg->eatoms.getByID(eaid);
 
 			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
-			// in order to maximize the output
+			// in order to maximize the output;
+			// for nonmonotonic input atoms, enumerate all exponentially many assignments
+//			InterpretationPtr nonmonotonicinput(new Interpretation(factory.reg));
+			boost::unordered_map<IDAddress, bool> nonmonotonicinput;
 			InterpretationPtr input(new Interpretation(factory.reg));
 			input->add(*src);
 			bm::bvector<>::enumerator en = input->getStorage().first();
@@ -315,12 +318,49 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 					    ogatom.tuple[0] == ea.inputs[i]){
 						input->clearFact(*en);
 					}
+					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+					    !ea.getExtSourceProperties().isAntimonotonic(i) &&
+					    !ea.getExtSourceProperties().isMonotonic(i) &&
+					    ogatom.tuple[0] == ea.inputs[i]){
+						nonmonotonicinput[*en] = false;
+					}
 				}
 				en++;
 			}
 
-			DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
-			evaluateExternalAtom(ctx, ea, input, cb);
+			DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
+			bool allOnes;
+			do
+			{
+				// set nonmonotonic input
+				allOnes = true;
+				typedef std::pair<IDAddress, bool> Pair;
+				BOOST_FOREACH (Pair p, nonmonotonicinput){
+					if (p.second) input->setFact(p.first);
+					else{
+						input->clearFact(p.first);
+						allOnes = false;
+					}
+				}
+
+				// evalute external atom
+				DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
+				evaluateExternalAtom(ctx, ea, input, cb);
+
+				// enumerate next assignment to nonmonotonic input atoms
+				if (!allOnes){
+					std::vector<IDAddress> clear;
+					BOOST_FOREACH (Pair p, nonmonotonicinput){
+						if (p.second) clear.push_back(p.first);
+						else{
+							nonmonotonicinput[p.first] = true;
+							break;
+						}
+					}
+					BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
+				}
+			}while(!allOnes);
+			DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
 		}
 
 		// solve program

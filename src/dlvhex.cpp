@@ -174,9 +174,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
-      << "     --autostrongsafety" << std::endl
-      << "                      Tries to automatically establish strong safety where the property is violated" << std::endl
-      << "                      (only useful with --weaksafety)" << std::endl
+      << "     --domainexpansionsafety" << std::endl
+      << "                      Uses more liberal safety conditions than strong safety" << std::endl
       << "     --multithreading Parallelizes model candidate computation and external atom verification (experimental)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
@@ -378,7 +377,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
-  pctx.config.setOption("AutoStrongSafety",0);
+  pctx.config.setOption("DomainExpansionSafety",0);
   pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
@@ -643,7 +642,7 @@ void processOptionsPrePlugin(
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
-		{ "autostrongsafety", no_argument, 0, 33 },
+		{ "domainexpansionsafety", no_argument, 0, 33 },
 		{ "multithreading", no_argument, 0, 34 },
 		{ NULL, 0, NULL, 0 }
 	};
@@ -1181,7 +1180,7 @@ void processOptionsPrePlugin(
 			}
 			break;
 
-		case 33: pctx.config.setOption("AutoStrongSafety", 1); break;
+		case 33: pctx.config.setOption("DomainExpansionSafety", 1); break;
 
 		case 34: pctx.config.setOption("MultiThreading", 1); break;
 
