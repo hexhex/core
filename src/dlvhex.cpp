@@ -526,6 +526,9 @@ int main(int argc, char *argv[])
 		// create dependency graph (we need the previous step for this)
 		pctx.createDependencyGraph();
 
+		// create attribute graph
+		pctx.createAttributeGraph();
+
 		// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
 		pctx.optimizeEDBDependencyGraph();
 		// everything in the following will be done using the dependency graph and EDB

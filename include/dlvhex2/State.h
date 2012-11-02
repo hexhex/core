@@ -66,6 +66,7 @@ public:
 	virtual void rewriteEDBIDB(ProgramCtx*);
   virtual void safetyCheck(ProgramCtx*);
   virtual void createDependencyGraph(ProgramCtx*);
+  virtual void createAttributeGraph(ProgramCtx*);
 	virtual void optimizeEDBDependencyGraph(ProgramCtx*);
 	virtual void createComponentGraph(ProgramCtx*);
   virtual void strongSafetyCheck(ProgramCtx*);
@@ -132,6 +133,13 @@ class DLVHEX_EXPORT CreateDependencyGraphState : public State
 public:
   CreateDependencyGraphState();
   virtual void createDependencyGraph(ProgramCtx*);
+};
+
+class DLVHEX_EXPORT CreateAttributeGraphState : public State
+{
+public:
+  CreateAttributeGraphState();
+  virtual void createAttributeGraph(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT OptimizeEDBDependencyGraphState : public State

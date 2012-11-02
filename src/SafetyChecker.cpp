@@ -557,18 +557,17 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
   assert(!!reg);
 
 
-  AttributeGraph ag(reg, ctx.idb);
   if( ctx.config.getOption("DumpAttrGraph") )
   {
     std::string fnamev = ctx.config.getStringOption("DebugPrefix")+"_AttrGraphVerbose.dot";
     LOG(INFO,"dumping verbose attribute graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
-    ag.writeGraphViz(filev, true);
+    ctx.attrgraph->writeGraphViz(filev, true);
   }
 
   if (ctx.config.getOption("DomainExpansionSafety"))
   {
-    if (!ag.isDomainExpansionSafe()){
+    if (!ctx.attrgraph->isDomainExpansionSafe()){
       throw SyntaxError("Program is not domain-expansion safe");
     }
     return;

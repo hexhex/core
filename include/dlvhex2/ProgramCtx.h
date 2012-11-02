@@ -145,6 +145,7 @@ public:
 
   DependencyGraphPtr depgraph;
   ComponentGraphPtr compgraph;
+  AttributeGraphPtr attrgraph;
   FinalEvalGraphPtr evalgraph;
   FinalEvalGraph::EvalUnit ufinal;
   std::list<ModelCallbackPtr> modelCallbacks;
@@ -209,6 +210,7 @@ public:
   void rewriteEDBIDB();              // optional
   void safetyCheck();                // optional (if you know that your program is safe!)
   void createDependencyGraph();
+  void createAttributeGraph();
 	void optimizeEDBDependencyGraph(); // optional
 	void createComponentGraph();
   void strongSafetyCheck();          // optional (if you know that your program is safe!)

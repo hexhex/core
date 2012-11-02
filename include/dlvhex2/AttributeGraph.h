@@ -54,6 +54,7 @@ public:
 		};
 		RegistryPtr reg;
 		Type type;
+		ID eatomID;
 		ID predicate;
 		std::vector<ID> inputList;
 		ID ruleID;
@@ -119,8 +120,10 @@ private:
 	std::set<Node> cyclicAttributes;
 	boost::unordered_set<VariableLocation> boundedVariables;						// currently bounded variables
 	boost::unordered_set<Attribute> domainExpansionSafeAttributes;						// current domain-expansion safe attributes
+	boost::unordered_set<ID> necessaryExternalAtoms;							// external atoms which are necessary to establish domain-expansion safety
+	boost::unordered_set<std::pair<ID, VariableLocation> > boundedByExternals;				// variables bounded by externals, but not (yet) by ordinary atoms
 
-	Attribute getAttribute(ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);
+	Attribute getAttribute(ID eatomID, ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);
 	Attribute getAttribute(ID predicate, int argumentIndex);
 	Node getNode(Attribute at);
 
@@ -137,6 +140,7 @@ public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);
 
 	bool isDomainExpansionSafe() const;
+	bool isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const;
 
 	// output graph as graphviz source
 	virtual void writeGraphViz(std::ostream& o, bool verbose) const;
@@ -145,6 +149,8 @@ public:
 std::size_t hash_value(const AttributeGraph::Attribute& at);
 std::size_t hash_value(const AttributeGraph::VariableLocation& vl);
 
+typedef boost::shared_ptr<AttributeGraph> AttributeGraphPtr;
+typedef boost::shared_ptr<const AttributeGraph> AttributeGraphConstPtr;
 
 DLVHEX_NAMESPACE_END
 

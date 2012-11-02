@@ -101,12 +101,13 @@ std::ostream& AttributeGraph::Attribute::print(std::ostream& o) const{
 	return o;
 }
 
-AttributeGraph::Attribute AttributeGraph::getAttribute(ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex){
+AttributeGraph::Attribute AttributeGraph::getAttribute(ID eatomID, ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex){
 
 	Attribute at;
 	at.reg = reg;
 	at.type = Attribute::External;
 	at.ruleID = ruleID;
+	at.eatomID = eatomID;
 	at.predicate = predicate;
 	at.inputList = inputList;
 	at.input = inputAttribute;
@@ -120,6 +121,7 @@ AttributeGraph::Attribute AttributeGraph::getAttribute(ID predicate, int argumen
 	at.reg = reg;
 	at.type = Attribute::Ordinary;
 	at.ruleID = ID_FAIL;
+	at.eatomID = ID_FAIL;
 	at.predicate = predicate;
 	at.input = false;
 	at.argIndex = argumentIndex;
@@ -179,26 +181,6 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 	DBGLOG(DBG, "Attribute " << at << " is domain-expansion safe");
 	domainExpansionSafeAttributes.insert(at);
 
-	// safe attributes may lead to safe variables
-	BOOST_FOREACH (AtomLocation al, attributeOccursIn[at]){
-		if (al.second.isOrdinaryAtom()){
-			const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(al.second);
-			if (oatom.tuple[at.argIndex].isVariableTerm()){
-				addBoundedVariable(VariableLocation(al.first, oatom.tuple[at.argIndex]));
-			}
-		}
-		if (al.second.isExternalAtom()){
-			const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
-			for (int o = 0; o < eatom.tuple.size(); ++o){
-				if (getAttribute(eatom.predicate, eatom.inputs, al.first, false, o + 1) == at){
-					if (eatom.tuple[o].isVariableTerm()){
-						addBoundedVariable(VariableLocation(al.first, eatom.tuple[o]));
-					}
-				}
-			}
-		}
-	}
-
 	// notify all attributes which wait for this attribute to become domain-expansion safe
 	while (attributesSafeByAttribute[at].size() > 0){
 		Attribute sat = *attributesSafeByAttribute[at].begin();
@@ -211,6 +193,43 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 			addDomainExpansionSafeAttribute(sat);
 		}
 	}
+
+	// safe attributes may lead to safe variables
+	// process safe variables due to ordinary atoms first (we want to use external atoms as rarely as possible in order to optimize them away)
+//	for (int ordinary = 1; ordinary >= 0; ordinary--){
+		BOOST_FOREACH (AtomLocation al, attributeOccursIn[at]){
+			if (al.second.isOrdinaryAtom()){
+				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(al.second);
+				if (oatom.tuple[at.argIndex].isVariableTerm()){
+					addBoundedVariable(VariableLocation(al.first, oatom.tuple[at.argIndex]));
+				}
+			}
+			if (al.second.isExternalAtom()){
+				const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
+				for (int o = 0; o < eatom.tuple.size(); ++o){
+					if (getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, o + 1) == at){
+						if (eatom.tuple[o].isVariableTerm()){
+							VariableLocation vl(al.first, eatom.tuple[o]);
+/*
+							if (boundedVariables.count(vl) == 0){
+								std::stringstream ss;	
+								RawPrinter printer(ss, reg);
+								printer.print(vl.second);
+								DBGLOG(DBG, "External atom " << al.second << " is necessary to establish boundedness of " << "r" << vl.first.address << "/" << ss.str());
+								necessaryExternalAtoms.insert(al.second);
+							}
+*/
+							// here we COULD bound vl, but we don't do it yet, because
+							// we want to check first if we can also make it safe without exploiting the external atom
+							// (this would have the advantage that we can optimize the external atom away)
+							boundedByExternals.insert(std::pair<ID, VariableLocation>(al.second, vl));
+//							addBoundedVariable(vl);
+						}
+					}
+				}
+			}
+		}
+//	}
 }
 
 void AttributeGraph::createDependencies(){
@@ -247,7 +266,7 @@ void AttributeGraph::createDependencies(){
 						const ExternalAtom& eAtom = reg->eatoms.getByID(bID);
 
 						for (int bArg = 0; bArg < eAtom.tuple.size(); ++bArg){
-							Node bodyNode = getNode(getAttribute(eAtom.predicate, eAtom.inputs, ruleID, false, (bArg + 1)));
+							Node bodyNode = getNode(getAttribute(bID, eAtom.predicate, eAtom.inputs, ruleID, false, (bArg + 1)));
 
 							if (hAtom.tuple[hArg].isVariableTerm() && eAtom.tuple[bArg].isVariableTerm() && hAtom.tuple[hArg] == eAtom.tuple[bArg]){
 								boost::add_edge(bodyNode, headNode, ag);
@@ -273,7 +292,7 @@ void AttributeGraph::createDependencies(){
 							const ExternalAtom& eAtom = reg->eatoms.getByID(bID2);
 
 							for (int bArg2 = 0; bArg2 < eAtom.inputs.size(); ++bArg2){
-								Node bodyNode2 = getNode(getAttribute(eAtom.predicate, eAtom.inputs, ruleID, true, (bArg2 + 1)));
+								Node bodyNode2 = getNode(getAttribute(bID2, eAtom.predicate, eAtom.inputs, ruleID, true, (bArg2 + 1)));
 
 								if (bAtom.tuple[bArg1].isVariableTerm() && eAtom.inputs[bArg2].isVariableTerm() && bAtom.tuple[bArg1] == eAtom.inputs[bArg2]){
 									boost::add_edge(bodyNode1, bodyNode2, ag);
@@ -287,14 +306,14 @@ void AttributeGraph::createDependencies(){
 				const ExternalAtom& eAtom1 = reg->eatoms.getByID(bID1);
 
 				for (int bArg1 = 0; bArg1 < eAtom1.tuple.size(); ++bArg1){
-					Node bodyNode1 = getNode(getAttribute(eAtom1.predicate, eAtom1.inputs, ruleID, false, (bArg1 + 1)));
+					Node bodyNode1 = getNode(getAttribute(bID1, eAtom1.predicate, eAtom1.inputs, ruleID, false, (bArg1 + 1)));
 
 					BOOST_FOREACH (ID bID2, rule.body){
 						if (bID2.isExternalAtom()){
 							const ExternalAtom& eAtom2 = reg->eatoms.getByID(bID2);
 
 							for (int bArg2 = 0; bArg2 < eAtom2.inputs.size(); ++bArg2){
-								Node bodyNode2 = getNode(getAttribute(eAtom2.predicate, eAtom2.inputs, ruleID, true, (bArg2 + 1)));
+								Node bodyNode2 = getNode(getAttribute(bID2, eAtom2.predicate, eAtom2.inputs, ruleID, true, (bArg2 + 1)));
 
 								if (eAtom1.tuple[bArg1].isVariableTerm() && eAtom2.inputs[bArg2].isVariableTerm() && eAtom1.tuple[bArg1] == eAtom2.inputs[bArg2]){
 									boost::add_edge(bodyNode1, bodyNode2, ag);
@@ -312,13 +331,13 @@ void AttributeGraph::createDependencies(){
 				const ExternalAtom& eAtom = reg->eatoms.getByID(bID);
 
 				for (int i = 0; i < eAtom.inputs.size(); ++i){
-					Node inputNode = getNode(getAttribute(eAtom.predicate, eAtom.inputs, ruleID, true, (i + 1)));
+					Node inputNode = getNode(getAttribute(bID, eAtom.predicate, eAtom.inputs, ruleID, true, (i + 1)));
 					for (int o = 0; o < eAtom.tuple.size(); ++o){
-						Node outputNode = getNode(getAttribute(eAtom.predicate, eAtom.inputs, ruleID, false, (o + 1)));
+						Node outputNode = getNode(getAttribute(bID, eAtom.predicate, eAtom.inputs, ruleID, false, (o + 1)));
 						boost::add_edge(inputNode, outputNode, ag);
 					}
 					if (eAtom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE){
-						predicateInputs.push_back(std::pair<Attribute, ID>(getAttribute(eAtom.predicate, eAtom.inputs, ruleID, true, (i + 1)), eAtom.inputs[i]));
+						predicateInputs.push_back(std::pair<Attribute, ID>(getAttribute(bID, eAtom.predicate, eAtom.inputs, ruleID, true, (i + 1)), eAtom.inputs[i]));
 					}
 				}
 			}
@@ -370,7 +389,7 @@ void AttributeGraph::createIndices(){
 			if (bID.isExternalAtom()){
 				const ExternalAtom& eatom = reg->eatoms.getByID(bID);
 				for (int i = 0; i < eatom.inputs.size(); ++i){
-					Attribute iattr = getAttribute(eatom.predicate, eatom.inputs, ruleID, true, i + 1);
+					Attribute iattr = getAttribute(bID, eatom.predicate, eatom.inputs, ruleID, true, i + 1);
 
 					// for predicate input parameters, we have to wait for all attributes of the according predicate to become safe
 					if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE){
@@ -388,7 +407,7 @@ void AttributeGraph::createIndices(){
 
 					// for output attributes, we have to wait for all input attributes to become safe
 					for (int o = 0; o < eatom.tuple.size(); ++o){
-						Attribute oattr = getAttribute(eatom.predicate, eatom.inputs, ruleID, false, o + 1);
+						Attribute oattr = getAttribute(bID, eatom.predicate, eatom.inputs, ruleID, false, o + 1);
 						attributeOccursIn[oattr].insert(AtomLocation(ruleID, bID));
 						safetyPreconditions[oattr].second.insert(iattr);
 						attributesSafeByAttribute[iattr].insert(oattr);
@@ -451,6 +470,18 @@ void AttributeGraph::computeDomainExpansionSafety(){
 		}
 	}
 
+	// exploit external atoms to establish further boundings of variables
+	while (boundedByExternals.size() > 0){
+		VariableLocation vl = boundedByExternals.begin()->second;
+		ID eatom = boundedByExternals.begin()->first;
+		boundedByExternals.erase(boundedByExternals.begin());
+		if (boundedVariables.count(vl) == 0){
+			DBGLOG(DBG, "Exploiting " << eatom);
+			necessaryExternalAtoms.insert(eatom);
+			addBoundedVariable(vl);
+		}
+	}
+
 	DBGLOG(DBG, "Domain Expansion Safety: " << isDomainExpansionSafe() << " (" << domainExpansionSafeAttributes.size() << " out of " << num_vertices(ag) << " attributes are safe)");
 }
 
@@ -462,6 +493,11 @@ AttributeGraph::AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb) : re
 
 bool AttributeGraph::isDomainExpansionSafe() const{
 	return domainExpansionSafeAttributes.size() == num_vertices(ag);
+}
+
+bool AttributeGraph::isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const{
+	assert(isDomainExpansionSafe());
+	return necessaryExternalAtoms.count(eatomID) > 0;
 }
 
 namespace
@@ -491,13 +527,21 @@ void AttributeGraph::writeGraphViz(std::ostream& o, bool verbose) const{
 		}
 		o << "\"";
 		o << ",shape=box";
+		std::vector<std::string> style;
 		if (cyclicAttributes.count(*it) > 0){
 			if (std::find(domainExpansionSafeAttributes.begin(), domainExpansionSafeAttributes.end(), ag[*it]) == domainExpansionSafeAttributes.end()){
-				o << ",style=filled,fillcolor=red";
+				o << ",fillcolor=red";
 			}else{
-				o << ",style=filled,fillcolor=yellow";
+				o << ",fillcolor=yellow";
 			}
+			style.push_back("filled");
 		}
+		if (ag[*it].type == Attribute::External && necessaryExternalAtoms.count(ag[*it].eatomID) == 0){
+			style.push_back("dashed");
+		}
+		o << ",style=\"";
+		for (int i = 0; i < style.size(); ++i) o << (i > 0 ? "," : "") << style[i];
+		o << "\"";
 		o << "];" << std::endl;
 	}
 
@@ -521,6 +565,7 @@ std::size_t hash_value(const AttributeGraph::Attribute& at)
 {
 	std::size_t seed = 0;
 	boost::hash_combine(seed, at.type);
+	boost::hash_combine(seed, at.eatomID);
 	boost::hash_combine(seed, at.predicate);
 	BOOST_FOREACH (ID i, at.inputList) boost::hash_combine(seed, i);
 	boost::hash_combine(seed, at.ruleID);

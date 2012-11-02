@@ -36,6 +36,7 @@
 #include "dlvhex2/FLPModelGeneratorBase.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/AttributeGraph.h"
 
 #include "dlvhex2/CDNLSolver.h"
 #include "dlvhex2/ClaspSolver.h"
@@ -241,6 +242,11 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 					}
 					positiverule.body.push_back(b);
 				}else if (b.isExternalAtom()){
+					if (!ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
+						DBGLOG(DBG, "Remove external atom " << b << " because it is not necessary to establish domain-expansion safety");
+						continue;
+					}
+/*
 					bool stronglysafe = true;
 					const ExternalAtom& ea = reg->eatoms.getByID(b);
 					BOOST_FOREACH (ID o, ea.tuple){
@@ -255,6 +261,7 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 						DBGLOG(DBG, "Remove external atom " << b << " because it is strongly safe");
 						continue;
 					}
+*/
 					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
 					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
 						std::stringstream ss;
@@ -265,8 +272,8 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 						ss  << "   ";
 						printer.print(ruleid);
 						ss << std::endl;
-						ss << "   is unstratified in the evaluation unit and not strongly safe, which can decrease performance significantly." << std::endl;
-						ss << "   Consider using a different heuristics or make it strongly safe.";
+						ss << "   is unstratified in the evaluation unit and necessary for safety, which can decrease performance significantly." << std::endl;
+						ss << "   Consider using a different heuristics or ensure safty by other means.";
 						LOG(WARNING,  ss.str());
 					}
 					positiverule.body.push_back(b);

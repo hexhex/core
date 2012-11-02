@@ -281,6 +281,9 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 template<typename OrdinaryASPSolverT>
 InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb){
 
+	// if there are no inner external atoms, then there is nothing to do
+	if (factory.deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(factory.reg));
+
 	typedef boost::shared_ptr<OrdinaryASPSolverT> OrdinaryASPSolverTPtr;
 
 	// compute the fixpoint of the positive program wrt. edb
