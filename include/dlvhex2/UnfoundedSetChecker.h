@@ -154,6 +154,12 @@ public:
 	Nogood getUFSNogood(
 			const std::vector<IDAddress>& ufs,
 			InterpretationConstPtr interpretation);
+	Nogood getUFSNogoodReductBased(
+			const std::vector<IDAddress>& ufs,
+			InterpretationConstPtr interpretation);
+	Nogood getUFSNogoodUFSBased(
+			const std::vector<IDAddress>& ufs,
+			InterpretationConstPtr interpretation);
 
 	typedef boost::shared_ptr<UnfoundedSetChecker> Ptr;
 	typedef boost::shared_ptr<const UnfoundedSetChecker> ConstPtr;

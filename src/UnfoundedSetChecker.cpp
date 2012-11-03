@@ -203,6 +203,78 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 		const std::vector<IDAddress>& ufs,
 		InterpretationConstPtr interpretation){
 
+	switch (ctx.config.getOption("UFSLearnStrategy")){
+		case 1:	return getUFSNogoodReductBased(ufs, interpretation);
+		case 2:	return getUFSNogoodUFSBased(ufs, interpretation);
+		default: throw GeneralError("Unknown UFSLern strategy");
+	}
+}
+
+Nogood UnfoundedSetChecker::getUFSNogoodReductBased(
+		const std::vector<IDAddress>& ufs,
+		InterpretationConstPtr interpretation){
+
+	// reduct-based stratey
+	Nogood ng;
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	bool first = true;
+	ss << "{ ";
+	BOOST_FOREACH (IDAddress adr, ufs){
+		ss << (!first ? ", " : "") << adr;
+		first = false;
+	}
+	ss << " }";
+	DBGLOG(DBG, "Constructing UFS nogood for UFS " << ss.str() << " wrt. " << *interpretation);
+#endif
+
+	// for each rule with unsatisfied body
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID b, rule.body){
+			if (interpretation->getFact(b.address) != !b.isNaf()){
+				// take an unsatisfied body literal
+				ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
+				break;
+			}
+		}
+	}
+
+	// add the smaller FLP model (interpretation minus unfounded set), restricted to ordinary atoms
+	InterpretationPtr smallerFLPModel = InterpretationPtr(new Interpretation(*interpretation));
+	BOOST_FOREACH (IDAddress adr, ufs){
+		smallerFLPModel->clearFact(adr);
+	}
+	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
+	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
+	while (en < en_end){
+		if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
+			ng.insert(NogoodContainer::createLiteral(*en));
+		}
+		en++;
+	}
+
+	// add one atom which is in the original interpretation but not in the flp model
+	en = interpretation->getStorage().first();
+	en_end = interpretation->getStorage().end();
+	while (en < en_end){
+		if (!smallerFLPModel->getFact(*en)){
+			ng.insert(NogoodContainer::createLiteral(*en));
+			break;
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Constructed UFS nogood " << ng);
+	return ng;
+}
+
+Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
+		const std::vector<IDAddress>& ufs,
+		InterpretationConstPtr interpretation){
+
+	// UFS-based strategy
 	Nogood ng;
 
 	// take an atom from the unfounded set which is true in the interpretation

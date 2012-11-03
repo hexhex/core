@@ -157,7 +157,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        aufs: Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
-      << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
+      << "     --ufslearn=[none,reduct,ufs]" << std::endl
+      << "                      Enable learning from UFS checks (only useful with --flpcheck=[a]ufs[m])" << std::endl
+      << "                        none (default): No learning" << std::endl
+      << "                        reduct: Learning is based on the FLP-reduct" << std::endl
+      << "                        ufs: Learning is based on the unfounded set" << std::endl
       << "     --eaevalheuristics=[always,inputcomplete,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
@@ -348,6 +352,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
   pctx.config.setOption("UFSLearning", 0);
+  pctx.config.setOption("UFSLearnStrategy", 2);
   pctx.config.setOption("ExternalLearningIOBehavior", 0);
   pctx.config.setOption("ExternalLearningMonotonicity", 0);
   pctx.config.setOption("ExternalLearningFunctionality", 0);
@@ -639,7 +644,7 @@ void processOptionsPrePlugin(
 		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
 		{ "flpcheck", required_argument, 0, 20 },
-		{ "ufslearn", no_argument, 0, 23 },
+		{ "ufslearn", optional_argument, 0, 23 },
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "eaevalheuristics", required_argument, 0, 26 },
 		{ "ufscheckheuristics", required_argument, 0, 27 },
@@ -1107,7 +1112,27 @@ void processOptionsPrePlugin(
 			break;
 
 		case 23:
-			pctx.config.setOption("UFSLearning", 1);
+			if (!optarg){
+				// use UFS-based learning
+				pctx.config.setOption("UFSLearning", 1);
+				pctx.config.setOption("UFSLearnStrategy", 2);
+			}else{
+				std::string learn(optarg);
+				if (learn == "none")
+				{
+					pctx.config.setOption("UFSLearning", 0);
+				}
+				else if (learn == "reduct"){
+					pctx.config.setOption("UFSLearning", 1);
+					pctx.config.setOption("UFSLearnStrategy", 1);
+				}
+				else if (learn == "ufs"){
+					pctx.config.setOption("UFSLearning", 1);
+					pctx.config.setOption("UFSLearnStrategy", 2);
+				}else{
+					throw GeneralError("Unknown UFS Learning option: \"" + learn + "\"");
+				}
+			}
 			break;
 
 		case 25:
