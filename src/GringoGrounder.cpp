@@ -166,17 +166,19 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		out << "}";
 	}else{
 		out << "[";
-		// make the value variable safe
-		if (oatom.tuple[oatom.tuple.size() - 1].isVariableTerm() && false){
-			print(intPred);
-			out << "(";
-			print(oatom.tuple[oatom.tuple.size() - 1]);
-			out << "),";
-		}
-
 		print(aatom.literals[0]);
 		out << "=";
 		print(oatom.tuple[oatom.tuple.size() - 1]);
+
+		// make the value variable safe
+		if (oatom.tuple[oatom.tuple.size() - 1].isVariableTerm()){
+			out << ":";
+			print(intPred);
+			out << "(";
+			print(oatom.tuple[oatom.tuple.size() - 1]);
+			out << ")";
+		}
+
 		out << "]";
 	}
 	print(upperbound);
