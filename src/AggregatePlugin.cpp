@@ -222,6 +222,24 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 					bodyVarsOfSymbolicSet.push_back(c);
 				}
 			}
+			// if a body literal is a builtin and shares a variable with the symbolic set, then we have to add also the other variables in this builtin
+			bool changed = true;
+			while (changed){
+				changed = false;
+				BOOST_FOREACH (ID bb, rule.body){
+					if (!bb.isBuiltinAtom()) continue;
+
+					std::set<ID> bbVars;
+					reg->getVariablesInID(bb, bbVars);
+					BOOST_FOREACH (ID v, bbVars){
+						if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
+							conjSymSetVars.insert(v);
+							changed = true;
+							break;
+						}
+					}
+				}
+			}
 
 
 			ID keyPredID, inputPredID;

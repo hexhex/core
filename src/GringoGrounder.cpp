@@ -166,20 +166,20 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		out << "}";
 	}else{
 		out << "[";
+		// make the value variable safe
+		if (oatom.tuple[oatom.tuple.size() - 1].isVariableTerm() && false){
+			print(intPred);
+			out << "(";
+			print(oatom.tuple[oatom.tuple.size() - 1]);
+			out << "),";
+		}
+
 		print(aatom.literals[0]);
 		out << "=";
 		print(oatom.tuple[oatom.tuple.size() - 1]);
 		out << "]";
 	}
 	print(upperbound);
-	// make the value variable safe
-	if (oatom.tuple[oatom.tuple.size() - 1].isVariableTerm() && false){
-		out << ", ";
-		print(intPred);
-		out << "(";
-		print(oatom.tuple[oatom.tuple.size() - 1]);
-		out << ")";
-	}
 }
 
 void GringoGrounder::Printer::printInt(ID id){
