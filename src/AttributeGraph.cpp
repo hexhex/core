@@ -152,7 +152,8 @@ bool AttributeGraph::isNewlySafe(Attribute at){
 
 void AttributeGraph::addBoundedVariable(VariableLocation vl){
 
-	// go through all attributes bounded by this variable
+	if (boundedVariables.count(vl) > 0) return;
+
 #ifndef NDEBUG
 	std::stringstream ss;
 	RawPrinter printer(ss, reg);
@@ -173,11 +174,39 @@ void AttributeGraph::addBoundedVariable(VariableLocation vl){
 		}
 	}
 	attributesSafeByVariable[vl].clear();
+
+	// go through all external atoms where:
+	// 1. the variable occurs in an output position
+	// 2. the external atom has a finite fiber
+	// then the input variables are bounded as well
+	BOOST_FOREACH (AtomLocation al, variableOccursIn[vl]){
+		if (al.second.isExternalAtom()){
+			const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
+			if (eatom.getExtSourceProperties().hasFiniteFiber()){
+				bool outputbound = true;
+				for (int i = 0; i < eatom.tuple.size(); ++i){
+					if (eatom.tuple[i].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, eatom.tuple[i])) == 0){
+						outputbound = false;
+						break;
+					}
+				}
+				if (outputbound){
+					// bound the input as well
+					for (int i = 0; i < eatom.inputs.size(); ++i){
+						if (eatom.inputs[i].isVariableTerm()){
+							boundedByExternals.insert(std::pair<ID, VariableLocation>(al.second, VariableLocation(al.first, eatom.inputs[i])));
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 
 	// go through all atoms where the attribute occurs
+	if (domainExpansionSafeAttributes.count(at) > 0) return;
 	DBGLOG(DBG, "Attribute " << at << " is domain-expansion safe");
 	domainExpansionSafeAttributes.insert(at);
 
@@ -189,47 +218,36 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 
 		assert(std::find(safetyPreconditions[sat].second.begin(), safetyPreconditions[sat].second.end(), at) != safetyPreconditions[sat].second.end());
 		safetyPreconditions[sat].second.erase(at);
-		if (isNewlySafe(at)){
+		if (isNewlySafe(sat)){
 			addDomainExpansionSafeAttribute(sat);
 		}
 	}
 
 	// safe attributes may lead to safe variables
 	// process safe variables due to ordinary atoms first (we want to use external atoms as rarely as possible in order to optimize them away)
-//	for (int ordinary = 1; ordinary >= 0; ordinary--){
-		BOOST_FOREACH (AtomLocation al, attributeOccursIn[at]){
-			if (al.second.isOrdinaryAtom()){
-				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(al.second);
-				if (oatom.tuple[at.argIndex].isVariableTerm()){
-					addBoundedVariable(VariableLocation(al.first, oatom.tuple[at.argIndex]));
-				}
+	BOOST_FOREACH (AtomLocation al, attributeOccursIn[at]){
+		if (al.second.isOrdinaryAtom()){
+			const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(al.second);
+			if (oatom.tuple[at.argIndex].isVariableTerm()){
+				addBoundedVariable(VariableLocation(al.first, oatom.tuple[at.argIndex]));
 			}
-			if (al.second.isExternalAtom()){
-				const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
-				for (int o = 0; o < eatom.tuple.size(); ++o){
-					if (getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, o + 1) == at){
-						if (eatom.tuple[o].isVariableTerm()){
-							VariableLocation vl(al.first, eatom.tuple[o]);
-/*
-							if (boundedVariables.count(vl) == 0){
-								std::stringstream ss;	
-								RawPrinter printer(ss, reg);
-								printer.print(vl.second);
-								DBGLOG(DBG, "External atom " << al.second << " is necessary to establish boundedness of " << "r" << vl.first.address << "/" << ss.str());
-								necessaryExternalAtoms.insert(al.second);
-							}
-*/
-							// here we COULD bound vl, but we don't do it yet, because
-							// we want to check first if we can also make it safe without exploiting the external atom
-							// (this would have the advantage that we can optimize the external atom away)
-							boundedByExternals.insert(std::pair<ID, VariableLocation>(al.second, vl));
-//							addBoundedVariable(vl);
-						}
+		}
+		if (al.second.isExternalAtom()){
+			const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
+			for (int o = 0; o < eatom.tuple.size(); ++o){
+				if (getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, o + 1) == at){
+					if (eatom.tuple[o].isVariableTerm()){
+						VariableLocation vl(al.first, eatom.tuple[o]);
+
+						// here we COULD bound vl, but we don't do it yet, because
+						// we want to check first if we can also make it safe without exploiting the external atom
+						// (this would have the advantage that we can optimize the external atom away)
+						boundedByExternals.insert(std::pair<ID, VariableLocation>(al.second, vl));
 					}
 				}
 			}
 		}
-//	}
+	}
 }
 
 void AttributeGraph::createDependencies(){
@@ -381,6 +399,9 @@ void AttributeGraph::createIndices(){
 				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(bID);
 				for (int i = 1; i < oatom.tuple.size(); ++i){
 					attributeOccursIn[getAttribute(oatom.tuple[0], i)].insert(AtomLocation(ruleID, bID));
+					if (oatom.tuple[i].isVariableTerm()){
+						variableOccursIn[VariableLocation(ruleID, oatom.tuple[i])].insert(AtomLocation(ruleID, bID));
+					}
 				}
 			}
 
@@ -403,6 +424,7 @@ void AttributeGraph::createIndices(){
 					if (eatom.pluginAtom->getInputType(i) != PluginAtom::PREDICATE && eatom.inputs[i].isVariableTerm()){
 						safetyPreconditions[iattr].first.insert(VariableLocation(ruleID, eatom.inputs[i]));
 						attributesSafeByVariable[VariableLocation(ruleID, eatom.inputs[i])].insert(iattr);
+						variableOccursIn[VariableLocation(ruleID, eatom.inputs[i])].insert(AtomLocation(ruleID, bID));
 					}
 
 					// for output attributes, we have to wait for all input attributes to become safe
@@ -413,12 +435,15 @@ void AttributeGraph::createIndices(){
 						attributesSafeByAttribute[iattr].insert(oattr);
 					}
 				}
+				for (int i = 0; i < eatom.tuple.size(); ++i){
+					variableOccursIn[VariableLocation(ruleID, eatom.tuple[i])].insert(AtomLocation(ruleID, bID));
+				}
 			}
 		}
 	}
 }
 
-void AttributeGraph::computeDomainExpansionSafety(){
+void AttributeGraph::computeCyclicAttributes(){
 
 	// find strongly connected components in the graph
 	DBGLOG(DBG, "Computing strongly connected components in attribute dependency graph");
@@ -433,11 +458,28 @@ void AttributeGraph::computeDomainExpansionSafety(){
 	// find cyclic external attributes
 	std::vector<Attribute> cyclicExternal;
 	for (int c = 0; c < depSCC.size(); ++c){
-		BOOST_FOREACH (Attribute at, depSCC[c]){
-			if (at.type == Attribute::External && depSCC[c].size() > 1){
-				DBGLOG(DBG, "Found cyclic external attribute of " << at.predicate);
-				cyclicExternal.push_back(at);
-				break;
+		// check for this SCC:
+		// 1. if it is cyclic
+		// 2. the SCC has potential to become malign
+		if (depSCC[c].size() > 1){
+			bool malign = false;
+			BOOST_FOREACH (Attribute at, depSCC[c]){
+				if (at.type == Attribute::External){
+					if (!reg->eatoms.getByID(at.eatomID).getExtSourceProperties().wellorderingStrlen){
+						malign = true;
+						break;
+					}
+				}
+			}
+
+			if (malign){
+				BOOST_FOREACH (Attribute at, depSCC[c]){
+					if (at.type == Attribute::External){
+						DBGLOG(DBG, "Found malign cyclic external attribute of " << at.predicate);
+						cyclicExternal.push_back(at);
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -455,6 +497,40 @@ void AttributeGraph::computeDomainExpansionSafety(){
 						boost::on_discover_vertex())))); 
 	}
 	DBGLOG(DBG, "" << cyclicAttributes.size() << " attributes depend cyclically on external attributes");
+}
+
+void AttributeGraph::ensureOrdinarySafety(){
+
+	// if a variable occurs in no ordinary atom and no necessary external atom, add an additional necessary external atom
+	BOOST_FOREACH (ID ruleID, idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		std::set<ID> hvars, bvars;
+		BOOST_FOREACH (ID h, rule.head) reg->getVariablesInID(h, hvars);
+		BOOST_FOREACH (ID b, rule.body){
+			if (!b.isNaf()){
+				if (b.isExternalAtom() && necessaryExternalAtoms.count(b) == 0) continue;
+				reg->getOutVariablesInID(b, bvars);
+			}
+		}
+		BOOST_FOREACH (ID hvar, hvars){	// for each head variable
+			if (bvars.count(hvar) == 0){	// if it does not occur in an ordinary or necessary external atom
+				BOOST_FOREACH (ID b, rule.body){	// search for another (not necessary) external atom
+					std::set<ID> cvars;
+					reg->getOutVariablesInID(b, cvars);
+					if (cvars.count(hvar) > 0){
+						assert(b.isExternalAtom());
+						necessaryExternalAtoms.insert(b);	// this atom is then also necessary
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+void AttributeGraph::computeDomainExpansionSafety(){
+
+	computeCyclicAttributes();
 
 	NodeIterator it, it_end;
 	for(boost::tie(it, it_end) = boost::vertices(ag); it != it_end; ++it){
@@ -469,6 +545,47 @@ void AttributeGraph::computeDomainExpansionSafety(){
 			addDomainExpansionSafeAttribute(ag[*it]);
 		}
 	}
+	// 3. make output variables of external atoms safe, if they are in a position with finite domain
+	// 4. make input variables of external atoms safe, if they have no output variables
+	BOOST_FOREACH (ID ruleID, idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isExternalAtom()){
+				const ExternalAtom& eatom = reg->eatoms.getByID(b);
+
+				// 3.
+				for (int i = 0; i < eatom.tuple.size(); ++i){
+					if (eatom.getExtSourceProperties().hasFiniteDomain(i)){
+						VariableLocation vl(ruleID, eatom.tuple[i]);
+						if (boundedVariables.count(vl) == 0){
+							DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because output element " << i << " of external atom " << b << " has a finite domain");
+							boundedByExternals.insert(std::pair<ID, VariableLocation>(b, vl));
+						}
+					}
+				}
+
+				// 4.
+				bool outputBounded = true;
+				for (int i = 0; i < eatom.tuple.size(); ++i){
+					if (eatom.tuple[i].isVariableTerm()){
+						outputBounded = false;
+						break;
+					}
+				}
+				if (eatom.getExtSourceProperties().hasFiniteFiber() && outputBounded){
+					for (int i = 0; i < eatom.inputs.size(); ++i){
+						if (eatom.inputs[i].isVariableTerm()){
+							VariableLocation vl(ruleID, eatom.inputs[i]);
+							if (boundedVariables.count(vl) == 0){
+								DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because " << b << " has a finite fiber");
+								boundedByExternals.insert(std::pair<ID, VariableLocation>(b, vl));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	// exploit external atoms to establish further boundings of variables
 	while (boundedByExternals.size() > 0){
@@ -481,6 +598,11 @@ void AttributeGraph::computeDomainExpansionSafety(){
 			addBoundedVariable(vl);
 		}
 	}
+
+	// our optimization technique eliminates external atoms which are not necessary
+	// to establish domain-expansion safety;
+	// however, this might also destroy ordinary safety, which has to be avoided now
+	ensureOrdinarySafety();
 
 	DBGLOG(DBG, "Domain Expansion Safety: " << isDomainExpansionSafe() << " (" << domainExpansionSafeAttributes.size() << " out of " << num_vertices(ag) << " attributes are safe)");
 }

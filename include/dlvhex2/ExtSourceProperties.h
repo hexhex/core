@@ -43,22 +43,30 @@ DLVHEX_NAMESPACE_BEGIN
 
 #warning TODO what is the difference/intended usage of ExtSourceProperty vs ExtSourceProperties? (the names are not very intuitive)
 
+/**
+ * This struct is only used during parsing to store exactly one property tag of an external atom.
+ * E.g. in
+ *   &foo[n,m](X,Y)<monotonic n, antimonotonic m>
+ * the parser will create two instances of this struct:
+ * - one for "monotonic n" (where type=MONOTONIC and param="ID of term n")
+ * - one for "antimonotonic m" (where type=ANTIMONOTONIC and param="ID of term m")
+ * After all tags an external atom have been parsed, the vector<ExtSourceProperty> is transformed into an instance of ExtSourceProperties,
+ * which stores the properties in a format which allows for efficient property querying.
+ */
 struct ExtSourceProperty:
   private ostream_printable<ExtSourceProperty> 
 {
 	enum Type{
 		MONOTONIC,
-		NONMONOTONIC,
 		ANTIMONOTONIC,
-		NONANTIMONOTONIC,
 		FUNCTIONAL,
-		NONFUNCTIONAL,
 		ATOMLEVELLINEAR,
 		TUPLELEVELLINEAR,
 		NONATOMLEVELLINEAR,
-		NONTUPLELEVELLINEAR,
 		USES_ENVIRONMENT,
-		DOESN_T_USE_ENVIRONMENT
+		FINITEDOMAIN,
+		FINITEFIBER,
+		WELLORDERINGSTRLEN
 	};
 
 	Type type;
@@ -72,7 +80,7 @@ struct ExtSourceProperty:
     { return o << "ExtSourceProperty(type=" << type << ",param=" << param << ")"; }
 };
 
-// stores properties of an external source on one of two levels:
+// Stores properties of an external source on one of two levels:
 // 1. on the level of plugin atoms
 // 2. on the level of individual external atoms
 struct ExternalAtom;	// fwd declaration
@@ -83,9 +91,11 @@ struct ExtSourceProperties
 	ExternalAtom* ea;	// pointer to the external atom to which this property structure belongs to
 	PluginAtom* pa;		// pointer to the plugin atom to which this property structure belongs to;
 
-	std::vector<int> monotonicInputPredicates;
-	std::vector<int> antimonotonicInputPredicates;
-	std::vector<int> predicateParameterNameIndependence;
+	// all indices are 0-based
+	std::vector<int> monotonicInputPredicates;		// indices of monotonic input parameters
+	std::vector<int> antimonotonicInputPredicates;		// indices of antimonotonic input parameters
+	std::vector<int> predicateParameterNameIndependence;	// indices of input parameters whose name is irrelevant (only the extension matters)
+	std::vector<int> finiteOutputDomain;			// indices of output elements with a finite domain
 
 	// if an external source is functional, then there must not exist multiple output tuples simultanously;
 	// "functionalStart" defines the number of non-functional output terms before the functional output starts
@@ -94,15 +104,19 @@ struct ExtSourceProperties
 	bool functional;
 	int functionalStart;
 
-	bool atomlevellinear;
-	bool tuplelevellinear;
-	bool usesEnvironment;
+	bool atomlevellinear;		// predicate input can be split into single atoms
+	bool tuplelevellinear;		// predicate input can be split such that only atoms with the same arguments must be grouped
+	bool usesEnvironment;		// external atom uses the environment (cf. acthex)
+	bool finiteFiber;		// a fixed output value can be produced only by finitly many different inputs
+	bool wellorderingStrlen;	// the output uses constants which are at most as long as the longest input
 
 	ExtSourceProperties() : ea(0), pa(0), functionalStart(0){
 		functional = false;
 		atomlevellinear = false;
 		tuplelevellinear = false;
 		usesEnvironment = false;
+		finiteFiber = false;
+		wellorderingStrlen = false;
 	}
 
 	/**
@@ -163,6 +177,23 @@ struct ExtSourceProperties
 	bool doesItUseEnvironment() const
 	{ return usesEnvironment; }
 
+	/**
+	* @return bool True if the specified output element has a finite domain
+	*/
+	bool hasFiniteDomain(int outputElement) const
+	{ return std::find(finiteOutputDomain.begin(), finiteOutputDomain.end(), outputElement) != finiteOutputDomain.end(); }
+
+	/**
+	* @return finite fiber
+	*/
+	bool hasFiniteFiber() const
+	{ return finiteFiber; }
+
+	/**
+	* @return strlen well ordering
+	*/
+	bool hasWellorderingStrlen() const
+	{ return wellorderingStrlen; }
 };
 
 DLVHEX_NAMESPACE_END

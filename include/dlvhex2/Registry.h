@@ -189,6 +189,13 @@ struct Registry:
   // id is a literal or atom
   void getVariablesInID(ID id, std::set<ID>& out) const;
 
+  // get all IDs of variables in atom given by ID,
+  // but skip input variables in external atoms.
+  // add these ids to out
+  // (returns even local variables for aggregates)
+  // id is a literal or atom
+  void getOutVariablesInID(ID id, std::set<ID>& out) const;
+
   // get all IDs of variables in atoms in given tuple
   // add these ids to out
   // (returns even local variables for aggregates)

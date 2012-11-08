@@ -521,10 +521,6 @@ struct sem<HexGrammarSemantics::externalAtom>
           DBGLOG(DBG, "External Atom is functional");
           atom.prop.functional = true;
           break;
-        case ExtSourceProperty::NONFUNCTIONAL:
-          DBGLOG(DBG, "External Atom is nonfunctional");
-          atom.prop.functional = false;
-          break;
         case ExtSourceProperty::MONOTONIC:
           if (prop.param == ID_FAIL){
             DBGLOG(DBG, "External Atom is monotonic in all input parameters");
@@ -537,25 +533,6 @@ struct sem<HexGrammarSemantics::externalAtom>
               if (atom.inputs[i] == prop.param){
                 DBGLOG(DBG, "External Atom is monotonic in parameter " << i);
                 atom.prop.monotonicInputPredicates.push_back(i);
-                found = true;
-                break;
-              }
-            }
-            if (!found) throw SyntaxError("Property refers to invalid input parameter");
-          }
-          break;
-        case ExtSourceProperty::NONMONOTONIC:
-          if (prop.param == ID_FAIL){
-            DBGLOG(DBG, "External Atom is nonmonotonic in all input parameters");
-            atom.prop.monotonicInputPredicates.clear();
-          }else{
-            bool found = false;
-            for (int i = 0; i < atom.inputs.size(); ++i){
-              if (atom.inputs[i] == prop.param){
-                DBGLOG(DBG, "External Atom is nonmonotonic in parameter " << i);
-                if (std::find(atom.prop.monotonicInputPredicates.begin(), atom.prop.monotonicInputPredicates.end(), i) != atom.prop.monotonicInputPredicates.end()){
-                  atom.prop.monotonicInputPredicates.erase(std::find(atom.prop.monotonicInputPredicates.begin(), atom.prop.monotonicInputPredicates.end(), i));
-                }
                 found = true;
                 break;
               }
@@ -582,40 +559,32 @@ struct sem<HexGrammarSemantics::externalAtom>
             if (!found) throw SyntaxError("Property refers to invalid input parameter");
           }
           break;
-        case ExtSourceProperty::NONANTIMONOTONIC:
-          if (prop.param == ID_FAIL){
-            DBGLOG(DBG, "External Atom is nonmonotonic in all input parameters");
-            atom.prop.antimonotonicInputPredicates.clear();
-          }else{
-            bool found = false;
-            for (int i = 0; i < atom.inputs.size(); ++i){
-              if (atom.inputs[i] == prop.param){
-                DBGLOG(DBG, "External Atom is nonantimonotonic in parameter " << i);
-                if (std::find(atom.prop.antimonotonicInputPredicates.begin(), atom.prop.antimonotonicInputPredicates.end(), i) != atom.prop.antimonotonicInputPredicates.end()){
-                  atom.prop.antimonotonicInputPredicates.erase(std::find(atom.prop.antimonotonicInputPredicates.begin(), atom.prop.antimonotonicInputPredicates.end(), i));
-                }
-                found = true;
-                break;
-              }
-            }
-            if (!found) throw SyntaxError("Property refers to invalid input parameter");
-          }
-          break;
         case ExtSourceProperty::ATOMLEVELLINEAR:
           DBGLOG(DBG, "External Atom is linear on atom level");
           atom.prop.atomlevellinear = true;
-          break;
-        case ExtSourceProperty::NONATOMLEVELLINEAR:
-          DBGLOG(DBG, "External Atom is not linear on atom level");
-          atom.prop.atomlevellinear = false;
           break;
         case ExtSourceProperty::TUPLELEVELLINEAR:
           DBGLOG(DBG, "External Atom is linear on tuple level");
           atom.prop.tuplelevellinear = true;
           break;
-        case ExtSourceProperty::NONTUPLELEVELLINEAR:
-          DBGLOG(DBG, "External Atom is not linear on tuple level");
-          atom.prop.tuplelevellinear = false;
+        case ExtSourceProperty::FINITEDOMAIN:
+          if (prop.param == ID_FAIL){
+            DBGLOG(DBG, "External Atom has a finite domain in all output positions");
+            for (int i = 0; i < atom.tuple.size(); ++i){
+              atom.prop.finiteOutputDomain.push_back(i);
+            }
+          }else{
+            bool found = false;
+            atom.prop.finiteOutputDomain.push_back(prop.param.address);
+          }
+          break;
+        case ExtSourceProperty::FINITEFIBER:
+          DBGLOG(DBG, "External Atom has a finite fiber");
+          atom.prop.finiteFiber = true;
+          break;
+        case ExtSourceProperty::WELLORDERINGSTRLEN:
+          DBGLOG(DBG, "External Atom has a wellordering using strlen");
+          atom.prop.wellorderingStrlen = true;
           break;
       }
     }
@@ -675,20 +644,22 @@ struct sem<HexGrammarSemantics::extSourceProperty>
   {
         if (boost::fusion::at_c<0>(source) == "functional"){
 		target = ExtSourceProperty(ExtSourceProperty::FUNCTIONAL, boost::fusion::at_c<1>(source));
-	}else if (boost::fusion::at_c<0>(source) == "nonfunctional"){
-		target = ExtSourceProperty(ExtSourceProperty::NONFUNCTIONAL, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "monotonic"){
 		target = ExtSourceProperty(ExtSourceProperty::MONOTONIC, boost::fusion::at_c<1>(source));
-        }else if (boost::fusion::at_c<0>(source) == "nonmonotonic"){
-		target = ExtSourceProperty(ExtSourceProperty::NONMONOTONIC, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "antimonotonic"){
 		target = ExtSourceProperty(ExtSourceProperty::ANTIMONOTONIC, boost::fusion::at_c<1>(source));
-        }else if (boost::fusion::at_c<0>(source) == "nonantimonotonic"){
-		target = ExtSourceProperty(ExtSourceProperty::NONANTIMONOTONIC, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "fullylinear" || boost::fusion::at_c<0>(source) == "atomlevellinear"){
 		target = ExtSourceProperty(ExtSourceProperty::ATOMLEVELLINEAR, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "tuplelevellinear"){
 		target = ExtSourceProperty(ExtSourceProperty::TUPLELEVELLINEAR, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "finitedomain"){
+		ID idx = boost::fusion::at_c<1>(source);
+		if (!(idx == ID_FAIL || idx.isIntegerTerm())) throw GeneralError("Property \"finitedomain\" must specify the 0-based index of an output element");
+		target = ExtSourceProperty(ExtSourceProperty::FINITEDOMAIN, idx);
+        }else if (boost::fusion::at_c<0>(source) == "finitefiber"){
+		target = ExtSourceProperty(ExtSourceProperty::FINITEFIBER, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "wellorderingstrlen"){
+		target = ExtSourceProperty(ExtSourceProperty::WELLORDERINGSTRLEN, boost::fusion::at_c<1>(source));
 	}else{
 		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
 	}

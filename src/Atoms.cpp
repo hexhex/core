@@ -131,6 +131,7 @@ ExternalAtom::~ExternalAtom()
 }
 
 const ExtSourceProperties& ExternalAtom::getExtSourceProperties() const{
+	DBGLOG(DBG, "Using external source properties from " << (useProp ? "external atom" : "plugin"));
 	return useProp ? prop : pluginAtom->getExtSourceProperties();
 }
 

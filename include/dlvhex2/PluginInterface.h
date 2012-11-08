@@ -895,6 +895,18 @@ public:
   virtual ~PluginAtom() {}
 
   /**
+   * \brief Get input arity
+   * \return int Input arity, where a tuple parameter is counted once
+   */
+  int getInputArity() const;
+
+  /**
+   * \brief Get output arity
+   * \return int Output arity
+   */
+  int getOutputArity() const;
+
+  /**
    * \brief Checks the input arity of the external atom against the
    * specified arity.
    *

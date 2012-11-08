@@ -146,6 +146,15 @@ PluginAtom::addInputTuple()
     inputType.push_back(TUPLE);
 }
 
+int
+PluginAtom::getInputArity() const{
+	return inputType.size();
+}
+
+int
+PluginAtom::getOutputArity() const{
+	return outputSize;
+}
 
 bool
 PluginAtom::checkInputArity(const unsigned arity) const

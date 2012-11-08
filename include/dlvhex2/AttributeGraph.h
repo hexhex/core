@@ -114,6 +114,7 @@ private:
 	boost::unordered_map<Attribute, boost::unordered_set<Attribute> > attributesSafeByAttribute;		// stores for each attribute the attributes whose safety depends on this attribute
 
 	boost::unordered_map<Attribute, std::set<AtomLocation> > attributeOccursIn;				// stores for each attribute the atoms where it occurs
+	boost::unordered_map<VariableLocation, std::set<AtomLocation> > variableOccursIn;			// stores for each variable the atoms where it occurs
 
 	// output
 	boost::unordered_map<ID, int> predicateArity;								// arity of a given (ordinary) predciate
@@ -135,6 +136,8 @@ private:
 	// initialization
 	void createDependencies();
 	void createIndices();
+	void computeCyclicAttributes();
+	void ensureOrdinarySafety();
 	void computeDomainExpansionSafety();
 public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);
