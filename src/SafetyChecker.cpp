@@ -391,6 +391,13 @@ bool reorderForSafety(RegistryPtr reg, std::list<ID>& src, Tuple& tgt, std::set<
 void
 SafetyChecker::operator() () const throw (SyntaxError)
 {
+	Tuple unsafe = checkSafety(true);
+	assert(unsafe.size() == 0);
+}
+
+Tuple
+SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxError)
+{
   LOG_SCOPE(ANALYZE,"safety",false);
 	LOG(ANALYZE,"=safety checker");
 
@@ -472,7 +479,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
 						remainingbodyvars.begin(), remainingbodyvars.end(),
 						safevars.begin(), safevars.end(),
 						inserter);
-				throw SyntaxError("Rule not safe (body): "
+				if (!throwOnUnsafeVariables) return unsafeBodyVars;
+				else throw SyntaxError("Rule not safe (body): "
 						"'" + printToString<RawPrinter>(idrule, reg) + "': "
 						"literals not safe: " +
 						printManyToString<RawPrinter>(Tuple(src.begin(), src.end()), ", ", reg) + ", "
@@ -500,7 +508,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
 		// report unsafe if unsafe
 		if( !unsafeHeadVars.empty() )
 		{
-			throw SyntaxError("Rule not safe (head): "
+			if (!throwOnUnsafeVariables) return unsafeHeadVars;
+			else throw SyntaxError("Rule not safe (head): "
 					"'" + printToString<RawPrinter>(idrule, reg) + "': "
 					"variables not safe: " +
 					printManyToString<RawPrinter>(unsafeHeadVars, ", ", reg));
@@ -516,8 +525,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
 			assert(&rule == &(reg->rules.getByID(idrule)));
 		}
   }
+  return Tuple();
 }
-
 
 StrongSafetyChecker::StrongSafetyChecker(const ProgramCtx& ctx):
   SafetyCheckerBase(ctx)

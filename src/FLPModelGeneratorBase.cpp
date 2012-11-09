@@ -246,22 +246,7 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 						DBGLOG(DBG, "Remove external atom " << b << " because it is not necessary to establish domain-expansion safety");
 						continue;
 					}
-/*
-					bool stronglysafe = true;
-					const ExternalAtom& ea = reg->eatoms.getByID(b);
-					BOOST_FOREACH (ID o, ea.tuple){
-						if (o.isVariableTerm() &&
-						      (ci.stronglySafeVariables.find(ruleid) == ci.stronglySafeVariables.end() ||
-						       std::find(ci.stronglySafeVariables.at(ruleid).begin(), ci.stronglySafeVariables.at(ruleid).end(), o) == ci.stronglySafeVariables.at(ruleid).end())){
-							stronglysafe = false;
-							break;
-						}
-					}
-					if (stronglysafe){
-						DBGLOG(DBG, "Remove external atom " << b << " because it is strongly safe");
-						continue;
-					}
-*/
+
 					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
 					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
 						std::stringstream ss;

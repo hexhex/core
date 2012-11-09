@@ -71,9 +71,11 @@ class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
 public:
   SafetyChecker(const ProgramCtx& ctx);
   virtual ~SafetyChecker();
-  
+
   virtual void
   operator() () const throw (SyntaxError);
+
+  Tuple checkSafety(bool throwOnUnsafeVariables) const throw (SyntaxError);
 };
 
 

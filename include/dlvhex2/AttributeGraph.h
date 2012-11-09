@@ -25,7 +25,8 @@
  * @file   AttributeGraph.h
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
- * @brief  Stores dependencies between attributes in a program.
+ * @brief  Stores dependencies between attributes in a program and
+ *         checks domain-expansion safety of a program.
  */
 
 #ifndef ATTRIBUTEGRAPH_H_
@@ -129,16 +130,23 @@ private:
 	Node getNode(Attribute at);
 
 	// helper
+	bool hasInformationFlow(boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow, ID from, ID to);
 	bool isNewlySafe(Attribute at);
-	void addBoundedVariable(VariableLocation vl);
-	void addDomainExpansionSafeAttribute(Attribute at);
+
+	// trigger functions
+	void addBoundedVariable(VariableLocation vl);								// called after a new variable has become bounded to trigger further actions
+	void addDomainExpansionSafeAttribute(Attribute at);							// called after an attribute has become safe to trigger further actions
 
 	// initialization
-	void createDependencies();
-	void createIndices();
-	void computeCyclicAttributes();
-	void ensureOrdinarySafety();
-	void computeDomainExpansionSafety();
+	void computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow);	// computes for a given rule the
+																// information exchange between variables through builtins
+	void createDependencyGraph();												// create dependency graph of ordinary and external predicates
+	void createPreconditionsAndLocationIndices();										// the indices above
+	void computeCyclicAttributes();												// compute attributes which occur in or depend on cycles
+	void ensureOrdinarySafety();												// restricts the optimization of necessary to keep ordinary safety
+	void computeInitiallySafeAttributes();											// mark attributes as domain-expansion safe
+	void computeInitiallyBoundedVariables();										// mark variables as bounded
+	void computeDomainExpansionSafety();											// calls the previous methods until no more safe attributes can be derived
 public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);
 

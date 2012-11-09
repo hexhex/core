@@ -108,3 +108,8 @@ empty.hex testrepetition.stdout --testplugin-test-repetition --solver=genuinegc
 # TODO make MLP work if we do not have DLV (ASPSolver) module-Complex.mlp module-Complex.out --mlp --solver=genuinegc
 # TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=genuinegc
 # TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=genuinegc
+liberalsafety1.hex liberalsafety1.out --domainexpansionsafety --solver=genuinegc
+liberalsafety2.hex liberalsafety2.out --domainexpansionsafety --solver=genuinegc
+liberalsafety3.hex liberalsafety3.out --domainexpansionsafety --solver=genuinegc
+liberalsafety4.hex liberalsafety4.out --domainexpansionsafety --solver=genuinegc
+liberalsafety5.hex liberalsafety5.out --domainexpansionsafety --solver=genuinegc

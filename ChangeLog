@@ -1,3 +1,9 @@
+2012-11-09  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* src/AttributeGraph.cpp: First complete implementation of
+	the attribute graph used for more liberal safety conditions.
+	* include/dlvhex2/AttributeGraph.h: Likewise.
+
 2012-10-17  Peter Schueller <peterschueller@sabanciuniv.edu>
 
 	Release 2.1.0

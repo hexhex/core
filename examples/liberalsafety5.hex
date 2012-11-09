@@ -1,0 +1,3 @@
+% This program checks if domain-expansion safety is also properly propagated through builtin-atoms
+p(1).
+p(Z) :- p(X), &testConcat[X,1](Y), Z=Y*2, &testSmallerThan[Y,5000]().
