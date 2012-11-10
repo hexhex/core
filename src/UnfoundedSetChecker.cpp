@@ -638,7 +638,6 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 		Nogood inputNogood;
 		bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
-		bool skip = false;
 		while (en < en_end){
 			if (compatibleSet->getFact(*en)){
 				// T a \in I
@@ -655,9 +654,6 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 				}
 			}
 			en++;
-		}
-		if (skip){
-			continue;
 		}
 
 		// go through the output atoms
@@ -1259,7 +1255,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 				// define: a_{IandU} := a_I \wedge a
 				// we define a new atom a_{IandU}, which serves as a replacement for a, as follows:
 				//   1. if a_I is false, then a_{IandU} is false
-				//   2. if a_I is true and a is false, then a_{IandU} is false
+				//   2. if a is false, then a_{IandU} is false
 				//   3. otherwise (a_I is true and a is true) a_{IandU} is true
 				{
 					IDAddress aIandU_IDA = IandU[*en];
@@ -1272,7 +1268,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 
 					// 2.
 					Nogood ng2;
-					ng2.insert(NogoodContainer::createLiteral(is.address, true));
+//					ng2.insert(NogoodContainer::createLiteral(is.address, true));
 					ng2.insert(NogoodContainer::createLiteral(*en, false));
 					ng2.insert(NogoodContainer::createLiteral(aIandU_IDA, true));
 					ufsDetectionProblem.addNogood(ng2);
@@ -1288,7 +1284,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 				// define: a_{\overline{I}orU} := \neg a_I \or a
 				// we define a new atom a_{\overline{I}orU}, which serves as a replacement for a, as follows:
 				//   1. if a_I is false, then a_{\overline{I}orU} is true
-				//   2. if a_I is true and a is true, then a_{\overline{I}orU} is true
+				//   2. if a is true, then a_{\overline{I}orU} is true
 				//   3. otherwise (a_I is true and a is false) a_{\overline{I}orU} is false
 				{
 					IDAddress anIorU_IDA = nIorU[*en];
@@ -1301,7 +1297,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 
 					// 2.
 					Nogood ng2;
-					ng2.insert(NogoodContainer::createLiteral(is.address, true));
+//					ng2.insert(NogoodContainer::createLiteral(is.address, true));
 					ng2.insert(NogoodContainer::createLiteral(*en, true));
 					ng2.insert(NogoodContainer::createLiteral(anIorU_IDA, false));
 					ufsDetectionProblem.addNogood(ng2);
@@ -1363,13 +1359,9 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemBasicEABeha
 		Nogood inputNogood;
 		bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
-		bool skip = false;
 		while (en < en_end){
 			inputNogood.insert(NogoodContainer::createLiteral(becomeFalse[*en], false));
 			en++;
-		}
-		if (skip){
-			continue;
 		}
 
 		// go through the output atoms
@@ -1449,7 +1441,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 	DBGLOG(DBG, "A: Intersection of U with I");
 	while (en < en_end){
 		// do not set an ordinary atom which is false in I
-		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
 			if (!compatibleSet->getFact(*en)){
 				assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
 			}
