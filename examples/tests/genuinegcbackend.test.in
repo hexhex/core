@@ -113,3 +113,4 @@ liberalsafety2.hex liberalsafety2.out --domainexpansionsafety --solver=genuinegc
 liberalsafety3.hex liberalsafety3.out --domainexpansionsafety --solver=genuinegc
 liberalsafety4.hex liberalsafety4.out --domainexpansionsafety --solver=genuinegc
 liberalsafety5.hex liberalsafety5.out --domainexpansionsafety --solver=genuinegc
+outer.hex outer.out --domainexpansionsafety --solver=genuinegc --heuristics=monolithic

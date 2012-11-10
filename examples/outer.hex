@@ -1,0 +1,6 @@
+% If evaluated with --heuristics=monolithic and --domainexpansionsafety,
+% this program tests if it works that outer external atoms become inner ones.
+% While forbidden with strong safety, this should work with domainexpansionsafety.
+p(a).
+q(Y) :- p(X), &testConcat[X,a](Y).
+res(Z) :- &id[q](Z).
