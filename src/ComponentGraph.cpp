@@ -460,7 +460,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     ci.recursiveAggregates = computeRecursiveAggregatesInComponent(ci);
 
     // compute stratification of default-negated literals and predicate input parameters
-    calculateStratificationInfo(ci);
+    calculateStratificationInfo(reg, ci);
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
@@ -754,7 +754,7 @@ bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci)
 	return false;
 }
 
-bool ComponentGraph::calculateStratificationInfo(ComponentInfo& ci)
+bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci)
 {
 	DBGLOG(DBG, "calculateStratificationInfo");
 
@@ -973,7 +973,7 @@ ComponentGraph::collapseComponents(
 	}
 
 	// recalculate stratification for the collapsed component
-	calculateStratificationInfo(ci);
+	calculateStratificationInfo(reg, ci);
 
 	// build incoming dependencies
 	for(DepMap::const_iterator itd = incoming.begin();

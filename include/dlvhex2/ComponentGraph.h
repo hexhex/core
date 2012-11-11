@@ -248,9 +248,12 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
+
   bool calculateFixedDomain(ComponentInfo& ci);
   bool computeRecursiveAggregatesInComponent(ComponentInfo& ci);
-  bool calculateStratificationInfo(ComponentInfo& ci);
+
+public:
+  static bool calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END
