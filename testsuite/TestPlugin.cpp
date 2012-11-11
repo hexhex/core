@@ -323,7 +323,6 @@ public:
     setOutputArity(0);
 
     prop.functional = true;
-    prop.finiteFiber = true;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)

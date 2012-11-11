@@ -683,7 +683,7 @@ void AttributeGraph::computeInitiallyBoundedVariables(){
 						if (eatom.inputs[i].isVariableTerm()){
 							VariableLocation vl(ruleID, eatom.inputs[i]);
 							if (boundedVariables.count(vl) == 0){
-								DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because " << b << " has a finite fiber");
+								DBGLOG(DBG, "Variable " << "r" << vl.first.address << "/" << vl.second.address << " is bounded because " << b << " has a finite fiber");
 								boundedByExternals.insert(std::pair<ID, VariableLocation>(b, vl));
 							}
 						}
