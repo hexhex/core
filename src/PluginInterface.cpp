@@ -117,14 +117,16 @@ PluginAtom::Answer::Answer():
 void
 PluginAtom::addInputPredicate(bool nameIsRelevant)
 {
-	// throw error if last input term was tuple
-	if (inputType.size() > 0)
-		if (inputType.back() == TUPLE)
-			throw GeneralError("Tuple inputs must be specified last in input list");
+    // throw error if last input term was tuple
+    if (inputType.size() > 0)
+        if (inputType.back() == TUPLE)
+            throw GeneralError("Tuple inputs must be specified last in input list");
 
     inputType.push_back(PREDICATE);
 
-    if (!nameIsRelevant) prop.predicateParameterNameIndependence.push_back(inputType.size() - 1);
+    if (!nameIsRelevant) prop.predicateParameterNameIndependence.insert(inputType.size() - 1);
+
+    if (allmonotonic) prop.monotonicInputPredicates.insert(inputType.size() - 1);
 }
 
 

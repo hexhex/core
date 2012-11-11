@@ -403,6 +403,7 @@ void ProgramCtx::associateExtAtomsWithPluginAtoms(
       assert(!!itpa->second);
       // we store this as a POD pointer!
       eatom.pluginAtom = itpa->second.get();
+      eatom.prop |= itpa->second->getExtSourceProperties();
     }
     else
     {

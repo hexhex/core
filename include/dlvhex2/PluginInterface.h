@@ -846,14 +846,9 @@ protected:
    * - you must call setOutputArity().
    */
   PluginAtom(const std::string& predicate, bool monotonic):
-    predicate(predicate)/*,
-    monotonic(monotonic)*/
+    predicate(predicate),
+    allmonotonic(monotonic)
     { prop.pa = this;
-      if (monotonic){
-        for (int i = 0; i < inputType.size(); ++i){
-          if (inputType[i] == PREDICATE) prop.monotonicInputPredicates.push_back(i);
-        }
-      }
     }
 
   // The following functions are to be used in the constructor only.
@@ -1075,8 +1070,8 @@ protected:
   // Id of the predicate name, ID_FAIL if no registry is set
   ID predicateID;
 
-  // whether the function is monotonic or nonmonotonic
-//  bool monotonic;	// is now part of ExtSourceProperties
+  // whether the function is monotonic in all parameters
+  bool allmonotonic;	// is now part of ExtSourceProperties
 
   /// \brief general properties of the external source (may be overridden on atom-level)
   ExtSourceProperties prop;

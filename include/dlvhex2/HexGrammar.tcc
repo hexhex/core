@@ -525,14 +525,14 @@ struct sem<HexGrammarSemantics::externalAtom>
           if (prop.param == ID_FAIL){
             DBGLOG(DBG, "External Atom is monotonic in all input parameters");
             for (int i = 0; i < atom.inputs.size(); ++i){
-              atom.prop.monotonicInputPredicates.push_back(i);
+              atom.prop.monotonicInputPredicates.insert(i);
             }
           }else{
             bool found = false;
             for (int i = 0; i < atom.inputs.size(); ++i){
               if (atom.inputs[i] == prop.param){
                 DBGLOG(DBG, "External Atom is monotonic in parameter " << i);
-                atom.prop.monotonicInputPredicates.push_back(i);
+                atom.prop.monotonicInputPredicates.insert(i);
                 found = true;
                 break;
               }
@@ -544,14 +544,14 @@ struct sem<HexGrammarSemantics::externalAtom>
           if (prop.param == ID_FAIL){
             DBGLOG(DBG, "External Atom is antimonotonic in all input parameters");
             for (int i = 0; i < atom.inputs.size(); ++i){
-              atom.prop.antimonotonicInputPredicates.push_back(i);
+              atom.prop.antimonotonicInputPredicates.insert(i);
             }
           }else{
             bool found = false;
             for (int i = 0; i < atom.inputs.size(); ++i){
               if (atom.inputs[i] == prop.param){
                 DBGLOG(DBG, "External Atom is antimonotonic in parameter " << i);
-                atom.prop.antimonotonicInputPredicates.push_back(i);
+                atom.prop.antimonotonicInputPredicates.insert(i);
                 found = true;
                 break;
               }
@@ -571,11 +571,11 @@ struct sem<HexGrammarSemantics::externalAtom>
           if (prop.param == ID_FAIL){
             DBGLOG(DBG, "External Atom has a finite domain in all output positions");
             for (int i = 0; i < atom.tuple.size(); ++i){
-              atom.prop.finiteOutputDomain.push_back(i);
+              atom.prop.finiteOutputDomain.insert(i);
             }
           }else{
             bool found = false;
-            atom.prop.finiteOutputDomain.push_back(prop.param.address);
+            atom.prop.finiteOutputDomain.insert(prop.param.address);
           }
           break;
         case ExtSourceProperty::FINITEFIBER:

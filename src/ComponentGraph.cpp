@@ -933,42 +933,47 @@ ComponentGraph::collapseComponents(
 				ci.stronglySafeVariables[p.first].insert(id);
 			}
 		}
+/*
 		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
 			BOOST_FOREACH (ID id, p.second){
 				ci.stratifiedLiterals[p.first].insert(id);
 			}
 		}
+*/
 
-    ci.disjunctiveHeads |= cio.disjunctiveHeads;
-    ci.negationInCycles |= cio.negationInCycles;
-		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
-		ci.componentIsMonotonic &= cio.componentIsMonotonic;
-		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty())) ci.fixedDomain &= cio.fixedDomain;	// pure external components shall have no influence on this property
-														// because domain restriction is always done in successor components
-    ci.recursiveAggregates |= cio.recursiveAggregates;
+		ci.disjunctiveHeads |= cio.disjunctiveHeads;
+		ci.negationInCycles |= cio.negationInCycles;
+			ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+			ci.componentIsMonotonic &= cio.componentIsMonotonic;
+			if (!(!cio.outerEatoms.empty() && cio.innerRules.empty())) ci.fixedDomain &= cio.fixedDomain;	// pure external components shall have no influence on this property
+															// because domain restriction is always done in successor components
+		ci.recursiveAggregates |= cio.recursiveAggregates;
 
-    // if *ito does not depend on any component in originals
-    // then outer eatoms stay outer eatoms
-    // otherwise they become inner eatoms
-    if( internallyDepends.find(*ito) == internallyDepends.end() )
-    {
-      // does not depend on other components
-      ci.outerEatoms.insert(ci.outerEatoms.end(),
-          cio.outerEatoms.begin(), cio.outerEatoms.end());
-			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
-    }
-    else
-    {
-      // does depend on other components
-      // -> former outer eatoms now become inner eatoms
-      ci.innerEatoms.insert(ci.innerEatoms.end(),
-          cio.outerEatoms.begin(), cio.outerEatoms.end());
+		// if *ito does not depend on any component in originals
+		// then outer eatoms stay outer eatoms
+		// otherwise they become inner eatoms
+		if( internallyDepends.find(*ito) == internallyDepends.end() )
+		{
+		// does not depend on other components
+		ci.outerEatoms.insert(ci.outerEatoms.end(),
+		  cio.outerEatoms.begin(), cio.outerEatoms.end());
+				ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+		}
+		else
+		{
+		// does depend on other components
+		// -> former outer eatoms now become inner eatoms
+		ci.innerEatoms.insert(ci.innerEatoms.end(),
+		  cio.outerEatoms.begin(), cio.outerEatoms.end());
 
-      // here, outer eatom becomes inner eatom
-			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
-    }
-    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
+		// here, outer eatom becomes inner eatom
+				ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+		}
+		#warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
+
+	// recalculate stratification for the collapsed component
+	calculateStratificationInfo(ci);
 
 	// build incoming dependencies
 	for(DepMap::const_iterator itd = incoming.begin();

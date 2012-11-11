@@ -208,7 +208,7 @@ struct ExternalAtom:
   mutable boost::shared_ptr<PredicateMask> inputMask;
 
   // properties of this external atom
-  ExtSourceProperties prop;
+  mutable ExtSourceProperties prop;
   bool useProp;
 
 public:

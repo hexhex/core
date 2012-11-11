@@ -92,10 +92,10 @@ struct ExtSourceProperties
 	PluginAtom* pa;		// pointer to the plugin atom to which this property structure belongs to;
 
 	// all indices are 0-based
-	std::vector<int> monotonicInputPredicates;		// indices of monotonic input parameters
-	std::vector<int> antimonotonicInputPredicates;		// indices of antimonotonic input parameters
-	std::vector<int> predicateParameterNameIndependence;	// indices of input parameters whose name is irrelevant (only the extension matters)
-	std::vector<int> finiteOutputDomain;			// indices of output elements with a finite domain
+	std::set<int> monotonicInputPredicates;			// indices of monotonic input parameters
+	std::set<int> antimonotonicInputPredicates;		// indices of antimonotonic input parameters
+	std::set<int> predicateParameterNameIndependence;	// indices of input parameters whose name is irrelevant (only the extension matters)
+	std::set<int> finiteOutputDomain;			// indices of output elements with a finite domain
 
 	// if an external source is functional, then there must not exist multiple output tuples simultanously;
 	// "functionalStart" defines the number of non-functional output terms before the functional output starts
@@ -119,6 +119,8 @@ struct ExtSourceProperties
 		wellorderingStrlen = false;
 	}
 
+	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
+
 	/**
 	* @return overall monotonicity
 	*/
@@ -133,13 +135,13 @@ struct ExtSourceProperties
 	* @return monotonicity on parameter level
 	*/
 	bool isMonotonic(int parameterIndex) const
-	{ return std::find(monotonicInputPredicates.begin(), monotonicInputPredicates.end(), parameterIndex) != monotonicInputPredicates.end(); }
+	{ return monotonicInputPredicates.count(parameterIndex); }
 
 	/**
 	* @return antimonotonicity on parameter level
 	*/
 	bool isAntimonotonic(int parameterIndex) const
-	{ return std::find(antimonotonicInputPredicates.begin(), antimonotonicInputPredicates.end(), parameterIndex) != antimonotonicInputPredicates.end(); }
+	{ return antimonotonicInputPredicates.count(parameterIndex); }
 
 	/**
 	* @return nonmonotonicity on parameter level
@@ -169,7 +171,7 @@ struct ExtSourceProperties
 	* @return bool True if the name of the predicate parameter with the given index is irrelevant
 	*/
 	bool isIndependentOfPredicateParameterName(int parameterIndex) const
-	{ return std::find(predicateParameterNameIndependence.begin(), predicateParameterNameIndependence.end(), parameterIndex) != predicateParameterNameIndependence.end(); }
+	{ return predicateParameterNameIndependence.count(parameterIndex); }
 
 	/**
 	* @return true if this Atom uses Environment
@@ -181,7 +183,7 @@ struct ExtSourceProperties
 	* @return bool True if the specified output element has a finite domain
 	*/
 	bool hasFiniteDomain(int outputElement) const
-	{ return std::find(finiteOutputDomain.begin(), finiteOutputDomain.end(), outputElement) != finiteOutputDomain.end(); }
+	{ return finiteOutputDomain.count(outputElement); }
 
 	/**
 	* @return finite fiber

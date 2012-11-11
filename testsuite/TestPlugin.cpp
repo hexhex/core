@@ -643,7 +643,7 @@ public:
     addInputPredicate();
     setOutputArity(1);
 
-    prop.finiteOutputDomain.push_back(0);
+    prop.finiteOutputDomain.insert(0);
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
@@ -898,7 +898,7 @@ public:
 	addInputPredicate();
 	setOutputArity(0);
 
-	prop.antimonotonicInputPredicates.push_back(0);
+	prop.antimonotonicInputPredicates.insert(0);
   }
 
   virtual void
@@ -940,7 +940,7 @@ public:
 	addInputPredicate();
 	setOutputArity(0);
 
-	prop.antimonotonicInputPredicates.push_back(0);
+	prop.antimonotonicInputPredicates.insert(0);
   }
 
   virtual void
@@ -982,7 +982,7 @@ public:
 			addInputPredicate();
 			setOutputArity(2);
 
-			prop.monotonicInputPredicates.push_back(0);
+			prop.monotonicInputPredicates.insert(0);
 	}
 
 	virtual void
@@ -1032,7 +1032,7 @@ public:
 			addInputConstant();
 			setOutputArity(0);
 
-			prop.monotonicInputPredicates.push_back(0);
+			prop.monotonicInputPredicates.insert(0);
 	}
 
 	bool dfscycle(bool directed, ID parent, ID node, std::map<ID, std::set<ID> >& outedges, std::map<ID, bool>& visited, std::set<std::pair<ID, ID> >& cycle){
@@ -1101,7 +1101,7 @@ public:
 	addInputConstant();
 	setOutputArity(1);
 
-	prop.antimonotonicInputPredicates.push_back(0);
+	prop.antimonotonicInputPredicates.insert(0);
   }
 
   virtual void
