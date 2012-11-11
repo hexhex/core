@@ -768,6 +768,9 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 		{
 			if (!hid.isOrdinaryAtom()) continue;
 			headAtomIDs.insert(hid);
+
+			const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(hid);
+			ci.predicatesInComponent.insert(oatom.tuple[0]);
 		}
 	}
 
@@ -801,12 +804,9 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 				for (int p = 0; p < eatom.inputs.size() && stratified; ++p){
 					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.getExtSourceProperties().isNonmonotonic(p)){
 						// is this predicate defined in this component?
-						BOOST_FOREACH (ID hid, headAtomIDs){
-							const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
-							if (hoatom.tuple[0] == eatom.inputs[p]){
-								stratified = false;
-								break;
-							}
+						if (ci.predicatesInComponent.count(eatom.inputs[p]) > 0){
+							stratified = false;
+							break;
 						}
 					}
 				}
@@ -933,6 +933,8 @@ ComponentGraph::collapseComponents(
 				ci.stronglySafeVariables[p.first].insert(id);
 			}
 		}
+		ci.predicatesInComponent.insert(
+				cio.predicatesInComponent.begin(), cio.predicatesInComponent.end());
 /*
 		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
 			BOOST_FOREACH (ID id, p.second){

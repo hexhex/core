@@ -212,6 +212,8 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 				ci.stronglySafeVariables[p.first].insert(id);
 			}
 		}
+		ci.predicatesInComponent.insert(
+				cio.predicatesInComponent.begin(), cio.predicatesInComponent.end());
 /*
 		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
 			BOOST_FOREACH (ID id, p.second){

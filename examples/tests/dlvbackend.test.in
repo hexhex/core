@@ -114,4 +114,7 @@ liberalsafety3.hex liberalsafety3.out --domainexpansionsafety --solver=dlv
 # dlv does not accept constants larger than maxint
 # liberalsafety4.hex liberalsafety4.out --domainexpansionsafety --solver=dlv
 liberalsafety5.hex liberalsafety5.out --domainexpansionsafety --solver=dlv
-outer.hex outer.out --domainexpansionsafety --solver=genuinegc --heuristics=monolithic
+liberalsafety6.hex liberalsafety6.out --domainexpansionsafety --solver=dlv
+liberalsafety7.hex liberalsafety7.out --domainexpansionsafety --solver=dlv --heuristics=monolithic
+liberalsafety8.hex liberalsafety8.out --domainexpansionsafety --solver=dlv
+liberalsafety9.hex liberalsafety9.out --domainexpansionsafety --solver=dlv

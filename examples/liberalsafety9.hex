@@ -1,6 +1,9 @@
 % If evaluated with --heuristics=monolithic and --domainexpansionsafety,
 % this program tests if it works that outer external atoms become inner ones.
 % While forbidden with strong safety, this should work with domainexpansionsafety.
-p(a).
-q(Y) :- p(X), &testConcat[X,a](Y).
-res(Z) :- &id[q](Z).
+
+% In contrast to liberalsafety6.hex, here the domain exploration algorithm
+% never needs to guess the assignments to q(a), because the parameter is stratified.
+q(a).
+p(X) :- &id[q](X).
+res(Y) v res2(Y) :- p(X), &testConcat[X,a](Y).

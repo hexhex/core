@@ -232,7 +232,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("DomainExpansionSafety")){
-      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<GenuineSolver>(factory.ctx, postprocInput);
+      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<GenuineSolver>(factory.ci, factory.ctx, postprocInput);
       postprocInput->add(*domPredictaesExtension);
     }
 

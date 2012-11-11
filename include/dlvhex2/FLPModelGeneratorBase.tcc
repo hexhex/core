@@ -279,7 +279,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 }
 
 template<typename OrdinaryASPSolverT>
-InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb){
+InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb){
 
 	// if there are no inner external atoms, then there is nothing to do
 	if (factory.deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(factory.reg));
@@ -306,12 +306,12 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
 			// in order to maximize the output;
 			// for nonmonotonic input atoms, enumerate all exponentially many assignments
-//			InterpretationPtr nonmonotonicinput(new Interpretation(factory.reg));
 			boost::unordered_map<IDAddress, bool> nonmonotonicinput;
 			InterpretationPtr input(new Interpretation(factory.reg));
 			input->add(*src);
-			bm::bvector<>::enumerator en = input->getStorage().first();
-			bm::bvector<>::enumerator en_end = input->getStorage().end();
+			ea.updatePredicateInputMask();
+			bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
 			while (en < en_end){
 				const OrdinaryAtom& ogatom = factory.reg->ogatoms.getByAddress(*en);
 
@@ -319,13 +319,25 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
 					    ea.getExtSourceProperties().isAntimonotonic(i) &&
 					    ogatom.tuple[0] == ea.inputs[i]){
+						DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
 						input->clearFact(*en);
 					}
 					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
 					    !ea.getExtSourceProperties().isAntimonotonic(i) &&
 					    !ea.getExtSourceProperties().isMonotonic(i) &&
 					    ogatom.tuple[0] == ea.inputs[i]){
-						nonmonotonicinput[*en] = false;
+						// if the predicate is defined in this component, enumerate all possible assignments
+						if (ci.predicatesInComponent.count(ea.inputs[i]) > 0){
+							DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
+							nonmonotonicinput[*en] = false;
+						}
+						// otherwise: take the truth value from the edb
+						else{
+							if (!edb->getFact(*en)){
+								DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
+								input->clearFact(*en);
+							}
+						}
 					}
 				}
 				en++;

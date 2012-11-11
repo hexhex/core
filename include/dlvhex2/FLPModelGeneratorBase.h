@@ -211,7 +211,7 @@ protected:
 
   // computes an overestimate of the domains of all inner external atoms which are not strongly safe
   template<typename OrdinaryASPSolverT>
-  InterpretationConstPtr computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb);
+  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb);
 
   // constructs a nogood which describes the essence of a
   // failed FLP check

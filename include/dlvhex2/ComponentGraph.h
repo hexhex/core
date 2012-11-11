@@ -84,6 +84,7 @@ public:
     std::vector<ID> innerConstraints;
     boost::unordered_map<ID, std::set<ID> > stronglySafeVariables;
     boost::unordered_map<ID, std::set<ID> > stratifiedLiterals;
+    std::set<ID> predicatesInComponent;
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories

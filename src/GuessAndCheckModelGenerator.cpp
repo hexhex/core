@@ -321,7 +321,7 @@ GuessAndCheckModelGenerator::GuessAndCheckModelGenerator(
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("DomainExpansionSafety")){
-      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<ASMOrdinaryASPSolver>(factory.ctx, postprocInput);
+      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<ASMOrdinaryASPSolver>(factory.ci, factory.ctx, postprocInput);
       postprocInput->add(*domPredictaesExtension);
     }
 
