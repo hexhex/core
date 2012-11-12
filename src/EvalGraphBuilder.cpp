@@ -212,11 +212,15 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 				ci.stronglySafeVariables[p.first].insert(id);
 			}
 		}
+		ci.predicatesInComponent.insert(
+				cio.predicatesInComponent.begin(), cio.predicatesInComponent.end());
+/*
 		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
 			BOOST_FOREACH (ID id, p.second){
 				ci.stratifiedLiterals[p.first].insert(id);
 			}
 		}
+*/
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negationInCycles |= cio.negationInCycles;
@@ -246,6 +250,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
     }
     #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
+	ComponentGraph::calculateStratificationInfo(registry(), ci);
 
 	//
 	// build newUnitDependsOn

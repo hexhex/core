@@ -271,6 +271,94 @@ public:
 };
 #endif
 
+class TestSubstrAtom:
+  public PluginAtom
+{
+public:
+  TestSubstrAtom():
+    PluginAtom("testSubstr", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(1);
+
+    prop.functional = true;
+    prop.wellorderingStrlen = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    if (!query.input[1].isIntegerTerm()) throw GeneralError("testSubstr expects an integer as its second argument");
+    if (!query.input[2].isIntegerTerm()) throw GeneralError("testSubstr expects an integer as its third argument");
+
+    try{
+      int start = query.input[1].address;
+      int len = query.input[2].address;
+      std::string str = registry->terms.getByID(query.input[0]).getUnquotedString();
+      int clen = str.length() - start;
+      if (clen < len) len = clen;
+      std::string substring = str.substr(start, len);
+      if (registry->terms.getByID(query.input[0]).isQuotedString()) substring = "\"" + substring + "\"";
+      ID resultterm = registry->storeConstantTerm(substring);
+      Tuple tu;
+      tu.push_back(resultterm);
+      answer.get().push_back(tu);
+    }catch(...){
+      // specified substring is out of bounds
+      // return nothing
+    }
+  }
+};
+
+class TestSmallerThanAtom:
+  public PluginAtom
+{
+public:
+  TestSmallerThanAtom():
+    PluginAtom("testSmallerThan", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(0);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    if (!query.input[0].isIntegerTerm()) throw GeneralError("testLessThan expects an integer as its second argument");
+    if (!query.input[1].isIntegerTerm()) throw GeneralError("testLessThan expects an integer as its third argument");
+
+    if (query.input[0].address < query.input[1].address){
+      Tuple tu;
+      answer.get().push_back(tu);
+    }
+  }
+};
+
+class TestStrlenAtom:
+  public PluginAtom
+{
+public:
+  TestStrlenAtom():
+    PluginAtom("testStrlen", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    setOutputArity(1);
+
+    prop.functional = true;
+    prop.finiteFiber = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    Tuple tu;
+    tu.push_back(ID::termFromInteger(registry->terms.getByID(query.input[0]).getUnquotedString().length()));
+    answer.get().push_back(tu);
+  }
+};
+
 class TestSetMinusAtom:
   public ComfortPluginAtom
 {
@@ -553,6 +641,8 @@ public:
   {
     addInputPredicate();
     setOutputArity(1);
+
+    prop.finiteOutputDomain.insert(0);
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
@@ -651,7 +741,7 @@ class TestIdAtom:	// tests user-defined external learning
 {
 public:
   TestIdAtom():
-    PluginAtom("id", true) // monotonic, and no predicate inputs anyway
+    PluginAtom("id", false) // monotonic, and no predicate inputs anyway
     #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
   {
     addInputPredicate();
@@ -807,7 +897,7 @@ public:
 	addInputPredicate();
 	setOutputArity(0);
 
-	prop.antimonotonicInputPredicates.push_back(0);
+	prop.antimonotonicInputPredicates.insert(0);
   }
 
   virtual void
@@ -849,7 +939,7 @@ public:
 	addInputPredicate();
 	setOutputArity(0);
 
-	prop.antimonotonicInputPredicates.push_back(0);
+	prop.antimonotonicInputPredicates.insert(0);
   }
 
   virtual void
@@ -891,7 +981,7 @@ public:
 			addInputPredicate();
 			setOutputArity(2);
 
-			prop.monotonicInputPredicates.push_back(0);
+			prop.monotonicInputPredicates.insert(0);
 	}
 
 	virtual void
@@ -941,7 +1031,7 @@ public:
 			addInputConstant();
 			setOutputArity(0);
 
-			prop.monotonicInputPredicates.push_back(0);
+			prop.monotonicInputPredicates.insert(0);
 	}
 
 	bool dfscycle(bool directed, ID parent, ID node, std::map<ID, std::set<ID> >& outedges, std::map<ID, bool>& visited, std::set<std::pair<ID, ID> >& cycle){
@@ -1010,7 +1100,7 @@ public:
 	addInputConstant();
 	setOutputArity(1);
 
-	prop.antimonotonicInputPredicates.push_back(0);
+	prop.antimonotonicInputPredicates.insert(0);
   }
 
   virtual void
@@ -1177,6 +1267,9 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSubstrAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSmallerThanAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestStrlenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));

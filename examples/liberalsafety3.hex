@@ -1,0 +1,4 @@
+% The program is safe because testSmallerThan binds Len, which binds in turn Y and X
+
+s(a).
+s(Y) :- s(X), &testConcat[X, a](Y), &testStrlen[Y](Len), &testSmallerThan[Len, 10]()<finitefiber>.

@@ -59,6 +59,7 @@
 #include "dlvhex2/EvalHeuristicTrivial.h"
 #include "dlvhex2/EvalHeuristicEasy.h"
 #include "dlvhex2/EvalHeuristicGreedy.h"
+#include "dlvhex2/EvalHeuristicMonolithic.h"
 #include "dlvhex2/EvalHeuristicFromFile.h"
 #include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
 #include "dlvhex2/UnfoundedSetCheckHeuristics.h"
@@ -156,7 +157,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        aufs: Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
-      << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
+      << "     --ufslearn=[none,reduct,ufs]" << std::endl
+      << "                      Enable learning from UFS checks (only useful with --flpcheck=[a]ufs[m])" << std::endl
+      << "                        none (default): No learning" << std::endl
+      << "                        reduct: Learning is based on the FLP-reduct" << std::endl
+      << "                        ufs: Learning is based on the unfounded set" << std::endl
       << "     --eaevalheuristics=[always,inputcomplete,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
@@ -174,9 +179,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
-      << "     --autostrongsafety" << std::endl
-      << "                      Tries to automatically establish strong safety where the property is violated" << std::endl
-      << "                      (only useful with --weaksafety)" << std::endl
+      << "     --domainexpansionsafety" << std::endl
+      << "                      Uses more liberal safety conditions than strong safety" << std::endl
       << "     --multithreading Parallelizes model candidate computation and external atom verification (experimental)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
@@ -200,6 +204,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
 			<< "                      greedy - (default) heuristics with advantages for external behavior learning" << std::endl
+			<< "                      monolithic - put everything into one unit" << std::endl
+			<< "                                   (for testing purposes, does [currently] not work in general)" << std::endl
 			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
@@ -221,6 +227,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      eval   - Evaluation Graph (once per program)" << std::endl
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
+      << "                      attr   - Attribute dependency graph (once per program)" << std::endl
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
@@ -345,6 +352,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
   pctx.config.setOption("UFSLearning", 0);
+  pctx.config.setOption("UFSLearnStrategy", 2);
   pctx.config.setOption("ExternalLearningIOBehavior", 0);
   pctx.config.setOption("ExternalLearningMonotonicity", 0);
   pctx.config.setOption("ExternalLearningFunctionality", 0);
@@ -367,6 +375,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("DumpEvalGraph",0);
   pctx.config.setOption("DumpModelGraph",0);
   pctx.config.setOption("DumpIModelGraph",0);
+  pctx.config.setOption("DumpAttrGraph",0);
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
   pctx.config.setOption("NumberOfModels",0);
@@ -376,7 +385,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
-  pctx.config.setOption("AutoStrongSafety",0);
+  pctx.config.setOption("DomainExpansionSafety",0);
   pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
@@ -522,6 +531,9 @@ int main(int argc, char *argv[])
 		// create dependency graph (we need the previous step for this)
 		pctx.createDependencyGraph();
 
+		// create attribute graph
+		pctx.createAttributeGraph();
+
 		// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
 		pctx.optimizeEDBDependencyGraph();
 		// everything in the following will be done using the dependency graph and EDB
@@ -632,7 +644,7 @@ void processOptionsPrePlugin(
 		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
 		{ "flpcheck", required_argument, 0, 20 },
-		{ "ufslearn", no_argument, 0, 23 },
+		{ "ufslearn", optional_argument, 0, 23 },
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "eaevalheuristics", required_argument, 0, 26 },
 		{ "ufscheckheuristics", required_argument, 0, 27 },
@@ -641,7 +653,7 @@ void processOptionsPrePlugin(
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
-		{ "autostrongsafety", no_argument, 0, 33 },
+		{ "domainexpansionsafety", no_argument, 0, 33 },
 		{ "multithreading", no_argument, 0, 34 },
 		{ NULL, 0, NULL, 0 }
 	};
@@ -728,6 +740,10 @@ void processOptionsPrePlugin(
 				else if( heuri == "greedy" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
+				}
+				else if( heuri == "monolithic" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
@@ -932,6 +948,10 @@ void processOptionsPrePlugin(
 							{
 								pctx.config.setOption("DumpIModelGraph",1);
 							}
+							else if( token == "attr" )
+							{
+								pctx.config.setOption("DumpAttrGraph",1);
+							}
 							else
 								throw UsageError("unknown graphviz graph type '"+token+"'");
 						}
@@ -1092,7 +1112,27 @@ void processOptionsPrePlugin(
 			break;
 
 		case 23:
-			pctx.config.setOption("UFSLearning", 1);
+			if (!optarg){
+				// use UFS-based learning
+				pctx.config.setOption("UFSLearning", 1);
+				pctx.config.setOption("UFSLearnStrategy", 2);
+			}else{
+				std::string learn(optarg);
+				if (learn == "none")
+				{
+					pctx.config.setOption("UFSLearning", 0);
+				}
+				else if (learn == "reduct"){
+					pctx.config.setOption("UFSLearning", 1);
+					pctx.config.setOption("UFSLearnStrategy", 1);
+				}
+				else if (learn == "ufs"){
+					pctx.config.setOption("UFSLearning", 1);
+					pctx.config.setOption("UFSLearnStrategy", 2);
+				}else{
+					throw GeneralError("Unknown UFS Learning option: \"" + learn + "\"");
+				}
+			}
 			break;
 
 		case 25:
@@ -1175,7 +1215,7 @@ void processOptionsPrePlugin(
 			}
 			break;
 
-		case 33: pctx.config.setOption("AutoStrongSafety", 1); break;
+		case 33: pctx.config.setOption("DomainExpansionSafety", 1); break;
 
 		case 34: pctx.config.setOption("MultiThreading", 1); break;
 

@@ -203,6 +203,78 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 		const std::vector<IDAddress>& ufs,
 		InterpretationConstPtr interpretation){
 
+	switch (ctx.config.getOption("UFSLearnStrategy")){
+		case 1:	return getUFSNogoodReductBased(ufs, interpretation);
+		case 2:	return getUFSNogoodUFSBased(ufs, interpretation);
+		default: throw GeneralError("Unknown UFSLern strategy");
+	}
+}
+
+Nogood UnfoundedSetChecker::getUFSNogoodReductBased(
+		const std::vector<IDAddress>& ufs,
+		InterpretationConstPtr interpretation){
+
+	// reduct-based stratey
+	Nogood ng;
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	bool first = true;
+	ss << "{ ";
+	BOOST_FOREACH (IDAddress adr, ufs){
+		ss << (!first ? ", " : "") << adr;
+		first = false;
+	}
+	ss << " }";
+	DBGLOG(DBG, "Constructing UFS nogood for UFS " << ss.str() << " wrt. " << *interpretation);
+#endif
+
+	// for each rule with unsatisfied body
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID b, rule.body){
+			if (interpretation->getFact(b.address) != !b.isNaf()){
+				// take an unsatisfied body literal
+				ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
+				break;
+			}
+		}
+	}
+
+	// add the smaller FLP model (interpretation minus unfounded set), restricted to ordinary atoms
+	InterpretationPtr smallerFLPModel = InterpretationPtr(new Interpretation(*interpretation));
+	BOOST_FOREACH (IDAddress adr, ufs){
+		smallerFLPModel->clearFact(adr);
+	}
+	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
+	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
+	while (en < en_end){
+		if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
+			ng.insert(NogoodContainer::createLiteral(*en));
+		}
+		en++;
+	}
+
+	// add one atom which is in the original interpretation but not in the flp model
+	en = interpretation->getStorage().first();
+	en_end = interpretation->getStorage().end();
+	while (en < en_end){
+		if (!smallerFLPModel->getFact(*en)){
+			ng.insert(NogoodContainer::createLiteral(*en));
+			break;
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Constructed UFS nogood " << ng);
+	return ng;
+}
+
+Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
+		const std::vector<IDAddress>& ufs,
+		InterpretationConstPtr interpretation){
+
+	// UFS-based strategy
 	Nogood ng;
 
 	// take an atom from the unfounded set which is true in the interpretation
@@ -566,7 +638,6 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 		Nogood inputNogood;
 		bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
-		bool skip = false;
 		while (en < en_end){
 			if (compatibleSet->getFact(*en)){
 				// T a \in I
@@ -583,9 +654,6 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 				}
 			}
 			en++;
-		}
-		if (skip){
-			continue;
 		}
 
 		// go through the output atoms
@@ -1187,7 +1255,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 				// define: a_{IandU} := a_I \wedge a
 				// we define a new atom a_{IandU}, which serves as a replacement for a, as follows:
 				//   1. if a_I is false, then a_{IandU} is false
-				//   2. if a_I is true and a is false, then a_{IandU} is false
+				//   2. if a is false, then a_{IandU} is false
 				//   3. otherwise (a_I is true and a is true) a_{IandU} is true
 				{
 					IDAddress aIandU_IDA = IandU[*en];
@@ -1200,7 +1268,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 
 					// 2.
 					Nogood ng2;
-					ng2.insert(NogoodContainer::createLiteral(is.address, true));
+//					ng2.insert(NogoodContainer::createLiteral(is.address, true));
 					ng2.insert(NogoodContainer::createLiteral(*en, false));
 					ng2.insert(NogoodContainer::createLiteral(aIandU_IDA, true));
 					ufsDetectionProblem.addNogood(ng2);
@@ -1216,7 +1284,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 				// define: a_{\overline{I}orU} := \neg a_I \or a
 				// we define a new atom a_{\overline{I}orU}, which serves as a replacement for a, as follows:
 				//   1. if a_I is false, then a_{\overline{I}orU} is true
-				//   2. if a_I is true and a is true, then a_{\overline{I}orU} is true
+				//   2. if a is true, then a_{\overline{I}orU} is true
 				//   3. otherwise (a_I is true and a is false) a_{\overline{I}orU} is false
 				{
 					IDAddress anIorU_IDA = nIorU[*en];
@@ -1229,7 +1297,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 
 					// 2.
 					Nogood ng2;
-					ng2.insert(NogoodContainer::createLiteral(is.address, true));
+//					ng2.insert(NogoodContainer::createLiteral(is.address, true));
 					ng2.insert(NogoodContainer::createLiteral(*en, true));
 					ng2.insert(NogoodContainer::createLiteral(anIorU_IDA, false));
 					ufsDetectionProblem.addNogood(ng2);
@@ -1291,13 +1359,9 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemBasicEABeha
 		Nogood inputNogood;
 		bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
-		bool skip = false;
 		while (en < en_end){
 			inputNogood.insert(NogoodContainer::createLiteral(becomeFalse[*en], false));
 			en++;
-		}
-		if (skip){
-			continue;
 		}
 
 		// go through the output atoms
@@ -1377,7 +1441,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 	DBGLOG(DBG, "A: Intersection of U with I");
 	while (en < en_end){
 		// do not set an ordinary atom which is false in I
-		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
 			if (!compatibleSet->getFact(*en)){
 				assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
 			}

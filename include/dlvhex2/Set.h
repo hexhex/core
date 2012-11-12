@@ -507,7 +507,7 @@ public:
 		else return 0;
 	}
 
-	int resize(int s){
+	void resize(int s){
 //		os.resize(s);
 	}
 

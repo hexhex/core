@@ -12,6 +12,7 @@ pkginclude_HEADERS = \
   ASPSolverManager.h \
   AsynchronousModelGenerator.h \
   Atoms.h \
+  AttributeGraph.h \
   BaseModelGenerator.h \
   Benchmarking.h \
   ClaspSolver.h \
@@ -36,6 +37,7 @@ pkginclude_HEADERS = \
   EvalHeuristicEasy.h \
   EvalHeuristicFromFile.h \
   EvalHeuristicGreedy.h \
+  EvalHeuristicMonolithic.h \
   EvalHeuristicOldDlvhex.h \
   EvalHeuristicShared.h \
   EvalHeuristicTrivial.h \

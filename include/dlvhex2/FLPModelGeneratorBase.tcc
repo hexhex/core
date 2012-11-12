@@ -279,7 +279,10 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 }
 
 template<typename OrdinaryASPSolverT>
-InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb){
+InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb){
+
+	// if there are no inner external atoms, then there is nothing to do
+	if (factory.deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(factory.reg));
 
 	typedef boost::shared_ptr<OrdinaryASPSolverT> OrdinaryASPSolverTPtr;
 
@@ -301,11 +304,14 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			const ExternalAtom& ea = factory.reg->eatoms.getByID(eaid);
 
 			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
-			// in order to maximize the output
+			// in order to maximize the output;
+			// for nonmonotonic input atoms, enumerate all exponentially many assignments
+			boost::unordered_map<IDAddress, bool> nonmonotonicinput;
 			InterpretationPtr input(new Interpretation(factory.reg));
 			input->add(*src);
-			bm::bvector<>::enumerator en = input->getStorage().first();
-			bm::bvector<>::enumerator en_end = input->getStorage().end();
+			ea.updatePredicateInputMask();
+			bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
 			while (en < en_end){
 				const OrdinaryAtom& ogatom = factory.reg->ogatoms.getByAddress(*en);
 
@@ -313,14 +319,63 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
 					    ea.getExtSourceProperties().isAntimonotonic(i) &&
 					    ogatom.tuple[0] == ea.inputs[i]){
+						DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
 						input->clearFact(*en);
+					}
+					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+					    !ea.getExtSourceProperties().isAntimonotonic(i) &&
+					    !ea.getExtSourceProperties().isMonotonic(i) &&
+					    ogatom.tuple[0] == ea.inputs[i]){
+						// if the predicate is defined in this component, enumerate all possible assignments
+						if (ci.predicatesInComponent.count(ea.inputs[i]) > 0){
+							DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
+							nonmonotonicinput[*en] = false;
+						}
+						// otherwise: take the truth value from the edb
+						else{
+							if (!edb->getFact(*en)){
+								DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
+								input->clearFact(*en);
+							}
+						}
 					}
 				}
 				en++;
 			}
 
-			DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
-			evaluateExternalAtom(ctx, ea, input, cb);
+			DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
+			bool allOnes;
+			do
+			{
+				// set nonmonotonic input
+				allOnes = true;
+				typedef std::pair<IDAddress, bool> Pair;
+				BOOST_FOREACH (Pair p, nonmonotonicinput){
+					if (p.second) input->setFact(p.first);
+					else{
+						input->clearFact(p.first);
+						allOnes = false;
+					}
+				}
+
+				// evalute external atom
+				DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
+				evaluateExternalAtom(ctx, ea, input, cb);
+
+				// enumerate next assignment to nonmonotonic input atoms
+				if (!allOnes){
+					std::vector<IDAddress> clear;
+					BOOST_FOREACH (Pair p, nonmonotonicinput){
+						if (p.second) clear.push_back(p.first);
+						else{
+							nonmonotonicinput[p.first] = true;
+							break;
+						}
+					}
+					BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
+				}
+			}while(!allOnes);
+			DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
 		}
 
 		// solve program

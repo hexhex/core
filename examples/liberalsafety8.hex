@@ -1,0 +1,5 @@
+% This program needs to guess all 4 assignments to p(a) and p(b)
+% during domain exploration (with and heuristics), because
+% the two rules must be in one unit.
+p(a) v p(b).
+p(X) :- &id[p](X)<finitedomain>.

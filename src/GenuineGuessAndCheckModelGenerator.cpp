@@ -64,7 +64,7 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   // (and there is quite some room for more optimization)
 
   // create program for domain exploration
-  if (ctx.config.getOption("AutoStrongSafety")){
+  if (ctx.config.getOption("DomainExpansionSafety")){
     std::vector<ID> deidb;
     deidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     deidb.insert(deidb.end(), ci.innerRules.begin(), ci.innerRules.end());
@@ -231,8 +231,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     }
 
     // compute extensions of domain predicates and add it to the input
-    if (factory.ctx.config.getOption("AutoStrongSafety")){
-      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<GenuineSolver>(factory.ctx, postprocInput);
+    if (factory.ctx.config.getOption("DomainExpansionSafety")){
+      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<GenuineSolver>(factory.ci, factory.ctx, postprocInput);
       postprocInput->add(*domPredictaesExtension);
     }
 
@@ -434,7 +434,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	// which semantics?
 	if (factory.ctx.config.getOption("WellJustified")){
 		// well-justified FLP: fixpoint iteration
-		InterpretationPtr fixpoint = getFixpoint(factory.ctx, compatibleSet, grounder->getGroundProgram());
+		InterpretationPtr fixpoint = welljustifiedSemanticsGetFixpoint(factory.ctx, compatibleSet, grounder->getGroundProgram());
 		InterpretationPtr reference = InterpretationPtr(new Interpretation(*compatibleSet));
 		factory.gpMask.updateMask();
 		factory.gnMask.updateMask();

@@ -51,6 +51,7 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/PluginContainer.h"
+#include "dlvhex2/AttributeGraph.h"
 #include "dlvhex2/DependencyGraph.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/FinalEvalGraph.h"
@@ -132,6 +133,7 @@ STATE_FUNC_DEFAULT_IMPL(mlpSolver);
 STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
 STATE_FUNC_DEFAULT_IMPL(safetyCheck);
 STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
+STATE_FUNC_DEFAULT_IMPL(createAttributeGraph);
 STATE_FUNC_DEFAULT_IMPL(optimizeEDBDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(createComponentGraph);
 STATE_FUNC_DEFAULT_IMPL(strongSafetyCheck);
@@ -608,6 +610,18 @@ void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
   }
 
   ctx->depgraph = depgraph;
+
+  StatePtr next(new CreateAttributeGraphState);
+  changeState(ctx, next);
+}
+
+MANDATORY_STATE_CONSTRUCTOR(CreateAttributeGraphState);
+
+void CreateAttributeGraphState::createAttributeGraph(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building attribute graph");
+
+  ctx->attrgraph = AttributeGraphPtr(new AttributeGraph(ctx->registry(), ctx->idb));
 
   StatePtr next(new OptimizeEDBDependencyGraphState);
   changeState(ctx, next);

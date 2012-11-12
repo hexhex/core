@@ -1,0 +1,11 @@
+% If evaluated with --heuristics=monolithic and --domainexpansionsafety,
+% this program tests if it works that outer external atoms become inner ones.
+% While forbidden with strong safety, this should work with domainexpansionsafety.
+
+% If evaluated with --heuristics=monolithic, parameter q in &id[q](Z) is unstratified,
+% thus the domain exploration algorithm needs to guess the assignments to q(a).
+% With --heuristics=greedy the second rule is in a different component and
+% both can be solved with plain model generator.
+p(a).
+q(Y) :- p(X), &testConcat[X,a](Y).
+res(Z) :- &id[q](Z).

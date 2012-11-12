@@ -185,6 +185,7 @@ void ProgramCtx::mlpSolver() { state->mlpSolver(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
 void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
 void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }
+void ProgramCtx::createAttributeGraph() { state->createAttributeGraph(this); }
 void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
 void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }
 void ProgramCtx::strongSafetyCheck() { state->strongSafetyCheck(this); }
@@ -263,6 +264,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
 	pc.safetyCheck();
 	pc.createDependencyGraph();
+	pc.createAttributeGraph();
 	pc.optimizeEDBDependencyGraph();
 	pc.createComponentGraph();
 	pc.createEvalGraph();
@@ -401,6 +403,7 @@ void ProgramCtx::associateExtAtomsWithPluginAtoms(
       assert(!!itpa->second);
       // we store this as a POD pointer!
       eatom.pluginAtom = itpa->second.get();
+      eatom.prop |= itpa->second->getExtSourceProperties();
     }
     else
     {

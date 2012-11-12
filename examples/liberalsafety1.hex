@@ -1,0 +1,6 @@
+% The "finitedomain" property ensures domain-expansion safety.
+
+dom(1).
+dom(2).
+
+p(X) :- &testNonmon[p](X).

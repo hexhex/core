@@ -1,0 +1,4 @@
+% The program is safe because testSubstr returns only smaller strings wrt. to the wellordering of string length
+
+s("helloworld").
+s(Y) :- s(X), &testSubstr[X,1,10](Y).

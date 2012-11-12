@@ -50,6 +50,7 @@ libdlvhex2_base_la_SOURCES = \
     ASPSolverManager.cpp \
     AsynchronousModelGenerator.cpp \
     Atoms.cpp \
+    AttributeGraph.cpp \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
@@ -65,6 +66,7 @@ libdlvhex2_base_la_SOURCES = \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicGreedy.cpp \
+    EvalHeuristicMonolithic.cpp \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicShared.cpp \
     EvalHeuristicTrivial.cpp \

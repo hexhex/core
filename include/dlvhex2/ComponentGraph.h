@@ -84,6 +84,7 @@ public:
     std::vector<ID> innerConstraints;
     boost::unordered_map<ID, std::set<ID> > stronglySafeVariables;
     boost::unordered_map<ID, std::set<ID> > stratifiedLiterals;
+    std::set<ID> predicatesInComponent;
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories
@@ -248,9 +249,12 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
+
   bool calculateFixedDomain(ComponentInfo& ci);
   bool computeRecursiveAggregatesInComponent(ComponentInfo& ci);
-  bool calculateStratificationInfo(ComponentInfo& ci);
+
+public:
+  static bool calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

@@ -38,6 +38,20 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& prop2){
+	BOOST_FOREACH (int i, prop2.monotonicInputPredicates) monotonicInputPredicates.insert(i);
+	BOOST_FOREACH (int i, prop2.antimonotonicInputPredicates) antimonotonicInputPredicates.insert(i);
+	BOOST_FOREACH (int i, prop2.predicateParameterNameIndependence) predicateParameterNameIndependence.insert(i);
+	BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
+	functional |= prop2.functional;
+	functionalStart = functionalStart > prop2.functionalStart ? functionalStart : prop2.functionalStart;
+	atomlevellinear |= prop2.atomlevellinear;
+	tuplelevellinear |= prop2.tuplelevellinear;
+	usesEnvironment |= prop2.usesEnvironment;
+	finiteFiber |= prop2.finiteFiber;
+	wellorderingStrlen |= prop2.wellorderingStrlen;
+}
+
 /**
 * @return overall monotonicity
 */

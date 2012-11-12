@@ -494,7 +494,7 @@ void BaseModelGeneratorFactory::convertRuleBody(
       PluginAtom* pluginAtom = eatom.pluginAtom;
 
       // create replacement atom
-      OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
+      OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
       replacement.tuple.push_back(
           reg->getAuxiliaryConstantSymbol('r',
             pluginAtom->getPredicateID()));

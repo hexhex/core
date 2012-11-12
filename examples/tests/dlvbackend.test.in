@@ -108,3 +108,13 @@ module-Hanoi.mlp module-Hanoi.out --mlp --solver=dlv
 module-Complex.mlp module-Complex.out --mlp --solver=dlv
 module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=dlv
 module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=dlv
+liberalsafety1.hex liberalsafety1.out --domainexpansionsafety --solver=dlv
+liberalsafety2.hex liberalsafety2.out --domainexpansionsafety --solver=dlv
+liberalsafety3.hex liberalsafety3.out --domainexpansionsafety --solver=dlv
+# dlv does not accept constants larger than maxint
+# liberalsafety4.hex liberalsafety4.out --domainexpansionsafety --solver=dlv
+liberalsafety5.hex liberalsafety5.out --domainexpansionsafety --solver=dlv
+liberalsafety6.hex liberalsafety6.out --domainexpansionsafety --solver=dlv
+liberalsafety7.hex liberalsafety7.out --domainexpansionsafety --solver=dlv --heuristics=monolithic
+liberalsafety8.hex liberalsafety8.out --domainexpansionsafety --solver=dlv
+liberalsafety9.hex liberalsafety9.out --domainexpansionsafety --solver=dlv

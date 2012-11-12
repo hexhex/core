@@ -546,6 +546,11 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           if (mergeComponents(compgraph.propsOf(comp), compgraph.propsOf(comp2))){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
+              // merge only one pair at a time, otherwise this could create cycles which are not detected above:
+              // e.g. C1     C2 --> C3 --> C4
+              // C1 can be merged with C2 and C1 can be merged with C4, but it can't be merged with both of them because this would create a cycle
+              // This is only detected if we see {C1, C2} (or {C1, C4}) as intermediate result
+              break;
             }
           }else{
             DBGLOG(DBG, "do not merge because the fixed domain property is different for the components");
