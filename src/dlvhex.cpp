@@ -157,6 +157,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        aufs: Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
+      << "     --noflpcriterion Do no apply decision criterion to skip the FLP check" << std::endl
       << "     --ufslearn=[none,reduct,ufs]" << std::endl
       << "                      Enable learning from UFS checks (only useful with --flpcheck=[a]ufs[m])" << std::endl
       << "                        none (default): No learning" << std::endl
@@ -344,6 +345,7 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+  pctx.config.setOption("FLPDecisionCriterion", 1);
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("UFSCheck", 0);
   pctx.config.setOption("UFSCheckMonolithic", 0);
@@ -645,6 +647,7 @@ void processOptionsPrePlugin(
 		{ "extlearn", optional_argument, 0, 18 },
 		{ "flpcheck", required_argument, 0, 20 },
 		{ "ufslearn", optional_argument, 0, 23 },
+		{ "noflpcriterion", no_argument, 0, 35 },
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "eaevalheuristics", required_argument, 0, 26 },
 		{ "ufscheckheuristics", required_argument, 0, 27 },
@@ -1218,6 +1221,8 @@ void processOptionsPrePlugin(
 		case 33: pctx.config.setOption("DomainExpansionSafety", 1); break;
 
 		case 34: pctx.config.setOption("MultiThreading", 1); break;
+
+		case 35: pctx.config.setOption("FLPDecisionCriterion", 0); break;
 
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
