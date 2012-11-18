@@ -1816,14 +1816,16 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		std::set<ID> skipProgram,
 		SimpleNogoodContainerPtr ngc){
 
-	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles())){
+	bool flpdc = ctx.config.getOption("FLPDecisionCriterion");
+
+	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles()) && flpdc){
 		DBGLOG(DBG, "Skipping UFS check program  it contains neither head-cycles nor e-cycles");
 		return std::vector<IDAddress>();
 	}
 
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
-		if (mg && agp.hasECycles()){
+		if (mg && agp.hasECycles() && flpdc){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			if (preparedUnfoundedSetCheckers.size() == 0){
 				preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
@@ -1856,13 +1858,13 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp))){
+			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp)) && flpdc){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
 				continue;
 			}
 
 			DBGLOG(DBG, "Checking for UFS in component " << comp);
-			if (mg && agp.hasECycles(comp)){
+			if (mg && agp.hasECycles(comp) && flpdc){
 				DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 				if (preparedUnfoundedSetCheckers.find(comp) == preparedUnfoundedSetCheckers.end()){
 					preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
