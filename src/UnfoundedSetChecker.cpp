@@ -1825,7 +1825,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
-		if (mg && agp.hasECycles() || !flpdc){
+		if (mg && (agp.hasECycles() || !flpdc)){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			if (preparedUnfoundedSetCheckers.size() == 0){
 				preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
@@ -1864,7 +1864,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 			}
 
 			DBGLOG(DBG, "Checking for UFS in component " << comp);
-			if (mg && agp.hasECycles(comp) || !flpdc){
+			if (mg && (agp.hasECycles(comp) || !flpdc)){
 				DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 				if (preparedUnfoundedSetCheckers.find(comp) == preparedUnfoundedSetCheckers.end()){
 					preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
