@@ -1008,8 +1008,7 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 	claspStarted = false;
 	endOfModels = false;
 	terminationRequest = false;
-	assert(!!ep);
-	ep->reset();
+	if(!!ep) ep->reset();
 
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
