@@ -566,7 +566,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 		}
 	}else{
 		// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0){
+		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterion")){
 			DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
 			return true;
 		}else{
