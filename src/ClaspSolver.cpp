@@ -891,6 +891,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	modelCount = 0;
 	if (initiallyInconsistent){
 		endOfModels = true;
+		ep = NULL;
 		claspThread = NULL;
 	}else{
 		if (pb.dependencyGraph() && pb.dependencyGraph()->nodes() > 0) {
@@ -945,6 +946,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 	modelCount = 0;
 	if (initiallyInconsistent){
 		endOfModels = true;
+		ep = NULL;
 		claspThread = NULL;
 	}else{
 		// add enumerator
