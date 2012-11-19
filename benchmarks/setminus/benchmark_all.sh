@@ -3,7 +3,7 @@
 if [ $# -le 0 ]; then
 	to=300
 else
-	to=$2
+	to=$1
 fi
 
 for (( instance=1; instance<=20; instance++ ))
