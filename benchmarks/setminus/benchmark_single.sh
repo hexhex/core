@@ -38,14 +38,14 @@ for (( j = 1; j <= instance; j++ ))
 do
 	prog="domain($j). $prog"
 done
-echo $prog > prog.hex
+echo $prog > prog$instance.hex
 
 # for all configurations
 i=0
 for c in "${confs[@]}"
 do
 	echo -ne -e " "
-	output=$(timeout $to time -f %e dlvhex2 $c --plugindir=../../testsuite/ prog.hex 2>&1 >/dev/null)
+	output=$(timeout $to time -f %e dlvhex2 $c --plugindir=../../testsuite/ prog$instance.hex 2>&1 >/dev/null)
 	if [[ $? == 124 ]]; then
 		output="---"
 	fi
@@ -54,4 +54,4 @@ do
 done
 echo -e -ne "\n"
 
-rm prog.hex
+rm prog$instance.hex
