@@ -651,6 +651,7 @@ void AttributeGraph::computeInitiallyBoundedVariables(){
 	// 3. make output variables of external atoms safe, if they are in a position with finite domain
 	// 4. make input variables of external atoms safe, if they have no output variables
 	// 5. make variables bounded, which they are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
+	// 6. make variables in #int(...) atoms bounded
 	BOOST_FOREACH (ID ruleID, idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID b, rule.body){
@@ -689,6 +690,10 @@ void AttributeGraph::computeInitiallyBoundedVariables(){
 						}
 					}
 				}
+			}
+			else if (b.isBuiltinAtom()){
+				const BuiltinAtom& batom = reg->batoms.getByID(b);
+				if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) addBoundedVariable(VariableLocation(ruleID, batom.tuple[1]));
 			}
 			else if (b.isAggregateAtom()){
 				const AggregateAtom& aatom = reg->aatoms.getByID(b);

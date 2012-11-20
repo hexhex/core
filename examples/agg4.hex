@@ -1,3 +1,5 @@
+#maxint=3.
+
 a(1,a) v a(2,b).
 a(1,c) v a(3,d).
 

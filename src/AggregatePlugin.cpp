@@ -437,6 +437,14 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				bi.tuple.push_back(aatom.tuple[4]);
 				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
 			}
+
+			// add an atom  #int(valueVariable)
+			{
+				BuiltinAtom batom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+				batom.tuple.push_back(ID::termFromBuiltin(ID::TERM_BUILTIN_INT));
+				batom.tuple.push_back(valueVariable);
+				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(batom)));
+			}
 		}else{
 			// take it as it is
 			newRule.body.push_back(b);
