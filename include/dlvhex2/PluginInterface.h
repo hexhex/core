@@ -918,6 +918,18 @@ public:
   bool checkOutputArity(unsigned arity) const;
 
   /**
+   * The function is called once for each external atom.
+   * It may inspect the input list and set additional external atom properties,
+   * which do not hold in general but only for a certain usage of the external source.
+   * Example: Let &sql[r1, ..., rn, query](X1, ..., Xm) be an SQL-query processor
+   *          over relations r1, ..., rn.
+   *          Then &sql is in general not monotonic, but if query is a simple
+   *          selection of all tuples, then it becomes monotonic.
+   * (Note that eatom.prop is mutable, thus is can be modified although eatom is const)
+   */
+  virtual void setupProperties(const ExternalAtom& eatom) {}
+
+  /**
    * \brief Retrieve answer object according to a query (cached).
    *
    * This function implements the query cache, if enabled, and will rarely need to be

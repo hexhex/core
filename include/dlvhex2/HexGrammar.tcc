@@ -514,7 +514,6 @@ struct sem<HexGrammarSemantics::externalAtom>
 
   void interpretProperties(HexGrammarSemantics& mgr, ExternalAtom& atom, std::vector<ExtSourceProperty>& props){
 
-    atom.useProp = true;
     BOOST_FOREACH (ExtSourceProperty prop, props){
       switch (prop.type){
         case ExtSourceProperty::FUNCTIONAL:

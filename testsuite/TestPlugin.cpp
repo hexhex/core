@@ -642,7 +642,13 @@ public:
     addInputPredicate();
     setOutputArity(1);
 
-    prop.finiteOutputDomain.insert(0);
+//    prop.finiteOutputDomain.insert(0);
+  }
+
+  virtual void setupProperties(const ExternalAtom& eatom){
+    if (getRegistry()->terms.getByID(eatom.inputs[0]).symbol == "p"){
+      prop.finiteOutputDomain.insert(0);
+    }
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
