@@ -39,17 +39,23 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& prop2){
-	BOOST_FOREACH (int i, prop2.monotonicInputPredicates) monotonicInputPredicates.insert(i);
-	BOOST_FOREACH (int i, prop2.antimonotonicInputPredicates) antimonotonicInputPredicates.insert(i);
-	BOOST_FOREACH (int i, prop2.predicateParameterNameIndependence) predicateParameterNameIndependence.insert(i);
-	BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
+	monotonicInputPredicates.insert(prop2.monotonicInputPredicates.begin(), prop2.monotonicInputPredicates.end());
+	antimonotonicInputPredicates.insert(prop2.antimonotonicInputPredicates.begin(), prop2.antimonotonicInputPredicates.end());
+	predicateParameterNameIndependence.insert(prop2.predicateParameterNameIndependence.begin(), prop2.predicateParameterNameIndependence.end());
+	finiteOutputDomain.insert(prop2.finiteOutputDomain.begin(), prop2.finiteOutputDomain.end());
+//	BOOST_FOREACH (int i, prop2.monotonicInputPredicates) monotonicInputPredicates.insert(i);
+//	BOOST_FOREACH (int i, prop2.antimonotonicInputPredicates) antimonotonicInputPredicates.insert(i);
+//	BOOST_FOREACH (int i, prop2.predicateParameterNameIndependence) predicateParameterNameIndependence.insert(i);
+//	BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
 	functional |= prop2.functional;
 	functionalStart = functionalStart > prop2.functionalStart ? functionalStart : prop2.functionalStart;
 	atomlevellinear |= prop2.atomlevellinear;
 	tuplelevellinear |= prop2.tuplelevellinear;
 	usesEnvironment |= prop2.usesEnvironment;
 	finiteFiber |= prop2.finiteFiber;
-	wellorderingStrlen |= prop2.wellorderingStrlen;
+	BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
+	wellorderingStrlen.insert(prop2.wellorderingStrlen.begin(), prop2.wellorderingStrlen.end());
+	wellorderingNatural.insert(prop2.wellorderingNatural.begin(), prop2.wellorderingNatural.end());
 }
 
 /**

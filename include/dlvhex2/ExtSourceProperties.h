@@ -62,22 +62,22 @@ struct ExtSourceProperty:
 		FUNCTIONAL,
 		ATOMLEVELLINEAR,
 		TUPLELEVELLINEAR,
-		NONATOMLEVELLINEAR,
 		USES_ENVIRONMENT,
 		FINITEDOMAIN,
 		FINITEFIBER,
-		WELLORDERINGSTRLEN
+		WELLORDERINGSTRLEN,
+		WELLORDERINGNATURAL
 	};
 
 	Type type;
-	ID param;
+	ID param1, param2;
 
 	ExtSourceProperty(){}
-	ExtSourceProperty(Type t, ID p) : type(t), param(p){}
-	ExtSourceProperty(Type t) : type(t), param(ID_FAIL){}
+	ExtSourceProperty(Type t, ID p1, ID p2) : type(t), param1(p1), param2(p2){}
+	ExtSourceProperty(Type t) : type(t), param1(ID_FAIL), param2(ID_FAIL){}
   
   std::ostream& print(std::ostream& o) const
-    { return o << "ExtSourceProperty(type=" << type << ",param=" << param << ")"; }
+    { return o << "ExtSourceProperty(type=" << type << ",param1=" << param1 << ",param2=" << param2 << ")"; }
 };
 
 // Stores properties of an external source on one of two levels:
@@ -108,7 +108,9 @@ struct ExtSourceProperties
 	bool tuplelevellinear;		// predicate input can be split such that only atoms with the same arguments must be grouped
 	bool usesEnvironment;		// external atom uses the environment (cf. acthex)
 	bool finiteFiber;		// a fixed output value can be produced only by finitly many different inputs
-	bool wellorderingStrlen;	// the output uses constants which are at most as long as the longest input
+//	bool wellorderingStrlen;	// the output uses constants which are at most as long as the longest input
+	std::set<std::pair<int, int> > wellorderingStrlen;	// <i,j> means that output value at position j is strictly smaller than at input position i (strlen)
+	std::set<std::pair<int, int> > wellorderingNatural;	// <i,j> means that output value at position j is strictly smaller than at input position i (wrt. natural numbers)
 
 	ExtSourceProperties() : ea(0), pa(0), functionalStart(0){
 		functional = false;
@@ -116,7 +118,6 @@ struct ExtSourceProperties
 		tuplelevellinear = false;
 		usesEnvironment = false;
 		finiteFiber = false;
-		wellorderingStrlen = false;
 	}
 
 	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
@@ -194,8 +195,14 @@ struct ExtSourceProperties
 	/**
 	* @return strlen well ordering
 	*/
-	bool hasWellorderingStrlen() const
-	{ return wellorderingStrlen; }
+	bool hasWellorderingStrlen(int from, int to) const
+	{ return wellorderingStrlen.count(std::pair<int, int>(from, to)) > 0; }
+
+	/**
+	* @return natural well ordering
+	*/
+	bool hasWellorderingNatural(int from, int to) const
+	{ return wellorderingNatural.count(std::pair<int, int>(from, to)) > 0; }
 };
 
 DLVHEX_NAMESPACE_END

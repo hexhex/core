@@ -517,11 +517,13 @@ struct sem<HexGrammarSemantics::externalAtom>
     BOOST_FOREACH (ExtSourceProperty prop, props){
       switch (prop.type){
         case ExtSourceProperty::FUNCTIONAL:
-          DBGLOG(DBG, "External Atom is functional");
+	 if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"functional\" expects no parameters");
+         DBGLOG(DBG, "External Atom is functional");
           atom.prop.functional = true;
           break;
         case ExtSourceProperty::MONOTONIC:
-          if (prop.param == ID_FAIL){
+	  if (prop.param2 != ID_FAIL) throw GeneralError("Property \"monotonic\" expects less than two parameters");
+          if (prop.param1 == ID_FAIL){
             DBGLOG(DBG, "External Atom is monotonic in all input parameters");
             for (int i = 0; i < atom.inputs.size(); ++i){
               atom.prop.monotonicInputPredicates.insert(i);
@@ -529,7 +531,7 @@ struct sem<HexGrammarSemantics::externalAtom>
           }else{
             bool found = false;
             for (int i = 0; i < atom.inputs.size(); ++i){
-              if (atom.inputs[i] == prop.param){
+              if (atom.inputs[i] == prop.param1){
                 DBGLOG(DBG, "External Atom is monotonic in parameter " << i);
                 atom.prop.monotonicInputPredicates.insert(i);
                 found = true;
@@ -540,7 +542,8 @@ struct sem<HexGrammarSemantics::externalAtom>
           }
           break;
         case ExtSourceProperty::ANTIMONOTONIC:
-          if (prop.param == ID_FAIL){
+	  if (prop.param2 != ID_FAIL) throw GeneralError("Property \"antimonotonic\" expects less than two parameters");
+          if (prop.param1 == ID_FAIL){
             DBGLOG(DBG, "External Atom is antimonotonic in all input parameters");
             for (int i = 0; i < atom.inputs.size(); ++i){
               atom.prop.antimonotonicInputPredicates.insert(i);
@@ -548,7 +551,7 @@ struct sem<HexGrammarSemantics::externalAtom>
           }else{
             bool found = false;
             for (int i = 0; i < atom.inputs.size(); ++i){
-              if (atom.inputs[i] == prop.param){
+              if (atom.inputs[i] == prop.param1){
                 DBGLOG(DBG, "External Atom is antimonotonic in parameter " << i);
                 atom.prop.antimonotonicInputPredicates.insert(i);
                 found = true;
@@ -559,31 +562,47 @@ struct sem<HexGrammarSemantics::externalAtom>
           }
           break;
         case ExtSourceProperty::ATOMLEVELLINEAR:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"atomlevellinear\" expects no parameters");
           DBGLOG(DBG, "External Atom is linear on atom level");
           atom.prop.atomlevellinear = true;
           break;
         case ExtSourceProperty::TUPLELEVELLINEAR:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"tuplelevellinear\" expects no parameters");
           DBGLOG(DBG, "External Atom is linear on tuple level");
           atom.prop.tuplelevellinear = true;
           break;
+        case ExtSourceProperty::USES_ENVIRONMENT:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"usesenvironment\" expects no parameters");
+          DBGLOG(DBG, "External Atom uses environment");
+          atom.prop.usesEnvironment = true;
+          break;
         case ExtSourceProperty::FINITEDOMAIN:
-          if (prop.param == ID_FAIL){
+	  if (prop.param2 != ID_FAIL) throw GeneralError("Property \"finitedomain\" expects less than two parameters");
+          if (prop.param1 == ID_FAIL){
             DBGLOG(DBG, "External Atom has a finite domain in all output positions");
             for (int i = 0; i < atom.tuple.size(); ++i){
               atom.prop.finiteOutputDomain.insert(i);
             }
           }else{
             bool found = false;
-            atom.prop.finiteOutputDomain.insert(prop.param.address);
+	    if (!prop.param1.isIntegerTerm()) throw GeneralError("The parameter of property \"finitedomain\" must be an integer");
+            atom.prop.finiteOutputDomain.insert(prop.param1.address);
           }
           break;
         case ExtSourceProperty::FINITEFIBER:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"finitefiber\" expects no parameters");
           DBGLOG(DBG, "External Atom has a finite fiber");
           atom.prop.finiteFiber = true;
           break;
         case ExtSourceProperty::WELLORDERINGSTRLEN:
+	  if (prop.param1 == ID_FAIL || prop.param2 == ID_FAIL) throw GeneralError("Property \"wellordering\" expects two parameters");
           DBGLOG(DBG, "External Atom has a wellordering using strlen");
-          atom.prop.wellorderingStrlen = true;
+          atom.prop.wellorderingStrlen.insert(std::pair<int, int>(prop.param1.address, prop.param2.address));
+          break;
+        case ExtSourceProperty::WELLORDERINGNATURAL:
+	  if (prop.param1 == ID_FAIL || prop.param2 == ID_FAIL) throw GeneralError("Property \"wellordering\" expects two parameters");
+          DBGLOG(DBG, "External Atom has a wellordering using natural");
+          atom.prop.wellorderingNatural.insert(std::pair<int, int>(prop.param1.address, prop.param2.address));
           break;
       }
     }
@@ -635,30 +654,45 @@ struct sem<HexGrammarSemantics::externalAtom>
 template<>
 struct sem<HexGrammarSemantics::extSourceProperty>
 {
-  void operator()(HexGrammarSemantics& mgr, const std::string& property, ExtSourceProperty& target)
+  void operator()(
+	HexGrammarSemantics& mgr,
+	const boost::fusion::vector2<
+		std::string,
+		boost::optional<
+			boost::fusion::vector2<
+				ID,
+				boost::optional<ID>
+			>
+		> >& source,
+	ExtSourceProperty& target)
   {
-    operator()(mgr, boost::fusion::vector2<const std::string&, const ID&>(property, ID_FAIL), target);
-  }
-  void operator()(HexGrammarSemantics& mgr, boost::fusion::vector2<const std::string&, const ID&> source, ExtSourceProperty& target)
-  {
+
+	ID p1 = ID_FAIL;
+	ID p2 = ID_FAIL;
+	if (!!boost::fusion::at_c<1>(source)){
+		p1 = boost::fusion::at_c<0>(boost::fusion::at_c<1>(source).get());
+		if (boost::fusion::at_c<1>(boost::fusion::at_c<1>(source).get())){
+			p2 = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source).get()).get();
+		}
+	}
         if (boost::fusion::at_c<0>(source) == "functional"){
-		target = ExtSourceProperty(ExtSourceProperty::FUNCTIONAL, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::FUNCTIONAL, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "monotonic"){
-		target = ExtSourceProperty(ExtSourceProperty::MONOTONIC, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::MONOTONIC, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "antimonotonic"){
-		target = ExtSourceProperty(ExtSourceProperty::ANTIMONOTONIC, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::ANTIMONOTONIC, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "fullylinear" || boost::fusion::at_c<0>(source) == "atomlevellinear"){
-		target = ExtSourceProperty(ExtSourceProperty::ATOMLEVELLINEAR, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::ATOMLEVELLINEAR, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "tuplelevellinear"){
-		target = ExtSourceProperty(ExtSourceProperty::TUPLELEVELLINEAR, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::TUPLELEVELLINEAR, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "usesenvironment"){
+		target = ExtSourceProperty(ExtSourceProperty::USES_ENVIRONMENT, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "finitedomain"){
-		ID idx = boost::fusion::at_c<1>(source);
-		if (!(idx == ID_FAIL || idx.isIntegerTerm())) throw GeneralError("Property \"finitedomain\" must specify the 0-based index of an output element");
-		target = ExtSourceProperty(ExtSourceProperty::FINITEDOMAIN, idx);
+		target = ExtSourceProperty(ExtSourceProperty::FINITEDOMAIN, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "finitefiber"){
-		target = ExtSourceProperty(ExtSourceProperty::FINITEFIBER, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::FINITEFIBER, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "wellorderingstrlen"){
-		target = ExtSourceProperty(ExtSourceProperty::WELLORDERINGSTRLEN, boost::fusion::at_c<1>(source));
+		target = ExtSourceProperty(ExtSourceProperty::WELLORDERINGSTRLEN, p1, p2);
 	}else{
 		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
 	}
@@ -1075,8 +1109,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::externalAtom(sem) ];
 
   externalAtomProperty
-    = (cident >> term > qi::eps) [ Sem::extSourceProperty(sem) ]
-    | (cident > qi::eps) [ Sem::extSourceProperty(sem) ];
+    = (cident > -(term > -term) > qi::eps) [ Sem::extSourceProperty(sem) ];
 
   externalAtomProperties
     = (externalAtomProperty > qi::eps) % qi::lit(',');

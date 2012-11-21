@@ -533,14 +533,37 @@ void AttributeGraph::computeCyclicAttributes(){
 		// 2. the SCC has potential to become malign
 		if (depSCC[c].size() > 1){
 			bool malign = false;
-			BOOST_FOREACH (Attribute at, depSCC[c]){
-				if (at.type == Attribute::External){
-					if (!reg->eatoms.getByID(at.eatomID).getExtSourceProperties().wellorderingStrlen){
-						malign = true;
-						break;
+
+			// stores for each external atom ID the pairs of input and output arguments which need to support a wellordering
+			std::vector<std::pair<ID, std::pair<int, int> > > pairsToCheck;
+
+			// for all output attributes
+			BOOST_FOREACH (Attribute oat, depSCC[c]){
+				if (oat.type == Attribute::External && oat.input == false){
+					// for all corresponding input attributes
+					BOOST_FOREACH (Attribute iat, depSCC[c]){
+						if (iat.type == Attribute::External && iat.input == true && iat.eatomID == oat.eatomID && iat.ruleID == oat.ruleID){
+							// store this pair
+							pairsToCheck.push_back(std::pair<ID, std::pair<int, int> >(iat.eatomID, std::pair<int, int>(iat.argIndex - 1, oat.argIndex - 1)));
+						}
 					}
+//					if (!reg->eatoms.getByID(at.eatomID).getExtSourceProperties().wellorderingStrlen){
+//						malign = true;
+//						break;
+//					}
 				}
 			}
+
+			// check all pairs
+			bool strlen = true;
+			bool natural = true;
+			for (int p = 0; p < pairsToCheck.size(); ++p){
+				DBGLOG(DBG, "Checking if " << pairsToCheck[p].first << " has a wellordering from argument " << pairsToCheck[p].second.first << " to argument " << pairsToCheck[p].second.second);
+				const ExtSourceProperties& prop = reg->eatoms.getByID(pairsToCheck[p].first).getExtSourceProperties();
+				strlen &= prop.hasWellorderingStrlen(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
+				natural &= prop.hasWellorderingNatural(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
+			}
+			malign = !strlen && !natural;
 
 			if (malign){
 				BOOST_FOREACH (Attribute at, depSCC[c]){

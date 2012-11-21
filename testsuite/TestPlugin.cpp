@@ -284,7 +284,7 @@ public:
     setOutputArity(1);
 
     prop.functional = true;
-    prop.wellorderingStrlen = true;
+    prop.wellorderingStrlen.insert(std::pair<int, int>(0, 0));
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
