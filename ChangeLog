@@ -1,3 +1,8 @@
+2012-11-22  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* src/ClaspSolver.cpp: Upgrade to clasp 2.1.1.
+	* checkout_build_potassco.sh: Add 3 gringo patches.
+
 2012-11-09  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* src/AttributeGraph.cpp: First complete implementation of

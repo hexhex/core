@@ -12,7 +12,7 @@ if test -e clasp; then
 	fi
 else
 	echo "checking out clasp"
-  svn co $POTASSCO_REPOROOT/tags/clasp-2.0.5 clasp
+  svn co $POTASSCO_REPOROOT/tags/clasp-2.1.1 clasp
 	mkdir -p clasp/build/release
 	echo "configuring clasp"
 	pushd clasp
@@ -38,6 +38,12 @@ else
   mkdir -p gringo/build/release
   echo "patching gringo (for multithreaded)"
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.patch ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.patch ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.patch ||
     { echo "gringo patching failed!"; exit -1; }
   #echo "patching gringo (for clang)"
   #patch -d gringo -p0 <gringo/patches/patch-clang.diff ||

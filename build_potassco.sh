@@ -9,7 +9,7 @@ if test -e clasp; then
 	fi
 else
 	echo "unpacking clasp"
-  tar xzf ${TOP_SRCDIR}/clasp-2.0.5-source.tar.gz --transform 's/clasp-2.0.5/clasp/'
+  tar xzf ${TOP_SRCDIR}/clasp-2.1.1-source.tar.gz --transform 's/clasp-2.1.1/clasp/'
 	echo "configuring clasp"
 	mkdir -p clasp/build/release
 	(

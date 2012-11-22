@@ -308,7 +308,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 #endif
 
 	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
-	std::pair<bool, bool> ret(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok);
+	std::pair<bool, bool> ret(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok());
 
 	return ret;
 }
@@ -856,7 +856,7 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 #endif
 
 		DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
-		initiallyInconsistent |= !Clasp::ClauseCreator::create(*claspInstance.master(), clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order).ok;
+		initiallyInconsistent |= !Clasp::ClauseCreator::create(*claspInstance.master(), clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order).ok();
 	}
 
 	return initiallyInconsistent;
@@ -915,7 +915,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
 		ep = new ExternalPropagator(*this);
-		claspInstance.addPost(ep);
+		claspInstance.master()->addPost(ep);
 
 		// endInit() must be called once before the search starts
 		DBGLOG(DBG, "Finalizing clasp initialization");
@@ -957,7 +957,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
 		ep = new ExternalPropagator(*this);
-		claspInstance.addPost(ep);
+		claspInstance.master()->addPost(ep);
 
 		// endInit() must be called once before the search starts
 		DBGLOG(DBG, "Finalizing clasp initialization");
