@@ -104,6 +104,7 @@ private:
 		> NodeMapping;
 	NodeMapping nm;
 	typedef NodeMapping::index<NodeInfoTag>::type NodeNodeInfoIndex;
+	std::vector<std::vector<Attribute> > depSCC;
 
 	// some indices
 	typedef std::pair<std::set<VariableLocation>, boost::unordered_set<Attribute> > SafetyPreconditions;	// stores which variables still need to be bounded
@@ -136,6 +137,7 @@ private:
 	// trigger functions
 	void addBoundedVariable(VariableLocation vl);								// called after a new variable has become bounded to trigger further actions
 	void addDomainExpansionSafeAttribute(Attribute at);							// called after an attribute has become safe to trigger further actions
+	bool identifyBenignCycles();										// makes output attributes in benign cycles safe; returns if new attributes became safe
 
 	// initialization
 	void computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow);	// computes for a given rule the

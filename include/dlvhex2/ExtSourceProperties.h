@@ -136,7 +136,7 @@ struct ExtSourceProperties
 	* @return monotonicity on parameter level
 	*/
 	bool isMonotonic(int parameterIndex) const
-	{ return monotonicInputPredicates.count(parameterIndex); }
+	{ return monotonicInputPredicates.count(parameterIndex) > 0; }
 
 	/**
 	* @return antimonotonicity on parameter level
@@ -172,7 +172,7 @@ struct ExtSourceProperties
 	* @return bool True if the name of the predicate parameter with the given index is irrelevant
 	*/
 	bool isIndependentOfPredicateParameterName(int parameterIndex) const
-	{ return predicateParameterNameIndependence.count(parameterIndex); }
+	{ return predicateParameterNameIndependence.count(parameterIndex) > 0; }
 
 	/**
 	* @return true if this Atom uses Environment
@@ -184,7 +184,7 @@ struct ExtSourceProperties
 	* @return bool True if the specified output element has a finite domain
 	*/
 	bool hasFiniteDomain(int outputElement) const
-	{ return finiteOutputDomain.count(outputElement); }
+	{ return finiteOutputDomain.count(outputElement) > 0; }
 
 	/**
 	* @return finite fiber

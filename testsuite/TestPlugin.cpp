@@ -271,6 +271,117 @@ public:
 };
 #endif
 
+class TestListConcatAtom:
+  public PluginAtom
+{
+public:
+  TestListConcatAtom():
+    PluginAtom("testListConcat", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputTuple();
+    setOutputArity(1);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    std::stringstream ss;
+
+    BOOST_FOREACH(ID tid, query.input)
+    {
+			assert(tid.isTerm());
+      if( tid.isIntegerTerm() )
+        ss << tid.address;
+      else if( tid.isConstantTerm() )
+			{
+				const std::string& str = registry->terms.getByID(tid).getUnquotedString();
+				if (ss.str().length() > 0) ss << ";";
+				ss << str;
+			}
+      else
+        throw PluginError("encountered unknown term type!");
+    }
+    
+		Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + ss.str() + "\"");
+    Tuple tu;
+    tu.push_back(registry->storeTerm(resultterm));
+
+    answer.get().push_back(tu);
+  }
+};
+
+class TestListLengthAtom:
+  public PluginAtom
+{
+public:
+  TestListLengthAtom():
+    PluginAtom("testListLength", true)
+  {
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(1);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	const std::string& str = registry->terms.getByID(query.input[0]).getUnquotedString();
+	int len = 0;
+	if (str.length() > 0) len++;
+	for (int i = 0; i < str.length(); i++){
+		if (str[i] == ';') len++;
+	}
+
+    Tuple tu;
+    tu.push_back(ID::termFromInteger(len / query.input[1].address));
+    answer.get().push_back(tu);
+  }
+};
+
+
+class TestListSplitAtom:
+  public PluginAtom
+{
+public:
+  TestListSplitAtom():
+    PluginAtom("testListSplit", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(2);
+
+    prop.functional = true;
+    prop.wellorderingStrlen.insert(std::pair<int, int>(0, 0));
+    prop.wellorderingStrlen.insert(std::pair<int, int>(0, 1));
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	const std::string& str = registry->terms.getByID(query.input[0]).getUnquotedString();
+	int cnt = query.input[1].address;
+
+	std::stringstream substr1, substr2;
+	int nr = 0;
+	for (int i = 0; i < str.length(); i++){
+		if (str[i] == ';'){
+			nr++;
+			if (nr == cnt) continue;
+		}
+		if (nr >= cnt) substr2 << str[i];
+		else substr1 << str[i];
+	}
+
+    Term t1(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + substr1.str() + "\"");
+    Term t2(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + substr2.str() + "\"");
+    Tuple tu;
+    tu.push_back(registry->storeTerm(t1));
+    tu.push_back(registry->storeTerm(t2));
+    answer.get().push_back(tu);
+  }
+};
+
 class TestSubstrAtom:
   public PluginAtom
 {
@@ -327,12 +438,20 @@ public:
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
-    if (!query.input[0].isIntegerTerm()) throw GeneralError("testLessThan expects an integer as its second argument");
-    if (!query.input[1].isIntegerTerm()) throw GeneralError("testLessThan expects an integer as its third argument");
-
-    if (query.input[0].address < query.input[1].address){
-      Tuple tu;
-      answer.get().push_back(tu);
+    if (query.input[0].isIntegerTerm() && query.input[1].isIntegerTerm()){
+      // integer comparison
+      if (query.input[0].address < query.input[1].address){
+        Tuple tu;
+        answer.get().push_back(tu);
+      }
+    }else{
+      // string comparison
+      std::string str1 = registry->terms.getByID(query.input[0]).getUnquotedString();
+      std::string str2 = registry->terms.getByID(query.input[1]).getUnquotedString();
+      if (str1.compare(str2) < 0){
+        Tuple tu;
+        answer.get().push_back(tu);
+      }
     }
   }
 };
@@ -1287,6 +1406,9 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestListConcatAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestListLengthAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestListSplitAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSubstrAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSmallerThanAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestStrlenAtom, PluginPtrDeleter<PluginAtom>()));
