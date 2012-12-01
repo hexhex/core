@@ -456,6 +456,99 @@ public:
   }
 };
 
+class TestFirstAtom:
+  public PluginAtom
+{
+public:
+  TestFirstAtom():
+    PluginAtom("testFirst", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    setOutputArity(2);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    std::string str = registry->terms.getByID(query.input[0]).getUnquotedString();
+
+    Tuple tu;
+    tu.push_back(registry->storeConstantTerm("\"" + (str.length() >= 1 ? str.substr(0, 1) : "") + "\"", true));
+    tu.push_back(registry->storeConstantTerm("\"" + (str.length() >= 1 ? str.substr(1) : "") + "\"", true));
+    answer.get().push_back(tu);
+  }
+};
+
+class TestPushAtom:
+  public PluginAtom
+{
+public:
+  TestPushAtom():
+    PluginAtom("testPush", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(1);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    std::string str1 = registry->terms.getByID(query.input[0]).getUnquotedString();
+    std::string str2 = registry->terms.getByID(query.input[1]).getUnquotedString();
+
+    Tuple tu;
+    tu.push_back(registry->storeConstantTerm("\"" + str1 + str2 + "\""));
+    answer.get().push_back(tu);
+  }
+};
+
+class TestMoveAtom:
+  public PluginAtom
+{
+public:
+  TestMoveAtom():
+    PluginAtom("testMove", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputPredicate();
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(2);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    ID state = query.input[1];
+    std::string ichar = registry->terms.getByID(query.input[2]).getUnquotedString();
+    std::string schar = registry->terms.getByID(query.input[3]).getUnquotedString();
+
+    // go through the tuples of the accessability relation
+    bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+    bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+    while (en < en_end){
+      const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en);
+      // match?
+      if (oatom.tuple[1] == state &&
+          registry->terms.getByID(oatom.tuple[2]).getUnquotedString() == ichar &&
+          registry->terms.getByID(oatom.tuple[3]).getUnquotedString() == schar){
+
+          // go to this state
+          Tuple tu;
+          tu.push_back(oatom.tuple[4]);
+          tu.push_back(oatom.tuple[5]);
+          answer.get().push_back(tu);
+      }
+      en++;
+    }
+  }
+};
+
+
 class TestStrlenAtom:
   public PluginAtom
 {
@@ -1411,6 +1504,9 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestListSplitAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSubstrAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSmallerThanAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestFirstAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestPushAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestMoveAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestStrlenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));

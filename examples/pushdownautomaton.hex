@@ -1,0 +1,34 @@
+% This example simulates a push-down automaton (stack machine) using external atoms.
+% The program is a proof of concept for the new safety criteria (--domainexpansionsafety).
+
+% input word
+input("abc").
+
+% define the state transition function: (FromState, InputSymbol, StackSymbol, ToState, PushStackWord)
+arc(start, a, "b", s1, "bla").
+arc(s1, b, "b", s1, "x").
+arc(s1, c, "x", s1, "x").
+
+% set of final states
+final(s1).
+
+% in step 1 we are in the start state and the whole input is on the input type
+in(start, Word, b, 1) :- input(Word).
+
+% state transition:
+%   1. extract the first symbols from the input string and from the stack
+%   2. pass them to the "move" atom (simulates state transition)
+%   3. retrieve a new state and a word which is pushed on the stack
+%   4. append the new word to the stack content
+%   5. move to the new state
+in(NewState, WRest, NewStack, NewStep) :-					% 5
+	in(State, Word, Stack, Step),
+	&testFirst[Word](WChar, WRest)<finitedomain 0, wellorderingstrlen 0 1>,	% 1
+	&testFirst[Stack](SChar, SRest),					% 1
+	&testMove[arc, State, WChar, SChar](NewState, Push)<finitedomain 0>,	% 2, 3
+	&testPush[Push, SRest](NewStack)<finitedomain 0>,			% 4
+	NewStep=Step+1.
+
+% the word is accepted if we end up in a final state and the input is completely processed
+accepted :- in(State, "", _, _), final(State).
+:- not accepted.
