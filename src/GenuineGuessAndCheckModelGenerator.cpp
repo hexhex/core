@@ -64,7 +64,7 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   // (and there is quite some room for more optimization)
 
   // create program for domain exploration
-  if (ctx.config.getOption("DomainExpansionSafety")){
+  if (ctx.config.getOption("LiberalSafety")){
     std::vector<ID> deidb;
     deidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     deidb.insert(deidb.end(), ci.innerRules.begin(), ci.innerRules.end());
@@ -231,7 +231,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     }
 
     // compute extensions of domain predicates and add it to the input
-    if (factory.ctx.config.getOption("DomainExpansionSafety")){
+    if (factory.ctx.config.getOption("LiberalSafety")){
       InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<GenuineSolver>(factory.ci, factory.ctx, postprocInput);
       postprocInput->add(*domPredictaesExtension);
     }

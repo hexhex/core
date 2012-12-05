@@ -574,10 +574,10 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
     ctx.attrgraph->writeGraphViz(filev, true);
   }
 
-  if (ctx.config.getOption("DomainExpansionSafety"))
+  if (ctx.config.getOption("LiberalSafety"))
   {
     if (!ctx.attrgraph->isDomainExpansionSafe()){
-      throw SyntaxError("Program is not domain-expansion safe");
+      throw SyntaxError("Program is not liberally domain-expansion safe");
     }
     return;
   }

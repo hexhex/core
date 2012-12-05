@@ -142,12 +142,18 @@ private:
 	// initialization
 	void computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow);	// computes for a given rule the
 																// information exchange between variables through builtins
+
 	void createDependencyGraph();												// create dependency graph of ordinary and external predicates
 	void createPreconditionsAndLocationIndices();										// the indices above
 	void computeCyclicAttributes();												// compute attributes which occur in or depend on cycles
+
+	// computation
 	void ensureOrdinarySafety();												// restricts the optimization of necessary to keep ordinary safety
-	void computeInitiallySafeAttributes();											// mark attributes as domain-expansion safe
-	void computeInitiallyBoundedVariables();										// mark variables as bounded
+
+	void checkStaticConditions();												// statically checks for domain-expansion safety of attributes
+																// and boundedness of variables, i.e., the checks are done only once
+	bool checkDynamicConditions();												// iteratively checks for more domain-expansion safety of attributes
+																// and boundedness of variables; returns if changes were made
 	void computeDomainExpansionSafety();											// calls the previous methods until no more safe attributes can be derived
 public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);

@@ -186,8 +186,7 @@ void AttributeGraph::addBoundedVariable(VariableLocation vl){
 
 		// go through all external atoms where:
 		// 1. the variable occurs in an output position --> then the corresponding output attribute becomes safe
-		// 2. the variable occurs in an output position and the external atom has a finite fiber
-		// then the input variables are bounded as well
+		// 2. the variable occurs in an output position and the external atom has a finite fiber --> then the input variables are bounded as well
 		if (al.second.isExternalAtom()){
 
 			// 1.
@@ -237,7 +236,7 @@ void AttributeGraph::addBoundedVariable(VariableLocation vl){
 				if (allsafe) addBoundedVariable(VariableLocation(al.first, batom.tuple[3]));
 
 			// for binary: if one side is safe, then the other side is safe as well
-			}else if (batom.tuple.size() == 3){
+			}else if (batom.tuple.size() == 3 && batom.tuple[0].address == ID::TERM_BUILTIN_EQ){
 				if (batom.tuple[1].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[1])) > 0) addBoundedVariable(VariableLocation(al.first, batom.tuple[2]));
 				if (batom.tuple[2].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[2])) > 0) addBoundedVariable(VariableLocation(al.first, batom.tuple[1]));
 			}
@@ -266,6 +265,7 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 		}
 	}
 
+	// trigger depending actions
 	// safe attributes may lead to safe variables
 	// process safe variables due to ordinary atoms first (we want to use external atoms as rarely as possible in order to optimize them away)
 	BOOST_FOREACH (AtomLocation al, attributeOccursIn[at]){
@@ -294,8 +294,6 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 }
 
 bool AttributeGraph::identifyBenignCycles(){
-
-	bool changed = false;
 
 	for (int c = 0; c < depSCC.size(); ++c){
 		// check for this SCC:
@@ -335,14 +333,15 @@ bool AttributeGraph::identifyBenignCycles(){
 			if (!malign){
 				DBGLOG(DBG, "A cycle became benign");
 
-				// make all output of external atoms in the component bounded
+				// make all output variables of external atoms in the component bounded
 				BOOST_FOREACH (Attribute oat, depSCC[c]){
 					if (oat.type == Attribute::External && oat.input == false){
 						const ExternalAtom& eatom = reg->eatoms.getByID(oat.eatomID);
 						VariableLocation vl(oat.ruleID, eatom.tuple[oat.argIndex - 1]);
 						if (eatom.tuple[oat.argIndex - 1].isVariableTerm() && boundedVariables.count(vl) == 0){
 							boundedByExternals.insert(std::pair<ID, VariableLocation>(oat.eatomID, vl));
-							changed = true;
+							depSCC.erase(depSCC.begin() + c);
+							return true;
 						}
 					}
 				}
@@ -350,7 +349,7 @@ bool AttributeGraph::identifyBenignCycles(){
 		}
 	}
 
-	return changed;
+	return false;
 }
 
 void AttributeGraph::computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow){
@@ -524,8 +523,8 @@ void AttributeGraph::createPreconditionsAndLocationIndices(){
 
 		// 1. store for body attributes in which ordinary or external atoms they occur
 		// 2. store for external atoms:
-		//	- for which variables they wait
-		//	- for which attributes they wait
+		//	- for which variables they wait to become bounded
+		//	- for which attributes they wait to become domain-expansion safe
 		BOOST_FOREACH (ID bID, rule.body){
 			if (bID.isNaf()) continue;
 
@@ -575,7 +574,7 @@ void AttributeGraph::createPreconditionsAndLocationIndices(){
 				}
 			}
 
-			// remember the variables which occur in equivalence builtin atoms
+			// remember the variables which occur in builtin atoms
 			else if (bID.isBuiltinAtom()){
 				const BuiltinAtom& batom = reg->batoms.getByID(bID);
 				std::set<ID> vars;
@@ -601,64 +600,27 @@ void AttributeGraph::computeCyclicAttributes(){
 	// find cyclic external attributes
 	std::vector<Attribute> cyclicExternal;
 	for (int c = 0; c < depSCC.size(); ++c){
-		// check for this SCC:
-		// 1. if it is cyclic
-		// 2. the SCC has potential to become malign
+		// check for this SCC if it contains a cyclic external attribute
 		if (depSCC[c].size() > 1){
 			bool external = false;
 			BOOST_FOREACH (Attribute oat, depSCC[c]){
 				if (oat.type == Attribute::External && oat.input == false){
 					external = true;
+					break;
 				}
 			}
-
-/*
-			bool malign = false;
-
-			// stores for each external atom ID the pairs of input and output arguments which need to support a wellordering
-			std::vector<std::pair<ID, std::pair<int, int> > > pairsToCheck;
-
-			// for all output attributes
-			BOOST_FOREACH (Attribute oat, depSCC[c]){
-				if (oat.type == Attribute::External && oat.input == false){
-					// for all corresponding input attributes
-					BOOST_FOREACH (Attribute iat, depSCC[c]){
-						if (iat.type == Attribute::External && iat.input == true && iat.eatomID == oat.eatomID && iat.ruleID == oat.ruleID){
-							// store this pair
-							pairsToCheck.push_back(std::pair<ID, std::pair<int, int> >(iat.eatomID, std::pair<int, int>(iat.argIndex - 1, oat.argIndex - 1)));
-						}
-					}
-//					if (!reg->eatoms.getByID(at.eatomID).getExtSourceProperties().wellorderingStrlen){
-//						malign = true;
-//						break;
-//					}
-				}
-			}
-
-			// check all pairs
-			bool strlen = true;
-			bool natural = true;
-			for (int p = 0; p < pairsToCheck.size(); ++p){
-				DBGLOG(DBG, "Checking if " << pairsToCheck[p].first << " has a wellordering from argument " << pairsToCheck[p].second.first << " to argument " << pairsToCheck[p].second.second);
-				const ExtSourceProperties& prop = reg->eatoms.getByID(pairsToCheck[p].first).getExtSourceProperties();
-				strlen &= prop.hasWellorderingStrlen(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
-				natural &= prop.hasWellorderingNatural(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
-			}
-			malign = !strlen && !natural;
-*/
 			if (external){
 				BOOST_FOREACH (Attribute at, depSCC[c]){
 					if (at.type == Attribute::External){
 						DBGLOG(DBG, "Found cyclic external attribute of " << at.predicate);
 						cyclicExternal.push_back(at);
-						break;
 					}
 				}
 			}
 		}
 	}
 
-	// find all attributes which depend on such cyclic external attributes
+	// find all attributes which depend on cyclic external attributes
 	BOOST_FOREACH (Attribute at, cyclicExternal){
 		const NodeNodeInfoIndex& idx = nm.get<NodeInfoTag>();
 		NodeNodeInfoIndex::const_iterator it = idx.find(at);
@@ -733,29 +695,21 @@ void AttributeGraph::ensureOrdinarySafety(){
 	}
 }
 
-void AttributeGraph::computeInitiallySafeAttributes(){
+void AttributeGraph::checkStaticConditions(){
 
+	// 1. make all attributes safe, except those in cyclicAttributes
 	NodeIterator it, it_end;
 	for(boost::tie(it, it_end) = boost::vertices(ag); it != it_end; ++it){
-		// 1. make all attributes safe, except those in cyclicAttributes
 		if (cyclicAttributes.count(*it) == 0){
 			DBGLOG(DBG, "Attribute " << ag[*it] << " is externally acyclic");
 			addDomainExpansionSafeAttribute(ag[*it]);
 		}
-		// 2. attributes are safe if there are no more variables which need to be bounded
-		else if (safetyPreconditions[ag[*it]].first.size() == 0 && safetyPreconditions[ag[*it]].second.size() == 0){
-			DBGLOG(DBG, "Attribute " << ag[*it] << " does not depend on any unbounded variables or unsafe attributes");
-			addDomainExpansionSafeAttribute(ag[*it]);
-		}
 	}
-}
 
-void AttributeGraph::computeInitiallyBoundedVariables(){
-
-	// 3. make output variables of external atoms safe, if they are in a position with finite domain
-	// 4. make input variables of external atoms safe, if they have no output variables
-	// 5. make variables bounded, which they are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
-	// 6. make variables in #int(...) atoms bounded
+	// 2. make output variables of external atoms bounded, if they are in a position with finite domain
+	// 3. make input variables of external atoms bounded, if they have no output variables
+	// 4. make variables bounded, which are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
+	// 5. make variables in #int(...) atoms bounded
 	BOOST_FOREACH (ID ruleID, idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID b, rule.body){
@@ -764,7 +718,7 @@ void AttributeGraph::computeInitiallyBoundedVariables(){
 			if (b.isExternalAtom()){
 				const ExternalAtom& eatom = reg->eatoms.getByID(b);
 
-				// 3.
+				// 2.
 				for (int i = 0; i < eatom.tuple.size(); ++i){
 					if (eatom.getExtSourceProperties().hasFiniteDomain(i)){
 						VariableLocation vl(ruleID, eatom.tuple[i]);
@@ -775,7 +729,7 @@ void AttributeGraph::computeInitiallyBoundedVariables(){
 					}
 				}
 
-				// 4.
+				// 3.
 				bool outputBounded = true;
 				for (int i = 0; i < eatom.tuple.size(); ++i){
 					if (eatom.tuple[i].isVariableTerm()){
@@ -795,25 +749,51 @@ void AttributeGraph::computeInitiallyBoundedVariables(){
 					}
 				}
 			}
-			else if (b.isBuiltinAtom()){
-				const BuiltinAtom& batom = reg->batoms.getByID(b);
-				if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) addBoundedVariable(VariableLocation(ruleID, batom.tuple[1]));
-			}
+
+			// 4.
 			else if (b.isAggregateAtom()){
 				const AggregateAtom& aatom = reg->aatoms.getByID(b);
 				if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) addBoundedVariable(VariableLocation(ruleID, aatom.tuple[0]));
 				if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) addBoundedVariable(VariableLocation(ruleID, aatom.tuple[4]));
 			}
+
+			// 5
+			else if (b.isBuiltinAtom()){
+				const BuiltinAtom& batom = reg->batoms.getByID(b);
+				if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) addBoundedVariable(VariableLocation(ruleID, batom.tuple[1]));
+			}
 		}
 	}
+}
+
+bool AttributeGraph::checkDynamicConditions(){
+
+	// check if a malign cycle became safe because some input attribute to an external atom became safe
+	return identifyBenignCycles();
 }
 
 void AttributeGraph::computeDomainExpansionSafety(){
 
 	computeCyclicAttributes();
 
-	computeInitiallySafeAttributes();
-	computeInitiallyBoundedVariables();
+	// We employ the following general strategy:
+	// 1. check static conditions which make attributes domain-expansion safe or variables bounded
+	//    (conditions which do not depend on previously domain-expansion safe attributes or bounded variables)
+	//
+	// while (not domain-expansion safe && changes){
+	//   2. check dynamic conditions which make attributes domain-expansion safe or variables bounded
+	//      (conditions which depend on previously domain-expansion safe attributes or bounded variables)
+	// }
+	//
+	// For implementing step 2 we further exploit the following ideas:
+	// - Do not recheck conditions if no relevant precondition changed;
+	//   Use triggers as often as possible: new safe attributes or bounded variables may imply further safe attributes or bounded variables
+	// - Only make use of external atoms if this is absolutely necessary
+	//   (if safety can be established without external atoms, then grounding will be easier)
+	//   
+
+	// 1.
+	checkStaticConditions();
 
 	bool changed = true;
 	while (!isDomainExpansionSafe() && changed){
@@ -831,11 +811,9 @@ void AttributeGraph::computeDomainExpansionSafety(){
 				changed = true;
 			}
 		}
-		if (changed) continue;
 
-		// check if a malign cycle became safe because some input attribute to an external atom became safe
-		changed |= identifyBenignCycles();
-		if (changed) continue;
+		// 2.
+		changed |= checkDynamicConditions();
 	}
 
 	// our optimization technique eliminates external atoms which are not necessary
