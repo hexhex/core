@@ -803,6 +803,9 @@ void AttributeGraph::computeDomainExpansionSafety(){
 	while (!isDomainExpansionSafe() && changed){
 		changed = false;
 
+		// 2.
+		checkDynamicConditions();
+
 		// exploit external atoms to establish further boundings of variables
 		while (boundedByExternals.size() > 0){
 			VariableLocation vl = boundedByExternals.begin()->second;
@@ -813,11 +816,9 @@ void AttributeGraph::computeDomainExpansionSafety(){
 				necessaryExternalAtoms.insert(eatom);
 				addBoundedVariable(vl);
 				changed = true;
+				break;
 			}
 		}
-
-		// 2.
-		checkDynamicConditions();
 	}
 
 	// our optimization technique eliminates external atoms which are not necessary
