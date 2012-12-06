@@ -88,6 +88,11 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
     if( !rid.doesRuleContainExtatoms() )
       continue;
 
+    // do not guess external atoms in auxiliary input rules
+    // because those rules may not contain all relevant body atoms which provide grounding
+//    if ( rid.isExternalInputAuxiliary() )
+//      continue;
+
     const Rule& r = reg->rules.getByID(rid);
     DBGLOG(DBG,"processing rule with external atoms: " << rid << " " << r);
 
@@ -197,6 +202,38 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
           if( use )
           {
             guessingrule.body.push_back(lit);
+          }
+        }
+      }
+
+      // the auxiliary input also provides grounding (potentially)
+      if (eatom.auxInputPredicate != ID_FAIL){
+        DBGLOG(DBG, "Adding auxiliary input atom to guessing rule");
+        for (int inp = 0; inp < eatom.inputs.size(); ++inp){
+          // for each input variable
+          if (eatom.inputs[inp].isVariableTerm()){
+            DBGLOG(DBG, "Argument " << inp << " needs to be grounded");
+            // determine the argument position of aux input predicate which provides grounding for this variable
+            bool found = false;
+            OrdinaryAtom auxinput(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALINPUTAUX);
+            auxinput.tuple.push_back(eatom.auxInputPredicate);
+            for (int pos = 0; pos < eatom.auxInputMapping.size(); ++pos){
+              if (std::find(eatom.auxInputMapping[pos].begin(), eatom.auxInputMapping[pos].end(), inp) != eatom.auxInputMapping[pos].end()){
+                DBGLOG(DBG, "Argument " << inp << " is grounded by auxiliary input position " << pos);
+                // found
+                assert (!found);
+                auxinput.tuple.push_back(eatom.inputs[inp]);
+                found = true;
+                break;
+              }else{
+                ID tid;
+                tid = reg->terms.getIDByString("_");
+		if (tid == ID_FAIL) tid = reg->terms.storeAndGetID(Term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | ID::PROPERTY_VAR_ANONYMOUS, "_"));
+                auxinput.tuple.push_back(tid);
+              }
+            }
+            assert(found);
+            guessingrule.body.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryNAtom(auxinput)));
           }
         }
       }

@@ -1,0 +1,12 @@
+d("a").
+dom("a").
+
+% This program demonstrates a bug in the construction of the EA guessing rules in dlvhex 2.1.0.
+% It requires the use of the G&C mg for the whole program because of the default negation.
+% All external atoms are inner and therefore need to be guessed.
+% The guessing rule created for &testConcat[Y, ""](Z) in the first rule is:
+%   aux_r(Y, "", Z) v aux_n(Y, "", Z) :- dom(Z).
+% But then Y is not safe.
+% The problem can be fixed by adding the auxiliary input aux_i_0(Y) to the rule body of the guessing rule.
+e(Z) :- d(X), &testConcat[X, ""](Y), &testConcat[Y, ""](Z), dom(Y), dom(Z).
+d(Y) :- e(X), &testConcat[X, ""](Y), not &testConcat[X, ""](Y), dom(Y).

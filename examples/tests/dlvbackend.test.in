@@ -29,6 +29,7 @@ extatom6.hex extatom6.out --solver=dlv
 extatom7.hex extatom7.out --nofacts --solver=dlv
 extatom8.hex extatom8.out --nofacts --solver=dlv
 extatom9.hex extatom9.out --solver=dlv
+auxinput.hex auxinput.out --solver=dlv
 higherorder1.hex higherorder1.out --nofacts --higherorder-enable --solver=dlv
 higherorder2.hex higherorder2.out --nofacts --higherorder-enable --solver=dlv
 higherorder3.hex higherorder3.out --nofacts --higherorder-enable --solver=dlv

@@ -646,7 +646,7 @@ Set<ID> InternalGroundASPSolver::getUnfoundedSet(){
 				if (!bodyLit.isNaf() && (unfoundedAtoms.count(bodyLit.address) > 0) && (depSCC[componentOfAtom[atom]].count(bodyLit.address) > 0)){
 					// extend the unfounded set by this atom
 					DBGLOG(DBG, "Rule depends on unfounded " << litToString(bodyLit) << " --> adding to ufs");
-					ufs.insert(bodyLit);
+					ufs.insert(createLiteral(bodyLit));
 					dependsOnUnfoundedAtoms = true;
 				}
 			}

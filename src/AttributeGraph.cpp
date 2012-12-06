@@ -440,6 +440,8 @@ void AttributeGraph::createDependencyGraph(){
 					Node bodyNode1 = getNode(getAttribute(bAtom.tuple[0], bArg1));
 
 					BOOST_FOREACH (ID bID2, rule.body){
+						if (bID2.isNaf()) continue;
+
 						if (bID2.isExternalAtom()){
 							const ExternalAtom& eAtom = reg->eatoms.getByID(bID2);
 
@@ -461,6 +463,8 @@ void AttributeGraph::createDependencyGraph(){
 					Node bodyNode1 = getNode(getAttribute(bID1, eAtom1.predicate, eAtom1.inputs, ruleID, false, (bArg1 + 1)));
 
 					BOOST_FOREACH (ID bID2, rule.body){
+						if (bID2.isNaf()) continue;
+
 						if (bID2.isExternalAtom()){
 							const ExternalAtom& eAtom2 = reg->eatoms.getByID(bID2);
 
@@ -479,6 +483,8 @@ void AttributeGraph::createDependencyGraph(){
 
 		// EA input-output dependencies
 		BOOST_FOREACH (ID bID, rule.body){
+			if (bID.isNaf()) continue;
+
 			if (bID.isExternalAtom()){
 				const ExternalAtom& eAtom = reg->eatoms.getByID(bID);
 
