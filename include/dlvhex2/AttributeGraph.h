@@ -137,7 +137,6 @@ private:
 	// trigger functions
 	void addBoundedVariable(VariableLocation vl);								// called after a new variable has become bounded to trigger further actions
 	void addDomainExpansionSafeAttribute(Attribute at);							// called after an attribute has become safe to trigger further actions
-	bool identifyBenignCycles();										// makes output attributes in benign cycles safe; returns if new attributes became safe
 
 	// initialization
 	void computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow);	// computes for a given rule the
@@ -152,8 +151,9 @@ private:
 
 	void checkStaticConditions();												// statically checks for domain-expansion safety of attributes
 																// and boundedness of variables, i.e., the checks are done only once
-	bool checkDynamicConditions();												// iteratively checks for more domain-expansion safety of attributes
-																// and boundedness of variables; returns if changes were made
+	void checkDynamicConditions();												// iteratively checks for more domain-expansion safety of attributes
+																// and boundedness of variables
+	void identifyBenignCycles();												// makes output attributes in benign cycles safe
 	void computeDomainExpansionSafety();											// calls the previous methods until no more safe attributes can be derived
 public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);

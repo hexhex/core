@@ -224,7 +224,6 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
                 assert (!found);
                 auxinput.tuple.push_back(eatom.inputs[inp]);
                 found = true;
-                break;
               }else{
                 ID tid;
                 tid = reg->terms.getIDByString("_");

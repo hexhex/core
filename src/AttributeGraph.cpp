@@ -293,65 +293,6 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 	}
 }
 
-bool AttributeGraph::identifyBenignCycles(){
-
-	for (int c = 0; c < depSCC.size(); ++c){
-		// check for this SCC:
-		// 1. if it is cyclic
-		// 2. the SCC has potential to become malign
-		DBGLOG(DBG, "Checking if cycle " << c << " became benign");
-		if (depSCC[c].size() > 1){
-			bool malign = false;
-
-			// stores for each external atom ID the pairs of input and output arguments which need to support a wellordering
-			std::vector<std::pair<ID, std::pair<int, int> > > pairsToCheck;
-
-			// for all output attributes
-			BOOST_FOREACH (Attribute oat, depSCC[c]){
-				if (oat.type == Attribute::External && oat.input == false && domainExpansionSafeAttributes.count(oat) == 0){
-					// for all corresponding input attributes which are not bounded
-					BOOST_FOREACH (Attribute iat, depSCC[c]){
-						if (iat.type == Attribute::External && iat.input == true && iat.eatomID == oat.eatomID && iat.ruleID == oat.ruleID && domainExpansionSafeAttributes.count(iat) == 0){
-							// store this pair
-							pairsToCheck.push_back(std::pair<ID, std::pair<int, int> >(iat.eatomID, std::pair<int, int>(iat.argIndex - 1, oat.argIndex - 1)));
-						}
-					}
-				}
-			}
-
-			// check all pairs
-			bool strlen = true;
-			bool natural = true;
-			for (int p = 0; p < pairsToCheck.size(); ++p){
-				DBGLOG(DBG, "Checking if " << pairsToCheck[p].first << " has a wellordering from argument " << pairsToCheck[p].second.first << " to argument " << pairsToCheck[p].second.second);
-				const ExtSourceProperties& prop = reg->eatoms.getByID(pairsToCheck[p].first).getExtSourceProperties();
-				strlen &= prop.hasWellorderingStrlen(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
-				natural &= prop.hasWellorderingNatural(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
-			}
-			malign = !strlen && !natural;
-
-			if (!malign){
-				DBGLOG(DBG, "A cycle became benign");
-
-				// make all output variables of external atoms in the component bounded
-				BOOST_FOREACH (Attribute oat, depSCC[c]){
-					if (oat.type == Attribute::External && oat.input == false){
-						const ExternalAtom& eatom = reg->eatoms.getByID(oat.eatomID);
-						VariableLocation vl(oat.ruleID, eatom.tuple[oat.argIndex - 1]);
-						if (eatom.tuple[oat.argIndex - 1].isVariableTerm() && boundedVariables.count(vl) == 0){
-							boundedByExternals.insert(std::pair<ID, VariableLocation>(oat.eatomID, vl));
-							depSCC.erase(depSCC.begin() + c);
-							return true;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return false;
-}
-
 void AttributeGraph::computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow){
 
 	BOOST_FOREACH (ID b, rule.body){
@@ -509,6 +450,16 @@ void AttributeGraph::createDependencyGraph(){
 			boost::add_edge(getNode(ordinaryPredicateAttribute), getNode(p.first), ag);
 		}
 	}
+
+	// find strongly connected components in the graph
+	DBGLOG(DBG, "Computing strongly connected components in attribute dependency graph");
+	std::vector<int> componentMap(num_vertices(ag));
+	int num = boost::strong_components(ag, &componentMap[0]);
+	depSCC = std::vector<std::vector<Attribute> >(num);
+	int nodeNr = 0;
+	BOOST_FOREACH (int componentOfNode, componentMap){
+		depSCC[componentOfNode].push_back(ag[nodeNr++]);
+	}
 }
 
 void AttributeGraph::createPreconditionsAndLocationIndices(){
@@ -593,24 +544,14 @@ void AttributeGraph::createPreconditionsAndLocationIndices(){
 
 void AttributeGraph::computeCyclicAttributes(){
 
-	// find strongly connected components in the graph
-	DBGLOG(DBG, "Computing strongly connected components in attribute dependency graph");
-	std::vector<int> componentMap(num_vertices(ag));
-	int num = boost::strong_components(ag, &componentMap[0]);
-	depSCC = std::vector<std::vector<Attribute> >(num);
-	int nodeNr = 0;
-	BOOST_FOREACH (int componentOfNode, componentMap){
-		depSCC[componentOfNode].push_back(ag[nodeNr++]);
-	}
-
 	// find cyclic external attributes
 	std::vector<Attribute> cyclicExternal;
 	for (int c = 0; c < depSCC.size(); ++c){
-		// check for this SCC if it contains a cyclic external attribute
+		// check for this SCC if it contains an unsafe cyclic external attribute
 		if (depSCC[c].size() > 1){
 			bool external = false;
 			BOOST_FOREACH (Attribute oat, depSCC[c]){
-				if (oat.type == Attribute::External && oat.input == false){
+				if (oat.type == Attribute::External && oat.input == false && domainExpansionSafeAttributes.count(oat) == 0){
 					external = true;
 					break;
 				}
@@ -627,6 +568,7 @@ void AttributeGraph::computeCyclicAttributes(){
 	}
 
 	// find all attributes which depend on cyclic external attributes
+	cyclicAttributes.clear();
 	BOOST_FOREACH (Attribute at, cyclicExternal){
 		const NodeNodeInfoIndex& idx = nm.get<NodeInfoTag>();
 		NodeNodeInfoIndex::const_iterator it = idx.find(at);
@@ -703,15 +645,6 @@ void AttributeGraph::ensureOrdinarySafety(){
 
 void AttributeGraph::checkStaticConditions(){
 
-	// 1. make all attributes safe, except those in cyclicAttributes
-	NodeIterator it, it_end;
-	for(boost::tie(it, it_end) = boost::vertices(ag); it != it_end; ++it){
-		if (cyclicAttributes.count(*it) == 0){
-			DBGLOG(DBG, "Attribute " << ag[*it] << " is externally acyclic");
-			addDomainExpansionSafeAttribute(ag[*it]);
-		}
-	}
-
 	// 2. make output variables of external atoms bounded, if they are in a position with finite domain
 	// 3. make input variables of external atoms bounded, if they have no output variables
 	// 4. make variables bounded, which are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
@@ -772,15 +705,80 @@ void AttributeGraph::checkStaticConditions(){
 	}
 }
 
-bool AttributeGraph::checkDynamicConditions(){
+void AttributeGraph::identifyBenignCycles(){
 
-	// check if a malign cycle became safe because some input attribute to an external atom became safe
-	return identifyBenignCycles();
+	for (int c = 0; c < depSCC.size(); ++c){
+		// check for this SCC:
+		// 1. if it is cyclic
+		// 2. the SCC has potential to become malign
+		if (depSCC[c].size() > 1){
+			DBGLOG(DBG, "Checking if cycle " << c << " is benign");
+			bool malign = false;
+
+			// stores for each external atom ID the pairs of input and output arguments which need to support a wellordering
+			std::vector<std::pair<ID, std::pair<int, int> > > pairsToCheck;
+
+			// for all output attributes
+			BOOST_FOREACH (Attribute oat, depSCC[c]){
+				if (oat.type == Attribute::External && oat.input == false && domainExpansionSafeAttributes.count(oat) == 0){
+					// for all corresponding input attributes which are not bounded
+					BOOST_FOREACH (Attribute iat, depSCC[c]){
+						if (iat.type == Attribute::External && iat.input == true && iat.eatomID == oat.eatomID && iat.ruleID == oat.ruleID && domainExpansionSafeAttributes.count(iat) == 0){
+							// store this pair
+							pairsToCheck.push_back(std::pair<ID, std::pair<int, int> >(iat.eatomID, std::pair<int, int>(iat.argIndex - 1, oat.argIndex - 1)));
+						}
+					}
+				}
+			}
+
+			// check all pairs
+			bool strlen = true;
+			bool natural = true;
+			for (int p = 0; p < pairsToCheck.size(); ++p){
+				DBGLOG(DBG, "Checking if " << pairsToCheck[p].first << " has a wellordering from argument " << pairsToCheck[p].second.first << " to argument " << pairsToCheck[p].second.second);
+				const ExtSourceProperties& prop = reg->eatoms.getByID(pairsToCheck[p].first).getExtSourceProperties();
+				strlen &= prop.hasWellorderingStrlen(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
+				natural &= prop.hasWellorderingNatural(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
+			}
+			malign = !strlen && !natural;
+
+			if (!malign){
+				DBGLOG(DBG, "Cycle is benign");
+
+				// make all output variables of external atoms in the component bounded
+				BOOST_FOREACH (Attribute oat, depSCC[c]){
+					if (oat.type == Attribute::External && oat.input == false){
+						const ExternalAtom& eatom = reg->eatoms.getByID(oat.eatomID);
+						VariableLocation vl(oat.ruleID, eatom.tuple[oat.argIndex - 1]);
+						if (eatom.tuple[oat.argIndex - 1].isVariableTerm() && boundedVariables.count(vl) == 0){
+							boundedByExternals.insert(std::pair<ID, VariableLocation>(oat.eatomID, vl));
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void AttributeGraph::checkDynamicConditions(){
+
+	// identify benign cycles
+	identifyBenignCycles();
+
+	// recompute attributes which depend on malign cycles
+	computeCyclicAttributes();
+
+	// make all attributes safe, except those in cyclicAttributes
+	NodeIterator it, it_end;
+	for(boost::tie(it, it_end) = boost::vertices(ag); it != it_end; ++it){
+		if (cyclicAttributes.count(*it) == 0){
+			DBGLOG(DBG, "Attribute " << ag[*it] << " is externally acyclic");
+			addDomainExpansionSafeAttribute(ag[*it]);
+		}
+	}
 }
 
 void AttributeGraph::computeDomainExpansionSafety(){
-
-	computeCyclicAttributes();
 
 	// We employ the following general strategy:
 	// 1. check static conditions which make attributes domain-expansion safe or variables bounded
@@ -819,7 +817,7 @@ void AttributeGraph::computeDomainExpansionSafety(){
 		}
 
 		// 2.
-		changed |= checkDynamicConditions();
+		checkDynamicConditions();
 	}
 
 	// our optimization technique eliminates external atoms which are not necessary
