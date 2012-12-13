@@ -533,7 +533,7 @@ ID Registry::storeTerm(Term& term)
   }
   else
   {
-    assert(false && "could not identify term type");
+    throw FatalError("could not identify term type for symbol '" + term.symbol +"'");
   }
 
   return storeConstOrVarTerm(term);
