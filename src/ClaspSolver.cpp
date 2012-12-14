@@ -52,6 +52,7 @@
 
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
+#include "clasp/heuristics.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -882,6 +883,14 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
+
+  // by PS (experimental) set heuristics
+  if( c.config.getOption("ClaspHeuristicsVsids") != 0 )
+  {
+    Clasp::ClaspVsids* vsids = new Clasp::ClaspVsids(0.95);
+    claspInstance.master()->setHeuristic(3, vsids);
+    // TODO --sat-pre=20,25,120 --trans-ext=dynamic
+  }
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	bool initiallyInconsistent = sendProgramToClasp(p, dm);
