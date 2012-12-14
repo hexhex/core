@@ -139,9 +139,12 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	// we support aggregates of one of the two kinds:
 	// 1. l <= #agg{...} <= u
 	// 2. v = #agg{...}
+	// 3. l <= #agg{...}
+	// 4. #agg{...} <= u
 	const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
 	ID lowerbound, upperbound;
+  // 1. l <= #agg{...} <= u
 	if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
 	    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
 		lowerbound = aatom.tuple[0];
@@ -159,6 +162,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 			print(upperbound);
 			out << "), ";
 		}
+	// 2. v = #agg{...}
 	}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) &&
 	   	 aatom.tuple[4] == ID_FAIL){
 		lowerbound = aatom.tuple[0];
@@ -170,12 +174,35 @@ void GringoGrounder::Printer::printAggregate(ID id){
 			print(lowerbound);
 			out << "), ";
 		}
+	// 3. l <= #agg{...}
+	}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+	   	 aatom.tuple[4] == ID_FAIL){
+		lowerbound = aatom.tuple[0];
+		// gringo expects a domain predicate: use #int
+		if (lowerbound.isVariableTerm()){
+			print(intPred);
+			out << "(";
+			print(lowerbound);
+			out << "), ";
+		}
+	// 4. #agg{...} <= u
+	}else if (aatom.tuple[0] == ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+	   	 aatom.tuple[4] != ID_FAIL){
+		upperbound = aatom.tuple[4];
+		// gringo expects a domain predicate: use #int
+		if (upperbound.isVariableTerm()){
+			print(intPred);
+			out << "(";
+			print(upperbound);
+			out << "), ";
+		}
 	}else{
-		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...}");
+		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} or l <= #agg{...} or #agg{...} <= u");
 	}
 	if (id.isLiteral() && id.isNaf()) out << "not ";
-	print(lowerbound);
-	print(aatom.tuple[2]);
+  if( lowerbound != ID_FAIL )
+    print(lowerbound);
+  print(aatom.tuple[2]);
 	const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
 	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
 		out << "{";
@@ -198,7 +225,8 @@ void GringoGrounder::Printer::printAggregate(ID id){
 
 		out << "]";
 	}
-	print(upperbound);
+  if( upperbound != ID_FAIL )
+    print(upperbound);
 }
 
 void GringoGrounder::Printer::printInt(ID id){
