@@ -51,6 +51,8 @@
 #include <sstream>
 #include <algorithm>
 
+using dlvhex::ID;
+
 namespace
 {
 	bool parsePositional(const std::string&, std::string& out)
@@ -58,6 +60,20 @@ namespace
 		out = "file";
 		return true;
 	}
+
+  dlvhex::IDAddress reverseBinaryOperator(dlvhex::IDAddress op)
+  {
+    // reverse operator if necessary (< switches with >, <= switches with >=)
+    switch(static_cast<dlvhex::IDAddress>(op))
+    {
+    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GT;
+    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GE;
+    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LT;
+    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LE;
+    default:
+      return op;
+    }
+  }
 }
 
 DLVHEX_NAMESPACE_BEGIN
@@ -102,6 +118,7 @@ void GringoGrounder::Printer::printRule(ID id){
 					BuiltinAtom bi2 = bi;
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
+          bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
 					if (!first) out << ", ";
 					first = false;
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
