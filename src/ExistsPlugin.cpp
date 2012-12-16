@@ -78,7 +78,7 @@ void ExistsPlugin::printUsage(std::ostream& o) const
 	o << "     --exists-maxarity=<N> Maximum number of existentially quantified variables in an atom." << std::endl;
 }
 
-// accepted options: --strongnegation-enable
+// accepted options: --exists-enable
 //
 // processes options for this plugin, and removes recognized options from pluginOptions
 // (do not free the pointers, the const char* directly come from argv)
@@ -110,7 +110,7 @@ void ExistsPlugin::processOptions(
 		if( processed )
 		{
 			// return value of erase: element after it, maybe end()
-			DBGLOG(DBG,"StrongNegationPlugin successfully processed option " << str);
+			DBGLOG(DBG,"ExistsPlugin successfully processed option " << str);
 			it = pluginOptions.erase(it);
 		}
 		else
@@ -245,14 +245,14 @@ public:
 		HexParserModule(moduletype),
 		sem(ctx)
 	{
-		LOG(INFO,"constructed StrongNegationParserModule");
+		LOG(INFO,"constructed ExistsParserModule");
 	}
 
 	virtual HexParserModuleGrammarPtr createGrammarModule()
 	{
 		assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
 		grammarModule.reset(new ExistsParserModuleGrammar(sem));
-		LOG(INFO,"created StrongNegationParserModuleGrammar");
+		LOG(INFO,"created ExistsParserModuleGrammar");
 		return grammarModule;
 	}
 };
@@ -421,7 +421,6 @@ std::vector<PluginAtomPtr> ExistsPlugin::createAtoms(ProgramCtx& ctx) const{
 	return ret;
 }
 
-// register auxiliary printer for strong negation auxiliaries
 void ExistsPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
 	ExistsPlugin::CtxData& ctxdata = ctx.getPluginData<ExistsPlugin>();
