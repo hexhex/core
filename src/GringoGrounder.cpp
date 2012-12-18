@@ -171,8 +171,10 @@ void GringoGrounder::Printer::printAggregate(ID id){
 			out << "), ";
 		}
 	}else{
-		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...}");
+		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body");
 	}
+	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
+
 	if (id.isLiteral() && id.isNaf()) out << "not ";
 	print(lowerbound);
 	print(aatom.tuple[2]);
