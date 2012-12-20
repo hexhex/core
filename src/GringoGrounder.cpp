@@ -499,6 +499,12 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
 }
 
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
+  ctx(ctx), nongroundProgram(p), groundProgram(p){
+  gringo.disjShift = false;
+  doRun();
+}
+
 Output *GringoGrounder::output()
 {
 	return new GroundHexProgramBuilder(ctx, groundProgram, intPred, anonymousPred);

@@ -129,10 +129,7 @@ private:
 	};
 
 public:
-	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p) : ctx(ctx), nongroundProgram(p), groundProgram(p){
-		gringo.disjShift = false;
-		doRun();
-	}
+	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p);
 	const OrdinaryASPProgram& getGroundProgram();
 
 protected:
