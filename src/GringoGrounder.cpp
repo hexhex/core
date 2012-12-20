@@ -136,7 +136,7 @@ void GringoGrounder::Printer::printRule(ID id){
 
 void GringoGrounder::Printer::printAggregate(ID id){
 
-	// we support aggregates of one of the two kinds:
+	// we support aggregates of one of the four kinds:
 	// 1. l <= #agg{...} <= u
 	// 2. v = #agg{...}
 	// 3. l <= #agg{...}
@@ -197,8 +197,10 @@ void GringoGrounder::Printer::printAggregate(ID id){
 			out << "), ";
 		}
 	}else{
-		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} or l <= #agg{...} or #agg{...} <= u");
+		throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} or l <= #agg{...} or #agg{...} <= u with exactly one atom in the aggregate body");
 	}
+	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
+
 	if (id.isLiteral() && id.isNaf()) out << "not ";
   if( lowerbound != ID_FAIL )
     print(lowerbound);

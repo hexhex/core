@@ -72,6 +72,7 @@ libdlvhex2_base_la_SOURCES = \
     EvalHeuristicTrivial.cpp \
     ExternalAtomEvaluationHeuristics.cpp \
     ExternalLearningHelper.cpp \
+    ExistsPlugin.cpp \
     ExtSourceProperties.cpp \
     FLPModelGeneratorBase.cpp \
     GraphvizHelpers.cpp \

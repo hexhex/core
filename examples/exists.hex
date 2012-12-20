@@ -1,0 +1,3 @@
+person(joe).
+person(john).
++Y,Z : parents(X,Y,Z) :- person(X).
