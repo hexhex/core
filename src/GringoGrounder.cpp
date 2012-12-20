@@ -528,7 +528,13 @@ int GringoGrounder::doRun()
 
 	// redirect std::cerr output to temporary string because gringo spams std:cerr with lots of useless warnings
 	std::stringstream errstr;
-	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());
+	std::streambuf* origcerr = NULL;
+	if( !Logger::Instance().shallPrint(Logger::DBG) )
+	{
+		// only do this if we are not debugging
+		// (this origcerr procedure kills all logging in the following)
+		origcerr = std::cerr.rdbuf(errstr.rdbuf());
+	}
 
 	try{
 		// we need a unique integer and a unique anonymous predicate
@@ -601,14 +607,16 @@ int GringoGrounder::doRun()
 #endif
 
 		// restore cerr output
-		std::cerr.rdbuf(origcerr);
+		if( origcerr != NULL )
+			std::cerr.rdbuf(origcerr);
 
 		DBGLOG(DBG, errstr.str());
 
 		return EXIT_SUCCESS;
 	}catch(...){
 		// restore cerr output
-		std::cerr.rdbuf(origcerr);
+		if( origcerr != NULL )
+			std::cerr.rdbuf(origcerr);
 
 		throw;
 	}
