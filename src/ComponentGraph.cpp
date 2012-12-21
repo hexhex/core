@@ -867,6 +867,7 @@ ComponentGraph::collapseComponents(
 
 	// dependencies of other components on the new component
 	DepMap incoming;
+	bool foundInternalNegativeRuleDependency = false;
 
 	// iterate over all originals and over incoming dependencies
   // now also check for duplicate violations
@@ -875,17 +876,20 @@ ComponentGraph::collapseComponents(
 		DBGLOG(DBG,"original " << *ito << ":");
 		DBGLOG_INDENT(DBG);
 
+		// go over dependencies to original members of new component
 		SuccessorIterator itsucc, itsucc_end;
 		for(boost::tie(itsucc, itsucc_end) = getProvides(*ito);
 				itsucc != itsucc_end; ++itsucc)
 		{
 			Dependency incoming_dep = *itsucc;
 			Component source = sourceOf(incoming_dep);
+			const DependencyInfo& incoming_di = propsOf(incoming_dep);
 			if( originals.count(source) == 0 )
 			{
-				// do not count dependencies within the new collapsed component
+				// the dependency comes from outside the new component
+
 				DBGLOG(DBG,"incoming dependency from " << source);
-				incoming[source] |= propsOf(incoming_dep);
+				incoming[source] |= incoming_di;
 				// ensure that we do not create cycles
         // (this check is not too costly, so this is no assertion but a real runtime check)
 				DepMap::const_iterator itdm = outgoing.find(source);
@@ -897,6 +901,12 @@ ComponentGraph::collapseComponents(
           throw std::runtime_error(
               "collapseComponents tried to create a cycle!");
         }
+			}
+			else
+			{
+				// the dependency comes from inside the new component (to inside)
+				if( incoming_di.negativeRule )
+					foundInternalNegativeRuleDependency = true;
 			}
 		} // iterate over successors
 	} // iterate over originals
@@ -935,20 +945,33 @@ ComponentGraph::collapseComponents(
 		}
 		ci.predicatesInComponent.insert(
 				cio.predicatesInComponent.begin(), cio.predicatesInComponent.end());
-/*
+		/*
 		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
 			BOOST_FOREACH (ID id, p.second){
 				ci.stratifiedLiterals[p.first].insert(id);
 			}
 		}
-*/
+		*/
 
 		ci.disjunctiveHeads |= cio.disjunctiveHeads;
-		ci.negationInCycles |= cio.negationInCycles;
-			ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
-			ci.componentIsMonotonic &= cio.componentIsMonotonic;
-			if (!(!cio.outerEatoms.empty() && cio.innerRules.empty())) ci.fixedDomain &= cio.fixedDomain;	// pure external components shall have no influence on this property
-															// because domain restriction is always done in successor components
+		// if we collapse two components which have no negation inside them,
+		// but they negatively depend on each other, we must set this to true
+		// example: a :- b. and :- not a. are collapsed -> resulting component has negationInCycles
+		// TODO fix name: negationInCycles really should be negativeDependencyBetweenRules
+		ci.negationInCycles |= cio.negationInCycles | foundInternalNegativeRuleDependency;
+		// (we do not need to check for nonmonotonic dependencies from external atoms
+		// which become internal nonmonotonic dependencies, because such dependencies
+		// are handled by the innerEatomsNonmonotonic flag which will get true if there
+		// any external atom that can create such a nonmonotonic dependency, e.g. nonmon_noloop.hex)
+		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+		ci.componentIsMonotonic &= cio.componentIsMonotonic;
+
+		// fixedDomain:
+		// pure external components shall have no influence on this property
+		// because domain restriction is always done in successor components
+		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty()))
+			ci.fixedDomain &= cio.fixedDomain;
+
 		ci.recursiveAggregates |= cio.recursiveAggregates;
 
 		// if *ito does not depend on any component in originals
