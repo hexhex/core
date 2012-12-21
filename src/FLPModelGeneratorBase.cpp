@@ -94,7 +94,8 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
 //      continue;
 
     const Rule& r = reg->rules.getByID(rid);
-    DBGLOG(DBG,"processing rule with external atoms: " << rid << " " << r);
+    DBGLOG(DBG,"processing rule with external atom(s): " << printToString<RawPrinter>(rid, reg) <<
+               " (rid " << rid << "r " << r << ")");
 
     BOOST_FOREACH(ID lit, r.body)
     {
@@ -106,7 +107,8 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
         continue;
 
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
-      DBGLOG(DBG,"processing external atom " << lit << " " << eatom);
+      DBGLOG(DBG,"processing external atom " << printToString<RawPrinter>(lit, reg) <<
+                 " (lit " << lit << " eatom " << eatom << ")");
       DBGLOG_INDENT(DBG);
 
       // prepare replacement atom
@@ -139,7 +141,7 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
         if( outp.isVariableTerm() )
           variables.insert(outp);
       }
-      DBGLOG(DBG,"found set of variables: " << printset(variables));
+      DBGLOG(DBG,"found set of variables: " << printManyToString<RawPrinter>(Tuple(variables.begin(), variables.end()), ",", reg));
 
       // groundness of replacement predicate
       ID posreplacement;
@@ -158,8 +160,8 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
         replacement.tuple[0] = negpredicate;
         negreplacement = reg->storeOrdinaryNAtom(replacement);
       }
-      DBGLOG(DBG,"registered posreplacement " << posreplacement <<
-          " and negreplacement " << negreplacement);
+      DBGLOG(DBG,"registered posreplacement " << printToString<RawPrinter>(posreplacement, reg) <<
+          " and negreplacement " << printToString<RawPrinter>(negreplacement, reg));
 
       // create rule head
       Rule guessingrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR |
@@ -239,15 +241,7 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
 
       // store rule
       ID gid = reg->storeRule(guessingrule);
-      DBGLOG(DBG,"stored guessingrule " << guessingrule << " which got id " << gid);
-      #ifndef NDEBUG
-      {
-        std::stringstream s;
-        RawPrinter p(s, reg);
-        p.print(gid);
-        DBGLOG(DBG,"  " << s.str());
-      }
-      #endif
+      DBGLOG(DBG,"stored guessingrule " << printToString<RawPrinter>(gid, reg) << " which got id " << gid);
       gidb.push_back(gid);
     }
   }
