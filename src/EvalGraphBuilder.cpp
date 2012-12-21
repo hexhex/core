@@ -130,6 +130,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 
 	// iterate over all originals and over their outgoing dependencies (what they depend on)
 	ComponentSet::const_iterator ito;
+	bool foundInternalNegativeRuleDependency = false;
 	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
 		DBGLOG(DBG,"original " << *ito << ":");
@@ -178,9 +179,16 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 			}
       else
       {
-				// dependency within the new collapsed component
+				// dependency to other component within the new collapsed component
+
+				const ComponentGraph::DependencyInfo& comp_depinfo =
+					cg.propsOf(outgoing_dep);
+
 				DBGLOG(DBG,"internal dependency (to " << target << ")");
 				internallyDepends.insert(*ito);
+
+				if( comp_depinfo.negativeRule )
+					foundInternalNegativeRuleDependency = true;
       }
 		} // iterate over predecessors
 	} // iterate over originals
@@ -250,6 +258,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
     }
     #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
+  ci.negationInCycles |= foundInternalNegativeRuleDependency;
 	ComponentGraph::calculateStratificationInfo(registry(), ci);
 
 	//

@@ -829,6 +829,8 @@ ComponentGraph::collapseComponents(
 {
 	DBGLOG_SCOPE(DBG,"cC", false);
 	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << ")");
+  #warning ComponentGraph::collapseComponents is deprecated, please use EvalGraphBuilder::createEvalUnit
+  //LOG(WARNING,"ComponentGraph::collapseComponents is deprecated, please use EvalGraphBuilder::createEvalUnit");
 
 	typedef std::map<Component, DependencyInfo> DepMap;
 
