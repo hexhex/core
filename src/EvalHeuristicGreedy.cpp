@@ -58,8 +58,8 @@ bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& c
 
 	// if both components are solved by wellfounded mg and none of them has outer external atoms, then we merge them
 	// (the resulting component will still be wellfounded and an outer external atom can not become an inner one)
-	if (!ci1.innerEatomsNonmonotonic && !ci1.negationInCycles && !ci1.disjunctiveHeads && ci1.innerEatoms.size() > 0 && ci1.outerEatoms.size() == 0 &&
-	    !ci2.innerEatomsNonmonotonic && !ci2.negationInCycles && !ci2.disjunctiveHeads && ci2.innerEatoms.size() > 0 && ci2.outerEatoms.size() == 0) return true;
+	if (!ci1.innerEatomsNonmonotonic && !ci1.negativeDependencyBetweenRules && !ci1.disjunctiveHeads && ci1.innerEatoms.size() > 0 && ci1.outerEatoms.size() == 0 &&
+	    !ci2.innerEatomsNonmonotonic && !ci2.negativeDependencyBetweenRules && !ci2.disjunctiveHeads && ci2.innerEatoms.size() > 0 && ci2.outerEatoms.size() == 0) return true;
 
 	// otherwise: don't merge them
 	return false;

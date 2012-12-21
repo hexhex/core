@@ -599,7 +599,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 
 		// ignore components without nonmonotonic inner external atoms, negation in cycles and disjunctive heads
 		// (they will be solved by the WellfoundedModelGenerator and do not need strong safety)
-//		if( !ci.innerEatomsNonmonotonic && !ci.negationInCycles && !ci.disjunctiveHeads )
+//		if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads )
 //			continue;
 
 		// check if any external atom has output variables

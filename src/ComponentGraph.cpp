@@ -445,7 +445,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 		// check, if the component contains only positive cycles
 		if( !checkNoNegativeEdgesInComponent(dg, nodes) )
 		{
-			ci.negationInCycles = true;
+			ci.negativeDependencyBetweenRules = true;
 		}
 
     // components are never monotonic if they contain disjunctions or nonmonotonic external atoms
@@ -467,7 +467,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
     DBGLOG(DBG,"-> disjunctiveHeads=" << ci.disjunctiveHeads <<
-				" negationInCycles=" << ci.negationInCycles <<
+				" negativeDependencyBetweenRules=" << ci.negativeDependencyBetweenRules <<
 				" innerEatomsNonmonotonic=" << ci.innerEatomsNonmonotonic <<
 				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic <<
 				" componentIsMonotonic=" << ci.componentIsMonotonic);
@@ -829,6 +829,8 @@ ComponentGraph::collapseComponents(
 {
 	DBGLOG_SCOPE(DBG,"cC", false);
 	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << ")");
+  #warning ComponentGraph::collapseComponents is deprecated, please use EvalGraphBuilder::createEvalUnit
+  //LOG(WARNING,"ComponentGraph::collapseComponents is deprecated, please use EvalGraphBuilder::createEvalUnit");
 
 	typedef std::map<Component, DependencyInfo> DepMap;
 
@@ -956,9 +958,9 @@ ComponentGraph::collapseComponents(
 		ci.disjunctiveHeads |= cio.disjunctiveHeads;
 		// if we collapse two components which have no negation inside them,
 		// but they negatively depend on each other, we must set this to true
-		// example: a :- b. and :- not a. are collapsed -> resulting component has negationInCycles
-		// TODO fix name: negationInCycles really should be negativeDependencyBetweenRules
-		ci.negationInCycles |= cio.negationInCycles | foundInternalNegativeRuleDependency;
+		// example: a :- b. and :- not a. are collapsed -> resulting component has negativeDependencyBetweenRules
+		// TODO fix name: negativeDependencyBetweenRules really should be negativeDependencyBetweenRules
+		ci.negativeDependencyBetweenRules |= cio.negativeDependencyBetweenRules | foundInternalNegativeRuleDependency;
 		// (we do not need to check for nonmonotonic dependencies from external atoms
 		// which become internal nonmonotonic dependencies, because such dependencies
 		// are handled by the innerEatomsNonmonotonic flag which will get true if there
@@ -1086,7 +1088,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 		{
 			if( ci.disjunctiveHeads )
 				o << "{rules contain disjunctive heads}|";
-			if( ci.negationInCycles )
+			if( ci.negativeDependencyBetweenRules )
 				o << "{rules contain negation in cycles}|";
 		}
     if( !ci.innerEatoms.empty() && ci.innerEatomsNonmonotonic )
@@ -1111,7 +1113,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 		{
 			if( ci.disjunctiveHeads )
 				o << "{rules contain disjunctive heads}|";
-			if( ci.negationInCycles )
+			if( ci.negativeDependencyBetweenRules )
 				o << "{rules contain negation in cycles}|";
 		}
     if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
