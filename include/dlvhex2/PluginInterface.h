@@ -925,7 +925,7 @@ public:
    *          over relations r1, ..., rn.
    *          Then &sql is in general not monotonic, but if query is a simple
    *          selection of all tuples, then it becomes monotonic.
-   * (Note that eatom.prop is mutable, thus is can be modified although eatom is const)
+   * (Note that eatom.prop is copied to ExternalAtom::prop and there can be modified)
    */
   virtual void setupProperties(const ExternalAtom& eatom) {}
 
