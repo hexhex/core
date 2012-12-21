@@ -231,7 +231,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 */
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
-    ci.negationInCycles |= cio.negationInCycles;
+    ci.negativeDependencyBetweenRules |= cio.negativeDependencyBetweenRules;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
     ci.fixedDomain |= cio.fixedDomain;
     ci.componentIsMonotonic |= cio.componentIsMonotonic;
@@ -258,7 +258,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
     }
     #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
-  ci.negationInCycles |= foundInternalNegativeRuleDependency;
+  ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
 	ComponentGraph::calculateStratificationInfo(registry(), ci);
 
 	//
@@ -324,7 +324,7 @@ EvalGraphBuilder::createEvalUnit(
     }
     else
     {
-      if( !ci.innerEatomsNonmonotonic && !ci.negationInCycles && !ci.disjunctiveHeads )
+      if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads )
       {
         // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
 				// -> wellfounded/fixpoint model generator factory

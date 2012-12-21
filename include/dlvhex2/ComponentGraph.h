@@ -89,7 +89,7 @@ public:
     // this is determined by calculateComponents
     // and used for selecting model generator factories
 		bool disjunctiveHeads;
-		bool negationInCycles;
+		bool negativeDependencyBetweenRules;
 		bool innerEatomsNonmonotonic;
 		bool outerEatomsNonmonotonic;
 		bool componentIsMonotonic;
@@ -98,11 +98,11 @@ public:
 
 		// previous:
     //bool innerEatomsMonotonicAndOnlyPositiveCycles;
-		// := (!innerEatomsNonmonotonic && !negationInCycles && !disjunctiveHeads)
+		// := (!innerEatomsNonmonotonic && !negativeDependencyBetweenRules && !disjunctiveHeads)
 
 		ComponentInfo():
       disjunctiveHeads(false),
-			negationInCycles(false),
+			negativeDependencyBetweenRules(false),
 			innerEatomsNonmonotonic(false),
 	outerEatomsNonmonotonic(false),
 	componentIsMonotonic(true),

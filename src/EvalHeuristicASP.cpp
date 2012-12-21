@@ -37,7 +37,7 @@
  * if outerEatoms is nonempty, outerext(C) is fact
  * if innerEatoms is nonempty, innerext(C) is fact
  * if disjunctiveHeads is true, disjheads(C) is fact
- * if negationInCycles is true, negcycles(C) is fact
+ * if negativeDependencyBetweenRules is true, negcycles(C) is fact
  * if innerEatomsNonmonotonic is true, innerextnonmon(C) is fact
  * if outerEatomsNonmonotonic is true, outerextnonmon(C) is fact
  *
@@ -354,7 +354,7 @@ void transformComponentGraphIntoASPFacts(std::ostream& facts, std::map<unsigned,
       facts << "outerext" << arg;
     if( !ci.disjunctiveHeads )
       facts << "disjheads" << arg;
-    if( !ci.negationInCycles )
+    if( !ci.negativeDependencyBetweenRules )
       facts << "negcycles" << arg;
     if( !ci.innerEatomsNonmonotonic )
       facts << "innerextnonmon" << arg;
