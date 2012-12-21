@@ -979,20 +979,20 @@ ComponentGraph::collapseComponents(
 		// otherwise they become inner eatoms
 		if( internallyDepends.find(*ito) == internallyDepends.end() )
 		{
-		// does not depend on other components
-		ci.outerEatoms.insert(ci.outerEatoms.end(),
-		  cio.outerEatoms.begin(), cio.outerEatoms.end());
-				ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+			// does not depend on other components
+			ci.outerEatoms.insert(ci.outerEatoms.end(),
+				cio.outerEatoms.begin(), cio.outerEatoms.end());
+			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
 		}
 		else
 		{
-		// does depend on other components
-		// -> former outer eatoms now become inner eatoms
-		ci.innerEatoms.insert(ci.innerEatoms.end(),
-		  cio.outerEatoms.begin(), cio.outerEatoms.end());
+			// does depend on other components
+			// -> former outer eatoms now become inner eatoms
+			ci.innerEatoms.insert(ci.innerEatoms.end(),
+				cio.outerEatoms.begin(), cio.outerEatoms.end());
 
-		// here, outer eatom becomes inner eatom
-				ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+			// here, outer eatom becomes inner eatom
+			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
 		}
 		#warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
