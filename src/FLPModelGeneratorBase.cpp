@@ -210,33 +210,26 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
 
       // the auxiliary input also provides grounding (potentially)
       if (eatom.auxInputPredicate != ID_FAIL){
-        DBGLOG(DBG, "Adding auxiliary input atom to guessing rule");
+        DBGLOG(DBG, "Adding auxiliary input predicate " << printToString<RawPrinter>(eatom.auxInputPredicate,reg) << " to guessing rule");
+        // use the same variables for grounding the guessing had as for grouding the aux input
+        // (see comments about auxInputMapping in class ExternalAtom)
+        std::set<ID> usedVariables;
+        OrdinaryAtom auxinput(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALINPUTAUX);
+        auxinput.tuple.push_back(eatom.auxInputPredicate);
         for (int inp = 0; inp < eatom.inputs.size(); ++inp){
-          // for each input variable
-          if (eatom.inputs[inp].isVariableTerm()){
-            DBGLOG(DBG, "Argument " << inp << " needs to be grounded");
+          // for each input
+          ID inpTerm = eatom.inputs[inp];
+          // if it is a variable and we have not used it so far, use it
+          if (inpTerm.isVariableTerm() &&
+              usedVariables.find(inpTerm) == usedVariables.end()){
             // determine the argument position of aux input predicate which provides grounding for this variable
-            bool found = false;
-            OrdinaryAtom auxinput(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALINPUTAUX);
-            auxinput.tuple.push_back(eatom.auxInputPredicate);
-            for (int pos = 0; pos < eatom.auxInputMapping.size(); ++pos){
-              if (std::find(eatom.auxInputMapping[pos].begin(), eatom.auxInputMapping[pos].end(), inp) != eatom.auxInputMapping[pos].end()){
-                DBGLOG(DBG, "Argument " << inp << " is grounded by auxiliary input position " << pos);
-                // found
-                assert (!found);
-                auxinput.tuple.push_back(eatom.inputs[inp]);
-                found = true;
-              }else{
-                ID tid;
-                tid = reg->terms.getIDByString("_");
-		if (tid == ID_FAIL) tid = reg->terms.storeAndGetID(Term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | ID::PROPERTY_VAR_ANONYMOUS, "_"));
-                auxinput.tuple.push_back(tid);
-              }
-            }
-            assert(found);
-            guessingrule.body.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryNAtom(auxinput)));
+            auxinput.tuple.push_back(inpTerm);
+            usedVariables.insert(inpTerm);
           }
         }
+        ID aiid = reg->storeOrdinaryNAtom(auxinput);
+        DBGLOG(DBG,"created auxiliary grounding predicate " << printToString<RawPrinter>(aiid,reg) << " which got id " << aiid);
+        guessingrule.body.push_back(ID::posLiteralFromAtom(aiid));
       }
 
       // store rule
