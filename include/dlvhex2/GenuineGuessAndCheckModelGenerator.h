@@ -71,6 +71,10 @@ protected:
   // outer external atoms
   std::vector<ID> outerEatoms;
 
+  // nogoods which shall be kept beyond the lifespan of the model generator
+  // (useful for nonground nogoods)
+  SimpleNogoodContainerPtr globalLearnedEANogoods;
+
 public:
   GenuineGuessAndCheckModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,

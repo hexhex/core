@@ -271,6 +271,14 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
     //   this must be regarded in UFS checking (see examples/trickyufs.hex)
     ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3));
 
+    // overtake nogoods from the factory
+    for (int i = 0; i < factory.globalLearnedEANogoods->getNogoodCount(); ++i){
+      learnedEANogoods->addNogood(factory.globalLearnedEANogoods->getNogood(i));
+    }
+    if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
+    if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(InterpretationConstPtr());
+    transferLearnedEANogoods();
+
     // start producing models
     modelProducer = new boost::thread(boost::bind(&GenuineGuessAndCheckModelGeneratorAsync::produceOrdinaryModels, this));
     modelVerifier = new boost::thread(boost::bind(&GenuineGuessAndCheckModelGeneratorAsync::verifyModels, this));
@@ -471,6 +479,8 @@ void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 		}
 		if (learnedEANogoods->getNogood(i).isGround()){
 			solver->addNogood(learnedEANogoods->getNogood(i));
+		}else{
+			factory.globalLearnedEANogoods->addNogood(learnedEANogoods->getNogood(i));
 		}
 	}
 	// for encoding-based UFS checkers, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
