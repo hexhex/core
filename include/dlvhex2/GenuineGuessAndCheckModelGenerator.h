@@ -148,13 +148,13 @@ protected:
   /**
    * Learns related nonground nogoods
    */
-  void generalizeNogoods();
   void generalizeNogood(Nogood ng);
 
   /**
+   * Triggern nonground nogood learning and instantiation
    * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly
    */
-  void transferLearnedEANogoods();
+  void updateEANogoods(InterpretationConstPtr compatibleSet = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
    * Checks after completion of an assignment if it is compatible.
