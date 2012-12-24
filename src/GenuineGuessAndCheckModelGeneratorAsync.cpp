@@ -462,6 +462,8 @@ void GenuineGuessAndCheckModelGeneratorAsync::updateEANogoods(
 	InterpretationConstPtr factWasSet,
 	InterpretationConstPtr changed){
 
+	boost::mutex::scoped_lock lock(transferMutex);
+
 	// generalize ground nogoods to nonground ones
 	if (factory.ctx.config.getOption("ExternalLearningGeneralize")){
 		int max = learnedEANogoods->getNogoodCount();
@@ -476,7 +478,6 @@ void GenuineGuessAndCheckModelGeneratorAsync::updateEANogoods(
 	}
 
 	// transfer nogoods to the solver
-	boost::mutex::scoped_lock lock(transferMutex);
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned IO-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
