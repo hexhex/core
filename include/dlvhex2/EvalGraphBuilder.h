@@ -145,7 +145,7 @@ protected:
   // component graph (we clone it and store it here in the constructor)
   boost::scoped_ptr<ComponentGraph> clonedcgptr;
   // component graph (reference to cloned storage)
-  ComponentGraph& cgcopy;
+  ComponentGraph& cg;
 	// eval graph
 	EvalGraphT& eg;
   // configuration for model generator factory
@@ -182,7 +182,7 @@ public:
   // accessors
   // 
   inline const EvalGraphT& getEvalGraph() const { return eg; }
-  inline ComponentGraph& getComponentGraph() { return cgcopy; }
+  inline ComponentGraph& getComponentGraph() { return cg; }
 	// returns a graph consisting of all components that still need to be built into some evaluation unit
   inline const ComponentGraphRest& getComponentGraphRest() const { return cgrest; }
   // get component corresponding to given unit (previously generated using createEvalUnit)

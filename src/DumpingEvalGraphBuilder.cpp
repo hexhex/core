@@ -48,7 +48,7 @@ DumpingEvalGraphBuilder::DumpingEvalGraphBuilder(
 	EvalGraphBuilder(ctx, cg, eg, externalEvalConfig),
 	output(ofname.c_str(), std::ios::out | std::ios::trunc)
 {
-  throw std::runtime_error("TODO: implement mapping of components to component indices here!");
+  throw std::runtime_error("TODO revitalize this functionality as follows: record indices of components here, cg.collapseComponents must record in the component which components get into a goal component, then createEvalUnit can dump which original component indices become which units (this is the clean and only useful way to do it)");
 }
 
 DumpingEvalGraphBuilder::~DumpingEvalGraphBuilder()
@@ -63,7 +63,7 @@ DumpingEvalGraphBuilder::createEvalUnit(
   {
     ComponentGraph::ComponentIterator cit, cit_end;
     unsigned idx = 0;
-    for(boost::tie(cit, cit_end) = cgcopy.getComponents();
+    for(boost::tie(cit, cit_end) = cg.getComponents();
         cit != cit_end; ++cit, ++idx)
     {
       componentidx[*cit] = idx;

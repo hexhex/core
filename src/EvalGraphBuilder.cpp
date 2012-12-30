@@ -65,15 +65,14 @@ EvalGraphBuilder::EvalGraphBuilder(
     EvalGraphT& eg,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
   ctx(ctx),
-	//cg(cg),
   clonedcgptr(cg.clone()),
-  cgcopy(*clonedcgptr),
+  cg(*clonedcgptr),
   eg(eg),
   externalEvalConfig(externalEvalConfig),
 	mapping(),
-  unusedEdgeFilter(&cgcopy, &mapping),
+  unusedEdgeFilter(&cg, &mapping),
   unusedVertexFilter(&mapping),
-  cgrest(cgcopy.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter)
+  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter)
 {
 }
 
@@ -114,18 +113,14 @@ EvalGraphBuilder::createEvalUnit(
 
   // collapse components into new eval unit
 	// (this verifies necessary conditions and computes new dependencies)
-  #warning substitute name cgcopy by name cg once this works
   Component newComp;
 	{
 		// TODO perhaps directly take ComponentSet as inputs
 		ComponentSet scomps(comps.begin(), comps.end());
 		ComponentSet sccomps(ccomps.begin(), ccomps.end());
-    //was: calculateNewEvalUnitInfos(scomps, sccomps, newUnitDependsOn, newUnitInfo);
-		//cgcopy.computeCollapsedComponentInfos(
-    //    scomps, sccomps, newInDeps, newOutDeps, newUnitInfo);
-		newComp = cgcopy.collapseComponents(scomps, sccomps);
+		newComp = cg.collapseComponents(scomps, sccomps);
 	}
-	const ComponentInfo& newUnitInfo = cgcopy.propsOf(newComp);
+	const ComponentInfo& newUnitInfo = cg.propsOf(newComp);
 
   // create eval unit
   EvalUnit u = eg.addUnit(eup_empty);
@@ -194,10 +189,10 @@ EvalGraphBuilder::createEvalUnit(
   // create dependencies
   unsigned joinOrder = 0; // TODO define join order in a more intelligent way?
   ComponentGraph::PredecessorIterator dit, dend;
-  for(boost::tie(dit, dend) = cgcopy.getDependencies(newComp);
+  for(boost::tie(dit, dend) = cg.getDependencies(newComp);
       dit != dend; dit++)
   {
-    Component tocomp = cgcopy.targetOf(*dit);
+    Component tocomp = cg.targetOf(*dit);
 
     // get eval unit corresponding to tocomp
     ComponentEvalUnitMapping::left_map::iterator itdo =
@@ -205,7 +200,7 @@ EvalGraphBuilder::createEvalUnit(
     assert(itdo != mapping.left.end());
     EvalUnit dependsOn = itdo->second;
 
-    const DependencyInfo& di = cgcopy.propsOf(*dit);
+    const DependencyInfo& di = cg.propsOf(*dit);
     DBGLOG(DBG,"adding dependency to unit " << dependsOn << " with joinOrder " << joinOrder);
     eg.addDependency(u, dependsOn, EvalUnitDepProperties(joinOrder));
     joinOrder++;
