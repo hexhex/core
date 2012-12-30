@@ -107,35 +107,6 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
   DBGLOG(DBG,"predecessors of " << from << " are " << printrange(preds));
 }
 
-typedef std::map<Component, std::list<Component> > Cloned2OrigMap;
-
-// gets cloned cg
-// gets components in cloned cg to collapse
-// returns new component in cloned cg, 
-// updates com accordingly
-Component collapseHelper(Cloned2OrigMap& com, ComponentGraph& clonedcg, const ComponentSet& clonedcollapse)
-{
-  Component ret = clonedcg.collapseComponents(clonedcollapse);
-
-  // insert new empty mapping into com
-  com[ret] = std::list<Component>();
-
-  // collect all targets
-  // remove sources on the way there
-  std::list<Component>& targets = com[ret];
-  for(ComponentSet::const_iterator it = clonedcollapse.begin(); it != clonedcollapse.end(); ++it)
-  {
-    Cloned2OrigMap::iterator comit = com.find(*it);
-    assert(comit != com.end());
-    targets.insert(targets.end(), comit->second.begin(), comit->second.end());
-
-    // erase record in com
-    com.erase(*it);
-  }
-
-  return ret;
-}
-
 }
 
 // required for some GCCs for DFSVisitor CopyConstructible Concept Check
@@ -143,22 +114,7 @@ using namespace internal;
 
 void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
 {
-  const ComponentGraph& constcompgraph = builder.getComponentGraph();
-	boost::scoped_ptr<ComponentGraph> pcompgraph(constcompgraph.clone());
-  ComponentGraph& compgraph(*pcompgraph);
-  // build mapping from cloned to original component graph
-  Cloned2OrigMap cloned2orig;
-  {
-    ComponentGraph::ComponentIterator cit, cit_end, ccit, ccit_end;
-    boost::tie(cit, cit_end) = constcompgraph.getComponents();
-    boost::tie(ccit, ccit_end) = compgraph.getComponents();
-    for(;cit != cit_end && ccit != ccit_end; cit++, ccit++)
-    {
-      std::list<Component> comps;
-      comps.push_back(*cit);
-      cloned2orig[*ccit] = comps;
-    }
-  }
+  ComponentGraph& compgraph = builder.getComponentGraph();
 
   bool didSomething;
   do
@@ -241,7 +197,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
       if( !collapse.empty() )
       {
         collapse.insert(comp);
-        Component c = collapseHelper(cloned2orig, compgraph, collapse);
+        Component c = compgraph.collapseComponents(collapse);
         LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
 
         // restart loop after collapse
@@ -307,7 +263,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
         // collapse! (decreases graph size)
         collapse.insert(comp);
         assert(collapse.size() > 1);
-        Component c = collapseHelper(cloned2orig, compgraph, collapse);
+        Component c = compgraph.collapseComponents(collapse);
         LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
 
         // restart loop after collapse
@@ -385,7 +341,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
         // collapse! (decreases graph size)
         collapse.insert(comp);
         assert(collapse.size() > 1);
-        Component c = collapseHelper(cloned2orig, compgraph, collapse);
+        Component c = compgraph.collapseComponents(collapse);
         LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
 
         // restart loop after collapse
@@ -421,7 +377,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
     {
       // collapse! (decreases graph size)
       LOG(ANALYZE,"collapsing constraint-only nodes " << printrange(collapse));
-      Component c = collapseHelper(cloned2orig, compgraph, collapse);
+      Component c = compgraph.collapseComponents(collapse);
       didSomething = true;
     }
   }
@@ -434,11 +390,13 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
   //
   ComponentContainer sortedcomps;
   evalheur::topologicalSortComponents(compgraph.getInternalGraph(), sortedcomps);
+  LOG(ANALYZE,"now creating evaluation units from components " << printrange(sortedcomps));
   for(ComponentContainer::const_iterator it = sortedcomps.begin();
       it != sortedcomps.end(); ++it)
   {
-    // <foo>.find(<bar>)->second has an implicit assert() at the iterator dereferencing
-		const std::list<Component>& comps = cloned2orig.find(*it)->second;
+    // just create a unit from each component (we collapsed above)
+    std::list<Component> comps;
+    comps.push_back(*it);
     std::list<Component> ccomps;
     EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
