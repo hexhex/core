@@ -51,19 +51,29 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+namespace
+{
+  typedef ComponentGraph::ComponentSet ComponentSet;
+  typedef ComponentGraph::ComponentInfo ComponentInfo;
+  typedef ComponentGraph::DependencyInfo DependencyInfo;
+  typedef ComponentGraph::DepMap DepMap;
+}
+
 EvalGraphBuilder::EvalGraphBuilder(
     ProgramCtx& ctx, 
 		ComponentGraph& cg,
     EvalGraphT& eg,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
   ctx(ctx),
-	cg(cg),
+	//cg(cg),
+  clonedcgptr(cg.clone()),
+  cgcopy(*clonedcgptr),
   eg(eg),
   externalEvalConfig(externalEvalConfig),
 	mapping(),
-  unusedEdgeFilter(&cg, &mapping),
+  unusedEdgeFilter(&cgcopy, &mapping),
   unusedVertexFilter(&mapping),
-  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter)
+  cgrest(cgcopy.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter)
 {
 }
 
@@ -98,6 +108,7 @@ namespace
   EvalUnitProperties eup_empty;
 }
 
+#if 0
 // build evaluation unit from components <comps> and copy into this unit also constraints in <ccomps>
 //
 // look at all dependencies outgoing from <comps>
@@ -151,15 +162,14 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 				// map component to unit
 				ComponentEvalUnitMapping::left_map::iterator itu(
 						mapping.left.find(target));
-				#ifndef NDEBUG
 				// be nice: give a nice error message
+        #warning this check must be externalized!
 				if( itu == mapping.left.end() )
 				{
 					LOG(ERROR,"outgoing dependency from component " << *ito <<
 							" to component " << target << " not allowed because "
 							" the target is not yet mapped to an evaluation unit");
 				}
-				#endif
 				const ComponentGraph::DependencyInfo& comp_depinfo =
 					cg.propsOf(outgoing_dep);
 
@@ -261,6 +271,8 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
   ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
 	ComponentGraph::calculateStratificationInfo(registry(), ci);
 
+  ---
+
 	//
 	// build newUnitDependsOn
 	//
@@ -271,6 +283,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 		newUnitDependsOn.push_back(itd->second);
 	}
 }
+#endif
 
 EvalGraphBuilder::EvalUnit
 EvalGraphBuilder::createEvalUnit(
@@ -280,27 +293,29 @@ EvalGraphBuilder::createEvalUnit(
   DBGLOG(DBG,"= EvalGraphBuilder::createEvalUnit(" <<
 			printrange(comps) << "," << printrange(ccomps) << ")");
 
-	// calculate properties of new eval unit
-	// (this verifies a lot of stuff in debug mode)
-	std::list<DependencyInfo> newUnitDependsOn;
-	ComponentInfo newUnitInfo;
+  // collapse components into new eval unit
+	// (this verifies necessary conditions and computes new dependencies)
+  #warning substitute name cgcopy by name cg once this works
+  Component newComp;
 	{
 		// TODO perhaps directly take ComponentSet as inputs
 		ComponentSet scomps(comps.begin(), comps.end());
 		ComponentSet sccomps(ccomps.begin(), ccomps.end());
-		calculateNewEvalUnitInfos(scomps, sccomps, newUnitDependsOn, newUnitInfo);
+    //was: calculateNewEvalUnitInfos(scomps, sccomps, newUnitDependsOn, newUnitInfo);
+		//cgcopy.computeCollapsedComponentInfos(
+    //    scomps, sccomps, newInDeps, newOutDeps, newUnitInfo);
+		newComp = cgcopy.collapseComponents(scomps, sccomps);
 	}
+	const ComponentInfo& newUnitInfo = cgcopy.propsOf(newComp);
 
   // create eval unit
   EvalUnit u = eg.addUnit(eup_empty);
-  LOG(DBG,"created unit " << u);
+  LOG(DBG,"created unit " << u << " for new comp " << newComp);
 
-  // associate comps with component
-	// ignore shared ccomps here (see comments in .hpp file)
-	BOOST_FOREACH(Component c, comps)
-	{
-		typedef ComponentEvalUnitMapping::value_type MappedPair;
-		bool success = mapping.insert(MappedPair(c, u)).second;
+  // associate new comp with eval unit
+  {
+    typedef ComponentEvalUnitMapping::value_type MappedPair;
+		bool success = mapping.insert(MappedPair(newComp, u)).second;
 		assert(success); // component must not already exist here
 	}
 
@@ -358,12 +373,22 @@ EvalGraphBuilder::createEvalUnit(
   }
 
   // create dependencies
-  unsigned joinOrder = 0;
-	BOOST_FOREACH(const DependencyInfo& di, newUnitDependsOn)
-	{
-		// TODO join order?
-    DBGLOG(DBG,"adding dependency to unit " << di.dependsOn << " with joinOrder " << joinOrder);
-    eg.addDependency(u, di.dependsOn, EvalUnitDepProperties(joinOrder));
+  unsigned joinOrder = 0; // TODO define join order in a more intelligent way?
+  ComponentGraph::PredecessorIterator dit, dend;
+  for(boost::tie(dit, dend) = cgcopy.getDependencies(newComp);
+      dit != dend; dit++)
+  {
+    Component tocomp = cgcopy.targetOf(*dit);
+
+    // get eval unit corresponding to tocomp
+    ComponentEvalUnitMapping::left_map::iterator itdo =
+      mapping.left.find(tocomp);
+    assert(itdo != mapping.left.end());
+    EvalUnit dependsOn = itdo->second;
+
+    const DependencyInfo& di = cgcopy.propsOf(*dit);
+    DBGLOG(DBG,"adding dependency to unit " << dependsOn << " with joinOrder " << joinOrder);
+    eg.addDependency(u, dependsOn, EvalUnitDepProperties(joinOrder));
     joinOrder++;
 	}
 

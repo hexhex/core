@@ -43,6 +43,7 @@
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <boost/bimap/unordered_multiset_of.hpp>
+#include <boost/scoped_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -70,18 +71,18 @@ public:
   typedef ComponentGraph::Dependency Dependency;
 
 protected:
-	typedef ComponentGraph::ComponentSet ComponentSet;
-	typedef ComponentGraph::ComponentInfo ComponentInfo;
-	struct DependencyInfo:
-		public ComponentGraph::DependencyInfo
-	{
-		// this is not a property of a graph,
-		// we use this when we calculate the dependencies of a new unit
-		// and for that we need to know on which units it depends
-		EvalUnit dependsOn;
-		DependencyInfo(EvalUnit dependsOn, const ComponentGraph::DependencyInfo& parent):
-			ComponentGraph::DependencyInfo(parent), dependsOn(dependsOn) {}
-	};
+	//typedef ComponentGraph::ComponentSet ComponentSet;
+	//typedef ComponentGraph::ComponentInfo ComponentInfo;
+	//struct DependencyInfo:
+	//	public ComponentGraph::DependencyInfo
+	//{
+	//	// this is not a property of a graph,
+	//	// we use this when we calculate the dependencies of a new unit
+	//	// and for that we need to know on which units it depends
+	//	EvalUnit dependsOn;
+	//	DependencyInfo(EvalUnit dependsOn, const ComponentGraph::DependencyInfo& parent):
+	//		ComponentGraph::DependencyInfo(parent), dependsOn(dependsOn) {}
+	//};
 
 protected:
   // we use identity as hash function as eval units are distinct unsigned ints
@@ -101,7 +102,7 @@ protected:
 	// dependencies have been fulfilled)
   typedef boost::bimaps::bimap<
       boost::bimaps::unordered_set_of<Component>,
-      boost::bimaps::unordered_multiset_of<EvalUnit, identity >
+      boost::bimaps::unordered_set_of<EvalUnit>
     > ComponentEvalUnitMapping;
 
 protected:
@@ -156,7 +157,11 @@ protected:
   // overall program context
   ProgramCtx& ctx;
 	// component graph (this is an input -> const)
-	const ComponentGraph& cg;
+	//const ComponentGraph& cg;
+  // storage for copied component graph
+  boost::scoped_ptr<ComponentGraph> clonedcgptr;
+  // copied component graph which will be modified
+  ComponentGraph& cgcopy;
 	// eval graph
 	EvalGraphT& eg;
   // configuration for model generator factory
@@ -193,8 +198,7 @@ public:
   // accessors
   // 
   inline const EvalGraphT& getEvalGraph() const { return eg; }
-  //inline ComponentGraph& getComponentGraph() { return cg; }
-  inline const ComponentGraph& getComponentGraph() const { return cg; }
+  inline ComponentGraph& getComponentGraph() { return cgcopy; }
 	// returns a graph consisting of all components that still need to be built into some evaluation unit
   inline const ComponentGraphRest& getComponentGraphRest() const { return cgrest; }
 
@@ -224,15 +228,16 @@ public:
 			const std::list<Component>& comps, const std::list<Component>& ccomps);
 
 protected:
+  # warning replaced by ComponentGraph::computeCollapsedComponentInfos
 	// prepare to collapse given components into evaluation unit
 	// prepare collapse incoming dependencies
 	// create dependencies and properties of dependencies
 	// create properties of component
 	// asserts that this operation does not make the DAG cyclic
-	void calculateNewEvalUnitInfos(
-			const ComponentSet& comps, const ComponentSet& ccomps,
-			std::list<DependencyInfo>& newUnitDependsOn,
-			ComponentInfo& newUnitInfo);
+	///void calculateNewEvalUnitInfos(
+	///		const ComponentSet& comps, const ComponentSet& ccomps,
+	///		std::list<DependencyInfo>& newUnitDependsOn,
+	///		ComponentInfo& newUnitInfo);
 };
 typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 
