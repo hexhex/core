@@ -71,20 +71,6 @@ public:
   typedef ComponentGraph::Dependency Dependency;
 
 protected:
-	//typedef ComponentGraph::ComponentSet ComponentSet;
-	//typedef ComponentGraph::ComponentInfo ComponentInfo;
-	//struct DependencyInfo:
-	//	public ComponentGraph::DependencyInfo
-	//{
-	//	// this is not a property of a graph,
-	//	// we use this when we calculate the dependencies of a new unit
-	//	// and for that we need to know on which units it depends
-	//	EvalUnit dependsOn;
-	//	DependencyInfo(EvalUnit dependsOn, const ComponentGraph::DependencyInfo& parent):
-	//		ComponentGraph::DependencyInfo(parent), dependsOn(dependsOn) {}
-	//};
-
-protected:
   // we use identity as hash function as eval units are distinct unsigned ints
 
   BOOST_CONCEPT_ASSERT((boost::Convertible<Component, void*>));
@@ -226,18 +212,6 @@ public:
 	//   constraint pushing restrictions (this will be asserted by createEvalUnit))
   virtual EvalUnit createEvalUnit(
 			const std::list<Component>& comps, const std::list<Component>& ccomps);
-
-protected:
-  # warning replaced by ComponentGraph::computeCollapsedComponentInfos
-	// prepare to collapse given components into evaluation unit
-	// prepare collapse incoming dependencies
-	// create dependencies and properties of dependencies
-	// create properties of component
-	// asserts that this operation does not make the DAG cyclic
-	///void calculateNewEvalUnitInfos(
-	///		const ComponentSet& comps, const ComponentSet& ccomps,
-	///		std::list<DependencyInfo>& newUnitDependsOn,
-	///		ComponentInfo& newUnitInfo);
 };
 typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 
