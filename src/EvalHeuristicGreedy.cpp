@@ -45,6 +45,8 @@
 #include <boost/graph/properties.hpp>
 #include <boost/scoped_ptr.hpp>
 
+//#include <fstream>
+
 DLVHEX_NAMESPACE_BEGIN
 
 bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2) const{
@@ -175,7 +177,7 @@ Component collapseHelper(Cloned2OrigMap& com, ComponentGraph& clonedcg, const Co
   for(ComponentSet::const_iterator it = clonedcollapse.begin(); it != clonedcollapse.end(); ++it)
   {
     Cloned2OrigMap::iterator comit = com.find(*it);
-    assert(comit != com.end());																																																																																																																																																																																																																	
+    assert(comit != com.end());
     targets.insert(targets.end(), comit->second.begin(), comit->second.end());
 
     // erase record in com
@@ -193,8 +195,15 @@ using namespace internalgreedy;
 void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
 {
   const ComponentGraph& constcompgraph = builder.getComponentGraph();
-	boost::scoped_ptr<ComponentGraph> pcompgraph(constcompgraph.clone());
+  boost::scoped_ptr<ComponentGraph> pcompgraph(constcompgraph.clone());
   ComponentGraph& compgraph(*pcompgraph);
+  #if 0
+  {
+    std::string fnamev = "my_initial_ClonedCompGraphVerbose.dot";
+    std::ofstream filev(fnamev.c_str());
+    compgraph.writeGraphViz(filev, true);
+  }
+  #endif
   // build mapping from cloned to original component graph
   Cloned2OrigMap cloned2orig;
   {
@@ -482,7 +491,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
         Component comp2 = *cit2;
         DBGLOG(DBG,"checking other component " << comp2);
 
-	// only merge nodes with successors, but not with predecessors
+        // only merge nodes with successors, but not with predecessors
 /*
         ComponentSet c2preds;
         transitivePredecessorComponents(compgraph, comp, c2preds);
@@ -541,7 +550,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
         }
 
-	// if this is the case, then do not merge
+        // if this is the case, then do not merge
         if (!breakCycle){
           if (mergeComponents(compgraph.propsOf(comp), compgraph.propsOf(comp2))){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
@@ -586,13 +595,27 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
   //
   // create eval units using topological sort
   //
+  LOG(ANALYZE,"now creating evaluation units");
   ComponentContainer sortedcomps;
   topologicalSortOfComponents(compgraph, sortedcomps);
   for(ComponentContainer::const_iterator it = sortedcomps.begin();
       it != sortedcomps.end(); ++it)
   {
+    const std::list<Component>& comps = cloned2orig.find(*it)->second;
+    LOG(DBG,"plan to collapse " << printrange(comps));
+  }
+  #if 0
+  {
+    std::string fnamev = "my_ClonedCompGraphVerbose.dot";
+    std::ofstream filev(fnamev.c_str());
+    compgraph.writeGraphViz(filev, true);
+  }
+  #endif
+  for(ComponentContainer::const_iterator it = sortedcomps.begin();
+      it != sortedcomps.end(); ++it)
+  {
     // <foo>.find(<bar>)->second has an implicit assert() at the iterator dereferencing
-		const std::list<Component>& comps = cloned2orig.find(*it)->second;
+    const std::list<Component>& comps = cloned2orig.find(*it)->second;
     std::list<Component> ccomps;
     EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
