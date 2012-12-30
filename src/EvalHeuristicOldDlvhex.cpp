@@ -53,14 +53,16 @@ EvalHeuristicOldDlvhex::~EvalHeuristicOldDlvhex()
 {
 }
 
-// as we are in a CPP file, we can do this
-typedef ComponentGraph::Component Component;
-typedef ComponentGraph::ComponentIterator ComponentIterator;
-typedef ComponentGraph::SuccessorIterator SuccessorIterator;
-typedef ComponentGraph::PredecessorIterator PredecessorIterator;
-typedef std::set<Component> ComponentSet;
-typedef std::list<Component> ComponentList;
-typedef std::vector<Component> ComponentVector;
+namespace
+{
+  typedef ComponentGraph::Component Component;
+  typedef ComponentGraph::ComponentIterator ComponentIterator;
+  typedef ComponentGraph::SuccessorIterator SuccessorIterator;
+  typedef ComponentGraph::PredecessorIterator PredecessorIterator;
+  typedef std::set<Component> ComponentSet;
+  typedef std::list<Component> ComponentList;
+  typedef std::vector<Component> ComponentVector;
+}
 
 // old dlvhex approach:
 // "calculate all that is calculateable" then go to next set of components and continue
@@ -78,33 +80,31 @@ void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
   // get internal compgraph
   const ComponentGraph::Graph& igraph = compgraph.getInternalGraph();
 
-  //
-  // do topological sort
-	// (this sorting will remain stable, though elements may be removed)
-  //
-
-  // prepare colormap
-  //
-	// we need a hash map, as component graph is no graph with vecS-storage
-	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
-	CompColorHashMap ccWhiteHashMap;
-	// fill white hash map
-  ComponentGraph::ComponentIterator cit, cit_end;
-	for(boost::tie(cit, cit_end) = compgraph.getComponents();
-			cit != cit_end; ++cit)
-	{
-		ccWhiteHashMap[*cit] = boost::white_color;
-	}
-
-  // do it
   ComponentList opencomps;
-  std::back_insert_iterator<ComponentList> compinserter(opencomps);
-  CompColorHashMap ccHashMap(ccWhiteHashMap);
-  boost::topological_sort(
-      compgraph.getInternalGraph(),
-      compinserter,
-      boost::color_map(CompColorMap(ccHashMap)));
+  // topologically sort into opencomps
+  {
+    // prepare colormap
+    //
+    // we need a hash map, as component graph is no graph with vecS-storage
+    typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+    typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+    CompColorHashMap ccWhiteHashMap;
+    // fill white hash map
+    ComponentGraph::ComponentIterator cit, cit_end;
+    for(boost::tie(cit, cit_end) = compgraph.getComponents();
+        cit != cit_end; ++cit)
+    {
+      ccWhiteHashMap[*cit] = boost::white_color;
+    }
+
+    // sort
+    std::back_insert_iterator<ComponentList> compinserter(opencomps);
+    CompColorHashMap ccHashMap(ccWhiteHashMap);
+    boost::topological_sort(
+        compgraph.getInternalGraph(),
+        compinserter,
+        boost::color_map(CompColorMap(ccHashMap)));
+  }
 
   ComponentSet finishedcompsSet;
 
@@ -162,7 +162,9 @@ void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
 			std::list<Component> comps(markedcomps.begin(), markedcomps.end());
 			std::list<Component> ccomps;
 			EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
-			LOG(ANALYZE,"components " << printrange(comps) << " became eval unit " << u);
+      Component c = builder.getComponentForUnit(u);
+			LOG(ANALYZE,"components " << printrange(comps) << " became eval unit " << u << " and component " << c);
+      finishedcompsSet.insert(c);
 		}
 
     // remove marked from opencomps

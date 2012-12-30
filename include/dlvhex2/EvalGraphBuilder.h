@@ -142,11 +142,9 @@ public:
 protected:
   // overall program context
   ProgramCtx& ctx;
-	// component graph (this is an input -> const)
-	//const ComponentGraph& cg;
-  // storage for copied component graph
+  // component graph (we clone it and store it here in the constructor)
   boost::scoped_ptr<ComponentGraph> clonedcgptr;
-  // copied component graph which will be modified
+  // component graph (reference to cloned storage)
   ComponentGraph& cgcopy;
 	// eval graph
 	EvalGraphT& eg;
@@ -187,6 +185,8 @@ public:
   inline ComponentGraph& getComponentGraph() { return cgcopy; }
 	// returns a graph consisting of all components that still need to be built into some evaluation unit
   inline const ComponentGraphRest& getComponentGraphRest() const { return cgrest; }
+  // get component corresponding to given unit (previously generated using createEvalUnit)
+  Component getComponentForUnit(EvalUnit u) const;
 
 	// returns the registry (useful for printing, cannot do this inline as ProgramCtx depends on this header)
   RegistryPtr registry();
