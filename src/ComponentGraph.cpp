@@ -842,9 +842,9 @@ void ComponentGraph::computeCollapsedComponentInfos(
       printrange(comps) << "," << printrange(sharedcomps) << ",.,.,.)");
 
 	// dependencies from the new components to other components
-	DepMap& outgoing = newIncomingDependencies;
+	DepMap& incoming = newIncomingDependencies;
 	// dependencies from other components to the new component
-	DepMap& incoming = newOutgoingDependencies;
+	DepMap& outgoing = newOutgoingDependencies;
 
   // set of original components that depend on other original components
 	// (we need this to find out whether an eatom in a component is an outer or
