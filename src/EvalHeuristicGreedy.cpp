@@ -34,13 +34,13 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/EvalHeuristicGreedy.h"
+#include "dlvhex2/EvalHeuristicShared.h"
 #include "dlvhex2/Logger.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp>
-#include <boost/graph/topological_sort.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -83,34 +83,6 @@ typedef ComponentGraph::ComponentSet ComponentSet;
 
 namespace internalgreedy
 {
-
-template<typename ComponentGraph, typename Sequence>
-void topologicalSortOfComponents(const ComponentGraph& compgraph, Sequence& comps)
-{
-  // we need a hash map, as component graph is no graph with vecS-storage
-  //
-  typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-  typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
-  CompColorHashMap ccWhiteHashMap;
-  // fill white hash map
-  ComponentIterator cit, cit_end;
-  for(boost::tie(cit, cit_end) = compgraph.getComponents();
-      cit != cit_end; ++cit)
-  {
-    //boost::put(ccWhiteHashMap, *cit, boost::white_color);
-    ccWhiteHashMap[*cit] = boost::white_color;
-  }
-  CompColorHashMap ccHashMap(ccWhiteHashMap);
-
-  //
-  // do topological sort
-  //
-  std::back_insert_iterator<Sequence> compinserter(comps);
-  boost::topological_sort(
-      compgraph.getInternalGraph(),
-      compinserter,
-      boost::color_map(CompColorMap(ccHashMap)));
-}
 
 // collect all components on the way
 struct DFSVisitor:
@@ -597,7 +569,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
   //
   LOG(ANALYZE,"now creating evaluation units");
   ComponentContainer sortedcomps;
-  topologicalSortOfComponents(compgraph, sortedcomps);
+  evalheur::topologicalSortComponents(compgraph.getInternalGraph(), sortedcomps);
   for(ComponentContainer::const_iterator it = sortedcomps.begin();
       it != sortedcomps.end(); ++it)
   {

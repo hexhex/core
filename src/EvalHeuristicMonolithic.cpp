@@ -35,11 +35,6 @@
 #include "dlvhex2/EvalHeuristicMonolithic.h"
 #include "dlvhex2/Logger.h"
 
-#include <boost/unordered_map.hpp>
-#include <boost/graph/topological_sort.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/graph/properties.hpp>
-
 DLVHEX_NAMESPACE_BEGIN
 
 EvalHeuristicMonolithic::EvalHeuristicMonolithic():
@@ -51,50 +46,14 @@ EvalHeuristicMonolithic::~EvalHeuristicMonolithic()
 {
 }
 
-typedef ComponentGraph::Component Component;
-typedef ComponentGraph::ComponentIterator ComponentIterator;
-typedef std::vector<Component> ComponentContainer;
-
 // trivial strategy:
 // do a topological sort of the tree
 // build eval units in that order
 void EvalHeuristicMonolithic::build(EvalGraphBuilder& builder)
 {
+  typedef ComponentGraph::Component Component;
   const ComponentGraph& compgraph = builder.getComponentGraph();
-
-  //
-	// we need a hash map, as component graph is no graph with vecS-storage
-  //
-	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
-	CompColorHashMap ccWhiteHashMap;
-	{
-		// initialize white hash map
-		ComponentIterator cit, cit_end;
-		for(boost::tie(cit, cit_end) = compgraph.getComponents();
-				cit != cit_end; ++cit)
-		{
-			ccWhiteHashMap[*cit] = boost::white_color;
-		}
-	}
-  CompColorHashMap ccHashMap(ccWhiteHashMap);
-
-  //
-  // do topological sort
-  //
-  ComponentContainer ccomps;
-  std::back_insert_iterator<ComponentContainer> compinserter(ccomps);
-  boost::topological_sort(
-      compgraph.getInternalGraph(),
-      compinserter,
-      boost::color_map(CompColorMap(ccHashMap)));
-
-  std::list<Component> comps, constraintcomps;
-  for(ComponentContainer::const_iterator it = ccomps.begin();
-      it != ccomps.end(); ++it)
-  {
-		comps.push_back(*it);
-  }
+  std::list<Component> comps(compgraph.getComponents().first, compgraph.getComponents().second), constraintcomps;
   EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, constraintcomps);
   LOG(ANALYZE,"got since eval unit " << u);
 }
