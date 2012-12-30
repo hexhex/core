@@ -16,6 +16,11 @@ equality.hex equality.out --solver=genuineii
 extatom1.hex extatom1.out --solver=genuineii
 extatom1simple.hex extatom1simple.out --solver=genuineii
 extatom2.hex extatom2.out --solver=genuineii
+# let's try all possible evaluation heuristics here (i.e., not monolithic) with genuineii (we always have this solver)
+extatom2.hex extatom2.out --solver=genuineii --heuristics=old
+extatom2.hex extatom2.out --solver=genuineii --heuristics=trivial
+extatom2.hex extatom2.out --solver=genuineii --heuristics=easy
+extatom2.hex extatom2.out --solver=genuineii --heuristics=greedy
 extatom2safety.hex extatom2.out --solver=genuineii
 extatom3.hex extatom3.out --nofacts --solver=genuineii
 # TODO make ASPSolverManager work if we do not have DLV extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplana.txt --solver=genuineii
