@@ -126,6 +126,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
   BaseModelGenerator(input),
   factory(factory)
 {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine plain mg construction");
 	RegistryPtr reg = factory.ctx.registry();
 
 	// create new interpretation as copy
@@ -155,7 +156,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 		IntegrateExternalAnswerIntoInterpretationCB cb(newint);
 		evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
 		DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
-		    "outer external atom computations");
+		    "outer eatom computations");
 		DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
 	}
 
