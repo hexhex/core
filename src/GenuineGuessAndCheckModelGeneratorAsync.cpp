@@ -224,7 +224,7 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
       evaluateExternalAtoms(factory.ctx,
           factory.outerEatoms, postprocInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
-          "outer external atom computations");
+          "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
       assert(!factory.xidb.empty() &&
