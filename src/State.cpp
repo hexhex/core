@@ -719,18 +719,34 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
 
   FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
-	EvalGraphBuilderPtr egbuilder;
-	if( ctx->config.getOption("DumpEvaluationPlan") )
-	{
-		egbuilder.reset(new DumpingEvalGraphBuilder(
-					*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware,
-					ctx->config.getStringOption("DumpEvaluationPlanFile")));
-	}
-	else
-	{
-		egbuilder.reset(new EvalGraphBuilder(
-					*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware));
-	}
+
+  EvalGraphBuilderPtr egbuilder;
+  if( ctx->config.getOption("DumpEvaluationPlan") )
+  {
+      egbuilder.reset(new DumpingEvalGraphBuilder(
+                  *ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware,
+                  ctx->config.getStringOption("DumpEvaluationPlanFile")));
+  }
+  else
+  {
+      egbuilder.reset(new EvalGraphBuilder(
+                  *ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware));
+  }
+
+  // dump component graph again, this time the cloned version
+  // (it has different addresses which we might need for debugging)
+  if( ctx->config.getOption("DumpCompGraph") )
+  {
+    std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_ClonedCompGraphVerbose.dot";
+    LOG(INFO,"dumping verbose cloned component graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    egbuilder->getComponentGraph().writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_ClonedCompGraphTerse.dot";
+    LOG(INFO,"dumping terse cloned component graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    egbuilder->getComponentGraph().writeGraphViz(filet, false);
+  }
 
   // use configured eval heuristic
   assert(!!ctx->evalHeuristic && "need configured heuristic");

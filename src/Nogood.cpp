@@ -325,7 +325,7 @@ void NogoodSet::forgetLeastFrequentlyAdded(){
 	for (int i = 0; i < nogoods.size(); i++){
 		mac = mac > addCount[i] ? mac : addCount[i];
 	}
-	// delete those with an add count of less than 20% of the maximum add count
+	// delete those with an add count of less than 5% of the maximum add count
 	for (int i = 0; i < nogoods.size(); i++){
 		if (addCount[i] < mac * 0.05){
 			DBGLOG(DBG, "Forgetting nogood " << nogoods[i]);

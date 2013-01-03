@@ -56,8 +56,10 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 	// go through all nonground nogoods which have not been instantiated so far
 	int max = watched->getNogoodCount();
 	if (instantiatedNongroundNogoodsIndex >= max) instantiatedNongroundNogoodsIndex = 0;
+	DBGLOG(DBG, "Updating nogood grounder from " << instantiatedNongroundNogoodsIndex << " to " << max);
 	for (int i = instantiatedNongroundNogoodsIndex; i < max; ++i){
 		Nogood ng = watched->getNogood(i);
+		DBGLOG(DBG, "Checking nogood " << ng.getStringRepresentation(reg));
 		if (ng.isGround()) continue;
 
 		DBGLOG(DBG, "Searching for watched literal in nogood " << i);
@@ -131,8 +133,10 @@ void LazyNogoodGrounder::update(InterpretationConstPtr partialInterpretation, In
 	DBGLOG(DBG, "Updating watches of nonground nogoods");
 	int max = watched->getNogoodCount();
 	if (watchedNogoodsCount >= max) watchedNogoodsCount = 0;
+	DBGLOG(DBG, "Updating nogood grounder from " << watchedNogoodsCount << " to " << max);
 	for (int i = watchedNogoodsCount; i < max; ++i){
 		Nogood ng = watched->getNogood(i);
+		DBGLOG(DBG, "Checking nogood " << ng.getStringRepresentation(reg));
 		if (ng.isGround()) continue;
 
 		DBGLOG(DBG, "Searching for watched literal in nogood " << i);

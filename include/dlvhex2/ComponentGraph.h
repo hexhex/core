@@ -141,6 +141,7 @@ public:
   typedef Traits::in_edge_iterator SuccessorIterator;
 
 	typedef std::set<Component> ComponentSet;
+	typedef std::map<Component, DependencyInfo> DepMap;
 
   //////////////////////////////////////////////////////////////////////////////
   // members
@@ -173,11 +174,28 @@ public:
 	//
 
 	// collapse several components into one
-	// NOTE: This method is a relic from old evaluation graph; if we remove or 
-  // rewrite the easy heuristics to use a better method, we can remove this
-  // method as well (we should).
+  // originals are put into new component and then removed
+  // shared are just copied into new component
 	Component collapseComponents(
-			const ComponentSet& originals);
+			const ComponentSet& originals, const ComponentSet& shared=ComponentSet());
+
+  //
+  // mighty helper for collapsing components
+  //
+
+  // Compute the dependency infos and component info
+  // before putting components `comps' and `sharedcomps' into a new component.
+  //
+  // `sharedcomps' may only contain components with constraints that can be shared.
+  //
+  // This method does not change the graph, it only changes the output arguments,
+  // hence it is const (and should stay const).
+  // 
+  // This method throws an exception if this operation makes the DAG cyclic.
+  void computeCollapsedComponentInfos(
+      const ComponentSet& comps, const ComponentSet& sharedcomps,
+      DepMap& newIncomingDependencies, DepMap& newOutgoingDependencies,
+      ComponentInfo& newComponentInfo) const; // see comment above about const!
 
 	//
 	// accessors

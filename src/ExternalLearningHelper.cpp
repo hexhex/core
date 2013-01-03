@@ -125,8 +125,13 @@ Set<ID> ExternalLearningHelper::getOutputAtoms(const PluginAtom::Query& query, c
 
 ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, Tuple otuple, bool sign){
 
+	bool ground = true;
+	BOOST_FOREACH (ID o, otuple) if (o.isVariableTerm()) ground = false;
+
 	// construct replacement atom with input from query
-	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+	if (ground) replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+	else replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
 	replacement.tuple.resize(1);
 	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
 	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){

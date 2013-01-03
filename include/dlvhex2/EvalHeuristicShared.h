@@ -50,8 +50,8 @@ typedef std::set<Component> ComponentSet;
 // topological sort of all components in graph into vector
 //
 // takes either internal component graph or component graph rest
-template<typename ComponentGraphIntOrRest>
-void topologicalSortComponents(const ComponentGraphIntOrRest& cg, ComponentContainer& out);
+template<typename ComponentGraphIntOrRest, typename Sequence>
+void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out);
 
 struct BuildCommand
 {
@@ -64,18 +64,14 @@ typedef std::vector<BuildCommand> CommandVector;
 
 void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder);
 
-}
-
-namespace evalheur
+// template implementation
+template<typename ComponentGraphIntOrRest, typename Sequence>
+void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out)
 {
+  // we need a hash map, as component graph is no graph with vecS-storage
+  typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+  typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
 
-// we need a hash map, as component graph is no graph with vecS-storage
-typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
-
-template<typename ComponentGraphIntOrRest>
-void topologicalSortComponents(const ComponentGraphIntOrRest& cg, ComponentContainer& out)
-{
 	// create white hash map for topological sort
 	CompColorHashMap ccWhiteHashMap;
 	{
@@ -88,7 +84,7 @@ void topologicalSortComponents(const ComponentGraphIntOrRest& cg, ComponentConta
 	}
 
   assert(out.empty());
-  std::back_insert_iterator<ComponentContainer> compinserter(out);
+  typename std::back_insert_iterator<Sequence> compinserter(out);
   boost::topological_sort(
       cg,
       compinserter,
