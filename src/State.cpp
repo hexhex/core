@@ -1128,6 +1128,7 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
     benchmark::ID grounder = bmc.getInstrumentationID("Grounder time");
     benchmark::ID solver = bmc.getInstrumentationID("Solver time");
     benchmark::ID overall = bmc.getInstrumentationID("BenchmarkController lifetime");
+    bmc.stop(overall);
     //const benchmark::BenchmarkController::Stat& stat = bmc.getStat(eeval);
     //std::cerr << stat.count << " ";
     //bmc.printInSecs(std::cerr, stat.duration, 3);
