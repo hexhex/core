@@ -397,6 +397,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 	pctx.config.setOption("ClaspHeuristicsVsids",0); // perhaps only temporary
+	pctx.config.setOption("DumpStatsErdi",0); // perhaps only temporary
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -662,7 +663,8 @@ void processOptionsPrePlugin(
 		{ "modelqueuesize", required_argument, 0, 32 },
 		{ "liberalsafety", no_argument, 0, 33 },
 		{ "multithreading", no_argument, 0, 34 },
-    { "claspvsids", no_argument, 0, 36 },
+    { "claspvsids", no_argument, 0, 36 }, // perhaps only temporary
+    { "dumpstats", no_argument, 0, 37 }, // perhaps only temporary
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1230,6 +1232,13 @@ void processOptionsPrePlugin(
 		case 35: pctx.config.setOption("FLPDecisionCriterion", 0); break;
 
     case 36: pctx.config.setOption("ClaspHeuristicsVsids",1); break;
+
+    case 37:
+      pctx.config.setOption("DumpStatsErdi",1);
+      #if !defined(DLVHEX_BENCHMARK)
+      throw std::runtime_error("you can only use --dumpstats if you configured with --enable-benchmark");
+      #endif
+      break;
 
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
