@@ -95,6 +95,17 @@ public:
   static ID getOutputAtom(const PluginAtom::Query& query, Tuple t, bool sign);
 
   /**
+   * \brief Construct an output (replacement) atom corresponding to the input tuple i and the answer tuple o;
+   *        sign indicates if the positive or negative version of the replacement atom is used.
+   * \@param query Query (is only used to get registry and external predicate ID)
+   * \@param i The tuple to be used as input
+   * \@param o The tuple to be used as output 
+   * \@param sign Sign of the generated output atom
+   * \@return ID Literal representation of the output tuple
+   */
+  static ID getOutputAtom(const PluginAtom::Query& query, const Tuple& i, const Tuple& o, bool sign);
+
+  /**
    * \brief Parses a learning rule, checks if it is valid learning rule (i.e. it is of the kind as described in the explanation of learnFromRule),
    *        and returns its ID; if the parser or the validity check fails, ID_FAIL is returned.
    * \@param ctx Modifiable pointer to the program context
