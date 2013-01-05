@@ -148,6 +148,7 @@ public:
     Count prints;
     Time start;
     Duration duration;
+    bool running;
 
     Stat(const std::string& name);
   };
@@ -155,6 +156,10 @@ public:
 
 public:
   inline std::ostream& printInSecs(std::ostream& o, const Duration& d, int width=0) const;
+
+  // comfort formatting
+  std::string count(const std::string& identifier, int width=0) const;
+  std::string duration(const std::string& identifier, int width=0) const;
 
   // print information about stat
   inline void printInformation(const Stat& st); // inline for performance
@@ -193,7 +198,7 @@ public:
   inline std::ostream& printCount(std::ostream& out, ID id); // inline for performance
   // print only duration of ID
   inline std::ostream& printDuration(std::ostream& out, ID id); // inline for performance
-  inline const Stat& getStat(ID id) { return instrumentations[id]; }
+  inline const Stat& getStat(ID id) const { return instrumentations[id]; }
 
   // 
   // record measured things
@@ -311,7 +316,11 @@ void BenchmarkController::start(ID id)
 {
 	boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
-  st.start = boost::posix_time::microsec_clock::local_time();
+  if( !st.running )
+  {
+    st.start = boost::posix_time::microsec_clock::local_time();
+    st.running = true;
+  }
 }
 
 // inline for performance
@@ -321,10 +330,13 @@ void BenchmarkController::stop(ID id)
 	boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
-  Duration dur = boost::posix_time::microsec_clock::local_time() - st.start;
-  st.count++;
-  st.duration += dur;
-  printInformationContinous(st,dur);
+  if( st.running )
+  {
+    Duration dur = boost::posix_time::microsec_clock::local_time() - st.start;
+    st.count++;
+    st.duration += dur;
+    printInformationContinous(st,dur);
+  }
 }
 
 // record count (no time), print stats

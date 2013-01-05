@@ -1120,23 +1120,24 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
     // dump number of ground atoms, number of rules (in registry)
     // dump certain time stats
     benchmark::BenchmarkController& bmc = benchmark::BenchmarkController::Instance();
-    unsigned noAtoms = ctx->registry()->ogatoms.getSize();
-    unsigned noRules = ctx->registry()->rules.getSize();
+    unsigned noAtoms = 0;
+    unsigned noRules = 0;
+    if( ctx && ctx->registry() )
+    {
+      noAtoms = ctx->registry()->ogatoms.getSize();
+      noRules = ctx->registry()->rules.getSize();
+    }
 
-    benchmark::ID p_mg = bmc.getInstrumentationID("genuine plain mg construction");
-    benchmark::ID gnc_mg = bmc.getInstrumentationID("genuine g&c mg construction");
-    benchmark::ID grounder = bmc.getInstrumentationID("Grounder time");
-    benchmark::ID solver = bmc.getInstrumentationID("Solver time");
     benchmark::ID overall = bmc.getInstrumentationID("BenchmarkController lifetime");
     bmc.stop(overall);
     //const benchmark::BenchmarkController::Stat& stat = bmc.getStat(eeval);
     //std::cerr << stat.count << " ";
     //bmc.printInSecs(std::cerr, stat.duration, 3);
     std::cerr << "STATS;ogatoms;" << noAtoms << ";rules;" << noRules;
-    std::cerr << ";plain_mg;"; bmc.printInSecs(std::cerr, bmc.getStat(p_mg).duration, 3);
-    std::cerr << ";gnc_mg;"; bmc.printInSecs(std::cerr, bmc.getStat(gnc_mg).duration, 3);
-    std::cerr << ";grounder;"; bmc.printInSecs(std::cerr, bmc.getStat(grounder).duration, 3);
-    std::cerr << ";solver;"; bmc.printInSecs(std::cerr, bmc.getStat(solver).duration, 3);
+    std::cerr << ";plain_mg;" << bmc.duration("genuine plain mg construction", 3);
+    std::cerr << ";gnc_mg;" << bmc.duration("genuine g&c mg construction", 3);
+    std::cerr << ";grounder;" << bmc.duration("Grounder time", 3);
+    std::cerr << ";solver;" << bmc.duration("Solver time", 3);
     std::cerr << ";overall;"; bmc.printInSecs(std::cerr, bmc.getStat(overall).duration, 3);
     std::cerr << std::endl;
   }

@@ -46,7 +46,7 @@ namespace benchmark
 {
 
 BenchmarkController::Stat::Stat(const std::string& name):
-  name(name), count(0), prints(0), start(), duration()
+  name(name), count(0), prints(0), start(), duration(), running(false)
 {
 }
 
@@ -117,6 +117,28 @@ ID BenchmarkController::getInstrumentationID(const std::string& name)
   {
     return it->second;
   }
+}
+
+std::string BenchmarkController::count(const std::string& name, int width) const
+{
+  std::map<std::string, ID>::const_iterator it = name2id.find(name);
+  if( it == name2id.end() )
+    return "-";
+  benchmark::ID id = it->second;
+  std::ostringstream oss;
+  oss << std::setw(width) << getStat(id).count;
+  return oss.str();
+}
+
+std::string BenchmarkController::duration(const std::string& name, int width) const
+{
+  std::map<std::string, ID>::const_iterator it = name2id.find(name);
+  if( it == name2id.end() )
+    return "-";
+  benchmark::ID id = it->second;
+  std::ostringstream oss;
+  printInSecs(oss, getStat(id).duration, width);
+  return oss.str();
 }
 
 } // namespace benchmark
