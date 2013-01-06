@@ -274,14 +274,14 @@ void BenchmarkController::printInformation(const Stat& st)
 // print only count of ID
 std::ostream& BenchmarkController::printCount(std::ostream& out, ID id)
 {
-	boost::mutex::scoped_lock lock(mutex);
+  boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
   return out << st.count;
 }
 
 std::ostream& BenchmarkController::printDuration(std::ostream& out, ID id)
 {
-	boost::mutex::scoped_lock lock(mutex);
+  boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
   return printInSecs(out, st.duration);
 }
@@ -314,7 +314,7 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
 // start timer
 void BenchmarkController::start(ID id)
 {
-	boost::mutex::scoped_lock lock(mutex);
+  boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
   if( !st.running )
   {
@@ -327,7 +327,7 @@ void BenchmarkController::start(ID id)
 // stop and record elapsed time, print stats
 void BenchmarkController::stop(ID id)
 {
-	boost::mutex::scoped_lock lock(mutex);
+  boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
   if( st.running )
@@ -336,6 +336,7 @@ void BenchmarkController::stop(ID id)
     st.count++;
     st.duration += dur;
     printInformationContinous(st,dur);
+    st.running = false;
   }
 }
 
@@ -343,7 +344,7 @@ void BenchmarkController::stop(ID id)
 // inline for performance
 void BenchmarkController::count(ID id, Count increment)
 {
-	boost::mutex::scoped_lock lock(mutex);
+  boost::mutex::scoped_lock lock(mutex);
   Stat& s = instrumentations[id];
   s.count += increment;
   s.prints += increment - 1;
