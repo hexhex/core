@@ -211,21 +211,34 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
       // the auxiliary input also provides grounding (potentially)
       if (eatom.auxInputPredicate != ID_FAIL){
         DBGLOG(DBG, "Adding auxiliary input predicate " << printToString<RawPrinter>(eatom.auxInputPredicate,reg) << " to guessing rule");
-        // use the same variables for grounding the guessing had as for grouding the aux input
-        // (see comments about auxInputMapping in class ExternalAtom)
-        std::set<ID> usedVariables;
         OrdinaryAtom auxinput(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALINPUTAUX);
         auxinput.tuple.push_back(eatom.auxInputPredicate);
-        for (int inp = 0; inp < eatom.inputs.size(); ++inp){
-          // for each input
-          ID inpTerm = eatom.inputs[inp];
-          // if it is a variable and we have not used it so far, use it
-          if (inpTerm.isVariableTerm() &&
-              usedVariables.find(inpTerm) == usedVariables.end()){
-            // determine the argument position of aux input predicate which provides grounding for this variable
-            auxinput.tuple.push_back(inpTerm);
-            usedVariables.insert(inpTerm);
+        // resize to hold input predicate and all aux input variables
+        auxinput.tuple.resize(eatom.auxInputMapping.size()+1,ID_FAIL);
+        // now assign correct variables from inputs to aux inputs
+        unsigned at = 1;
+        for(ExternalAtom::AuxInputMapping::const_iterator itaim = eatom.auxInputMapping.begin();
+            itaim != eatom.auxInputMapping.end(); ++itaim, ++at)
+        {
+          typedef std::list<unsigned> UList;
+          const UList& varplaces = *itaim;
+          ID current = ID_FAIL;
+          assert(!varplaces.empty() && "cannot have empty variable mapping");
+          for(UList::const_iterator it = varplaces.begin();
+              it != varplaces.end(); ++it)
+          {
+            if( it == varplaces.begin() )
+            {
+              // set the variable
+              current = eatom.inputs[*it];
+            }
+            else
+            {
+              // verify the variable
+              assert(current == eatom.inputs[*it] && "something went wrong with auxInputMapping!");
+            }
           }
+          auxinput.tuple[at] = current;
         }
         ID aiid = reg->storeOrdinaryNAtom(auxinput);
         DBGLOG(DBG,"created auxiliary grounding predicate " << printToString<RawPrinter>(aiid,reg) << " which got id " << aiid);
