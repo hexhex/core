@@ -1,0 +1,13 @@
+bee("b").
+aaa("a").
+res("ab").
+
+blah(C) :- bee(B), aaa(A), res(C), &testConcat[A,B](C).
+
+% enforce guess and check model generator (see nonmon_guess.hex)
+seta(u). seta(v). seta(w).
+setc(X) :- &testSetMinus[seta,setd](X), seta(X).
+setd(Y) :- &testSetMinus[seta,setc](Y), seta(Y).
+
+% leave only one possibility
+setc(u). setc(v). setc(w).
