@@ -53,6 +53,14 @@
 
 using dlvhex::ID;
 
+#undef DEBUG_GRINGOPARSER
+
+#ifdef DEBUG_GRINGOPARSER
+# define GPDBGLOG(a,b) DBGLOG(a,b)
+#else
+# define GPDBGLOG(a,b) do { } while(false);
+#endif
+
 namespace
 {
 	bool parsePositional(const std::string&, std::string& out)
@@ -340,7 +348,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
 						r.body.push_back(aid);
 						ID rid = ctx.registry()->storeRule(r);
-						DBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
+						GPDBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
 						groundProgram.idb.push_back(rid);
 						edb->setFact(aid.address);
 					}else{
@@ -348,7 +356,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						addSymbol(lpr.head[0]);
 
 						// skip facts which are not in the symbol table
-						DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
+						GPDBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
 						edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
 
 						// project dummy integer facts
@@ -399,7 +407,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						if (r.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
 					}
 					ID rid = ctx.registry()->storeRule(r);
-					DBGLOG(DBG, "Adding rule " << rid);
+					GPDBGLOG(DBG, "Adding rule " << rid);
 					groundProgram.idb.push_back(rid);
 				}
 				break;
@@ -463,7 +471,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	if( dlvhexId == ID_FAIL )
 	{
 		// parse groundatom, register and store
-		DBGLOG(DBG,"parsing gringo ground atom '" << atomstring << "'");
+		GPDBGLOG(DBG,"parsing gringo ground atom '" << atomstring << "'");
 		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 		ogatom.text = atomstring;
 		{
@@ -473,7 +481,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 			tokenizer tok(ogatom.text, sep);
 			for(tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
 			{
-				DBGLOG(DBG,"got token '" << *it << "'");
+				GPDBGLOG(DBG,"got token '" << *it << "'");
 				Term term(ID::MAINKIND_TERM, *it);
 				// the following takes care of int vs const/string
 				ID id = ctx.registry()->storeTerm(term);
@@ -489,7 +497,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	}
 
 	indexToGroundAtomID[atom.first] = dlvhexId;
-	DBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
+	GPDBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){

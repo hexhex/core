@@ -106,7 +106,7 @@ output(const Tuple& output)
       output.begin(), output.end());
 
   // this replacement might already exists
-  LOG(DBG,"integrating eatom tuple " << printrange(replacement.tuple));
+  DBGLOG(DBG,"integrating eatom tuple " << printrange(replacement.tuple));
   ID idreplacement = reg->storeOrdinaryGAtom(replacement);
   DBGLOG(DBG,"got replacement ID " << idreplacement);
   outputi->setFact(idreplacement.address);

@@ -475,7 +475,8 @@ removeNamespaces()
 #endif
 
 	// be verbose if requested
-	if( ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM) )
+	if( ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM) &&
+		 	Logger::Instance().shallPrint(Logger::INFO) )
 	{
     LOG(INFO,"parsed IDB:");
     RawPrinter rp(Logger::Instance().stream(), ctx->registry());
@@ -552,7 +553,8 @@ RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
 	  rewriter->rewrite(*ctx);
 
     // be verbose if requested
-    if( ctx->config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM) )
+    if( ctx->config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM) &&
+		 	Logger::Instance().shallPrint(Logger::INFO) )
     {
       LOG(INFO,"rewritten IDB:");
       RawPrinter rp(Logger::Instance().stream(), ctx->registry());
