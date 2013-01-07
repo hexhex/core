@@ -184,10 +184,15 @@ struct ExternalAtom:
   ID auxInputPredicate;
   // this mapping stores for each argument of auxInputPredicate
   // a list of positions in the input tuple where this argument applies
-  // e.g., for &foo[a,C,d,X,C]() we have aux(C,X) and inputs <a,C,d,X,C>
-  // then we have mapping < [1,4], [3] >:
-  // for index 0 = argument C we have to set index 1 and 4 in inputs
-  // for index 1 = argument X we have to set index 3 in inputs
+  // e.g., for &foo[a,C,d,X,C]() we have 
+	// either aux(C,X) and inputs <a,C,d,X,C>
+  //        then we have mapping < [1,4], [3] >:
+  //        for index 0 = argument C we have to set index 1 and 4 in inputs
+  //        for index 1 = argument X we have to set index 3 in inputs
+	// or     aux(X,C) and inputs <a,C,d,X,C>
+  //        then we have mapping < [3], [1,4] >:
+  //        for index 0 = argument X we have to set index 3 in inputs
+  //        for index 1 = argument C we have to set index 1 and 4 in inputs
   typedef std::vector<std::list<unsigned> > AuxInputMapping;
   AuxInputMapping auxInputMapping;
 
