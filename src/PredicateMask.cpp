@@ -100,9 +100,9 @@ void PredicateMask::addPredicate(ID pred)
 
 void PredicateMask::updateMask()
 {
-  DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
-  DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<
-      printset(predicates));
+  //DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
+  //DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<
+  //    printset(predicates));
 
   assert(!!maski);
   RegistryPtr reg = maski->getRegistry();
@@ -123,10 +123,15 @@ void PredicateMask::updateMask()
   boost::mutex::scoped_lock lock(updateMutex);
 
   // check if we have unknown atoms
-  DBGLOG(DBG,"already inspected ogatoms with address < " << knownAddresses <<
-      ", iterator range has size " << maxaddr);
+  //DBGLOG(DBG,"already inspected ogatoms with address < " << knownAddresses <<
+  //    ", iterator range has size " << maxaddr);
   if( maxaddr == knownAddresses )
     return;
+
+  // only log real activity
+  DBGLOG_VSCOPE(DBG,"PM::uM(do)",this,false);
+  DBGLOG(DBG,"= PredicateMask::updateMask (need to update) for predicates " <<
+      printset(predicates));
 
   // if not equal, it must be larger -> we must inspect
   assert(maxaddr > knownAddresses);
@@ -234,6 +239,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
 
     assert(eatom);
 
+#if 0
 #ifndef NDEBUG
     std::stringstream ss;
     ss << "Comparing togatom tuple (";
@@ -266,6 +272,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     ss << ")";
     DBGLOG(DBG, ss.str());
 #endif
+#endif
 
     std::map<ID, ID> varBinding;
 
@@ -279,7 +286,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
       if (eatom->pluginAtom->getInputType(p) == PluginAtom::PREDICATE ||
           eatom->pluginAtom->getInputType(p) == PluginAtom::CONSTANT && !eatom->inputs[p].isVariableTerm()){
         if (togatom[p + aux + 1] != eatom->inputs[p]){
-          DBGLOG(DBG, "Predicate or constant input mismatch");
+          //DBGLOG(DBG, "Predicate or constant input mismatch");
           return false;
         }
       }
@@ -309,7 +316,10 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
           break;
         }
       }
-      if (!inputmatch) DBGLOG(DBG, "Auxiliary input mismatch");
+      if (!inputmatch)
+      {
+        //DBGLOG(DBG, "Auxiliary input mismatch");
+      }
     }
     if (!inputmatch) return false;
 
