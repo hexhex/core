@@ -183,31 +183,47 @@ ExternalAtomMask::~ExternalAtomMask(){
 }
 
 void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb){
+  assert(ctx == 0 && eatom == 0 && "we should never set the eatom twice!");
 
     this->eatom = &eatom;
     this->ctx = &ctx;
-    setRegistry(eatom.pluginAtom->getRegistry());
+    RegistryPtr reg = eatom.pluginAtom->getRegistry();
+    setRegistry(reg);
 
-    // mask contains input (predicate and constant) and output of the external atom
+    //
+    // inputs
+    //
+
+    // aux input predicate for this eatom
     if (eatom.auxInputPredicate != ID_FAIL){
       DBGLOG(DBG, "Adding auxiliary input predicate");
       addPredicate(eatom.auxInputPredicate);
     }
+
+    // predicates of predicate inputs for this eatom
     int i = 0;
     BOOST_FOREACH (ID p, eatom.inputs){
-      if (eatom.pluginAtom->getInputType(i++) == PluginAtom::PREDICATE){
+      if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE){
         DBGLOG(DBG, "Adding input predicate " << p);
         addPredicate(p);
       }
+      i++;
     }
-    ID posreplacement = eatom.pluginAtom->getRegistry()->getAuxiliaryConstantSymbol('r', eatom.predicate);
-    ID negreplacement = eatom.pluginAtom->getRegistry()->getAuxiliaryConstantSymbol('n', eatom.predicate);
+
+    //
+    // outputs
+    //
+
+    // positive and negative replacement predicates for this eatom
+    ID posreplacement = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+    ID negreplacement = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+
     // find all output atoms which possibly belong to this external atom
     BOOST_FOREACH (ID rId, groundidb){
-      const Rule& rule = eatom.pluginAtom->getRegistry()->rules.getByID(rId);
+      const Rule& rule = reg->rules.getByID(rId);
       BOOST_FOREACH (ID h, rule.head){
         if (h.isExternalAuxiliary()){
-          const OrdinaryAtom& atom = eatom.pluginAtom->getRegistry()->ogatoms.getByID(h);
+          const OrdinaryAtom& atom = reg->ogatoms.getByID(h);
           if (atom.tuple[0] == posreplacement || atom.tuple[0] == negreplacement){
             outputAtoms.insert(h.address);
           }
@@ -215,7 +231,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
       }
       BOOST_FOREACH (ID b, rule.body){
         if (b.isExternalAuxiliary()){
-          const OrdinaryAtom& atom = eatom.pluginAtom->getRegistry()->ogatoms.getByID(b);
+          const OrdinaryAtom& atom = reg->ogatoms.getByID(b);
           if (atom.tuple[0] == posreplacement || atom.tuple[0] == negreplacement){
             outputAtoms.insert(b.address);
           }
@@ -225,7 +241,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     DBGLOG(DBG, "Watching " << outputAtoms.size() << " output atoms");
 
     BOOST_FOREACH (IDAddress outputAtom, outputAtoms){
-      const OrdinaryAtom& oatom = eatom.pluginAtom->getRegistry()->ogatoms.getByAddress(outputAtom);
+      const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(outputAtom);
       if (matchOutputAtom(oatom.tuple)){
         DBGLOG(DBG, "Output atom " << outputAtom << " matches the external atom");
         maski->setFact(outputAtom);
