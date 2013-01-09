@@ -136,11 +136,31 @@ const ExtSourceProperties& ExternalAtom::getExtSourceProperties() const{
 
 std::ostream& ExternalAtom::print(std::ostream& o) const
 {
-  return o <<
-    "ExternalAtom(&" << predicate << "[" << printvector(inputs) <<
-    "](" << printvector(Atom::tuple) << ")" <<
-    " pluginAtom=" << printptr(pluginAtom) <<
-    " auxInputPredicate=" << auxInputPredicate;
+  if( pluginAtom == NULL )
+  {
+    // raw
+    return o <<
+      "ExternalAtom(&" << predicate << "[" << printvector(inputs) <<
+      "](" << printvector(Atom::tuple) << ")" <<
+      " pluginAtom=" << printptr(pluginAtom) <<
+      " auxInputPredicate=" << auxInputPredicate;
+  }
+  else
+  {
+    // pretty
+    RegistryPtr reg = pluginAtom->getRegistry();
+    o << "&" << pluginAtom->getPredicate() <<
+      "[" << printManyToString<RawPrinter>(inputs, ",", reg) <<
+      "](" << printManyToString<RawPrinter>(Atom::tuple, ",", reg) << ") ";
+    if( auxInputPredicate == ID_FAIL )
+    {
+      return o << " (aux=ID_FAIL)";
+    }
+    else
+    {
+      return o << " (aux=" << printToString<RawPrinter>(auxInputPredicate, reg) << ")";
+    }
+  }
 }
 
 std::ostream& ModuleAtom::print(std::ostream& o) const
