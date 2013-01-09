@@ -706,3 +706,5 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 }
 
 DLVHEX_NAMESPACE_END
+
+// vi:ts=8:
