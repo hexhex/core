@@ -108,7 +108,7 @@ private:
 		void addSymbol(uint32_t symbol);
 
 		std::map<int, ID> indexToGroundAtomID;
-		std::vector<LParseRule> rules;
+		std::list<LParseRule> rules;
 	public:
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
 		void doFinalize();
