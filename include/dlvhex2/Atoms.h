@@ -177,19 +177,19 @@ struct ExternalAtom:
   // (cannot be indexed in multi_index_container as it is mutable)
   // this is a POD-style pointer as the target object is dynamically loaded
   // shared library code, which cannot be weak_ptr- or shared_ptr-managed.
-	// (TODO use a weak ptr here with an empty deleter and adjust everything accordingly)
-	mutable PluginAtom* pluginAtom;
+  // (TODO use a weak ptr here with an empty deleter and adjust everything accordingly)
+  mutable PluginAtom* pluginAtom;
 
   // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here
   ID auxInputPredicate;
   // this mapping stores for each argument of auxInputPredicate
   // a list of positions in the input tuple where this argument applies
   // e.g., for &foo[a,C,d,X,C]() we have 
-	// either aux(C,X) and inputs <a,C,d,X,C>
+  // either aux(C,X) and inputs <a,C,d,X,C>
   //        then we have mapping < [1,4], [3] >:
   //        for index 0 = argument C we have to set index 1 and 4 in inputs
   //        for index 1 = argument X we have to set index 3 in inputs
-	// or     aux(X,C) and inputs <a,C,d,X,C>
+  // or     aux(X,C) and inputs <a,C,d,X,C>
   //        then we have mapping < [3], [1,4] >:
   //        for index 0 = argument X we have to set index 3 in inputs
   //        for index 1 = argument C we have to set index 1 and 4 in inputs
