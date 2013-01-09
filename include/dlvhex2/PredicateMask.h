@@ -90,14 +90,15 @@ class ExternalAtomMask : public PredicateMask
 private:
   const ProgramCtx* ctx;
   const ExternalAtom* eatom;
-  std::set<IDAddress> outputAtoms;
+  InterpretationPtr outputAtoms;
   std::vector<Tuple> auxInputTuples;
+protected:
+  bool matchOutputAtom(const Tuple& togatom);
 public:
   ExternalAtomMask();
   ~ExternalAtomMask();
 
   void setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb);
-  bool matchOutputAtom(const Tuple& togatom);
   void updateMask();
   const std::vector<Tuple>& getAuxInputTuples() const;
 };

@@ -176,19 +176,25 @@ void PredicateMask::updateMask()
   DBGLOG(DBG,"updateMask created new set of relevant ogatoms: " << *maski << " and knownAddresses is " << knownAddresses);
 }
 
-ExternalAtomMask::ExternalAtomMask() : PredicateMask(), ctx(0), eatom(0){
+ExternalAtomMask::ExternalAtomMask() : PredicateMask(), ctx(0), eatom(0) {
 }
 
 ExternalAtomMask::~ExternalAtomMask(){
 }
 
+// assumption: this is called once only
+// implicit assumption (as groundidb is const& and not stored in the class): groundidb does not change
 void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb){
-  assert(this->ctx == 0 && this->eatom == 0 && "we should never set the eatom twice!");
+    assert(this->ctx == 0 && this->eatom == 0 && !this->outputAtoms && "we should never set the eatom twice!");
+
+    LOG_SCOPE(DBG,"sEA",false);
+    LOG(DBG," = ExternalAtomMask::setEAtom for " << eatom << " and " << groundidb.size() << " rules in groundidb");
 
     this->eatom = &eatom;
     this->ctx = &ctx;
     RegistryPtr reg = eatom.pluginAtom->getRegistry();
     setRegistry(reg);
+    outputAtoms.reset(new Interpretation(reg));
 
     //
     // inputs
@@ -196,7 +202,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
 
     // aux input predicate for this eatom
     if (eatom.auxInputPredicate != ID_FAIL){
-      DBGLOG(DBG, "Adding auxiliary input predicate");
+      DBGLOG(DBG, "Adding auxiliary input predicate " << printToString<RawPrinter>(eatom.auxInputPredicate,reg));
       addPredicate(eatom.auxInputPredicate);
     }
 
@@ -204,7 +210,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     int i = 0;
     BOOST_FOREACH (ID p, eatom.inputs){
       if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE){
-        DBGLOG(DBG, "Adding input predicate " << p);
+        DBGLOG(DBG, "Adding input predicate " << printToString<RawPrinter>(p,reg));
         addPredicate(p);
       }
       i++;
@@ -218,14 +224,22 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     ID posreplacement = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
     ID negreplacement = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
 
-    // find all output atoms which possibly belong to this external atom
+    // find all output atoms (replacement atoms for positive or negative external atoms)
+    // which possibly belong to this external atom
     BOOST_FOREACH (ID rId, groundidb){
+      // TODO we could mark PROPERTY_RULE_EXTATOMS for external replacement atoms coming from gringo, then we can rule out all rules without extatoms here by a bit check, perhaps it will not pay off however
+
+      // I think we cannot use a PredicateMask to get these atoms (by simply matching
+      // posreplacement and negreplacement) because then we get everything in the registry,
+      // not only those in groundidb, and if we need to count them to ensure we have every
+      // bit that is relevant (as done for verification of external atoms) this will not
+      // work anymore.
       const Rule& rule = reg->rules.getByID(rId);
       BOOST_FOREACH (ID h, rule.head){
         if (h.isExternalAuxiliary()){
           const OrdinaryAtom& atom = reg->ogatoms.getByID(h);
           if (atom.tuple[0] == posreplacement || atom.tuple[0] == negreplacement){
-            outputAtoms.insert(h.address);
+            outputAtoms->setFact(h.address);
           }
         }
       }
@@ -233,21 +247,25 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
         if (b.isExternalAuxiliary()){
           const OrdinaryAtom& atom = reg->ogatoms.getByID(b);
           if (atom.tuple[0] == posreplacement || atom.tuple[0] == negreplacement){
-            outputAtoms.insert(b.address);
+            outputAtoms->setFact(b.address);
           }
         }
       }
     }
-    DBGLOG(DBG, "Watching " << outputAtoms.size() << " output atoms");
+    DBGLOG(DBG, "Watching " << outputAtoms->getStorage().count() << " output atoms: " << *outputAtoms);
 
-    BOOST_FOREACH (IDAddress outputAtom, outputAtoms){
+    bm::bvector<>::enumerator en = outputAtoms->getStorage().first();
+    bm::bvector<>::enumerator en_end = outputAtoms->getStorage().end();
+    while (en < en_end){
+      const IDAddress outputAtom = *en;
       const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(outputAtom);
       if (matchOutputAtom(oatom.tuple)){
-        DBGLOG(DBG, "Output atom " << outputAtom << " matches the external atom");
+        DBGLOG(DBG, "Output atom " << oatom.text << " matches the external atom");
         maski->setFact(outputAtom);
       }else{
-        DBGLOG(DBG, "Output atom " << outputAtom << " does not match the external atom");
+        DBGLOG(DBG, "Output atom " << oatom.text << " does not match the external atom");
       }
+      en++;
     }
 }
 
@@ -301,6 +319,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
           (eatom->pluginAtom->getInputType(p) == PluginAtom::CONSTANT && !eatom->inputs[p].isVariableTerm())){
         if (togatom[p + aux + 1] != eatom->inputs[p]){
           //DBGLOG(DBG, "Predicate or constant input mismatch");
+          // do not assign variable already here, because we later check against input tuples, this is a redundant fast check to eliminate mismatches in constants and predicates
           return false;
         }
       }
@@ -413,14 +432,18 @@ void ExternalAtomMask::updateMask(){
     if (auxAdded){
       DBGLOG(DBG, "Auxiliary input changed");
       // recheck all output atoms
-      BOOST_FOREACH (IDAddress outputAtom, outputAtoms){
+      bm::bvector<>::enumerator en = outputAtoms->getStorage().first();
+      bm::bvector<>::enumerator en_end = outputAtoms->getStorage().end();
+      while (en < en_end){
+        const IDAddress outputAtom = *en;
         const OrdinaryAtom& oatom = eatom->pluginAtom->getRegistry()->ogatoms.getByAddress(outputAtom);
         if (matchOutputAtom(oatom.tuple)){
-          DBGLOG(DBG, "Output atom " << outputAtom << " matches the external atom");
+          DBGLOG(DBG, "Output atom " << oatom.text << " matches the external atom");
           maski->setFact(outputAtom);
         }else{
-          DBGLOG(DBG, "Output atom " << outputAtom << " does not match the external atom");
+          DBGLOG(DBG, "Output atom " << oatom.text << " does not match the external atom");
         }
+        en++;
       }
     }
 }
