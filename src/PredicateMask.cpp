@@ -404,6 +404,7 @@ void ExternalAtomMask::updateMask(){
     DBGLOG(DBG, "ExternalAtomMask::updateMask");
 
     // remember what changed
+    // FIXME we can perhaps make this change computation faster and reduce reallocations using some nice bitmagic operators
     InterpretationPtr change = InterpretationPtr(new Interpretation(eatom->pluginAtom->getRegistry()));
     change->getStorage() |= maski->getStorage();
     PredicateMask::updateMask();
@@ -413,6 +414,7 @@ void ExternalAtomMask::updateMask(){
     if (change->getStorage().count() == 0) return;
 
     // check if an atom over the auxiliary input predicate was added
+    // (this is not done as a PredicateMask because it alread gets the delta in change)
     bool auxAdded = false;
     bm::bvector<>::enumerator en = change->getStorage().first();
     bm::bvector<>::enumerator en_end = change->getStorage().end();
