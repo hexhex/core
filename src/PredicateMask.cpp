@@ -183,7 +183,7 @@ ExternalAtomMask::~ExternalAtomMask(){
 }
 
 void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb){
-  assert(ctx == 0 && eatom == 0 && "we should never set the eatom twice!");
+  assert(this->ctx == 0 && this->eatom == 0 && "we should never set the eatom twice!");
 
     this->eatom = &eatom;
     this->ctx = &ctx;
