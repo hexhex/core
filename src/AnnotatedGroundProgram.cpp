@@ -1,6 +1,11 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "dlvhex2/AnnotatedGroundProgram.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp> 
@@ -62,7 +67,6 @@ void AnnotatedGroundProgram::createProgramMask(){
 }
 
 void AnnotatedGroundProgram::createEAMasks(){
-
 	eaMasks.resize(indexedEatoms.size());
 	int eaIndex = 0;
 	BOOST_FOREACH (ID eatom, indexedEatoms){
@@ -105,6 +109,7 @@ void AnnotatedGroundProgram::setIndexEAtoms(std::vector<ID> indexedEatoms){
 }
 
 void AnnotatedGroundProgram::initialize(){
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnnotatedGroundProg init");
 
 	eaMasks.resize(0);
 	if (haveGrounding) createProgramMask();

@@ -244,6 +244,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
     // evaluate edb+xidb+gidb
     {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init guessprog");
 	DBGLOG(DBG,"evaluating guessing program");
 	// no mask
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
@@ -275,10 +276,13 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3));
 
     // overtake nogoods from the factory
-    for (int i = 0; i < factory.globalLearnedEANogoods->getNogoodCount(); ++i){
-      learnedEANogoods->addNogood(factory.globalLearnedEANogoods->getNogood(i));
+    {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init nogoods");
+      for (int i = 0; i < factory.globalLearnedEANogoods->getNogoodCount(); ++i){
+        learnedEANogoods->addNogood(factory.globalLearnedEANogoods->getNogood(i));
+      }
+      updateEANogoods();
     }
-    updateEANogoods();
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){

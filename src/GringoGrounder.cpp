@@ -567,7 +567,7 @@ int GringoGrounder::doRun()
 		printer.print(intPred);
 		programStream << "(0.." << ctx.maxint << ").";
 
-		DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
+		LOG(DBG, "Sending the following input to Gringo: " << programStream.str());
 
 		// grounding
 		std::auto_ptr<Output> o(output());

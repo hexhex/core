@@ -113,6 +113,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 }
 
 GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "grounding (GenuineGroundS.::getInst)");
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
