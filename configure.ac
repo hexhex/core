@@ -121,7 +121,7 @@ AC_ARG_ENABLE(release,
               [enable_release=false]
              )
 AC_ARG_ENABLE(debug,
-              [AS_HELP_STRING([--enable-debug],[build debug version])],
+              [AS_HELP_STRING([--enable-debug],[build debug version (+assertions+dbglog+timers+counters-opt)])],
               [enable_debug=true],
               [enable_debug=false]
              )
@@ -160,6 +160,7 @@ case "$dbgrelbench" in
      true,*,*,*,*)
 	# do stuff that must be done for --enable-debug here
 	AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
+	AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
   CPPFLAGS="$CPPFLAGS -DDEBUG"
 	optlevel="-O0"
 	debuginfo="-g"
@@ -173,6 +174,7 @@ case "$dbgrelbench" in
      *,*,*,*,true)
 	# do stuff that must be done for --enable-extra-debug here
 	AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
+	AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
   CPPFLAGS="$CPPFLAGS -DDEBUG"
 	optlevel="-O0"
 	defines="-D_GLIBCXX_DEBUG"
