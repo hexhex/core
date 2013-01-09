@@ -42,6 +42,7 @@ AnnotatedGroundProgram::operator=(
 	componentOfAtom = other.componentOfAtom;
 	externalEdges = other.externalEdges;
 	headCycles = other.headCycles;
+	headCyclicRules = other.headCyclicRules;
 	eCycles = other.eCycles;
 	programComponents = other.programComponents;
 	headCyclesTotal = other.headCyclesTotal;
@@ -105,6 +106,8 @@ void AnnotatedGroundProgram::setIndexEAtoms(std::vector<ID> indexedEatoms){
 }
 
 void AnnotatedGroundProgram::initialize(){
+
+	headCyclicRules = InterpretationPtr(new Interpretation(reg));
 
 	eaMasks.resize(0);
 	if (haveGrounding) createProgramMask();
@@ -277,8 +280,6 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 }
 
 void AnnotatedGroundProgram::computeHeadCycles(){
-
-	headCyclicRules = InterpretationPtr(new Interpretation(reg));
 
 	// check if the components contain head-cycles
 	DBGLOG(DBG, "Computing head-cycles of components");
