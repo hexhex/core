@@ -754,7 +754,7 @@ void processOptionsPrePlugin(
 				else if( heuri == "monolithic" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
-					//pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
+					pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
