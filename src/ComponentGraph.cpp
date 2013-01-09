@@ -986,6 +986,7 @@ void ComponentGraph::computeCollapsedComponentInfos(
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negativeDependencyBetweenRules |= cio.negativeDependencyBetweenRules;
+
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
     ci.componentIsMonotonic |= cio.componentIsMonotonic;
 

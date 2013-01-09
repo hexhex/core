@@ -47,6 +47,7 @@ AnnotatedGroundProgram::operator=(
 	componentOfAtom = other.componentOfAtom;
 	externalEdges = other.externalEdges;
 	headCycles = other.headCycles;
+	headCyclicRules = other.headCyclicRules;
 	eCycles = other.eCycles;
 	programComponents = other.programComponents;
 	headCyclesTotal = other.headCyclesTotal;
@@ -110,6 +111,8 @@ void AnnotatedGroundProgram::setIndexEAtoms(std::vector<ID> indexedEatoms){
 
 void AnnotatedGroundProgram::initialize(){
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnnotatedGroundProg init");
+
+	headCyclicRules = InterpretationPtr(new Interpretation(reg));
 
 	eaMasks.resize(0);
 	if (haveGrounding) createProgramMask();
@@ -306,6 +309,13 @@ void AnnotatedGroundProgram::computeHeadCycles(){
 		headCycles.push_back(!hcf);
 		headCyclesTotal |= headCycles[headCycles.size() - 1];
 		DBGLOG(DBG, "Component " << comp << ": " << !hcf);
+
+		if (!hcf){
+			// all rules in the component are head-cyclic
+			BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
+				headCyclicRules->setFact(ruleID.address);
+			}
+		}
 	}
 }
 
@@ -362,10 +372,12 @@ void AnnotatedGroundProgram::computeECycles(){
 
 bool AnnotatedGroundProgram::containsHeadCycles(ID ruleID) const{
 
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
-	}
-	return false;
+	return headCyclicRules->getFact(ruleID.address);
+
+//	for (int comp = 0; comp < depSCC.size(); ++comp){
+//		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
+//	}
+//	return false;
 }
 
 int AnnotatedGroundProgram::getComponentCount() const{
