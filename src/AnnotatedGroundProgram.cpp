@@ -86,8 +86,9 @@ void AnnotatedGroundProgram::mapAuxToEAtoms(){
 	BOOST_FOREACH (ID eatom, indexedEatoms){
 		// create an EAMask for each inner external atom
 		ExternalAtomMask& eaMask = *eaMasks[eaIndex];
-		eaMask.setEAtom(*ctx, reg->eatoms.getByID(eatom), groundProgram.idb);
-		eaMask.updateMask();
+    // we already did this in createEAMasks
+		//eaMask.setEAtom(*ctx, reg->eatoms.getByID(eatom), groundProgram.idb);
+		//eaMask.updateMask();
 
 		// map external auxiliaries back to their external atoms
 		bm::bvector<>::enumerator en = eaMask.mask()->getStorage().first();
