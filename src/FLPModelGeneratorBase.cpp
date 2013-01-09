@@ -794,7 +794,7 @@ bool FLPModelGeneratorBase::VerifyExternalAtomCB::output(const Tuple& output){
 	replacement.tuple.resize(size);
 
 	if(remainingguess->getFact(idreplacement_neg.address)){
-		DBGLOG(DBG, "Positive atom was guessed to be false: " << idreplacement_pos.address);
+		LOG(DBG, "Positive atom " << printToString<RawPrinter>(idreplacement_pos, reg) << " address=" << idreplacement_pos.address << " was guessed to be false!");
 		verified = false;
 		falsified = reg->ogatoms.getIDByAddress(idreplacement_neg.address);
 		return false;
