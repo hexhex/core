@@ -278,6 +278,8 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 
 void AnnotatedGroundProgram::computeHeadCycles(){
 
+	headCyclicRules = InterpretationPtr(new Interpretation(reg));
+
 	// check if the components contain head-cycles
 	DBGLOG(DBG, "Computing head-cycles of components");
 	headCyclesTotal = false;
@@ -301,6 +303,13 @@ void AnnotatedGroundProgram::computeHeadCycles(){
 		headCycles.push_back(!hcf);
 		headCyclesTotal |= headCycles[headCycles.size() - 1];
 		DBGLOG(DBG, "Component " << comp << ": " << !hcf);
+
+		if (!hcf){
+			// all rules in the component are head-cyclic
+			BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
+				headCyclicRules->setFact(ruleID.address);
+			}
+		}
 	}
 }
 
@@ -357,10 +366,12 @@ void AnnotatedGroundProgram::computeECycles(){
 
 bool AnnotatedGroundProgram::containsHeadCycles(ID ruleID) const{
 
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
-	}
-	return false;
+	return headCyclicRules->getFact(ruleID.address);
+
+//	for (int comp = 0; comp < depSCC.size(); ++comp){
+//		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
+//	}
+//	return false;
 }
 
 int AnnotatedGroundProgram::getComponentCount() const{

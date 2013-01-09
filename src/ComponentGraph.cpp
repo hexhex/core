@@ -959,6 +959,7 @@ ComponentGraph::collapseComponents(
 		// example: a :- b. and :- not a. are collapsed -> resulting component has negationInCycles
 		// TODO fix name: negationInCycles really should be negativeDependencyBetweenRules
 		ci.negationInCycles |= cio.negationInCycles | foundInternalNegativeRuleDependency;
+
 		// (we do not need to check for nonmonotonic dependencies from external atoms
 		// which become internal nonmonotonic dependencies, because such dependencies
 		// are handled by the innerEatomsNonmonotonic flag which will get true if there

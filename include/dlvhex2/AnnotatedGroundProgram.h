@@ -84,6 +84,7 @@ class AnnotatedGroundProgram{
 	boost::unordered_map<IDAddress, int> componentOfAtom;
 	std::vector<std::pair<IDAddress, IDAddress> > externalEdges;
 	std::vector<bool> headCycles;
+	InterpretationPtr headCyclicRules;
 	std::vector<bool> eCycles;
 	std::vector<ProgramComponent> programComponents;
 
