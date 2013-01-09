@@ -315,7 +315,8 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 	InterpretationPtr edb = InterpretationPtr(new Interpretation(ctx.registry()));
 	groundProgram.edb = edb;
 	groundProgram.idb.clear();
-	BOOST_FOREACH (LParseRule lpr, rules){
+  groundProgram.idb.reserve(rules.size());
+	BOOST_FOREACH (const LParseRule& lpr, rules){
 		Rule r(ID::MAINKIND_RULE);
 		switch (lpr.type){
 			case LParseRule::Weight:
