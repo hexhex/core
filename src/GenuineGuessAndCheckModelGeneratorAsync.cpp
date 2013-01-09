@@ -99,6 +99,8 @@ GenuineGuessAndCheckModelGeneratorAsyncFactory::GenuineGuessAndCheckModelGenerat
   // transform xidb for flp calculation
   if (ctx.config.getOption("FLPCheck")) createFLPRules();
 
+  globalLearnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+
   // output rules
   {
     std::ostringstream s;
@@ -222,7 +224,7 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
       evaluateExternalAtoms(factory.ctx,
           factory.outerEatoms, postprocInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
-          "outer external atom computations");
+          "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
       assert(!factory.xidb.empty() &&
@@ -270,6 +272,12 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
     //   Concerning the last parameter, note that clasp backend uses choice rules for implementing disjunctions:
     //   this must be regarded in UFS checking (see examples/trickyufs.hex)
     ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3));
+
+    // overtake nogoods from the factory
+    for (int i = 0; i < factory.globalLearnedEANogoods->getNogoodCount(); ++i){
+      learnedEANogoods->addNogood(factory.globalLearnedEANogoods->getNogood(i));
+    }
+    updateEANogoods();
 
     // start producing models
     modelProducer = new boost::thread(boost::bind(&GenuineGuessAndCheckModelGeneratorAsync::produceOrdinaryModels, this));
@@ -449,17 +457,27 @@ void GenuineGuessAndCheckModelGeneratorAsync::generalizeNogood(Nogood ng){
 	ea.pluginAtom->generalizeNogood(ng, &factory.ctx, learnedEANogoods);
 }
 
-void GenuineGuessAndCheckModelGeneratorAsync::generalizeNogoods(){
-	int max = learnedEANogoods->getNogoodCount();
-	for (int i = learnedEANogoodsTransferredIndex; i < max; ++i){
-		generalizeNogood(learnedEANogoods->getNogood(i));
-	}
-}
-
-void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
+void GenuineGuessAndCheckModelGeneratorAsync::updateEANogoods(
+	InterpretationConstPtr compatibleSet,
+	InterpretationConstPtr factWasSet,
+	InterpretationConstPtr changed){
 
 	boost::mutex::scoped_lock lock(transferMutex);
 
+	// generalize ground nogoods to nonground ones
+	if (factory.ctx.config.getOption("ExternalLearningGeneralize")){
+		int max = learnedEANogoods->getNogoodCount();
+		for (int i = learnedEANogoodsTransferredIndex; i < max; ++i){
+			generalizeNogood(learnedEANogoods->getNogood(i));
+		}
+	}
+
+	// instantiate nonground nogoods
+	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")){
+		nogoodGrounder->update(compatibleSet, factWasSet, changed);
+	}
+
+	// transfer nogoods to the solver
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned IO-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
@@ -471,17 +489,20 @@ void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 		}
 		if (learnedEANogoods->getNogood(i).isGround()){
 			solver->addNogood(learnedEANogoods->getNogood(i));
+		}else{
+			// keep nonground nogoods beyond the lifespan of this model generator
+			factory.globalLearnedEANogoods->addNogood(learnedEANogoods->getNogood(i));
 		}
 	}
-	// for encoding-based UFS checkers, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
+
+	// for encoding-based UFS checkers and explicit FLP checks, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
 	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
-	if (factory.ctx.config.getOption("UFSCheckAssumptionBased")){
-		// assumption-based
+	if (factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
+	    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterion"))){
 		boost::mutex::scoped_lock lock(ufsCheckMutex);
 		ufscm->learnNogoodsFromMainSearch();
 		learnedEANogoods->clear();
 	}else{
-		// encoding-based
 		learnedEANogoods->forgetLeastFrequentlyAdded();
 	}
 	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
@@ -512,15 +533,8 @@ bool GenuineGuessAndCheckModelGeneratorAsync::finalCompatibilityCheck(Interpreta
 			// evaluate the EA in a separate thread
 			boost::thread* thread = new boost::thread(boost::bind(&GenuineGuessAndCheckModelGeneratorAsync::finalExternalAtomEvaluation, this, eaIndex, modelCandidate, &eaVerified));
 			eaEvalThreads.push_back(std::pair<int, boost::thread*>(eaIndex, thread));
-//eaVerified[eaIndex] = !verifyExternalAtom(eaIndex, modelCandidate);
 
 			eaEvaluated[eaIndex] = true;
-/*
-			if (eaVerified[eaIndex] == false){
-				compatible = false;
-				break;
-			}
-*/
 		}
 	}
 
@@ -577,9 +591,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 				DBGLOG(DBG, "FLP Check");
 				// do FLP check (possibly with nogood learning) and add the learned nogoods to the main search
 				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-				if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
-				if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
-				transferLearnedEANogoods();
+				updateEANogoods();
 				return result;
 			}
 
@@ -590,8 +602,6 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 				{
 					boost::mutex::scoped_lock lock(ufsCheckMutex);
 					std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-					if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
-					if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
 					if (ufs.size() > 0){
 						DBGLOG(DBG, "Got a UFS");
 						if (factory.ctx.config.getOption("UFSLearning")){
@@ -604,7 +614,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 						ret = true;
 					}
 				}
-				transferLearnedEANogoods();
+				updateEANogoods();
 				return ret;
 			}
 
@@ -779,9 +789,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 	}
 
 	// transfer learned nogoods to solver
-	if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
-	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(partialInterpretation, factWasSet, changed);
-	transferLearnedEANogoods();
+	updateEANogoods();
 
 	// if the input to the external atom was complete, then remember the verification result
 	// (for incomplete input we cannot yet decide this)

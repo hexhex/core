@@ -48,6 +48,7 @@ DumpingEvalGraphBuilder::DumpingEvalGraphBuilder(
 	EvalGraphBuilder(ctx, cg, eg, externalEvalConfig),
 	output(ofname.c_str(), std::ios::out | std::ios::trunc)
 {
+  throw std::runtime_error("TODO revitalize this functionality as follows: record indices of components here, cg.collapseComponents must record in the component which components get into a goal component, then createEvalUnit can dump which original component indices become which units (this is the clean and only useful way to do it)");
 }
 
 DumpingEvalGraphBuilder::~DumpingEvalGraphBuilder()

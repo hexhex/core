@@ -125,8 +125,13 @@ Set<ID> ExternalLearningHelper::getOutputAtoms(const PluginAtom::Query& query, c
 
 ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, Tuple otuple, bool sign){
 
+	bool ground = true;
+	BOOST_FOREACH (ID o, otuple) if (o.isVariableTerm()) ground = false;
+
 	// construct replacement atom with input from query
-	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+	if (ground) replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+	else replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
 	replacement.tuple.resize(1);
 	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
 	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
@@ -135,6 +140,33 @@ ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, Tuple o
 		replacement.tuple.push_back(query.eatom->auxInputPredicate);
 	}
 	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
+	int s = replacement.tuple.size();
+
+	// add output tuple
+	replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
+
+	ID idreplacement = NogoodContainer::createLiteral(query.ctx->registry()->storeOrdinaryAtom(replacement));
+	return idreplacement;
+}
+
+ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, const Tuple& ituple, const Tuple& otuple, bool sign){
+
+	bool ground = true;
+	BOOST_FOREACH (ID i, ituple) if (i.isVariableTerm()) ground = false;
+	BOOST_FOREACH (ID o, otuple) if (o.isVariableTerm()) ground = false;
+
+	// construct replacement atom with input from query
+	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+	if (ground) replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+	else replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+	replacement.tuple.resize(1);
+	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
+	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
+//		replacement.tuple.push_back(query.ctx->registry()->storeVariableTerm("X"));
+//		replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		replacement.tuple.push_back(query.eatom->auxInputPredicate);
+	}
+	replacement.tuple.insert(replacement.tuple.end(), ituple.begin(), ituple.end());
 	int s = replacement.tuple.size();
 
 	// add output tuple

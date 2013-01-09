@@ -33,12 +33,8 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/EvalHeuristicTrivial.h"
+#include "dlvhex2/EvalHeuristicShared.h"
 #include "dlvhex2/Logger.h"
-
-#include <boost/unordered_map.hpp>
-#include <boost/graph/topological_sort.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/graph/properties.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -62,32 +58,8 @@ void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
 {
   const ComponentGraph& compgraph = builder.getComponentGraph();
 
-  //
-	// we need a hash map, as component graph is no graph with vecS-storage
-  //
-	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
-	CompColorHashMap ccWhiteHashMap;
-	{
-		// initialize white hash map
-		ComponentIterator cit, cit_end;
-		for(boost::tie(cit, cit_end) = compgraph.getComponents();
-				cit != cit_end; ++cit)
-		{
-			ccWhiteHashMap[*cit] = boost::white_color;
-		}
-	}
-  CompColorHashMap ccHashMap(ccWhiteHashMap);
-
-  //
-  // do topological sort
-  //
   ComponentContainer comps;
-  std::back_insert_iterator<ComponentContainer> compinserter(comps);
-  boost::topological_sort(
-      compgraph.getInternalGraph(),
-      compinserter,
-      boost::color_map(CompColorMap(ccHashMap)));
+  evalheur::topologicalSortComponents(compgraph.getInternalGraph(), comps);
 
   for(ComponentContainer::const_iterator it = comps.begin();
       it != comps.end(); ++it)

@@ -118,7 +118,7 @@ void DependencyGraph::createNodesAndIntraRuleDependencies(
     std::vector<ID>& createdAuxRules, HeadBodyHelper& hbh)
 {
   // TODO: faster allocation of dep graph? use custom storage with pre-reserved memory? (we know the exact number of nodes from the registry!)
-  LOG_SCOPE(ANALYZE,"cNaIRD", false);
+  DBGLOG_SCOPE(ANALYZE,"cNaIRD", false);
   DBGLOG(DBG,"=createNodesAndIntraRuleDependencies");
 
 	// create nodes and register them in node mapping table
@@ -309,8 +309,8 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     // retrieve aatom from registry
     const AggregateAtom& aatom = registry->aatoms.getByID(idat);
 
-    LOG_SCOPE(DBG, "recursive cNAIRDfRAB", false);
-    LOG(DBG, "=recursively calling createNodesAndIntraRuleDependenciesForRuleAddBody for aggregate " << aatom);
+    DBGLOG_SCOPE(DBG, "recursive cNAIRDfRAB", false);
+    DBGLOG(DBG, "=recursively calling createNodesAndIntraRuleDependenciesForRuleAddBody for aggregate " << aatom);
 
     // do the same for aggregate body as we did for the rule body
     // (including generation of auxiliary input rules)
@@ -331,7 +331,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
 void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
     ID idrule, std::vector<ID>& createdAuxRules, HeadBodyHelper& hbh)
 {
-  LOG_VSCOPE(DBG,"cNaIRDfR", idrule.address,true);
+  DBGLOG_VSCOPE(DBG,"cNaIRDfR", idrule.address,true);
   DBGLOG(DBG,"=createNodesAndIntraRuleDependenciesForRule for rule " << idrule <<
       " " << printToString<RawPrinter>(idrule, registry));
   assert(idrule.isRule());
@@ -369,7 +369,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     std::vector<ID>& createdAuxRules,
     HeadBodyHelper& hbh)
 {
-  LOG_SCOPE(DBG,"cARiR",false);
+  DBGLOG_SCOPE(DBG,"cARiR",false);
   DBGLOG(DBG,"=createAuxiliaryRuleIfRequired for body " <<
       printvector(body) << " = " <<
       printManyToString<RawPrinter>(body, ",", registry));

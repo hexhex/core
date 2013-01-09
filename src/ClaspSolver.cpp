@@ -788,8 +788,18 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 	if (!!sharedMinimizeData){
 		sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
 		minc = sharedMinimizeData->attach(*claspInstance.master(), true);
+		claspInstance.enumerator()->setMinimize(sharedMinimizeData);
 
 		// use the current optimum as upper bound for this unit
+//std::vector<int> v; v.push_back(0); setOptimum(v);
+/*
+Clasp::wsum_t newopt[2];
+newopt[0] = 1;
+newopt[1] = 1;
+sharedMinimizeData->setOptimum(newopt);
+minc->restoreOptimum();
+minc->integrateNext(*claspInstance.master());
+*/
 		setOptimum(ctx.currentOptimum);
 	}
 }
@@ -1077,7 +1087,10 @@ void ClaspSolver::addNogood(Nogood ng){
 
 void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
-	if (!minc) return;
+	if (!minc){
+		DBGLOG(DBG, "No mimimize constraint configured; do not set new optimum");
+		return;
+	}
 
 	// This method helps the reasoner to eliminate non-optimal partial models in advance
 	// by setting the internal upper bound to a given value.
@@ -1113,18 +1126,6 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
 		delete []newopt;
 		return;
-
-/*
-		DBGLOG(DBG, "Backtrack because current assignment violates optimum");
-		uint32 dl = claspInstance.master()->decisionLevel();
-		if (dl == claspInstance.master()->rootLevel()){
-			DBGLOG(DBG, "Stop backtracking because root level reached");
-			claspInstance.master()->setStopConflict();
-			delete []newopt;
-			return;
-		}
-		claspInstance.master()->undoUntil(dl - 1, true);
-*/
 	}
 
 	// send the new upper bound to clasp

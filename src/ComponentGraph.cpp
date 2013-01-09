@@ -53,6 +53,18 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+namespace
+{
+  typedef DependencyGraph::Node Node;
+  typedef std::set<Node> NodeSet;
+  typedef std::vector<Node> NodeVector;
+
+  typedef ComponentGraph::ComponentSet ComponentSet;
+  typedef ComponentGraph::ComponentInfo ComponentInfo;
+  typedef ComponentGraph::DependencyInfo DependencyInfo;
+  typedef ComponentGraph::DepMap DepMap;
+}
+
 const ComponentGraph::DependencyInfo&
 ComponentGraph::DependencyInfo::operator|=(
 		const ComponentGraph::DependencyInfo& other)
@@ -93,13 +105,6 @@ ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
 ComponentGraph::~ComponentGraph()
 {
   DBGLOG(DBG, "Destructing component graph " << this);
-}
-
-namespace
-{
-  typedef DependencyGraph::Node Node;
-  typedef std::set<Node> NodeSet;
-  typedef std::vector<Node> NodeVector;
 }
 
 #warning fixed point: eatoms only in positive cycles is misleading, we demand only positive cycles for all atoms! (no negative or disjunctive edge at all)
@@ -445,7 +450,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 		// check, if the component contains only positive cycles
 		if( !checkNoNegativeEdgesInComponent(dg, nodes) )
 		{
-			ci.negationInCycles = true;
+			ci.negativeDependencyBetweenRules = true;
 		}
 
     // components are never monotonic if they contain disjunctions or nonmonotonic external atoms
@@ -467,7 +472,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
     DBGLOG(DBG,"-> disjunctiveHeads=" << ci.disjunctiveHeads <<
-				" negationInCycles=" << ci.negationInCycles <<
+				" negativeDependencyBetweenRules=" << ci.negativeDependencyBetweenRules <<
 				" innerEatomsNonmonotonic=" << ci.innerEatomsNonmonotonic <<
 				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic <<
 				" componentIsMonotonic=" << ci.componentIsMonotonic);
@@ -818,30 +823,42 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 	}
 }
 
-// collapse components given in range into one new component
-// collapse incoming and outgoing dependencies
-// update properties of dependencies
-// update properties of component
-// asserts that this operation does not make the DAG cyclic
-ComponentGraph::Component
-ComponentGraph::collapseComponents(
-		const ComponentSet& originals)
+// Compute the dependency infos and component info
+// before putting components `comps' and `sharedcomps' into a new component.
+//
+// `sharedcomps' may only contain components with constraints that can be shared.
+//
+// This method does not change the graph, it only changes the output arguments,
+// hence it is const (and should stay const).
+//
+// This method throws an exception if this operation makes the DAG cyclic.
+void ComponentGraph::computeCollapsedComponentInfos(
+    const ComponentSet& comps, const ComponentSet& sharedcomps,
+    DepMap& newIncomingDependencies, DepMap& newOutgoingDependencies,
+    ComponentInfo& newComponentInfo) const // see comment above about const!
 {
-	DBGLOG_SCOPE(DBG,"cC", false);
-	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << ")");
+	DBGLOG_SCOPE(DBG,"cCCI", false);
+	DBGLOG(DBG,"= computeCollapsedComponentInfos(" <<
+      printrange(comps) << "," << printrange(sharedcomps) << ",.,.,.)");
 
-	typedef std::map<Component, DependencyInfo> DepMap;
+	// dependencies from the new components to other components
+	DepMap& incoming = newIncomingDependencies;
+	// dependencies from other components to the new component
+	DepMap& outgoing = newOutgoingDependencies;
 
-	// set of dependencies from the new component to other components
-	DepMap outgoing;
-  // set of original components that depend on original components
+  // set of original components that depend on other original components
+	// (we need this to find out whether an eatom in a component is an outer or
+	// an inner eatom ... if it depends on stuff in the components it is inner)
   ComponentSet internallyDepends;
 
-	// iterate over all originals and over outgoing dependencies
+  // whether within the new component there is a negative rule dependency
+	bool foundInternalNegativeRuleDependency = false;
+
+	// iterate over all originals and over their outgoing dependencies (what they depend on)
 	ComponentSet::const_iterator ito;
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
-		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG(DBG,"original " << *ito << ": (outgoing)");
 		DBGLOG_INDENT(DBG);
 
 		PredecessorIterator itpred, itpred_end;
@@ -850,30 +867,30 @@ ComponentGraph::collapseComponents(
 		{
 			Dependency outgoing_dep = *itpred;
 			Component target = targetOf(outgoing_dep);
-			if( originals.count(target) == 0 )
+      const DependencyInfo& outgoing_depInfo = propsOf(outgoing_dep);
+			if( comps.find(target) == comps.end() )
 			{
 				// dependency not within the new collapsed component
 				DBGLOG(DBG,"outgoing dependency to " << target);
-				outgoing[target] |= propsOf(outgoing_dep);
+				outgoing[target] |= outgoing_depInfo;
 			}
       else
       {
 				// dependency within the new collapsed component
 				DBGLOG(DBG,"internal dependency (to " << target << ")");
 				internallyDepends.insert(*ito);
+
+				if( outgoing_depInfo.negativeRule )
+					foundInternalNegativeRuleDependency = true;
       }
 		} // iterate over predecessors
-	} // iterate over originals
+	} // iterate over `comps' originals
 
-	// dependencies of other components on the new component
-	DepMap incoming;
-	bool foundInternalNegativeRuleDependency = false;
-
-	// iterate over all originals and over incoming dependencies
+	// iterate over `comps' originals and over incoming dependencies
   // now also check for duplicate violations
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
-		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG(DBG,"original " << *ito << ": (incoming)");
 		DBGLOG_INDENT(DBG);
 
 		// go over dependencies to original members of new component
@@ -884,7 +901,7 @@ ComponentGraph::collapseComponents(
 			Dependency incoming_dep = *itsucc;
 			Component source = sourceOf(incoming_dep);
 			const DependencyInfo& incoming_di = propsOf(incoming_dep);
-			if( originals.count(source) == 0 )
+			if( comps.find(source) == comps.end() )
 			{
 				// the dependency comes from outside the new component
 
@@ -895,34 +912,48 @@ ComponentGraph::collapseComponents(
 				DepMap::const_iterator itdm = outgoing.find(source);
 				// if we have an incoming dep and an outgoing dep,
 				// we create a cycle so this collapsing is invalid
-        // (this is a bug in the code calling collapseComponents!)
+        // (this is a bug in the code calling this method!)
         if( itdm != outgoing.end() )
         {
           throw std::runtime_error(
-              "collapseComponents tried to create a cycle!");
+              "computeCollapsedComponentInfos tried to create a cycle!");
         }
 			}
 			else
 			{
 				// the dependency comes from inside the new component (to inside)
-				if( incoming_di.negativeRule )
-					foundInternalNegativeRuleDependency = true;
+        // nothing to do here (we already did it above
+        assert(internallyDepends.find(source) != internallyDepends.end() &&
+            "we should have found everything above that we find here");
 			}
 		} // iterate over successors
 	} // iterate over originals
 
 	//
-	// we prepared all dependencies, so now we create the component
+	// build newComponentInfo
 	//
+	ComponentInfo& ci = newComponentInfo;
+  if( !sharedcomps.empty() )
+    LOG(WARNING,"maybe we need to do more about shared constraint components `sharedcomps' here, at the moment we just copy them!");
+	for(ito = sharedcomps.begin(); ito != sharedcomps.end(); ++ito)
+  {
+		const ComponentInfo& cio = propsOf(*ito);
+    #ifdef COMPGRAPH_SOURCESDEBUG
+		ci.sources.insert(ci.sources.end(),
+				cio.sources.begin(), cio.sources.end());
+		#endif
+    if( !cio.innerRules.empty() ||
+        !cio.innerEatoms.empty() )
+      throw std::runtime_error("ccomps must only contain inner constraints!");
+    // inner constraints stay inner constraints
+		ci.innerConstraints.insert(ci.innerConstraints.end(),
+				cio.innerConstraints.begin(), cio.innerConstraints.end());
 
-	Component c = boost::add_vertex(cg);
-	LOG(DBG,"created component node " << c << " for collapsed component");
-
-	// build combined component info
-	ComponentInfo& ci = propsOf(c);
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
+    #warning do we need to do more here? perhaps negative dependencies to this unit? recursive aggregates?
+  }
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
-		ComponentInfo& cio = propsOf(*ito);
+		const ComponentInfo& cio = propsOf(*ito);
     #ifdef COMPGRAPH_SOURCESDEBUG
 		ci.sources.insert(ci.sources.end(),
 				cio.sources.begin(), cio.sources.end());
@@ -945,12 +976,13 @@ ComponentGraph::collapseComponents(
 		}
 		ci.predicatesInComponent.insert(
 				cio.predicatesInComponent.begin(), cio.predicatesInComponent.end());
-		/*
+/*
 		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
 			BOOST_FOREACH (ID id, p.second){
 				ci.stratifiedLiterals[p.first].insert(id);
 			}
 		}
+<<<<<<< HEAD
 		*/
 
 		ci.disjunctiveHeads |= cio.disjunctiveHeads;
@@ -964,9 +996,16 @@ ComponentGraph::collapseComponents(
 		// which become internal nonmonotonic dependencies, because such dependencies
 		// are handled by the innerEatomsNonmonotonic flag which will get true if there
 		// any external atom that can create such a nonmonotonic dependency, e.g. nonmon_noloop.hex)
-		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
-		ci.componentIsMonotonic &= cio.componentIsMonotonic;
+=======
+*/
 
+    ci.disjunctiveHeads |= cio.disjunctiveHeads;
+    ci.negativeDependencyBetweenRules |= cio.negativeDependencyBetweenRules;
+>>>>>>> 4b0cc62783274b055af0d5a7a2b0091f7daa173d
+		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+    ci.componentIsMonotonic |= cio.componentIsMonotonic;
+
+    #warning check if fixedDomain is propagated correctly, it is missing in operator|= but this might be on purpose
 		// fixedDomain:
 		// pure external components shall have no influence on this property
 		// because domain restriction is always done in successor components
@@ -975,31 +1014,52 @@ ComponentGraph::collapseComponents(
 
 		ci.recursiveAggregates |= cio.recursiveAggregates;
 
-		// if *ito does not depend on any component in originals
-		// then outer eatoms stay outer eatoms
-		// otherwise they become inner eatoms
-		if( internallyDepends.find(*ito) == internallyDepends.end() )
-		{
-			// does not depend on other components
-			ci.outerEatoms.insert(ci.outerEatoms.end(),
-				cio.outerEatoms.begin(), cio.outerEatoms.end());
+    // if *ito does not depend on any component in originals
+    // then outer eatoms stay outer eatoms
+    // otherwise they become inner eatoms
+    if( internallyDepends.find(*ito) == internallyDepends.end() )
+    {
+      // does not depend on other components
+      ci.outerEatoms.insert(ci.outerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
 			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
-		}
-		else
-		{
-			// does depend on other components
-			// -> former outer eatoms now become inner eatoms
-			ci.innerEatoms.insert(ci.innerEatoms.end(),
-				cio.outerEatoms.begin(), cio.outerEatoms.end());
+    }
+    else
+    {
+      // does depend on other components
+      // -> former outer eatoms now become inner eatoms
+      ci.innerEatoms.insert(ci.innerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
 
-			// here, outer eatom becomes inner eatom
+      // here, outer eatom becomes inner eatom
 			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
-		}
-		#warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
+    }
+    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
-
-	// recalculate stratification for the collapsed component
+  ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
 	calculateStratificationInfo(reg, ci);
+}
+
+// collapse components given in range into one new component
+// originals are put into new component and then removed
+// shared are just copied into new component
+// collapse incoming and outgoing dependencies
+// update properties of dependencies
+// update properties of component
+ComponentGraph::Component
+ComponentGraph::collapseComponents(
+		const ComponentSet& originals, const ComponentSet& shared)
+{
+	DBGLOG_SCOPE(DBG,"cC", false);
+	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << "," << printrange(shared) << ")");
+
+	Component c = boost::add_vertex(cg);
+	LOG(DBG,"created component node " << c << " for collapsed component");
+
+	DepMap incoming;
+	DepMap outgoing;
+  ComponentInfo& ci = propsOf(c);
+  computeCollapsedComponentInfos(originals, shared, incoming, outgoing, ci);
 
 	// build incoming dependencies
 	for(DepMap::const_iterator itd = incoming.begin();
@@ -1007,7 +1067,7 @@ ComponentGraph::collapseComponents(
 	{
 		Dependency newdep;
 		bool success;
-		DBGLOG(DBG,"adding edge " << itd->first << " -> " << c);
+		DBGLOG(DBG,"adding incoming edge " << itd->first << " -> " << c);
 		boost::tie(newdep, success) = boost::add_edge(itd->first, c, itd->second, cg);
 		assert(success); // we only add new edges here, and each only once
 	}
@@ -1018,13 +1078,14 @@ ComponentGraph::collapseComponents(
 	{
 		Dependency newdep;
 		bool success;
-		DBGLOG(DBG,"adding edge " << c << " -> " << itd->first);
+		DBGLOG(DBG,"adding outgoing edge " << c << " -> " << itd->first);
 		boost::tie(newdep, success) = boost::add_edge(c, itd->first, itd->second, cg);
 		assert(success); // we only add new edges here, and each only once
 	}
 
 	// remove all original components
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	for(ComponentSet::const_iterator ito = originals.begin();
+      ito != originals.end(); ++ito)
 	{
 		boost::clear_vertex(*ito, cg);
 		boost::remove_vertex(*ito, cg);
@@ -1087,7 +1148,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 		{
 			if( ci.disjunctiveHeads )
 				o << "{rules contain disjunctive heads}|";
-			if( ci.negationInCycles )
+			if( ci.negativeDependencyBetweenRules )
 				o << "{rules contain negation in cycles}|";
 		}
     if( !ci.innerEatoms.empty() && ci.innerEatomsNonmonotonic )
@@ -1112,7 +1173,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 		{
 			if( ci.disjunctiveHeads )
 				o << "{rules contain disjunctive heads}|";
-			if( ci.negationInCycles )
+			if( ci.negativeDependencyBetweenRules )
 				o << "{rules contain negation in cycles}|";
 		}
     if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )

@@ -126,6 +126,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
   BaseModelGenerator(input),
   factory(factory)
 {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine plain mg construction");
 	RegistryPtr reg = factory.ctx.registry();
 
 	// create new interpretation as copy
@@ -155,7 +156,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 		IntegrateExternalAnswerIntoInterpretationCB cb(newint);
 		evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
 		DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
-		    "outer external atom computations");
+		    "outer eatom computations");
 		DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
 	}
 
@@ -179,41 +180,8 @@ GenuinePlainModelGenerator::generateNextModel()
 	}
 
 	RegistryPtr reg = factory.ctx.registry();
-/*
-static int i = 0;
-if (i == 0){
-	std::vector<ID> ass;
-	ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 0));
-	ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 1));
-	ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 2));
-	solver->restartWithAssumptions(ass);
-}
-i++;
-*/
+
 	InterpretationPtr modelCandidate = solver->getNextModel();
-/*
-if (!modelCandidate){
-	std::cout << "Y" << std::endl;
-	std::vector<ID> ass;
-	ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 1));
-	solver->restartWithAssumptions(ass);
-	modelCandidate = solver->getNextModel();
-}
-*/
-//solver->setOptimum(factory.ctx.currentOptimum);
-/*
-if (!modelCandidate){
-//	i = (i + 1) % 3;
-	//if (i++ == 1){
-
-	std::vector<ID> ass;
-//	ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, i));
-	solver->restartWithAssumptions(ass);
-
-	modelCandidate = solver->getNextModel();
-}
-//}
-*/
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;
