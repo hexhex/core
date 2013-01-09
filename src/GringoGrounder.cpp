@@ -449,7 +449,8 @@ void GringoGrounder::GroundHexProgramBuilder::printComputeRule(int models, const
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
-
+	std::vector<unsigned> symbolstarts; // should be called symbolstarts,lastsymbolends-2,or endofstring-2
+	symbolstarts.reserve(arity+1);
 	std::stringstream ss;
 	ss << name;
 	if(arity > 0)
@@ -457,33 +458,39 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 		ValVec::const_iterator k = vals_.begin() + atom.second;
 		ValVec::const_iterator end = k + arity;
 		ss << "(";
+		symbolstarts.push_back(ss.tellp());
 		k->print(s_, ss);
 		for(++k; k != end; ++k)
 		{
 			ss << ",";
+			symbolstarts.push_back(ss.tellp());
 			k->print(s_, ss);
 		}
 		ss << ")";
+		symbolstarts.push_back(ss.tellp());
 	}
-	std::string atomstring = ss.str();
+	else
+	{
+		symbolstarts.push_back(1 + static_cast<unsigned>(ss.tellp()));
+	}
+	//std::cerr << arity << " " << ss.str() << " " << printrange(symbolstarts) << std::endl;
+	assert(symbolstarts.size() == arity+1);
+	OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, ss.str());
 
-	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(atomstring);
+	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(ogatom.text);
 
 	if( dlvhexId == ID_FAIL )
 	{
 		// parse groundatom, register and store
-		GPDBGLOG(DBG,"parsing gringo ground atom '" << atomstring << "'");
-		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		ogatom.text = atomstring;
+		GPDBGLOG(DBG,"parsing gringo ground atom '" << ogatom.text << "'");
 		{
 			// create ogatom.tuple
-			boost::char_separator<char> sep(",()");
-			typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-			tokenizer tok(ogatom.text, sep);
-			for(tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+			unsigned lastsymbolstart = 0;
+			for(unsigned symidx = 0; symidx < arity+1; symidx++)
 			{
-				GPDBGLOG(DBG,"got token '" << *it << "'");
-				Term term(ID::MAINKIND_TERM, *it);
+				Term term(ID::MAINKIND_TERM, ogatom.text.substr(lastsymbolstart, symbolstarts[symidx]-lastsymbolstart-1));
+				GPDBGLOG(DBG,"got token '" << term.symbol << "'");
+
 				// the following takes care of int vs const/string
 				ID id = ctx.registry()->storeTerm(term);
 				assert(id != ID_FAIL);
@@ -492,13 +499,15 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 				if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
 				if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
 				ogatom.tuple.push_back(id);
+
+				lastsymbolstart = symbolstarts[symidx];
 			}
 		}
 		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
 	}
 
 	indexToGroundAtomID[atom.first] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
+	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
