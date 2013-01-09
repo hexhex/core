@@ -274,17 +274,15 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
 #endif
 #endif
 
-    std::map<ID, ID> varBinding;
-
     // check predicate and constant input
     int aux = 0;
     if (ctx->config.getOption("IncludeAuxInputInAuxiliaries") && eatom->auxInputPredicate != ID_FAIL){
       if (togatom[1] != eatom->auxInputPredicate) return false;
       aux = 1;
     }
-    for (int p = 0; p < eatom->inputs.size(); ++p){
+    for (unsigned p = 0; p < eatom->inputs.size(); ++p){
       if (eatom->pluginAtom->getInputType(p) == PluginAtom::PREDICATE ||
-          eatom->pluginAtom->getInputType(p) == PluginAtom::CONSTANT && !eatom->inputs[p].isVariableTerm()){
+          (eatom->pluginAtom->getInputType(p) == PluginAtom::CONSTANT && !eatom->inputs[p].isVariableTerm())){
         if (togatom[p + aux + 1] != eatom->inputs[p]){
           //DBGLOG(DBG, "Predicate or constant input mismatch");
           return false;
@@ -292,16 +290,26 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
       }
     }
 
+    // remember variable binding
+    // using map here is not too evil as we have a maximum of eatom->inputs.size() elements in map -> very fast, probably faster than hashtable
+    typedef std::map<ID, ID> VBMap;
+    VBMap varBinding;
+
     // check auxiliary input
     bool inputmatch = false;
     if (eatom->auxInputPredicate == ID_FAIL){
       inputmatch = true;
     }else{
-      BOOST_FOREACH (Tuple tinp, auxInputTuples){
+      for(unsigned tidx = 0; tidx < auxInputTuples.size(); ++tidx)
+      {
+        const Tuple& tinp = auxInputTuples[tidx];
         // check if tinp corresponds to togatom
         bool match = true;
-        for (int i = 0; i < tinp.size(); ++i){
-          BOOST_FOREACH (unsigned pos, eatom->auxInputMapping[i]){
+        for (unsigned i = 0; i < tinp.size(); ++i){
+          for(std::list<unsigned>::const_iterator it = eatom->auxInputMapping[i].begin();
+              it != eatom->auxInputMapping[i].end(); ++it)
+          {
+            const unsigned& pos = *it;
             if (togatom[aux + 1 + pos] != tinp[i]){
               match = false;
               break;
@@ -324,12 +332,13 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     if (!inputmatch) return false;
 
     // check output tuple
-    for (int o = 0; o < eatom->tuple.size(); ++o){
+    for (unsigned o = 0; o < eatom->tuple.size(); ++o){
       if (eatom->tuple[o].isVariableTerm()){
-        if (varBinding.find(eatom->tuple[o]) == varBinding.end()){
-          varBinding[eatom->tuple[o]] = togatom[aux + 1 + eatom->inputs.size() + o];
+        VBMap::iterator vbit = varBinding.find(eatom->tuple[o]);
+        if (vbit == varBinding.end()){
+          vbit->second = togatom[aux + 1 + eatom->inputs.size() + o];
         }else{
-          if (varBinding[eatom->tuple[o]] != togatom[aux + 1 + eatom->inputs.size() + o]){
+          if (vbit->second != togatom[aux + 1 + eatom->inputs.size() + o]){
             return false;
           }
         }
