@@ -90,8 +90,15 @@ class ExternalAtomMask : public PredicateMask
 private:
   const ProgramCtx* ctx;
   const ExternalAtom* eatom;
+  // bits of all ground output atoms (positive and negative ground replacement atoms) that are relevant in the respective ground program
   InterpretationPtr outputAtoms;
-  std::vector<Tuple> auxInputTuples;
+  // bits of all ground auxiliary input replacement atoms (that are relevant in the respective ground program?)
+  InterpretationPtr auxInputMask;
+  // cache, where to start filling into preparedTuple (1 if IncludeAuxInputInAuxiliaries is false, 2 if it is true)
+  unsigned offset;
+  // cache for replacement tuple: first=positive_repl, including auxinputpred if IncludeAuxInputInAuxiliaries, including constants and variables
+  // can be modified if protected by mutex
+  Tuple preparedTuple;
 protected:
   bool matchOutputAtom(const Tuple& togatom);
 public:
@@ -100,7 +107,7 @@ public:
 
   void setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb);
   void updateMask();
-  const std::vector<Tuple>& getAuxInputTuples() const;
+  const InterpretationConstPtr getAuxInputMask() const;
 };
 
 DLVHEX_NAMESPACE_END

@@ -195,6 +195,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     RegistryPtr reg = eatom.pluginAtom->getRegistry();
     setRegistry(reg);
     outputAtoms.reset(new Interpretation(reg));
+    auxInputMask.reset(new Interpretation(reg));
 
     //
     // inputs
@@ -270,8 +271,8 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
 }
 
 bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
-
     assert(eatom);
+    RegistryPtr reg = maski->getRegistry();
 
 #if 0
 #ifndef NDEBUG
@@ -335,22 +336,24 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     if (eatom->auxInputPredicate == ID_FAIL){
       inputmatch = true;
     }else{
-      for(unsigned tidx = 0; tidx < auxInputTuples.size(); ++tidx)
+      bm::bvector<>::enumerator en = auxInputMask->getStorage().first();
+      bm::bvector<>::enumerator en_end = auxInputMask->getStorage().end();
+      for(; en < en_end; ++en)
       {
-        const Tuple& tinp = auxInputTuples[tidx];
+        const OrdinaryAtom& tinp = reg->ogatoms.getByAddress(*en);
         // check if tinp corresponds to togatom
         bool match = true;
-        for (unsigned i = 0; i < tinp.size(); ++i){
-          for(std::list<unsigned>::const_iterator it = eatom->auxInputMapping[i].begin();
-              it != eatom->auxInputMapping[i].end(); ++it)
+        for (unsigned i = 1; i < tinp.tuple.size(); ++i){
+          for(std::list<unsigned>::const_iterator it = eatom->auxInputMapping[i-1].begin();
+              it != eatom->auxInputMapping[i-1].end(); ++it)
           {
             const unsigned& pos = *it;
-            if (togatom[aux + 1 + pos] != tinp[i]){
+            if (togatom[aux + 1 + pos] != tinp.tuple[i]){
               match = false;
               break;
             }
             // remember matched variables
-            varBinding[eatom->inputs[pos]] = tinp[i];
+            varBinding[eatom->inputs[pos]] = tinp.tuple[i];
           }
           if (!match) break;
         }
@@ -421,10 +424,7 @@ void ExternalAtomMask::updateMask(){
     while (en < en_end){
       const OrdinaryAtom& oatom = eatom->pluginAtom->getRegistry()->ogatoms.getByAddress(*en);
       if (oatom.tuple[0] == eatom->auxInputPredicate){
-        //remember the auxiliary input tuple
-        Tuple inp = oatom.tuple;
-        inp.erase(inp.begin());
-        auxInputTuples.push_back(inp);
+        auxInputMask->setFact(*en);
         auxAdded = true;
       }
       en++;
@@ -450,8 +450,8 @@ void ExternalAtomMask::updateMask(){
     }
 }
 
-const std::vector<Tuple>& ExternalAtomMask::getAuxInputTuples() const{
-    return auxInputTuples;
+const InterpretationConstPtr ExternalAtomMask::getAuxInputMask() const{
+    return auxInputMask;
 }
 
 DLVHEX_NAMESPACE_END
