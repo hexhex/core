@@ -982,26 +982,11 @@ void ComponentGraph::computeCollapsedComponentInfos(
 				ci.stratifiedLiterals[p.first].insert(id);
 			}
 		}
-<<<<<<< HEAD
-		*/
-
-		ci.disjunctiveHeads |= cio.disjunctiveHeads;
-		// if we collapse two components which have no negation inside them,
-		// but they negatively depend on each other, we must set this to true
-		// example: a :- b. and :- not a. are collapsed -> resulting component has negationInCycles
-		// TODO fix name: negationInCycles really should be negativeDependencyBetweenRules
-		ci.negationInCycles |= cio.negationInCycles | foundInternalNegativeRuleDependency;
-
-		// (we do not need to check for nonmonotonic dependencies from external atoms
-		// which become internal nonmonotonic dependencies, because such dependencies
-		// are handled by the innerEatomsNonmonotonic flag which will get true if there
-		// any external atom that can create such a nonmonotonic dependency, e.g. nonmon_noloop.hex)
-=======
 */
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negativeDependencyBetweenRules |= cio.negativeDependencyBetweenRules;
->>>>>>> 4b0cc62783274b055af0d5a7a2b0091f7daa173d
+
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
     ci.componentIsMonotonic |= cio.componentIsMonotonic;
 
