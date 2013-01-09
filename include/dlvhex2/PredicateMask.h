@@ -94,11 +94,11 @@ private:
   InterpretationPtr outputAtoms;
   // bits of all ground auxiliary input replacement atoms (that are relevant in the respective ground program?)
   InterpretationPtr auxInputMask;
-  // cache, where to start filling into preparedTuple (1 if IncludeAuxInputInAuxiliaries is false, 2 if it is true)
-  unsigned offset;
   // cache for replacement tuple: first=positive_repl, including auxinputpred if IncludeAuxInputInAuxiliaries, including constants and variables
-  // can be modified if protected by mutex
+  // should not be modified
   Tuple preparedTuple;
+  // can be modified if protected by mutex, should always be reset to preparedTuple
+  Tuple workTuple;
 protected:
   bool matchOutputAtom(const Tuple& togatom);
 public:

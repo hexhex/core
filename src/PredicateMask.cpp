@@ -197,6 +197,18 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     outputAtoms.reset(new Interpretation(reg));
     auxInputMask.reset(new Interpretation(reg));
 
+    // positive and negative replacement predicates for this eatom
+    ID posreplacement = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+    ID negreplacement = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+
+    // replacement tuple cache
+    preparedTuple.push_back(posreplacement);
+    if( eatom.auxInputPredicate != ID_FAIL &&
+        ctx.config.getOption("IncludeAuxInputInAuxiliaries") )
+    {
+      preparedTuple.push_back(eatom.auxInputPredicate);
+    }
+
     //
     // inputs
     //
@@ -210,6 +222,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     // predicates of predicate inputs for this eatom
     int i = 0;
     BOOST_FOREACH (ID p, eatom.inputs){
+      preparedTuple.push_back(p);
       if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE){
         DBGLOG(DBG, "Adding input predicate " << printToString<RawPrinter>(p,reg));
         addPredicate(p);
@@ -220,10 +233,9 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     //
     // outputs
     //
-
-    // positive and negative replacement predicates for this eatom
-    ID posreplacement = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
-    ID negreplacement = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+    preparedTuple.insert(preparedTuple.end(), eatom.tuple.begin(), eatom.tuple.end());
+    workTuple.assign(preparedTuple.begin(), preparedTuple.end());
+    DBGLOG(DBG,"preparedTuple is <" << printManyToString<RawPrinter>(preparedTuple, ", ", reg) << ">");
 
     // find all output atoms (replacement atoms for positive or negative external atoms)
     // which possibly belong to this external atom
@@ -272,7 +284,41 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
 
 bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     assert(eatom);
-    RegistryPtr reg = maski->getRegistry();
+
+    //RegistryPtr reg = maski->getRegistry();
+    //DBGLOG(WARNING,"workTuple=" << printManyToString<RawPrinter>(workTuple, ", ", reg) << " togatom=" << printManyToString<RawPrinter>(togatom, ", ", reg));
+
+    // store togatom into workTuple if possible, otherwise bailout
+    // then restore workTuple
+    assert(workTuple.size() == togatom.size());
+    assert(workTuple == preparedTuple);
+    bool ret = true;
+    for(unsigned idx = 1; idx < togatom.size(); ++idx)
+    {
+      ID query = togatom[idx];
+      ID pattern = workTuple[idx];
+      if( pattern.isVariableTerm() )
+      {
+        for(unsigned i = idx; i < togatom.size(); ++i)
+        {
+          if( workTuple[i] == pattern )
+            workTuple[i] = query;
+        }
+      }
+      else
+      {
+        assert(pattern.isConstantTerm());
+        if( pattern != query )
+        {
+          ret = false;
+          break;
+        }
+      }
+    }
+
+    // restore workTuple
+    workTuple.assign(preparedTuple.begin(), preparedTuple.end());
+    return ret;
 
 #if 0
 #ifndef NDEBUG
@@ -309,6 +355,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
 #endif
 #endif
 
+#if 0
     // check predicate and constant input
     int aux = 0;
     if (ctx->config.getOption("IncludeAuxInputInAuxiliaries") && eatom->auxInputPredicate != ID_FAIL){
@@ -389,6 +436,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
       }
     }
     return true;
+#endif
 }
 
   // this method ensures that the mask captures:
