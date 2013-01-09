@@ -261,7 +261,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
       // call callback and abort if requested
       if( !cb.output(t) )
       {
-        LOG(DBG,"callback aborted for output tuple " << printrange(t));
+        LOG(DBG,"callback aborted for output tuple <" << printManyToString<RawPrinter>(t, ",", ctx.registry()) << ">");
         return false;
       }
     }
@@ -295,83 +295,54 @@ bool BaseModelGenerator::evaluateExternalAtoms(ProgramCtx& ctx,
 bool BaseModelGenerator::verifyEAtomAnswerTuple(RegistryPtr reg,
   const ExternalAtom& eatom, const Tuple& t) const
 {
-  return true;
+  LOG_SCOPE(DBG, "vEAAT", false);
+  LOG(DBG,"= verifyEAtomAnswerTuple for " << eatom << " and tuple <" << printManyToString<RawPrinter>(t, ", ", reg) << ">");
+  // check answer tuple, if it corresponds to pattern
 
-    #warning TODO verify answer tuple! (as done in dlvhex trunk using std::mismatch)
-    #if 0
-    // check answer tuple, if it corresponds to pattern
-    this is the respective code
+  if( t.size() != eatom.tuple.size() )
+    throw PluginError("External atom " + eatom.pluginAtom->getPredicate() +
+       " returned tuple <" + printManyToString<RawPrinter>(t, ", ", reg) + "> of incompatible size.");
 
+  // pattern may contain variables and constants
+  Tuple pattern(eatom.tuple);
 
-    /**
-     * @brief Check the answers returned from the external atom, and
-     * remove ill-formed tuples.
-     *
-     * Check whether the answers in the output list are
-     * (1) ground
-     * (2) conform to the output pattern, i.e.,
-     *     &rdf[uri](S,rdf:subClassOf,O) shall only return tuples of form
-     *     <s, rdf:subClassOf, o>, and not for instance <s,
-     *     rdf:subPropertyOf, o>, we have to filter them out (do we?)
-     */
-    struct CheckOutput
-      : public std::binary_function<const Term, const Term, bool>
+  // consecutively compare tuple term vs pattern term of same index:
+  // * if variable appears throw exception (programming error, plugins may only return constants)
+  // * if constant meets variable -> set all variables of same ID in pattern to that constant and continue verifying
+  // * if constant meets other constant -> return false (mismatch)
+  // * if constant meets same constant -> continue verifying
+  // return true
+
+  const unsigned arity = t.size();
+  for(unsigned at = 0; at < arity; ++at)
+  {
+    if( t[at].isVariableTerm() )
+      throw PluginError("External atom " + eatom.pluginAtom->getPredicate() +
+         " returned variable in result tuple <" + printManyToString<RawPrinter>(t, ", ", reg) + "> which is forbidden");
+
+    if( pattern[at].isVariableTerm() )
     {
-      bool
-      operator() (const Term& t1, const Term& t2) const
+      // set all variables to this constant and continue
+      ID variable = pattern[at];
+      for(unsigned i = at; i < arity; ++i)
       {
-        // answers must be ground, otw. programming error in the plugin
-        assert(t1.isInt() || t1.isString() || t1.isSymbol());
-
-        // pattern tuple values must coincide
-        if (t2.isInt() || t2.isString() || t2.isSymbol())
-          {
-      return t1 == t2;
-          }
-        else // t2.isVariable() -> t1 is a variable binding for t2
-          {
-      return true;
-          }
+        if( pattern[i] == variable )
+          pattern[i] = t[at];
       }
-    };
-
-
-    for (std::vector<Tuple>::const_iterator s = answers->begin(); s != answers->end(); ++s)
-    {
-      if (s->size() != externalAtom->getArguments().size())
-        {
-          throw PluginError("External atom " + externalAtom->getFunctionName() + " returned tuple of incompatible size.");
-        }
-
-      // check if this answer from pluginatom conforms to the external atom's arguments
-      std::pair<Tuple::const_iterator,Tuple::const_iterator> mismatched =
-        std::mismatch(s->begin(),
-          s->end(),
-          externalAtom->getArguments().begin(),
-          CheckOutput()
-          );
-
-      if (mismatched.first == s->end()) // no mismatch found -> add this tuple to the result
-        {
-          // the replacement atom contains both the input and the output list!
-          // (*inputi must be ground here, since it comes from
-          // groundInputList(i, inputArguments))
-          Tuple resultTuple(*inputi);
-
-          // add output list
-          resultTuple.insert(resultTuple.end(), s->begin(), s->end());
-
-          // setup new atom with appropriate replacement name
-          AtomPtr ap(new Atom(externalAtom->getReplacementName(), resultTuple));
-
-          result.insert(ap);
-        }
-      else
-        {
-          // found a mismatch, ignore this answer tuple
-        }
     }
-    #endif
+    else if( pattern[at] != t[at] )
+    {
+      // mismatch
+      return false;
+    }
+    else
+    {
+      // ok, continue
+      assert(t[at] == pattern[at]);
+    }
+  }
+
+  return true;
 }
 
 InterpretationPtr BaseModelGenerator::projectEAtomInputInterpretation(RegistryPtr reg,
