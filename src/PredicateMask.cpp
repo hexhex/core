@@ -89,6 +89,10 @@ void PredicateMask::setRegistry(RegistryPtr reg)
 
 void PredicateMask::addPredicate(ID pred)
 {
+  boost::mutex::scoped_lock lock(updateMutex);
+
+  DBGLOG_VSCOPE(DBG,"PM::aP",this,false);
+  DBGLOG(DBG,"adding predicate " << pred << ", knownAddresses was " << knownAddresses);
   assert(pred.isTerm() && pred.isConstantTerm() && "predicate masks can only be done on constant terms");
   predicates.insert(pred.address);
   knownAddresses = 0;	// scan the whole address space again
