@@ -577,12 +577,13 @@ int GringoGrounder::doRun()
 		printer.print(intPred);
 		programStream << "(0.." << ctx.maxint << ").";
 
-		LOG(DBG, "Sending the following input to Gringo: " << programStream.str());
+		LOG(DBG, "Sending the following input to Gringo: {{" << programStream.str() << "}}");
 
 		// grounding
 		std::auto_ptr<Output> o(output());
 		Streams inputStreams;
 		inputStreams.appendStream(std::auto_ptr<std::istream>(new std::stringstream(programStream.str())), "program");
+		programStream.str("");
 		if(gringo.groundInput)
 		{
 			Storage   s(o.get());
@@ -610,25 +611,31 @@ int GringoGrounder::doRun()
 			o->finalize();
 		}
 
-		// print ground program
-#ifdef NDEBUG
-		programStream.str("");
-		if( groundProgram.edb != 0 )
-		{
-			// print edb interpretation as facts
-			groundProgram.edb->printAsFacts(programStream);
-			programStream << "\n";
-		}
-		printer.printmany(groundProgram.idb, "\n");
-		programStream << std::endl;
-		DBGLOG(DBG, "Got the following ground program from Gringo: " << programStream.str());
-#endif
-
 		// restore cerr output
 		if( origcerr != NULL )
+		{
 			std::cerr.rdbuf(origcerr);
+			if( errstr.str().size() > 0 )
+			{
+				LOG(INFO, "Gringo Output was {" << errstr.str() << "}");
+			}
+		}
 
-		DBGLOG(DBG, errstr.str());
+		// print ground program
+#if 1
+		if( Logger::Instance().shallPrint(Logger::DBG) )
+		{
+			if( groundProgram.edb != 0 )
+			{
+				// print edb interpretation as facts
+				groundProgram.edb->printAsFacts(programStream);
+				programStream << "\n";
+			}
+			printer.printmany(groundProgram.idb, "\n");
+			programStream << std::endl;
+			LOG(DBG, "Got the following ground program from Gringo: {" << programStream.str() << "}");
+		}
+#endif
 
 		return EXIT_SUCCESS;
 	}catch(...){
