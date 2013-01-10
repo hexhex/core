@@ -122,8 +122,6 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 }
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
-  // benchmark -> see below (we do not want to count waiting time)
-
 	// thread-safe access to the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
 	if (cs.propagator.size() != 0){
@@ -136,33 +134,35 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		}
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop");
 
 		// translate clasp assignment to hex assignment
 		// get the symbol table from the solver
-		interpretation->clear();
-		factWasSet->clear();
-		const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-		for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-			// bitset of all assigned values
-			if (s.isTrue(it->second.lit) || s.isFalse(it->second.lit)) {
-				IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-				factWasSet->setFact(adr);
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop pre");
+			interpretation->clear();
+			factWasSet->clear();
+			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+			for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+				// bitset of all assigned values
+				if (s.isTrue(it->second.lit) || s.isFalse(it->second.lit)) {
+					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+					factWasSet->setFact(adr);
+				}
+				// bitset of true values (partial interpretation)
+				if (s.isTrue(it->second.lit)) {
+					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+					interpretation->setFact(adr);
+				}
 			}
-			// bitset of true values (partial interpretation)
-			if (s.isTrue(it->second.lit)) {
-				IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-				interpretation->setFact(adr);
-			}
-		}
 
-		// a fact changed iff
-		// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
-		// 2. it was set before and is still set but the truth value is different
-		changed->clear();
-		changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
-		changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
-		DBGLOG(DBG, "Changed truth values: " << *changed);
+			// a fact changed iff
+			// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
+			// 2. it was set before and is still set but the truth value is different
+			changed->clear();
+			changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
+			changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
+			DBGLOG(DBG, "Changed truth values: " << *changed);
+		}
 
 		DBGLOG(DBG, "Calling external propagators");
 		bool conflict = false;
@@ -185,6 +185,7 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 	bool inconsistent = false;
 	{
 	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop an");
 
 		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
 
