@@ -570,7 +570,7 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		pb.startRule(Clasp::BASICRULE);
 		pb.addHead(aux);
 		BOOST_FOREACH (ID b, rule.body){
-			// add literal to body	BOOST_FOREACH(ID bodyLit, ruleBody){
+			// add literal to body
 			if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
 			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 		}
