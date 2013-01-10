@@ -528,24 +528,53 @@ void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 	const Rule& rule = reg->rules.getByID(ruleId);
 	if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
 		// shifting
-		DBGLOG(DBG, "Shifting disjunctive rule" << ruleId);
+		DBGLOG(DBG, "Shifting disjunctive rule" << ruleId << " " << printToString<RawPrinter>(ruleId, reg));
+		#define USE_GRINGO_METHOD
+		#ifdef USE_GRINGO_METHOD
+		// a|b|c :- d, not e.
+		// becomes
+		// aux :- d, not e.
+		// a :- aux, not b, not c.
+		// b :- aux, not c, not a.
+		// c :- aux, not a, not b.
+		int aux = nextVarIndex++;
+		pb.startRule(Clasp::BASICRULE);
+		pb.addHead(aux);
+		BOOST_FOREACH (ID b, rule.body){
+			// add literal to body	BOOST_FOREACH(ID bodyLit, ruleBody){
+			if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
+			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+		}
+		pb.endRule();
+
 		for (int keep = 0; keep < rule.head.size(); ++keep){
 			pb.startRule(Clasp::BASICRULE);
-			int hi = 0;
-			BOOST_FOREACH (ID h, rule.head){
-				if (hi == keep){
-					// add literal to head
-					pb.addHead(hexToClasp[h.address].var());
+			pb.addHead(hexToClasp[rule.head[keep].address].var());
+			pb.addToBody(aux, true);
+			for(unsigned dontkeep = 0; dontkeep < rule.head.size(); ++dontkeep){
+				if( keep != dontkeep )
+				{
+					pb.addToBody(hexToClasp[rule.head[dontkeep].address].var(), false);
 				}
-				hi++;
 			}
+			pb.endRule();
+		}
+		#else
+		// a|b|c :- d, not e.
+		// becomes
+		// a :- d, not e, not b, not c.
+		// b :- d, not e, not a, not c.
+		// c :- d, not e, not a, not b.
+		for (int keep = 0; keep < rule.head.size(); ++keep){
+			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(hexToClasp[rule.head[keep].address].var());
 			BOOST_FOREACH (ID b, rule.body){
-				// add literal to body	BOOST_FOREACH(ID bodyLit, ruleBody){
+				// add literal to body
 				if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
 				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 			}
 			// shifted head atoms
-			hi = 0;
+			int hi = 0;
 			BOOST_FOREACH (ID h, rule.head){
 				if (hi != keep){
 					// add literal to head
@@ -555,6 +584,7 @@ void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 			}
 			pb.endRule();
 		}
+		#endif
 	}else if (dm == ChoiceRules){
 		int atLeastOneAtom = nextVarIndex++;
 
