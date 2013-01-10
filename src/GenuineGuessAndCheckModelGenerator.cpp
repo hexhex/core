@@ -325,26 +325,37 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	InterpretationPtr modelCandidate;
 	do
 	{
+		LOG(DBG,"asking for next model");
 		modelCandidate = solver->getNextModel();
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
-		if( !modelCandidate ) return modelCandidate;
+		if( !modelCandidate )
+		{
+			LOG(DBG,"unsatisfiable -> returning no model");
+			return InterpretationPtr();
+		}
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 
-		DBGLOG_SCOPE(DBG,"gM", false);
-		DBGLOG(DBG,"= got guess model " << *modelCandidate);
-
-		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
-		if (!finalCompatibilityCheck(modelCandidate)) continue;
+		LOG_SCOPE(DBG,"gM", false);
+		LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
+		if (!finalCompatibilityCheck(modelCandidate))
+		{
+			LOG(DBG,"compatibility failed");
+			continue;
+		}
 
 		DBGLOG(DBG, "Checking if model candidate is a model");
-		if (!isModel(modelCandidate)) continue;
+		if (!isModel(modelCandidate))
+		{
+			LOG(DBG,"isModel failed");
+			continue;
+		}
 
 		// remove edb and the guess (from here we don't need the guess anymore)
 		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
 		modelCandidate->getStorage() -= factory.gnMask.mask()->getStorage();
 		modelCandidate->getStorage() -= mask->getStorage();
 
-		DBGLOG(DBG,"= final model " << *modelCandidate);
+		LOG(DBG,"returning model without guess: " << *modelCandidate);
 		return modelCandidate;
 	}while(true);
 }
