@@ -694,7 +694,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		// add fact
-		pb.startRule();
+		pb.startRule(Clasp::BASICRULE);
 		pb.addHead(hexToClasp[*en].var());
 		pb.endRule();
 
