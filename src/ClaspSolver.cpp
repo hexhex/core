@@ -616,7 +616,7 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		#endif
 
 		return true;
-	}else if (dm == ChoiceRules){
+	}else{
 		int atLeastOneAtom = nextVarIndex++;
 
 		DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
