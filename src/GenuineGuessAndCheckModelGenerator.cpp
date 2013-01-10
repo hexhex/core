@@ -528,6 +528,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 }
 
 bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c partialUFSchk");
 
 	if (!factory.ctx.config.getOption("UFSCheck")) return false;
 
@@ -596,6 +597,7 @@ ID GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, Interpreta
 }
 
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms");
 
 	DBGLOG(DBG, "Evaluating External Atoms");
 
@@ -713,4 +715,4 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 
 DLVHEX_NAMESPACE_END
 
-// vi:ts=8:
+// vi:ts=8:noexpandtab:

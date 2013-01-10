@@ -122,6 +122,7 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 }
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
+  // benchmark -> see below (we do not want to count waiting time)
 
 	// thread-safe access to the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
@@ -135,6 +136,7 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		}
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop");
 
 		// translate clasp assignment to hex assignment
 		// get the symbol table from the solver
@@ -217,6 +219,7 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 }
 
 void ClaspSolver::ExternalPropagator::reset(){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::reset");
 	interpretation = InterpretationPtr(new Interpretation(cs.reg));
 	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
 	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
@@ -232,6 +235,7 @@ void ClaspSolver::ExternalPropagator::reset(){
                The second is true iff adding has produced a conflict
  */
 std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::addNogoodTC");
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -315,6 +319,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::convertClaspNogood LC");
 
 	if (learnedConstraint.clause()){
 		Clasp::LitVec lv;
@@ -324,6 +329,7 @@ std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConst
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(const Clasp::LitVec& litvec){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::convertClaspNogood LV");
 
 	// A clasp literal possibly maps to multiple dlvhex literals
 	// (due to optimization, equivalent and antivalent variables are represented by the same clasp literal).
@@ -345,6 +351,7 @@ std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(const Clasp::LitVe
 }
 
 std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> >& nogoods){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::convertClaspNogood vvI");
 
 	// The method "unfolds" a set of nogoods, represented as
 	// { l1[1], ..., l1[n1] } x { l2[1], ..., l2[n2] } x ... x { lk[1], ..., lk[nk] }
@@ -380,6 +387,7 @@ std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> 
 }
 
 void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab P pb");
 
 	DBGLOG(DBG, "Building atom index");
 
@@ -425,6 +433,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 }
 
 void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab ns");
 
 	DBGLOG(DBG, "Building atom index");
 
@@ -446,6 +455,7 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 }
 
 void ClaspSolver::buildOptimizedSymbolTable(){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildOptST");
 
 	hexToClasp.clear();
 
@@ -512,6 +522,7 @@ void ClaspSolver::runClasp(){
 }
 
 void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendDisjRuleTC");
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 	if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
@@ -579,6 +590,7 @@ void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 }
 
 void ClaspSolver::sendWeightRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendWeightRuleTC");
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 	pb.startRule(Clasp::WEIGHTRULE, rule.bound.address);
@@ -595,6 +607,7 @@ void ClaspSolver::sendWeightRuleToClasp(const AnnotatedGroundProgram& p, Disjunc
 }
 
 void ClaspSolver::sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendOrdinaryRuleTC");
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 	pb.startRule(Clasp::BASICRULE);
@@ -613,6 +626,7 @@ void ClaspSolver::sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, Disju
 }
 
 void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, std::map<IDAddress, std::vector<int> >& singletonNogoods, ID ruleId){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendRuleTC");
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 
@@ -661,6 +675,7 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 }
 
 bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
 	pb.startProgram(claspInstance, eqOptions);
 	pb.setCompute(false_, false);
@@ -727,6 +742,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 }
 
 void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::addMinimizeConstr");
 
 	// one minimize statement for each level
 	std::vector<Clasp::WeightLitVec> minimizeStatements;
@@ -806,6 +822,7 @@ minc->integrateNext(*claspInstance.master());
 }
 
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
 
 	buildInitialSymbolTable(ns);
 
@@ -999,6 +1016,7 @@ ClaspSolver::~ClaspSolver(){
 }
 
 void ClaspSolver::shutdownClasp(){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::shutdownClasp");
 
 	if (!strictSingleThreaded){
 		sem_dlvhexDataStructures.post();
@@ -1022,6 +1040,7 @@ void ClaspSolver::shutdownClasp(){
 }
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::restartWithAss");
 
 	if (claspStarted) shutdownClasp();
 
