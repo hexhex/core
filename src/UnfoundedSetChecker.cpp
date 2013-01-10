@@ -1823,6 +1823,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		return std::vector<IDAddress>();
 	}
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "UnfoundedSetChkMgr::getUFS");
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
 		if (mg && (agp.hasECycles() || !flpdc)){
