@@ -212,11 +212,12 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
 	// (see postcondition in clasp/constraint.h)
-	// propagate always if there are no free variables!
-	if( s.numFreeVars() == 0 )
+	// first propagate, then check free variables
+	// (otherwise could be incorrect as MG could miss to re-evaluate external atom)
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isModel)");
+	if( prop(s, true) )
 	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isModel)");
-		return prop(s, true);
+		return s.numFreeVars() == 0;
 	}
 	else
 	{
