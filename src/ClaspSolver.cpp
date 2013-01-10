@@ -1294,3 +1294,5 @@ InterpretationPtr DisjunctiveClaspSolver::getNextModel(){
 DLVHEX_NAMESPACE_END
 
 #endif
+
+// vim:noexpandtab:ts=8:
