@@ -510,7 +510,7 @@ void ClaspSolver::runClasp(){
 	}
 }
 
-void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
+bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 	if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
@@ -542,6 +542,8 @@ void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 			}
 			pb.endRule();
 		}
+
+		return true;
 	}else if (dm == ChoiceRules){
 		int atLeastOneAtom = nextVarIndex++;
 
@@ -574,6 +576,8 @@ void ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		}
 		pb.addToBody(atLeastOneAtom, false);
 		pb.endRule();
+
+		return false;
 	}
 }
 
@@ -624,8 +628,9 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 	DBGLOG(DBG, rulestr.str());
 #endif
 	// distinct by the type of the rule
+	bool wasShifted = false;
 	if (rule.head.size() > 1){
-		sendDisjunctiveRuleToClasp(p, dm, nextVarIndex, ruleId);
+		wasShifted = sendDisjunctiveRuleToClasp(p, dm, nextVarIndex, ruleId);
 	}else{
 		if (ID(rule.kind, 0).isWeightRule()){
 			sendWeightRuleToClasp(p, dm, nextVarIndex, ruleId);
@@ -637,8 +642,8 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 
 	// for non-shifted disjunctive rules, check support of singleton atoms
 	// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
-	DBGLOG(DBG, "Generating singleton loop nogoods");
-	if (!ruleId.isWeightRule()){
+	if (!wasShifted && !ruleId.isWeightRule()){
+		DBGLOG(DBG, "Generating singleton loop nogoods");
 		BOOST_FOREACH (ID h, rule.head){
 			// shiftedBody is true iff the original body is true and all other head atoms are false
 			pb.startRule(Clasp::BASICRULE);
