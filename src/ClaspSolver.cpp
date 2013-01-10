@@ -212,7 +212,16 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
 	// (see postcondition in clasp/constraint.h)
-	return prop(s, true) && s.numFreeVars() == 0;
+	// propagate always if there are no free variables!
+	if( s.numFreeVars() == 0 )
+	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isModel)");
+		return prop(s, true);
+	}
+	else
+	{
+		return false;
+	}
 }
 
 uint32 ClaspSolver::ExternalPropagator::priority() const{
