@@ -206,7 +206,26 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 //	return true;
+#if 1
+	// frequency based
+	const unsigned skipCount = 10000000;
+	static unsigned skipSoManyPropagates = 0;
+	if( skipSoManyPropagates > skipCount )
+	{
+		skipSoManyPropagates = 0;
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (propagate)");
+		return prop(s);
+	}
+	else
+	{
+		skipSoManyPropagates++;
+		return true;
+	}
+#else
+	// TODO time-based
+	st.start = boost::posix_time::microsec_clock::local_time();
 	return prop(s);
+#endif
 }
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
