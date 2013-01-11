@@ -143,6 +143,7 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop pre");
 			interpretation->clear();
 			factWasSet->clear();
+			#if 0
 			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
 			for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 				// bitset of all assigned values
@@ -156,6 +157,26 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 					interpretation->setFact(adr);
 				}
 			}
+			#else
+			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+			assert(symTab.size() == cs.claspSymtabToHex.size());
+			Clasp::SymbolTable::const_iterator it;
+			std::vector<IDAddress>::const_iterator ita;
+			for(it = symTab.begin(),
+			    ita = cs.claspSymtabToHex.begin();
+			    it != symTab.end(); ++it, ++ita) {
+				bool istrue = s.isTrue(it->second.lit);
+				bool isfalse = s.isFalse(it->second.lit);
+				// bitset of all assigned values
+				if( istrue || isfalse ) {
+					factWasSet->setFact(*ita);
+				}
+				// bitset of true values (partial interpretation)
+				if( istrue ) {
+					interpretation->setFact(*ita);
+				}
+			}
+			#endif
 
 			// a fact changed iff
 			// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
@@ -494,6 +515,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildOptST");
 
 	hexToClasp.clear();
+	claspSymtabToHex.clear();
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -501,15 +523,18 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 
 	// go through symbol table
 	const Clasp::SymbolTable& symTab = claspInstance.symTab();
+	claspSymtabToHex.reserve(symTab.size());
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		hexToClasp[hexAdr] = it->second.lit;
 		claspToHex[it->second.lit].push_back(hexAdr);
+		claspSymtabToHex.push_back(hexAdr);
 #ifndef NDEBUG
 		ss << "Hex " << hexAdr << " <--> " << (it->second.lit.sign() ? "" : "!") << it->second.lit.var() << std::endl;
 #endif
 	}
 	DBGLOG(DBG, "Symbol table of optimized program: " << std::endl << ss.str());
+	assert(claspSymtabToHex.size() == symTab.size());
 }
 
 std::string ClaspSolver::idAddressToString(IDAddress adr){

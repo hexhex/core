@@ -196,6 +196,9 @@ protected:
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
 	std::map<Clasp::Literal, std::vector<IDAddress> > claspToHex;
 
+	// cache for propagation:
+	std::vector<IDAddress> claspSymtabToHex; // for each entry in the optimized clasp symbol table we have one IDAddress here
+
 	// statistics
 	int modelCount;
 public:
