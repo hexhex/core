@@ -628,9 +628,8 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 	DBGLOG(DBG, rulestr.str());
 #endif
 	// distinct by the type of the rule
-	bool wasShifted = false;
 	if (rule.head.size() > 1){
-		wasShifted = sendDisjunctiveRuleToClasp(p, dm, nextVarIndex, ruleId);
+		sendDisjunctiveRuleToClasp(p, dm, nextVarIndex, ruleId);
 	}else{
 		if (ID(rule.kind, 0).isWeightRule()){
 			sendWeightRuleToClasp(p, dm, nextVarIndex, ruleId);
@@ -640,9 +639,9 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 	}
 
 
-	// for non-shifted disjunctive rules, check support of singleton atoms
+	// check support of singleton atoms
 	// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
-	if (!wasShifted && !ruleId.isWeightRule()){
+	if (!ruleId.isWeightRule()){
 		DBGLOG(DBG, "Generating singleton loop nogoods");
 		BOOST_FOREACH (ID h, rule.head){
 			// shiftedBody is true iff the original body is true and all other head atoms are false
