@@ -1036,9 +1036,11 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 			ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
 		}
 
-		std::stringstream prog;
-		pb.writeProgram(prog);
-		DBGLOG(DBG, "Program in LParse format: " << prog.str());
+		if( !Logger::Instance().shallPrint(Logger::DBG) )
+		{
+		  LOG(DBG, "Program in LParse format:");
+		  pb.writeProgram(Logger::Instance().stream());
+		}
 
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
