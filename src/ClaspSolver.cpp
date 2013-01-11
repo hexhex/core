@@ -55,6 +55,8 @@
 #include "clasp/heuristics.h"
 
 
+#define SINGLETON_LOOP_NOGOOD_OPTIMIZATION
+
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ClaspSolver ==============================
@@ -744,7 +746,7 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 		}
 	}
 
-
+	#ifdef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
 	// check support of singleton atoms
 	// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
 	if (!ruleId.isWeightRule()){
@@ -767,6 +769,7 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 			singletonNogoods[h.address].push_back(nextVarIndex++);
 		}
 	}
+	#endif
 }
 
 bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
@@ -812,6 +815,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 		sendRuleToClasp(p, dm, nextVarIndex, singletonNogoods, ruleId);
 	}
 
+	#ifdef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
 	// an atom is not true if no supporting shifted rule fires
 	typedef std::pair<IDAddress, std::vector<int> > Pair;
 	BOOST_FOREACH (Pair pair, singletonNogoods){
@@ -826,6 +830,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 		}
 		pb.endRule();
 	}
+	#endif
 
 	// Once all rules are defined, call endProgram() to load the (simplified)
 	bool initiallyInconsistent = !pb.endProgram();
