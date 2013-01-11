@@ -117,7 +117,7 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
-ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
+ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs): needReset(true), cs(cs){
 	reset();
 }
 
@@ -125,6 +125,8 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 	// thread-safe access to the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
 	if (cs.propagator.size() != 0){
+		needReset = true;
+
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
 		// because only in this case we know what MainThread is doing and which dlvhex data structures it accesses.
 		// Otherwise we could have a lot of unsynchronized data accesses.
@@ -249,12 +251,16 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 }
 
 void ClaspSolver::ExternalPropagator::reset(){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::reset");
-	interpretation = InterpretationPtr(new Interpretation(cs.reg));
-	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
-	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-	previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
-	changed = InterpretationPtr(new Interpretation(cs.reg));
+	if( needReset || interpretation->getRegistry() != cs.reg)
+	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::reset");
+		interpretation = InterpretationPtr(new Interpretation(cs.reg));
+		previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
+		factWasSet = InterpretationPtr(new Interpretation(cs.reg));
+		previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
+		changed = InterpretationPtr(new Interpretation(cs.reg));
+		needReset = false;
+	}
 }
 
 /**

@@ -111,6 +111,8 @@ private:
 	// propagator for external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{
 	private:
+		// if anything was done since last reset (if not, we can skip the reset in most cases)
+		bool needReset;
 		// reference to other class instance
 		ClaspSolver& cs;
 
