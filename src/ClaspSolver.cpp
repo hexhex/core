@@ -258,7 +258,7 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	// (see postcondition in clasp/constraint.h)
 	// first propagate, then check free variables
 	// (otherwise could be incorrect as MG could miss to re-evaluate external atom)
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isModel)");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isMdl)");
 	if( prop(s, true) )
 	{
 		return s.numFreeVars() == 0;
@@ -1007,7 +1007,7 @@ InterpretationPtr ClaspSolver::outputProjection(InterpretationConstPtr intr){
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(agp)");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
@@ -1071,7 +1071,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(ngs)");
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
