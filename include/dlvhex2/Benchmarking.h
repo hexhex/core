@@ -94,6 +94,8 @@
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid)
 # define DLVHEX_BENCHMARK_STOP(sid) \
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid)
+# define DLVHEX_BENCHMARK_SUSPEND(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid,false)
 # define DLVHEX_BENCHMARK_COUNT(sid,num) \
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().count(sid,num)
 # define DLVHEX_BENCHMARK_SCOPE(sid) \
@@ -118,6 +120,7 @@
 # define DLVHEX_BENCHMARK_REGISTER(sid,msg)               do { } while(0)
 # define DLVHEX_BENCHMARK_START(sid)                      do { } while(0)
 # define DLVHEX_BENCHMARK_STOP(sid)                       do { } while(0)
+# define DLVHEX_BENCHMARK_SUSPEND(sid)                    do { } while(0)
 # define DLVHEX_BENCHMARK_COUNT(sid,num)                  do { } while(0)
 # define DLVHEX_BENCHMARK_SCOPE(sid)                      do { } while(0)
 # define DLVHEX_BENCHMARK_SCOPE_TPL(sid)                  do { } while(0)
@@ -207,7 +210,8 @@ public:
   // start timer
   inline void start(ID id); // inline for performance
   // stop and record elapsed time, print stats
-  inline void stop(ID id); // inline for performance
+  // if count is false, stop time but do not count (for suspending timer)
+  inline void stop(ID id, bool count=true); // inline for performance
   // record count (no time), print stats
   inline void count(ID id, Count increment=1); // inline for performance
 
@@ -327,7 +331,7 @@ void BenchmarkController::start(ID id)
 
 // inline for performance
 // stop and record elapsed time, print stats
-void BenchmarkController::stop(ID id)
+void BenchmarkController::stop(ID id, bool count)
 {
   boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
@@ -335,7 +339,8 @@ void BenchmarkController::stop(ID id)
   if( st.running )
   {
     Duration dur = boost::posix_time::microsec_clock::local_time() - st.start;
-    st.count++;
+    if( count )
+      st.count++;
     st.duration += dur;
     printInformationContinous(st,dur);
     st.running = false;

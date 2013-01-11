@@ -91,7 +91,7 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 			boost::mutex::scoped_lock lock(cs.modelsMutex);
 			while(cs.preparedModels.size() >= cs.modelqueueSize){
 				DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved by MainThread");
-				DLVHEX_BENCHMARK_STOP(sidsolvertime);
+				DLVHEX_BENCHMARK_SUSPEND(sidsolvertime);
 				cs.waitForQueueSpaceCondition.wait(lock);
 				DLVHEX_BENCHMARK_START(sidsolvertime);
 			}
@@ -107,7 +107,7 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 		DBGLOG(DBG, "Notifying MainThread about new model");
 		cs.sem_answer.post();
 		DBGLOG(DBG, "ClaspThread: Waiting for further model requests");
-		DLVHEX_BENCHMARK_STOP(sidsolvertime);
+		DLVHEX_BENCHMARK_SUSPEND(sidsolvertime);
 		cs.sem_request.wait();
 		DLVHEX_BENCHMARK_START(sidsolvertime);
 	}
