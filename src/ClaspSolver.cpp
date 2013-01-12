@@ -1036,7 +1036,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 			ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
 		}
 
-		if( !Logger::Instance().shallPrint(Logger::DBG) )
+		if( Logger::Instance().shallPrint(Logger::DBG) )
 		{
 		  LOG(DBG, "Program in LParse format:");
 		  pb.writeProgram(Logger::Instance().stream());
