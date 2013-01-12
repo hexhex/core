@@ -253,7 +253,7 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
         annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 	solver = GenuineGroundSolver::getInstance(
 						factory.ctx, annotatedGroundProgram,
-						false,
+						false, // thread interleaving (why exactly here and only here false?)
 						!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck")	// do the UFS check for disjunctions only if we don't do
 																	// a minimality check in this class;
 																	// this will not find unfounded sets due to external sources,
