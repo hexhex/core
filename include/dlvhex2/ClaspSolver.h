@@ -186,13 +186,13 @@ protected:
 
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
+	Clasp::SolverConfig claspConfig;
 	Clasp::ProgramBuilder pb;
 	Clasp::LitVec assumptions;
 	Clasp::MinimizeBuilder minb;
 	Clasp::MinimizeConstraint* minc;
 	Clasp::SharedMinimizeData* sharedMinimizeData;
 	Clasp::ProgramBuilder::EqOptions eqOptions;
-	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;
 	ExternalPropagator* ep;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID

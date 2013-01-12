@@ -574,8 +574,7 @@ void ClaspSolver::runClasp(){
 
 	try{
 		DLVHEX_BENCHMARK_START(sidsolvertime);
-		Clasp::solve(claspInstance, params, assumptions);
-		//Clasp::solve(claspInstance, params, assumptions);
+		Clasp::solve(claspInstance, claspConfig.params, assumptions);
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 	}catch(ClaspSolver::ClaspTermination){
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
@@ -1051,9 +1050,8 @@ class ClaspSolver::ClaspInHexAppOptions:
   protected:
     typedef ProgramOptions::AppOptions Base;
   public:
-    ClaspInHexAppOptions(Clasp::Solver& solver):
-      solverConfig(solver),
-      searchOptions(&solverConfig),
+    ClaspInHexAppOptions(Clasp::SolverConfig* config):
+      searchOptions(config),
       argc(0),
       argv(0)
     {
@@ -1075,7 +1073,9 @@ class ClaspSolver::ClaspInHexAppOptions:
 
     void configure(std::string claspconfigstr)
     {
-      if( claspconfigstr == "default" )
+      if( claspconfigstr == "none" )
+	return; // do not do anything
+      else if( claspconfigstr == "default" )
 	claspconfigstr = DEF_SOLVE;
       else if( claspconfigstr == "frumpy" )
 	claspconfigstr = FRUMPY_SOLVE;
@@ -1133,6 +1133,10 @@ class ClaspSolver::ClaspInHexAppOptions:
 	LOG(ERROR,"parsing clasp options '" + config + "' failed: '" +
 	   messages.error + "' (we support SearchOptions, try --help)");
       }
+      for(ProgramOptions::StringSeq::const_iterator it = messages.warning.begin();
+	  it != messages.warning.end(); ++it){
+	LOG(WARNING,"clasp option warning: '" << *it << "'");
+      }
     }
 
   protected:
@@ -1159,7 +1163,6 @@ class ClaspSolver::ClaspInHexAppOptions:
     }
 
   protected:
-    Clasp::SolverConfig solverConfig;
     Clasp::SearchOptions searchOptions;
     // according to posix, these must be retained and must be modifiable until the end of the program
     int argc;
@@ -1169,13 +1172,32 @@ class ClaspSolver::ClaspInHexAppOptions:
 ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm):
  	ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
 	claspInstance(),
-	claspAppOptionsHelper(new ClaspInHexAppOptions(*claspInstance.master()))
+	claspConfig(*claspInstance.master()),
+	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig))
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(agp)");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
 	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
+
+	// experimental section
+	{
+	  //pb.setExtendedRuleMode(Clasp::ProgramBuilder::mode_transform_dynamic);
+
+	  // activate this to get errors in make check, it is very unclear to me why these errors appear, they should not
+	  if( false ) {
+	    Clasp::SatElite::SatElite* pre = new Clasp::SatElite::SatElite();
+	    pre->options.maxIters = 20;
+	    pre->options.maxOcc   = 25;
+	    pre->options.maxTime  = 120;
+	    claspInstance.satPrepro.reset(pre);
+	  }
+	}
+
+	// use facade in a poor way to set heuristics
+	Clasp::ClaspConfig cc;
+	cc.applyHeuristic(claspConfig);
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	bool initiallyInconsistent = sendProgramToClasp(p, dm);
@@ -1229,13 +1251,18 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
 	claspInstance(),
-	claspAppOptionsHelper(new ClaspInHexAppOptions(*claspInstance.master()))
+	claspConfig(*claspInstance.master()),
+	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig))
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(ngs)");
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
 	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
+
+	// use facade in a poor way to set heuristics
+	Clasp::ClaspConfig cc;
+	cc.applyHeuristic(claspConfig);
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 
