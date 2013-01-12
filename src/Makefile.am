@@ -208,5 +208,5 @@ libdlvhex2_mlpsolver_la_LDFLAGS = -version-info 2:0:1
 libdlvhex2_aspsolver_la_LDFLAGS = -version-info 4:0:1
 libdlvhex2_internalplugins_la_LDFLAGS = -version-info 2:0:1
 
-libdlvhex2_base_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
+libdlvhex2_base_la_LIBADD = $(EXTSOLVER_LIBADD) @LIBLTDL@ @LIBADD_DL@
 

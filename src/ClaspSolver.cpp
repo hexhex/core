@@ -49,10 +49,18 @@
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/tokenizer.hpp>
 
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
 #include "clasp/heuristics.h"
+
+// careful! clasp and gringo use different kinds of program_options, they are not binary compatible, i.e., can never be used in the same binary or even libaries
+#include "program_opts/program_options.h"
+#include "program_opts/app_options.h"
+
+#define WITH_THREADS 0 // this is only relevant for option parsing, so we don't care at the moment
+#include "clasp_options.h"
 
 
 #define SINGLETON_LOOP_NOGOOD_OPTIMIZATION
@@ -1005,19 +1013,163 @@ InterpretationPtr ClaspSolver::outputProjection(InterpretationConstPtr intr){
 	}
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
+namespace
+{
+
+bool myparsePositional(const std::string& t, std::string& out) {
+  out = "unknown";
+  //std::cerr << "parsePositional with '" << t << "' and '" << out << "'" << std::endl;
+  //out = t;
+  return true;
+  /*
+  int num;
+  if   (parse(t, num)) { out = "number"; }
+  else                 { out = "file";   }
+  return true;
+  */
+}
+
+} // anonymous namespace
+
+// from clasp source code
+#define DEF_SOLVE    "--heuristic=Berkmin --restarts=x,100,1.5 --deletion=1,75 --del-init-r=200,40000 --del-max=400000 --del-algo=basic --contraction=250 --loops=common --save-p=180"
+#define FRUMPY_SOLVE DEF_SOLVE " --del-grow=1.1 --strengthen=local"
+#define JUMPY_SOLVE  "--heuristic=Vsids --restarts=L,100 --del-init-r=1000,20000 --del-algo=basic,2 --deletion=3,75 --del-grow=1.1,25,x,100,1.5 --del-cfl=x,10000,1.1 --del-glue=2 --update-lbd=3 --strengthen=recursive --otfs=2 --save-p=70"
+#define HANDY_SOLVE  "--heuristic=Vsids --restarts=D,100,0.7 --deletion=2,50,20.0 --del-max=200000 --del-algo=sort,2 --del-init-r=1000,14000 --del-cfl=+,4000,600 --del-glue=2 --update-lbd --strengthen=recursive --otfs=2 --save-p=20 --contraction=600 --loops=distinct --counter-restarts=7 --counter-bump=1023 --reverse-arcs=2"
+#define CRAFTY_SOLVE "--heuristic=Vsids --restarts=x,128,1.5 --deletion=3,75,10.0 --del-init-r=1000,9000 --del-grow=1.1,20.0 --del-cfl=+,10000,1000 --del-algo=basic --del-glue=2 --otfs=2 --reverse-arcs=1 --counter-restarts=3 --contraction=250"
+#define TRENDY_SOLVE "--heuristic=Vsids --restarts=D,100,0.7 --deletion=3,50 --del-init=500,19500 --del-grow=1.1,20.0,x,100,1.5 --del-cfl=+,10000,2000 --del-algo=basic --del-glue=2 --strengthen=recursive --update-lbd --otfs=2 --save-p=75 --counter-restarts=3 --counter-bump=1023 --reverse-arcs=2  --contraction=250 --loops=common"
+
+class ClaspSolver::ClaspInHexAppOptions:
+  public ProgramOptions::AppOptions
+{
+  protected:
+    typedef ProgramOptions::AppOptions Base;
+  public:
+    ClaspInHexAppOptions(Clasp::Solver& solver):
+      solverConfig(solver),
+      searchOptions(&solverConfig),
+      argc(0),
+      argv(0)
+    {
+    }
+
+    ~ClaspInHexAppOptions()
+    {
+      if( argv )
+      {
+	char** ptr = argv;
+	while( *ptr )
+	{
+	  free(*ptr);
+	  ptr++;
+	}
+	delete[] argv;
+      }
+    }
+
+    void configure(std::string claspconfigstr)
+    {
+      if( claspconfigstr == "default" )
+	claspconfigstr = DEF_SOLVE;
+      else if( claspconfigstr == "frumpy" )
+	claspconfigstr = FRUMPY_SOLVE;
+      else if( claspconfigstr == "jumpy" )
+	claspconfigstr = JUMPY_SOLVE;
+      else if( claspconfigstr == "handy" )
+	claspconfigstr = HANDY_SOLVE;
+      else if( claspconfigstr == "crafty" )
+	claspconfigstr = CRAFTY_SOLVE;
+      else if( claspconfigstr == "trendy" )
+	claspconfigstr = TRENDY_SOLVE;
+      // otherwise let the config string itself be parsed by clasp
+
+      // parse clasp options using clasp option parsers
+      // (this automatically configures the clasp solver which was bound to the claspAppOptionsHelper object in the constructor)
+      parse(claspconfigstr);
+    }
+
+    void parse(const std::string& config)
+    {
+      assert(argc == 0 && argv == 0);
+      
+      const char* appName = "clasp-in-hex";
+      // prepare simulated commandline
+      std::vector<std::string> simulatedCommandline;
+      // first argument = binary name
+      //simulatedCommandline.push_back(appName);
+
+      // parse into tokens to present as if it was a commandline
+      boost::char_separator<char> sep(" ");
+      typedef boost::tokenizer<boost::char_separator<char> > tizer;
+      tizer t(config, sep);
+      for(tizer::iterator it = t.begin();
+	  it != t.end(); ++it)
+      {
+	simulatedCommandline.push_back(*it);
+      }
+      LOG(DBG,"clasp configuration string '" << config << "' was tokenized into " << printvector(simulatedCommandline, "<'", "','", "'>"));
+
+      // put simulated arguments into posix main() style arguments
+      argc = simulatedCommandline.size();
+      argv = new char*[argc+1];
+      for(int idx = 0; idx < argc; ++idx)
+      {
+	// let's hope the option parser will not write past the
+	// end of the char* strings or try to reallocate them
+	//argv[idx] = &(simulatedCommandline[idx][0]);
+	argv[idx] = strdup(simulatedCommandline[idx].c_str());
+      }
+      argv[argc] = 0;
+
+      //if(! Base::parse(argc, argv, appName, Clasp::parsePositional) )
+      if( !Base::parse(argc, argv, appName, myparsePositional) )
+      {
+	LOG(ERROR,"parsing clasp options '" + config + "' failed: '" +
+	   messages.error + "' (we support SearchOptions, try --help)");
+      }
+    }
+
+  protected:
+    virtual void initOptions(ProgramOptions::OptionContext& root)
+    {
+      searchOptions.initOptions(root);
+    }
+
+    virtual bool validateOptions(const ProgramOptions::OptionContext& root, const ProgramOptions::ParsedOptions& o, ProgramOptions::Messages& m)
+    {
+      return searchOptions.validateOptions(root, o, m);
+    }
+
+    virtual void printHelp(const ProgramOptions::OptionContext& root)
+    {
+      std::cout << "Configuration for embedded clasp, see potassco http://potassco.sourceforge.net/#clasp" << std::endl;
+      ProgramOptions::FileOut out(stdout);
+      root.description(out);
+    }
+      
+    virtual void printVersion(const ProgramOptions::OptionContext& root)
+    {
+      std::cout << "TODO (clasp version)" << std::endl;
+    }
+
+  protected:
+    Clasp::SolverConfig solverConfig;
+    Clasp::SearchOptions searchOptions;
+    // according to posix, these must be retained and must be modifiable until the end of the program
+    int argc;
+    char** argv;
+};
+
+ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm):
+ 	ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
+	claspInstance(),
+	claspAppOptionsHelper(new ClaspInHexAppOptions(*claspInstance.master()))
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(agp)");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
-  // by PS (experimental) set heuristics
-  if( c.config.getOption("ClaspHeuristicsVsids") != 0 )
-  {
-    Clasp::ClaspVsids* vsids = new Clasp::ClaspVsids(0.95);
-    claspInstance.master()->setHeuristic(3, vsids);
-    // TODO --sat-pre=20,25,120 --trans-ext=dynamic
-  }
+	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	bool initiallyInconsistent = sendProgramToClasp(p, dm);
@@ -1069,11 +1221,15 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 }
 
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
+ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
+	claspInstance(),
+	claspAppOptionsHelper(new ClaspInHexAppOptions(*claspInstance.master()))
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(ngs)");
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
+
+	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 

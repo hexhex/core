@@ -57,6 +57,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
@@ -86,6 +87,7 @@ public:
 	};
 
 private:
+	class ClaspInHexAppOptions;
 	class ClaspTermination : public std::runtime_error{
 	public:
 		ClaspTermination() : std::runtime_error("ClaspThread: Termination request"){}
@@ -195,6 +197,9 @@ protected:
 	ExternalPropagator* ep;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
 	std::map<Clasp::Literal, std::vector<IDAddress> > claspToHex;
+
+	// for clasp configuration using clasp config parsers (must retain commandline cache for lifetime of clasp, so must be stored here)
+	boost::scoped_ptr<ClaspInHexAppOptions> claspAppOptionsHelper;
 
 	// cache for propagation:
 	std::vector<IDAddress> claspSymtabToHex; // for each entry in the optimized clasp symbol table we have one IDAddress here
