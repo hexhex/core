@@ -1201,16 +1201,16 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	cc.applyHeuristic(claspConfig);
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
-	bool initiallyInconsistent = sendProgramToClasp(p, dm);
-	DBGLOG(DBG, "Initially inconsistent: " << initiallyInconsistent);
+	bool initiallyInconsistent = false;
 
-	// if the program is initially inconsistent we do not need to do a search at all
-	modelCount = 0;
-	if (initiallyInconsistent){
-		endOfModels = true;
-		ep = NULL;
-		claspThread = NULL;
-	}else{
+	do
+	{
+		initiallyInconsistent = sendProgramToClasp(p, dm);
+		if( initiallyInconsistent )
+			break;
+
+		modelCount = 0;
+
 		if (pb.dependencyGraph() && pb.dependencyGraph()->nodes() > 0) {
 			DBGLOG(DBG, "Adding unfounded set checker");
 			Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
@@ -1238,7 +1238,18 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 		// endInit() must be called once before the search starts
 		DBGLOG(DBG, "Finalizing clasp initialization");
-		claspInstance.endInit();
+		initiallyInconsistent = !claspInstance.endInit();
+		if( initiallyInconsistent )
+		  break;
+	}
+	while(false);
+
+	if( initiallyInconsistent )
+	{
+	  LOG(DBG, "Initially inconsistent!");
+	  endOfModels = true;
+	  ep = NULL;
+	  claspThread = NULL;
 	}
 
 	if (!strictSingleThreaded){
@@ -1267,16 +1278,16 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 
-	bool initiallyInconsistent = sendNogoodSetToClasp(ns);
-	DBGLOG(DBG, "Initially inconsistent: " << initiallyInconsistent);
+	bool initiallyInconsistent = false;
+	
+	do
+	{
+		initiallyInconsistent = sendNogoodSetToClasp(ns);
+		if( initiallyInconsistent )
+			break;
 
-	// if the program is initially inconsistent we do not need to do a search at all
-	modelCount = 0;
-	if (initiallyInconsistent){
-		endOfModels = true;
-		ep = NULL;
-		claspThread = NULL;
-	}else{
+		modelCount = 0;
+
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
 		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
@@ -1289,8 +1300,20 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 
 		// endInit() must be called once before the search starts
 		DBGLOG(DBG, "Finalizing clasp initialization");
-		claspInstance.endInit();
+		initiallyInconsistent = !claspInstance.endInit();
+		if( initiallyInconsistent )
+		  break;
 	}
+	while(false);
+
+	if( initiallyInconsistent )
+	{
+	  LOG(DBG, "Initially inconsistent!");
+	  endOfModels = true;
+	  ep = NULL;
+	  claspThread = NULL;
+	}
+
 
 	if (!strictSingleThreaded){
 		// We now return to dlvhex code which is not in this class.
