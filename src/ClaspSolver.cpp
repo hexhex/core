@@ -54,6 +54,7 @@
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
 #include "clasp/heuristics.h"
+#include "clasp/satelite.h"
 
 // careful! clasp and gringo use different kinds of program_options, they are not binary compatible, i.e., can never be used in the same binary or even libaries
 #include "program_opts/program_options.h"
