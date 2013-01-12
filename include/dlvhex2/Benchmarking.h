@@ -103,6 +103,11 @@
     BOOST_SCOPE_EXIT( (sid) ) { \
       DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid); \
     } BOOST_SCOPE_EXIT_END
+# define DLVHEX_BENCHMARK_SUSPEND_SCOPE(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid,false); \
+    BOOST_SCOPE_EXIT( (sid) ) { \
+      DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid); \
+    } BOOST_SCOPE_EXIT_END
 # define DLVHEX_BENCHMARK_SCOPE_TPL(sid) \
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid); \
     BOOST_SCOPE_EXIT_TPL( (sid) ) { \
@@ -121,6 +126,7 @@
 # define DLVHEX_BENCHMARK_START(sid)                      do { } while(0)
 # define DLVHEX_BENCHMARK_STOP(sid)                       do { } while(0)
 # define DLVHEX_BENCHMARK_SUSPEND(sid)                    do { } while(0)
+# define DLVHEX_BENCHMARK_SUSPEND_SCOPE(sid)              do { } while(0)
 # define DLVHEX_BENCHMARK_COUNT(sid,num)                  do { } while(0)
 # define DLVHEX_BENCHMARK_SCOPE(sid)                      do { } while(0)
 # define DLVHEX_BENCHMARK_SCOPE_TPL(sid)                  do { } while(0)
@@ -307,7 +313,7 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
         " total:";
       printInSecs(*output, st.duration, 6) << "s" <<
         " last:";
-      printInSecs(*output, dur, 2) << "s" << std::endl;
+      printInSecs(*output, dur, 2) << "s" << ((st.running)?"(runs)":"") << std::endl;
     }
   }
   else
@@ -339,11 +345,13 @@ void BenchmarkController::stop(ID id, bool count)
   if( st.running )
   {
     Duration dur = boost::posix_time::microsec_clock::local_time() - st.start;
-    if( count )
-      st.count++;
     st.duration += dur;
-    printInformationContinous(st,dur);
     st.running = false;
+    if( count )
+		{
+      st.count++;
+			printInformationContinous(st,dur);
+		}
   }
 }
 

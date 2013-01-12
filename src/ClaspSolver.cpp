@@ -70,9 +70,9 @@ DLVHEX_NAMESPACE_BEGIN
 // ============================== ClaspSolver ==============================
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
-
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
-	DBGLOG(DBG, "ClaspThread: Start producing a model");
+	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
 
 	// create a model
 	// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
@@ -99,9 +99,9 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 			boost::mutex::scoped_lock lock(cs.modelsMutex);
 			while(cs.preparedModels.size() >= cs.modelqueueSize){
 				DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved by MainThread");
-				DLVHEX_BENCHMARK_SUSPEND(sidsolvertime);
+				//DLVHEX_BENCHMARK_SUSPEND(sidsolvertime);
 				cs.waitForQueueSpaceCondition.wait(lock);
-				DLVHEX_BENCHMARK_START(sidsolvertime);
+				//DLVHEX_BENCHMARK_START(sidsolvertime);
 			}
 
 			DBGLOG(DBG, "Adding new model to model queue");
@@ -115,13 +115,17 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 		DBGLOG(DBG, "Notifying MainThread about new model");
 		cs.sem_answer.post();
 		DBGLOG(DBG, "ClaspThread: Waiting for further model requests");
-		DLVHEX_BENCHMARK_SUSPEND(sidsolvertime);
+		//DLVHEX_BENCHMARK_SUSPEND(sidsolvertime);
 		cs.sem_request.wait();
-		DLVHEX_BENCHMARK_START(sidsolvertime);
+		//DLVHEX_BENCHMARK_START(sidsolvertime);
 	}
 
 	static const bool quickTerminationMethod = true;
-	if (quickTerminationMethod && cs.terminationRequest) throw ClaspSolver::ClaspTermination();
+	if (quickTerminationMethod && cs.terminationRequest)
+	{
+	  LOG(DBG,"throwing ClaspTermination");
+	  throw ClaspSolver::ClaspTermination();
+	}
 }
 
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
@@ -132,6 +136,8 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs): needReset(
 }
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
+	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
 	// thread-safe access to the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
 	if (cs.propagator.size() != 0){
@@ -246,7 +252,7 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	if( skipSoManyPropagates > skipCount )
 	{
 		skipSoManyPropagates = 0;
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (propagate)");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (prop)");
 		return prop(s);
 	}
 	else
