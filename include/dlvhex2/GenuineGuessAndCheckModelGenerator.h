@@ -124,7 +124,6 @@ protected:
 
   std::vector<bool> eaVerified;
   std::vector<bool> eaEvaluated;
-  boost::unordered_map<IDAddress, std::vector<int> > unverifyWatchList;
   boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList;
   ExternalAtomEvaluationHeuristicsPtr externalAtomEvalHeuristics;
   UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
@@ -194,9 +193,9 @@ protected:
    * @param eaIndex The index of the inner external atom
    * @param search Search interpretation; can be 0 to indicate that all atoms of the EA's mask are eligable
    * @param truthValue Indicates whether to search for a true or a false atom in search
-   * @return ID ID of an atom to watch or ID_FAIL if none exists
+   * @return Address of an atom to watch or ALL_ONES if none exists
    */
-  ID getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue);
+  IDAddress getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue);
 
   /**
    * Heuristically decides if and which external atoms we evaluate.

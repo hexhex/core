@@ -300,15 +300,9 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
       // watch all atoms in the scope of the external atom for unverification
       bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
       bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().end();
-      bool first = true;
-      while (en < en_end){
-        unverifyWatchList[*en].push_back(i);
-
+      if (en < en_end){
         // watch one input atom for verification
-        if (first) verifyWatchList[*en].push_back(i);
-        first = false;
-
-        en++;
+        verifyWatchList[*en].push_back(i);
       }
     }
     externalAtomEvalHeuristics = factory.ctx.externalAtomEvaluationHeuristicsFactory->createHeuristics(this, reg);
@@ -581,19 +575,56 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 	return false;
 }
 
-ID GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
+IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "getWatchedLiteral");
 	bm::bvector<>::enumerator eaDepAtoms = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
 	bm::bvector<>::enumerator eaDepAtoms_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
+	bm::bvector<>::enumerator searchb = search->getStorage().first();
+	bm::bvector<>::enumerator searchb_end = search->getStorage().end();
 
+	#if 1
+	// go through eamask
 	while (eaDepAtoms < eaDepAtoms_end){
+		// if search bitset has correct truth value
 		if (search->getFact(*eaDepAtoms) == truthValue){
 			DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
-			return reg->ogatoms.getIDByAddress(*eaDepAtoms);
+			return *eaDepAtoms; // reg->ogatoms.getIDByAddress(*eaDepAtoms);
 		}
 		eaDepAtoms++;
 	}
-	return ID_FAIL;
+	#else
+	// optimized for truthValue (not a good optimization, as optimization on small eamask is the best we can do, and it is done above) XXX only thing we could improve is a queue of watches so that we have constant time for getWatchedLiteral
+	if( truthValue )
+	{
+	  // looking for the first common bit in eaDepAtoms and searchb
+	  while( eaDepAtoms != eaDepAtoms_end && searchb != searchb_end ) {
+	    if( *eaDepAtoms == *searchb ) {
+	      DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
+	      return *eaDepAtoms; // reg->ogatoms.getIDByAddress(*eaDepAtoms);
+	    } else if( *eaDepAtoms < *searchb ) {
+	      eaDepAtoms++;
+	    } else { assert( *eaDepAtoms > *searchb );
+	      searchb++;
+	    }
+	  }
+	} else {
+	  // looking for the first bit in eaDepAtoms that is not in searchb
+	  while( eaDepAtoms != eaDepAtoms_end && searchb != searchb_end ) {
+	    if( *eaDepAtoms == *searchb ) { // we need to find a different pair
+	      eaDepAtoms++;
+	      searchb++;
+	    } else if( *eaDepAtoms < *searchb ) { // found it!
+	      DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
+	      return *eaDepAtoms; //reg->ogatoms.getIDByAddress(*eaDepAtoms);
+	    } else { assert( *eaDepAtoms > *searchb ); // we found a bit that is in searchb but not in eaDepAtoms
+	      searchb++;
+	    }
+	  }
+	}
+	#endif
+
+	return ID::ALL_ONES; //ID_FAIL;
 }
 
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
@@ -601,39 +632,63 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 
 	DBGLOG(DBG, "Evaluating External Atoms");
 
-	// for all changed atoms
-	bm::bvector<>::enumerator en = changed->getStorage().first();
+	bm::bvector<>::enumerator en;
+	bm::bvector<>::enumerator en_begin = changed->getStorage().first();
 	bm::bvector<>::enumerator en_end = changed->getStorage().end();
 
-	bool conflict = false;
-	while (en < en_end){
-		DBGLOG(DBG, "Processing watches for atom " << *en);
+	{
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms wl");
 
-		// unverify/unfalsify external atoms which watch this atom
-		BOOST_FOREACH (int eaIndex, unverifyWatchList[*en]){
-			DBGLOG(DBG, "Checking if " << eaIndex << " is marked as evaluated");
-			if (eaEvaluated[eaIndex]){
-				DBGLOG(DBG, "Unverifying/Unfalsifying atom " << factory.innerEatoms[eaIndex]);
-				// unverify
-				eaVerified[eaIndex] = false;
-				eaEvaluated[eaIndex] = false;
+	// for each eatom, if it is evaluated:
+	// * look if there is a bit in changed that matches the eatom mask
+	// * if yes, unverify eatom and update watches:
+	//   * if bit became assigned/defined set watch on unassigned bit that matches eatom mask
+	//   * if bit became unassigned/undefined set watch on changed bit that matches eatom mask
 
-				if (!factWasSet->getFact(*en)){
-					// watch a yet unassigned atom such that the external atom depends on it
-					ID id = getWatchedLiteral(eaIndex, factWasSet, false);
-					assert(id != ID_FAIL);
-					verifyWatchList[id.address].push_back(eaIndex);
-				}else{
-					// watch a changed atom
-					ID id = getWatchedLiteral(eaIndex, changed, true);
-					assert(id != ID_FAIL);
-					verifyWatchList[id.address].push_back(eaIndex);
-				}
-			}
-		}
-		en++;
+	// unverify/unfalsify external atoms which watch this atom
+	for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
+	  if( !eaEvaluated[eaIndex] )
+	    // we don't need to verify watches because the eatom was not evaluated
+	    continue;
+
+	  const InterpretationConstPtr& mask = annotatedGroundProgram.getEAMask(eaIndex)->mask();
+
+	  // check if something in its mask was changed
+	  en = en_begin;
+	  while (en < en_end){
+	    if( mask->getFact(*en) )
+	    {
+	      // yes, it changed, so we unverify and leave
+	      DBGLOG(DBG, "atom " << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg) <<
+		 " changed and unverified external atom " <<
+		 printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
+
+	      // unverify
+	      eaVerified[eaIndex] = false;
+	      eaEvaluated[eaIndex] = false;
+
+	      // new watches
+	      if (!factWasSet->getFact(*en)){
+		      // watch a yet unassigned atom such that the external atom depends on it
+		      IDAddress id = getWatchedLiteral(eaIndex, factWasSet, false);
+		      assert(id != ID::ALL_ONES);
+		      verifyWatchList[id].push_back(eaIndex);
+	      }else{
+		      // watch a changed atom
+		      IDAddress id = getWatchedLiteral(eaIndex, changed, true);
+		      assert(id != ID::ALL_ONES);
+		      verifyWatchList[id].push_back(eaIndex);
+	      }
+
+	      // leave, we are done with this external atom as we set eaEvaluated to false
+	      break;
+	    }
+	    en++;
+	  }
+	}
 	}
 
+	bool conflict = false;
 	en = changed->getStorage().first();
 	en_end = changed->getStorage().end();
 	while (en < en_end){
@@ -649,8 +704,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 					}
 					if (!eaEvaluated[eaIndex]){
 						// find a new yet unassigned atom to watch
-						ID id = getWatchedLiteral(eaIndex, factWasSet, false);
-						if (id != ID_FAIL) verifyWatchList[id.address].push_back(eaIndex);
+						IDAddress id = getWatchedLiteral(eaIndex, factWasSet, false);
+						if (id != ID::ALL_ONES)
+						  verifyWatchList[id].push_back(eaIndex);
 					}
 				}
 			}
@@ -665,6 +721,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 }
 
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtom");
 
 	// prepare EA evaluation
 	InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
