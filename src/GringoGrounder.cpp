@@ -597,7 +597,9 @@ int GringoGrounder::doRun()
 		else
 		{
 			IncConfig config;
-			Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
+			bool verbose = true;
+			TermExpansionPtr expansion(new TermExpansion());
+			Grounder  g(o.get(), verbose, expansion);
 			Parser    p(&g, config, inputStreams, gringo.compat);
 
 			config.incBegin = 1;
@@ -647,22 +649,20 @@ int GringoGrounder::doRun()
 	}
 }
 
-ProgramOptions::PosOption GringoGrounder::getPositionalParser() const
-{
-	return &parsePositional;
-}
+detail::GringoOptions::GringoOptions()
+	: smodelsOut(false)
+	, textOut(false)
+	, metaOut(false)
+	, groundOnly(false)
+	, ifixed(1)
+	, ibase(false)
+	, groundInput(false)
+	, disjShift(false)
+	, compat(false)
+	, stats(false)
+	, iexpand(IEXPAND_ALL)
+{ }
 
-void GringoGrounder::handleSignal(int sig)
-{
-	(void)sig;
-	printf("\n*** INTERRUPTED! ***\n");
-	_exit(S_UNKNOWN);
-}
-
-std::string GringoGrounder::getVersion() const
-{
-	return GRINGO_VERSION;
-}
 
 DLVHEX_NAMESPACE_END
 

@@ -42,17 +42,55 @@
 #include <map>
 #include <sstream>
 
-#include "gringo/gringo_options.h"
 #include "gringo/lparseoutput.h"
-#include "gringo/main_app.h"
 #include "gringo/streams.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
+namespace detail
+{
+  // gringo config substitute (so that we only need one kind of libprogram_opts
+  class GringoOptions
+  {
+  public:
+    enum IExpand { IEXPAND_ALL, IEXPAND_DEPTH };
+
+  public:
+    GringoOptions();
+
+    // AppOptions interface
+    //void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
+    //bool validateOptions(ProgramOptions::OptionValues& values, Messages&);
+    //void addDefaults(std::string& def);
+    //TermExpansionPtr termExpansion(IncConfig &config) const;
+
+    /** The constant assignments in the format "constant=term" */
+    std::vector<std::string> consts;
+    /** Whether to print smodels output */
+    bool smodelsOut;
+    /** Whether to print in lparse format */
+    bool textOut;
+    bool metaOut;
+    /** True iff some output was requested*/
+    bool groundOnly;
+    int ifixed;
+    bool ibase;
+    bool groundInput;
+    /** whether disjunctions will get shifted */
+    bool disjShift;
+    /** filename for optional dependency graph dump */
+    std::string depGraph;
+    bool compat;
+    /** whether statistics will be printed to stderr */
+    bool stats;
+    IExpand iexpand;
+  };
+}
+
 /**
  * Gringo command line application.
  */
-class GringoGrounder : public MainApp, public GenuineGrounder
+class GringoGrounder: public GenuineGrounder
 {
 private:
 	ProgramCtx& ctx;
@@ -60,10 +98,7 @@ private:
 	OrdinaryASPProgram groundProgram;
 	ID intPred, anonymousPred;
 
-	GringoOptions gringo;
-//	::Module *base_;
-//	::Module *cumulative_;
-//	::Module *volatile_;
+	detail::GringoOptions gringo;
 
 	class Printer : public RawPrinter{
 	public:
@@ -138,30 +173,7 @@ protected:
 	  * \returns input stream containing the constant definitions in ASP
 	  */
 	Streams::StreamPtr constStream() const;
-	// ---------------------------------------------------------------------------------------
-	// AppOptions interface
-	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {
-		gringo.initOptions(root, hidden);
-	}
-	void addDefaults(std::string& defaults) {
-		gringo.addDefaults(defaults);
-	}
-	bool validateOptions(ProgramOptions::OptionValues& v, Messages& m) {
-		return gringo.validateOptions(v, m);
-	}
-	// ---------------------------------------------------------------------------------------
-	// Application interface
-	ProgramOptions::PosOption getPositionalParser() const;
-	void handleSignal(int sig);
-/*
-	void setIinit(IncConfig &cfg);
-	void groundStep(Grounder &g, IncConfig &cfg, int step, int goal);
-	void groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal);
-	void createModules(Grounder &g);
-*/
 	int  doRun();
-	std::string getVersion() const;
-	// ---------------------------------------------------------------------------------------
 };
 
 DLVHEX_NAMESPACE_END
