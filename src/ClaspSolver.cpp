@@ -205,7 +205,6 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		}
 
 		DBGLOG(DBG, "Calling external propagators");
-		bool conflict = false;
 		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
 			cb->propagate(interpretation, factWasSet, changed);
 		}
