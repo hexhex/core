@@ -399,7 +399,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 
 	// transfer nogoods to the solver
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
-		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned IO-Nogoods", 1);
+		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
 			if (factory.ctx.config.getOption("GenuineSolver") >= 3){
 				if (i == 0) std::cerr << "( NOTE: With clasp backend, learned nogoods become effective with a delay because of multithreading! )" << std::endl << std::endl;
