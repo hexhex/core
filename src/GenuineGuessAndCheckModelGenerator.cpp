@@ -400,6 +400,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	// transfer nogoods to the solver
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", 1);
+		const Nogood& ng = learnedEANogoods->getNogood(i);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
 		  	// we cannot use i==1 because of learnedEANogoods.clear() below in this function
 		 	static bool first = true; 
@@ -412,12 +413,13 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 			  }
 			  first = false;
 			}
+			LOG(DBG,"learned nogood " << ng.getStringRepresentation(reg));
 		}
-		if (learnedEANogoods->getNogood(i).isGround()){
-			solver->addNogood(learnedEANogoods->getNogood(i));
+		if (ng.isGround()){
+			solver->addNogood(ng);
 		}else{
 			// keep nonground nogoods beyond the lifespan of this model generator
-			factory.globalLearnedEANogoods->addNogood(learnedEANogoods->getNogood(i));
+			factory.globalLearnedEANogoods->addNogood(ng);
 		}
 	}
 
