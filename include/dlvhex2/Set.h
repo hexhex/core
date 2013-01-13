@@ -342,6 +342,10 @@ public:
 		return const_set_iterator<T>(*this, p);
 	}
 
+	bool empty() const{
+		return rsize == 0;
+	}
+
 	void clear(){
 		rsize = 0;
 	}
