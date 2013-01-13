@@ -265,7 +265,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	learnedEANogoodsTransferredIndex = 0;
 	nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
 
-	solver->addPropagator(this);
+	if( factory.ctx.config.getOption("NoPropagator") == 0 )
+	  solver->addPropagator(this);
     }
 
     setHeuristics();
@@ -454,7 +455,6 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 			// try to verify
 			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " is not verified, trying to do this now");
 			verifyExternalAtom(eaIndex, modelCandidate);
-			eaEvaluated[eaIndex] = true;
 			DBGLOG(DBG, "Verification result: " << eaVerified[eaIndex]);
 
 			if (eaVerified[eaIndex] == false){
@@ -706,7 +706,12 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 				if (!eaEvaluated[eaIndex]){
 					// evaluate external atom if the heuristics decides so
 					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-					if (externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed)){
+					bool doEval;
+					{
+					  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
+					  doEval = externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed);
+					}
+					if (doEval){
 						// evaluate it
 						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
 					}
@@ -757,7 +762,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 		bool verify = vcb.verify();
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
 		eaVerified[eaIndex] = verify;
-		eaEvaluated[eaIndex] = true;
+		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
+		if( factory.ctx.config.getOption("NoPropagator") == 0 )
+		  eaEvaluated[eaIndex] = true;
 
 		return !verify;
 	}else{

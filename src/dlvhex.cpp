@@ -399,6 +399,7 @@ int main(int argc, char *argv[])
 	// frumpy is the name of the failsafe clasp config option
 	pctx.config.setStringOption("ClaspConfiguration","frumpy");
 	pctx.config.setOption("DumpStatsErdi",0); // perhaps only temporary
+	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -670,6 +671,7 @@ void processOptionsPrePlugin(
 	};
 
   // default settings
+  pctx.config.setOption("NoPropagator", 1);
   pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
@@ -1165,6 +1167,7 @@ void processOptionsPrePlugin(
 				else if (heur == "never")
 				{
 					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+					pctx.config.setOption("NoPropagator", 1);
 				}
 				else
 				{
