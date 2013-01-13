@@ -1243,6 +1243,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
+#if 0
 	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
 
 	// experimental section
@@ -1262,6 +1263,11 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	// use facade in a poor way to set heuristics
 	Clasp::ClaspConfig cc;
 	cc.applyHeuristic(claspConfig);
+#else
+
+	  Clasp::ClaspVsids* vsids = new Clasp::ClaspVsids(0.95);
+	  claspInstance.master()->setHeuristic(3, vsids);
+#endif
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	bool initiallyInconsistent = false;
