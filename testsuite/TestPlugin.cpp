@@ -1517,6 +1517,53 @@ public:
   }
 };
 
+// just always true and takes 5 constant inputs
+class TestTrueMultiInpAtom:
+  public PluginAtom
+{
+public:
+  TestTrueMultiInpAtom():
+    PluginAtom("testTrueMultiInp", true)
+  {
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+		Tuple t;
+		answer.get().push_back(t);
+  }
+};
+
+// takes 5 constant inputs, just always returns integer 1 in output
+class TestTrueMultiInpAtom2:
+  public PluginAtom
+{
+public:
+  TestTrueMultiInpAtom2():
+    PluginAtom("testTrueMultiInp2", true)
+  {
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+		Tuple t;
+		t.push_back(ID::termFromInteger(1));
+		answer.get().push_back(t);
+  }
+};
+
 
 class TestFinalCallback:
 	public FinalCallback
@@ -1639,6 +1686,8 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestCycleAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestAppendAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestDisjAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom2, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
