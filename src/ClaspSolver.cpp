@@ -476,12 +476,22 @@ std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(const Clasp::LitVe
 
 	std::vector<std::vector<ID> > ret;
 
-	BOOST_FOREACH (Clasp::Literal l, litvec){
+	BOOST_FOREACH (Clasp::Literal lit, litvec){
 		// create for each clasp literal a vector of all possible back-translations to dlvhex
 		std::vector<ID> translations;
-		for (int i = 0; i < claspToHex[l].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[l][i]));
-		Clasp::Literal ln(l.var(), !l.sign());
-		for (int i = 0; i < claspToHex[ln].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[ln][i]));
+		uint32_t l = lit.index(); // ignore watch flags
+		for(unsigned pos = 0; pos < 2; ++pos)
+		{
+			uint32_t idx = Clasp::Literal(lit.var(), pos == 1).index();
+			assert(idx < claspToHex.size());
+			if( !!claspToHex[idx] )
+			{
+				for (unsigned i = 0; i < claspToHex[idx]->size(); ++i)
+					translations.push_back(ID(
+						ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK,
+						(*claspToHex[idx])[i]));
+			}
+		}
 		ret.push_back(translations);
 	}
 	return ret;
@@ -575,6 +585,7 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	DBGLOG(DBG, "Building atom index");
 
 	claspInstance.symTab().startInit();
+	resetAndResizeClaspToHex((claspInstance.numVars()+1)*2);
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
@@ -582,13 +593,34 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
 				std::string str = idAddressToString(lit.address);
 				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
-				hexToClasp[lit.address] = Clasp::Literal(c, true);
-				claspToHex[Clasp::Literal(c, true)].push_back(lit.address);
-				claspInstance.symTab().addUnique(c, str.c_str()).lit = Clasp::Literal(c, true);
+				Clasp::Literal clasplit(c, true);
+				hexToClasp[lit.address] = clasplit;
+				assert(clasplit.index() < claspToHex.size());
+				AddressVector* &c2h = claspToHex[clasplit.index()];
+				if( !c2h )
+				  c2h = new AddressVector;
+				c2h->push_back(lit.address);
+				claspInstance.symTab().addUnique(c, str.c_str()).lit = clasplit;
 			}
 		}
 	}
 	claspInstance.symTab().endInit();
+}
+
+// free all non-NULL Pointers above size
+// resize vector
+// set all to NULL
+// can be used to deallocate
+void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
+{
+	for(unsigned u = 0; u < claspToHex.size(); ++u)
+	{
+		if( claspToHex[u] )
+			delete claspToHex[u];
+	}
+	claspToHex.resize(size, NULL);
+	for(unsigned u = 0; u < claspToHex.size(); ++u)
+		claspToHex[u] = NULL;
 }
 
 void ClaspSolver::buildOptimizedSymbolTable(){
@@ -604,10 +636,19 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	// go through symbol table
 	const Clasp::SymbolTable& symTab = claspInstance.symTab();
 	claspSymtabToHex.reserve(symTab.size());
+       	// each variable can be a positive or negative literal, literals are (var << 1 | sign)
+	// build empty set of NULL-pointers to vectors
+       	// (many literals will be internal variables and have no HEX equivalent)
+	resetAndResizeClaspToHex((claspInstance.numVars()+1)*2);
+	LOG(DBG, "Symbol table of optimized program:");
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		hexToClasp[hexAdr] = it->second.lit;
-		claspToHex[it->second.lit].push_back(hexAdr);
+		assert(it->second.lit.index() < claspToHex.size());
+		AddressVector* &c2h = claspToHex[it->second.lit.index()];
+		if( !c2h )
+		  c2h = new AddressVector;
+		c2h->push_back(hexAdr);
 		claspSymtabToHex.push_back(hexAdr);
 #ifndef NDEBUG
 		ss << "Hex " << hexAdr << " <--> " << (it->second.lit.sign() ? "" : "!") << it->second.lit.var() << std::endl;
@@ -1394,6 +1435,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 
 ClaspSolver::~ClaspSolver(){
 	shutdownClasp();
+	resetAndResizeClaspToHex(0);
 
 	DBGLOG(DBG, "Deleting ClauseCreator");
 	delete clauseCreator;

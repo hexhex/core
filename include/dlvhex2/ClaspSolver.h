@@ -197,7 +197,11 @@ protected:
 	Clasp::ClauseCreator* clauseCreator;
 	ExternalPropagator* ep;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
-	std::map<Clasp::Literal, std::vector<IDAddress> > claspToHex;
+	typedef std::vector<IDAddress> AddressVector;
+	// TODO wrap functionality of claspToHex in class
+	std::vector<AddressVector*> claspToHex; // literal index to list of HEX ogatom indices (we need to use literal index due to watch flag in Clasp::Literal)
+	void resetAndResizeClaspToHex(unsigned size);
+	//std::map<uint32_t, std::vector<IDAddress> > claspToHex;
 
 	// for clasp configuration using clasp config parsers (must retain commandline cache for lifetime of clasp, so must be stored here)
 	boost::scoped_ptr<ClaspInHexAppOptions> claspAppOptionsHelper;
