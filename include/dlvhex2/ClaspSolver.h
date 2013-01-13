@@ -123,7 +123,8 @@ private:
 		InterpretationPtr changed;
 	public:
 		ExternalPropagator(ClaspSolver& cs);
-		bool prop(Clasp::Solver& s, bool onlyOnCurrentDL = false);
+		void prop(Clasp::Solver& s);
+		virtual bool propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL = false);
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
@@ -131,7 +132,7 @@ private:
 	};
 
 	// interface to clasp internals
-	std::pair<bool, bool> addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL = false);
+	std::pair<bool, bool> addNogoodToClasp(Clasp::Solver& s, const Nogood& ng, bool onlyOnCurrentDL = false);
 	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
@@ -182,7 +183,7 @@ protected:
 	boost::mutex propagatorMutex;	// exclusive access of propagator
 	Set<PropagatorCallback*> propagator;
 	boost::mutex nogoodsMutex;	// exclusive access of nogoods
-	std::queue<Nogood> nogoods;
+	std::list<Nogood> nogoods;
 
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;

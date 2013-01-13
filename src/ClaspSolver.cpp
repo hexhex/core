@@ -136,12 +136,16 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs): needReset(
 	reset();
 }
 
-bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
-	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
+void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
+	if (cs.propagator.size() == 0)
+	  return;
+
 	// thread-safe access to the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
-	if (cs.propagator.size() != 0){
+
+	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
+
 		needReset = true;
 
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
@@ -218,26 +222,69 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 			DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
 			cs.sem_dlvhexDataStructures.post();
 		}
-	}
+}
 
+bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL){
 	// add the new nogoods to clasp
+  	// if onlyOnCurrentDL, we only 
 	bool inconsistent = false;
+	if( !cs.nogoods.empty() )
 	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::propNN");
 	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop an");
 
-		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
-
-		bool processed = true;
-		while (cs.nogoods.size() > 0 && processed && !inconsistent){
-			Nogood& ng = cs.nogoods.front();
-			std::pair<bool, bool> ret = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
-			processed = ret.first;
-			inconsistent = ret.second; // we must not add more clauses if we have already a conflict
-			if (processed) cs.nogoods.pop();
+		unsigned count = 0, success = 0;
+		if( onlyOnCurrentDL )
+		{
+		  // transfer the first we can process (and this one must cause it to be inconsistent)
+		  // do not discard unprocessed, as we might transfer them later in a !onlyOnCurrentDL call
+		  for(std::list<Nogood>::iterator it = cs.nogoods.begin();
+		      it != cs.nogoods.end(); ++it)
+		  {
+			Nogood& ng = *it;
+			bool proc, inc;
+			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			count++;
+			//LOG(DBG, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
+			if( proc )
+			{
+			  assert(inc && "in onlyOnCurrentDL mode, the first processed must per definition cause inconsistency");
+			  cs.nogoods.erase(it);
+			  success++;
+			  inconsistent = true;
+			  break;
+			}
+		  }
 		}
+		else
+		{
+		  // transfer until we cause inconsistency
+		  // discard even if unprocessed (might be duplicates)
+		  std::list<Nogood>::iterator it;
+		  for(it = cs.nogoods.begin();
+		      it != cs.nogoods.end(); ++it)
+		  {
+			Nogood& ng = *it;
+			bool proc, inc;
+			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			count++;
+			//LOG(DBG, "proc " << proc << " inc " << inc << " for nogood " << ng.getStringRepresentation(cs.reg));
+			if( inc )
+			{
+			  inconsistent = true;
+			  // increase it so that we will erase also this element
+			  it++;
+			  break;
+			}
+			if( proc )
+			  success++;
+		  }
+		  cs.nogoods.erase(cs.nogoods.begin(), it);
+		}
+		LOG(DBG, "Transferred " << success << " nogoods from external learners to clasp -> " <<
+		    (inconsistent ? "" : "not ") << "inconsistent "
+		    "(onlyOnCurrentDL=" << onlyOnCurrentDL << ", attempts=" << count << ", remaining=" << cs.nogoods.size() << ")");
 	}
-	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 	assert(!inconsistent || s.hasConflict());
 
 	return !inconsistent;
@@ -245,6 +292,15 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 //	return true;
+  // propagate in external atoms (this may add new nogoods)
+  prop(s);
+
+  // always do this because we may obtain new nogoods
+  // that have been created due to reportModel and subsequent model compatibility checks
+  // (if something shall be skipped -> skip inside of prop())
+  return propagateNewNogoods(s);
+
+#if 0
 #if 1
 	// frequency based
 	const unsigned skipCount = 10000000;
@@ -265,15 +321,23 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	st.start = boost::posix_time::microsec_clock::local_time();
 	return prop(s);
 #endif
+#endif
 }
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isMdl)");
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
+	// (the "true" parameter instructs propagateNewNogoods to do that)
 	// (see postcondition in clasp/constraint.h)
+
 	// first propagate, then check free variables
 	// (otherwise could be incorrect as MG could miss to re-evaluate external atom)
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isMdl)");
-	if( prop(s, true) )
+	prop(s);
+
+	// always do propagateNewNogoods because we may obtain new nogoods from somewhere else
+	// that have been created due to reportModel and subsequent model compatibility checks
+	// (if something shall be skipped -> skip inside of prop())
+	if( propagateNewNogoods(s, true) )
 	{
 		return s.numFreeVars() == 0;
 	}
@@ -307,7 +371,7 @@ void ClaspSolver::ExternalPropagator::reset(){
  *               That is, it is true iff it was either added or excluded from being added, and false if it might be added at some future point
                The second is true iff adding has produced a conflict
  */
-std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL){
+std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogood& ng, bool onlyOnCurrentDL){
 	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::addNogoodTC");
 
 #ifndef NDEBUG
@@ -1418,7 +1482,7 @@ void ClaspSolver::addNogood(Nogood ng){
 	// access nogoods
 	{
 	        boost::mutex::scoped_lock lock(nogoodsMutex);
-		nogoods.push(ng);
+		nogoods.push_back(ng);
 	}
 
 	if (!strictSingleThreaded){
