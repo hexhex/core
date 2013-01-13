@@ -401,10 +401,16 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
-			if (factory.ctx.config.getOption("GenuineSolver") >= 3){
-				if (i == 0) std::cerr << "( NOTE: With clasp backend, learned nogoods become effective with a delay because of multithreading! )" << std::endl << std::endl;
-			}else{
-				if (i == 0) std::cerr << "( NOTE: With i-backend, learned nogoods become effective AFTER the next model was printed ! )" << std::endl << std::endl;
+		  	// we cannot use i==1 because of learnedEANogoods.clear() below in this function
+		 	static bool first = true; 
+			if( first )
+			{
+			  if (factory.ctx.config.getOption("GenuineSolver") >= 3){
+				  LOG(DBG, "( NOTE: With clasp backend, learned nogoods become effective with a delay because of multithreading! )");
+			  }else{
+				  LOG(DBG, "( NOTE: With i-backend, learned nogoods become effective AFTER the next model was printed ! )");
+			  }
+			  first = false;
 			}
 		}
 		if (learnedEANogoods->getNogood(i).isGround()){
