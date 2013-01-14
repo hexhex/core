@@ -1024,6 +1024,8 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
 	pb.startProgram(claspInstance, eqOptions);
+	false_ = pb.newAtom();
+	assert(false_ == 1);
 	pb.setCompute(false_, false);
 
 	buildInitialSymbolTable(p.getGroundProgram(), pb);

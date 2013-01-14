@@ -181,7 +181,7 @@ private:
 	void runClasp();
 
 	// initialization
-	static const int false_ = 1;	// 1 is our constant "false"
+	uint32_t false_;	// 1 will be our constant "false"
 	bool sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId);
 	void sendWeightRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId);
 	void sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId);
