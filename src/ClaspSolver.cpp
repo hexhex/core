@@ -683,7 +683,8 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 			hexToClasp[*en] = Clasp::Literal(c, true);
 
 			std::string str = idAddressToString(*en);
-			claspInstance.symTab().addUnique(c, str.c_str());
+			//claspInstance.symTab().addUnique(c, str.c_str());
+			pb.setAtomName(c, str.c_str());
 		}
 		en++;
 	}
@@ -698,7 +699,8 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 				hexToClasp[h.address] = Clasp::Literal(c, true);
 
 				std::string str = idAddressToString(h.address);
-				claspInstance.symTab().addUnique(c, str.c_str());
+				//claspInstance.symTab().addUnique(c, str.c_str());
+				pb.setAtomName(c, str.c_str());
 			}
 		}
 		BOOST_FOREACH (ID b, rule.body){
@@ -708,7 +710,8 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 				hexToClasp[b.address] = Clasp::Literal(c, true);
 
 				std::string str = idAddressToString(b.address);
-				claspInstance.symTab().addUnique(c, str.c_str());
+				//claspInstance.symTab().addUnique(c, str.c_str());
+				pb.setAtomName(c, str.c_str());
 			}
 		}
 	}
