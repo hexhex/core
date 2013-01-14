@@ -764,10 +764,6 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	hexToClasp.clear();
 	claspSymtabToHex.clear();
 
-#ifndef NDEBUG
-	std::stringstream ss;
-#endif
-
 	// go through symbol table
 	const Clasp::SymbolTable& symTab = claspInstance.symTab();
 	claspSymtabToHex.reserve(symTab.size());
@@ -785,21 +781,21 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 		  c2h = new AddressVector;
 		c2h->push_back(hexAdr);
 		claspSymtabToHex.push_back(hexAdr);
-#ifndef NDEBUG
-		ss << "Hex " << hexAdr << " <--> " << (it->second.lit.sign() ? "" : "!") << it->second.lit.var() << std::endl;
-#endif
+		LOG(DBG,"Hex " << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
+		        "(" << it->second.lit.index() << ")" << (it->second.lit.sign() ? "" : "!") << it->second.lit.var());
 	}
-	DBGLOG(DBG, "Symbol table of optimized program: " << std::endl << ss.str());
 	assert(claspSymtabToHex.size() == symTab.size());
 }
 
 std::string ClaspSolver::idAddressToString(IDAddress adr){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "idAddressToString");
 	std::stringstream ss;
 	ss << adr;
 	return ss.str();
 }
 
 IDAddress ClaspSolver::stringToIDAddress(std::string str){
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "stringToIDAddress");
 	return atoi(str.c_str());
 }
 
@@ -982,12 +978,8 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 
 	if (ID(rule.kind, 0).isWeakConstraint()) throw GeneralError("clasp-based solver does not support weak constraints");
 
-#ifndef NDEBUG
-	std::stringstream rulestr;
-	RawPrinter printer(rulestr, reg);
-	printer.print(ruleId);
-	DBGLOG(DBG, rulestr.str());
-#endif
+	DBGLOG(DBG, "sendRuleToClasp " << printToString<RawPrinter>(ruleId, reg));
+
 	// distinct by the type of the rule
 	if (rule.head.size() > 1){
 		sendDisjunctiveRuleToClasp(p, dm, nextVarIndex, ruleId);
@@ -1033,13 +1025,8 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 
 	buildInitialSymbolTable(p.getGroundProgram(), pb);
 
-#ifndef NDEBUG
-	std::stringstream programstring;
-	RawPrinter printer(programstring, reg);
-#endif
-
 	// transfer edb
-	DBGLOG(DBG, "Sending EDB to clasp");
+	DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
 	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
@@ -1050,9 +1037,6 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 
 		en++;
 	}
-#ifndef NDEBUG
-	DBGLOG(DBG, *p.getGroundProgram().edb);
-#endif
 
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
