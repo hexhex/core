@@ -488,17 +488,18 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
         }
 
-        // check if there is a negative external dependency from comp to comp2
+        // check if there is an external dependency from comp to comp2
         std::set<std::pair<ComponentGraph::Component, ComponentGraph::Component> > negdep;
         BOOST_FOREACH (ComponentGraph::Dependency dep, compgraph.getDependencies()){
-          if (compgraph.getDependencyInfo(dep).negativeExternal){
+          if (compgraph.getDependencyInfo(dep).externalPredicateInput/*negativeExternal*/){
             negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
           }
         }
 
         // if this is the case, then do not merge
         if (!breakCycle){
-          bool nd = negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end() || negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end();
+          bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end() && compgraph.propsOf(comp).outerEatomsNonmonotonic) ||
+		    (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end() && compgraph.propsOf(comp2).outerEatomsNonmonotonic);
           if (mergeComponents(builder.getProgramCtx(), compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
