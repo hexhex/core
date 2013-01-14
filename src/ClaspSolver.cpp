@@ -79,6 +79,8 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
 	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
 
+	// XXX why don't we use the incrementally updated model?
+
 	// get the symbol table from the solver
 	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
