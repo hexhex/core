@@ -417,7 +417,9 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 
 					OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 					domatom.tuple.push_back(factory.reg->getAuxiliaryConstantSymbol('d', eaid));
-					for (int i = 1 + ea.inputs.size(); i < ogatom.tuple.size(); ++i){
+					int io = 1;
+					if (ea.auxInputPredicate != ID_FAIL && factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
+					for (int i = io + ea.inputs.size(); i < ogatom.tuple.size(); ++i){
 						domatom.tuple.push_back(ogatom.tuple[i]);
 					}
 					domintr->setFact(factory.reg->storeOrdinaryGAtom(domatom).address);

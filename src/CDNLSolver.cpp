@@ -358,7 +358,7 @@ void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 	tmpWatched.clear();
 	BOOST_FOREACH (ID lit, ng){
 		if (!assigned(lit.address) && tmpWatched.size() < 2){
-			tmpWatched.insert(lit);
+			tmpWatched.insert(createLiteral(lit));
 		}else if(falsified(lit)){
 			inactive = true;
 		}
@@ -367,7 +367,7 @@ void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 	// remember watches
 	if (!inactive){
 		BOOST_FOREACH (ID lit, tmpWatched){
-			startWatching(index, lit);
+			startWatching(index, createLiteral(lit));
 		}
 	}
 
@@ -408,7 +408,6 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 	    (!lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())){
 		do{
 			changed = false;
-
 			BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfPosLiteral[lit.address] : watchingNogoodsOfNegLiteral[lit.address]){
 				inactivateNogood(nogoodNr);
 				changed = true;
@@ -418,7 +417,9 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 	}
 
 	// go through all nogoods which watch this literal positively and find a new watched literal
-	if (watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()){
+//	if (watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()){
+	if ((!lit.isNaf() && watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()) ||
+	    (lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())){
 		do{
 			changed = false;
 
@@ -435,7 +436,7 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 				BOOST_FOREACH (ID nglit, ng){
 					if ((watchedLiteralsOfNogood[nogoodNr].size() < 2) && !assigned(nglit.address) && (watchedLiteralsOfNogood[nogoodNr].count(nglit) == 0)){
 						// watch it
-						startWatching(nogoodNr, nglit);
+						startWatching(nogoodNr, createLiteral(nglit));
 					}else if (falsified(nglit)){
 						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now inactive");
 						inactivateNogood(nogoodNr);
@@ -445,6 +446,7 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 				}
 				if (!inactive){
 					// nogood might have become unit or contradictory
+DBGLOG(DBG, "::" << watchedLiteralsOfNogood[nogoodNr].size());
 					if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
 						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
 						unitNogoods.insert(nogoodNr);
@@ -509,7 +511,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 						if (!stillInactive){
 							DBGLOG(DBG, "Nogood " << nogoodNr << " is reactivated");
 							BOOST_FOREACH (ID lit, tmpWatched){
-								startWatching(nogoodNr, lit);
+								startWatching(nogoodNr, createLiteral(lit));
 							}
 
 							if (tmpWatched.size() == 1){
@@ -523,7 +525,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 						break;
 					case 1:		// nogood was unit before
 						// watch litadr
-						startWatching(nogoodNr, literal);
+						startWatching(nogoodNr, createLiteral(literal));
 
 						// nogood is not unit anymore
 						DBGLOGD(DBG, "Nogood " << nogoodNr << " is not unit anymore");
@@ -553,18 +555,18 @@ void CDNLSolver::inactivateNogood(int nogoodNr){
 }
 
 void CDNLSolver::stopWatching(int nogoodNr, ID lit){
-	DBGLOGD(DBG, "Nogood " << nogoodNr << " stops watching " << litToString(lit));
+	DBGLOGD(DBG, "Nogood " << nogoodNr << " stops watching " << litToString(lit) << " (" << createLiteral(lit) << ")");
 	if (!lit.isNaf()){
 		watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
 	}else{
 		watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
 	}
-	watchedLiteralsOfNogood[nogoodNr].erase(lit);
+	watchedLiteralsOfNogood[nogoodNr].erase(createLiteral(lit));
 }
 
 void CDNLSolver::startWatching(int nogoodNr, ID lit){
-	DBGLOGD(DBG, "Nogood " << nogoodNr << " starts watching " << litToString(lit));
-	watchedLiteralsOfNogood[nogoodNr].insert(lit);
+	DBGLOGD(DBG, "Nogood " << nogoodNr << " starts watching " << litToString(lit) << " (" << createLiteral(lit) << ")");
+	watchedLiteralsOfNogood[nogoodNr].insert(createLiteral(lit));
 	if (!lit.isNaf()){
 		watchingNogoodsOfPosLiteral[lit.address].insert(nogoodNr);
 	}else{
@@ -590,6 +592,7 @@ void CDNLSolver::initListOfAllFacts(){
 		const Nogood& ng = nogoodset.getNogood(i);
 		// go through all literals of the nogood
 		for (Nogood::const_iterator lIt = ng.begin(); lIt != ng.end(); ++lIt){
+			if (lIt->isOrdinaryNongroundAtom()) throw GeneralError("Got nonground atom in SAT instance");
 			allFacts.insert(lIt->address);
 		}
 	}

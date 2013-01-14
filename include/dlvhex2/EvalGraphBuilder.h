@@ -191,6 +191,9 @@ public:
 	// returns the registry (useful for printing, cannot do this inline as ProgramCtx depends on this header)
   RegistryPtr registry();
 
+	// returns the ProgramCtx
+  inline ProgramCtx& getProgramCtx(){ return ctx; }
+
   //
   // modifiers
   //
