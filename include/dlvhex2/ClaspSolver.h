@@ -123,7 +123,18 @@ private:
 		// last clasp trail size where we were called
 		uint32_t lastTrail;
 
-		// XXX
+		// remember how far we must backtrack the decisionLevelMasks
+		// 0 means we don't need to undo (by definition we never need to undo level 0)
+		// a number means "down to and including that decision level"
+		uint32_t needToUndoDownToThisDecisionLevel;
+		// remember what's the lowest decision level is that we must update (this level and all above)
+		uint32_t needToUpdateFromDecisionLevel;
+		// remember what's the lowest trail position from where we must update
+		// this position might be in level 0 or within level needToUpdateFromDecisionLevel,
+		// but cannot be above the start of level (needToUpdateFromDecisionLevel+1)
+		uint32_t needToUpdateFromTrail;
+
+		// debug the clasp solver trail
 		void printTrail(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
 
 		// current partial interpretation
@@ -139,19 +150,34 @@ private:
 		// decision level 0 is not tracked
 		//(it cannot be undone or changed, it is initially stored in interpretation and never changes)
 		std::vector<InterpretationPtr> decisionLevelMasks;
+			// we do not store decision level 0, so the index is -1, therefore index may be equal to size
+		inline bool haveMaskForLevel(uint32_t level) { return level <= decisionLevelMasks.size(); }
 
 		// update interpretation/factWasSet/changed with removal of given level's mask
 		// (must be the last)
 		// remove mask
 		void undoDecisionLevel(uint32_t level);
 
-		void updateDecisionLevels(Clasp::Solver& s);
+		// undo all decision levels we have remembered that we must undo
+		void undoNecessaryDecisionLevels();
+
+		// check if we shall propagate the clasp data into HEX (which is expensive)
+		bool checkIfHexInterpretationPropagationShouldBeDone(Clasp::Solver& s);
+
+		// record decision levels in propagate
+		void recordUpdateDecisionLevels(Clasp::Solver& s);
+
+		// update all decision levels we have remembered that we must update
+		void updateNecessaryDecisionLevels(Clasp::Solver& s);
 
 		// adds to decisionLevelMasks what needs to be added from the trail
+		// it is possible to call this method with level=0, then no undo-information will be recorded
+		// (this is necessary and useful for the static level which is directly put into the interpretation)
 		void updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive);
 
-		// update for decision level 0 from trail
-		//void updateInterpretation(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
+		// undo and update recorded decision levels
+		void applyRecordedDecisionLevelUpdates(Clasp::Solver& s);
+
 
 	public:
 		ExternalPropagator(ClaspSolver& cs);
@@ -161,7 +187,6 @@ private:
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
-		void initialize();
 	};
 
 	// interface to clasp internals

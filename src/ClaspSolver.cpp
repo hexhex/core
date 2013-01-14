@@ -135,11 +135,15 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 }
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) :
-  needReset(true),
-  cs(cs),
-  lastDL(0),
-  lastTrail(0){
-	initialize();
+		cs(cs),
+		lastDL(0),
+		lastTrail(0),
+		needToUndoDownToThisDecisionLevel(0),
+		needToUpdateFromDecisionLevel(0),
+		needToUpdateFromTrail(0) {
+	interpretation = InterpretationPtr(new Interpretation(cs.reg));
+	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
+	changed = InterpretationPtr(new Interpretation(cs.reg));
 }
 
 void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
@@ -271,22 +275,47 @@ void ClaspSolver::ExternalPropagator::printTrail(Clasp::Solver& s, uint32_t from
 }
 
 void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
-	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
-	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::undoLevel");
+	//DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+	//DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::undoLevel");
 
 	assert(s.decisionLevel() > 0);
 	// the following holds because we just undid a level so it has been reset
 	// -> new data will be appended to this trail size
 	assert(s.levelStart(s.decisionLevel()) == s.trail().size());
 
-	LOG(DBG, "undoLevel to " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
+	DBGLOG(DBG, "recording undoLevel to " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
 
 	// we go back only one level, so current level is same or one less than last level
 	assert(s.decisionLevel() == lastDL || (s.decisionLevel() + 1) == lastDL);
 
 	// -> we need to undo this level
-	undoDecisionLevel(s.decisionLevel());
+	// the following command would do it immediately, but we want to propagate only
+	// in chosen moments and from propagate(), so we record the lowest decision level we must undo
+	//
+	// [one could argue that, as we need to undo the levels anyway, we can
+	// just as well do it here. BUT this is not true: 1) we might abort
+	// before we need to undo, and 2) undoing the history here and in
+	// pieces congests the cpu cache, so it slows down the solver. hence it
+	// should definitely be more efficient to only record undo levels here
+	// and really do the undoing later when we must access the
+	// interpretations anyways]
+	//
+	//undoDecisionLevel(s.decisionLevel());
+	if( needToUndoDownToThisDecisionLevel == 0 )
+	{
+		// no level was remembered to be undone
+		needToUndoDownToThisDecisionLevel = s.decisionLevel();
+	}
+	else
+	{
+		// some level was remembered to be undone
+		needToUndoDownToThisDecisionLevel = std::min(needToUndoDownToThisDecisionLevel, s.decisionLevel());
+	}
+	DBGLOG(DBG, "recording need to undo down to decision level " << needToUndoDownToThisDecisionLevel);
+
+	// undo down to 0 should be impossible, and we have reserved 0 as special value, make sure it never happens
+	assert(needToUndoDownToThisDecisionLevel != 0);
 
 	// we backtracked, remember decision level and trail size here
 	lastDL = s.decisionLevel();
@@ -318,104 +347,230 @@ void ClaspSolver::ExternalPropagator::undoDecisionLevel(uint32_t level){
 	}
 }
 
+void ClaspSolver::ExternalPropagator::undoNecessaryDecisionLevels(){
+	if( needToUndoDownToThisDecisionLevel > 0 )
+	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::undoNecessaryDLs");
+
+		// we do not store level 0, so size is really index
+		uint32_t highestStoredDecisionLevel = decisionLevelMasks.size();
+		for(uint32_t at = highestStoredDecisionLevel;
+		    at >= needToUndoDownToThisDecisionLevel; --at)
+		{
+			// rollback decision level in changed/factWasSet/interpretation
+			undoDecisionLevel(at);
+		}
+		assert(decisionLevelMasks.size() == (needToUndoDownToThisDecisionLevel-1));
+
+		DBGLOG(DBG,"undoNecessaryDecisionLevels undid down to and including " <<
+		           needToUndoDownToThisDecisionLevel << ", " <<
+			   decisionLevelMasks.size() << " masks remain");
+		// reset: 0 means we do not need to undo anything at the moment
+		needToUndoDownToThisDecisionLevel = 0;
+	}
+}
+
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+	// directly updating here would slow us down a lot, in particular if we
+	// are not going to use the interpretation therefore we just record on
+	// which decision level we are for later and use that information if we
+	// really do Hex-Interpretation-Propagation
+	//updateDecisionLevels(s);
+	recordUpdateDecisionLevels(s);
+
+	// here we can skip propagations, as many as we want, we can even skip all
+	// (e.g. for --eaevalheuristics=never, because isModel() never skips)
+	if( checkIfHexInterpretationPropagationShouldBeDone(s) )
+	{
+		applyRecordedDecisionLevelUpdates(s);
+
+		// propagate in external atoms (this may add new nogoods)
+		prop(s);
+	}
+
+	// always do this because we may obtain new nogoods not only from
+	// prop() but also from reportModel and model compatibility checks
+	return propagateNewNogoods(s);
+}
+
+void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::propagate");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp updateRDLU");
 
-//	return true;
-	updateDecisionLevels(s);
+	// this both must be done (in that order) if a valid interpretation is required
+	undoNecessaryDecisionLevels();
+	updateNecessaryDecisionLevels(s);
+}
 
-  // propagate in external atoms (this may add new nogoods)
-  prop(s);
-
-  // always do this because we may obtain new nogoods
-  // that have been created due to reportModel and subsequent model compatibility checks
-  // (if something shall be skipped -> skip inside of prop())
-  return propagateNewNogoods(s);
-
-#if 0
+bool ClaspSolver::ExternalPropagator::checkIfHexInterpretationPropagationShouldBeDone(Clasp::Solver& s){
 #if 1
 	// frequency based
-	const unsigned skipCount = 10000000;
-	static unsigned skipSoManyPropagates = 0;
-	if( skipSoManyPropagates > skipCount )
+	const unsigned skipSoManyPropagates = 1000*1000;
+	static unsigned skipcounter = 0;
+	if( skipcounter > skipSoManyPropagates )
 	{
-		skipSoManyPropagates = 0;
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (prop)");
-		return prop(s);
+		skipcounter = 0;
+		return true;
 	}
 	else
 	{
-		skipSoManyPropagates++;
-		return true;
+		skipcounter++;
+		return false;
 	}
 #else
 	// TODO time-based
+	// TODO time+frequency-based (all K propagates but at least all N seconds and at most M times a second)
 	st.start = boost::posix_time::microsec_clock::local_time();
 	return prop(s);
 #endif
-#endif
 }
 
-void ClaspSolver::ExternalPropagator::updateDecisionLevels(Clasp::Solver& s){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::updateDLs");
+void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
 	// incremental update of HEX interpretation from clasp interpretation
 	if( lastDL < s.decisionLevel() )
 	{
-		LOG(DBG,"decision level update to " << s.decisionLevel() <<
+		DBGLOG(DBG,"recording decision level update to " << s.decisionLevel() <<
 		    " (going up from " << lastDL << "),"
 		    " old level " << lastDL << " starts at " << ((lastDL==0)?0:s.levelStart(lastDL)) << ","
 		    " new level " << s.decisionLevel() << " starts at " << s.levelStart(s.decisionLevel()));
 		assert(s.decisionLevel() == lastDL + 1);
 
 		// decision level has changed upwards - register callback
+		assert(s.decisionLevel() > 0);
 		s.addUndoWatch(s.decisionLevel(), this);
-
-		// we need new mask
-		decisionLevelMasks.push_back(InterpretationPtr(new Interpretation(cs.reg)));
 
 		// here we came up, so lastTrail is OK from last call of undoLevel or of this method
 	}
 	else if( lastDL > s.decisionLevel() )
 	{
-		LOG(DBG,"decision level update to " << s.decisionLevel() << " (down from " << lastDL << "),"
+		DBGLOG(DBG,"recording decision level update to " << s.decisionLevel() << " (down from " << lastDL << "),"
 		    " new level " << s.decisionLevel() << " starts at " <<
 		    ((s.decisionLevel() == 0)?0:s.levelStart(s.decisionLevel())));
 		assert(s.decisionLevel() == lastDL - 1);
 
 		// going down -> watch already there
 
-		// lastTrail can be invalid from before (if last call was in undo and we initialize using start of this newly entered level
-		//lastTrail = s.levelStart(s.decisionLevel());
-		//if( s.decisionLevel() != 0 )
-		//	// here we either came down or up,
-		//	// so lastTrail might be invalid from before and we initialize using start of this newly entered level
-		//	// (regardless of entering from above (backtracking) or below, this is allowed and cannot be made more efficient)
-		//	lastTrail = s.levelStart(s.decisionLevel());
-		//else
-		//	// BUT if we go down to 0, levelStart is not a valid thing to do, so we must completely reset
-		//	lastTrail = 0;
+		// lastTrail can be invalid from before (if last call was in
+		// undo and we initialize using start of this newly entered level
 	}
+	
+	// here we know:
+	//
+	// we must update decision level s.decisionLevel()
+	// using trail[ lastTrail .. s.trail().size() )
+	// we could do this immediately here with the following line
+	//updateDecisionLevel(s, s.decisionLevel(), lastTrail, s.trail().size());
+	//
+	// but we want to postpone this, so we only record
+	// * what is the lowest decision level we need to update
+	// * what is the lowest trail position from where we need to update
+	// [the highest corresponding values are trivially
+        //  s.decisionLevel() and s.trail().size()]
+	if( needToUpdateFromDecisionLevel == 0 )
+	{
+		needToUpdateFromDecisionLevel = s.decisionLevel();
+	}
+	else
+	{
+		needToUpdateFromDecisionLevel = std::min(needToUpdateFromDecisionLevel, s.decisionLevel());
+	}
+	// trail can have value 0, which is not a special value (!)
+	needToUpdateFromTrail = std::min(needToUpdateFromTrail, lastTrail);
 
-	// this decision level is always the last, so we compare with size
-	// we do not store decision level 0, so the index is -1, therefore size must be equal index
-	assert(decisionLevelMasks.size() == s.decisionLevel());
-
-	// update decision level data
-	// (this extends a previously existing level or starts to fill a new one, it's the same procedure)
-	// this also updates interpretation/factWasSet/changed incrementally
-	updateDecisionLevel(s, s.decisionLevel(), lastTrail, s.trail().size());
+	DBGLOG(DBG,"recording need to update from decision level " << needToUpdateFromDecisionLevel << " "
+	       "which starts at " << ((needToUpdateFromDecisionLevel==0)?0:s.levelStart(needToUpdateFromDecisionLevel)) << ", "
+	       "need to update from trail position " << needToUpdateFromTrail);
 
 	// remember from where we need to start next
 	lastTrail = s.trail().size();
 	lastDL = s.decisionLevel();
 }
 
+void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(Clasp::Solver& s){
+	DBGLOG(DBG,"updateNecessaryDecisionLevels(at " << s.decisionLevel() << "/"
+	           "trail size " << s.trail().size() << ", need update from " <<
+		   needToUpdateFromTrail << " and from level " << needToUpdateFromDecisionLevel);
+	// here we can use s.levelStart(lvl) except for the lowest level where we
+	// can have two cases:
+	// * we need to update below lowest level start (e.g., for EDB)
+	// * we update from somewhere above lowest level start (but below next level start)
+
+	// if nothing must be updated, we don't need to continue
+	if( needToUpdateFromTrail == s.trail().size() )
+	{
+		assert(needToUpdateFromDecisionLevel == 0);
+		return;
+	}
+
+	assert(needToUpdateFromDecisionLevel <= s.decisionLevel());
+
+	// first update lowest level (this must be done independent from
+	// needToUpdateFromDecisionLevel, because needToUpdateFromDecisionLevel
+	// might be 0 and we need to update nevertheless!)
+	if( s.decisionLevel() == 0 )
+	{
+		// update with complete trail
+		updateDecisionLevel(s, s.decisionLevel(), needToUpdateFromTrail, s.trail().size());
+		needToUpdateFromTrail = s.trail().size();
+		needToUpdateFromDecisionLevel = 0;
+		// finished here, we processed whole trail
+		return;
+	}
+
+	// what if we need to update within decision level 0
+	if( needToUpdateFromTrail < s.levelStart(1) )
+	{
+		// we need to update level 0
+		// BUT only until end of decision level 0
+		updateDecisionLevel(s, 0, needToUpdateFromTrail, s.levelStart(1));
+		needToUpdateFromTrail = s.levelStart(1);
+		if( needToUpdateFromDecisionLevel == 0 )
+			needToUpdateFromDecisionLevel = 1;
+	}
+
+	// now manage all non-special decision levels (above 0)
+	for( uint32_t level = needToUpdateFromDecisionLevel; level <= s.decisionLevel(); ++level)
+	{
+		uint32_t start = s.levelStart(level);
+		DBGLOG(DBG,"updating decision level " << level << " with start " << start << ", "
+		           "need to update trail from " << needToUpdateFromTrail << " have " << decisionLevelMasks.size() << " masks"); 
+		if( start < needToUpdateFromTrail )
+		{
+			// partial update of level -> mask exists
+			assert(haveMaskForLevel(level));
+		}
+		else
+		{
+			// initial update of level -> mask does not exist
+			assert(!haveMaskForLevel(level));
+			decisionLevelMasks.push_back(InterpretationPtr(new Interpretation(cs.reg)));
+		}
+		uint32_t end;
+		if( level < s.decisionLevel() )
+		{
+			end = s.levelStart(level+1);
+		}
+		else
+		{
+			end = s.trail().size();
+		}
+
+		// update decision level data
+		// (this extends a previously existing level or starts to fill a new one, it's the same procedure)
+		// this also updates interpretation/factWasSet/changed incrementally
+		updateDecisionLevel(s, level, start, end);
+	}
+	needToUpdateFromDecisionLevel = 0;
+	needToUpdateFromTrail = s.trail().size();
+}
+
 void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
-	LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
 	if( Logger::Instance().shallPrint(Logger::DBG) )
+	{
+		LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
 		printTrail(s, from, to_exclusive);
+	}
 
 	// go through each literal in the trail
 	assert(to_exclusive <= s.trail().size());
@@ -437,8 +592,9 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint
 				{
 					IDAddress hexAddr = (*c2h)[u];
 					// update EVERYTHING
+					// BUT only update mask if not level 0
+					// (we never undo 0, also 0 is likely the biggest level)
 					if( level > 0 )
-						// only update mask if not level 0 (we never undo 0 and 0 is likely the biggest level)
 						decisionLevelMasks[level-1]->setFact(hexAddr);
 					changed->setFact(hexAddr);
 					factWasSet->setFact(hexAddr);
@@ -457,15 +613,23 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");
+
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
 	// (the "true" parameter instructs propagateNewNogoods to do that)
 	// (see postcondition in clasp/constraint.h)
 
-	// incrementally update interpretation
-	updateDecisionLevels(s);
+	// just record as in propagate()
+	recordUpdateDecisionLevels(s);
 
-	// first propagate, then check free variables
-	// (otherwise could be incorrect as MG could miss to re-evaluate external atom)
+       	// but apply recorded changes (all so far) unconditionally
+        // (because we must do prop(s) afterwards)
+	applyRecordedDecisionLevelUpdates(s);
+
+	// first propagate to HEX; this invalidates external atoms that have
+	// been marked as evaluated previously if their input interpretation
+	// changed (if this is not done, reportModel() might be called and use
+	// previously computed/cached eatom values which no longer reflect the
+	// interpretation)
 	prop(s);
 
 	// always do propagateNewNogoods because we may obtain new nogoods from somewhere else
@@ -483,20 +647,6 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 
 uint32 ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_general;
-}
-
-void ClaspSolver::ExternalPropagator::initialize(){
-	//if( needReset || interpretation->getRegistry() != cs.reg)
-	//{
-		//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::reset");
-		lastDL = 0;
-		lastTrail = 0;
-		interpretation = InterpretationPtr(new Interpretation(cs.reg));
-		factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-		changed = InterpretationPtr(new Interpretation(cs.reg));
-		decisionLevelMasks.clear();
-		needReset = false;
-	//}
 }
 
 /**
