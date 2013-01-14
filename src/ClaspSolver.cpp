@@ -134,8 +134,12 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
-ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs): needReset(true), cs(cs){
-	reset();
+ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) :
+  needReset(true),
+  cs(cs),
+  lastDL(0),
+  lastTrail(0){
+	initialize();
 }
 
 void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
@@ -148,8 +152,6 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
 
-		needReset = true;
-
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
 		// because only in this case we know what MainThread is doing and which dlvhex data structures it accesses.
 		// Otherwise we could have a lot of unsynchronized data accesses.
@@ -158,65 +160,10 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 			DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 		}
 
-		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
-
-		// translate clasp assignment to hex assignment
-		// get the symbol table from the solver
-		{
-			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::prop pre");
-			interpretation->clear();
-			factWasSet->clear();
-			#if 0
-			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-			for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-				// bitset of all assigned values
-				if (s.isTrue(it->second.lit) || s.isFalse(it->second.lit)) {
-					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-					factWasSet->setFact(adr);
-				}
-				// bitset of true values (partial interpretation)
-				if (s.isTrue(it->second.lit)) {
-					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-					interpretation->setFact(adr);
-				}
-			}
-			#else
-			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-			assert(symTab.size() == cs.claspSymtabToHex.size());
-			Clasp::SymbolTable::const_iterator it;
-			std::vector<IDAddress>::const_iterator ita;
-			for(it = symTab.begin(),
-			    ita = cs.claspSymtabToHex.begin();
-			    it != symTab.end(); ++it, ++ita) {
-				bool istrue = s.isTrue(it->second.lit);
-				bool isfalse = s.isFalse(it->second.lit);
-				// bitset of all assigned values
-				if( istrue || isfalse ) {
-					factWasSet->setFact(*ita);
-				}
-				// bitset of true values (partial interpretation)
-				if( istrue ) {
-					interpretation->setFact(*ita);
-				}
-			}
-			#endif
-
-			// a fact changed iff
-			// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
-			// 2. it was set before and is still set but the truth value is different
-			changed->clear();
-			changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
-			changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
-			DBGLOG(DBG, "Changed truth values: " << *changed);
-		}
-
 		DBGLOG(DBG, "Calling external propagators");
 		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
 			cb->propagate(interpretation, factWasSet, changed);
 		}
-
-		previousInterpretation->getStorage() = interpretation->getStorage();
-		previousFactWasSet->getStorage() = factWasSet->getStorage();
 
 		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
 		// which cannot interfere with dlvhex.
@@ -292,8 +239,93 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 	return !inconsistent;
 }
 
+void ClaspSolver::ExternalPropagator::printTrail(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive)
+{
+  std::stringstream ss;
+  assert(to_exclusive <= s.trail().size());
+  RawPrinter p(ss, cs.reg);
+  ss << "Trail[" << from << "," << to_exclusive << ") = [";
+  for(uint32_t at = from; at < to_exclusive; ++at)
+  {
+    // each literal in the trail can correspond to more than one literal in hex
+    // we need to look at both polarities (variables here are always decided, we see only that they are decided, not the decision)
+    for(unsigned pos = 0; pos < 2; ++pos)
+    {
+      Clasp::Literal lit(s.trail()[at].var(), pos == 1);
+      assert(lit.index() < cs.claspToHex.size());
+      AddressVector* c2h = cs.claspToHex[lit.index()];
+      ss << "(" << lit.index() << ")";
+      if( !!c2h )
+      {
+	for(unsigned u = 0; u < c2h->size(); ++u)
+	{
+	  ss << ",";
+	  ID id = cs.reg->ogatoms.getIDByAddress((*c2h)[u]);
+	  p.print(id);
+	}
+      }
+    }
+  }
+  ss << "]";
+  LOG(WARNING, ss.str());
+}
+
+void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
+	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::undoLevel");
+
+	assert(s.decisionLevel() > 0);
+	// the following holds because we just undid a level so it has been reset
+	// -> new data will be appended to this trail size
+	assert(s.levelStart(s.decisionLevel()) == s.trail().size());
+
+	LOG(DBG, "undoLevel to " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
+
+	// we go back only one level, so current level is same or one less than last level
+	assert(s.decisionLevel() == lastDL || (s.decisionLevel() + 1) == lastDL);
+
+	// -> we need to undo this level
+	undoDecisionLevel(s.decisionLevel());
+
+	// we backtracked, remember decision level and trail size here
+	lastDL = s.decisionLevel();
+	lastTrail = s.trail().size();
+}
+
+void ClaspSolver::ExternalPropagator::undoDecisionLevel(uint32_t level){
+	// check if decision level we undo was one where we have a mask
+	// (sometimes we undo a level twice without propagation between)
+	if( level == decisionLevelMasks.size() )
+	{
+		// level 0 is not in the mask -> -1 for index
+		assert(decisionLevelMasks.size() == level);
+
+		InterpretationPtr m = decisionLevelMasks[level-1];
+		decisionLevelMasks.pop_back();
+
+		// add bits to changed
+		changed->getStorage() |= m->getStorage();
+		// remove bits from factWasSet
+		factWasSet->getStorage() -= m->getStorage();
+		// remove bits from interpretation (i.e., set them to default 0)
+		interpretation->getStorage() -= m->getStorage();
+		LOG(DBG, "after undoDecisionLevel(" << level << "): interpretation=" << *interpretation << ", changed=" << *changed << ", factWasSet=" << *factWasSet);
+	}
+	else
+	{
+		assert(level == (decisionLevelMasks.size()+1));
+	}
+}
+
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::propagate");
+
 //	return true;
+	updateDecisionLevels(s);
+
   // propagate in external atoms (this may add new nogoods)
   prop(s);
 
@@ -326,11 +358,111 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 #endif
 }
 
+void ClaspSolver::ExternalPropagator::updateDecisionLevels(Clasp::Solver& s){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::updateDLs");
+	// incremental update of HEX interpretation from clasp interpretation
+	if( lastDL < s.decisionLevel() )
+	{
+		LOG(DBG,"decision level update to " << s.decisionLevel() <<
+		    " (going up from " << lastDL << "),"
+		    " old level " << lastDL << " starts at " << ((lastDL==0)?0:s.levelStart(lastDL)) << ","
+		    " new level " << s.decisionLevel() << " starts at " << s.levelStart(s.decisionLevel()));
+		assert(s.decisionLevel() == lastDL + 1);
+
+		// decision level has changed upwards - register callback
+		s.addUndoWatch(s.decisionLevel(), this);
+
+		// we need new mask
+		decisionLevelMasks.push_back(InterpretationPtr(new Interpretation(cs.reg)));
+
+		// here we came up, so lastTrail is OK from last call of undoLevel or of this method
+	}
+	else if( lastDL > s.decisionLevel() )
+	{
+		LOG(DBG,"decision level update to " << s.decisionLevel() << " (down from " << lastDL << "),"
+		    " new level " << s.decisionLevel() << " starts at " <<
+		    ((s.decisionLevel() == 0)?0:s.levelStart(s.decisionLevel())));
+		assert(s.decisionLevel() == lastDL - 1);
+
+		// going down -> watch already there
+
+		// lastTrail can be invalid from before (if last call was in undo and we initialize using start of this newly entered level
+		//lastTrail = s.levelStart(s.decisionLevel());
+		//if( s.decisionLevel() != 0 )
+		//	// here we either came down or up,
+		//	// so lastTrail might be invalid from before and we initialize using start of this newly entered level
+		//	// (regardless of entering from above (backtracking) or below, this is allowed and cannot be made more efficient)
+		//	lastTrail = s.levelStart(s.decisionLevel());
+		//else
+		//	// BUT if we go down to 0, levelStart is not a valid thing to do, so we must completely reset
+		//	lastTrail = 0;
+	}
+
+	// this decision level is always the last, so we compare with size
+	// we do not store decision level 0, so the index is -1, therefore size must be equal index
+	assert(decisionLevelMasks.size() == s.decisionLevel());
+
+	// update decision level data
+	// (this extends a previously existing level or starts to fill a new one, it's the same procedure)
+	// this also updates interpretation/factWasSet/changed incrementally
+	updateDecisionLevel(s, s.decisionLevel(), lastTrail, s.trail().size());
+
+	// remember from where we need to start next
+	lastTrail = s.trail().size();
+	lastDL = s.decisionLevel();
+}
+
+void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
+	LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
+	if( Logger::Instance().shallPrint(Logger::DBG) )
+		printTrail(s, from, to_exclusive);
+
+	// go through each literal in the trail
+	assert(to_exclusive <= s.trail().size());
+	for(uint32_t at = from; at < to_exclusive; ++at)
+	{
+		// use both polarities for each literal
+		// (variables here are always decided, we see only that they are decided, not the decision)
+		for(unsigned pos = 0; pos < 2; ++pos)
+		{
+			Clasp::Literal lit(s.trail()[at].var(), pos == 1);
+			assert(lit.index() < cs.claspToHex.size());
+			AddressVector* c2h = cs.claspToHex[lit.index()];
+			//ss << "(" << lit.index() << ")";
+			// check if this literal has some meaning in HEX
+			if( !!c2h )
+			{
+				// go through all mappings of that literal to HEX
+				for(unsigned u = 0; u < c2h->size(); ++u)
+				{
+					IDAddress hexAddr = (*c2h)[u];
+					// update EVERYTHING
+					if( level > 0 )
+						// only update mask if not level 0 (we never undo 0 and 0 is likely the biggest level)
+						decisionLevelMasks[level-1]->setFact(hexAddr);
+					changed->setFact(hexAddr);
+					factWasSet->setFact(hexAddr);
+					if( pos == 0 )
+						interpretation->clearFact(hexAddr);
+					else
+						interpretation->setFact(hexAddr);
+				}
+			}
+		}
+	}
+	LOG(DBG, "after updateDecisionLevel(" << level << "): interpretation=" << *interpretation << ", changed=" << *changed << ", factWasSet=" << *factWasSet);
+}
+
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv/ExtProp/prop (isMdl)");
+	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
 	// (the "true" parameter instructs propagateNewNogoods to do that)
 	// (see postcondition in clasp/constraint.h)
+
+	// incrementally update interpretation
+	updateDecisionLevels(s);
 
 	// first propagate, then check free variables
 	// (otherwise could be incorrect as MG could miss to re-evaluate external atom)
@@ -353,17 +485,18 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_general;
 }
 
-void ClaspSolver::ExternalPropagator::reset(){
-	if( needReset || interpretation->getRegistry() != cs.reg)
-	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::reset");
+void ClaspSolver::ExternalPropagator::initialize(){
+	//if( needReset || interpretation->getRegistry() != cs.reg)
+	//{
+		//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::reset");
+		lastDL = 0;
+		lastTrail = 0;
 		interpretation = InterpretationPtr(new Interpretation(cs.reg));
-		previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
 		factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-		previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
 		changed = InterpretationPtr(new Interpretation(cs.reg));
+		decisionLevelMasks.clear();
 		needReset = false;
-	}
+	//}
 }
 
 /**

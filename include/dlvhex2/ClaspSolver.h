@@ -118,17 +118,50 @@ private:
 		// reference to other class instance
 		ClaspSolver& cs;
 
-		InterpretationPtr interpretation, previousInterpretation;
-		InterpretationPtr factWasSet, previousFactWasSet;
+		// last clasp decision level where we were called
+		uint32_t lastDL;
+		// last clasp trail size where we were called
+		uint32_t lastTrail;
+
+		// XXX
+		void printTrail(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
+
+		// current partial interpretation
+		InterpretationPtr interpretation;
+		// current mask (which atoms are defined)
+		InterpretationPtr factWasSet;
+		// which bits of interpretation changed their truth value, or became defined or became undefined
 		InterpretationPtr changed;
+
+		// cache for incrementally updating HEX interpretation in propagator
+		// for each decision level in clasp, track mask of atoms set in that level
+		// (in practical examples these can be from a few atoms to tens of thousands of atoms)
+		// decision level 0 is not tracked
+		//(it cannot be undone or changed, it is initially stored in interpretation and never changes)
+		std::vector<InterpretationPtr> decisionLevelMasks;
+
+		// update interpretation/factWasSet/changed with removal of given level's mask
+		// (must be the last)
+		// remove mask
+		void undoDecisionLevel(uint32_t level);
+
+		void updateDecisionLevels(Clasp::Solver& s);
+
+		// adds to decisionLevelMasks what needs to be added from the trail
+		void updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive);
+
+		// update for decision level 0 from trail
+		//void updateInterpretation(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
+
 	public:
 		ExternalPropagator(ClaspSolver& cs);
 		void prop(Clasp::Solver& s);
+		virtual void undoLevel(Clasp::Solver& s);
 		virtual bool propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL = false);
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
-		void reset();
+		void initialize();
 	};
 
 	// interface to clasp internals
@@ -206,7 +239,7 @@ protected:
 	// for clasp configuration using clasp config parsers (must retain commandline cache for lifetime of clasp, so must be stored here)
 	boost::scoped_ptr<ClaspInHexAppOptions> claspAppOptionsHelper;
 
-	// cache for propagation:
+	// cache for incrementally updating HEX interpretation in propagator
 	std::vector<IDAddress> claspSymtabToHex; // for each entry in the optimized clasp symbol table we have one IDAddress here
 
 	// statistics
