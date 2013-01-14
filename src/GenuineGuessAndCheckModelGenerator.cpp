@@ -677,11 +677,13 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 
 	      // new watches
 	      if (!factWasSet->getFact(*en)){
+		      // XXX why can't we just watch *en? it is undefined
 		      // watch a yet unassigned atom such that the external atom depends on it
 		      IDAddress id = getWatchedLiteral(eaIndex, factWasSet, false);
 		      assert(id != ID::ALL_ONES);
 		      verifyWatchList[id].push_back(eaIndex);
 	      }else{
+		      // XXX why can't we just watch *en? it is changed
 		      // watch a changed atom
 		      IDAddress id = getWatchedLiteral(eaIndex, changed, true);
 		      assert(id != ID::ALL_ONES);
