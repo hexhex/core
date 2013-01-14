@@ -1475,6 +1475,24 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		initiallyInconsistent = !claspInstance.endInit();
 		if( initiallyInconsistent )
 		  break;
+
+		// like facade does
+		pb.getAssumptions(assumptions);
+
+		// like facade does
+		uint32_t estimate = 0;
+		if( claspConfig.params.reduce.estimate() )
+			estimate = claspInstance.problemComplexity();
+		uint32_t size = claspInstance.numConstraints();
+		double r = claspInstance.numVars() / std::max(1.0, double(claspInstance.numConstraints()));
+		uint32_t fsize;
+		if (r < 0.1 || r > 10.0) {
+			fsize = std::max(claspInstance.numVars(), claspInstance.numConstraints());
+		} else {
+			fsize = std::min(claspInstance.numVars(), claspInstance.numConstraints());
+		}
+		LOG(DBG,"clasp estimate " << estimate << " size " << size << " r " << r << " fsize " << fsize);
+		claspInstance.setProblemSize(fsize, estimate);
 	}
 	while(false);
 
