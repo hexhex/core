@@ -62,6 +62,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/date_time.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include "clasp/solver.h"
@@ -115,11 +116,45 @@ private:
 
 	// propagator for external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{
+	public:
+		// helper for deciding whether to defer propagation to HEX
+		// (it is expensive, but it can cut the search space by evaluating external atoms)
+		class DeferPropagationHeuristics
+		{
+		public:
+			DeferPropagationHeuristics(ExternalPropagator& parent);
+			virtual ~DeferPropagationHeuristics();
+			virtual bool shallWePropagate(Clasp::Solver& s) = 0;
+			virtual void forcePropagation() = 0;
+		protected:
+			ExternalPropagator& parent;
+		};
+		typedef boost::shared_ptr<DeferPropagationHeuristics>
+		       	DeferPropagationHeuristicsPtr;
+
+		class DeferStepsWithTimeoutDeferPropagationHeuristics:
+			public DeferPropagationHeuristics
+		{
+		public:
+			DeferStepsWithTimeoutDeferPropagationHeuristics(
+					ExternalPropagator& parent, unsigned skipAmount, double skipMaxSeconds);
+			virtual bool shallWePropagate(Clasp::Solver& s);
+			virtual void forcePropagation();
+		protected:
+			unsigned skipAmount;
+			unsigned skipCounter;
+			boost::posix_time::ptime lastPropagation;
+			boost::posix_time::time_duration skipMaxDuration;
+		};
+
+
 	private:
 		// if anything was done since last reset (if not, we can skip the reset in most cases)
 		bool needReset;
 		// reference to other class instance
 		ClaspSolver& cs;
+		// for deciding whether to defer propagation
+		DeferPropagationHeuristicsPtr deferHeuristics;
 
 		// last clasp decision level where we were called
 		uint32_t lastDL;
@@ -184,6 +219,7 @@ private:
 
 	public:
 		ExternalPropagator(ClaspSolver& cs);
+		void setHeuristics(DeferPropagationHeuristicsPtr deferHeuristics);
 		void prop(Clasp::Solver& s);
 		virtual void undoLevel(Clasp::Solver& s);
 		virtual bool propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL = false);

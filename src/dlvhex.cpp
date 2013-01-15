@@ -401,6 +401,10 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 	// frumpy is the name of the failsafe clasp config option
 	pctx.config.setStringOption("ClaspConfiguration","frumpy");
+  // propagate at least once per second, but also propagate all 10000 times we can propagate 
+  // TODO we should experiment with these
+  pctx.config.setOption("ClaspDeferNPropagations", 10000);
+	pctx.config.setOption("ClaspDeferMaxTMilliseconds",1000);
 	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing

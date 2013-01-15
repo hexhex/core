@@ -134,8 +134,64 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
+ClaspSolver::ExternalPropagator::
+DeferPropagationHeuristics::DeferPropagationHeuristics(ExternalPropagator& parent):
+	parent(parent)
+{
+}
+
+ClaspSolver::ExternalPropagator::
+DeferPropagationHeuristics::~DeferPropagationHeuristics() 
+{
+}
+
+ClaspSolver::ExternalPropagator::
+DeferStepsWithTimeoutDeferPropagationHeuristics::DeferStepsWithTimeoutDeferPropagationHeuristics(
+		ExternalPropagator& parent, unsigned skipAmount, double skipMaxSeconds):
+	DeferPropagationHeuristics(parent),
+	skipAmount(skipAmount),
+	skipCounter(0),
+	lastPropagation(boost::posix_time::microsec_clock::local_time()),
+	skipMaxDuration()
+{
+	skipMaxDuration = boost::posix_time::microseconds(skipMaxSeconds/1000000.0);
+}
+
+bool ClaspSolver::ExternalPropagator::
+DeferStepsWithTimeoutDeferPropagationHeuristics::shallWePropagate(Clasp::Solver& s)
+{
+	boost::posix_time::ptime now(boost::posix_time::microsec_clock::local_time());
+	if( skipMaxDuration < (now - lastPropagation) )
+	{
+		lastPropagation = now;
+		skipCounter = 0;
+		return true;
+	}
+	else
+	{
+		if( skipCounter >= skipAmount )
+		{
+			lastPropagation = now;
+			skipCounter = 0;
+			return true;
+		}
+		else
+		{
+			skipCounter++;
+			return false;
+		}
+	}
+}
+
+void ClaspSolver::ExternalPropagator::
+DeferStepsWithTimeoutDeferPropagationHeuristics::forcePropagation()
+{
+	skipCounter = skipAmount;
+}
+
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) :
 		cs(cs),
+		deferHeuristics(),
 		lastDL(0),
 		lastTrail(0),
 		needToUndoDownToThisDecisionLevel(0),
@@ -370,6 +426,11 @@ void ClaspSolver::ExternalPropagator::undoNecessaryDecisionLevels(){
 	}
 }
 
+void ClaspSolver::ExternalPropagator::setHeuristics(DeferPropagationHeuristicsPtr dh)
+{
+	deferHeuristics = dh;
+}
+
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	// directly updating here would slow us down a lot, in particular if we
 	// are not going to use the interpretation therefore we just record on
@@ -380,7 +441,8 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 	// here we can skip propagations, as many as we want, we can even skip all
 	// (e.g. for --eaevalheuristics=never, because isModel() never skips)
-	if( checkIfHexInterpretationPropagationShouldBeDone(s) )
+	if( deferHeuristics == DeferPropagationHeuristicsPtr()
+	    || deferHeuristics->shallWePropagate(s) )
 	{
 		applyRecordedDecisionLevelUpdates(s);
 
@@ -401,29 +463,6 @@ void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(Clasp::S
 	// this both must be done (in that order) if a valid interpretation is required
 	undoNecessaryDecisionLevels();
 	updateNecessaryDecisionLevels(s);
-}
-
-bool ClaspSolver::ExternalPropagator::checkIfHexInterpretationPropagationShouldBeDone(Clasp::Solver& s){
-#if 1
-	// frequency based
-	const unsigned skipSoManyPropagates = 1000*1000;
-	static unsigned skipcounter = 0;
-	if( skipcounter > skipSoManyPropagates )
-	{
-		skipcounter = 0;
-		return true;
-	}
-	else
-	{
-		skipcounter++;
-		return false;
-	}
-#else
-	// TODO time-based
-	// TODO time+frequency-based (all K propagates but at least all N seconds and at most M times a second)
-	st.start = boost::posix_time::microsec_clock::local_time();
-	return prop(s);
-#endif
 }
 
 void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
@@ -1598,6 +1637,14 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
 		ep = new ExternalPropagator(*this);
+		{
+			// configure propagator
+			double deferMS = ctx.config.getOption("ClaspDeferMaxTMilliseconds");
+			ExternalPropagator::DeferPropagationHeuristicsPtr dh(
+					new ExternalPropagator::DeferStepsWithTimeoutDeferPropagationHeuristics(
+						*ep, ctx.config.getOption("ClaspDeferNPropagations"), deferMS / 1000.0));
+			ep->setHeuristics(dh);
+		}
 		claspInstance.master()->addPost(ep);
 
 		// endInit() must be called once before the search starts
@@ -1674,6 +1721,14 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
 		ep = new ExternalPropagator(*this);
+		{
+			// configure propagator
+			double deferMS = ctx.config.getOption("ClaspDeferMaxTMilliseconds");
+			ExternalPropagator::DeferPropagationHeuristicsPtr dh(
+					new ExternalPropagator::DeferStepsWithTimeoutDeferPropagationHeuristics(
+						*ep, ctx.config.getOption("ClaspDeferNPropagations"), deferMS / 1000.0));
+			ep->setHeuristics(dh);
+		}
 		claspInstance.master()->addPost(ep);
 
 		// endInit() must be called once before the search starts
