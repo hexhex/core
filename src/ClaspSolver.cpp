@@ -1588,6 +1588,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
 		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
+		//claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
 		claspInstance.enumerator()->enumerate(0);
 
 		// respect weak constraints
