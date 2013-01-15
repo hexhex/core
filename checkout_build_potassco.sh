@@ -39,11 +39,11 @@ else
   echo "patching gringo (for multithreaded)"
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
     { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.patch ||
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.diff ||
     { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.patch ||
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
     { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.patch ||
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
     { echo "gringo patching failed!"; exit -1; }
   #echo "patching gringo (for clang)"
   #patch -d gringo -p0 <gringo/patches/patch-clang.diff ||

@@ -32,6 +32,12 @@ else
   echo "patching gringo (for multithreaded)"
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
     { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.diff ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
+    { echo "gringo patching failed!"; exit -1; }
   echo "using clang: ${USING_CLANG}"
   if test "xyes" == "x${USING_CLANG}"; then
     echo "patching gringo (for clang)"
