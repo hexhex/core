@@ -29,12 +29,14 @@ if test -e gringo; then
 else
 	echo "unpacking gringo"
   tar xzf ${TOP_SRCDIR}/gringo-3.0.4-source.tar.gz --transform 's/gringo-3.0.4-source/gringo/'
-  echo "patching gringo (for multithreaded)"
+  echo "patching gringo"
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
     { echo "gringo patching failed!"; exit -1; }
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.diff ||
     { echo "gringo patching failed!"; exit -1; }
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl-builtsource.diff ||
     { echo "gringo patching failed!"; exit -1; }
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
     { echo "gringo patching failed!"; exit -1; }

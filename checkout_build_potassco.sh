@@ -36,12 +36,14 @@ else
 	echo "checking out gringo";
   svn co $POTASSCO_REPOROOT/tags/gringo-3.0.4 gringo
   mkdir -p gringo/build/release
-  echo "patching gringo (for multithreaded)"
+  echo "patching gringo"
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
     { echo "gringo patching failed!"; exit -1; }
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.diff ||
     { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
+  patch -d gringo -p1 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
+    { echo "gringo patching failed!"; exit -1; }
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl-builtsource.diff ||
     { echo "gringo patching failed!"; exit -1; }
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
     { echo "gringo patching failed!"; exit -1; }
