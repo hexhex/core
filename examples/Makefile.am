@@ -10,6 +10,7 @@ EXTRA_DIST = \
     agg3.hex \
     agg4.hex \
     anonymousvariable1.hex \
+    auxinput.hex \
     builtin_safety1.hex \
     builtin_safety1a.hex \
     builtin_safety1b.hex \
@@ -37,12 +38,22 @@ EXTRA_DIST = \
     extatom7.hex \
     extatom8.hex \
     extatom9.hex \
+    extatom10.hex \
     higherorder1.hex \
     higherorder2.hex \
     higherorder3.hex \
     higherorder4.hex \
     higherorder5.hex \
     higherorder5except.hex \
+    liberalsafety1.hex \
+    liberalsafety2.hex \
+    liberalsafety3.hex \
+    liberalsafety4.hex \
+    liberalsafety5.hex \
+    liberalsafety6.hex \
+    liberalsafety7.hex \
+    liberalsafety8.hex \
+    liberalsafety9.hex \
     manyanswersets.hex \
     minimality.hex \
     msp.hex \
@@ -127,6 +138,7 @@ EXTRA_DIST = \
     tests/agg3.out \
     tests/agg4.out \
     tests/anonymousvariable1.out \
+    tests/auxinput.out \
     tests/builtin_safety1.stderr \
     tests/builtin_safety1a.stderr \
     tests/builtin_safety1b.stderr \
@@ -150,12 +162,22 @@ EXTRA_DIST = \
     tests/extatom7.out \
     tests/extatom8.out \
     tests/extatom9.out \
+    tests/extatom10.out \
     tests/higherorder1.out \
     tests/higherorder2.out \
     tests/higherorder3.out \
     tests/higherorder4.out \
     tests/higherorder5.out \
     tests/higherorder5except.stderr \
+    tests/liberalsafety1.out \
+    tests/liberalsafety2.out \
+    tests/liberalsafety3.out \
+    tests/liberalsafety4.out \
+    tests/liberalsafety5.out \
+    tests/liberalsafety6.out \
+    tests/liberalsafety7.out \
+    tests/liberalsafety8.out \
+    tests/liberalsafety9.out \
     tests/manyanswersets_twomodels.stdout \
     tests/minimality.out \
     tests/msp.out \
