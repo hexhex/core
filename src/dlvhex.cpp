@@ -218,9 +218,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      1  - program analysis information (including dot-file)" << std::endl
       << "                      2  - program modifications by plugins" << std::endl
       << "                      4  - intermediate model generation info" << std::endl
-      << "                      8  - timing information (only if configured with" << std::endl
-      << "                                               --enable-debug)" << std::endl
+      << "                      8  - timing information" << std::endl
+      << "                           (only if configured with --enable-benchmark)" << std::endl
       << "                      add values for multiple categories." << std::endl
+      << "     --dumpstats      dump certain benchmarking results and statistics in CSV format." << std::endl
+      << "                      (only if configured with --enable-benchmark)" << std::endl
       << "     --graphviz=G     Specify comma separated list of graph types to export as .dot files." << std::endl
       << "                      Default is none, graph types are:" << std::endl
       << "                      dep    - Dependency Graph (once per program)" << std::endl
@@ -393,12 +395,12 @@ int main(int argc, char *argv[])
   pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
+	pctx.config.setOption("DumpStats",0);
 	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
 	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 	// frumpy is the name of the failsafe clasp config option
 	pctx.config.setStringOption("ClaspConfiguration","frumpy");
-	pctx.config.setOption("DumpStatsErdi",0); // perhaps only temporary
 	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
@@ -666,7 +668,7 @@ void processOptionsPrePlugin(
 		{ "liberalsafety", no_argument, 0, 33 },
 		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
-    { "dumpstats", no_argument, 0, 37 }, // perhaps only temporary
+    { "dumpstats", no_argument, 0, 37 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1239,7 +1241,7 @@ void processOptionsPrePlugin(
     case 36: pctx.config.setStringOption("ClaspConfiguration",std::string(optarg)); break;
 
     case 37:
-      pctx.config.setOption("DumpStatsErdi",1);
+      pctx.config.setOption("DumpStats",1);
       #if !defined(DLVHEX_BENCHMARK)
       throw std::runtime_error("you can only use --dumpstats if you configured with --enable-benchmark");
       #endif
