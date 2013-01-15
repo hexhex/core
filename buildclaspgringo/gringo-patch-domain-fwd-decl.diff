@@ -1,10 +1,10 @@
 Author: Thomas Krennwallner <tkren@kr.tuwien.ac.at>
 Description: Fix invalid use of incomplete type Domain compile error.
 Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=652787
-Index: gringo-3.0.3-source/libgringo/src/parser.r2c
+Index: libgringo/src/parser.r2c
 ===================================================================
---- gringo-3.0.3-source.orig/libgringo/src/parser.r2c	2010-11-03 22:24:59.000000000 +0100
-+++ gringo-3.0.3-source/libgringo/src/parser.r2c	2011-12-25 18:19:11.000000000 +0100
+--- libgringo/src/parser.r2c	2010-11-03 22:24:59.000000000 +0100
++++ libgringo/src/parser.r2c	2011-12-25 18:19:11.000000000 +0100
 @@ -22,6 +22,7 @@
  #include <gringo/constterm.h>
  #include <gringo/prgvisitor.h>
