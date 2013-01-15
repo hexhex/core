@@ -1512,6 +1512,7 @@ class ClaspSolver::ClaspInHexAppOptions:
       {
 	LOG(ERROR,"parsing clasp options '" + config + "' failed: '" +
 	   messages.error + "' (we support SearchOptions, try --help)");
+	throw std::runtime_error("parsing clasp options failed!");
       }
       for(ProgramOptions::StringSeq::const_iterator it = messages.warning.begin();
 	  it != messages.warning.end(); ++it){
