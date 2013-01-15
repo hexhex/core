@@ -36,6 +36,7 @@
 #include "dlvhex2/EvalHeuristicGreedy.h"
 #include "dlvhex2/EvalHeuristicShared.h"
 #include "dlvhex2/Logger.h"
+#include "dlvhex2/ProgramCtx.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -49,22 +50,29 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2) const{
+bool EvalHeuristicGreedy::mergeComponents(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2, bool negativeExternalDependency) const{
 
-	// never merge components with outer external atoms (they could become inner ones)
-	if (!ci1.outerEatoms.empty() || !ci2.outerEatoms.empty()) return false;
+	if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+		// here we could always merge
+		// however, we do this only if there are no negative external dependencies between the components (as this comes at exponential cost)
+		return !negativeExternalDependency;
+	}else{
 
-	// if both components have a fixed domain we can safely merge them
-	// (both can be solved by guess&check mg)
-	if (ci1.fixedDomain && ci2.fixedDomain) return true;
+		// never merge components with outer external atoms (they could become inner ones)
+		if (!ci1.outerEatoms.empty() || !ci2.outerEatoms.empty()) return false;
 
-	// if both components are solved by wellfounded mg and none of them has outer external atoms, then we merge them
-	// (the resulting component will still be wellfounded and an outer external atom can not become an inner one)
-	if (!ci1.innerEatomsNonmonotonic && !ci1.negativeDependencyBetweenRules && !ci1.disjunctiveHeads && ci1.innerEatoms.size() > 0 && ci1.outerEatoms.size() == 0 &&
-	    !ci2.innerEatomsNonmonotonic && !ci2.negativeDependencyBetweenRules && !ci2.disjunctiveHeads && ci2.innerEatoms.size() > 0 && ci2.outerEatoms.size() == 0) return true;
+		// if both components have a fixed domain we can safely merge them
+		// (both can be solved by guess&check mg)
+		if (ci1.fixedDomain && ci2.fixedDomain) return true;
 
-	// otherwise: don't merge them
-	return false;
+		// if both components are solved by wellfounded mg and none of them has outer external atoms, then we merge them
+		// (the resulting component will still be wellfounded and an outer external atom can not become an inner one)
+		if (!ci1.innerEatomsNonmonotonic && !ci1.negativeDependencyBetweenRules && !ci1.disjunctiveHeads && ci1.innerEatoms.size() > 0 && ci1.outerEatoms.size() == 0 &&
+		    !ci2.innerEatomsNonmonotonic && !ci2.negativeDependencyBetweenRules && !ci2.disjunctiveHeads && ci2.innerEatoms.size() > 0 && ci2.outerEatoms.size() == 0) return true;
+
+		// otherwise: don't merge them
+		return false;
+	}
 }
 
 EvalHeuristicGreedy::EvalHeuristicGreedy():
@@ -146,13 +154,13 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
   }
   #endif
 
+
   bool didSomething;
   do
   {
     didSomething = false;
 
 //compgraph.writeGraphViz(std::cout, true);
-
   //
   // forall external components e:
   // merge with all rules that 
@@ -239,6 +247,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
       }
     }
   }
+
 /*
   //
   // forall components with only inner rules or constraints:
@@ -399,6 +408,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
     }
   }
 */
+
   //
   // forall components c1:
   // merge with all other components c2 such that no cycle is broken
@@ -478,9 +488,19 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
         }
 
+        // check if there is an external dependency from comp to comp2
+        std::set<std::pair<ComponentGraph::Component, ComponentGraph::Component> > negdep;
+        BOOST_FOREACH (ComponentGraph::Dependency dep, compgraph.getDependencies()){
+          if (compgraph.getDependencyInfo(dep).externalPredicateInput/*negativeExternal*/){
+            negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
+          }
+        }
+
         // if this is the case, then do not merge
         if (!breakCycle){
-          if (mergeComponents(compgraph.propsOf(comp), compgraph.propsOf(comp2))){
+          bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end() && compgraph.propsOf(comp).outerEatomsNonmonotonic) ||
+		    (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end() && compgraph.propsOf(comp2).outerEatomsNonmonotonic);
+          if (mergeComponents(builder.getProgramCtx(), compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
               // merge only one pair at a time, otherwise this could create cycles which are not detected above:

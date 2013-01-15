@@ -82,7 +82,7 @@ void InternalGroundASPSolver::createNogoodsForRuleBody(ID ruleBodyAtomID, const 
 	BOOST_FOREACH(ID bodyLit, ruleBody){
 		bodySatIfLitSat.insert(createLiteral(bodyLit));
 	}
-	bodySatIfLitSat.insert(negation(ruleBodyAtomID));
+	bodySatIfLitSat.insert(negation(createLiteral(ruleBodyAtomID)));
 	nogoodset.addNogood(bodySatIfLitSat);
 
 	// 2. body must not be true if a literal is false
@@ -174,7 +174,7 @@ void InternalGroundASPSolver::createSingularLoopNogoods(){
 			BOOST_FOREACH(RulePair pair, shiftedProgram){
 				const Rule& r = reg->rules.getByID(pair.first);
 				if (r.head.size() > 0 && (r.head[0].address == litadr)){
-					supNogood.insert(negation(pair.second));
+					supNogood.insert(negation(createLiteral(pair.second)));
 				}
 			}
 			nogoodset.addNogood(supNogood);
@@ -324,12 +324,16 @@ void InternalGroundASPSolver::initializeLists(){
 
 		// remember this rule for each contained literal
 		for (std::vector<ID>::const_iterator lIt = r.head.begin(); lIt != r.head.end(); ++lIt){
+			if (lIt->isOrdinaryNongroundAtom()) throw GeneralError("Got nonground program");
+
 			rulesWithPosHeadLiteral[lIt->address].insert(ruleID);
 			// collect all facts
 			allFacts.insert(lIt->address);
 			ordinaryFacts.insert(lIt->address);
 		}
 		for (std::vector<ID>::const_iterator lIt = r.body.begin(); lIt != r.body.end(); ++lIt){
+			if (lIt->isOrdinaryNongroundAtom()) throw GeneralError("Got nonground program");
+
 			if (!lIt->isNaf()){
 				rulesWithPosBodyLiteral[lIt->address].insert(ruleID);
 			}else{

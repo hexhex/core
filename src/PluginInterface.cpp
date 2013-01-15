@@ -409,8 +409,8 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
 						ss << id;
 						first = false;
 					}
-#endif
 					DBGLOG(DBG, "Creating partial query for input tuple " << ss.str());
+#endif
 					Query qa = query;
 					qa.predicateInputMask = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
 					for (int parIndex = 0; parIndex < qa.input.size(); parIndex++){
