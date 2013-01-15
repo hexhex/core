@@ -88,6 +88,9 @@ public:
 
 private:
 	class ClaspInHexAppOptions;
+	// configure clasp using clasp commandline parsers and configuration in ProgramCtx
+	void configureClaspCommandline();
+
 	class ClaspTermination : public std::runtime_error{
 	public:
 		ClaspTermination() : std::runtime_error("ClaspThread: Termination request"){}

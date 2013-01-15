@@ -1436,7 +1436,7 @@ class ClaspSolver::ClaspInHexAppOptions:
     {
     }
 
-    ~ClaspInHexAppOptions()
+    virtual ~ClaspInHexAppOptions()
     {
       if( argv )
       {
@@ -1476,12 +1476,14 @@ class ClaspSolver::ClaspInHexAppOptions:
     void parse(const std::string& config)
     {
       assert(argc == 0 && argv == 0);
-      
+
+      //TODO we might want to use parsed.assign(ProgramOptions::parseCommandString(def.cmdLine, root)) however then we lose many comfort things in AppOptions, sadly AppOptions does not support directly parsing from a string
+
       const char* appName = "clasp-in-hex";
       // prepare simulated commandline
       std::vector<std::string> simulatedCommandline;
       // first argument = binary name
-      //simulatedCommandline.push_back(appName);
+      simulatedCommandline.push_back(appName);
 
       // parse into tokens to present as if it was a commandline
       boost::char_separator<char> sep(" ");
@@ -1506,7 +1508,6 @@ class ClaspSolver::ClaspInHexAppOptions:
       }
       argv[argc] = 0;
 
-      //if(! Base::parse(argc, argv, appName, Clasp::parsePositional) )
       if( !Base::parse(argc, argv, appName, myparsePositional) )
       {
 	LOG(ERROR,"parsing clasp options '" + config + "' failed: '" +
@@ -1558,33 +1559,10 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
-#if 0
-	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
-
-	// experimental section
-	{
-	  //pb.setExtendedRuleMode(Clasp::ProgramBuilder::mode_transform_dynamic);
-
-	  // activate this to get errors in make check, it is very unclear to me why these errors appear, they should not
-	  if( false ) {
-	    Clasp::SatElite::SatElite* pre = new Clasp::SatElite::SatElite();
-	    pre->options.maxIters = 20;
-	    pre->options.maxOcc   = 25;
-	    pre->options.maxTime  = 120;
-	    claspInstance.satPrepro.reset(pre);
-	  }
-	}
-
-	// use facade in a poor way to set heuristics
-	Clasp::ClaspConfig cc;
-	cc.applyHeuristic(claspConfig);
-#else
-
-	  Clasp::ClaspVsids* vsids = new Clasp::ClaspVsids(0.95);
-	  claspInstance.master()->setHeuristic(3, vsids);
-#endif
+	configureClaspCommandline();
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
+
 	bool initiallyInconsistent = false;
 
 	do
@@ -1672,11 +1650,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
-	claspAppOptionsHelper->configure(ctx.config.getStringOption("ClaspConfiguration"));
-
-	// use facade in a poor way to set heuristics
-	Clasp::ClaspConfig cc;
-	cc.applyHeuristic(claspConfig);
+	configureClaspCommandline();
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 
@@ -1723,6 +1697,33 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
 		sem_dlvhexDataStructures.wait();
 	}
+}
+
+void ClaspSolver::configureClaspCommandline()
+{
+	const std::string& configstr = ctx.config.getStringOption("ClaspConfiguration");
+	claspAppOptionsHelper->configure(configstr);
+
+	// experimental section
+	{
+	  // TODO handle these kinds of options
+	  //pb.setExtendedRuleMode(Clasp::ProgramBuilder::mode_transform_dynamic);
+
+	  // activate this to get errors in make check, it is very unclear to me why these errors appear, they should not
+	  if( false ) {
+	    Clasp::SatElite::SatElite* pre = new Clasp::SatElite::SatElite();
+	    pre->options.maxIters = 20;
+	    pre->options.maxOcc   = 25;
+	    pre->options.maxTime  = 120;
+	    claspInstance.satPrepro.reset(pre);
+	  }
+	}
+
+	// use facade in a poor way to set heuristics
+	// (Clasp::ClaspConfig::applyHeuristic() could be static, as it does not use state)
+	// (let's hope they don't change this)
+	Clasp::ClaspConfig cc;
+	cc.applyHeuristic(claspConfig);
 }
 
 ClaspSolver::~ClaspSolver(){
