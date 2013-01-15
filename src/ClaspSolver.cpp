@@ -538,7 +538,12 @@ void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(Clasp::Solve
 	// if nothing must be updated, we don't need to continue
 	if( needToUpdateFromTrail == s.trail().size() )
 	{
-		assert(needToUpdateFromDecisionLevel == 0);
+		// reset decision level to be updated, as we don't need to do anything at the moment
+		// it can happen that needToUpdateFromDecisionLevel != 0 here
+		// if we just propagated but then we get an additional update
+		// for the level with no new information in the trail, in this
+		// case it is safe to reset this to 0
+		needToUpdateFromDecisionLevel = 0;
 		return;
 	}
 
