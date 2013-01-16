@@ -189,7 +189,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		DLVHEX_BENCHMARK_START(sidflpenum);
 		InterpretationPtr flpbodyas = flpbodysolver->getNextModel();
 		DLVHEX_BENCHMARK_STOP(sidflpenum);
-		DLVHEX_BENCHMARK_REGISTER(flpcandidates, "Investigated models of FLP reduct");
+		DLVHEX_BENCHMARK_REGISTER(flpcandidates, "Checked FLP reduct models");
 		while(flpbodyas != InterpretationPtr())
 		{
 			DLVHEX_BENCHMARK_COUNT(flpcandidates,1);
