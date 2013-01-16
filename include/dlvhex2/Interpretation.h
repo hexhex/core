@@ -114,6 +114,7 @@ public:
     {  bits.clear();  }
 
   bool operator==(const Interpretation& other) const;
+  bool operator!=(const Interpretation& other) const;
   bool operator<(const Interpretation& other) const;
   
 
