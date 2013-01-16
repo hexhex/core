@@ -154,7 +154,7 @@ DeferStepsWithTimeoutDeferPropagationHeuristics::DeferStepsWithTimeoutDeferPropa
 	lastPropagation(boost::posix_time::microsec_clock::local_time()),
 	skipMaxDuration()
 {
-	skipMaxDuration = boost::posix_time::microseconds(skipMaxSeconds/1000000.0);
+	skipMaxDuration = boost::posix_time::microseconds(skipMaxSeconds*1000.0*1000.0);
 }
 
 bool ClaspSolver::ExternalPropagator::
@@ -163,6 +163,8 @@ DeferStepsWithTimeoutDeferPropagationHeuristics::shallWePropagate(Clasp::Solver&
 	boost::posix_time::ptime now(boost::posix_time::microsec_clock::local_time());
 	if( skipMaxDuration < (now - lastPropagation) )
 	{
+		DBGLOG(DBG,"we shall propagate to HEX because skipMaxDuration=" << skipMaxDuration <<
+		           " < time of last propgation, now=" << now << ", lastPropagation=" << lastPropagation);
 		lastPropagation = now;
 		skipCounter = 0;
 		return true;
@@ -171,6 +173,8 @@ DeferStepsWithTimeoutDeferPropagationHeuristics::shallWePropagate(Clasp::Solver&
 	{
 		if( skipCounter >= skipAmount )
 		{
+			DBGLOG(DBG,"we shall propagate to HEX because skipCounter=" << skipCounter <<
+				   " >= skipAmount=" << skipAmount);
 			lastPropagation = now;
 			skipCounter = 0;
 			return true;
@@ -441,9 +445,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 	// here we can skip propagations, as many as we want, we can even skip all
 	// (e.g. for --eaevalheuristics=never, because isModel() never skips)
-	if( deferHeuristics == DeferPropagationHeuristicsPtr()
-	    || deferHeuristics->shallWePropagate(s) )
+	if( !deferHeuristics || deferHeuristics->shallWePropagate(s) )
 	{
+		DBGLOG(DBG,"propagating to HEX (!!deferHeuristics) == " << (!!deferHeuristics));
 		applyRecordedDecisionLevelUpdates(s);
 
 		// propagate in external atoms (this may add new nogoods)
@@ -665,6 +669,7 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	// just record as in propagate()
 	recordUpdateDecisionLevels(s);
 
+	DBGLOG(DBG,"propagating to HEX (isModel)");
        	// but apply recorded changes (all so far) unconditionally
         // (because we must do prop(s) afterwards)
 	applyRecordedDecisionLevelUpdates(s);
