@@ -1644,6 +1644,13 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		// respect weak constraints
 //		addMinimizeConstraints(p);
 
+		// endInit() must be called once before the search starts
+		// (endInit might call propagators, so we add our propagator later)
+		DBGLOG(DBG, "Finalizing clasp initialization");
+		initiallyInconsistent = !claspInstance.endInit();
+		if( initiallyInconsistent )
+		  break;
+
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
 		ep = new ExternalPropagator(*this);
@@ -1656,12 +1663,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 			ep->setHeuristics(dh);
 		}
 		claspInstance.master()->addPost(ep);
-
-		// endInit() must be called once before the search starts
-		DBGLOG(DBG, "Finalizing clasp initialization");
-		initiallyInconsistent = !claspInstance.endInit();
-		if( initiallyInconsistent )
-		  break;
 
 		// like facade does
 		pb.getAssumptions(assumptions);
@@ -1723,10 +1724,28 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 
 		modelCount = 0;
 
+		// compared to the other constructor, we don't add unfounded set checker here
+		// XXX because we solve a sat and not an asp problem?
+
+		// compared to the other constructor we don't dump the program in lparse format here
+		// XXX why?
+#warning TODO fix duplicate code in ClaspSolver constructors
+
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
 		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
+		//claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
 		claspInstance.enumerator()->enumerate(0);
+
+		// respect weak constraints
+//		addMinimizeConstraints(p);
+
+		// endInit() must be called once before the search starts
+		// (endInit might call propagators, so we add our propagator later)
+		DBGLOG(DBG, "Finalizing clasp initialization");
+		initiallyInconsistent = !claspInstance.endInit();
+		if( initiallyInconsistent )
+		  break;
 
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
@@ -1741,11 +1760,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 		}
 		claspInstance.master()->addPost(ep);
 
-		// endInit() must be called once before the search starts
-		DBGLOG(DBG, "Finalizing clasp initialization");
-		initiallyInconsistent = !claspInstance.endInit();
-		if( initiallyInconsistent )
-		  break;
 	}
 	while(false);
 
