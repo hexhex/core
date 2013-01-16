@@ -221,11 +221,15 @@ private:
 		ExternalPropagator(ClaspSolver& cs);
 		void setHeuristics(DeferPropagationHeuristicsPtr deferHeuristics);
 		void prop(Clasp::Solver& s);
+		void initialize(Clasp::Solver& s);
 		virtual void undoLevel(Clasp::Solver& s);
 		virtual bool propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL = false);
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
+		// if this returns true, interpretation reflects the full state of assignments in s
+		virtual bool isComplete(const Clasp::Solver& s) const;
+		virtual InterpretationPtr getInterpretation();
 	};
 
 	// interface to clasp internals
@@ -254,8 +258,8 @@ private:
 	void addMinimizeConstraints(const AnnotatedGroundProgram& p);
 	bool sendNogoodSetToClasp(const NogoodSet& ns);
 
-	// output filtering
-	InterpretationPtr outputProjection(InterpretationConstPtr intr);
+	// output filtering (works on given interpretation and modifies it)
+	void outputProject(InterpretationPtr intr);
 
 protected:
 	// structural program information
