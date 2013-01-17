@@ -760,7 +760,9 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(Interpretation
 	return conflict;
 }
 
-bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation,
+	       	InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&ca verifyEAtom");
 
 	// prepare EA evaluation
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
@@ -783,9 +785,16 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 
 	// if the input to the external atom was complete, then remember the verification result
 	// (for incomplete input we cannot yet decide this)
-	if (!factWasSet ||
-	    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
-
+	//
+	// assert that ea mask is a subset of programmask
+	assert( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() ==
+	        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()) );
+	// now the original check
+        //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count()
+        //       ==
+        //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()   )){
+	// is simply whether factwasset fully covers eamask, i.e., whether in the subtraction eamask-factwasset any bit remains
+	if( !factWasSet || bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage(), factWasSet->getStorage() ) ) {
 		// remember the verification result
 		bool verify = vcb.verify();
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
