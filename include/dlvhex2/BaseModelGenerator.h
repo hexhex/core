@@ -145,6 +145,10 @@ protected:
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
     NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
+  virtual bool evaluateExternalAtomQuery(
+    PluginAtom::Query& query,
+    ExternalAnswerTupleCallback& cb,
+    NogoodContainerPtr nogoods) const;
 
   // calls evaluateExternalAtom for each atom in eatoms
   //
@@ -168,9 +172,10 @@ protected:
     const ExternalAtom& eatom, InterpretationConstPtr full) const;
 
   // from auxiliary input predicates and the eatom,
-  // calculate all tuples that are inputs to the eatom and store them into "inputs"
+  // calculate all tuples that are inputs to the eatom
+  // and store them as true bits into "inputs", bits can be looked up in the EAInputTupleCache in registry
   virtual void buildEAtomInputTuples(RegistryPtr reg,
-    const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
+    const ExternalAtom& eatom, InterpretationConstPtr i, InterpretationPtr inputs) const;
 };
 
 DLVHEX_NAMESPACE_END

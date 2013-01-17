@@ -44,10 +44,62 @@
 #include "dlvhex2/ExternalLearningHelper.h"
 
 #include <boost/foreach.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+// we define this class here, as we use it only in the implementation
+// it is stored in registry as an opaque shared pointer
+class EAInputTupleCache
+{
+protected:
+	// a vector of pointers to tuple, with null values allowed
+	// we use this similar to a bitset:
+	//
+        // the idaddress of an ordinary ground atom
+        // with predicate externalatom::auxinputpredicate
+	// is the address in this vector
+	//
+	// (null values are for all ordinary ground atoms which are not auxiliary input predicates)
+	// we trade this null space for addressing speed, as these tuples need to be looked up very often
+	//
+	// the stored tuples are input tuples to external atoms, with all replacements of variables
+        // due to externalatom::auxinputmapping already done
+	boost::ptr_vector< boost::nullable< Tuple > > cache;
+
+public:
+	// nothing virtual, this is for implementation
+	// and virtual function calls could slow us down
+	EAInputTupleCache(): cache() {}
+	// free the cache and delete all non-NULL pointers (automatically)
+	~EAInputTupleCache() {}
+
+	// just looks up and asserts everything is ok
+	inline const Tuple& lookup(IDAddress auxInputOgAtomAddress) const
+	{
+		assert(auxInputOgAtomAddress < cache.size());
+		assert( !cache.is_null(auxInputOgAtomAddress) );
+		return cache[auxInputOgAtomAddress];
+	}
+
+	// looks up tuple in vector and returns it
+	// creates empty tuple in vector and returns it if nothing was stored in vector
+	//
+	// resizes vector if necessary
+	inline Tuple& lookupOrCreate(IDAddress auxInputOgAtomAddress)
+	{
+		if( auxInputOgAtomAddress >= cache.size() )
+			cache.resize(auxInputOgAtomAddress+1, NULL);
+		if( cache.is_null(auxInputOgAtomAddress) )
+		{
+			cache.replace(auxInputOgAtomAddress, new Tuple);
+		}
+		return cache[auxInputOgAtomAddress];
+	}
+};
+typedef boost::shared_ptr<EAInputTupleCache> EAInputTupleCachePtr;
 
 BaseModelGenerator::ExternalAnswerTupleCallback::
 ~ExternalAnswerTupleCallback()
@@ -133,7 +185,8 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
       " with input interpretation " << *inputi);
 
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
-	DLVHEX_BENCHMARK_REGISTER(sidier,"integrate external results");
+
+  RegistryPtr reg = ctx.registry();
 
   // build input interpretation
   // for each input tuple (multiple auxiliary inputs possible)
@@ -141,73 +194,88 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   //   call retrieve
   //   integrate answer into interpretation i as additional facts
 
-  assert(!!eatom.pluginAtom);
-  PluginAtom* pluginAtom = eatom.pluginAtom;
-
   // if this is wrong, we might have mixed up registries between plugin and program
-  assert(eatom.predicate == pluginAtom->getPredicateID());
+  assert(!!eatom.pluginAtom && eatom.predicate == eatom.pluginAtom->getPredicateID());
 
   // project interpretation for predicate inputs
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(ctx.registry(), eatom, inputi);
 
-  // build input tuples
-  std::list<Tuple> inputs;
-  buildEAtomInputTuples(ctx.registry(), eatom, inputi, inputs);
-
-  if( Logger::Instance().shallPrint(Logger::PLUGIN) )
+  if( eatom.auxInputPredicate == ID_FAIL )
   {
-    LOG(PLUGIN,"eatom input tuples = ");
-    LOG_INDENT(PLUGIN);
-    BOOST_FOREACH(const Tuple& t, inputs)
-    {
-      std::stringstream s;
-      RawPrinter printer(s, ctx.registry());
-      s << "[";
-      printer.printmany(t,",");
-      s << "] ";
-      LOG(PLUGIN,s.str());
-    }
-    {
-      std::stringstream s;
-      RawPrinter printer(s, ctx.registry());
-      s << "(";
-      printer.printmany(eatom.tuple,",");
-      s << ")";
-      LOG(PLUGIN,"eatom output pattern = " << s.str());
-    }
-    LOG(PLUGIN,"projected eatom input interpretation = " << *eatominp);
+	// only one input tuple, and that is the one stored in eatom.inputs
+
+	// prepare callback for evaluation of this eatom
+	if( !cb.eatom(eatom) )
+	{
+		LOG(DBG,"callback aborted for eatom " << eatom);
+		return false;
+	}
+
+	// XXX here we copy it, we should just reference it
+	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, &eatom);
+	// XXX make this part of constructor
+	query.extinterpretation = inputi;
+	return evaluateExternalAtomQuery(query, cb, nogoods);
   }
-
-  // call callback and abort if requested
-  if( !inputs.empty() )
+  else
   {
-    if( !cb.eatom(eatom) )
-    {
-      LOG(DBG,"callback aborted for eatom " << eatom);
-      return false;
-    }
+	// auxiliary input predicate -> get input tuples (with cache)
+
+	// ensure we have a cache for external atom input tuples
+	if( !reg->eaInputTupleCache )
+		reg->eaInputTupleCache.reset(new EAInputTupleCache);
+	EAInputTupleCache& eaitc = *reg->eaInputTupleCache;
+
+	// build input tuples
+	// (we associate input tuples in the cache with the auxiliary external
+	// atom input tuples they have been created from)
+	// (for eatoms where no auxiliary input is required, we directly use ExternalAtom::inputs)
+	InterpretationPtr inputs(new Interpretation(reg));
+	// allocates inputs if necessary
+	buildEAtomInputTuples(ctx.registry(), eatom, inputi, inputs);
+
+	Interpretation::TrueBitIterator bit, bit_end;
+	boost::tie(bit, bit_end) = inputs->trueBits();
+
+	if( bit != bit_end )
+	{
+		// we have an input atom, so we tell the callback that we will process it
+		if( !cb.eatom(eatom) )
+		{
+			LOG(DBG,"callback aborted for eatom " << eatom);
+			return false;
+		}
+
+		for(;bit != bit_end; ++bit) {
+			const Tuple& inputtuple = eaitc.lookup(*bit);
+			// build query as reference to the storage in cache
+			// XXX here we copy, we could make it const ref in Query
+			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom);
+			query.extinterpretation = inputi;
+			if( ! evaluateExternalAtomQuery(query, cb, nogoods) )
+				return false;
+		}
+	}
   }
+  return true;
+}
 
-  // go over all ground input tuples as grounded by auxiliary inputs rule
-  BOOST_FOREACH(const Tuple& inputtuple, inputs)
-  {
-    #ifndef NDEBUG
-    std::string sinput;
-    {
-      std::stringstream s;
-      RawPrinter printer(s, ctx.registry());
-      s << "[";
-      printer.printmany(inputtuple,",");
-      s << "]";
-      sinput = s.str();
-    }
-    DBGLOG(DBG,"processing input tuple " << sinput << " = " << printrange(inputtuple));
-    #endif
+bool BaseModelGenerator::evaluateExternalAtomQuery(
+		PluginAtom::Query& query,
+	       	ExternalAnswerTupleCallback& cb,
+	       	NogoodContainerPtr nogoods) const {
+	const ProgramCtx& ctx = *query.ctx;
+	const RegistryPtr reg = ctx.registry();
+	const ExternalAtom& eatom = *query.eatom;
+	const Tuple& inputtuple = query.input;
 
-    // query
-    PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom);
-    query.extinterpretation = inputi;
+	if( Logger::Instance().shallPrint(Logger::PLUGIN) ) {
+	        LOG(PLUGIN,"eatom input pattern = " << printManyToString<RawPrinter>(eatom.inputs, ",", reg));
+		LOG(PLUGIN,"eatom output pattern = " << printManyToString<RawPrinter>(eatom.tuple, ",", reg));
+	        LOG(PLUGIN,"eatom input tuple = " << printManyToString<RawPrinter>(inputtuple, ",", reg));
+	}
+
     PluginAtom::Answer answer;
     assert(!!eatom.pluginAtom);
     if( query.ctx->config.getOption("UseExtAtomCache") ){
@@ -216,8 +284,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
     else
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
-
-      pluginAtom->retrieve(query, answer, nogoods);
+      eatom.pluginAtom->retrieve(query, answer, nogoods);
     }
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
@@ -235,21 +302,13 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
       }
     }
 
-    DLVHEX_BENCHMARK_SCOPE(sidier);
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidier,"integrate external results");
 
     // integrate result into interpretation
     BOOST_FOREACH(const Tuple& t, answer.get())
     {
-      if( Logger::Instance().shallPrint(Logger::PLUGIN) )
-      {
-        std::stringstream s;
-        RawPrinter printer(s, ctx.registry());
-        s << "(";
-        printer.printmany(t,",");
-        s << ")";
-        LOG(PLUGIN,"got answer tuple " << s.str());
-      }
-      if( !verifyEAtomAnswerTuple(ctx.registry(), eatom, t) )
+      LOG(PLUGIN,"got answer tuple " << printManyToString<RawPrinter>(t, ",", reg));
+      if( !verifyEAtomAnswerTuple(reg, eatom, t) )
       {
         LOG(WARNING,"external atom " << eatom << " returned tuple " <<
             printrange(t) << " which does not match output pattern (skipping)");
@@ -259,11 +318,10 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
       // call callback and abort if requested
       if( !cb.output(t) )
       {
-        LOG(DBG,"callback aborted for output tuple <" << printManyToString<RawPrinter>(t, ",", ctx.registry()) << ">");
+        LOG(DBG,"callback aborted for output tuple <" << printManyToString<RawPrinter>(t, ",", reg) << ">");
         return false;
       }
     }
-  } // go over all input tuples of this eatom
 
   return true;
 }
@@ -360,60 +418,69 @@ InterpretationPtr BaseModelGenerator::projectEAtomInputInterpretation(RegistryPt
 
 void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
   const ExternalAtom& eatom,
-  InterpretationConstPtr i,
-  std::list<Tuple>& inputs) const
+  InterpretationConstPtr interpretation,
+  InterpretationPtr inputs) const
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::buildEAIT");
   LOG_SCOPE(PLUGIN,"bEAIT",false);
   DBGLOG(DBG,"= buildEAtomInputTuples " << eatom);
 
-  // if there are no variables, there is no aux input predicate and only one input tuple
-  if( eatom.auxInputPredicate == ID_FAIL )
-  {
-    DBGLOG(DBG,"no auxiliary input predicate -> "
-        " returning single unchanged eatom.inputs " <<
-        printrange(eatom.inputs));
-    inputs.push_back(eatom.inputs);
-    return;
-  }
+  // it must be true here
+  assert(!!reg->eaInputTupleCache);
+  EAInputTupleCache& eaitc = *reg->eaInputTupleCache;
 
-  // otherwise we have to calculate a bit, using the aux input predicate
+  // if there are no variables, there is no eatom.auxInputPredicate and this function should not be called
+  assert(eatom.auxInputPredicate != ID_FAIL);
+
+  // otherwise find all aux input predicates that are true and extract their tuples
+  // XXX why don't we use a PredicateMask for this? or a part of ExternalAtomMask? 
   DBGLOG(DBG,"matching aux input predicate " << eatom.auxInputPredicate <<
       ", original eatom.inputs = " << printrange(eatom.inputs));
   dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
-  assert(reg != 0);
-  for(boost::tie(it, it_end) =
-      reg->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate);
-      it != it_end; ++it)
+  boost::tie(it, it_end) = reg->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate);
+  {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::buildEAIT2");
+  for(;it != it_end; ++it)
   {
     const dlvhex::OrdinaryAtom& oatom = *it;
-    #warning perhaps this could be made more efficient by storing back the id into oatom or by creating ogatoms.getIDRangeByPredicateID with some projecting adapter to PredicateIterator
-    ID idoatom = reg->ogatoms.getIDByStorage(oatom);
-    if( i->getFact(idoatom.address) )
+    IDAddress inputAtomBit = reg->ogatoms.getIDAddressByStorage(oatom);
+    // if this bit is relevant for us, i.e., we need to evaluate it
+    if( interpretation->getFact(inputAtomBit) )
     {
-      // add copy of original input tuple
-      inputs.push_back(eatom.inputs);
+      // lookup or create in cache
+      Tuple& t = eaitc.lookupOrCreate(inputAtomBit);
 
-      // modify this copy
-      Tuple& inp = inputs.back();
-
-      // replace all occurances of variables with the corresponding predicates in auxinput
-      for(unsigned idx = 0; idx < eatom.auxInputMapping.size(); ++idx)
+      if( t.empty() )
       {
-        // idx is the index of the argument to the auxiliary predicate
-        // at 0 there is the auxiliary predicate
-        ID replaceBy = oatom.tuple[idx+1];
-        // replaceBy is the ground term we will use instead of the input constant variable
-        for(std::list<unsigned>::const_iterator it = eatom.auxInputMapping[idx].begin();
-            it != eatom.auxInputMapping[idx].end(); ++it)
-        {
-          // *it is the index of the input term that is a variable
-          assert(inp[*it].isTerm() && inp[*it].isVariableTerm());
-          inp[*it] = replaceBy;
-        }
+	      // create it
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::buildEAIT3");
+	      // add copy of original input tuple
+	      t = eatom.inputs;
+
+	      // replace all occurances of variables with the corresponding predicates in auxinput
+	      for(unsigned idx = 0; idx < eatom.auxInputMapping.size(); ++idx)
+	      {
+		// idx is the index of the argument to the auxiliary predicate
+		// at 0 there is the auxiliary predicate
+		ID replaceBy = oatom.tuple[idx+1];
+		// replaceBy is the ground term we will use instead of the input constant variable
+		for(std::list<unsigned>::const_iterator it = eatom.auxInputMapping[idx].begin();
+		    it != eatom.auxInputMapping[idx].end(); ++it)
+		{
+		  // *it is the index of the input term that is a variable
+		  // (this also verifies that we do not overwrite a variable twice with different values)
+		  assert(t[*it].isTerm() && t[*it].isVariableTerm());
+		  t[*it] = replaceBy;
+		}
+	      }
+	      DBGLOG(DBG,"after inserting auxiliary predicate inputs: input = " << printManyToString<RawPrinter>(t, ",", reg));
       }
-      DBGLOG(DBG,"after inserting auxiliary predicate inputs: input = " << printrange(inp));
+
+      // signal to caller, that it should use the bit/tuple
+      inputs->setFact(inputAtomBit);
     }
+  }
   }
 }
 
@@ -459,14 +526,12 @@ void BaseModelGeneratorFactory::convertRuleBody(
       DBGLOG(DBG,"rewriting external atom " << eatom <<
           " literal with id " << *itlit);
 
-      assert(!!eatom.pluginAtom);
-      PluginAtom* pluginAtom = eatom.pluginAtom;
-
       // create replacement atom
       OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+      assert(!!eatom.pluginAtom);
       replacement.tuple.push_back(
           reg->getAuxiliaryConstantSymbol('r',
-            pluginAtom->getPredicateID()));
+            eatom.pluginAtom->getPredicateID()));
       if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && eatom.auxInputPredicate != ID_FAIL){
         replacement.tuple.push_back(eatom.auxInputPredicate);
       }
