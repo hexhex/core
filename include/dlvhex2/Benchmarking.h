@@ -362,7 +362,8 @@ void BenchmarkController::count(ID id, Count increment)
   boost::mutex::scoped_lock lock(mutex);
   Stat& s = instrumentations[id];
   s.count += increment;
-  s.prints += increment - 1;
+  // only count how often we count, otherwise we might spam
+  s.prints ++;
   printInformationContinous(s,Duration());
 }
 
