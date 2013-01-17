@@ -116,6 +116,10 @@ public:
   // (storage must have originated from iterator from here)
 	inline ID getIDByStorage(const OrdinaryAtom& atom) const throw ();
 
+  // get IDAddress of given storage retrieved by other means
+  // (storage must have originated from iterator from here)
+	inline IDAddress getIDAddressByStorage(const OrdinaryAtom& atom) const throw ();
+
 	// store atom, assuming it does not exist
   // assert that atom did not exist in table
 	inline ID storeAndGetID(const OrdinaryAtom& atom) throw();
@@ -233,6 +237,20 @@ ID OrdinaryAtomTable::getIDByStorage(
       );
 }
 
+// get IDAddress of given storage retrieved by other means
+// (storage must have originated from iterator from here)
+IDAddress OrdinaryAtomTable::getIDAddressByStorage(
+	const OrdinaryAtom& atom) const throw ()
+{
+  // we cannot assert anything really useful here!
+  // (if the user specifies another storage, iterator_to will segfault
+  //  anyway as there is no associated internal multi_index storage node)
+  ReadLock lock(mutex);
+  const AddressIndex& aidx(container.get<impl::AddressTag>());
+  AddressIndex::const_iterator it(aidx.iterator_to(atom));
+  assert(atom.kind == it->kind);
+  return it - aidx.begin();
+}
 
 // store symbol, assuming it does not exist (this is only asserted)
 ID OrdinaryAtomTable::storeAndGetID(
