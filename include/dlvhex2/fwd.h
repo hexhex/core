@@ -61,6 +61,9 @@ typedef boost::shared_ptr<AttributeGraph> AttributeGraphPtr;
 
 struct ExternalAtom;
 
+class EAInputTupleCache;
+typedef boost::shared_ptr<EAInputTupleCache> EAInputTupleCachePtr;
+
 // FinalEvalGraph is a typedef and must not be forward-declared!
 
 class HexParser;

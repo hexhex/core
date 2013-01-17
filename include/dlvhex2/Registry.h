@@ -34,6 +34,7 @@
 #define REGISTRY_HPP_INCLUDED_14012011
 
 #include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.h"
 #include "dlvhex2/Printhelpers.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/TermTable.h"
@@ -93,6 +94,12 @@ struct Registry:
   RuleTable rules;
   ModuleTable moduleTable;
   std::vector<Tuple> inputList;
+
+  // this cache is used by BaseModelGenerator but it should persist over
+  // the lifetime of different model generators, can be shared by various
+  // kinds of model generators derived from BaseModelGenerator, and its
+  // content depends only on the registry, so we store it here
+  EAInputTupleCachePtr eaInputTupleCache;
 
   //
   // modifiers
