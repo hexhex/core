@@ -73,63 +73,68 @@ DLVHEX_NAMESPACE_BEGIN
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
 
-	// assert that we have the same state as in the last propagation/isModel
-	assert(cs.ep && cs.ep->isComplete(s));
-
-	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
-	model->add(*cs.ep->getInterpretation());
-
-	#ifdef DEBUG
-	// create full model from symbol table and verify it against incrementally updated model
+	// compute model
+	InterpretationPtr model;
 	{
-		// create a model
-		// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
-		InterpretationPtr vermodel = InterpretationPtr(new Interpretation(cs.reg));
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
+		// assert that we have the same state as in the last propagation/isModel
+		assert(cs.ep && cs.ep->isComplete(s));
 
-		// get the symbol table from the solver
-		const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-		for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-			//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
-			//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
-			// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
-			// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
-			if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
-				IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-				// set it in the model
-				vermodel->setFact(adr);
+		model = InterpretationPtr(new Interpretation(cs.reg));
+		model->add(*cs.ep->getInterpretation());
+
+		#ifdef DEBUG
+		// create full model from symbol table and verify it against incrementally updated model
+		{
+			// create a model
+			// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
+			InterpretationPtr vermodel = InterpretationPtr(new Interpretation(cs.reg));
+
+			// get the symbol table from the solver
+			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+			for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+				//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
+				//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
+				// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
+				// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
+				if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
+					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+					// set it in the model
+					vermodel->setFact(adr);
+				}
+			}
+
+			if( *model != *vermodel )
+			{
+				LOG(ERROR,"reportModel mismatch!")
+				InterpretationPtr both(new Interpretation(cs.reg));
+				both->add(*model);
+				both->bit_and(*vermodel);
+				
+				LOG(ERROR,"in both interpretations: " << *both)
+
+				InterpretationPtr onlyinc(new Interpretation(cs.reg));
+				onlyinc->add(*model);
+				onlyinc->getStorage() -= both->getStorage();
+				LOG(ERROR,"only in incremental interpretation: " << *onlyinc)
+
+				InterpretationPtr onlydir(new Interpretation(cs.reg));
+				onlydir->add(*vermodel);
+				onlydir->getStorage() -= both->getStorage();
+				LOG(ERROR,"only in directly obtained interpretation: " << *onlydir)
+
+				LOG(ERROR,"registry: " << cs.reg->ogatoms);
+				throw std::runtime_error("model mismatch!");
 			}
 		}
+		#endif
 
-		if( *model != *vermodel )
-		{
-			LOG(ERROR,"reportModel mismatch!")
-			InterpretationPtr both(new Interpretation(cs.reg));
-			both->add(*model);
-			both->bit_and(*vermodel);
-			
-			LOG(ERROR,"in both interpretations: " << *both)
-
-			InterpretationPtr onlyinc(new Interpretation(cs.reg));
-			onlyinc->add(*model);
-			onlyinc->getStorage() -= both->getStorage();
-			LOG(ERROR,"only in incremental interpretation: " << *onlyinc)
-
-			InterpretationPtr onlydir(new Interpretation(cs.reg));
-			onlydir->add(*vermodel);
-			onlydir->getStorage() -= both->getStorage();
-			LOG(ERROR,"only in directly obtained interpretation: " << *onlydir)
-
-			LOG(ERROR,"registry: " << cs.reg->ogatoms);
-			throw std::runtime_error("model mismatch!");
-		}
+		// remember the model
+		DBGLOG(DBG, "ClaspThread: Produced a model");
 	}
-	#endif
 
-	// remember the model
-	DBGLOG(DBG, "ClaspThread: Produced a model");
-
+	// put model into queue
 	// thread-safe queue access
 	if (!cs.strictSingleThreaded){
 		{
