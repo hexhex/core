@@ -694,6 +694,7 @@ ID GenuineGuessAndCheckModelGeneratorAsync::getWatchedLiteral(int eaIndex, Inter
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&ca verifyEAtoms");
 
 	DBGLOG(DBG, "Evaluating External Atoms");
 
