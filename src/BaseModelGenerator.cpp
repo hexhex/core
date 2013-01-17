@@ -197,6 +197,9 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   // if this is wrong, we might have mixed up registries between plugin and program
   assert(!!eatom.pluginAtom && eatom.predicate == eatom.pluginAtom->getPredicateID());
 
+  // update masks (inputMask and auxInputMask)
+  eatom.updatePredicateInputMask();
+
   // project interpretation for predicate inputs
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(ctx.registry(), eatom, inputi);
@@ -405,7 +408,8 @@ InterpretationPtr BaseModelGenerator::projectEAtomInputInterpretation(RegistryPt
   const ExternalAtom& eatom, InterpretationConstPtr full) const
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::projectEAII");
-  eatom.updatePredicateInputMask();
+  // we do this in general for the eatom
+  //eatom.updatePredicateInputMask();
 
   InterpretationPtr ret;
   if( full == 0 )
@@ -417,71 +421,66 @@ InterpretationPtr BaseModelGenerator::projectEAtomInputInterpretation(RegistryPt
 }
 
 void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
-  const ExternalAtom& eatom,
-  InterpretationConstPtr interpretation,
-  InterpretationPtr inputs) const
+		const ExternalAtom& eatom,
+		InterpretationConstPtr interpretation,
+		InterpretationPtr inputs) const
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::buildEAIT");
-  LOG_SCOPE(PLUGIN,"bEAIT",false);
-  DBGLOG(DBG,"= buildEAtomInputTuples " << eatom);
+	LOG_SCOPE(PLUGIN,"bEAIT",false);
+	DBGLOG(DBG,"= buildEAtomInputTuples " << eatom);
 
-  // it must be true here
-  assert(!!reg->eaInputTupleCache);
-  EAInputTupleCache& eaitc = *reg->eaInputTupleCache;
+	// it must be true here
+	assert(!!reg->eaInputTupleCache);
+	EAInputTupleCache& eaitc = *reg->eaInputTupleCache;
 
-  // if there are no variables, there is no eatom.auxInputPredicate and this function should not be called
-  assert(eatom.auxInputPredicate != ID_FAIL);
+	// if there are no variables, there is no eatom.auxInputPredicate and this function should not be called
+	assert(eatom.auxInputPredicate != ID_FAIL);
 
-  // otherwise find all aux input predicates that are true and extract their tuples
-  // XXX why don't we use a PredicateMask for this? or a part of ExternalAtomMask? 
-  DBGLOG(DBG,"matching aux input predicate " << eatom.auxInputPredicate <<
-      ", original eatom.inputs = " << printrange(eatom.inputs));
-  dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
-  boost::tie(it, it_end) = reg->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate);
-  {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::buildEAIT2");
-  for(;it != it_end; ++it)
-  {
-    const dlvhex::OrdinaryAtom& oatom = *it;
-    IDAddress inputAtomBit = reg->ogatoms.getIDAddressByStorage(oatom);
-    // if this bit is relevant for us, i.e., we need to evaluate it
-    if( interpretation->getFact(inputAtomBit) )
-    {
-      // lookup or create in cache
-      Tuple& t = eaitc.lookupOrCreate(inputAtomBit);
-
-      if( t.empty() )
-      {
-	      // create it
-
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseModelGen::buildEAIT3");
-	      // add copy of original input tuple
-	      t = eatom.inputs;
-
-	      // replace all occurances of variables with the corresponding predicates in auxinput
-	      for(unsigned idx = 0; idx < eatom.auxInputMapping.size(); ++idx)
-	      {
-		// idx is the index of the argument to the auxiliary predicate
-		// at 0 there is the auxiliary predicate
-		ID replaceBy = oatom.tuple[idx+1];
-		// replaceBy is the ground term we will use instead of the input constant variable
-		for(std::list<unsigned>::const_iterator it = eatom.auxInputMapping[idx].begin();
-		    it != eatom.auxInputMapping[idx].end(); ++it)
+	// otherwise find all aux input predicates that are true and extract their tuples
+	Interpretation relevant(reg);
+	relevant.getStorage() |= interpretation->getStorage() & eatom.getAuxInputMask()->getStorage();
+	Interpretation::TrueBitIterator it, it_end;
+	boost::tie(it, it_end) = relevant.trueBits();
+	{
+		for(;it != it_end; ++it)
 		{
-		  // *it is the index of the input term that is a variable
-		  // (this also verifies that we do not overwrite a variable twice with different values)
-		  assert(t[*it].isTerm() && t[*it].isVariableTerm());
-		  t[*it] = replaceBy;
-		}
-	      }
-	      DBGLOG(DBG,"after inserting auxiliary predicate inputs: input = " << printManyToString<RawPrinter>(t, ",", reg));
-      }
+			IDAddress inputAtomBit = *it;
 
-      // signal to caller, that it should use the bit/tuple
-      inputs->setFact(inputAtomBit);
-    }
-  }
-  }
+			// lookup or create in cache
+			Tuple& t = eaitc.lookupOrCreate(inputAtomBit);
+
+			if( t.empty() )
+			{
+				// create it
+
+				const dlvhex::OrdinaryAtom& oatom = reg->ogatoms.getByAddress(inputAtomBit);
+
+				// add copy of original input tuple
+				t = eatom.inputs;
+
+				// replace all occurances of variables with the corresponding predicates in auxinput
+				for(unsigned idx = 0; idx < eatom.auxInputMapping.size(); ++idx)
+				{
+					// idx is the index of the argument to the auxiliary predicate
+					// at 0 there is the auxiliary predicate
+					ID replaceBy = oatom.tuple[idx+1];
+					// replaceBy is the ground term we will use instead of the input constant variable
+					for(std::list<unsigned>::const_iterator it = eatom.auxInputMapping[idx].begin();
+							it != eatom.auxInputMapping[idx].end(); ++it)
+					{
+						// *it is the index of the input term that is a variable
+						// (this also verifies that we do not overwrite a variable twice with different values)
+						assert(t[*it].isTerm() && t[*it].isVariableTerm());
+						t[*it] = replaceBy;
+					}
+				}
+				DBGLOG(DBG,"after inserting auxiliary predicate inputs: input = " << printManyToString<RawPrinter>(t, ",", reg));
+			}
+
+			// signal to caller, that it should use the bit/tuple
+			inputs->setFact(inputAtomBit);
+		}
+	}
 }
 
 // rewrite all eatoms in body tuple to auxiliary replacement atoms

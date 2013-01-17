@@ -537,6 +537,8 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
 
   // create/invent auxiliary predicate and rule and add to registry
   ID auxHeadPred = createAuxiliaryRuleHeadPredicate(idat);
+  // auxInputMask is mutable so we may store it back this way (no index on it)
+  eatom.auxInputMask->addPredicate(auxHeadPred);
   ID auxHead = createAuxiliaryRuleHead(auxHeadPred, uniqueInputVariables);
   ID auxRule = createAuxiliaryRule(auxHead, auxBody);
   if( Logger::Instance().shallPrint(Logger::DBG) )

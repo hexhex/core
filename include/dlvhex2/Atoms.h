@@ -211,7 +211,10 @@ struct ExternalAtom:
   // long as we don't use predicateInputMask in an index of the
   // multi_index_container"
   //
+  #warning inputMask seems to be duplicated in parts of ExternalAtomMask
   mutable boost::shared_ptr<PredicateMask> inputMask;
+  // similarly we store a bitmask for all ogatoms with predicate auxInputPredicate
+  mutable boost::shared_ptr<PredicateMask> auxInputMask;
 
   // properties of this external atom
   mutable ExtSourceProperties prop;
@@ -225,6 +228,7 @@ public:
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
     inputMask(new PredicateMask),
+    auxInputMask(new PredicateMask),
     useProp(false)
     { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); prop.ea = this; }
   ExternalAtom(IDKind kind):
@@ -234,6 +238,7 @@ public:
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
     inputMask(new PredicateMask),
+    auxInputMask(new PredicateMask),
     useProp(false)
     { assert(ID(kind,0).isExternalAtom()); prop.ea = this; }
   ~ExternalAtom();
@@ -245,6 +250,7 @@ public:
     auxInputPredicate = ea.auxInputPredicate;
     auxInputMapping = ea.auxInputMapping;
     inputMask = ea.inputMask;
+    auxInputMask = ea.auxInputMask;
     prop = ea.prop;
     useProp = ea.useProp;
     prop.ea = this; // use the containing external atom
@@ -258,6 +264,7 @@ public:
     auxInputPredicate = ea.auxInputPredicate;
     auxInputMapping = ea.auxInputMapping;
     inputMask = ea.inputMask;
+    auxInputMask = ea.auxInputMask;
     prop = ea.prop;
     useProp = ea.useProp;
     prop.ea = this; // use the containing external atom
@@ -271,9 +278,12 @@ public:
   // needs a non-expired pluginAtom pointer (this is only asserted)
   // uses pluginAtom pointer to get the registry
   // we make this const so that we can call it on eatoms in ExternalAtomTable
+  //TODO rename this method to updateMasks()
   void updatePredicateInputMask() const;
   InterpretationConstPtr getPredicateInputMask() const
     { return inputMask->mask(); }
+  InterpretationConstPtr getAuxInputMask() const
+    { return auxInputMask->mask(); }
 };
 
 // module Atom structure
