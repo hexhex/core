@@ -307,7 +307,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
       }
       else
       {
-        assert(pattern.isConstantTerm());
+        assert(pattern.isConstantTerm() || pattern.isIntegerTerm());
         if( pattern != query )
         {
           ret = false;
