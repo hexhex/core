@@ -833,7 +833,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 	// only nogoods are relevant where all variables occur in this clasp instance
 	BOOST_FOREACH (ID lit, ng){
 		if (hexToClasp.find(lit.address) == hexToClasp.end()){
-			DBGLOG(DBG, "Skipping nogood because a literal is not in Clasp's literal list");
+			LOG(INFO, "Skipping nogood " << ng.getStringRepresentation(reg) << " because a literal is not in Clasp's literal list");
 			return std::pair<bool, bool>(true, false);
 		}
 	}
@@ -850,7 +850,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 		if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
 			if (pos.contains(hexToClasp[lit.address].var())) continue;
 			else if (neg.contains(hexToClasp[lit.address].var())){
-				DBGLOG(DBG, "Dropping tautological nogood");
+				LOG(INFO, "Dropping tautological nogood " << ng.getStringRepresentation(reg));
 				return std::pair<bool, bool>(true, false);
 			}
 			pos.insert(hexToClasp[lit.address].var());
@@ -859,7 +859,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 		}else{
 			if (neg.contains(hexToClasp[lit.address].var())) continue;
 			else if (pos.contains(hexToClasp[lit.address].var())){
-				DBGLOG(DBG, "Dropping tautological nogood");
+				LOG(INFO, "Dropping tautological nogood " << ng.getStringRepresentation(reg));
 				return std::pair<bool, bool>(true, false);
 			}
 			neg.insert(hexToClasp[lit.address].var());
@@ -879,7 +879,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 		// if requested, do not add clauses which do not cause a conflict on the current decision level
 		// (if this method is called by isModel() then we must not cause conflicts except on the top level)
 		if (onlyOnCurrentDL && !s.isFalse(clit)){
-			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
+			LOG(DBG, "Did not add nogood " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
 			return std::pair<bool, bool>(false, false);
 		}
 #ifndef NDEBUG
@@ -892,7 +892,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 	// if requested, do not add conflict clauses which cause a conflict on a decision level lower than the current one
 	// (if this method is called by isModel() then we must not cause conflicts except on the top level)
 	if (onlyOnCurrentDL && conflictOnLowerDL){
-		DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is conflicting on a lower decision level");
+		LOG(DBG, "Did not add nogood " << ng.getStringRepresentation(reg) << " because it is conflicting on a lower decision level");
 		return std::pair<bool, bool>(false, false);
 	}
 
