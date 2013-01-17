@@ -47,8 +47,6 @@
 
 #include <fstream>
 
-dlvhex::ProgramCtx* globalpc;
-
 DLVHEX_NAMESPACE_BEGIN
 
 BaseModelGenerator::ExternalAnswerTupleCallback::
@@ -211,9 +209,9 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
     PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom);
     query.extinterpretation = inputi;
     PluginAtom::Answer answer;
-    assert(globalpc);
-    if( globalpc->config.getOption("UseExtAtomCache") ){
-      pluginAtom->retrieveCached(query, answer, nogoods);
+    assert(!!eatom.pluginAtom);
+    if( query.ctx->config.getOption("UseExtAtomCache") ){
+      eatom.pluginAtom->retrieveCached(query, answer, nogoods);
     }
     else
     {

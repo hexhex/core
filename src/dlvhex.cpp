@@ -296,8 +296,6 @@ struct Config
 
 void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& pctx);
 
-extern dlvhex::ProgramCtx* globalpc = 0;
-
 int main(int argc, char *argv[])
 {
   const char* whoAmI = argv[0];
@@ -308,7 +306,6 @@ int main(int argc, char *argv[])
 
 	// program context
   ProgramCtx pctx;
-	globalpc = &pctx;
 	{
 		RegistryPtr registry(new Registry);
 		PluginContainerPtr pcp(new PluginContainer);

@@ -50,11 +50,6 @@
 
 #include <fstream>
 
-#if 1 // temporary for debugging
-extern dlvhex::ProgramCtx* globalpc;
-#endif
-
-
 DLVHEX_NAMESPACE_BEGIN
 
 FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
@@ -428,9 +423,8 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
       // kind will be overwritten
       Rule rflpbody(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 
-      assert(!!globalpc);
       // Note: EA-aux input rules MUST NOT be shifted! This could eliminate models of the reduct
-      if( r.isEAAuxInputRule() || globalpc->config.getOption("ExplicitFLPUnshift") == 1 )
+      if( r.isEAAuxInputRule() || ctx.config.getOption("ExplicitFLPUnshift") == 1 )
       {
         // original set of rules
         IDKind kind = ID::MAINKIND_RULE | ID::PROPERTY_AUX;
