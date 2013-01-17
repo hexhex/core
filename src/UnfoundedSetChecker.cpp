@@ -954,7 +954,7 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 	}
 	while ( model != InterpretationConstPtr()){
 		if (mode == WithExt){
-			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Investigated number of UFS candidates", 1);
+			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Checked UFS candidates", 1);
 		}
 
 		// check if the model is actually an unfounded set
@@ -1655,7 +1655,7 @@ std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(Inter
 	}
 	while ( model != InterpretationConstPtr()){
 		if (mode == WithExt){
-			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Investigated number of UFS candidates", 1);
+			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Checked UFS candidates", 1);
 		}
 
 		// check if the model is actually an unfounded set

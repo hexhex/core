@@ -252,13 +252,14 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
 	grounder = GenuineGrounder::getInstance(factory.ctx, program);
         annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 	solver = GenuineGroundSolver::getInstance(
-						factory.ctx, annotatedGroundProgram,
-						false, // thread interleaving (why exactly here and only here false?)
-						!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck")	// do the UFS check for disjunctions only if we don't do
-																	// a minimality check in this class;
-																	// this will not find unfounded sets due to external sources,
-																	// but at least unfounded sets due to disjunctions
-						);
+		factory.ctx, annotatedGroundProgram,
+	       	// no interleaved threading because guess and check MG will likely not profit from it
+		false,
+		// do the UFS check for disjunctions only if we don't do
+		// a minimality check in this class;
+		// this will not find unfounded sets due to external sources,
+		// but at least unfounded sets due to disjunctions
+		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
 	learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 	learnedEANogoodsTransferredIndex = 0;
 	nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
@@ -693,6 +694,7 @@ ID GenuineGuessAndCheckModelGeneratorAsync::getWatchedLiteral(int eaIndex, Inter
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&ca verifyEAtoms");
 
 	DBGLOG(DBG, "Evaluating External Atoms");
 
@@ -759,7 +761,9 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(Interpretation
 	return conflict;
 }
 
-bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation,
+	       	InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&ca verifyEAtom");
 
 	// prepare EA evaluation
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
@@ -782,9 +786,16 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 
 	// if the input to the external atom was complete, then remember the verification result
 	// (for incomplete input we cannot yet decide this)
-	if (!factWasSet ||
-	    ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())){
-
+	//
+	// assert that ea mask is a subset of programmask
+	assert( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() ==
+	        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()) );
+	// now the original check
+        //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count()
+        //       ==
+        //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()   )){
+	// is simply whether factwasset fully covers eamask, i.e., whether in the subtraction eamask-factwasset any bit remains
+	if( !factWasSet || bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage(), factWasSet->getStorage() ) ) {
 		// remember the verification result
 		bool verify = vcb.verify();
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
