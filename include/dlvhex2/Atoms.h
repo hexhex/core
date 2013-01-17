@@ -177,7 +177,8 @@ struct ExternalAtom:
   // (cannot be indexed in multi_index_container as it is mutable)
   // this is a POD-style pointer as the target object is dynamically loaded
   // shared library code, which cannot be weak_ptr- or shared_ptr-managed.
-  // (TODO use a weak ptr here with an empty deleter and adjust everything accordingly)
+  // (TODO use a weak ptr here with an empty deleter and adjust everything accordingly,
+  // then the shared library problem disappears and there is transparent and correct memory management)
   mutable PluginAtom* pluginAtom;
 
   // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here
