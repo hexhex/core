@@ -80,6 +80,7 @@ public:
 
   // get all external atoms with certain predicate id
   // NOTE: you may need to lock the mutex also while iterating!
+	// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
@@ -113,6 +114,7 @@ ExternalAtomTable::getByID(ID id) const throw ()
 
 // get all external atoms with certain predicate id
 // NOTE: you may need to lock the mutex also while iterating!
+// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
 std::pair<ExternalAtomTable::PredicateIterator, ExternalAtomTable::PredicateIterator>
 ExternalAtomTable::getRangeByPredicateID(ID id) const throw()
 {

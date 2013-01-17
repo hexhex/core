@@ -94,6 +94,7 @@ public:
 
   // get all module atoms with certain predicate id
   // NOTE: you may need to lock the mutex also while iterating!
+	// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
@@ -150,6 +151,7 @@ ID ModuleAtomTable::getIDByElement(ID predicate1, const Tuple& inputs1, ID outpu
 
 // get all external atoms with certain predicate id
 // NOTE: you may need to lock the mutex also while iterating!
+// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
 std::pair<ModuleAtomTable::PredicateIterator, ModuleAtomTable::PredicateIterator>
 ModuleAtomTable::getRangeByPredicateID(ID id) const throw()
 {
