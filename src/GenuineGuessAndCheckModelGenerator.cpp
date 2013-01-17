@@ -400,8 +400,8 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	}
 
 	// transfer nogoods to the solver
+	DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", learnedEANogoods->getNogoodCount()-learnedEANogoodsTransferredIndex);
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
-		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", 1);
 		const Nogood& ng = learnedEANogoods->getNogood(i);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
 		  	// we cannot use i==1 because of learnedEANogoods.clear() below in this function
