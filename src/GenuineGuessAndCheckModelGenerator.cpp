@@ -745,10 +745,13 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 	VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
 
-	// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
-	InterpretationPtr evalIntr = InterpretationPtr(new Interpretation(*partialInterpretation));
+	InterpretationConstPtr evalIntr = partialInterpretation;
 	if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
-		evalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
+		// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
+		// clone and extend
+		InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
+		ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
+		evalIntr = ncevalIntr;
 	}
 	// evaluate the external atom (and learn nogoods if external learning is used)
 	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
