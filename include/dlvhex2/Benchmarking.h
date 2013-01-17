@@ -266,10 +266,10 @@ void BenchmarkController::printInformation(const Stat& st)
   {
     (*output) <<
       "BM:" << std::setw(30) << st.name <<
-      ": count:" << std::setw(6) << st.count;
+      ": count:" << std::setw(8) << st.count;
 		(*output) <<
       " total:";
-    printInSecs(*output, st.duration, 6) <<
+    printInSecs(*output, st.duration, 4) <<
       "s avg:";
 		if( st.count > 0 )
 		{
@@ -309,9 +309,9 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
     {
       (*output) <<
         "BM:" << std::setw(30) << st.name <<
-        ": count:" << std::setw(6) << st.count <<
+        ": count:" << std::setw(8) << st.count <<
         " total:";
-      printInSecs(*output, st.duration, 6) << "s" <<
+      printInSecs(*output, st.duration, 4) << "s" <<
         " last:";
       printInSecs(*output, dur, 2) << "s" << ((st.running)?"(runs)":"") << std::endl;
     }
