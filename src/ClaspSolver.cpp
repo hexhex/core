@@ -292,21 +292,27 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 		  // transfer the first we can process (and this one must cause it to be inconsistent)
 		  // do not discard unprocessed, as we might transfer them later in a !onlyOnCurrentDL call
 		  for(std::list<Nogood>::iterator it = cs.nogoods.begin();
-		      it != cs.nogoods.end(); ++it)
+		      it != cs.nogoods.end();)
 		  {
 			Nogood& ng = *it;
 			bool proc, inc;
 			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
 			count++;
-			//LOG(DBG, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
-			if( proc )
-			{
-			  assert(inc && "in onlyOnCurrentDL mode, the first processed must per definition cause inconsistency");
-			  cs.nogoods.erase(it);
-			  success++;
-			  inconsistent = true;
-			  break;
+			LOG(WARNING, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
+			if( proc ) {
+				// erase and goto next
+				success++;
+				it = cs.nogoods.erase(it);
+			} else {
+				// goto next
+				it++;
 			}
+			if( inc ) {
+				// abort
+				inconsistent = true;
+				break;
+			}
+
 		  }
 		}
 		else
