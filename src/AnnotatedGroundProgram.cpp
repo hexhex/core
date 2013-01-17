@@ -329,11 +329,13 @@ void AnnotatedGroundProgram::computeECycles(){
 
 		// check for each e-edge x -> y if there is a path from y to x
 		// if yes, then y is a cyclic predicate input
-		std::vector<IDAddress> cyclicInputAtoms;
+		InterpretationPtr cyclicInputAtoms = InterpretationPtr(new Interpretation(reg));
 		typedef std::pair<IDAddress, IDAddress> Edge;
 		BOOST_FOREACH (Edge e, externalEdges){
-			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
-			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
+			if (!programComponents[comp].componentAtoms->getFact(e.first)) continue;
+			if (!programComponents[comp].componentAtoms->getFact(e.second)) continue;
+			//if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
+			//if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
 
 			std::vector<Graph::vertex_descriptor> reachable;
 			boost::breadth_first_search(depGraph, depNodes[e.second],
@@ -346,23 +348,24 @@ void AnnotatedGroundProgram::computeECycles(){
 
 			if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()){
 				// yes, there is a cycle
-				if (std::find(cyclicInputAtoms.begin(), cyclicInputAtoms.end(), e.second) == cyclicInputAtoms.end()){
-					cyclicInputAtoms.push_back(e.second);
-				}
+				cyclicInputAtoms->setFact(e.second);
 			}
 		}
-		eCycles.push_back(cyclicInputAtoms.size() > 0);
+		eCycles.push_back(cyclicInputAtoms->getStorage().count() > 0);
 		eCyclesTotal |= eCycles[eCycles.size() - 1];
 
 #ifndef NDEBUG
 		std::stringstream ss;
 		bool first = true;
-		BOOST_FOREACH (IDAddress a, cyclicInputAtoms){
+		bm::bvector<>::enumerator en = cyclicInputAtoms->getStorage().first();
+		bm::bvector<>::enumerator en_end = cyclicInputAtoms->getStorage().end();
+		while (en < en_end){
 			if (!first) ss << ", ";
 			first = false;
-			ss << a;
+			ss << *en;
+			en++;
 		}
-		if (cyclicInputAtoms.size() > 0){
+		if (cyclicInputAtoms->getStorage().count() > 0){
 			DBGLOG(DBG, "Component " << comp << ": 1 with cyclic input atoms " << ss.str());
 		}else{
 			DBGLOG(DBG, "Component " << comp << ": 0");
