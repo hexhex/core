@@ -64,6 +64,8 @@
 #include "clasp_options.h"
 
 
+// experiments with singleton loop nogoods:
+// PS with housekeeping: they are much worse both for unsat proofs and for finding solutions if problem is satisfiable (tested with status bcb6222b)
 #undef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
 
 DLVHEX_NAMESPACE_BEGIN
