@@ -300,7 +300,7 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 			bool proc, inc;
 			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
 			count++;
-			LOG(WARNING, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
+			//LOG(DBG, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
 			if( proc ) {
 				// erase and goto next
 				success++;
