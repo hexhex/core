@@ -274,6 +274,7 @@ bool BaseModelGenerator::evaluateExternalAtomQuery(
 	const Tuple& inputtuple = query.input;
 
 	if( Logger::Instance().shallPrint(Logger::PLUGIN) ) {
+	        LOG(PLUGIN,"eatom projected interpretation = " << *query.interpretation);
 	        LOG(PLUGIN,"eatom input pattern = " << printManyToString<RawPrinter>(eatom.inputs, ",", reg));
 		LOG(PLUGIN,"eatom output pattern = " << printManyToString<RawPrinter>(eatom.tuple, ",", reg));
 	        LOG(PLUGIN,"eatom input tuple = " << printManyToString<RawPrinter>(inputtuple, ",", reg));
