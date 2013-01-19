@@ -724,7 +724,9 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint
 	for(uint32_t at = from; at < to_exclusive; ++at) {
 		// handle literal as given in trail -> all these are true
 		{
-			AddressVector* c2h = cs.claspToHex[s.trail()[at].index()];
+			unsigned litaddr = s.trail()[at].index();
+			assert(litaddr < cs.claspToHex.size());
+			AddressVector* c2h = cs.claspToHex[litaddr];
 			// check if this literal has some meaning in HEX
 			if( !!c2h ) {
 				// go through all mappings of that literal to HEX
@@ -1061,7 +1063,7 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	}
 
 	// resize
-	resetAndResizeClaspToHex(largestIdx+1); // +1 because largest index must also be covered
+	resetAndResizeClaspToHex(largestIdx+1+1); // +1 because largest index must also be covered +1 because negative literal may also be there
 	// build back mapping
 	for(std::map<IDAddress,Clasp::Literal>::const_iterator it = hexToClasp.begin();
 	    it != hexToClasp.end(); ++it)
