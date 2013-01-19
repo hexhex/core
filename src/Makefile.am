@@ -43,7 +43,6 @@ dlvhex2_LDADD = \
 
 # dlvhex API
 libdlvhex2_base_la_SOURCES = \
-    AggregatePlugin.cpp \
     AnswerSet.cpp \
     AnnotatedGroundProgram.cpp \
     AnswerSetPrinterCallback.cpp \
@@ -72,7 +71,6 @@ libdlvhex2_base_la_SOURCES = \
     EvalHeuristicTrivial.cpp \
     ExternalAtomEvaluationHeuristics.cpp \
     ExternalLearningHelper.cpp \
-    ExistsPlugin.cpp \
     ExtSourceProperties.cpp \
     FLPModelGeneratorBase.cpp \
     GraphvizHelpers.cpp \
@@ -110,8 +108,7 @@ libdlvhex2_base_la_SOURCES = \
     State.cpp \
     URLBuf.cpp \
     UnfoundedSetCheckHeuristics.cpp \
-    UnfoundedSetChecker.cpp \
-    WeakConstraintPlugin.cpp
+    UnfoundedSetChecker.cpp
 
 # dlvhex MLP component
 libdlvhex2_mlpsolver_la_SOURCES =
@@ -128,9 +125,13 @@ libdlvhex2_aspsolver_la_SOURCES = \
 
 # dlvhex internal plugins
 libdlvhex2_internalplugins_la_SOURCES = \
+    AggregatePlugin.cpp \
+    ExistsPlugin.cpp \
+    HigherOrderPlugin.cpp \
+    ManualEvalHeuristicsPlugin.cpp \
     QueryPlugin.cpp \
     StrongNegationPlugin.cpp \
-    HigherOrderPlugin.cpp
+    WeakConstraintPlugin.cpp
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,

@@ -73,6 +73,7 @@
 #include "dlvhex2/HigherOrderPlugin.h"
 #include "dlvhex2/WeakConstraintPlugin.h"
 #include "dlvhex2/ExistsPlugin.h"
+#include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -437,6 +438,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
 			PluginInterfacePtr existsPlugin(new ExistsPlugin);
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
+			PluginInterfacePtr manualEvalHeuristicsPlugin(new ManualEvalHeuristicsPlugin);
+			pctx.pluginContainer()->addInternalPlugin(manualEvalHeuristicsPlugin);
 		}
 
 		// before anything else we dump the logo
