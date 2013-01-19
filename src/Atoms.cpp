@@ -184,17 +184,21 @@ void ExternalAtom::updatePredicateInputMask() const
 
     inputMask->setRegistry(reg);
   }
-  if( !auxInputMask->mask() )
-  {
-    // initially configure mask
-
-    assert(!!pluginAtom);
-    RegistryPtr reg = pluginAtom->getRegistry();
-
-    auxInputMask->setRegistry(reg);
-  }
   inputMask->updateMask();
-  auxInputMask->updateMask();
+
+  if( auxInputPredicate != ID_FAIL )
+  {
+	  if( !auxInputMask->mask() )
+	  {
+	    // initially configure mask
+
+	    assert(!!pluginAtom);
+	    RegistryPtr reg = pluginAtom->getRegistry();
+
+	    auxInputMask->setRegistry(reg);
+	  }
+	  auxInputMask->updateMask();
+  }
 }
 
 DLVHEX_NAMESPACE_END
