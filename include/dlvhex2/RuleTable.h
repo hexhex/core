@@ -80,6 +80,7 @@ public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
   typedef Container::index<impl::KindTag>::type KindIndex;
   typedef Container::index<impl::ElementTag>::type ElementIndex;
+  typedef AddressIndex::iterator AddressIterator;
   typedef ElementIndex::iterator ElementIterator;
 	// methods
 public:
@@ -103,6 +104,11 @@ public:
 
 	// implementation in Registry.cpp !
 	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
+
+	// get range over all atoms sorted by address
+	// NOTE: you may need to lock the mutex also while iterating!
+	inline std::pair<AddressIterator, AddressIterator>
+	getAllByAddress() const throw();
 };
 
 // retrieve by ID
@@ -186,6 +192,16 @@ void RuleTable::update(
   success = idx.replace(it, newStorage);
   (void)success;
 	assert(success);
+}
+
+// get range over all rules sorted by address
+// NOTE: you may need to lock the mutex also while iterating!
+std::pair<RuleTable::AddressIterator, RuleTable::AddressIterator>
+RuleTable::getAllByAddress() const throw()
+{
+  ReadLock lock(mutex);
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+	return std::make_pair(idx.begin(), idx.end());
 }
 
 DLVHEX_NAMESPACE_END
