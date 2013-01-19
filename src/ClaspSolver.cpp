@@ -1041,7 +1041,9 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	DBGLOG(DBG, "Building atom index");
 
 	claspInstance.symTab().startInit();
-	resetAndResizeClaspToHex((claspInstance.numVars()+1)*2);
+
+	// build symbol table and hexToClasp
+	unsigned largestIdx = 0;
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
@@ -1051,16 +1053,27 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
 				Clasp::Literal clasplit(c, false); // create positive literal -> false
 				hexToClasp[lit.address] = clasplit;
-				assert(clasplit.index() < claspToHex.size());
-				AddressVector* &c2h = claspToHex[clasplit.index()];
-				if( !c2h )
-				  c2h = new AddressVector;
-				c2h->push_back(lit.address);
-				//TODO what's this stuff with .lit = clasplit?
+				if( clasplit.index() > largestIdx )
+					largestIdx = clasplit.index();
 				claspInstance.symTab().addUnique(c, str.c_str()).lit = clasplit;
 			}
 		}
 	}
+
+	// resize
+	resetAndResizeClaspToHex(largestIdx+1); // +1 because largest index must also be covered
+	// build back mapping
+	for(std::map<IDAddress,Clasp::Literal>::const_iterator it = hexToClasp.begin();
+	    it != hexToClasp.end(); ++it)
+	{
+		const IDAddress hexlitaddress = it->first;
+		const Clasp::Literal& clasplit = it->second;
+		AddressVector* &c2h = claspToHex[clasplit.index()];
+		if( !c2h )
+			c2h = new AddressVector;
+		c2h->push_back(hexlitaddress);
+	}
+
 	claspInstance.symTab().endInit();
 }
 
