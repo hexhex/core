@@ -453,8 +453,6 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 	// undo down to 0 should be impossible, and we have reserved 0 as special value, make sure it never happens
 	assert(needToUndoDownToThisDecisionLevel != 0);
 
-	s.addUndoWatch(s.decisionLevel(), this);
-
 	// we backtracked, remember decision level and trail size here
 	lastDL = s.decisionLevel();
 	lastTrail = s.trail().size();
@@ -583,7 +581,7 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 	}
 
 	// always register callback, sometimes we get strange jumps in decision levels and we want to make sure we get all backtrackings
-	if( s.decisionLevel() > 0 )
+	if( s.decisionLevel() > 0 && s.decisionLevel() > lastDL )
 	{
 		// register callback
 		s.addUndoWatch(s.decisionLevel(), this);
