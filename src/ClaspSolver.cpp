@@ -453,6 +453,8 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 	// undo down to 0 should be impossible, and we have reserved 0 as special value, make sure it never happens
 	assert(needToUndoDownToThisDecisionLevel != 0);
 
+	s.addUndoWatch(s.decisionLevel(), this);
+
 	// we backtracked, remember decision level and trail size here
 	lastDL = s.decisionLevel();
 	lastTrail = s.trail().size();
@@ -563,24 +565,30 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 		    " new level " << s.decisionLevel() << " starts at " << s.levelStart(s.decisionLevel()));
 		assert(s.decisionLevel() == lastDL + 1);
 
-		// decision level has changed upwards - register callback
-		assert(s.decisionLevel() > 0);
-		s.addUndoWatch(s.decisionLevel(), this);
-
 		// here we came up, so lastTrail is OK from last call of undoLevel or of this method
 	}
 	else if( lastDL > s.decisionLevel() )
 	{
-		DBGLOG(DBG,"decision level update to " << s.decisionLevel() << " (down from " << lastDL << "),"
+		DBGLOG(DBG,"decision level update to " << s.decisionLevel() << " (down from " << lastDL << " with " << decisionLevelMasks.size() << " masks),"
 		    " new level " << s.decisionLevel() << " starts at " <<
 		    ((s.decisionLevel() == 0)?0:s.levelStart(s.decisionLevel())));
-		assert(s.decisionLevel() == lastDL - 1);
+
+		// XXX why does this assertion not work? sometimes we get undoLevel on level 3 followed by propagate on level 1 (sent mail to Benjamin)
+		//assert(s.decisionLevel() == lastDL - 1);
 
 		// going down -> watch already there
 
 		// lastTrail can be invalid from before (if last call was in
 		// undo and we initialize using start of this newly entered level
 	}
+
+	// always register callback, sometimes we get strange jumps in decision levels and we want to make sure we get all backtrackings
+	if( s.decisionLevel() > 0 )
+	{
+		// register callback
+		s.addUndoWatch(s.decisionLevel(), this);
+	}
+
 	
 	// here we know:
 	//
@@ -820,6 +828,7 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 }
 
 bool ClaspSolver::ExternalPropagator::isComplete(const Clasp::Solver& s) const {
+	//DBGLOG(DBG,"isComplete called with needToUndoDownToThisDecisionLevel=" << needToUndoDownToThisDecisionLevel << ", needToUpdateFromTrail=" << needToUpdateFromTrail << ", trail().size()=" << s.trail().size() << " and decision level " << s.decisionLevel());
 	return (needToUndoDownToThisDecisionLevel == 0) &&
 	       (s.trail().size() == needToUpdateFromTrail);
 }
