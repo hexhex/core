@@ -421,9 +421,6 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 	// -> new data will be appended to this trail size
 	assert(s.levelStart(s.decisionLevel()) == s.trail().size());
 
-	// we go back only one level, so current level is same or one less than last level
-	assert(s.decisionLevel() == lastDL || (s.decisionLevel() + 1) == lastDL);
-
 	// -> we need to undo this level
 	// the following command would do it immediately, but we want to propagate only
 	// in chosen moments and from propagate(), so we record the lowest decision level we must undo
@@ -448,7 +445,7 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 		needToUndoDownToThisDecisionLevel = std::min(needToUndoDownToThisDecisionLevel, s.decisionLevel());
 	}
 	DBGLOG(DBG, "recording undoLevel down to " << needToUndoDownToThisDecisionLevel <<
-	            " at " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
+	            " at " << s.decisionLevel() << "/" << s.trail().size());
 
 	// undo down to 0 should be impossible, and we have reserved 0 as special value, make sure it never happens
 	assert(needToUndoDownToThisDecisionLevel != 0);
@@ -555,38 +552,15 @@ void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Cl
 
 void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
 	// incremental update of HEX interpretation from clasp interpretation
-	if( lastDL < s.decisionLevel() )
+
+	// register callback whenever decision level changes
+	if( lastDL != s.decisionLevel() )
 	{
-		DBGLOG(DBG,"decision level update to " << s.decisionLevel() <<
-		    " (going up from " << lastDL << "),"
-		    " old level " << lastDL << " starts at " << ((lastDL==0)?0:s.levelStart(lastDL)) << ","
-		    " new level " << s.decisionLevel() << " starts at " << s.levelStart(s.decisionLevel()));
-		assert(s.decisionLevel() == lastDL + 1);
-
-		// here we came up, so lastTrail is OK from last call of undoLevel or of this method
+		// register undo watch
+		if( s.decisionLevel() != 0 )
+			s.addUndoWatch(s.decisionLevel(), this);
+		lastDL = s.decisionLevel();
 	}
-	else if( lastDL > s.decisionLevel() )
-	{
-		DBGLOG(DBG,"decision level update to " << s.decisionLevel() << " (down from " << lastDL << " with " << decisionLevelMasks.size() << " masks),"
-		    " new level " << s.decisionLevel() << " starts at " <<
-		    ((s.decisionLevel() == 0)?0:s.levelStart(s.decisionLevel())));
-
-		// XXX why does this assertion not work? sometimes we get undoLevel on level 3 followed by propagate on level 1 (sent mail to Benjamin)
-		//assert(s.decisionLevel() == lastDL - 1);
-
-		// going down -> watch already there
-
-		// lastTrail can be invalid from before (if last call was in
-		// undo and we initialize using start of this newly entered level
-	}
-
-	// always register callback, sometimes we get strange jumps in decision levels and we want to make sure we get all backtrackings
-	if( s.decisionLevel() > 0 && s.decisionLevel() > lastDL )
-	{
-		// register callback
-		s.addUndoWatch(s.decisionLevel(), this);
-	}
-
 	
 	// here we know:
 	//
@@ -616,7 +590,6 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 
 	// remember from where we need to start next
 	lastTrail = s.trail().size();
-	lastDL = s.decisionLevel();
 }
 
 void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp::Solver& s){
@@ -685,13 +658,9 @@ void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp:
 		}
 		uint32_t end;
 		if( level < s.decisionLevel() )
-		{
 			end = s.levelStart(level+1);
-		}
 		else
-		{
 			end = s.trail().size();
-		}
 
 		// update decision level data
 		// (this extends a previously existing level or starts to fill a new one, it's the same procedure)
