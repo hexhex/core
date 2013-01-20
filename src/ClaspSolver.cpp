@@ -479,23 +479,31 @@ void ClaspSolver::ExternalPropagator::undoDecisionLevel(uint32_t level){
 }
 
 void ClaspSolver::ExternalPropagator::undoNecessaryDecisionLevels(){
+	// if we need to undo
 	if( needToUndoDownToThisDecisionLevel > 0 )
 	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp undoNecDLs");
-
-		// we do not store level 0, so size is really index
-		uint32_t highestStoredDecisionLevel = decisionLevelMasks.size();
-		for(uint32_t at = highestStoredDecisionLevel;
-		    at >= needToUndoDownToThisDecisionLevel; --at)
+		// if we have masks so support this undo
+		// (we will not have such masks if we recorded levels but never updated them,
+		// in that case we just need to reset the recorded levels ane everything is fine)
+		if( decisionLevelMasks.size() > 0 )
 		{
-			// rollback decision level in changed/factWasSet/interpretation
-			undoDecisionLevel(at);
-		}
-		assert(decisionLevelMasks.size() == (needToUndoDownToThisDecisionLevel-1));
 
-		DBGLOG(DBG,"undoNecessaryDecisionLevels undid down to and including " <<
-		           needToUndoDownToThisDecisionLevel << ", " <<
-			   decisionLevelMasks.size() << " masks remain");
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp undoNecDLs");
+
+			// we do not store level 0, so size is really index
+			uint32_t highestStoredDecisionLevel = decisionLevelMasks.size();
+			for(uint32_t at = highestStoredDecisionLevel;
+			    at >= needToUndoDownToThisDecisionLevel; --at)
+			{
+				// rollback decision level in changed/factWasSet/interpretation
+				undoDecisionLevel(at);
+			}
+			assert(decisionLevelMasks.size() == (needToUndoDownToThisDecisionLevel-1));
+
+			DBGLOG(DBG,"undoNecessaryDecisionLevels undid down to and including " <<
+				   needToUndoDownToThisDecisionLevel << ", " <<
+				   decisionLevelMasks.size() << " masks remain");
+		}
 		// reset: 0 means we do not need to undo anything at the moment
 		needToUndoDownToThisDecisionLevel = 0;
 	}
