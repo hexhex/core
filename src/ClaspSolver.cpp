@@ -351,7 +351,7 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 	return !inconsistent;
 }
 
-void ClaspSolver::ExternalPropagator::printTrail(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive)
+void ClaspSolver::ExternalPropagator::printTrail(const Clasp::Solver& s, uint32_t from, uint32_t to_exclusive)
 {
   std::stringstream ss;
   assert(to_exclusive <= s.trail().size());
@@ -538,10 +538,10 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	return propagateNewNogoods(s);
 }
 
-void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(Clasp::Solver& s){
+void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp updateRDLU");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp applyRDLU");
 
 	// this both must be done (in that order) if a valid interpretation is required
 	undoNecessaryDecisionLevels();
@@ -608,7 +608,7 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 	lastDL = s.decisionLevel();
 }
 
-void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(Clasp::Solver& s){
+void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp::Solver& s){
 	DBGLOG(DBG,"updateNecessaryDecisionLevels at " << s.decisionLevel() << "/"
 	           "trail size " << s.trail().size() << ", need update from " <<
 		   needToUpdateFromTrail << " and from level " << needToUpdateFromDecisionLevel);
@@ -720,7 +720,7 @@ void ClaspSolver::ExternalPropagator::initialize(Clasp::Solver& s) {
 	}
 }
 
-void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
+void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
 	if( Logger::Instance().shallPrint(Logger::DBG) )
 	{
 		LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
