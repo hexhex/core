@@ -13,6 +13,12 @@ builtin_safety1d.hex builtin_safety1d.out --solver=genuineii
 comments.hex comments.out --solver=genuineii
 duplicaterule.asp duplicaterule.out --solver=genuineii
 equality.hex equality.out --solver=genuineii
+nonmoncycle.hex nonmoncycle.out --solver=genuineii
+nonmoncycle.hex nonmoncycle.out --solver=genuineii --flpcheck=ufs
+nonmoncycle.hex nonmoncycle.out --solver=genuineii --flpcheck=aufs
+nonmoncycle2.hex nonmoncycle2.out --solver=genuineii
+nonmoncycle2.hex nonmoncycle2.out --solver=genuineii --flpcheck=ufs
+nonmoncycle2.hex nonmoncycle2.out --solver=genuineii --flpcheck=aufs
 extatom1.hex extatom1.out --solver=genuineii
 extatom1simple.hex extatom1simple.out --solver=genuineii
 extatom2.hex extatom2.out --solver=genuineii
