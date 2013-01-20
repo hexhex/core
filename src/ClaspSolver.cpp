@@ -642,18 +642,12 @@ void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp:
 	// now manage all non-special decision levels (above 0)
 	for( uint32_t level = needToUpdateFromDecisionLevel; level <= s.decisionLevel(); ++level)
 	{
-		uint32_t start = s.levelStart(level);
+		uint32_t start = std::max(needToUpdateFromTrail, s.levelStart(level));
 		DBGLOG(DBG,"updating decision level " << level << " with start " << start << ", "
 		           "need to update trail from " << needToUpdateFromTrail << " have " << decisionLevelMasks.size() << " masks"); 
-		if( start < needToUpdateFromTrail )
-		{
-			// partial update of level -> mask exists
-			assert(haveMaskForLevel(level));
-		}
-		else
+		if( !haveMaskForLevel(level) )
 		{
 			// initial update of level -> mask does not exist
-			assert(!haveMaskForLevel(level));
 			decisionLevelMasks.push_back(InterpretationPtr(new Interpretation(cs.reg)));
 		}
 		uint32_t end;
