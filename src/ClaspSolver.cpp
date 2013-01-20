@@ -80,8 +80,13 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	InterpretationPtr model;
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
-		// assert that we have the same state as in the last propagation/isModel
-		assert(cs.ep && cs.ep->isComplete(s));
+		// assert that we have a propagator that incrementally builds our interpretation
+		assert(cs.ep);
+
+		// if reportModel is called without ep->isModel before (XXX yes, this happens, but i am not sure why)
+		cs.ep->applyRecordedDecisionLevelUpdates(s);
+
+		assert(cs.ep->isComplete(s));
 
 		model = InterpretationPtr(new Interpretation(cs.reg));
 		model->add(*cs.ep->getInterpretation());
