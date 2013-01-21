@@ -44,6 +44,8 @@
 #include <boost/foreach.hpp>
 #include <map>
 
+#undef DEBUG_UNIFICATION
+
 DLVHEX_NAMESPACE_BEGIN
 
 bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
@@ -51,21 +53,27 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
   if( tuple.size() != a.tuple.size() )
     return false;
 
+  #ifdef DEBUG_UNIFICATION
   DBGLOG_SCOPE(DBG,"unifiesWith",true);
+  #endif
   // unify from left to right
   Tuple result1(this->tuple);
   Tuple result2(a.tuple);
   // if both tuples have a variable, assign result1 variable to result2 for all occurences to the end
   // if one tuple has constant, assign this constant into the other tuple for all occurences to the end
   Tuple::iterator it1, it2;
+  #ifdef DEBUG_UNIFICATION
   DBGLOG(DBG,"starting with result1 tuple " << printvector(result1));
   DBGLOG(DBG,"starting with result2 tuple " << printvector(result2));
+  #endif
   for(it1 = result1.begin(), it2 = result2.begin();
       it1 != result1.end();
       ++it1, ++it2)
   {
+    #ifdef DEBUG_UNIFICATION
     DBGLOG(DBG,"at position " << static_cast<unsigned>(it1 - result1.begin()) <<
         ": checking " << *it1 << " vs " << *it2);
+    #endif
     if( *it1 != *it2 )
     {
       // different terms
@@ -118,9 +126,11 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
           return false;
         }
       }
+      #ifdef DEBUG_UNIFICATION
       DBGLOG(DBG,"after propagation of difference (look only after current position!):");
       DBGLOG(DBG,"result1 tuple " << printvector(result1));
       DBGLOG(DBG,"result2 tuple " << printvector(result2));
+      #endif
     }
   }
   return true;
