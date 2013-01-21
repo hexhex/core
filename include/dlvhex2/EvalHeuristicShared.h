@@ -68,27 +68,27 @@ void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& build
 template<typename ComponentGraphIntOrRest, typename Sequence>
 void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out)
 {
-  // we need a hash map, as component graph is no graph with vecS-storage
-  typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-  typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+	// we need a hash map, as component graph is no graph with vecS-storage
+	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
 
 	// create white hash map for topological sort
 	CompColorHashMap ccWhiteHashMap;
 	{
-    typename boost::graph_traits<ComponentGraphIntOrRest>::vertex_iterator cit, cit_end;
-    for(boost::tie(cit, cit_end) = boost::vertices(cg);
-        cit != cit_end; ++cit)
-    {
-      ccWhiteHashMap[*cit] = boost::white_color;
+		typename boost::graph_traits<ComponentGraphIntOrRest>::vertex_iterator cit, cit_end;
+		for(boost::tie(cit, cit_end) = boost::vertices(cg);
+		    cit != cit_end; ++cit)
+		{
+			ccWhiteHashMap[*cit] = boost::white_color;
 		}
 	}
 
-  assert(out.empty());
-  typename std::back_insert_iterator<Sequence> compinserter(out);
-  boost::topological_sort(
-      cg,
-      compinserter,
-      boost::color_map(CompColorMap(ccWhiteHashMap)));
+	assert(out.empty());
+	typename std::back_insert_iterator<Sequence> compinserter(out);
+	boost::topological_sort(
+		cg,
+		compinserter,
+		boost::color_map(CompColorMap(ccWhiteHashMap)));
 }
 
 }
