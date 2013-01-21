@@ -108,8 +108,26 @@ EvalGraphBuilder::createEvalUnit(
 		const std::list<Component>& comps, const std::list<Component>& ccomps)
 {
   LOG_SCOPE(ANALYZE,"cEU",true);
-  DBGLOG(DBG,"= EvalGraphBuilder::createEvalUnit(" <<
-			printrange(comps) << "," << printrange(ccomps) << ")");
+  if( Logger::Instance().shallPrint(Logger::DBG) ) {
+	DBGLOG(DBG,"= EvalGraphBuilder::createEvalUnit(" << printrange(comps) << "," << printrange(ccomps) << ")");
+	BOOST_FOREACH(Component c, comps) {
+		const ComponentInfo& ci = cg.propsOf(c);
+		if( !ci.innerEatoms.empty() )
+			DBGLOG(DBG," compi " << printManyToString<RawPrinter>(ci.innerEatoms, ",", registry()));
+		if( !ci.outerEatoms.empty() )
+			DBGLOG(DBG," compo " << printManyToString<RawPrinter>(ci.outerEatoms, ",", registry()));
+		if( !ci.innerRules.empty() )
+			DBGLOG(DBG," compr " << printManyToString<RawPrinter>(ci.innerRules, "\n", registry()));
+		if( !ci.innerConstraints.empty() )
+			DBGLOG(DBG," compc " << printManyToString<RawPrinter>(ci.innerConstraints, "\n", registry()));
+	}
+	BOOST_FOREACH(Component c, ccomps) {
+		const ComponentInfo& ci = cg.propsOf(c);
+		assert( ci.innerRules.empty() && ci.innerEatoms.empty() && ci.outerEatoms.empty() );
+		if( !ci.innerConstraints.empty() )
+			DBGLOG(DBG," ccompc " << printManyToString<RawPrinter>(ci.innerConstraints, "\n", registry()));
+	}
+  }
 
   // collapse components into new eval unit
 	// (this verifies necessary conditions and computes new dependencies)
