@@ -119,7 +119,7 @@ GenuineGuessAndCheckModelGeneratorFactory::createModelGenerator(
 std::ostream& GenuineGuessAndCheckModelGeneratorFactory::print(
     std::ostream& o) const
 {
-  return print(o, false);
+  return print(o, true);
 }
 
 std::ostream& GenuineGuessAndCheckModelGeneratorFactory::print(

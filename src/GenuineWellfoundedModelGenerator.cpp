@@ -106,13 +106,13 @@ std::ostream& GenuineWellfoundedModelGeneratorFactory::print(
   if( !idb.empty() )
   {
     o << " idb={";
-    printer.printmany(idb," ");
+    printer.printmany(idb,"\n");
     o << "}";
   }
   if( !xidb.empty() )
   {
     o << " xidb={";
-    printer.printmany(xidb," ");
+    printer.printmany(xidb,"\n");
     o << "}";
   }
   return o;

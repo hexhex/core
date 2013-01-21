@@ -115,7 +115,7 @@ std::ostream& GenuinePlainModelGeneratorFactory::print(
   }
   if( !xidb.empty() )
   {
-    printer.printmany(xidb,",");
+    printer.printmany(xidb,"\n");
   }
   return o;
 }
