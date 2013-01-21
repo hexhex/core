@@ -915,8 +915,9 @@ void ComponentGraph::computeCollapsedComponentInfos(
         // (this is a bug in the code calling this method!)
         if( itdm != outgoing.end() )
         {
-          throw std::runtime_error(
-              "computeCollapsedComponentInfos tried to create a cycle!");
+		std::stringstream s;
+		s << "Error: computeCollapsedComponentInfos tried to create a cycle via component " << source << " and " << *ito;
+		throw std::runtime_error(s.str());
         }
 			}
 			else
