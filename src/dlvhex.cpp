@@ -426,6 +426,8 @@ int main(int argc, char *argv[])
 
 		// initialize internal plugins
 		{
+			PluginInterfacePtr manualEvalHeuristicsPlugin(new ManualEvalHeuristicsPlugin);
+			pctx.pluginContainer()->addInternalPlugin(manualEvalHeuristicsPlugin);
 			PluginInterfacePtr queryPlugin(new QueryPlugin);
 			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
 			PluginInterfacePtr aggregatePlugin(new AggregatePlugin);
@@ -438,8 +440,6 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
 			PluginInterfacePtr existsPlugin(new ExistsPlugin);
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
-			PluginInterfacePtr manualEvalHeuristicsPlugin(new ManualEvalHeuristicsPlugin);
-			pctx.pluginContainer()->addInternalPlugin(manualEvalHeuristicsPlugin);
 		}
 
 		// before anything else we dump the logo
