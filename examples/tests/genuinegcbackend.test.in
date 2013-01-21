@@ -13,6 +13,12 @@ builtin_safety1c.hex builtin_safety1c.stderr --solver=genuinegc
 comments.hex comments.out --solver=genuinegc
 duplicaterule.asp duplicaterule.out --solver=genuinegc
 equality.hex equality.out --solver=genuinegc
+nonmoncycle.hex nonmoncycle.out --solver=genuinegc
+nonmoncycle.hex nonmoncycle.out --solver=genuinegc --flpcheck=ufs
+nonmoncycle.hex nonmoncycle.out --solver=genuinegc --flpcheck=aufs
+nonmoncycle2.hex nonmoncycle2.out --solver=genuinegc
+nonmoncycle2.hex nonmoncycle2.out --solver=genuinegc --flpcheck=ufs
+nonmoncycle2.hex nonmoncycle2.out --solver=genuinegc --flpcheck=aufs
 extatom1.hex extatom1.out --solver=genuinegc
 extatom1simple.hex extatom1simple.out --solver=genuinegc
 extatom2.hex extatom2.out --solver=genuinegc

@@ -173,7 +173,7 @@ private:
 		uint32_t needToUpdateFromTrail;
 
 		// debug the clasp solver trail
-		void printTrail(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
+		void printTrail(const Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
 
 		// current partial interpretation
 		InterpretationPtr interpretation;
@@ -206,16 +206,12 @@ private:
 		void recordUpdateDecisionLevels(Clasp::Solver& s);
 
 		// update all decision levels we have remembered that we must update
-		void updateNecessaryDecisionLevels(Clasp::Solver& s);
+		void updateNecessaryDecisionLevels(const Clasp::Solver& s);
 
 		// adds to decisionLevelMasks what needs to be added from the trail
 		// it is possible to call this method with level=0, then no undo-information will be recorded
 		// (this is necessary and useful for the static level which is directly put into the interpretation)
-		void updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive);
-
-		// undo and update recorded decision levels
-		void applyRecordedDecisionLevelUpdates(Clasp::Solver& s);
-
+		void updateDecisionLevel(const Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive);
 
 	public:
 		ExternalPropagator(ClaspSolver& cs);
@@ -230,6 +226,8 @@ private:
 		// if this returns true, interpretation reflects the full state of assignments in s
 		virtual bool isComplete(const Clasp::Solver& s) const;
 		virtual InterpretationPtr getInterpretation();
+		// undo and update recorded decision levels
+		void applyRecordedDecisionLevelUpdates(const Clasp::Solver& s);
 	};
 
 	// interface to clasp internals

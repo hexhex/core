@@ -64,6 +64,8 @@
 #include "clasp_options.h"
 
 
+// experiments with singleton loop nogoods:
+// PS with housekeeping: they are much worse both for unsat proofs and for finding solutions if problem is satisfiable (tested with status bcb6222b)
 #undef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
 
 DLVHEX_NAMESPACE_BEGIN
@@ -78,8 +80,13 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	InterpretationPtr model;
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
-		// assert that we have the same state as in the last propagation/isModel
-		assert(cs.ep && cs.ep->isComplete(s));
+		// assert that we have a propagator that incrementally builds our interpretation
+		assert(cs.ep);
+
+		// if reportModel is called without ep->isModel before (XXX yes, this happens, but i am not sure why)
+		cs.ep->applyRecordedDecisionLevelUpdates(s);
+
+		assert(cs.ep->isComplete(s));
 
 		model = InterpretationPtr(new Interpretation(cs.reg));
 		model->add(*cs.ep->getInterpretation());
@@ -298,7 +305,7 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 			bool proc, inc;
 			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
 			count++;
-			LOG(WARNING, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
+			//LOG(DBG, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
 			if( proc ) {
 				// erase and goto next
 				success++;
@@ -349,7 +356,7 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 	return !inconsistent;
 }
 
-void ClaspSolver::ExternalPropagator::printTrail(Clasp::Solver& s, uint32_t from, uint32_t to_exclusive)
+void ClaspSolver::ExternalPropagator::printTrail(const Clasp::Solver& s, uint32_t from, uint32_t to_exclusive)
 {
   std::stringstream ss;
   assert(to_exclusive <= s.trail().size());
@@ -414,9 +421,6 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 	// -> new data will be appended to this trail size
 	assert(s.levelStart(s.decisionLevel()) == s.trail().size());
 
-	// we go back only one level, so current level is same or one less than last level
-	assert(s.decisionLevel() == lastDL || (s.decisionLevel() + 1) == lastDL);
-
 	// -> we need to undo this level
 	// the following command would do it immediately, but we want to propagate only
 	// in chosen moments and from propagate(), so we record the lowest decision level we must undo
@@ -441,7 +445,7 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 		needToUndoDownToThisDecisionLevel = std::min(needToUndoDownToThisDecisionLevel, s.decisionLevel());
 	}
 	DBGLOG(DBG, "recording undoLevel down to " << needToUndoDownToThisDecisionLevel <<
-	            " at " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
+	            " at " << s.decisionLevel() << "/" << s.trail().size());
 
 	// undo down to 0 should be impossible, and we have reserved 0 as special value, make sure it never happens
 	assert(needToUndoDownToThisDecisionLevel != 0);
@@ -477,23 +481,31 @@ void ClaspSolver::ExternalPropagator::undoDecisionLevel(uint32_t level){
 }
 
 void ClaspSolver::ExternalPropagator::undoNecessaryDecisionLevels(){
+	// if we need to undo
 	if( needToUndoDownToThisDecisionLevel > 0 )
 	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp undoNecDLs");
-
-		// we do not store level 0, so size is really index
-		uint32_t highestStoredDecisionLevel = decisionLevelMasks.size();
-		for(uint32_t at = highestStoredDecisionLevel;
-		    at >= needToUndoDownToThisDecisionLevel; --at)
+		// if we have masks so support this undo
+		// (we will not have such masks if we recorded levels but never updated them,
+		// in that case we just need to reset the recorded levels ane everything is fine)
+		if( decisionLevelMasks.size() > 0 )
 		{
-			// rollback decision level in changed/factWasSet/interpretation
-			undoDecisionLevel(at);
-		}
-		assert(decisionLevelMasks.size() == (needToUndoDownToThisDecisionLevel-1));
 
-		DBGLOG(DBG,"undoNecessaryDecisionLevels undid down to and including " <<
-		           needToUndoDownToThisDecisionLevel << ", " <<
-			   decisionLevelMasks.size() << " masks remain");
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp undoNecDLs");
+
+			// we do not store level 0, so size is really index
+			uint32_t highestStoredDecisionLevel = decisionLevelMasks.size();
+			for(uint32_t at = highestStoredDecisionLevel;
+			    at >= needToUndoDownToThisDecisionLevel; --at)
+			{
+				// rollback decision level in changed/factWasSet/interpretation
+				undoDecisionLevel(at);
+			}
+			assert(decisionLevelMasks.size() == (needToUndoDownToThisDecisionLevel-1));
+
+			DBGLOG(DBG,"undoNecessaryDecisionLevels undid down to and including " <<
+				   needToUndoDownToThisDecisionLevel << ", " <<
+				   decisionLevelMasks.size() << " masks remain");
+		}
 		// reset: 0 means we do not need to undo anything at the moment
 		needToUndoDownToThisDecisionLevel = 0;
 	}
@@ -528,10 +540,10 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	return propagateNewNogoods(s);
 }
 
-void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(Clasp::Solver& s){
+void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp updateRDLU");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp applyRDLU");
 
 	// this both must be done (in that order) if a valid interpretation is required
 	undoNecessaryDecisionLevels();
@@ -540,31 +552,14 @@ void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(Clasp::S
 
 void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
 	// incremental update of HEX interpretation from clasp interpretation
-	if( lastDL < s.decisionLevel() )
+
+	// register callback whenever decision level changes
+	if( lastDL != s.decisionLevel() )
 	{
-		DBGLOG(DBG,"decision level update to " << s.decisionLevel() <<
-		    " (going up from " << lastDL << "),"
-		    " old level " << lastDL << " starts at " << ((lastDL==0)?0:s.levelStart(lastDL)) << ","
-		    " new level " << s.decisionLevel() << " starts at " << s.levelStart(s.decisionLevel()));
-		assert(s.decisionLevel() == lastDL + 1);
-
-		// decision level has changed upwards - register callback
-		assert(s.decisionLevel() > 0);
-		s.addUndoWatch(s.decisionLevel(), this);
-
-		// here we came up, so lastTrail is OK from last call of undoLevel or of this method
-	}
-	else if( lastDL > s.decisionLevel() )
-	{
-		DBGLOG(DBG,"decision level update to " << s.decisionLevel() << " (down from " << lastDL << "),"
-		    " new level " << s.decisionLevel() << " starts at " <<
-		    ((s.decisionLevel() == 0)?0:s.levelStart(s.decisionLevel())));
-		assert(s.decisionLevel() == lastDL - 1);
-
-		// going down -> watch already there
-
-		// lastTrail can be invalid from before (if last call was in
-		// undo and we initialize using start of this newly entered level
+		// register undo watch
+		if( s.decisionLevel() != 0 )
+			s.addUndoWatch(s.decisionLevel(), this);
+		lastDL = s.decisionLevel();
 	}
 	
 	// here we know:
@@ -595,10 +590,9 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 
 	// remember from where we need to start next
 	lastTrail = s.trail().size();
-	lastDL = s.decisionLevel();
 }
 
-void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(Clasp::Solver& s){
+void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp::Solver& s){
 	DBGLOG(DBG,"updateNecessaryDecisionLevels at " << s.decisionLevel() << "/"
 	           "trail size " << s.trail().size() << ", need update from " <<
 		   needToUpdateFromTrail << " and from level " << needToUpdateFromDecisionLevel);
@@ -648,29 +642,19 @@ void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(Clasp::Solve
 	// now manage all non-special decision levels (above 0)
 	for( uint32_t level = needToUpdateFromDecisionLevel; level <= s.decisionLevel(); ++level)
 	{
-		uint32_t start = s.levelStart(level);
+		uint32_t start = std::max(needToUpdateFromTrail, s.levelStart(level));
 		DBGLOG(DBG,"updating decision level " << level << " with start " << start << ", "
 		           "need to update trail from " << needToUpdateFromTrail << " have " << decisionLevelMasks.size() << " masks"); 
-		if( start < needToUpdateFromTrail )
-		{
-			// partial update of level -> mask exists
-			assert(haveMaskForLevel(level));
-		}
-		else
+		if( !haveMaskForLevel(level) )
 		{
 			// initial update of level -> mask does not exist
-			assert(!haveMaskForLevel(level));
 			decisionLevelMasks.push_back(InterpretationPtr(new Interpretation(cs.reg)));
 		}
 		uint32_t end;
 		if( level < s.decisionLevel() )
-		{
 			end = s.levelStart(level+1);
-		}
 		else
-		{
 			end = s.trail().size();
-		}
 
 		// update decision level data
 		// (this extends a previously existing level or starts to fill a new one, it's the same procedure)
@@ -710,7 +694,7 @@ void ClaspSolver::ExternalPropagator::initialize(Clasp::Solver& s) {
 	}
 }
 
-void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
+void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
 	if( Logger::Instance().shallPrint(Logger::DBG) )
 	{
 		LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
@@ -722,7 +706,9 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(Clasp::Solver& s, uint
 	for(uint32_t at = from; at < to_exclusive; ++at) {
 		// handle literal as given in trail -> all these are true
 		{
-			AddressVector* c2h = cs.claspToHex[s.trail()[at].index()];
+			unsigned litaddr = s.trail()[at].index();
+			assert(litaddr < cs.claspToHex.size());
+			AddressVector* c2h = cs.claspToHex[litaddr];
 			// check if this literal has some meaning in HEX
 			if( !!c2h ) {
 				// go through all mappings of that literal to HEX
@@ -803,6 +789,7 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 }
 
 bool ClaspSolver::ExternalPropagator::isComplete(const Clasp::Solver& s) const {
+	//DBGLOG(DBG,"isComplete called with needToUndoDownToThisDecisionLevel=" << needToUndoDownToThisDecisionLevel << ", needToUpdateFromTrail=" << needToUpdateFromTrail << ", trail().size()=" << s.trail().size() << " and decision level " << s.decisionLevel());
 	return (needToUndoDownToThisDecisionLevel == 0) &&
 	       (s.trail().size() == needToUpdateFromTrail);
 }
@@ -1039,7 +1026,9 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	DBGLOG(DBG, "Building atom index");
 
 	claspInstance.symTab().startInit();
-	resetAndResizeClaspToHex((claspInstance.numVars()+1)*2);
+
+	// build symbol table and hexToClasp
+	unsigned largestIdx = 0;
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
@@ -1049,16 +1038,27 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
 				Clasp::Literal clasplit(c, false); // create positive literal -> false
 				hexToClasp[lit.address] = clasplit;
-				assert(clasplit.index() < claspToHex.size());
-				AddressVector* &c2h = claspToHex[clasplit.index()];
-				if( !c2h )
-				  c2h = new AddressVector;
-				c2h->push_back(lit.address);
-				//TODO what's this stuff with .lit = clasplit?
+				if( clasplit.index() > largestIdx )
+					largestIdx = clasplit.index();
 				claspInstance.symTab().addUnique(c, str.c_str()).lit = clasplit;
 			}
 		}
 	}
+
+	// resize
+	resetAndResizeClaspToHex(largestIdx+1+1); // +1 because largest index must also be covered +1 because negative literal may also be there
+	// build back mapping
+	for(std::map<IDAddress,Clasp::Literal>::const_iterator it = hexToClasp.begin();
+	    it != hexToClasp.end(); ++it)
+	{
+		const IDAddress hexlitaddress = it->first;
+		const Clasp::Literal& clasplit = it->second;
+		AddressVector* &c2h = claspToHex[clasplit.index()];
+		if( !c2h )
+			c2h = new AddressVector;
+		c2h->push_back(hexlitaddress);
+	}
+
 	claspInstance.symTab().endInit();
 }
 
