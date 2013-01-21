@@ -235,6 +235,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      attr   - Attribute dependency graph (once per program)" << std::endl
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
+      << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)" << std::endl
       << "     --version        Show version information." << std::endl;
 }
 
@@ -673,6 +674,7 @@ void processOptionsPrePlugin(
 		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
     { "dumpstats", no_argument, 0, 37 },
+    { "iauxinaux", no_argument, 0, 38 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1249,6 +1251,10 @@ void processOptionsPrePlugin(
       #if !defined(DLVHEX_BENCHMARK)
       throw std::runtime_error("you can only use --dumpstats if you configured with --enable-benchmark");
       #endif
+      break;
+
+    case 38:
+      pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
       break;
 
 		case '?':
