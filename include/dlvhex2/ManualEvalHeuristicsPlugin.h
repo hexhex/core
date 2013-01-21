@@ -48,12 +48,19 @@ public:
 		// whether plugin is enabled
 		bool enabled;
 
+		// id of last rule in input (other rules are auxiliary, created by hex or plugins)
+		ID lastUserRuleID;
+
 		// assumption: parser processes rules in input and plugin understandable instructions sequentially
 		//
 		// running index used during parsing (rules of which unit are we currently parsing?)
 		unsigned currentUnit;
-		// maximum rule id parsed for each unit (this is set only after a unit is switched/finished)
-		Tuple goalUnitMaximumID;
+
+		// maximum rule id parsed is stored for each unit instruction
+		// the ID might be ID_FAIL which means that no rule comes before that, i.e., the first instruction in a file was #evalunit(...).
+		typedef std::pair<ID,unsigned> UnitInstruction;
+		typedef std::list<UnitInstruction> InstructionList;
+		InstructionList instructions;
 
 		CtxData();
 		virtual ~CtxData() {};
@@ -76,6 +83,9 @@ public:
 	// create parser modules that extend and the basic hex grammar
 	// this parser also stores the query information into the plugin
 	virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
+
+	// create program rewriter (we use it just to gather information from the parsed program)
+	virtual PluginRewriterPtr createRewriter(ProgramCtx& ctx);
 };
 
 DLVHEX_NAMESPACE_END
