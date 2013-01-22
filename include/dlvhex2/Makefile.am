@@ -73,6 +73,7 @@ pkginclude_HEADERS = \
   Nogood.h \
   OrdinaryASPProgram.h \
   OrdinaryASPSolver.h \
+  ManualEvalHeuristicsPlugin.h \
   ModelBuilder.h \
   ModelGenerator.h \
   ModelGraph.h \

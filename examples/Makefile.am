@@ -81,6 +81,8 @@ EXTRA_DIST = \
     weak2.hex \
     maxint.hex \
     naftest.hex \
+    nonmoncycle.hex \
+    nonmoncycle2.hex \
     nonmon_noloop.hex \
     nonmon_inc.hex \
     nonmon_guess.hex \
@@ -207,6 +209,8 @@ EXTRA_DIST = \
     tests/maxint.out \
     tests/naftest.out \
     tests/no_model.out \
+    tests/nonmoncycle.out \
+    tests/nonmoncycle2.out \
     tests/nonmon_noloop.out \
     tests/nonmon_inc.out \
     tests/nonmon_guess.out \
