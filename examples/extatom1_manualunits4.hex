@@ -1,0 +1,47 @@
+
+%
+% first component:
+% testA returns "foo" if c is empty
+% testA returns "bar" if c has one member
+%
+a(X) :- &testA[c](X), guard(X).
+b(X) v c(X) :- a(X).
+
+%
+% second component:
+% testB returns "bar" if n and m together have 1 or less members
+% testB returns "foo" if n and m together have 2 members
+%
+e(X) :- &testB[m,n](X), guard(X).
+m(X) v n(X) :- e(X).
+m(foo) :- e(foo).
+n(foo) :- e(foo).
+
+% eatom guess with both foo and bar must fail
+% eatom guess { &testB[m,n](foo), not &testB[m,n](bar) }:
+% => e(foo) activates m(foo) and n(foo) => classical model
+% => reduct is everything grounded with foo
+% => reduct has minimal model {} => no answer set
+% eatom guess { not &testB[m,n](foo), &testB[m,n](bar) }:
+% => two classical models:
+%    { e(bar), m(bar) } and { e(bar), n(bar) }
+% => for both the reduct is everything with bar
+% => the reduct has the same two classical models as minimal models
+% => these are answer sets
+
+%
+% third component: collect result from lower components:
+%
+result(X) :- b(X), m(X).
+
+%
+% EDB:
+%
+guard(foo).
+guard(bar).
+
+
+% first component has one answer set (see comments in extatom1simple.hex)
+% { a(foo), b(foo), guard(foo), guard(bar) }
+
+#evalunit(1).

@@ -21,6 +21,10 @@ nonmoncycle2.hex nonmoncycle2.out --solver=genuinegc --flpcheck=ufs
 nonmoncycle2.hex nonmoncycle2.out --solver=genuinegc --flpcheck=aufs
 extatom1.hex extatom1.out --solver=genuinegc
 extatom1simple.hex extatom1simple.out --solver=genuinegc
+extatom1_manualunits1.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
+extatom1_manualunits2.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
+extatom1_manualunits3.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
+extatom1_manualunits4.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
 extatom2.hex extatom2.out --solver=genuinegc
 extatom2safety.hex extatom2.out --solver=genuinegc
 extatom3.hex extatom3.out --nofacts --solver=genuinegc

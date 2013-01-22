@@ -20,6 +20,10 @@ nonmoncycle2.hex nonmoncycle2.out --solver=genuineii
 nonmoncycle2.hex nonmoncycle2.out --solver=genuineii --flpcheck=ufs
 nonmoncycle2.hex nonmoncycle2.out --solver=genuineii --flpcheck=aufs
 extatom1.hex extatom1.out --solver=genuineii
+extatom1_manualunits1.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
+extatom1_manualunits2.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
+extatom1_manualunits3.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
+extatom1_manualunits4.hex extatom1.out --solver=genuinegc --manualevalheuristics-enable
 extatom1simple.hex extatom1simple.out --solver=genuineii
 extatom2.hex extatom2.out --solver=genuineii
 # let's try all possible evaluation heuristics here (i.e., not monolithic) with genuineii (we always have this solver)

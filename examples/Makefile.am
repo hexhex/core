@@ -22,6 +22,10 @@ EXTRA_DIST = \
     empty.hex \
     equality.hex \
     extatom1.hex \
+    extatom1_manualunits1.hex \
+    extatom1_manualunits2.hex \
+    extatom1_manualunits3.hex \
+    extatom1_manualunits4.hex \
     extatom1simple.hex \
     extatom2.hex \
     extatom2dup.hex \
