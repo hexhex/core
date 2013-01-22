@@ -278,7 +278,8 @@ void EvalHeuristicFromHEXSourcecode::build(EvalGraphBuilder& builder) {
 	// try to fix some auxiliary components:
 	// if component depends on assigned component, and assigned component depends on it, and they are the same id, put into that component
 	ComponentContainer::iterator pit;
-	do {
+       	while( !auxiliaryComponents.empty() )
+	{
 		pit = auxiliaryComponents.begin();
 		Component c = *pit;
 		const ComponentInfo& ci = cg.getComponentInfo(c);
@@ -341,7 +342,7 @@ void EvalHeuristicFromHEXSourcecode::build(EvalGraphBuilder& builder) {
 			throw std::runtime_error("could not resolve auxiliary unit, perhaps more code is needed here");
 			//++pit;
 		}
-	} while( !auxiliaryComponents.empty() );
+	}
 
 	// collapse all these units
 	LOG(INFO,"collapsing according to '#evalunit(...).' instructions in source code");
