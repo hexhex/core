@@ -191,6 +191,8 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 		ints[0] = InterpretationPtr(new Interpretation(*postprocessedInput));
 		// the following creates a copy!
 		ints[1] = InterpretationPtr(new Interpretation(*postprocessedInput));
+
+//for (int k = 0; k < 10; k++){
 		do
 		{
 			InterpretationPtr src = ints[current];
@@ -229,6 +231,8 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 			}
 
+//			reg->eliminateHomomorphicAtoms(dst, src);
+
 			// check whether new interpretation is superset of old one
 			// break if they are equal (i.e., if the fixpoint is reached)
 			// error if new one is smaller (i.e., fixpoint is not allowed)
@@ -245,7 +249,13 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			limit--;
 			// loop if limit is not reached
 		}while( limit != 0 && !inconsistent );
-
+/*
+if (inconsistent) break;
+current=0;
+reg->freezeNullTerms(ints[0]);
+reg->freezeNullTerms(ints[1]);
+}
+*/
 		if( limit == 0 )
 			throw FatalError("reached wellfounded limit!");
 

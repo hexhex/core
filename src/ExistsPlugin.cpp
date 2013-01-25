@@ -387,7 +387,7 @@ class ExistsAtom : public PluginAtom
 		retrieve(const Query& query, Answer& answer) throw (PluginError)
 		{
 			Registry &registry = *getRegistry();
-
+/*
 			std::stringstream ss;
 			bool first = true;
 			BOOST_FOREACH (ID i, query.input){
@@ -395,12 +395,13 @@ class ExistsAtom : public PluginAtom
 				first = false;
 				ss << i.address;
 			}
-
+*/
 			Tuple tuple;
 			for (int o = 1; o <= arity; ++o){
-				std::stringstream outterm;
-				outterm << "\"[" << ss.str() << ";" << o << "]\"";
-				tuple.push_back(registry.storeConstantTerm(outterm.str(), false));
+//				std::stringstream outterm;
+//				outterm << "\"[" << ss.str() << ";" << o << "]\"";
+//				tuple.push_back(registry.storeConstantTerm(outterm.str(), false));
+				tuple.push_back(registry.getNewNullTerm());
 			}
 			answer.get().push_back(tuple);
 		}

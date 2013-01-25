@@ -49,6 +49,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <bm/bm.h>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -76,6 +77,10 @@ struct Registry:
   public ostream_printable<Registry>,
   public boost::enable_shared_from_this<Registry>
 {
+private:
+  bm::bvector<> tmpIntr;	// temporary storage for freezeNullTerms and eliminateHomomorphicAtoms
+
+public:
   Registry();
   // creates a real deep copy
   explicit Registry(const Registry& other);
@@ -141,6 +146,18 @@ struct Registry:
 
   // create a globally new constand term (new ID and new text)
   ID getNewConstantTerm(std::string prefix = "unnamed");
+
+  // create a new unique null term
+  ID getNewNullTerm();
+
+  // freeze all null terms in the tuple of an ordinary atom
+  ID freezeNullTerms(ID oatomID);
+
+  // freeze all null terms in the atoms of an interpretation
+  void freezeNullTerms(InterpretationPtr intr);
+
+  // remove all atoms from an interpretation which are homomorphic to some atom in a reference interpretation
+  void eliminateHomomorphicAtoms(InterpretationPtr intr, const InterpretationPtr ref);
 
   // check if rule is contained in registry
   // if yes return integer id
