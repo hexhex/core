@@ -825,6 +825,23 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 
 MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
 
+namespace
+{
+		void snapShotBenchmarking()
+		{
+				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
+								"BenchmarkController lifetime", "time to first model");
+				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
+								"Grounder time", "Grounder time to first model");
+				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
+								"Solver time", "Solver time to first model");
+				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
+								"PluginAtom retrieve", "PluginAtom retr to first model");
+				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
+								"Candidate compatible sets", "CandCompat sets to first model");
+		}
+}
+
 void
 EvaluateState::evaluate(ProgramCtx* ctx)
 {
@@ -832,7 +849,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
   typedef ModelBuilder<FinalEvalGraph>::OptionalModel OptionalModel;
   typedef ModelBuilder<FinalEvalGraph>::MyModelGraph MyModelGraph;
 
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"evaluate()");
+  bool didSnapshot = false;
 
   do
   {
@@ -928,6 +945,11 @@ EvaluateState::evaluate(ProgramCtx* ctx)
           }
           else
           {
+		    if( !didSnapshot ) {
+					snapShotBenchmarking();
+					didSnapshot = true;
+			}
+
             // process models directly
             BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
             {
@@ -955,6 +977,10 @@ EvaluateState::evaluate(ProgramCtx* ctx)
     // process cached models
     if (ctx->onlyBestModels){
       BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
+	    if( !didSnapshot ) {
+	    		snapShotBenchmarking();
+	    		didSnapshot = true;
+	    }
         BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
         {
           bool aborthere = !(*mcb)(answerset);

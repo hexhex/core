@@ -85,6 +85,10 @@
 // #if defined(DLVHEX_BENCHMARK)
 //   dlvhex::benchmark::ID myStoredSid =
 //     dlvhex::benchmark::BenchmarkController::Instance().getInstrumentationID("my message");
+//
+// invalidate(sid) and INVALIDATE is used to abort instrumentations that were started but should not be counted
+// (e.g., if there is no model, we will not have a time to first model)
+// invalidating a non-running counter does nothing
 // #endif
 
 #if defined(DLVHEX_BENCHMARK)
@@ -94,6 +98,8 @@
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid)
 # define DLVHEX_BENCHMARK_STOP(sid) \
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid)
+# define DLVHEX_BENCHMARK_INVALIDATE(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().invalidate(sid)
 # define DLVHEX_BENCHMARK_SUSPEND(sid) \
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid,false)
 # define DLVHEX_BENCHMARK_COUNT(sid,num) \
@@ -125,6 +131,7 @@
 # define DLVHEX_BENCHMARK_REGISTER(sid,msg)               do { } while(0)
 # define DLVHEX_BENCHMARK_START(sid)                      do { } while(0)
 # define DLVHEX_BENCHMARK_STOP(sid)                       do { } while(0)
+# define DLVHEX_BENCHMARK_INVALIDATE(sid)                 do { } while(0)
 # define DLVHEX_BENCHMARK_SUSPEND(sid)                    do { } while(0)
 # define DLVHEX_BENCHMARK_SUSPEND_SCOPE(sid)              do { } while(0)
 # define DLVHEX_BENCHMARK_COUNT(sid,num)                  do { } while(0)
@@ -220,6 +227,14 @@ public:
   inline void stop(ID id, bool count=true); // inline for performance
   // record count (no time), print stats
   inline void count(ID id, Count increment=1); // inline for performance
+  // stop and do not record anything
+  // if not running, do not do anything
+  inline void invalidate(ID id); // inline for performance
+
+  // copy data from one id to another id and call stop() on that other id
+  // e.g. do this for several interesting benchmarks at first model
+  void snapshot(ID id, ID intoID);
+  void snapshot(const std::string& fromstr, const std::string& tostr);
 
 private:
   // init, display start of benchmarking
@@ -353,6 +368,17 @@ void BenchmarkController::stop(ID id, bool count)
 			printInformationContinous(st,dur);
 		}
   }
+}
+
+// inline for performance
+// stop and do not record, handle non-started id's gracefully
+void BenchmarkController::invalidate(ID id)
+{
+  boost::mutex::scoped_lock lock(mutex);
+  Stat& st = instrumentations[id];
+
+  if( st.running )
+    st.running = false;
 }
 
 // record count (no time), print stats

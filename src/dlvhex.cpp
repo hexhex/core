@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
 		// deconstruct benchmarking (= output results) at scope exit 
 		int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
 		BOOST_SCOPE_EXIT( (dummy) ) {
-			(void)dummy;
+	  	(void)dummy;
 			benchmark::BenchmarkController::finish();
 		}
 		BOOST_SCOPE_EXIT_END

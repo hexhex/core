@@ -141,6 +141,34 @@ std::string BenchmarkController::duration(const std::string& name, int width) co
   return oss.str();
 }
 
+// copy data from one id to another id and call stop() on that other id
+// e.g. do this for several interesting benchmarks at first model
+void BenchmarkController::snapshot(ID id, ID intoID)
+{
+	{
+	  boost::mutex::scoped_lock lock(mutex);
+	  Stat& st = instrumentations[id];
+	  Stat& intost = instrumentations[intoID];
+
+	  // copy (overwrite old snapshot!)
+	  // do not copy name!
+	  intost.count = st.count;
+	  // do not copy prints! (might produce duplicates)
+	  intost.start = st.start;
+	  intost.duration = st.duration;
+	  intost.running = st.running;
+	}
+	// stop but do not count
+	stop(intoID, false);
+}
+
+void BenchmarkController::snapshot(const std::string& fromstr, const std::string& tostr)
+{
+	ID idfrom = getInstrumentationID(fromstr);
+	ID idto = getInstrumentationID(tostr);
+	snapshot(idfrom, idto);
+}
+
 } // namespace benchmark
 
 DLVHEX_NAMESPACE_END
