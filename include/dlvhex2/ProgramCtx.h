@@ -154,6 +154,9 @@ public:
   // model graph is only accessible via modelbuilder->getModelGraph()!
   // (model graph is part of the model builder) TODO think about that
 
+  // which benchmarks shall be preserved at first model?
+  std::map<std::string, std::string> benchmarksToSnapshotAtFirstModel;
+
   StatePtr state;
 
   void

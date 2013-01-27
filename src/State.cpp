@@ -805,6 +805,13 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
 
+  // what to snapshot at first model
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("BenchmarkController lifetime", "time to first model"));
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Grounder time", "Grounder time to first model"));
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Solver time", "Solver time to first model"));
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("PluginAtom retrieve", "PluginAtom retr to first model"));
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Candidate compatible sets", "CandCompat sets to first model"));
+
   // default model outputting callback
   ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(*ctx));
   ctx->modelCallbacks.push_back(asprinter);
@@ -827,18 +834,14 @@ MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
 
 namespace
 {
-		void snapShotBenchmarking()
+		void snapShotBenchmarking(ProgramCtx& ctx)
 		{
-				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
-								"BenchmarkController lifetime", "time to first model");
-				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
-								"Grounder time", "Grounder time to first model");
-				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
-								"Solver time", "Solver time to first model");
-				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
-								"PluginAtom retrieve", "PluginAtom retr to first model");
-				dlvhex::benchmark::BenchmarkController::Instance().snapshot(
-								"Candidate compatible sets", "CandCompat sets to first model");
+				std::map<std::string, std::string>::const_iterator snapit;
+				for(snapit = ctx.benchmarksToSnapshotAtFirstModel.begin();
+				    snapit != ctx.benchmarksToSnapshotAtFirstModel.end(); ++snapit)
+				{
+						dlvhex::benchmark::BenchmarkController::Instance().snapshot(snapit->first, snapit->second);
+				}
 		}
 }
 
@@ -949,7 +952,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
           else
           {
 		    if( !didSnapshot ) {
-					snapShotBenchmarking();
+					snapShotBenchmarking(*ctx);
 					didSnapshot = true;
 			}
 
@@ -981,7 +984,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
     if (ctx->onlyBestModels){
       BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
 	    if( !didSnapshot ) {
-	    		snapShotBenchmarking();
+	    		snapShotBenchmarking(*ctx);
 	    		didSnapshot = true;
 	    }
         BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
