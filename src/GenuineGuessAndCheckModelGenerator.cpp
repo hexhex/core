@@ -75,9 +75,9 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
     idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     std::back_insert_iterator<std::vector<ID> > dinserter(idb);
     std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ci, reg, _1));
+        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
     std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ci, reg, _1));
+        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
   }else{
     // copy rules and constraints to idb
     // TODO we do not really need this except for debugging (tiny optimization possibility)
@@ -762,8 +762,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	// (for incomplete input we cannot yet decide this)
 	//
 	// assert that ea mask is a subset of programmask
-	assert( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() ==
-	        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()) );
+//	assert( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() ==
+//	        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()) );
 	// now the original check
         //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count()
         //       ==

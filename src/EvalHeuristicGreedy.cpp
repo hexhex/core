@@ -37,6 +37,7 @@
 #include "dlvhex2/EvalHeuristicShared.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/AttributeGraph.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -160,7 +161,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
   {
     didSomething = false;
 
-//compgraph.writeGraphViz(std::cout, true);
   //
   // forall external components e:
   // merge with all rules that 
@@ -174,7 +174,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
         cit != compgraph.getComponents().second; ++cit)
     {
       Component comp = *cit;
-      if( compgraph.propsOf(comp).outerEatoms.empty() )
+      if( compgraph.propsOf(comp).outerEatoms.empty() )// || !compgraph.propsOf(comp).innerRules.empty() || !compgraph.propsOf(comp).innerConstraints.empty() )
         continue;
       DBGLOG(DBG,"checking component " << comp);
 
@@ -248,167 +248,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
     }
   }
 
-/*
-  //
-  // forall components with only inner rules or constraints:
-  // merge with children that are no eatoms and do not depend on anything else
-  //
-  {
-    ComponentIterator cit = compgraph.getComponents().first;
-    while(cit != compgraph.getComponents().second)
-    {
-      Component comp = *cit;
-      if( !compgraph.propsOf(comp).outerEatoms.empty() )
-      {
-        cit++;
-        continue;
-      }
-      DBGLOG(DBG,"checking component " << comp);
-
-      LOG(ANALYZE,"checking whether to collapse internal-only component " << comp << " with children");
-
-      // get successors
-      ComponentSet collapse;
-      ComponentGraph::SuccessorIterator sit, sit_end;
-      for(boost::tie(sit, sit_end) = compgraph.getProvides(comp);
-          sit != sit_end;
-          ++sit)
-      {
-        Component succ = compgraph.sourceOf(*sit);
-
-        // skip successors with eatoms
-        if( !compgraph.propsOf(succ).outerEatoms.empty() )
-          continue;
-
-        DBGLOG(DBG,"found successor " << succ);
-
-        ComponentGraph::PredecessorIterator pit, pit_end;
-        boost::tie(pit, pit_end) = compgraph.getDependencies(succ);
-        bool good = true;
-        assert(pit != pit_end);
-        if( compgraph.targetOf(*pit) != comp )
-        {
-          LOG(DBG,"successor bad as it depends on other node " << compgraph.targetOf(*pit));
-          good = false;
-        }
-        pit++;
-        if( pit != pit_end )
-        {
-          good = false;
-          LOG(DBG,"successor bad as it depends on more nodes");
-        }
-        if( good ){
-          // never merge domain-expanding components with non-domain expanding ones
-          if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(succ).fixedDomain){
-            collapse.insert(succ);
-          }
-        }
-      }
-
-      if( !collapse.empty() )
-      {
-        // collapse! (decreases graph size)
-        collapse.insert(comp);
-        assert(collapse.size() > 1);
-        Component c = collapseHelper(cloned2orig, compgraph, collapse);
-        LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
-
-        // restart loop after collapse
-        cit = compgraph.getComponents().first;
-        didSomething = true;
-      }
-      else
-      {
-        // advance
-        ++cit;
-      }
-    }
-  }
-
-  //
-  // forall components with only inner rules or constraints:
-  // merge with components that depend on exactly the same predecessors
-  //
-  {
-    ComponentIterator cit = compgraph.getComponents().first;
-    while(cit != compgraph.getComponents().second)
-    {
-      Component comp = *cit;
-      if( !compgraph.propsOf(comp).outerEatoms.empty() )
-      {
-        cit++;
-        continue;
-      }
-      DBGLOG(DBG,"checking component " << comp);
-
-      LOG(ANALYZE,"checking whether to collapse internal-only component " << comp << " with others");
-      ComponentSet collapse;
-
-      // get direct predecessors
-      ComponentSet preds;
-      {
-        ComponentGraph::PredecessorIterator pit, pit_end;
-        for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp);
-            pit != pit_end; ++pit)
-        {
-          preds.insert(compgraph.targetOf(*pit));
-        }
-      }
-      if( preds.empty() )
-      {
-        // do not combine stuff that depends only on edb
-        cit++;
-        continue;
-      }
-
-      // compare all further ones (further because of symmetry breaking)
-      ComponentIterator cit2 =  cit;
-      cit2++;
-      while( cit2 != compgraph.getComponents().second )
-      {
-        Component comp2 = *cit2;
-        DBGLOG(DBG,"checking other component " << comp2);
-        ComponentSet preds2;
-        {
-          ComponentGraph::PredecessorIterator pit, pit_end;
-          for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp2);
-              pit != pit_end; ++pit)
-          {
-            preds2.insert(compgraph.targetOf(*pit));
-          }
-        }
-
-        if( preds2 == preds ){
-          // never merge domain-expanding components with non-domain expanding ones
-          if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(comp2).fixedDomain){
-            collapse.insert(comp2);
-          }
-        }
-
-        cit2++;
-      }
-
-      if( !collapse.empty() )
-      {
-        // collapse! (decreases graph size)
-        collapse.insert(comp);
-        assert(collapse.size() > 1);
-        Component c = collapseHelper(cloned2orig, compgraph, collapse);
-        LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
-
-        // restart loop after collapse
-        cit = compgraph.getComponents().first;
-        didSomething = true;
-      }
-      else
-      {
-        // advance
-        ++cit;
-      }
-    }
-  }
-*/
-
   //
   // forall components c1:
   // merge with all other components c2 such that no cycle is broken
@@ -428,17 +267,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
       {
         Component comp2 = *cit2;
         DBGLOG(DBG,"checking other component " << comp2);
-
-        // only merge nodes with successors, but not with predecessors
-/*
-        ComponentSet c2preds;
-        transitivePredecessorComponents(compgraph, comp, c2preds);
-        if (std::find(c2preds.begin(), c2preds.end(), comp2) != c2preds.end()){
-          DBGLOG(DBG, "" << comp2 << " is a predecessor -> skip");
-          cit2++;
-          continue;
-        }
-*/
 
         bool breakCycle = false;
 
@@ -488,18 +316,29 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
         }
 
-        // check if there is an external dependency from comp to comp2
         std::set<std::pair<ComponentGraph::Component, ComponentGraph::Component> > negdep;
-        BOOST_FOREACH (ComponentGraph::Dependency dep, compgraph.getDependencies()){
-          if (compgraph.getDependencyInfo(dep).externalPredicateInput/*negativeExternal*/){
-            negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
+	if (builder.getProgramCtx().config.getOption("LiberalSafety") && builder.getProgramCtx().config.getOption("IncludeAuxInputInAuxiliaries")){
+          // check if there is a nonmonotonic external dependency from comp to comp2
+          BOOST_FOREACH (ComponentGraph::Dependency dep, compgraph.getDependencies()){
+            const ComponentGraph::DependencyInfo& di = compgraph.getDependencyInfo(dep);
+            if (di.externalNonmonotonicPredicateInput){
+               // check if the nonmonotonic predicate dependency is eliminated if we consider only necessary external atoms
+               BOOST_FOREACH (ComponentGraph::DependencyInfo::DepEdge de, di.depEdges){
+                 if (de.get<2>().externalNonmonotonicPredicateInput &&
+                     builder.getProgramCtx().attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(de.get<0>())){
+                   // not eliminated
+                   negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
+                   break;
+                 }
+               }
+            }
           }
         }
 
         // if this is the case, then do not merge
         if (!breakCycle){
-          bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end() && compgraph.propsOf(comp).outerEatomsNonmonotonic) ||
-		    (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end() && compgraph.propsOf(comp2).outerEatomsNonmonotonic);
+          bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
+		    (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
           if (mergeComponents(builder.getProgramCtx(), compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
@@ -509,8 +348,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
               // This is only detected if we see {C1, C2} (or {C1, C4}) as intermediate result
               break;
             }
-          }else{
-            DBGLOG(DBG, "do not merge because the fixed domain property is different for the components");
           }
         }
 

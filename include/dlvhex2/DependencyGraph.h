@@ -118,6 +118,8 @@ public:
     //     -> "externalConstantInput"
     //   * a predicate input of X matches one head of rule A
     //     -> "externalPredicateInput"
+    //   * a nonmonotonic predicate input of X matches one head of rule A
+    //     -> "externalPredicateInput" and "externalNonmonotonicPredicateInput"
     bool positiveRegularRule;
     bool positiveConstraint;
     bool negativeRule;
@@ -127,6 +129,7 @@ public:
     bool negativeExternal;
     bool externalConstantInput;
     bool externalPredicateInput;
+    bool externalNonmonotonicPredicateInput;
 
 		DependencyInfo():
     	positiveRegularRule(false),
@@ -137,7 +140,8 @@ public:
       positiveExternal(false),
       negativeExternal(false),
       externalConstantInput(false),
-      externalPredicateInput(false)
+      externalPredicateInput(false),
+      externalNonmonotonicPredicateInput(false)
       {}
 		const DependencyInfo& operator|=(const DependencyInfo& other);
     std::ostream& print(std::ostream& o) const;
@@ -365,7 +369,7 @@ protected:
   void createExternalPredicateInputDependencies(const HeadBodyHelper& hbh);
     // helpers
     void createExternalPredicateInputDependenciesForInput(
-        const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh);
+        bool nonmonotonic, const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh);
 
   // build all unifying dependencies ("{positive,negative}{Rule,Constraint}", "unifyingHead")
   void createUnifyingDependencies(const HeadBodyHelper& hbh);

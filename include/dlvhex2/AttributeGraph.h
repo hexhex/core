@@ -123,7 +123,7 @@ private:
 	std::set<Node> cyclicAttributes;
 	boost::unordered_set<VariableLocation> boundedVariables;						// currently bounded variables
 	boost::unordered_set<Attribute> domainExpansionSafeAttributes;						// current domain-expansion safe attributes
-	boost::unordered_set<ID> necessaryExternalAtoms;							// external atoms which are necessary to establish domain-expansion safety
+	boost::unordered_set<IDAddress> necessaryExternalAtoms;							// external atoms which are necessary to establish domain-expansion safety
 	boost::unordered_set<std::pair<ID, VariableLocation> > boundedByExternals;				// variables bounded by externals, but not (yet) by ordinary atoms
 
 	Attribute getAttribute(ID eatomID, ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);

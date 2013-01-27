@@ -62,7 +62,7 @@ public:
 
 protected:
   // adds domain predicates to rule bodies in order to make external atoms groundable
-  virtual ID addDomainPredicatesWhereNecessary(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid);
+  virtual ID addDomainPredicatesWhereNecessary(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid);
   // rewrite all eatoms in body to auxiliary replacement atoms
   // store into registry and return id
   virtual ID convertRule(ProgramCtx& ctx, ID ruleid);

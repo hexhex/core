@@ -6,7 +6,7 @@ p(a) v p(b).
 d(a).
 d(b).
 d(c).
-d(X) :- &testSetMinus[d,p](X)<finitedomain,monotonic d>.
+r(X) :- &testSetMinus[d,p](X)<finitedomain,monotonic d>.
 
 % &testSetMinus[d,p](X) receives nonmonotonic input, but from a different component.
 % Thus, the nonmonotonic part is stratified. Consequently, the domain exploration does not need to guess all assignents to p(a) and p(b).

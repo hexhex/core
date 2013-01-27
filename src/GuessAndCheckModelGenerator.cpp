@@ -164,9 +164,9 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
     idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     std::back_insert_iterator<std::vector<ID> > dinserter(idb);
     std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-        dinserter, boost::bind(&GuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ci, reg, _1));
+        dinserter, boost::bind(&GuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
     std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-        dinserter, boost::bind(&GuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ci, reg, _1));
+        dinserter, boost::bind(&GuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
   }else{
     // copy rules and constraints to idb
     // TODO we do not really need this except for debugging (tiny optimization possibility)
