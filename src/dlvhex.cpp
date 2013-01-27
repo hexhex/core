@@ -76,6 +76,7 @@
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 
 #include <getopt.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <pwd.h>
 
@@ -300,6 +301,13 @@ struct Config
 
 void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& pctx);
 
+void signal_handler(int signum)
+{
+  // perform benchmarking shutdown to obtain benchmark output
+  benchmark::BenchmarkController::finish();
+  exit(-1);
+}
+
 int main(int argc, char *argv[])
 {
   const char* whoAmI = argv[0];
@@ -470,6 +478,13 @@ int main(int argc, char *argv[])
 			benchmark::BenchmarkController::finish();
 		}
 		BOOST_SCOPE_EXIT_END
+    // also deconstruct & output at SIGTERM/SIGINT
+    {
+      if( SIG_ERR == signal(SIGTERM, signal_handler) )
+        LOG(WARNING,"setting SIGTERM handler terminated with error '" << strerror(errno));
+      if( SIG_ERR == signal(SIGINT, signal_handler) )
+        LOG(WARNING,"setting SIINT handler terminated with error '" << strerror(errno));
+    }
 
 		// startup statemachine
 		pctx.changeState(StatePtr(new ShowPluginsState));
