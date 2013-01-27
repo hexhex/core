@@ -38,6 +38,16 @@
 DLVHEX_NAMESPACE_BEGIN
 
 template<typename EvalGraphT>
+struct ModelBuilderConfig
+{
+	ModelBuilderConfig(EvalGraphT& eg):
+	       	eg(eg), redundancyElimination(true), constantSpace(false) {}
+	EvalGraphT& eg;
+	bool redundancyElimination; 
+	bool constantSpace; 
+};
+
+template<typename EvalGraphT>
 class ModelBuilder
 {
   // types
@@ -100,8 +110,8 @@ protected:
 
   // methods
 public:
-  ModelBuilder(EvalGraphT& eg):
-    eg(eg), mg(eg) {}
+  ModelBuilder(ModelBuilderConfig<EvalGraphT>& cfg):
+    eg(cfg.eg), mg(cfg.eg) {}
   virtual ~ModelBuilder() {}
   inline EvalGraphT& getEvalGraph() { return eg; }
   inline MyModelGraph& getModelGraph() { return mg; }

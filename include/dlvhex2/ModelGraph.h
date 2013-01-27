@@ -213,7 +213,7 @@ private:
   EvalGraphT& eg;
   ModelGraphInt mg;
   // "exterior property map" for the eval graph: which models are present at which unit
-  EvalUnitModelsPropertyMap mau;
+  EvalUnitModelsPropertyMap mau; // "mau" stands for "models at unit"
 
   //////////////////////////////////////////////////////////////////////////////
   // methods

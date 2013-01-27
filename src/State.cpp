@@ -856,7 +856,10 @@ EvaluateState::evaluate(ProgramCtx* ctx)
     LOG(INFO,"creating model builder");
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
-      ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(*ctx->evalgraph));
+	  ModelBuilderConfig<FinalEvalGraph> cfg(*ctx->evalgraph);
+	  cfg.redundancyElimination = true;
+	  cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
+      ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(cfg));
     }
     ModelBuilder<FinalEvalGraph>& mb = *ctx->modelBuilder;
 

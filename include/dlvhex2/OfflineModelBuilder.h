@@ -84,10 +84,11 @@ protected:
 
   // methods
 public:
-  OfflineModelBuilder(EvalGraphT& eg):
-    Base(eg), offmbp()
+  OfflineModelBuilder(ModelBuilderConfig<EvalGraphT>& cfg):
+    Base(cfg), offmbp()
   {
     // allocate full mbp (plus one unit, as we will likely get an additional vertex)
+    EvalGraphT& eg = cfg.eg;
     OfflineModelBuildingProperties& offmbproptemp = offmbp[eg.countEvalUnits()];
     (void)offmbproptemp;
 

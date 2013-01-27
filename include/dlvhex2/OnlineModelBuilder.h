@@ -179,6 +179,16 @@ public:
     return mg.sourceOf(*p.currentisuccessor.get());
   }
 
+protected:
+    void clearIModel(Model m) {
+	    mg.propsOf(m).interpretation.reset();
+    }
+
+    void clearOModel(ModelSuccessorIterator msi) {
+	    mg.propsOf(mg.sourceOf(*msi)).interpretation.reset();
+    }
+
+
 private:
   typedef typename EvalGraphT::Observer EvalGraphObserverBase;
   class EvalGraphObserver:
@@ -211,17 +221,20 @@ protected:
   EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
   boost::shared_ptr<EvalGraphObserver> ego;
   bool redundancyElimination;
+  bool constantSpace;
 
   // methods
 public:
-  OnlineModelBuilder(EvalGraphT& eg, bool redundancyElimination=true):
-    Base(eg),
+  OnlineModelBuilder(ModelBuilderConfig<EvalGraphT>& cfg):
+    Base(cfg),
     mbp(),
     // setup observer to do the things below in case EvalGraph is changed
     // after the creation of this OnlineModelBuilder
     ego(new EvalGraphObserver(*this)),
-    redundancyElimination(redundancyElimination)
+    redundancyElimination(cfg.redundancyElimination),
+    constantSpace(cfg.constantSpace)
   {
+    EvalGraphT& eg = cfg.eg;
     // allocate full mbp (plus one unit, as we will likely get an additional vertex)
     EvalUnitModelBuildingProperties& mbproptemp = mbp[eg.countEvalUnits()];
     (void)mbproptemp;
@@ -261,6 +274,9 @@ protected:
   // helper for advanceOModelForIModel
   boost::optional<EvalUnitPredecessorIterator>
   ensureModelIncrement(EvalUnit u, EvalUnitPredecessorIterator cursor);
+
+  // for constant space
+  void removeIModelFromGraphs(Model m);
 
 public:
   // get next input model (projected if projection is configured) at unit u
@@ -564,6 +580,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       }
       odummy = dummy;
     }
+    if( hadIModel && constantSpace )
+	clearIModel(mbprops.getIModel().get());
     mbprops.setIModel(odummy);
     LOG(MODELB,"returning model " << printopt(odummy));
     #ifndef NDEBUG
@@ -673,6 +691,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   LOG(MODELB,"found full input model, creating imodel!");
   Model im = createIModelFromPredecessorOModels(u);
   LOG(MODELB,"returning newly created imodel " << im);
+  if( hadIModel && constantSpace )
+	  clearIModel(mbprops.getIModel().get());
   mbprops.setIModel(im);
   #ifndef NDEBUG
   if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
@@ -841,6 +861,8 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
 
     ModelSuccessorIterator& currentisuccessor = mbprops.currentisuccessor.get();
     assert(currentisuccessor != send);
+    if( constantSpace )
+	clearOModel(currentisuccessor);
     currentisuccessor++;
     if( currentisuccessor != send )
     {

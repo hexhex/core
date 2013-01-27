@@ -236,6 +236,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)" << std::endl
+      << "     --constspace     Free partial models immediately after using them. This may cause some models" << std::endl
+      << "                      to be computed multiple times. (Not with monolithic.)" << std::endl
       << "     --version        Show version information." << std::endl;
 }
 
@@ -405,6 +407,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ClaspDeferNPropagations", 10000);
 	pctx.config.setOption("ClaspDeferMaxTMilliseconds",1000);
 	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
+	pctx.config.setOption("UseConstantSpace", 0); // see --help
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -675,6 +678,7 @@ void processOptionsPrePlugin(
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
     { "dumpstats", no_argument, 0, 37 },
     { "iauxinaux", no_argument, 0, 38 },
+    { "constspace", no_argument, 0, 39 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1255,6 +1259,10 @@ void processOptionsPrePlugin(
 
     case 38:
       pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
+      break;
+
+    case 39:
+      pctx.config.setOption("UseConstantSpace",1);
       break;
 
 		case '?':

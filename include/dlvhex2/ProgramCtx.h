@@ -66,7 +66,7 @@ typedef boost::shared_ptr<EvalHeuristicBase<EvalGraphBuilder> >
 typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
   ModelBuilderPtr;
 
-typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
+typedef boost::function<ModelBuilder<FinalEvalGraph>*(ModelBuilderConfig<FinalEvalGraph>&)>
   ModelBuilderFactory;
 
 typedef std::map<std::string, PluginAtomPtr>
