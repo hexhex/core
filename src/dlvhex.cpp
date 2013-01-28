@@ -304,6 +304,7 @@ void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& 
 void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
+  LOG(ERROR,"dlvhex2 got termination signal!");
   benchmark::BenchmarkController::finish();
   exit(-1);
 }
