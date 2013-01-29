@@ -136,6 +136,94 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
   return true;
 }
 
+bool OrdinaryAtom::existsHomomorphism(const OrdinaryAtom& a) const
+{
+  if( tuple.size() != a.tuple.size() )
+    return false;
+#define DEBUG_HOMOMORPHISM
+  #ifdef DEBUG_HOMOMORPHISM
+  DBGLOG_SCOPE(DBG,"existsHomomorphism",true);
+  #endif
+  // unify from left to right
+  Tuple result1(this->tuple);
+  Tuple result2(a.tuple);
+  // if both tuples have a null value, assign result1 null to result2 for all occurences to the end
+  // if one tuple has constant, assign this constant into the other tuple for all occurences to the end
+  Tuple::iterator it1, it2;
+  #ifdef DEBUG_HOMOMORPHISM
+  DBGLOG(DBG,"starting with result1 tuple " << printvector(result1));
+  DBGLOG(DBG,"starting with result2 tuple " << printvector(result2));
+  #endif
+  for(it1 = result1.begin(), it2 = result2.begin();
+      it1 != result1.end();
+      ++it1, ++it2)
+  {
+    #ifdef DEBUG_HOMOMORPHISM
+    DBGLOG(DBG,"at position " << static_cast<unsigned>(it1 - result1.begin()) <<
+        ": checking " << *it1 << " vs " << *it2);
+    #endif
+    if( *it1 != *it2 )
+    {
+      // different terms
+      if( it1->isNullTerm() && !it1->isFrozenNullTerm() )
+      {
+        // it1 is null
+        if( it2->isNullTerm() && !it2->isFrozenNullTerm() )
+        {
+          // it2 is null
+
+          // assign *it1 variable to all occurances of *it2 in result2
+          Tuple::iterator it3(it2); it3++;
+          for(;it3 != result2.end(); ++it3)
+          {
+            if( *it3 == *it2 )
+              *it3 = *it1;
+          }
+        }
+        else
+        {
+          // it2 is nonnull
+
+          // assign *it2 nonvariable to all occurances of *it1 in result1
+          Tuple::iterator it3(it1); it3++;
+          for(;it3 != result1.end(); ++it3)
+          {
+            if( *it3 == *it1 )
+              *it3 = *it2;
+          }
+        }
+      }
+      else
+      {
+        // it1 is nonnull
+        if( it2->isNullTerm() && !it2->isFrozenNullTerm() )
+        {
+          // it2 is null
+
+          // assign *it1 nonnull to all occurances of *it2 in result2
+          Tuple::iterator it3(it2); it3++;
+          for(;it3 != result2.end(); ++it3)
+          {
+            if( *it3 == *it2 )
+              *it3 = *it1;
+          }
+        }
+        else
+        {
+          // it2 is nonnull
+          return false;
+        }
+      }
+      #ifdef DEBUG_HOMOMORPHISM
+      DBGLOG(DBG,"after propagation of difference (look only after current position!):");
+      DBGLOG(DBG,"result1 tuple " << printvector(result1));
+      DBGLOG(DBG,"result2 tuple " << printvector(result2));
+      #endif
+    }
+  }
+  return true;
+}
+
 ExternalAtom::~ExternalAtom()
 {
 }

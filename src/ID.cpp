@@ -41,7 +41,7 @@ std::ostream& ID::print(std::ostream& o) const
   const unsigned SUBKIND_MAX = 11;
   const char* subkinds[MAINKIND_MAX][SUBKIND_MAX] = {
     { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external", "", "", "", " module"},
-    { " constant",        " integer",            " variable",        " builtin",   " predicate", "", ""          },
+    { " constant",        " integer",            " variable",        " builtin",   " predicate", "null", ""          },
     { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external", "", "", "", " module"},
     { " regular",         " constraint",         " weak_constraint", "weight_rule",           "", "", ""          }
   };

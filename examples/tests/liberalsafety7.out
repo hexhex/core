@@ -1,2 +1,2 @@
-{p(a),d(a),d(b),d(c)}
-{p(b),d(a),d(b),d(c)}
+{p(a),d(a),d(b),d(c),r(b),r(c)}
+{p(b),d(a),d(b),d(c),r(a),r(c)}

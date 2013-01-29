@@ -75,9 +75,9 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
     idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     std::back_insert_iterator<std::vector<ID> > dinserter(idb);
     std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ci, reg, _1));
+        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
     std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ci, reg, _1));
+        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
   }else{
     // copy rules and constraints to idb
     // TODO we do not really need this except for debugging (tiny optimization possibility)
@@ -650,9 +650,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 
 	// for each eatom, if it is evaluated:
 	// * look if there is a bit in changed that matches the eatom mask
-	// * if yes, unverify eatom and update watches:
-	//   * if bit became assigned/defined set watch on unassigned bit that matches eatom mask
-	//   * if bit became unassigned/undefined set watch on changed bit that matches eatom mask
+	// * if yes:
+	//     * unverify eatom and use the changed bit as new watch
+	//     * if a watched atom was assigned, possibly evaluate the external atom (driven by a heuristics)
 
 	// unverify/unfalsify external atoms which watch this atom
 	for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
@@ -676,7 +676,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	      eaVerified[eaIndex] = false;
 	      eaEvaluated[eaIndex] = false;
 
-	      // new watches
+	      // *en is our new watch (as it is either undefined or was recently changed)
+	      verifyWatchList[*en].push_back(eaIndex);
+/*
 	      if (!factWasSet->getFact(*en)){
 		      // XXX why can't we just watch *en? it is undefined
 		      // watch a yet unassigned atom such that the external atom depends on it
@@ -690,7 +692,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 		      assert(id != ID::ALL_ONES);
 		      verifyWatchList[id].push_back(eaIndex);
 	      }
-
+*/
 	      // leave, we are done with this external atom as we set eaEvaluated to false
 	      break;
 	    }
@@ -760,20 +762,12 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// if the input to the external atom was complete, then remember the verification result
 	// (for incomplete input we cannot yet decide this)
-	//
-	// assert that ea mask is a subset of programmask
-	assert( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() ==
-	        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()) );
-	// now the original check
-        //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count()
-        //       ==
-        //       (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()   )){
-	// is simply whether factwasset fully covers eamask, i.e., whether in the subtraction eamask-factwasset any bit remains
 	if( !factWasSet || bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage(), factWasSet->getStorage() ) ) {
 		bool verify = vcb.verify();
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
 		eaVerified[eaIndex] = verify;
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
+		// @TODO: Why? Does it hurt if we always set eaEvaluated[eaIndex] to true?
 		if( factory.ctx.config.getOption("NoPropagator") == 0 )
 		  eaEvaluated[eaIndex] = true;
 

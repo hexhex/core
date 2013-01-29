@@ -35,6 +35,7 @@
 
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
+#include "boost/tuple/tuple.hpp"
 
 #ifndef NDEBUG
 # define COMPGRAPH_SOURCESDEBUG
@@ -118,6 +119,9 @@ public:
     #ifdef COMPGRAPH_SOURCESDEBUG
     std::set<DependencyGraph::Dependency> sources;
     #endif
+
+    typedef boost::tuple<ID, ID, DependencyGraph::DependencyInfo> DepEdge;
+    std::vector<DepEdge> depEdges;
 
 		DependencyInfo() {}
 		DependencyInfo(const DependencyGraph::DependencyInfo& other):

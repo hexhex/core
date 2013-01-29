@@ -131,7 +131,7 @@ empty.hex testrepetition.stdout --testplugin-test-repetition --solver=genuineii
 liberalsafety1.hex liberalsafety1.out --liberalsafety --solver=genuineii
 liberalsafety2.hex liberalsafety2.out --liberalsafety --solver=genuineii
 liberalsafety3.hex liberalsafety3.out --liberalsafety --solver=genuineii
-liberalsafety4.hex liberalsafety4.out --liberalsafety --solver=genuineii --aggregate-enable
+#liberalsafety4.hex liberalsafety4.out --liberalsafety --solver=genuineii --aggregate-enable
 liberalsafety5.hex liberalsafety5.out --liberalsafety --solver=genuineii
 liberalsafety6.hex liberalsafety6.out --liberalsafety --solver=genuineii
 liberalsafety7.hex liberalsafety7.out --liberalsafety --solver=genuineii --heuristics=monolithic

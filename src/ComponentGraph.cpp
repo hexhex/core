@@ -70,6 +70,11 @@ ComponentGraph::DependencyInfo::operator|=(
 		const ComponentGraph::DependencyInfo& other)
 {
 	DependencyGraph::DependencyInfo::operator|=(other);
+
+	BOOST_FOREACH (DepEdge de, other.depEdges) depEdges.push_back(de);
+
+//	depEdges.insert(depEdges.end(), other.depEdges.begin(), other.depEdges.end());
+
   return *this;
 }
 
@@ -530,6 +535,12 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 					// update existing dependency
 					propsOf(newdep) |= di;
 				}
+
+				// store original dependencies from the DependencyGraph
+				const DependencyGraph::NodeInfo& ni1 = dg.getNodeInfo(dg.sourceOf(dep));
+				const DependencyGraph::NodeInfo& ni2 = dg.getNodeInfo(dg.targetOf(dep));
+				propsOf(newdep).depEdges.push_back(DependencyInfo::DepEdge(ni1.id, ni2.id, di));
+
       } // for each dependency of *itn
     } // collect dependencies outgoing from node *itn in SCC s
   } // create dependencies outgoing from SCC s
@@ -1187,7 +1198,8 @@ void ComponentGraph::writeGraphVizDependencyLabel(std::ostream& o, Dependency de
     (di.positiveExternal?" posExt":"") <<
     (di.negativeExternal?" negExt":"") <<
     (di.externalConstantInput?" extConstInp":"") <<
-    (di.externalPredicateInput?" extPredInp":"");
+    (di.externalPredicateInput?" extPredInp":"") <<
+    (di.externalNonmonotonicPredicateInput?" extNonmonPredInp":"");
   }
 }
 

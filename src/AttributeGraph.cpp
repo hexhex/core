@@ -195,7 +195,7 @@ void AttributeGraph::addBoundedVariable(VariableLocation vl){
 				if (eatom.tuple[i] == vl.second){
 					Attribute oat = getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, i + 1);
 					if (domainExpansionSafeAttributes.count(oat) == 0){
-						necessaryExternalAtoms.insert(al.second);
+//						necessaryExternalAtoms.insert(al.second.address);
 						addDomainExpansionSafeAttribute(oat);
 					}
 				}
@@ -599,7 +599,7 @@ void AttributeGraph::ensureOrdinarySafety(){
 			Rule optimizedRule(rule.kind);
 			optimizedRule.head = rule.head;
 			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b) == 0) continue;
+				if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b.address) == 0) continue;
 				optimizedRule.body.push_back(b);
 			}
 			ID optimizedRuleID = reg->storeRule(optimizedRule);
@@ -624,12 +624,12 @@ void AttributeGraph::ensureOrdinarySafety(){
 				// add a not necessary external atom which binds at least one unsafe variable
 				ID newSafeVar = ID_FAIL;
 				BOOST_FOREACH (ID b, rule.body){
-					if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b) == 0){
+					if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b.address) == 0){
 						const ExternalAtom& eatom = reg->eatoms.getByID(b);
 						for (int i = 0; i < eatom.tuple.size(); ++i){
 							if (eatom.tuple[i].isVariableTerm() && searchFor.count(eatom.tuple[i]) > 0){
 								DBGLOG(DBG, "Adding external atom " << b << " to the necessary ones for reasons of ordinary safety");
-								necessaryExternalAtoms.insert(b);
+								necessaryExternalAtoms.insert(b.address);
 								newSafeVar = eatom.tuple[i];	// breakout: do not add further external atoms but recheck safety first
 								break;
 							}
@@ -813,7 +813,7 @@ void AttributeGraph::computeDomainExpansionSafety(){
 			boundedByExternals.erase(boundedByExternals.begin());
 			if (boundedVariables.count(vl) == 0){
 				DBGLOG(DBG, "Exploiting " << eatom);
-				necessaryExternalAtoms.insert(eatom);
+				necessaryExternalAtoms.insert(eatom.address);
 				addBoundedVariable(vl);
 				changed = true;
 				break;
@@ -841,7 +841,7 @@ bool AttributeGraph::isDomainExpansionSafe() const{
 
 bool AttributeGraph::isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const{
 	assert(isDomainExpansionSafe());
-	return necessaryExternalAtoms.count(eatomID) > 0;
+	return necessaryExternalAtoms.count(eatomID.address) > 0;
 }
 
 namespace
@@ -880,7 +880,7 @@ void AttributeGraph::writeGraphViz(std::ostream& o, bool verbose) const{
 			}
 			style.push_back("filled");
 		}
-		if (ag[*it].type == Attribute::External && necessaryExternalAtoms.count(ag[*it].eatomID) == 0){
+		if (ag[*it].type == Attribute::External && necessaryExternalAtoms.count(ag[*it].eatomID.address) == 0){
 			style.push_back("dashed");
 		}
 		o << ",style=\"";

@@ -42,6 +42,7 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/ExternalLearningHelper.h"
+#include "dlvhex2/AttributeGraph.h"
 
 #include <boost/foreach.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -568,7 +569,7 @@ void BaseModelGeneratorFactory::convertRuleBody(
 
 // adds for all external atoms with output variables which fail the strong safety check
 // a domain predicate to the rule body
-ID BaseModelGeneratorFactory::addDomainPredicatesWhereNecessary(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid)
+ID BaseModelGeneratorFactory::addDomainPredicatesWhereNecessary(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid)
 {
   if( !ruleid.doesRuleContainExtatoms() )
   {
@@ -582,9 +583,10 @@ ID BaseModelGeneratorFactory::addDomainPredicatesWhereNecessary(const ComponentG
     if (!b.isNaf() && b.isExternalAtom()){
       const ExternalAtom& ea = reg->eatoms.getByID(b);
       BOOST_FOREACH (ID o, ea.tuple){
-        if (o.isVariableTerm() &&
-	      (ci.stronglySafeVariables.find(ruleid) == ci.stronglySafeVariables.end() ||
-	       std::find(ci.stronglySafeVariables.at(ruleid).begin(), ci.stronglySafeVariables.at(ruleid).end(), o) == ci.stronglySafeVariables.at(ruleid).end())){
+        if (ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
+        //if (o.isVariableTerm() &&
+	//      (ci.stronglySafeVariables.find(ruleid) == ci.stronglySafeVariables.end() ||
+	//       std::find(ci.stronglySafeVariables.at(ruleid).begin(), ci.stronglySafeVariables.at(ruleid).end(), o) == ci.stronglySafeVariables.at(ruleid).end())){
           OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
           oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
           BOOST_FOREACH (ID o2, ea.tuple){

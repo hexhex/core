@@ -190,6 +190,20 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
               }
             }
           }
+          else if( lit.isBuiltinAtom() )
+          {
+            const BuiltinAtom& biatom = reg->batoms.getByID(lit);
+            // look if this atom grounds any variables we need
+            BOOST_FOREACH(ID term, biatom.tuple)
+            {
+              if( term.isVariableTerm() &&
+                  (variables.find(term) != variables.end()) )
+              {
+                use = true;
+                break;
+              }
+            }
+          }
           else
           {
             LOG(WARNING,"TODO think about whether we need to consider "

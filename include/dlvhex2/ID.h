@@ -70,6 +70,7 @@ struct ID:
 	static const IDKind SUBKIND_TERM_VARIABLE =  0x02000000;
 	static const IDKind SUBKIND_TERM_BUILTIN =   0x03000000;
 	static const IDKind SUBKIND_TERM_PREDICATE = 0x04000000;
+	static const IDKind SUBKIND_TERM_NULL =      0x05000000;
 
 	static const IDKind SUBKIND_ATOM_ORDINARYG = 0x00000000;
 	static const IDKind SUBKIND_ATOM_ORDINARYN = 0x01000000;
@@ -88,6 +89,7 @@ struct ID:
 	static const IDKind PROPERTY_ATOM_HIDDEN     = 0x00010000;	// hidden atoms are skipped when printed for the user and excluded from predicate masks
 									// the property is used for a large number of temporary atoms needed in the UFS check
 									// (this would otherwise slow down predicate masks in the whole system)
+	static const IDKind PROPERTY_NULL_FROZEN     = 0x00010000;
 	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ       = 0x00100000;
@@ -148,7 +150,8 @@ struct ID:
 	inline bool isIntegerTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_INTEGER; }
 	inline bool isVariableTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_VARIABLE; }
 	inline bool isBuiltinTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
-	inline bool isPredicateTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_PREDICATE; }
+	inline bool isPredicateTerm() const { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_PREDICATE; }
+	inline bool isNullTerm() const      { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_NULL; }
 
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
   // true for ground or nonground ordinary atoms
@@ -178,6 +181,7 @@ struct ID:
 	inline bool doesRuleContainModatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_MODATOMS) == PROPERTY_RULE_MODATOMS; }
 	inline bool isRuleDisjunctive() const { assert(isRule()); return (kind & PROPERTY_RULE_DISJ) == PROPERTY_RULE_DISJ; }
 	inline bool isAnonymousVariable() const { assert(isVariableTerm()); return (kind & PROPERTY_VAR_ANONYMOUS) == PROPERTY_VAR_ANONYMOUS; }
+	inline bool isFrozenNullTerm() const{ assert(isNullTerm()); return (kind & PROPERTY_NULL_FROZEN) == PROPERTY_NULL_FROZEN; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }

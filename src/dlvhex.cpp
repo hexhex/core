@@ -699,7 +699,7 @@ void processOptionsPrePlugin(
 	};
 
   // default settings
-  pctx.config.setOption("NoPropagator", 1);
+  pctx.config.setOption("NoPropagator", 0);
   pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
@@ -1258,7 +1258,10 @@ void processOptionsPrePlugin(
 			}
 			break;
 
-		case 33: pctx.config.setOption("LiberalSafety", 1); break;
+		case 33:
+			pctx.config.setOption("LiberalSafety", 1);
+			pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
+			break;
 
 		case 34: pctx.config.setOption("MultiThreading", 1); break;
 

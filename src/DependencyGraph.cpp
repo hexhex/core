@@ -66,6 +66,7 @@ DependencyGraph::DependencyInfo::operator|=(
 	negativeExternal |= other.negativeExternal;
 	externalConstantInput |= other.externalConstantInput;
 	externalPredicateInput |= other.externalPredicateInput;
+	externalNonmonotonicPredicateInput |= other.externalNonmonotonicPredicateInput;
   return *this;
 }
 
@@ -85,7 +86,8 @@ std::ostream& DependencyGraph::DependencyInfo::print(std::ostream& o) const
     (positiveExternal?" positiveExternal":"") <<
     (negativeExternal?" negativeExternal":"") <<
     (externalConstantInput?" externalConstantInput":"") <<
-    (externalPredicateInput?" externalPredicateInput":"");
+    (externalPredicateInput?" externalPredicateInput":"") <<
+    (externalNonmonotonicPredicateInput?" externalNonmonotonicPredicateInput":"");
 }
 
 DependencyGraph::DependencyGraph(RegistryPtr registry):
@@ -702,14 +704,14 @@ void DependencyGraph::createExternalPredicateInputDependencies(
       eatom.inputMask->addPredicate(idpred);
 
       // here: we found a predicate input for this eatom where we need to calculate all dependencies
-      createExternalPredicateInputDependenciesForInput(*itext, idpred, hbh);
+      createExternalPredicateInputDependenciesForInput(eatom.getExtSourceProperties().isNonmonotonic(at), *itext, idpred, hbh);
     }
 
   } // go through all external atom nodes
 }
 
 void DependencyGraph::createExternalPredicateInputDependenciesForInput(
-    const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh)
+    bool nonmonotonic, const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh)
 {
   LOG_SCOPE(DBG,"cEPIDfI",false);
   LOG(DBG,"=createExternalPredicateInputDependenciesForInput "
@@ -717,6 +719,7 @@ void DependencyGraph::createExternalPredicateInputDependenciesForInput(
 
   DependencyInfo diExternalPredicateInput;
   diExternalPredicateInput.externalPredicateInput = true;
+  diExternalPredicateInput.externalNonmonotonicPredicateInput = nonmonotonic;
 
   const HeadBodyHelper::HeadPredicateIndex& hb_hpred = hbh.infos.get<HeadPredicateTag>();
   HeadBodyHelper::HeadPredicateIndex::const_iterator it, it_end;
@@ -1058,7 +1061,8 @@ void DependencyGraph::writeGraphVizDependencyLabel(std::ostream& o, Dependency d
     (di.positiveExternal?" posExt":"") <<
     (di.negativeExternal?" negExt":"") <<
     (di.externalConstantInput?" extConstInp":"") <<
-    (di.externalPredicateInput?" extPredInp":"");
+    (di.externalPredicateInput?" extPredInp":"") <<
+    (di.externalNonmonotonicPredicateInput?" extNonmonPredInp":"");
   }
 }
 
