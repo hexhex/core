@@ -1544,6 +1544,7 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 		DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 		initiallyInconsistent |= !Clasp::ClauseCreator::create(*claspInstance.master(), clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order).ok();
+		if (initiallyInconsistent) break;
 	}
 
 	return initiallyInconsistent;
