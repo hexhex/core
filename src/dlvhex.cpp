@@ -679,7 +679,7 @@ void processOptionsPrePlugin(
 	};
 
   // default settings
-  pctx.config.setOption("NoPropagator", 1);
+  pctx.config.setOption("NoPropagator", 0);
   pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
