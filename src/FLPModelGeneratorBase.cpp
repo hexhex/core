@@ -378,9 +378,17 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
               variables.insert(idt);
           }
         }
-        #warning implement aggregates here
-        else
+        else if( lit.isAggregateAtom() )
         {
+		// use boundaries as variables, variables in aggregate are free or (automatically) bound by context in rule
+		const AggregateAtom& aatom = reg->aatoms.getByID(lit);
+		if( aatom.tuple[0] != ID_FAIL && aatom.tuple[0].isVariableTerm() )
+			variables.insert(aatom.tuple[0]);
+		if( aatom.tuple[4] != ID_FAIL && aatom.tuple[4].isVariableTerm() )
+			variables.insert(aatom.tuple[4]);
+	}
+	else
+	{
           LOG(ERROR,"encountered literal " << lit << " in FLP check, don't know what to do about it");
           throw FatalError("TODO: think about how to treat other types of atoms in FLP check");
         }
@@ -451,9 +459,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
         BOOST_FOREACH (ID h, r.head){
           rflpbody.body.push_back(ID::literalFromAtom(h, true));
         }
-        #if 1 // temporary, for debugging
       }
-        #endif
 
       // store rules
       ID fheadrid = reg->storeRule(rflphead);
