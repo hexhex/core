@@ -52,12 +52,14 @@ struct OnlineModelBuilderTFixture:
   typedef dlvhex::OnlineModelBuilder<TestEvalGraph> ModelBuilder;
   typedef ModelBuilder::OptionalModel OptionalModel;
 
+  dlvhex::ModelBuilderConfig<TestEvalGraph> cfg;
   ModelBuilder omb;
   EvalUnit ufinal;
 
   OnlineModelBuilderTFixture():
     EvalGraphBaseFixtureT(),
-    omb(Base::eg)
+    cfg(Base::eg),
+    omb(cfg)
   {
     LOG_SCOPE(INFO,"OnlineModelBuilderTFixture<...>", true);
     typedef TestEvalUnitPropertyBase UnitCfg;

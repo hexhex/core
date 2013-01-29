@@ -50,12 +50,14 @@ struct OfflineModelBuilderTFixture:
   typedef dlvhex::OfflineModelBuilder<TestEvalGraph> ModelBuilder;
   typedef ModelBuilder::OptionalModel OptionalModel;
 
+  dlvhex::ModelBuilderConfig<TestEvalGraph> cfg;
   ModelBuilder omb;
   EvalUnit ufinal;
 
   OfflineModelBuilderTFixture():
     EvalGraphBaseFixtureT(),
-    omb(Base::eg)
+    cfg(Base::eg),
+    omb(cfg)
   {
     LOG_SCOPE(INFO,"OfflineModelBuilderTFixture<...>", true);
     typedef TestEvalUnitPropertyBase UnitCfg;
