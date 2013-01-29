@@ -8,7 +8,7 @@ all-local:
 	if test x$(DO_BUILDCLASPGRINGO) == xyes; then \
 		TOP_SRCDIR=$(top_srcdir) \
 		BOOST_ROOT=$(NESTED_BOOSTROOT) \
-		CXX=$(CXX) USING_CLANG=$(using_clang) \
+		CXX="$(CXX)" USING_CLANG=$(using_clang) \
 		$(SHELL) $(top_srcdir)/build_potassco.sh ; \
 	fi
 

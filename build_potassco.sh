@@ -18,7 +18,7 @@ else
 	popd
 	(
 		cd clasp
-		./configure.sh --config=fpic CXX=$CXX CXXFLAGS=-fPIC ||
+		./configure.sh --config=fpic CXX="$CXX" CXXFLAGS=-fPIC ||
 			{ echo "configuring clasp failed!"; exit -1; }
 	)
 fi
