@@ -446,7 +446,6 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 				}
 				if (!inactive){
 					// nogood might have become unit or contradictory
-DBGLOG(DBG, "::" << watchedLiteralsOfNogood[nogoodNr].size());
 					if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
 						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
 						unitNogoods.insert(nogoodNr);
