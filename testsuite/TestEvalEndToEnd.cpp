@@ -115,7 +115,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   //
   // evaluate
   //
-  FinalOnlineModelBuilder omb(eg);
+  dlvhex::ModelBuilderConfig<FinalEvalGraph> cfg(eg);
+  FinalOnlineModelBuilder omb(cfg);
 
   EvalUnit ufinal;
 
