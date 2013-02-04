@@ -759,6 +759,7 @@ int main(int argn, char** argv)
   // evaluate
   LOG(INFO,"evaluating");
   DLVHEX_BENCHMARK_REGISTER(sidoutputmodel, "output model");
+  dlvhex::ModelBuilderConfig<FinalEvalGraph> mbcfg(evalgraph);
   if( mbmode == "online" )
   {
     typedef FinalOnlineModelBuilder::Model Model;
@@ -766,7 +767,8 @@ int main(int argn, char** argv)
     typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
     LOG(INFO,"creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidonlinemb, "create online mb");
-    FinalOnlineModelBuilder mb(evalgraph);
+
+    FinalOnlineModelBuilder mb(mbcfg);
     DLVHEX_BENCHMARK_STOP(sidonlinemb);
 
     // get and print all models
@@ -830,7 +832,7 @@ int main(int argn, char** argv)
 
     LOG(INFO,"creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemb, "create offline mb");
-    FinalOfflineModelBuilder mb(evalgraph);
+    FinalOfflineModelBuilder mb(mbcfg);
     DLVHEX_BENCHMARK_STOP(sidofflinemb);
 
     LOG(INFO,"creating all final imodels");
