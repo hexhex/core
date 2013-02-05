@@ -65,6 +65,18 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
 
   // create program for domain exploration
   if (ctx.config.getOption("LiberalSafety")){
+#define nAdvancedTechnique
+#ifdef AdvancedTechnique
+    // add domain predicates
+    idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+    std::back_insert_iterator<std::vector<ID> > dinserter(idb);
+    std::transform(ci.innerRules.begin(), ci.innerRules.end(),
+        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
+    std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
+        dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
+
+    createDomainExplorationProgram(ci, ctx, idb);
+#else
     std::vector<ID> deidb;
     deidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     deidb.insert(deidb.end(), ci.innerRules.begin(), ci.innerRules.end());
@@ -78,17 +90,22 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
         dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
     std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
         dinserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
+#endif
+
+    innerEatoms = ci.innerEatoms;
+    // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
+    createEatomGuessingRules(ctx);
   }else{
     // copy rules and constraints to idb
     // TODO we do not really need this except for debugging (tiny optimization possibility)
     idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
     idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
     idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-  }
 
-  innerEatoms = ci.innerEatoms;
-  // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules(ctx);
+    innerEatoms = ci.innerEatoms;
+    // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
+    createEatomGuessingRules(ctx);
+  }
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());

@@ -1066,7 +1066,7 @@ class TestIdAtom:	// tests user-defined external learning
 {
 public:
   TestIdAtom():
-    PluginAtom("id", true) // monotonic
+    PluginAtom("id", false) // monotonic
     #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
   {
     addInputPredicate();

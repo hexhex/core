@@ -280,6 +280,11 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 template<typename OrdinaryASPSolverT>
 InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb){
+#define nAdvancedTechnique
+
+	InterpretationPtr domintr = InterpretationPtr(new Interpretation(factory.reg));
+	int oldDomintrCount = 0;
+	int loop = 1;
 
 	// if there are no inner external atoms, then there is nothing to do
 	if (factory.deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(factory.reg));
@@ -378,6 +383,65 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
 		}
 
+#ifdef AdvancedTechnique
+		// translate new EA-replacements to domain atoms
+		bm::bvector<>::enumerator en = dst->getStorage().first();
+		bm::bvector<>::enumerator en_end = dst->getStorage().end();
+		while (en < en_end){
+			ID id = factory.reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary()){
+				DBGLOG(DBG, "Converting atom with address " << *en);
+
+				const OrdinaryAtom& ogatom = factory.reg->ogatoms.getByAddress(*en);
+				BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
+					const ExternalAtom ea = factory.reg->eatoms.getByID(eaid);
+					if (ea.predicate == factory.reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
+
+						OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+						domatom.tuple.push_back(factory.reg->getAuxiliaryConstantSymbol('d', eaid));
+						int io = 1;
+						if (ea.auxInputPredicate != ID_FAIL && factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
+						for (int i = io + ea.inputs.size(); i < ogatom.tuple.size(); ++i){
+							domatom.tuple.push_back(ogatom.tuple[i]);
+						}
+						domintr->setFact(factory.reg->storeOrdinaryGAtom(domatom).address);
+					}
+				}
+			}
+			en++;
+		}
+		dst->getStorage() |= domintr->getStorage();
+		DBGLOG(DBG, "Domain extension interpretation: " << *domintr);
+
+		// ground program
+		domintr->getStorage() |= edb->getStorage();
+		OrdinaryASPProgram program(factory.reg, factory.deidb, domintr, ctx.maxint);
+		GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, program);
+
+		// retrieve maximum set of ground atoms in the ground program
+		dst->getStorage() |= grounder->getGroundProgram().edb->getStorage();
+		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb){
+			const Rule& r = factory.reg->rules.getByID(rid);
+			BOOST_FOREACH (ID h, r.head) dst->setFact(h.address);
+			BOOST_FOREACH (ID b, r.body) dst->setFact(b.address);
+		}
+
+		// grounding and EA-evaluation can both expand the active domain,
+		// so the overall loop must run 2 times without changed before we can be sure that we have reached the fixpoint
+		if (domintr->getStorage().count() == oldDomintrCount){
+			if (loop == 0){
+				DBGLOG(DBG, "Reached fixpoint: " << *dst);
+				break;
+			}
+			loop--;
+		}else loop = 1;
+		oldDomintrCount = domintr->getStorage().count();
+
+		// switch interpretations
+		current = 1 - current;
+	}while(true);
+
+#else
 		// solve program
 		OrdinaryASPProgram program(factory.reg, factory.deidb, dst, ctx.maxint);
 		OrdinaryASPSolverTPtr solver = OrdinaryASPSolverT::getInstance(ctx, program);
@@ -401,8 +465,8 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 
 	// create explicit representation of domain predicate extensions
 	DBGLOG(DBG, "Creating extension of domain predicates");
-	InterpretationPtr domintr = InterpretationPtr(new Interpretation(factory.reg));
 
+	// translate EA-replacements to domain atoms
 	bm::bvector<>::enumerator en = ints[current]->getStorage().first();
 	bm::bvector<>::enumerator en_end = ints[current]->getStorage().end();
 	while (en < en_end){
@@ -429,6 +493,8 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 		en++;
 	}
 	DBGLOG(DBG, "Domain extension interpretation: " << *domintr);
+
+#endif
 
 	return domintr;
 }

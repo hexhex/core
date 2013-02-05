@@ -99,6 +99,7 @@ protected:
 protected:
   // create guessing rules for external atom values
   void createEatomGuessingRules(const ProgramCtx& ctx);
+  ID createEatomGuessingRule(const ProgramCtx& ctx, ID ruleID, ID litID);
 
   // initializes deidb and innerEatoms
   void createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb);

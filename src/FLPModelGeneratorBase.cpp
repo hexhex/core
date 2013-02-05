@@ -101,6 +101,14 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
       if( innerEatomsSet.count(ID::atomFromLiteral(lit)) == 0 )
         continue;
 
+      gidb.push_back(createEatomGuessingRule(ctx, rid, lit));
+    }
+  }
+}
+
+ID FLPModelGeneratorFactoryBase::createEatomGuessingRule(const ProgramCtx& ctx, ID rid, ID lit)
+{
+      const Rule& r = reg->rules.getByID(rid);
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
       DBGLOG(DBG,"processing external atom " << printToString<RawPrinter>(lit, reg) <<
                  " (lit " << lit << " eatom " << eatom << ")");
@@ -257,17 +265,52 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules(const ProgramCtx& ct
       // store rule
       ID gid = reg->storeRule(guessingrule);
       DBGLOG(DBG,"stored guessingrule " << printToString<RawPrinter>(gid, reg) << " which got id " << gid);
-      gidb.push_back(gid);
-    }
-  }
+      return gid;
 }
 
 void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb){
-
+#define nAdvancedTechnique
 	RegistryPtr reg = ctx.registry();
 
-	// construct the positive subprogram where all default-negated atoms and strongly safe external atoms are removed
 	DBGLOG(DBG, "createDomainExplorationProgram");
+#ifdef AdvancedTechnique
+	BOOST_FOREACH (ID ruleid, idb){
+		const Rule& rule = reg->rules.getByID(ruleid);
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isExternalAtom()){
+				if (!ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
+					DBGLOG(DBG, "Remove external atom " << b << " because it is not necessary to establish domain-expansion safety");
+					continue;
+				}
+
+				if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
+				    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
+					std::stringstream ss;
+					RawPrinter printer(ss, reg);
+					ss << "External atom ";
+					printer.print(b);
+					ss << " in rule " << std::endl;
+					ss  << "   ";
+					printer.print(ruleid);
+					ss << std::endl;
+					ss << "   is unstratified in the evaluation unit and necessary for safety, which can decrease performance significantly." << std::endl;
+					ss << "   Consider using a different heuristics or ensure safty by other means.";
+					LOG(WARNING,  ss.str());
+				}
+				deidbInnerEatoms.push_back(b);
+				deidb.push_back(createEatomGuessingRule(ctx, ruleid, b));
+			}
+		}
+	}
+
+	deidb.reserve(idb.size());
+	std::back_insert_iterator<std::vector<ID> > inserter(deidb);
+	std::transform(idb.begin(), idb.end(),
+	      inserter, boost::bind(&FLPModelGeneratorFactoryBase::convertRule, this, ctx, _1));
+
+	deidb.insert(deidb.begin(), gidb.begin(), gidb.end());
+#else
+	// construct the positive subprogram where all default-negated atoms and strongly safe external atoms are removed
 	std::vector<ID> innerEatoms;
 	BOOST_FOREACH (ID ruleid, idb){
 		const Rule& rule = reg->rules.getByID(ruleid);
@@ -278,6 +321,7 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 			positiverule.head.clear();
 			positiverule.head.push_back(hid);
 			positiverule.body.clear();
+
 			BOOST_FOREACH (ID b, rule.body){
 				if (b.isNaf()){
 					// remove non-stratified default-negated literals
@@ -308,6 +352,7 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 					}
 					positiverule.body.push_back(b);
 					deidbInnerEatoms.push_back(b);
+
 				}else{
 					positiverule.body.push_back(b);
 				}
@@ -324,9 +369,11 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 			deidb.push_back(rid);
 		}
 	}
+#endif
+
 #ifndef NDEBUG
 
-	DBGLOG(DBG,"Positive program:");
+	DBGLOG(DBG,"Domain-exploration program:");
 	BOOST_FOREACH (ID ruleid, deidb){
 		{
 		std::stringstream s;
