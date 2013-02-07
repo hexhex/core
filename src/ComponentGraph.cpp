@@ -827,6 +827,7 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 					}
 				}
 				if (stratified){
+					DBGLOG(DBG, "Literal " << bid << " in rule " << rid << " is stratified");
 					ci.stratifiedLiterals[rid].insert(bid);
 				}
 			}

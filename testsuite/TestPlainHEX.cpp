@@ -645,7 +645,7 @@ int main(int argn, char** argv)
   LOG(INFO,"creating dependency graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(siddepgraph, "create dependencygraph");
   std::vector<dlvhex::ID> auxRules;
-  dlvhex::DependencyGraph depgraph(ctx.registry());
+  dlvhex::DependencyGraph depgraph(ctx, ctx.registry());
   depgraph.createDependencies(ctx.idb, auxRules);
   DLVHEX_BENCHMARK_STOP(siddepgraph);
   #ifndef NDEBUG

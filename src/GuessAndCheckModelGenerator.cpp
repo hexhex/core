@@ -152,33 +152,14 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // this model generator can handle any components
   // (and there is quite some room for more optimization)
 
-  // create program for domain exploration
-  if (ctx.config.getOption("LiberalSafety")){
-    std::vector<ID> deidb;
-    deidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
-    deidb.insert(deidb.end(), ci.innerRules.begin(), ci.innerRules.end());
-    deidb.insert(deidb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-    createDomainExplorationProgram(ci, ctx, deidb);
-
-    // add domain predicates
-    idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
-    std::back_insert_iterator<std::vector<ID> > dinserter(idb);
-    std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-        dinserter, boost::bind(&GuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
-    std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-        dinserter, boost::bind(&GuessAndCheckModelGeneratorFactory::addDomainPredicatesWhereNecessary, this, ctx, ci, reg, _1));
-  }else{
-    // copy rules and constraints to idb
-    // TODO we do not really need this except for debugging (tiny optimization possibility)
-    idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
-    idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
-    idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-  }
+  // just copy all rules and constraints to idb
+  idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+  idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
+  idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
   createEatomGuessingRules(ctx);
-
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
@@ -317,12 +298,6 @@ GuessAndCheckModelGenerator::GuessAndCheckModelGenerator(
       assert(!factory.xidb.empty() &&
           "the guess and check model generator is not required for "
           "non-idb components! (use plain)");
-    }
-
-    // compute extensions of domain predicates and add it to the input
-    if (factory.ctx.config.getOption("LiberalSafety")){
-      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<ASMOrdinaryASPSolver>(factory.ci, factory.ctx, postprocInput);
-      postprocInput->add(*domPredictaesExtension);
     }
 
     // assign to const member -> stays the same from here no!

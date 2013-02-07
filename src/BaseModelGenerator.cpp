@@ -567,50 +567,6 @@ void BaseModelGeneratorFactory::convertRuleBody(
   }
 }
 
-// adds for all external atoms with output variables which fail the strong safety check
-// a domain predicate to the rule body
-ID BaseModelGeneratorFactory::addDomainPredicatesWhereNecessary(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid)
-{
-  if( !ruleid.doesRuleContainExtatoms() )
-  {
-    DBGLOG(DBG,"not processing rule " << ruleid << " (does not contain extatoms)");
-    return ruleid;
-  }
-
-  const Rule& rule = reg->rules.getByID(ruleid);
-  Rule ruledom = rule;
-  BOOST_FOREACH (ID b, rule.body){
-    if (!b.isNaf() && b.isExternalAtom()){
-      const ExternalAtom& ea = reg->eatoms.getByID(b);
-      BOOST_FOREACH (ID o, ea.tuple){
-        if (ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
-        //if (o.isVariableTerm() &&
-	//      (ci.stronglySafeVariables.find(ruleid) == ci.stronglySafeVariables.end() ||
-	//       std::find(ci.stronglySafeVariables.at(ruleid).begin(), ci.stronglySafeVariables.at(ruleid).end(), o) == ci.stronglySafeVariables.at(ruleid).end())){
-          OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-          oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
-          BOOST_FOREACH (ID o2, ea.tuple){
-            oatom.tuple.push_back(o2);
-          }
-          ruledom.body.push_back(reg->storeOrdinaryNAtom(oatom));
-          break;
-        }
-      }
-    }
-  }
-  ID ruledomid = reg->storeRule(ruledom);
-#ifndef NDEBUG
-  {
-  std::stringstream s;
-  RawPrinter printer(s, reg);
-  printer.print(ruledomid);
-  DBGLOG(DBG,"rewriting rule " << s.str() << " from " << rule <<
-  " with id " << ruleid << " to rule with domain predicates");
-  }
-#endif
-  return ruledomid;
-}
-
 // get rule
 // rewrite all eatoms in body to auxiliary replacement atoms
 // store and return id

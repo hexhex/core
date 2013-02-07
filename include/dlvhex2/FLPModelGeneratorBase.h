@@ -102,7 +102,7 @@ protected:
   ID createEatomGuessingRule(const ProgramCtx& ctx, ID ruleID, ID litID);
 
   // initializes deidb and innerEatoms
-  void createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb);
+  void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx);
 
   // create rules from xidb
   // * for evaluating which bodies are satisfied -> xidbflphead

@@ -280,40 +280,58 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 template<typename OrdinaryASPSolverT>
 InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb){
-#define nAdvancedTechnique
+
+	RegistryPtr reg = ctx.registry();
 
 	InterpretationPtr domintr = InterpretationPtr(new Interpretation(factory.reg));
-	int oldDomintrCount = 0;
-	int loop = 1;
+	domintr->getStorage() |= edb->getStorage();
+
+	DBGLOG(DBG, "Computing fixpoint of extensions of domain predicates");
+	DBGLOG(DBG, "" << factory.deidbInnerEatoms.size() << " inner external atoms are necessary for establishing de-safety");
 
 	// if there are no inner external atoms, then there is nothing to do
 	if (factory.deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(factory.reg));
 
 	typedef boost::shared_ptr<OrdinaryASPSolverT> OrdinaryASPSolverTPtr;
 
-	// compute the fixpoint of the positive program wrt. edb
-	DBGLOG(DBG, "Computing fixpoint of extensions of domain predicates");
-	std::vector<InterpretationPtr> ints(2);
-	unsigned current = 0;
-	ints[0] = InterpretationPtr(new Interpretation(*edb));
-	ints[1] = InterpretationPtr(new Interpretation(*edb));
+	InterpretationPtr herbrandBase = InterpretationPtr(new Interpretation(reg));
+	herbrandBase->getStorage() |= edb->getStorage();
+	int oldHerbrandBaseSize;
 	do
 	{
-		InterpretationPtr src = ints[current];
-		InterpretationPtr dst = ints[1-current];
-		DBGLOG(DBG, "Loop with src=" << *src << " and dst=" << *dst);
+		oldHerbrandBaseSize = herbrandBase->getStorage().count();
+
+		DBGLOG(DBG, "Loop with herbrandBase=" << *herbrandBase);
+
+		// ground program
+		OrdinaryASPProgram program(factory.reg, factory.deidb, domintr, ctx.maxint);
+		GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, program);
+
+		// retrieve the Herbrand base
+		if (!!grounder->getGroundProgram().mask){
+			herbrandBase->getStorage() |= (grounder->getGroundProgram().edb->getStorage() - grounder->getGroundProgram().mask->getStorage());
+		}else{
+			herbrandBase->getStorage() |= grounder->getGroundProgram().edb->getStorage();
+		}
+		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb){
+			const Rule& r = factory.reg->rules.getByID(rid);
+			BOOST_FOREACH (ID h, r.head)
+				if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(h.address)) herbrandBase->setFact(h.address);
+			BOOST_FOREACH (ID b, r.body)
+				if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(b.address)) herbrandBase->setFact(b.address);
+		}
 
 		// evaluate inner external atoms
-		IntegrateExternalAnswerIntoInterpretationCB cb(dst);
+		IntegrateExternalAnswerIntoInterpretationCB cb(herbrandBase);
 		BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
 			const ExternalAtom& ea = factory.reg->eatoms.getByID(eaid);
 
 			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
 			// in order to maximize the output;
-			// for nonmonotonic input atoms, enumerate all exponentially many assignments
+			// for nonmonotonic input atoms, enumerate all (exponentially many) possible assignments
 			boost::unordered_map<IDAddress, bool> nonmonotonicinput;
 			InterpretationPtr input(new Interpretation(factory.reg));
-			input->add(*src);
+			input->add(*herbrandBase);
 			ea.updatePredicateInputMask();
 			bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
 			bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
@@ -383,10 +401,9 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
 		}
 
-#ifdef AdvancedTechnique
 		// translate new EA-replacements to domain atoms
-		bm::bvector<>::enumerator en = dst->getStorage().first();
-		bm::bvector<>::enumerator en_end = dst->getStorage().end();
+		bm::bvector<>::enumerator en = herbrandBase->getStorage().first();
+		bm::bvector<>::enumerator en_end = herbrandBase->getStorage().end();
 		while (en < en_end){
 			ID id = factory.reg->ogatoms.getIDByAddress(*en);
 			if (id.isExternalAuxiliary()){
@@ -410,92 +427,12 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			}
 			en++;
 		}
-		dst->getStorage() |= domintr->getStorage();
-		DBGLOG(DBG, "Domain extension interpretation: " << *domintr);
+		herbrandBase->getStorage() |= domintr->getStorage();
+		DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
+	}while(herbrandBase->getStorage().count() != oldHerbrandBaseSize);
 
-		// ground program
-		domintr->getStorage() |= edb->getStorage();
-		OrdinaryASPProgram program(factory.reg, factory.deidb, domintr, ctx.maxint);
-		GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, program);
-
-		// retrieve maximum set of ground atoms in the ground program
-		dst->getStorage() |= grounder->getGroundProgram().edb->getStorage();
-		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb){
-			const Rule& r = factory.reg->rules.getByID(rid);
-			BOOST_FOREACH (ID h, r.head) dst->setFact(h.address);
-			BOOST_FOREACH (ID b, r.body) dst->setFact(b.address);
-		}
-
-		// grounding and EA-evaluation can both expand the active domain,
-		// so the overall loop must run 2 times without changed before we can be sure that we have reached the fixpoint
-		if (domintr->getStorage().count() == oldDomintrCount){
-			if (loop == 0){
-				DBGLOG(DBG, "Reached fixpoint: " << *dst);
-				break;
-			}
-			loop--;
-		}else loop = 1;
-		oldDomintrCount = domintr->getStorage().count();
-
-		// switch interpretations
-		current = 1 - current;
-	}while(true);
-
-#else
-		// solve program
-		OrdinaryASPProgram program(factory.reg, factory.deidb, dst, ctx.maxint);
-		OrdinaryASPSolverTPtr solver = OrdinaryASPSolverT::getInstance(ctx, program);
-
-		InterpretationPtr model = solver->getNextModel();
-		assert(model != InterpretationPtr());
-		InterpretationPtr model2 = solver->getNextModel();
-		assert(model2 == InterpretationPtr());
-		dst->getStorage().swap(model->getStorage());
-
-		int cmpresult = dst->getStorage().compare(src->getStorage());
-		if( cmpresult == 0 )
-		{
-			DBGLOG(DBG, "Reached fixpoint: " << *dst);
-			break;
-		}
-
-		// switch interpretations
-		current = 1 - current;
-	}while(true);
-
-	// create explicit representation of domain predicate extensions
-	DBGLOG(DBG, "Creating extension of domain predicates");
-
-	// translate EA-replacements to domain atoms
-	bm::bvector<>::enumerator en = ints[current]->getStorage().first();
-	bm::bvector<>::enumerator en_end = ints[current]->getStorage().end();
-	while (en < en_end){
-		ID id = factory.reg->ogatoms.getIDByAddress(*en);
-		if (id.isExternalAuxiliary()){
-			DBGLOG(DBG, "Converting atom with address " << *en);
-
-			const OrdinaryAtom& ogatom = factory.reg->ogatoms.getByAddress(*en);
-			BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
-				const ExternalAtom ea = factory.reg->eatoms.getByID(eaid);
-				if (ea.predicate == factory.reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
-
-					OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-					domatom.tuple.push_back(factory.reg->getAuxiliaryConstantSymbol('d', eaid));
-					int io = 1;
-					if (ea.auxInputPredicate != ID_FAIL && factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
-					for (int i = io + ea.inputs.size(); i < ogatom.tuple.size(); ++i){
-						domatom.tuple.push_back(ogatom.tuple[i]);
-					}
-					domintr->setFact(factory.reg->storeOrdinaryGAtom(domatom).address);
-				}
-			}
-		}
-		en++;
-	}
-	DBGLOG(DBG, "Domain extension interpretation: " << *domintr);
-
-#endif
-
+	domintr->getStorage() |= edb->getStorage();
+	DBGLOG(DBG, "Domain extension interpretation (final result): " << *domintr);
 	return domintr;
 }
 

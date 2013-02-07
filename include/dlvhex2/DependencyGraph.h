@@ -248,6 +248,7 @@ protected:
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
+  ProgramCtx& ctx;
   RegistryPtr registry;
   Graph dg;
 	NodeMapping nm;
@@ -259,7 +260,7 @@ private:
   // not implemented on purpose because forbidden to use
 	DependencyGraph(const Dependency& other);
 public:
-	DependencyGraph(RegistryPtr registry);
+	DependencyGraph(ProgramCtx& ctx, RegistryPtr registry);
 	virtual ~DependencyGraph();
 
   // this method creates all dependencies

@@ -35,6 +35,7 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/AttributeGraph.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -90,8 +91,8 @@ std::ostream& DependencyGraph::DependencyInfo::print(std::ostream& o) const
     (externalNonmonotonicPredicateInput?" externalNonmonotonicPredicateInput":"");
 }
 
-DependencyGraph::DependencyGraph(RegistryPtr registry):
-  registry(registry), dg(), nm()
+DependencyGraph::DependencyGraph(ProgramCtx& ctx, RegistryPtr registry):
+  ctx(ctx), registry(registry), dg(), nm()
 {
 }
 
@@ -440,6 +441,12 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
 
     if( itat->isExternalAtom() )
     {
+      // skip external atoms which are not necessary for safety
+      if ( !!ctx.attrgraph && !ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(*itat) ){
+        DBGLOG(DBG, "Do not use " << *itat << " in input auxiliary rule because it is not necessary for safety");
+        continue;
+      }
+
       LOG(DBG,"checking if we depend on output list of external atom " << *itat);
 
       const ExternalAtom& eatom2 =

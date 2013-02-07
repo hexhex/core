@@ -264,8 +264,8 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
 
 	pc.safetyCheck();
-	pc.createDependencyGraph();
 	pc.createAttributeGraph();
+	pc.createDependencyGraph();
 	pc.optimizeEDBDependencyGraph();
 	pc.createComponentGraph();
 	pc.createEvalGraph();

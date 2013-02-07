@@ -563,11 +563,11 @@ int main(int argc, char *argv[])
 		// check weak safety
 		pctx.safetyCheck();
 
-		// create dependency graph (we need the previous step for this)
-		pctx.createDependencyGraph();
-
 		// create attribute graph
 		pctx.createAttributeGraph();
+
+		// create dependency graph (we need the previous step for this)
+		pctx.createDependencyGraph();
 
 		// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
 		pctx.optimizeEDBDependencyGraph();
@@ -1293,6 +1293,9 @@ void processOptionsPrePlugin(
 	// global constraints
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
 		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
+	}
+	if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver")){
+		throw GeneralError("Liberal safety is only supported for genuine solvers");
 	}
 	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
 		LOG(WARNING, "Model caching (modelqueuesize) is only compatible with clasp backend");

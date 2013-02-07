@@ -45,7 +45,7 @@ struct GenericDepGraphFixture:
   GenericDepGraphFixture():
     Base(),
     auxRules(),
-    depgraph(Base::ctx.registry())
+    depgraph(Base::ctx, Base::ctx.registry())
     { depgraph.createDependencies(Base::ctx.idb, auxRules); }
   ~GenericDepGraphFixture() {}
 };

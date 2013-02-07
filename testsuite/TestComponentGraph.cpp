@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
 
 	//LOG_REGISTRY_PROGRAM(ctx);
 
-  DependencyGraph depgraph(ctx.registry());
+  DependencyGraph depgraph(ctx, ctx.registry());
 	std::vector<ID> auxRules;
 	depgraph.createDependencies(ctx.idb, auxRules);
 

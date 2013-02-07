@@ -132,8 +132,8 @@ STATE_FUNC_DEFAULT_IMPL(moduleSyntaxCheck);
 STATE_FUNC_DEFAULT_IMPL(mlpSolver);
 STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
 STATE_FUNC_DEFAULT_IMPL(safetyCheck);
-STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(createAttributeGraph);
+STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(optimizeEDBDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(createComponentGraph);
 STATE_FUNC_DEFAULT_IMPL(strongSafetyCheck);
@@ -570,7 +570,7 @@ RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateDependencyGraphState);
+OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateAttributeGraphState);
 
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
@@ -584,6 +584,18 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
   // check by calling the object
   schecker();
 
+  StatePtr next(new CreateAttributeGraphState);
+  changeState(ctx, next);
+}
+
+MANDATORY_STATE_CONSTRUCTOR(CreateAttributeGraphState);
+
+void CreateAttributeGraphState::createAttributeGraph(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building attribute graph");
+
+  ctx->attrgraph = AttributeGraphPtr(new AttributeGraph(ctx->registry(), ctx->idb));
+
   StatePtr next(new CreateDependencyGraphState);
   changeState(ctx, next);
 }
@@ -594,7 +606,7 @@ void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building dependency graph");
 
-  DependencyGraphPtr depgraph(new DependencyGraph(ctx->registry()));
+  DependencyGraphPtr depgraph(new DependencyGraph(*ctx, ctx->registry()));
   std::vector<dlvhex::ID> auxRules;
   depgraph->createDependencies(ctx->idb, auxRules);
 
@@ -612,18 +624,6 @@ void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
   }
 
   ctx->depgraph = depgraph;
-
-  StatePtr next(new CreateAttributeGraphState);
-  changeState(ctx, next);
-}
-
-MANDATORY_STATE_CONSTRUCTOR(CreateAttributeGraphState);
-
-void CreateAttributeGraphState::createAttributeGraph(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building attribute graph");
-
-  ctx->attrgraph = AttributeGraphPtr(new AttributeGraph(ctx->registry(), ctx->idb));
 
   StatePtr next(new OptimizeEDBDependencyGraphState);
   changeState(ctx, next);

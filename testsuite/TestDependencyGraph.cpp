@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(testDisj)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry());
+    DependencyGraph depgraph(ctx, ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry());
+    DependencyGraph depgraph(ctx, ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 
@@ -231,7 +231,7 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry());
+    DependencyGraph depgraph(ctx, ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 
@@ -285,7 +285,7 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry());
+    DependencyGraph depgraph(ctx, ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 

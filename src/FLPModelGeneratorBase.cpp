@@ -268,121 +268,95 @@ ID FLPModelGeneratorFactoryBase::createEatomGuessingRule(const ProgramCtx& ctx, 
       return gid;
 }
 
-void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb){
-#define nAdvancedTechnique
-	RegistryPtr reg = ctx.registry();
+// adds for all external atoms with output variables which fail the strong safety check
+// a domain predicate to the rule body
+void FLPModelGeneratorFactoryBase::addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx){
 
-	DBGLOG(DBG, "createDomainExplorationProgram");
-#ifdef AdvancedTechnique
-	BOOST_FOREACH (ID ruleid, idb){
-		const Rule& rule = reg->rules.getByID(ruleid);
-		BOOST_FOREACH (ID b, rule.body){
-			if (b.isExternalAtom()){
-				if (!ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
-					DBGLOG(DBG, "Remove external atom " << b << " because it is not necessary to establish domain-expansion safety");
-					continue;
-				}
+  RegistryPtr reg = ctx.registry();
 
-				if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
-				    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
-					std::stringstream ss;
-					RawPrinter printer(ss, reg);
-					ss << "External atom ";
-					printer.print(b);
-					ss << " in rule " << std::endl;
-					ss  << "   ";
-					printer.print(ruleid);
-					ss << std::endl;
-					ss << "   is unstratified in the evaluation unit and necessary for safety, which can decrease performance significantly." << std::endl;
-					ss << "   Consider using a different heuristics or ensure safty by other means.";
-					LOG(WARNING,  ss.str());
-				}
-				deidbInnerEatoms.push_back(b);
-				deidb.push_back(createEatomGuessingRule(ctx, ruleid, b));
-			}
-		}
-	}
+  std::vector<ID> idbWithDomainPredicates;
+  deidb.reserve(idb.size());
+  idbWithDomainPredicates.reserve(idb.size());
 
-	deidb.reserve(idb.size());
-	std::back_insert_iterator<std::vector<ID> > inserter(deidb);
-	std::transform(idb.begin(), idb.end(),
-	      inserter, boost::bind(&FLPModelGeneratorFactoryBase::convertRule, this, ctx, _1));
+  // for all rules in the IDB
+  BOOST_FOREACH (ID ruleid, idb){
 
-	deidb.insert(deidb.begin(), gidb.begin(), gidb.end());
-#else
-	// construct the positive subprogram where all default-negated atoms and strongly safe external atoms are removed
-	std::vector<ID> innerEatoms;
-	BOOST_FOREACH (ID ruleid, idb){
-		const Rule& rule = reg->rules.getByID(ruleid);
+    if( !ruleid.doesRuleContainExtatoms() )
+    {
+      DBGLOG(DBG,"not processing rule " << ruleid << " (does not contain extatoms)");
+      idbWithDomainPredicates.push_back(ruleid);
+      deidb.push_back(ruleid);
+    }
 
-		BOOST_FOREACH (ID hid, rule.head){
+    // add domain predicates for all external atoms which are relevant for de-safety
+    const Rule& rule = reg->rules.getByID(ruleid);
+    Rule ruleDom = rule;
+    Rule ruleExpl(rule.kind & (ID::ALL_ONES - ID::PROPERTY_RULE_EXTATOMS));
+    ruleExpl.head = rule.head;
+    BOOST_FOREACH (ID b, rule.body){
+      if (!b.isExternalAtom()){
+        ruleExpl.body.push_back(b);
+      }
+      if (!b.isNaf() && b.isExternalAtom()){
+        const ExternalAtom& ea = reg->eatoms.getByID(b);
+        BOOST_FOREACH (ID o, ea.tuple){
+          if (ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
 
-			Rule positiverule = rule;
-			positiverule.head.clear();
-			positiverule.head.push_back(hid);
-			positiverule.body.clear();
+            // print a warning if there is a nonmonotonic external atom which is necessary for de-safety, because this makes grounding really slow
+            // (exponential in the number of nonmonotonic input atoms)
+            if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
+              std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
+              std::stringstream ss;
+              RawPrinter printer(ss, reg);
+              ss << "External atom ";
+              printer.print(b);
+              ss << " in rule " << std::endl;
+              ss << " ";
+              printer.print(ruleid);
+              ss << std::endl;
+              ss << " is nonmonotonic and necessary for safety. This can decrease grounding performance significantly." << std::endl;
+              ss << " Consider using a different heuristics or ensure safty by other means, e.g., additional ordinary atoms which bound the output.";
+              LOG(WARNING, ss.str());
+            }
 
-			BOOST_FOREACH (ID b, rule.body){
-				if (b.isNaf()){
-					// remove non-stratified default-negated literals
-					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
-					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
-						continue;
-					}
-					positiverule.body.push_back(b);
-				}else if (b.isExternalAtom()){
-					if (!ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
-						DBGLOG(DBG, "Remove external atom " << b << " because it is not necessary to establish domain-expansion safety");
-						continue;
-					}
+            // remember that this external atom was necessary for de-safety
+            DBGLOG(DBG, "External atom " << b << " is necessary for de-safety");
+            deidbInnerEatoms.push_back(b);
 
-					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
-					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
-						std::stringstream ss;
-						RawPrinter printer(ss, reg);
-						ss << "External atom ";
-						printer.print(b);
-						ss << " in rule " << std::endl;
-						ss  << "   ";
-						printer.print(ruleid);
-						ss << std::endl;
-						ss << "   is unstratified in the evaluation unit and necessary for safety, which can decrease performance significantly." << std::endl;
-						ss << "   Consider using a different heuristics or ensure safty by other means.";
-						LOG(WARNING,  ss.str());
-					}
-					positiverule.body.push_back(b);
-					deidbInnerEatoms.push_back(b);
-
-				}else{
-					positiverule.body.push_back(b);
-				}
-			}
-			ID rid = convertRule(ctx, reg->storeRule(positiverule));
+            OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
+            BOOST_FOREACH (ID o2, ea.tuple){
+              oatom.tuple.push_back(o2);
+            }
+            ID domainAtomID = reg->storeOrdinaryNAtom(oatom);
+            ruleDom.body.push_back(domainAtomID);
+            ruleExpl.body.push_back(domainAtomID);
+            break;
+          }
+        }
+      }
+    }
+    ID ruleDomID = reg->storeRule(ruleDom);
+    ID ruleExplID = reg->storeRule(ruleExpl);
 #ifndef NDEBUG
-			{
-			std::stringstream s;
-			RawPrinter printer(s, reg);
-			printer.print(rid);
-			DBGLOG(DBG,s.str());
-			}
+    {
+    std::stringstream s;
+    RawPrinter printer(s, reg);
+    s << "adding domain predicates: rewriting rule ";
+    printer.print(ruleid);
+    s << " to ";
+    printer.print(ruleDomID);
+    s << " (for IDB) and domain-exploration rule ";
+    printer.print(ruleExplID);
+    DBGLOG(DBG, s.str());
+    }
 #endif
-			deidb.push_back(rid);
-		}
-	}
-#endif
+    idbWithDomainPredicates.push_back(ruleDomID);
+    deidb.push_back(ruleExplID);
+  }
 
-#ifndef NDEBUG
-
-	DBGLOG(DBG,"Domain-exploration program:");
-	BOOST_FOREACH (ID ruleid, deidb){
-		{
-		std::stringstream s;
-		RawPrinter printer(s, reg);
-		printer.print(ruleid);
-		DBGLOG(DBG,s.str());
-		}
-	}
-#endif
+  // update the original IDB
+  idb = idbWithDomainPredicates;
 }
 
 /**
