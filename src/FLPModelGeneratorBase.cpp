@@ -458,7 +458,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
 
       // prepare replacement atom
       OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
+          ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_FLPAUX);
 
       // tuple: (replacement_predicate, variables*)
       ID flppredicate = reg->getAuxiliaryConstantSymbol('f', rid);
@@ -1000,8 +1000,8 @@ void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 	bm::bvector<>::enumerator en = edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = edb->getStorage().end();
 	while (en < en_end){
-		const OrdinaryAtom& atom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		if (!ID(atom.kind, *en).isAuxiliary()){
+		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() && !reg->ogatoms.getIDByAddress(*en).isFLPAuxiliary()){
+			const OrdinaryAtom& atom = reg->ogatoms.getByAddress(*en);
 			preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
 		}
 		en++;
@@ -1011,13 +1011,13 @@ void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 	BOOST_FOREACH (ID rid, idb){
 		const Rule& r = reg->rules.getByID(rid);
 		BOOST_FOREACH (ID h, r.head){
-			if (!h.isAuxiliary()){
+			if (!h.isExternalAuxiliary() && !h.isFLPAuxiliary()){
 				const OrdinaryAtom& atom = h.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(h) : reg->onatoms.getByID(h);
 				preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
 			}
 		}
 		BOOST_FOREACH (ID b, r.body){
-			if (b.isOrdinaryAtom() && !b.isAuxiliary()){
+			if (b.isOrdinaryAtom() && !b.isExternalAuxiliary() && !b.isFLPAuxiliary()){
 				const OrdinaryAtom& atom = b.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(b) : reg->onatoms.getByID(b);
 				preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
 			}
@@ -1124,6 +1124,7 @@ void FLPModelGeneratorBase::createMinimalityRules(
 	BOOST_FOREACH (Pair p, shadowPredicates){
 		OrdinaryAtom atom(ID::MAINKIND_ATOM);
 		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		if (p.first.isAuxiliary()) atom.kind |= ID::PROPERTY_AUX;
 		atom.tuple.push_back(p.first);
 		for (int i = 0; i < p.second.first; ++i){
 			std::stringstream var;
@@ -1201,6 +1202,7 @@ void FLPModelGeneratorBase::createFoundingRules(
 	BOOST_FOREACH (Pair p, shadowPredicates){
 		OrdinaryAtom atom(ID::MAINKIND_ATOM);
 		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		if (p.first.isAuxiliary()) atom.kind |= ID::PROPERTY_AUX;
 		atom.tuple.push_back(p.first);
 		for (int i = 0; i < p.second.first; ++i){
 			std::stringstream var;

@@ -332,12 +332,14 @@ Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
 			}
 		}
 		if (!foundInd){
+/*
 			// This cannot happen if all atoms are taken as ordinary ones, because this would mean:
 			// 1. No body atom is falsified by I (--> condition (i) does not apply)
-			// 2. No positive body atom, which is true in I, is in the unfounded set (--> condition (ii) does not apply)
+			// [2. No positive body atom, which is true in I, is in the unfounded set (--> condition (ii) does not apply)] <<-- this is not true
 			// 3. All head atoms, which are true in I, are in the UFS (--> condition (iii) does not apply)
 			// Therefore the UFS could not be an unfounded set
 			assert (mode == WithExt);
+*/
 
 			// alternatively: collect the truth values of all atoms relevant to the rule body
 			BOOST_FOREACH (ID b, rule.body){
