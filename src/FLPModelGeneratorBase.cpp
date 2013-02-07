@@ -323,14 +323,40 @@ void FLPModelGeneratorFactoryBase::addDomainPredicatesAndCreateDomainExploration
             DBGLOG(DBG, "External atom " << b << " is necessary for de-safety");
             deidbInnerEatoms.push_back(b);
 
-            OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-            oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
+            OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            OrdinaryAtom chosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            OrdinaryAtom notChosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            domainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
+            chosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', b));		// reuse auxiliaries for positive and negative replacements: they don't occur in the domain
+            notChosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('n', b));	// exploration program anyway
             BOOST_FOREACH (ID o2, ea.tuple){
-              oatom.tuple.push_back(o2);
+              domainAtom.tuple.push_back(o2);
+              chosenDomainAtom.tuple.push_back(o2);
+              notChosenDomainAtom.tuple.push_back(o2);
             }
-            ID domainAtomID = reg->storeOrdinaryNAtom(oatom);
+            ID domainAtomID = reg->storeOrdinaryNAtom(domainAtom);
+            ID chosenDomainAtomID = reg->storeOrdinaryNAtom(chosenDomainAtom);
+            ID notChosenDomainAtomID = reg->storeOrdinaryNAtom(notChosenDomainAtom);
+
             ruleDom.body.push_back(domainAtomID);
-            ruleExpl.body.push_back(domainAtomID);
+            ruleExpl.body.push_back(chosenDomainAtomID);
+
+            // create a rule p(X) v n(X) :- d(X) for each domain atom d
+            // this nondeterminisim is necessary to make the grounding exhaustive; otherwise the grounder may optimize the grounding too much and we are not aware of relevant atoms
+            Rule choosingRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+            choosingRule.head.push_back(chosenDomainAtomID);
+            choosingRule.head.push_back(notChosenDomainAtomID);
+            choosingRule.body.push_back(domainAtomID);
+            ID choosingRuleID = reg->storeRule(choosingRule);
+            deidb.push_back(choosingRuleID);
+            {
+            std::stringstream s;
+            RawPrinter printer(s, reg);
+            s << "adding choosing rule ";
+            printer.print(choosingRuleID);
+            s << " for external atom " << b;
+            DBGLOG(DBG, s.str());
+            }
             break;
           }
         }
