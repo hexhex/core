@@ -288,6 +288,8 @@ void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
 		name << ctx.registry()->terms.getByID(tid).symbol << "(" << symbol << ")";
 		ogatom.text = name.str();
 		if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+		if( tid.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
+		if( tid.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
 		ogatom.tuple.push_back(tid);
 		ogatom.tuple.push_back(ID::termFromInteger(symbol));
 		ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
@@ -339,6 +341,8 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						assert(tid != ID_FAIL);
 						assert(!tid.isVariableTerm());
 						if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+						if( tid.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
+						if( tid.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
 						ogatom.tuple.push_back(tid);
 						ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
 						if (aid == ID_FAIL){

@@ -756,7 +756,6 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
 		eaVerified[eaIndex] = verify;
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
-		// @TODO: Why? Does it hurt if we always set eaEvaluated[eaIndex] to true?
 		if( factory.ctx.config.getOption("NoPropagator") == 0 )
 		  eaEvaluated[eaIndex] = true;
 
