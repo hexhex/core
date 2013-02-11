@@ -352,7 +352,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
             bool nonmonTrans2 = false;
             BOOST_FOREACH (Component c, reachable1) if (nonmonotonicTransitivePredecessor.find(c) != nonmonotonicTransitivePredecessor.end()) nonmonTrans1 = true;
             BOOST_FOREACH (Component c, reachable2) if (nonmonotonicTransitivePredecessor.find(c) != nonmonotonicTransitivePredecessor.end()) nonmonTrans2 = true;
-            bool nd = nonmonTrans1 != nonmonTrans2;
+            nd = nonmonTrans1 != nonmonTrans2;
 //            bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
 //	                (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
           }
