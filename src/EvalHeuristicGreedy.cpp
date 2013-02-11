@@ -146,6 +146,7 @@ using namespace internalgreedy;
 
 void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
 {
+  ProgramCtx& ctx = builder.getProgramCtx();
   ComponentGraph& compgraph = builder.getComponentGraph();
   #if 0
   {
@@ -317,29 +318,46 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
         }
 
         std::set<std::pair<ComponentGraph::Component, ComponentGraph::Component> > negdep;
-	if (builder.getProgramCtx().config.getOption("LiberalSafety") && builder.getProgramCtx().config.getOption("IncludeAuxInputInAuxiliaries")){
-          // check if there is a nonmonotonic external dependency from comp to comp2
-          BOOST_FOREACH (ComponentGraph::Dependency dep, compgraph.getDependencies()){
-            const ComponentGraph::DependencyInfo& di = compgraph.getDependencyInfo(dep);
-            if (di.externalNonmonotonicPredicateInput){
-               // check if the nonmonotonic predicate dependency is eliminated if we consider only necessary external atoms
-               BOOST_FOREACH (ComponentGraph::DependencyInfo::DepEdge de, di.depEdges){
-                 if (de.get<2>().externalNonmonotonicPredicateInput &&
-                     builder.getProgramCtx().attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(de.get<0>())){
-                   // not eliminated
-                   negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
-                   break;
+        std::set<ComponentGraph::Component> nonmonotonicTransitivePredecessor;
+	if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+            if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+            // check if there is a nonmonotonic external dependency from comp to comp2
+            BOOST_FOREACH (ComponentGraph::Dependency dep, compgraph.getDependencies()){
+              const ComponentGraph::DependencyInfo& di = compgraph.getDependencyInfo(dep);
+              if (di.externalNonmonotonicPredicateInput){
+                 // check if the nonmonotonic predicate dependency is eliminated if we consider only necessary external atoms
+                 BOOST_FOREACH (ComponentGraph::DependencyInfo::DepEdge de, di.depEdges){
+                   if (de.get<2>().externalNonmonotonicPredicateInput &&
+                       ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(de.get<0>())){
+                      // not eliminated
+                      negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
+                      nonmonotonicTransitivePredecessor.insert(compgraph.sourceOf(dep));
+                      break;
+                   }
                  }
-               }
+              }
             }
           }
         }
 
         // if this is the case, then do not merge
         if (!breakCycle){
-          bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
-		    (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
-          if (mergeComponents(builder.getProgramCtx(), compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)){
+          // we do not want to merge if a component in transitivePredecessorComponents is reachable from exactly one of comp and comp2
+          bool nd = false;
+          if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+            ComponentSet reachable1, reachable2;
+            transitivePredecessorComponents(compgraph, comp, reachable1);
+            transitivePredecessorComponents(compgraph, comp2, reachable2);
+            bool nonmonTrans1 = false;
+            bool nonmonTrans2 = false;
+            BOOST_FOREACH (Component c, reachable1) if (nonmonotonicTransitivePredecessor.find(c) != nonmonotonicTransitivePredecessor.end()) nonmonTrans1 = true;
+            BOOST_FOREACH (Component c, reachable2) if (nonmonotonicTransitivePredecessor.find(c) != nonmonotonicTransitivePredecessor.end()) nonmonTrans2 = true;
+            bool nd = nonmonTrans1 != nonmonTrans2;
+//            bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
+//	                (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
+          }
+
+          if (mergeComponents(ctx, compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
               // merge only one pair at a time, otherwise this could create cycles which are not detected above:
