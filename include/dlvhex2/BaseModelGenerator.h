@@ -69,6 +69,8 @@ protected:
   // (works recursively for aggregate atoms,
   // will create additional "auxiliary" aggregate atoms in registry)
   virtual void convertRuleBody(ProgramCtx& ctx, const Tuple& body, Tuple& convbody);
+
+  void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms);
 };
 
 //
@@ -110,7 +112,58 @@ public:
     virtual bool output(const Tuple& output) = 0;
   };
 
-protected:
+  // callback for checking whether external computations
+  // reflect guesses of external atom truth values
+  struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
+    public ExternalAnswerTupleCallback
+  {
+    VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+        InterpretationPtr guess_pos,
+        InterpretationPtr guess_neg);
+    virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
+    // remembers eatom and prepares replacement.tuple[0]
+    virtual bool eatom(const ExternalAtom& eatom);
+    // remembers input
+    virtual bool input(const Tuple& input);
+    // creates replacement ogatom and activates respective bit in output interpretation
+    virtual bool output(const Tuple& output);
+  protected:
+    RegistryPtr reg;
+    InterpretationPtr guess_pos, guess_neg;
+    ID pospred, negpred;
+    OrdinaryAtom replacement;
+  };
+
+  struct VerifyExternalAtomCB:
+    public ExternalAnswerTupleCallback
+  {
+  protected:
+    const ExternalAtom& exatom;
+    const ExternalAtomMask& eaMask;
+    RegistryPtr reg;
+    ID pospred, negpred;
+    OrdinaryAtom replacement;
+    InterpretationConstPtr guess;
+    InterpretationPtr remainingguess;
+    bool verified;
+    ID falsified;
+
+  public:
+    bool onlyNegativeAuxiliaries();
+
+    VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& exatom, const ExternalAtomMask& eaMask);
+    virtual ~VerifyExternalAtomCB();
+    // remembers eatom and prepares replacement.tuple[0]
+    virtual bool eatom(const ExternalAtom& eatom);
+    // remembers input
+    virtual bool input(const Tuple& input);
+    // creates replacement ogatom and activates respective bit in output interpretation
+    virtual bool output(const Tuple& output);
+
+    bool verify();
+    ID getFalsifiedAtom(); // returns a falsified atom (positive or negative auxiliary) if verify() returns false, and ID_FAIL otherwise
+  };
+
   // for usual model building where we want to collect all true answers
   // as replacement atoms in an interpretation
   struct IntegrateExternalAnswerIntoInterpretationCB:
@@ -131,6 +184,7 @@ protected:
     OrdinaryAtom replacement;
   };
 
+protected:
   // projects input interpretation for predicate inputs
   // calculates constant input tuples from auxiliary input predicates and from given constants
   // calls eatom function with each input tuple
@@ -174,6 +228,8 @@ protected:
   // and store them as true bits into "inputs", bits can be looked up in the EAInputTupleCache in registry
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, InterpretationPtr inputs) const;
+
+  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms);
 };
 
 DLVHEX_NAMESPACE_END

@@ -104,6 +104,10 @@ protected:
   // (x stands for transformed)
   std::vector<ID> xidb;
 
+  // IDB for domain exploration (equivalent to xidb, except that it does not contain domain predicates)
+  std::vector<ID> deidbInnerEatoms;
+  std::vector<ID> deidb;
+
   // methods
 public:
   GenuineWellfoundedModelGeneratorFactory(

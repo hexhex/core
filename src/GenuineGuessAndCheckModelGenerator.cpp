@@ -72,7 +72,7 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   if (ctx.config.getOption("LiberalSafety")){
     // add domain predicates for all external atoms which are necessary to establish liberal domain-expansion safety
     // and extract the domain-exploration program from the IDB
-    addDomainPredicatesAndCreateDomainExplorationProgram(ci, ctx);
+    addDomainPredicatesAndCreateDomainExplorationProgram(ci, ctx, idb, deidb, deidbInnerEatoms);
   }
 
   innerEatoms = ci.innerEatoms;
@@ -224,7 +224,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")){
-      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates<GenuineSolver>(factory.ci, factory.ctx, postprocInput);
+      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
       postprocInput->add(*domPredictaesExtension);
     }
 

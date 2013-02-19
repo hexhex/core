@@ -170,6 +170,212 @@ output(const Tuple& output)
   return true;
 }
 
+BaseModelGenerator::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+    InterpretationPtr _guess_pos,
+    InterpretationPtr _guess_neg):
+  reg(_guess_pos->getRegistry()),
+  guess_pos(_guess_pos),
+  guess_neg(_guess_neg),
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX)
+{
+  assert(guess_pos->getRegistry() == guess_neg->getRegistry());
+}
+
+bool
+BaseModelGenerator::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+eatom(const ExternalAtom& eatom)
+{
+  pospred = 
+    reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+  negpred =
+    reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+  replacement.tuple.resize(1);
+
+  // never abort
+  return true;
+}
+
+bool
+BaseModelGenerator::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+input(const Tuple& input)
+{
+  assert(replacement.tuple.size() >= 1);
+
+  // shorten
+  replacement.tuple.resize(1);
+
+  // add
+  replacement.tuple.insert(replacement.tuple.end(),
+      input.begin(), input.end());
+
+  // never abort
+  return true;
+}
+
+bool
+BaseModelGenerator::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+output(const Tuple& output)
+{
+  assert(replacement.tuple.size() >= 1);
+
+  // add, but remember size to reset it later
+  unsigned size = replacement.tuple.size();
+  replacement.tuple.insert(replacement.tuple.end(),
+      output.begin(), output.end());
+
+  // build pos replacement, register, and clear the corresponding bit in guess_pos
+  replacement.tuple[0] = pospred;
+  ID idreplacement_pos = reg->storeOrdinaryGAtom(replacement);
+  DBGLOG(DBG,"pos replacement ID = " << idreplacement_pos);
+  if( !guess_pos->getFact(idreplacement_pos.address) )
+  {
+    // check whether neg is true, if yes we bailout
+    replacement.tuple[0] = negpred;
+    ID idreplacement_neg = reg->ogatoms.getIDByTuple(replacement.tuple);
+    if( idreplacement_neg == ID_FAIL )
+    {
+      // this is ok, the negative replacement does not exist so it cannot be true
+      DBGLOG(DBG,"neg eatom replacement " << replacement << " not found -> not required");
+    }
+    else
+    {
+      DBGLOG(DBG,"neg eatom replacement ID = " << idreplacement_neg);
+
+      // verify if it is true or not
+      if( guess_neg->getFact(idreplacement_neg.address) == true )
+      {
+        // this is bad, the guess was "false" but the eatom output says it is "true"
+        // -> abort
+        DBGLOG(DBG,"neg eatom replacement is true in guess -> wrong guess!");
+
+        // (we now that we won't reuse replacement.tuple,
+        //  so we do not care about resizing it here)
+        return false;
+      }
+      else
+      {
+        // this is ok, the negative replacement exists but is not true
+        DBGLOG(DBG,"neg eatom replacement found but not set -> ok");
+      }
+    }
+  }
+  else
+  {
+    // remove this bit, so later we can check if all bits were cleared
+    // (i.e., if all positive guesses were confirmed)
+    guess_pos->clearFact(idreplacement_pos.address);
+    DBGLOG(DBG,"clearing replacement fact -> positive guess interpretation is now " << *guess_pos);
+  }
+
+  // shorten it, s.t. we can add the next one
+  replacement.tuple.resize(size);
+
+  // do not abort if we reach here
+  return true;
+}
+
+
+BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX), falsified(ID_FAIL){
+
+	reg = eatom.pluginAtom->getRegistry();
+
+	pospred = reg->getAuxiliaryConstantSymbol('r', exatom.predicate);
+	negpred = reg->getAuxiliaryConstantSymbol('n', exatom.predicate);
+	replacement.tuple.resize(1);
+
+	remainingguess = InterpretationPtr(new Interpretation(reg));
+	remainingguess->add(*guess);
+	remainingguess->getStorage() &= eaMask.mask()->getStorage();
+}
+
+BaseModelGenerator::VerifyExternalAtomCB::~VerifyExternalAtomCB(){
+}
+
+bool BaseModelGenerator::VerifyExternalAtomCB::onlyNegativeAuxiliaries(){
+
+	bm::bvector<>::enumerator en = remainingguess->getStorage().first();
+	bm::bvector<>::enumerator en_end = remainingguess->getStorage().end();
+
+	while (en < en_end){
+		const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
+		if (oatom.tuple[0] == pospred){
+			DBGLOG(DBG, "Unfounded positive auxiliary detected: " << *en);
+			falsified = reg->ogatoms.getIDByAddress(*en);
+			return false;
+		}
+		en++;
+	}
+	return true;
+}
+
+bool BaseModelGenerator::VerifyExternalAtomCB::eatom(const ExternalAtom& exatom){
+
+	// this callback must not be used for evaluating multiple external atoms
+	assert(&exatom == &this->exatom);
+
+	return true;
+}
+
+bool BaseModelGenerator::VerifyExternalAtomCB::input(const Tuple& input){
+
+	assert(replacement.tuple.size() >= 1);
+
+	// shorten
+	replacement.tuple.resize(1);
+
+	// add
+	replacement.tuple.insert(replacement.tuple.end(), input.begin(), input.end());
+
+	// never abort
+	return true;
+}
+
+bool BaseModelGenerator::VerifyExternalAtomCB::output(const Tuple& output){
+
+	assert(replacement.tuple.size() >= 1);
+
+	// add, but remember size to reset it later
+	unsigned size = replacement.tuple.size();
+	replacement.tuple.insert(replacement.tuple.end(), output.begin(), output.end());
+
+	// build pos replacement, register, and clear the corresponding bit in guess_pos
+	replacement.tuple[0] = pospred;
+	ID idreplacement_pos = reg->storeOrdinaryGAtom(replacement);
+	replacement.tuple[0] = negpred;
+	ID idreplacement_neg = reg->storeOrdinaryGAtom(replacement);
+
+	// shorten it, s.t. we can add the next one
+	replacement.tuple.resize(size);
+
+	if(remainingguess->getFact(idreplacement_neg.address)){
+		LOG(DBG, "Positive atom " << printToString<RawPrinter>(idreplacement_pos, reg) << " address=" << idreplacement_pos.address << " was guessed to be false!");
+		verified = false;
+		falsified = reg->ogatoms.getIDByAddress(idreplacement_neg.address);
+		return false;
+	}else{
+		DBGLOG(DBG, "Positive atom was guessed correctly");
+		remainingguess->clearFact(idreplacement_pos.address);
+		return true;
+	}
+}
+
+bool BaseModelGenerator::VerifyExternalAtomCB::verify(){
+
+	if (remainingguess){
+		if (!onlyNegativeAuxiliaries()){
+			verified = false;
+		}
+		remainingguess.reset();
+	}
+
+	return verified;
+}
+
+ID BaseModelGenerator::VerifyExternalAtomCB::getFalsifiedAtom(){
+	return falsified;
+}
+
 // projects input interpretation
 // calls eatom function
 // reintegrates output tuples as auxiliary atoms into outputi
@@ -611,6 +817,285 @@ ID BaseModelGeneratorFactory::convertRule(ProgramCtx& ctx, ID ruleid)
   }
   #endif
   return newruleid;
+}
+
+
+// adds for all external atoms with output variables which fail the strong safety check
+// a domain predicate to the rule body
+void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms){
+
+  RegistryPtr reg = ctx.registry();
+
+  std::vector<ID> idbWithDomainPredicates;
+  deidb.reserve(idb.size());
+  idbWithDomainPredicates.reserve(idb.size());
+
+  // for all rules in the IDB
+  BOOST_FOREACH (ID ruleid, idb){
+
+    if( !ruleid.doesRuleContainExtatoms() )
+    {
+      DBGLOG(DBG,"not processing rule " << ruleid << " (does not contain extatoms)");
+      idbWithDomainPredicates.push_back(ruleid);
+      deidb.push_back(ruleid);
+    }
+
+    // add domain predicates for all external atoms which are relevant for de-safety
+    const Rule& rule = reg->rules.getByID(ruleid);
+    Rule ruleDom = rule;
+    Rule ruleExpl(rule.kind & (ID::ALL_ONES - ID::PROPERTY_RULE_EXTATOMS));
+    ruleExpl.head = rule.head;
+    BOOST_FOREACH (ID b, rule.body){
+      if (!b.isExternalAtom()){
+        ruleExpl.body.push_back(b);
+      }
+      if (!b.isNaf() && b.isExternalAtom()){
+        const ExternalAtom& ea = reg->eatoms.getByID(b);
+
+//        BOOST_FOREACH (ID o, ea.tuple){
+          if (ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
+
+            // print a warning if there is a nonmonotonic external atom which is necessary for de-safety, because this makes grounding really slow
+            // (exponential in the number of nonmonotonic input atoms)
+            if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
+              std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
+              std::stringstream ss;
+              RawPrinter printer(ss, reg);
+              ss << "External atom ";
+              printer.print(b);
+              ss << " in rule " << std::endl;
+              ss << " ";
+              printer.print(ruleid);
+              ss << std::endl;
+              ss << " is nonmonotonic and necessary for safety. This can decrease grounding performance significantly." << std::endl;
+              ss << " Consider using a different heuristics or ensure safty by other means, e.g., additional ordinary atoms which bound the output.";
+              LOG(WARNING, ss.str());
+            }
+
+            // remember that this external atom was necessary for de-safety
+            DBGLOG(DBG, "External atom " << b << " is necessary for de-safety");
+            deidbInnerEatoms.push_back(b);
+
+            OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            OrdinaryAtom chosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            OrdinaryAtom notChosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            domainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
+            chosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', b));		// reuse auxiliaries for positive and negative replacements: they don't occur in the domain
+            notChosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('n', b));	// exploration program anyway
+            BOOST_FOREACH (ID o2, ea.inputs){
+              domainAtom.tuple.push_back(o2);
+              chosenDomainAtom.tuple.push_back(o2);
+              notChosenDomainAtom.tuple.push_back(o2);
+            }
+            BOOST_FOREACH (ID o2, ea.tuple){
+              domainAtom.tuple.push_back(o2);
+              chosenDomainAtom.tuple.push_back(o2);
+              notChosenDomainAtom.tuple.push_back(o2);
+            }
+            ID domainAtomID = reg->storeOrdinaryNAtom(domainAtom);
+            ID chosenDomainAtomID = reg->storeOrdinaryNAtom(chosenDomainAtom);
+            ID notChosenDomainAtomID = reg->storeOrdinaryNAtom(notChosenDomainAtom);
+
+            ruleDom.body.push_back(domainAtomID);
+            ruleExpl.body.push_back(chosenDomainAtomID);
+
+            // create a rule p(X) v n(X) :- d(X) for each domain atom d
+            // this nondeterminisim is necessary to make the grounding exhaustive; otherwise the grounder may optimize the grounding too much and we are not aware of relevant atoms
+            Rule choosingRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+            choosingRule.head.push_back(chosenDomainAtomID);
+            choosingRule.head.push_back(notChosenDomainAtomID);
+            choosingRule.body.push_back(domainAtomID);
+            ID choosingRuleID = reg->storeRule(choosingRule);
+            deidb.push_back(choosingRuleID);
+            {
+            std::stringstream s;
+            RawPrinter printer(s, reg);
+            s << "adding choosing rule ";
+            printer.print(choosingRuleID);
+            s << " for external atom " << b;
+            DBGLOG(DBG, s.str());
+            }
+//            break;
+          }
+//        }
+      }
+    }
+    ID ruleDomID = reg->storeRule(ruleDom);
+    ID ruleExplID = reg->storeRule(ruleExpl);
+#ifndef NDEBUG
+    {
+    std::stringstream s;
+    RawPrinter printer(s, reg);
+    s << "adding domain predicates: rewriting rule ";
+    printer.print(ruleid);
+    s << " to ";
+    printer.print(ruleDomID);
+    s << " (for IDB) and domain-exploration rule ";
+    printer.print(ruleExplID);
+    DBGLOG(DBG, s.str());
+    }
+#endif
+    idbWithDomainPredicates.push_back(ruleDomID);
+    deidb.push_back(ruleExplID);
+  }
+
+  // update the original IDB
+  idb = idbWithDomainPredicates;
+}
+
+InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms){
+
+	RegistryPtr reg = ctx.registry();
+
+	InterpretationPtr domintr = InterpretationPtr(new Interpretation(reg));
+	domintr->getStorage() |= edb->getStorage();
+
+	DBGLOG(DBG, "Computing fixpoint of extensions of domain predicates");
+	DBGLOG(DBG, "" << deidbInnerEatoms.size() << " inner external atoms are necessary for establishing de-safety");
+
+	// if there are no inner external atoms, then there is nothing to do
+	if (deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(reg));
+
+	InterpretationPtr herbrandBase = InterpretationPtr(new Interpretation(reg));
+	herbrandBase->getStorage() |= edb->getStorage();
+	int oldHerbrandBaseSize;
+	do
+	{
+		oldHerbrandBaseSize = herbrandBase->getStorage().count();
+
+		DBGLOG(DBG, "Loop with herbrandBase=" << *herbrandBase);
+
+		// ground program
+		OrdinaryASPProgram program(reg, deidb, domintr, ctx.maxint);
+		GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, program);
+
+		// retrieve the Herbrand base
+		if (!!grounder->getGroundProgram().mask){
+			herbrandBase->getStorage() |= (grounder->getGroundProgram().edb->getStorage() - grounder->getGroundProgram().mask->getStorage());
+		}else{
+			herbrandBase->getStorage() |= grounder->getGroundProgram().edb->getStorage();
+		}
+		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb){
+			const Rule& r = reg->rules.getByID(rid);
+			BOOST_FOREACH (ID h, r.head)
+				if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(h.address)) herbrandBase->setFact(h.address);
+			BOOST_FOREACH (ID b, r.body)
+				if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(b.address)) herbrandBase->setFact(b.address);
+		}
+
+		// evaluate inner external atoms
+		BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(herbrandBase);
+		BOOST_FOREACH (ID eaid, deidbInnerEatoms){
+			const ExternalAtom& ea = reg->eatoms.getByID(eaid);
+
+			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
+			// in order to maximize the output;
+			// for nonmonotonic input atoms, enumerate all (exponentially many) possible assignments
+			boost::unordered_map<IDAddress, bool> nonmonotonicinput;
+			InterpretationPtr input(new Interpretation(reg));
+			input->add(*herbrandBase);
+			ea.updatePredicateInputMask();
+			bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+			while (en < en_end){
+				const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+
+				for (int i = 0; i < ea.inputs.size(); ++i){
+					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+					    ea.getExtSourceProperties().isAntimonotonic(i) &&
+					    ogatom.tuple[0] == ea.inputs[i]){
+						DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
+						input->clearFact(*en);
+					}
+					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+					    !ea.getExtSourceProperties().isAntimonotonic(i) &&
+					    !ea.getExtSourceProperties().isMonotonic(i) &&
+					    ogatom.tuple[0] == ea.inputs[i]){
+						// if the predicate is defined in this component, enumerate all possible assignments
+						if (ci.predicatesInComponent.count(ea.inputs[i]) > 0){
+							DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
+							nonmonotonicinput[*en] = false;
+						}
+						// otherwise: take the truth value from the edb
+						else{
+							if (!edb->getFact(*en)){
+								DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
+								input->clearFact(*en);
+							}
+						}
+					}
+				}
+				en++;
+			}
+
+			DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
+			bool allOnes;
+			do
+			{
+				// set nonmonotonic input
+				allOnes = true;
+				typedef std::pair<IDAddress, bool> Pair;
+				BOOST_FOREACH (Pair p, nonmonotonicinput){
+					if (p.second) input->setFact(p.first);
+					else{
+						input->clearFact(p.first);
+						allOnes = false;
+					}
+				}
+
+				// evalute external atom
+				DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
+				evaluateExternalAtom(ctx, ea, input, cb);
+
+				// enumerate next assignment to nonmonotonic input atoms
+				if (!allOnes){
+					std::vector<IDAddress> clear;
+					BOOST_FOREACH (Pair p, nonmonotonicinput){
+						if (p.second) clear.push_back(p.first);
+						else{
+							nonmonotonicinput[p.first] = true;
+							break;
+						}
+					}
+					BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
+				}
+			}while(!allOnes);
+			DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
+		}
+
+		// translate new EA-replacements to domain atoms
+		bm::bvector<>::enumerator en = herbrandBase->getStorage().first();
+		bm::bvector<>::enumerator en_end = herbrandBase->getStorage().end();
+		while (en < en_end){
+			ID id = reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary()){
+				DBGLOG(DBG, "Converting atom with address " << *en);
+
+				const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+				BOOST_FOREACH (ID eaid, deidbInnerEatoms){
+					const ExternalAtom ea = reg->eatoms.getByID(eaid);
+					if (ea.predicate == reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
+
+						OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+						domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
+						int io = 1;
+						if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
+						for (int i = io /*+ ea.inputs.size()*/; i < ogatom.tuple.size(); ++i){
+							domatom.tuple.push_back(ogatom.tuple[i]);
+						}
+						domintr->setFact(reg->storeOrdinaryGAtom(domatom).address);
+					}
+				}
+			}
+			en++;
+		}
+		herbrandBase->getStorage() |= domintr->getStorage();
+		DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
+	}while(herbrandBase->getStorage().count() != oldHerbrandBaseSize);
+
+	domintr->getStorage() |= edb->getStorage();
+	DBGLOG(DBG, "Domain extension interpretation (final result): " << *domintr);
+	return domintr;
 }
 
 DLVHEX_NAMESPACE_END

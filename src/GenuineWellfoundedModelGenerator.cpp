@@ -73,6 +73,13 @@ GenuineWellfoundedModelGeneratorFactory::GenuineWellfoundedModelGeneratorFactory
   idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
   idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
 
+  // create program for domain exploration
+  if (ctx.config.getOption("LiberalSafety")){
+    // add domain predicates for all external atoms which are necessary to establish liberal domain-expansion safety
+    // and extract the domain-exploration program from the IDB
+    addDomainPredicatesAndCreateDomainExplorationProgram(ci, ctx, idb, deidb, deidbInnerEatoms);
+  }
+
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
@@ -171,6 +178,12 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
 			assert(!factory.xidb.empty() && "the wellfounded model generator is not required for non-idb components! (use plain)");
+		}
+
+		// compute extensions of domain predicates and add it to the input
+		if (factory.ctx.config.getOption("LiberalSafety")){
+			InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocessedInput, factory.deidb, factory.deidbInnerEatoms);
+			postprocessedInput->add(*domPredictaesExtension);
 		}
 
 		// now we have postprocessed input in postprocessedInput

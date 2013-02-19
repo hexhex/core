@@ -101,9 +101,6 @@ protected:
   void createEatomGuessingRules(const ProgramCtx& ctx);
   ID createEatomGuessingRule(const ProgramCtx& ctx, ID ruleID, ID litID);
 
-  // initializes deidb and innerEatoms
-  void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx);
-
   // create rules from xidb
   // * for evaluating which bodies are satisfied -> xidbflphead
   //   -> this program creates flp auxiliary atoms
@@ -139,58 +136,6 @@ protected:
   // meta information about the ground program of this model generator
   AnnotatedGroundProgram annotatedGroundProgram;
 protected:
-  // callback for checking whether external computations
-  // reflect guesses of external atom truth values
-  struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
-    public ExternalAnswerTupleCallback
-  {
-    VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
-        InterpretationPtr guess_pos,
-        InterpretationPtr guess_neg);
-    virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
-    // remembers eatom and prepares replacement.tuple[0]
-    virtual bool eatom(const ExternalAtom& eatom);
-    // remembers input
-    virtual bool input(const Tuple& input);
-    // creates replacement ogatom and activates respective bit in output interpretation
-    virtual bool output(const Tuple& output);
-  protected:
-    RegistryPtr reg;
-    InterpretationPtr guess_pos, guess_neg;
-    ID pospred, negpred;
-    OrdinaryAtom replacement;
-  };
-
-  struct VerifyExternalAtomCB:
-    public ExternalAnswerTupleCallback
-  {
-  protected:
-    const ExternalAtom& exatom;
-    const ExternalAtomMask& eaMask;
-    RegistryPtr reg;
-    ID pospred, negpred;
-    OrdinaryAtom replacement;
-    InterpretationConstPtr guess;
-    InterpretationPtr remainingguess;
-    bool verified;
-    ID falsified;
-
-  public:
-    bool onlyNegativeAuxiliaries();
-
-    VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& exatom, const ExternalAtomMask& eaMask);
-    virtual ~VerifyExternalAtomCB();
-    // remembers eatom and prepares replacement.tuple[0]
-    virtual bool eatom(const ExternalAtom& eatom);
-    // remembers input
-    virtual bool input(const Tuple& input);
-    // creates replacement ogatom and activates respective bit in output interpretation
-    virtual bool output(const Tuple& output);
-
-    bool verify();
-    ID getFalsifiedAtom(); // returns a falsified atom (positive or negative auxiliary) if verify() returns false, and ID_FAIL otherwise
-  };
-
   // checks whether guessed external atom truth values
   // and external atom computations coincide
   virtual bool isCompatibleSet(
@@ -209,10 +154,6 @@ protected:
 		ProgramCtx& ctx,
 		SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr()
 		);
-
-  // computes an overestimate of the domains of all inner external atoms which are not strongly safe
-  template<typename OrdinaryASPSolverT>
-  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb);
 
   // constructs a nogood which describes the essence of a
   // failed FLP check
