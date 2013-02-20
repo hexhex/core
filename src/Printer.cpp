@@ -217,13 +217,6 @@ void RawPrinter::print(ID id)
 		case ID::SUBKIND_TERM_BUILTIN:
 			out << ID::stringFromBuiltinTerm(id.address);
 			break;
-		case ID::SUBKIND_TERM_NULL:
-			out << "\"";
-			if (id.isFrozenNullTerm()) out << "[";
-			out << registry->terms.getByID(id).getUnquotedString();
-			if (id.isFrozenNullTerm()) out << "]";
-			out << "\"";
-			break;
 		default:
 			assert(false);
 		}

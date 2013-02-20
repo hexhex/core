@@ -101,7 +101,7 @@ TermTable::getByID(
 {
 	assert(id.isTerm());
 	// integers are not allowed in this table!
-	assert(id.isConstantTerm() || id.isVariableTerm() || id.isNullTerm());
+	assert(id.isConstantTerm() || id.isVariableTerm());
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
@@ -137,7 +137,7 @@ ID TermTable::storeAndGetID(
 {
 	assert(ID(symb.kind,0).isTerm());
 	// integers are not allowed in this table!
-	assert(ID(symb.kind,0).isConstantTerm() || ID(symb.kind,0).isVariableTerm() || ID(symb.kind,0).isNullTerm());
+	assert(ID(symb.kind,0).isConstantTerm() || ID(symb.kind,0).isVariableTerm());
 	assert(!symb.symbol.empty());
 
   bool success;

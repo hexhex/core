@@ -77,9 +77,6 @@ struct Registry:
   public ostream_printable<Registry>,
   public boost::enable_shared_from_this<Registry>
 {
-private:
-  bm::bvector<> tmpIntr;	// temporary storage for freezeNullTerms and eliminateHomomorphicAtoms
-
 public:
   Registry();
   // creates a real deep copy
@@ -147,18 +144,6 @@ public:
   // create a globally new constand term (new ID and new text)
   ID getNewConstantTerm(std::string prefix = "unnamed");
 
-  // create a new unique null term
-  ID getNewNullTerm();
-
-  // freeze all null terms in the tuple of an ordinary atom
-  ID freezeNullTerms(ID oatomID);
-
-  // freeze all null terms in the atoms of an interpretation
-  void freezeNullTerms(InterpretationPtr intr);
-
-  // remove all atoms from an interpretation which are homomorphic to some atom in a reference interpretation
-  void eliminateHomomorphicAtoms(InterpretationPtr intr, const InterpretationPtr ref);
-
   // check if rule is contained in registry
   // if yes return integer id
   // otherwise store and return new id
@@ -180,10 +165,14 @@ public:
   ID getAuxiliaryConstantSymbol(char type, ID id);
 
   // maps an auxiliary constant symbol back to the ID behind
-  ID getIDByAuxiliaryConstantSymbol(ID auxConstantID);
+  ID getIDByAuxiliaryConstantSymbol(ID auxConstantID) const;
 
   // maps an auxiliary constant symbol back to the type behind
-  char getTypeByAuxiliaryConstantSymbol(ID auxConstantID);
+  char getTypeByAuxiliaryConstantSymbol(ID auxConstantID) const;
+
+  inline bool isNullTerm(ID term) const{
+    return term.isAuxiliary() && getTypeByAuxiliaryConstantSymbol(term) == '0';
+  }
 
   // get predicate mask to auxiliary ground atoms
   InterpretationConstPtr getAuxiliaryGroundAtomMask();

@@ -81,12 +81,9 @@ GenuineWellfoundedModelGeneratorFactory::GenuineWellfoundedModelGeneratorFactory
   }
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
-  xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+  xidb.reserve(idb.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
-  std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-      inserter, boost::bind(
-        &GenuineWellfoundedModelGeneratorFactory::convertRule, this, ctx, _1));
-  std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
+  std::transform(idb.begin(), idb.end(),
       inserter, boost::bind(
         &GenuineWellfoundedModelGeneratorFactory::convertRule, this, ctx, _1));
 

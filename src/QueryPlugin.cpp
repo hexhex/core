@@ -178,7 +178,8 @@ struct sem<QueryParserModuleSemantics::queryBody>
 {
   void operator()(
     QueryParserModuleSemantics& mgr,
-    const std::vector<ID>& source,
+    const boost::fusion::vector2<
+      boost::optional<std::vector<ID> >, std::vector<ID> >& source,
     ID&) // the target is not used
   {
 		if( !mgr.ctxdata.query.empty() )
@@ -187,8 +188,17 @@ struct sem<QueryParserModuleSemantics::queryBody>
 			return;
 		}
 
+		// remember the number of existentially quantified variables in the query
+		// (for correct query answering, the computation of the possibly infinite universal model must not stop before its depth is greater or equal to this number)
+		if (!!boost::fusion::at_c<0>(source)){
+			// count number of distinct variables
+			std::set<ID> distinct;
+			BOOST_FOREACH (ID v, boost::fusion::at_c<0>(source).get()) distinct.insert(v);
+			mgr.ctx.config.setOption("LiberalSafetyNullFreezeCount", distinct.size());
+		}
+
 		// set query
-		mgr.ctxdata.query = source;
+		mgr.ctxdata.query = boost::fusion::at_c<1>(source);
 
 		// get variables/check groundness
 		std::set<ID> vars;
@@ -228,6 +238,7 @@ struct QueryParserModuleGrammarBase:
 		typedef QueryParserModuleSemantics Sem;
 		query
 			= (
+					-(qi::lit('+') >> Base::terms >> qi::lit(':')) >>	// existential quantification
 					(Base::bodyLiteral % qi::char_(',')) >>
 					qi::lit('?') >
 					qi::eps

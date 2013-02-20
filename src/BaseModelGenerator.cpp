@@ -852,7 +852,6 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
       if (!b.isNaf() && b.isExternalAtom()){
         const ExternalAtom& ea = reg->eatoms.getByID(b);
 
-//        BOOST_FOREACH (ID o, ea.tuple){
           if (ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
 
             // print a warning if there is a nonmonotonic external atom which is necessary for de-safety, because this makes grounding really slow
@@ -915,9 +914,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
             s << " for external atom " << b;
             DBGLOG(DBG, s.str());
             }
-//            break;
           }
-//        }
       }
     }
     ID ruleDomID = reg->storeRule(ruleDom);
@@ -957,143 +954,176 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 	if (deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(reg));
 
 	InterpretationPtr herbrandBase = InterpretationPtr(new Interpretation(reg));
+	InterpretationPtr oldherbrandBase = InterpretationPtr(new Interpretation(reg));
+	InterpretationPtr homomorphicAuxInput = InterpretationPtr(new Interpretation(reg));	// stores the aux input atoms which are homomorphic to some other aux input atom in the Herbrand base
 	herbrandBase->getStorage() |= edb->getStorage();
-	int oldHerbrandBaseSize;
-	do
-	{
-		oldHerbrandBaseSize = herbrandBase->getStorage().count();
+	for (int freeze = 0; freeze <= ctx.config.getOption("LiberalSafetyNullFreezeCount"); freeze++){
+		DBGLOG(DBG, "Freezing nulls");
+		homomorphicAuxInput->clear();
+		do
+		{
+			oldherbrandBase->getStorage() = herbrandBase->getStorage();
 
-		DBGLOG(DBG, "Loop with herbrandBase=" << *herbrandBase);
+			DBGLOG(DBG, "Loop with herbrandBase=" << *herbrandBase);
 
-		// ground program
-		OrdinaryASPProgram program(reg, deidb, domintr, ctx.maxint);
-		GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, program);
+			// ground program
+			OrdinaryASPProgram program(reg, deidb, domintr, ctx.maxint);
+			GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, program);
 
-		// retrieve the Herbrand base
-		if (!!grounder->getGroundProgram().mask){
-			herbrandBase->getStorage() |= (grounder->getGroundProgram().edb->getStorage() - grounder->getGroundProgram().mask->getStorage());
-		}else{
-			herbrandBase->getStorage() |= grounder->getGroundProgram().edb->getStorage();
-		}
-		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb){
-			const Rule& r = reg->rules.getByID(rid);
-			BOOST_FOREACH (ID h, r.head)
-				if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(h.address)) herbrandBase->setFact(h.address);
-			BOOST_FOREACH (ID b, r.body)
-				if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(b.address)) herbrandBase->setFact(b.address);
-		}
+			// retrieve the Herbrand base
+			if (!!grounder->getGroundProgram().mask){
+				herbrandBase->getStorage() |= (grounder->getGroundProgram().edb->getStorage() - grounder->getGroundProgram().mask->getStorage());
+			}else{
+				herbrandBase->getStorage() |= grounder->getGroundProgram().edb->getStorage();
+			}
+			BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb){
+				const Rule& r = reg->rules.getByID(rid);
+				BOOST_FOREACH (ID h, r.head)
+					if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(h.address)) herbrandBase->setFact(h.address);
+				BOOST_FOREACH (ID b, r.body)
+					if (!grounder->getGroundProgram().mask || !grounder->getGroundProgram().mask->getFact(b.address)) herbrandBase->setFact(b.address);
+			}
 
-		// evaluate inner external atoms
-		BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(herbrandBase);
-		BOOST_FOREACH (ID eaid, deidbInnerEatoms){
-			const ExternalAtom& ea = reg->eatoms.getByID(eaid);
-
-			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
-			// in order to maximize the output;
-			// for nonmonotonic input atoms, enumerate all (exponentially many) possible assignments
-			boost::unordered_map<IDAddress, bool> nonmonotonicinput;
-			InterpretationPtr input(new Interpretation(reg));
-			input->add(*herbrandBase);
-			ea.updatePredicateInputMask();
-			bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
-			bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
-			while (en < en_end){
-				const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
-
-				for (int i = 0; i < ea.inputs.size(); ++i){
-					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
-					    ea.getExtSourceProperties().isAntimonotonic(i) &&
-					    ogatom.tuple[0] == ea.inputs[i]){
-						DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
-						input->clearFact(*en);
-					}
-					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
-					    !ea.getExtSourceProperties().isAntimonotonic(i) &&
-					    !ea.getExtSourceProperties().isMonotonic(i) &&
-					    ogatom.tuple[0] == ea.inputs[i]){
-						// if the predicate is defined in this component, enumerate all possible assignments
-						if (ci.predicatesInComponent.count(ea.inputs[i]) > 0){
-							DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
-							nonmonotonicinput[*en] = false;
-						}
-						// otherwise: take the truth value from the edb
-						else{
-							if (!edb->getFact(*en)){
-								DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
-								input->clearFact(*en);
+			// for all new atoms in the Herbrand base
+			{
+				bm::bvector<>::enumerator en = herbrandBase->getStorage().first();
+				bm::bvector<>::enumerator en_end = herbrandBase->getStorage().end();
+				while (en < en_end){
+					if (!oldherbrandBase->getFact(*en)){
+						const OrdinaryAtom& og1 = reg->ogatoms.getByAddress(*en);
+						// check if it is an external atom aux input atom
+						if (reg->ogatoms.getIDByAddress(*en).kind & ID::PROPERTY_EXTERNALINPUTAUX){
+							// check if it is homomorphic to some other atom in the Herbrand base
+							bm::bvector<>::enumerator en2 = oldherbrandBase->getStorage().first();
+							bm::bvector<>::enumerator en_end2 = oldherbrandBase->getStorage().end();
+							while (en2 < en_end2){
+								const OrdinaryAtom& og2 = reg->ogatoms.getByAddress(*en2);
+								if (og1.existsHomomorphism(reg, og2)){
+									homomorphicAuxInput->setFact(*en);
+									break;
+								}
+								en2++;
 							}
+						}
+					}
+					en++;
+				}
+			}
+			DBGLOG(DBG, "Homomorphic input atoms: " << *homomorphicAuxInput);
+
+			// evaluate inner external atoms
+			BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(herbrandBase);
+			BOOST_FOREACH (ID eaid, deidbInnerEatoms){
+				const ExternalAtom& ea = reg->eatoms.getByID(eaid);
+
+				// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
+				// in order to maximize the output;
+				// for nonmonotonic input atoms, enumerate all (exponentially many) possible assignments
+				boost::unordered_map<IDAddress, bool> nonmonotonicinput;
+				InterpretationPtr input(new Interpretation(reg));
+				input->add(*herbrandBase);
+				input->getStorage() -= homomorphicAuxInput->getStorage();
+				ea.updatePredicateInputMask();
+				bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+				bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+				while (en < en_end){
+					const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+
+					for (int i = 0; i < ea.inputs.size(); ++i){
+						if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+						    ea.getExtSourceProperties().isAntimonotonic(i) &&
+						    ogatom.tuple[0] == ea.inputs[i]){
+							DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
+							input->clearFact(*en);
+						}
+						if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+						    !ea.getExtSourceProperties().isAntimonotonic(i) &&
+						    !ea.getExtSourceProperties().isMonotonic(i) &&
+						    ogatom.tuple[0] == ea.inputs[i]){
+							// if the predicate is defined in this component, enumerate all possible assignments
+							if (ci.predicatesInComponent.count(ea.inputs[i]) > 0){
+								DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
+								nonmonotonicinput[*en] = false;
+							}
+							// otherwise: take the truth value from the edb
+							else{
+								if (!edb->getFact(*en)){
+									DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
+									input->clearFact(*en);
+								}
+							}
+						}
+					}
+					en++;
+				}
+
+				DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
+				bool allOnes;
+				do
+				{
+					// set nonmonotonic input
+					allOnes = true;
+					typedef std::pair<IDAddress, bool> Pair;
+					BOOST_FOREACH (Pair p, nonmonotonicinput){
+						if (p.second) input->setFact(p.first);
+						else{
+							input->clearFact(p.first);
+							allOnes = false;
+						}
+					}
+
+					// evalute external atom
+					DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
+					evaluateExternalAtom(ctx, ea, input, cb);
+
+					// enumerate next assignment to nonmonotonic input atoms
+					if (!allOnes){
+						std::vector<IDAddress> clear;
+						BOOST_FOREACH (Pair p, nonmonotonicinput){
+							if (p.second) clear.push_back(p.first);
+							else{
+								nonmonotonicinput[p.first] = true;
+								break;
+							}
+						}
+						BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
+					}
+				}while(!allOnes);
+				DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
+			}
+
+			// translate new EA-replacements to domain atoms
+			bm::bvector<>::enumerator en = herbrandBase->getStorage().first();
+			bm::bvector<>::enumerator en_end = herbrandBase->getStorage().end();
+			while (en < en_end){
+				ID id = reg->ogatoms.getIDByAddress(*en);
+				if (id.isExternalAuxiliary()){
+					DBGLOG(DBG, "Converting atom with address " << *en);
+
+					const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+					BOOST_FOREACH (ID eaid, deidbInnerEatoms){
+						const ExternalAtom ea = reg->eatoms.getByID(eaid);
+						if (ea.predicate == reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
+
+							OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+							domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
+							int io = 1;
+							if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
+							for (int i = io /*+ ea.inputs.size()*/; i < ogatom.tuple.size(); ++i){
+								domatom.tuple.push_back(ogatom.tuple[i]);
+							}
+							domintr->setFact(reg->storeOrdinaryGAtom(domatom).address);
 						}
 					}
 				}
 				en++;
 			}
+			herbrandBase->getStorage() |= domintr->getStorage();
+			DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
+		}while(herbrandBase->getStorage().count() != oldherbrandBase->getStorage().count());
+	}
 
-			DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
-			bool allOnes;
-			do
-			{
-				// set nonmonotonic input
-				allOnes = true;
-				typedef std::pair<IDAddress, bool> Pair;
-				BOOST_FOREACH (Pair p, nonmonotonicinput){
-					if (p.second) input->setFact(p.first);
-					else{
-						input->clearFact(p.first);
-						allOnes = false;
-					}
-				}
-
-				// evalute external atom
-				DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
-				evaluateExternalAtom(ctx, ea, input, cb);
-
-				// enumerate next assignment to nonmonotonic input atoms
-				if (!allOnes){
-					std::vector<IDAddress> clear;
-					BOOST_FOREACH (Pair p, nonmonotonicinput){
-						if (p.second) clear.push_back(p.first);
-						else{
-							nonmonotonicinput[p.first] = true;
-							break;
-						}
-					}
-					BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
-				}
-			}while(!allOnes);
-			DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
-		}
-
-		// translate new EA-replacements to domain atoms
-		bm::bvector<>::enumerator en = herbrandBase->getStorage().first();
-		bm::bvector<>::enumerator en_end = herbrandBase->getStorage().end();
-		while (en < en_end){
-			ID id = reg->ogatoms.getIDByAddress(*en);
-			if (id.isExternalAuxiliary()){
-				DBGLOG(DBG, "Converting atom with address " << *en);
-
-				const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
-				BOOST_FOREACH (ID eaid, deidbInnerEatoms){
-					const ExternalAtom ea = reg->eatoms.getByID(eaid);
-					if (ea.predicate == reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
-
-						OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-						domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
-						int io = 1;
-						if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
-						for (int i = io /*+ ea.inputs.size()*/; i < ogatom.tuple.size(); ++i){
-							domatom.tuple.push_back(ogatom.tuple[i]);
-						}
-						domintr->setFact(reg->storeOrdinaryGAtom(domatom).address);
-					}
-				}
-			}
-			en++;
-		}
-		herbrandBase->getStorage() |= domintr->getStorage();
-		DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
-	}while(herbrandBase->getStorage().count() != oldHerbrandBaseSize);
-
-	domintr->getStorage() |= edb->getStorage();
+	domintr->getStorage() -= edb->getStorage();
 	DBGLOG(DBG, "Domain extension interpretation (final result): " << *domintr);
 	return domintr;
 }

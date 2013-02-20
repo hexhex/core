@@ -203,6 +203,7 @@ struct ExistsParserModuleGrammarBase:
 					qi::lit('+') >> Base::terms >> qi::lit(':') >> Base::classicalAtom > qi::eps
 				) [ Sem::existsPrefixAtom(sem) ];
 
+
 		#ifdef BOOST_SPIRIT_DEBUG
 		BOOST_SPIRIT_DEBUG_NODE(existsPrefixAtom);
 		#endif
@@ -366,6 +367,10 @@ class ExistsAtom : public PluginAtom
 	private:
 		int arity;
 
+		// stores for each external atom and input tuple the associated output tuple of null terms
+		typedef std::pair<const ExternalAtom*, Tuple> ExistentialScope;
+		boost::unordered_map<ExistentialScope, Tuple> nullTerms;
+
 		std::string getName(std::string f, int ar){
 			std::stringstream ss;
 			ss << f << ar;
@@ -376,6 +381,7 @@ class ExistsAtom : public PluginAtom
 		ExistsAtom(int arity) : PluginAtom(getName("exists", arity), true)
 		{
 			prop.functional = true;
+			for (int i = 0; i < arity; i++) prop.finiteOutputDomain.insert(i);
 			this->arity = arity;
 
 			addInputTuple();
@@ -387,23 +393,20 @@ class ExistsAtom : public PluginAtom
 		retrieve(const Query& query, Answer& answer) throw (PluginError)
 		{
 			Registry &registry = *getRegistry();
-/*
-			std::stringstream ss;
-			bool first = true;
-			BOOST_FOREACH (ID i, query.input){
-				if (!first) ss << ",";
-				first = false;
-				ss << i.address;
+
+			// check if there is already a tuple of null terms associated with the current external atom and input tuple
+			ExistentialScope key(query.eatom, query.input);
+			if (nullTerms.find(key) == nullTerms.end()){
+				// create a new null term for each output position
+				Tuple tuple;
+				for (int o = 1; o <= arity; ++o){
+					tuple.push_back(registry.getAuxiliaryConstantSymbol('0', ID::termFromInteger(registry.terms.getSize())));
+				}
+				nullTerms[key] = tuple;
+				answer.get().push_back(tuple);
+			}else{
+				answer.get().push_back(nullTerms[key]);
 			}
-*/
-			Tuple tuple;
-			for (int o = 1; o <= arity; ++o){
-//				std::stringstream outterm;
-//				outterm << "\"[" << ss.str() << ";" << o << "]\"";
-//				tuple.push_back(registry.storeConstantTerm(outterm.str(), false));
-				tuple.push_back(registry.getNewNullTerm());
-			}
-			answer.get().push_back(tuple);
 		}
 };
 
