@@ -309,7 +309,7 @@ namespace
 void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
-  LOG(ERROR,"dlvhex2 got termination signal!");
+  LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal!");
   if( exeCtx != NULL )
     exeCtx->terminationRequest = true;
 }
