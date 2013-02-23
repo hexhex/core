@@ -301,12 +301,17 @@ struct Config
 
 void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& pctx);
 
+namespace
+{
+  ProgramCtx* exeCtx = NULL;
+}
+
 void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
   LOG(ERROR,"dlvhex2 got termination signal!");
-  benchmark::BenchmarkController::finish();
-  exit(-1);
+  if( exeCtx != NULL )
+    exeCtx->terminationRequest = true;
 }
 
 int main(int argc, char *argv[])
@@ -319,6 +324,7 @@ int main(int argc, char *argv[])
 
 	// program context
   ProgramCtx pctx;
+  exeCtx = &pctx;
 	{
 		RegistryPtr registry(new Registry);
 		PluginContainerPtr pcp(new PluginContainer);
@@ -479,13 +485,13 @@ int main(int argc, char *argv[])
 			benchmark::BenchmarkController::finish();
 		}
 		BOOST_SCOPE_EXIT_END
-    // also deconstruct & output at SIGTERM/SIGINT
-    {
-      if( SIG_ERR == signal(SIGTERM, signal_handler) )
-        LOG(WARNING,"setting SIGTERM handler terminated with error '" << strerror(errno));
-      if( SIG_ERR == signal(SIGINT, signal_handler) )
-        LOG(WARNING,"setting SIINT handler terminated with error '" << strerror(errno));
-    }
+		// also deconstruct & output at SIGTERM/SIGINT
+		{
+			if( SIG_ERR == signal(SIGTERM, signal_handler) )
+				LOG(WARNING,"setting SIGTERM handler terminated with error '" << strerror(errno));
+			if( SIG_ERR == signal(SIGINT, signal_handler) )
+				LOG(WARNING,"setting SIINT handler terminated with error '" << strerror(errno));
+		}
 
 		// startup statemachine
 		pctx.changeState(StatePtr(new ShowPluginsState));
@@ -509,6 +515,7 @@ int main(int argc, char *argv[])
 		// (this deletes processed options from config.pluginOptions)
 		// TODO use boost::program_options
 		pctx.processPluginOptions(config.pluginOptions);
+		if( pctx.terminationRequest ) return 1;
 			
 		// handle options not recognized by dlvhex and not by plugins
 		if( !config.pluginOptions.empty() )
@@ -530,70 +537,86 @@ int main(int argc, char *argv[])
 
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
+		if( pctx.terminationRequest ) return 1;
 			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
 		pctx.parse();
+		if( pctx.terminationRequest ) return 1;
 		
 		// check if in mlp mode	
 		if( pctx.config.getOption("MLP") ) 
 		  {
 			// syntax check for mlp
 			pctx.moduleSyntaxCheck();
+			if( pctx.terminationRequest ) return 1;
 
 			// solve mlp
 			pctx.mlpSolver();
+			if( pctx.terminationRequest ) return 1;
 		  }
 
 		else 
 
 		  {	
 
-		// associate PluginAtom instances with
-		// ExternalAtom instances (in the IDB)
-		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+			// associate PluginAtom instances with
+			// ExternalAtom instances (in the IDB)
+			pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+			if( pctx.terminationRequest ) return 1;
+				
+			// rewrite program (plugins might want to do this, e.g., for partial grounding)
+			pctx.rewriteEDBIDB();
+			if( pctx.terminationRequest ) return 1;
+				
+			// associate PluginAtom instances with
+			// ExternalAtom instances (in the IDB)
+			// (again, rewrite might add external atoms)
+			pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+
+			// check weak safety
+			pctx.safetyCheck();
+			if( pctx.terminationRequest ) return 1;
+
+			// create attribute graph
+			pctx.createAttributeGraph();
+			if( pctx.terminationRequest ) return 1;
+
+			// create dependency graph (we need the previous step for this)
+			pctx.createDependencyGraph();
+			if( pctx.terminationRequest ) return 1;
+
+			// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
+			pctx.optimizeEDBDependencyGraph();
+			if( pctx.terminationRequest ) return 1;
+			// everything in the following will be done using the dependency graph and EDB
+			#warning IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?
+				
+			// create graph of strongly connected components of dependency graph
+			pctx.createComponentGraph();
+			if( pctx.terminationRequest ) return 1;
+
+			// use SCCs to do strong safety check
+			if( !pctx.config.getOption("SkipStrongSafetyCheck") ) {
+				pctx.strongSafetyCheck();
+				if( pctx.terminationRequest ) return 1;
+			}
 			
-		// rewrite program (plugins might want to do this, e.g., for partial grounding)
-		pctx.rewriteEDBIDB();
-			
-		// associate PluginAtom instances with
-		// ExternalAtom instances (in the IDB)
-		// (again, rewrite might add external atoms)
-		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+			// select heuristics and create eval graph
+			pctx.createEvalGraph();
+			if( pctx.terminationRequest ) return 1;
 
-		// check weak safety
-		pctx.safetyCheck();
+			// stop here if no evaluation was requested
+			if( config.optionNoEval )
+				return 0;
 
-		// create attribute graph
-		pctx.createAttributeGraph();
-
-		// create dependency graph (we need the previous step for this)
-		pctx.createDependencyGraph();
-
-		// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
-		pctx.optimizeEDBDependencyGraph();
-		// everything in the following will be done using the dependency graph and EDB
-		#warning IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?
-			
-		// create graph of strongly connected components of dependency graph
-		pctx.createComponentGraph();
-
-		// use SCCs to do strong safety check
-		if( !pctx.config.getOption("SkipStrongSafetyCheck") )
-			pctx.strongSafetyCheck();
-		
-		// select heuristics and create eval graph
-		pctx.createEvalGraph();
-
-		// stop here if no evaluation was requested
-		if( config.optionNoEval )
-			return 0;
-
-		// setup model builder and configure plugin/dlvhex model processing hooks
-		pctx.setupProgramCtx();
-			
-		// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
-		// (individual model output should happen here)
-		pctx.evaluate();
+			// setup model builder and configure plugin/dlvhex model processing hooks
+			pctx.setupProgramCtx();
+			if( pctx.terminationRequest ) return 1;
+				
+			// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
+			// (individual model output should happen here)
+			pctx.evaluate();
+			if( pctx.terminationRequest ) return 1;
 
 		} // end if (mlp) else ...
 
@@ -1375,7 +1398,7 @@ void configurePluginPath(std::string& userPlugindir)
 	userPlugindir = searchpath.str();
 }
 
-/* vim: set expandtab sw=2 ts=2 tw=80: */
+/* vim: set noexpandtab sw=8 ts=8 tw=80: */
 
 // Local Variables:
 // mode: C++

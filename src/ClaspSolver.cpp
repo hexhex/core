@@ -517,6 +517,12 @@ void ClaspSolver::ExternalPropagator::setHeuristics(DeferPropagationHeuristicsPt
 }
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+	// check for termination request
+	if( cs.ctx.terminationRequest ) {
+		LOG(DBG,"throwing ClaspTermination");
+		throw ClaspSolver::ClaspTermination();
+	}
+
 	// directly updating here would slow us down a lot, in particular if we
 	// are not going to use the interpretation therefore we just record on
 	// which decision level we are for later and use that information if we
