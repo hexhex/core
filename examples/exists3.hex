@@ -1,0 +1,9 @@
+p(a,b).
+u(c,d).
+
++Z : v(Z) :- u(X,Y).
++Y : u(X,Y) :- v(X).
+p(X,Z) :- v(X), p(Y,Z).
+p(X,W) :- p(X,Y), u(Z,W).
+
++X,Y : p(X,Y), u(X,Y) ?
