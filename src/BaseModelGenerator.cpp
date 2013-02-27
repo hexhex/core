@@ -826,6 +826,8 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
   RegistryPtr reg = ctx.registry();
 
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidadpacdep,"addDomainPredicatesAndCreateDomainExplorationProgram");
+
   std::vector<ID> idbWithDomainPredicates;
   deidb.reserve(idb.size());
   idbWithDomainPredicates.reserve(idb.size());
@@ -944,6 +946,8 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 
 	RegistryPtr reg = ctx.registry();
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPredicates");
+	
 	InterpretationPtr domintr = InterpretationPtr(new Interpretation(reg));
 	domintr->getStorage() |= edb->getStorage();
 
