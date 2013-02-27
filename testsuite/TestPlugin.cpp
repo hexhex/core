@@ -44,6 +44,7 @@
 #include "dlvhex2/ProgramCtx.h"
 
 #include <boost/foreach.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <string>
 #include <sstream>
@@ -1517,6 +1518,40 @@ public:
   }
 };
 
+class TestHashAtom:
+  public PluginAtom
+{
+public:
+  TestHashAtom():
+    PluginAtom("testHash", false)
+  {
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::size_t hashValue = 0;
+
+	while (en < en_end){
+		const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+		BOOST_FOREACH (ID t, ogatom.tuple){
+			boost::hash_combine(hashValue, t.address);
+		}
+		en++;
+	}
+
+	std::stringstream ss;
+	ss << "h" << hashValue;
+	Tuple t;
+	t.push_back(getRegistry()->storeConstantTerm(ss.str()));
+	answer.get().push_back(t);
+  }
+};
+
 // just always true and takes 5 constant inputs
 class TestTrueMultiInpAtom:
   public PluginAtom
@@ -1686,6 +1721,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestCycleAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestAppendAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestDisjAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestHashAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom2, PluginPtrDeleter<PluginAtom>()));
 
