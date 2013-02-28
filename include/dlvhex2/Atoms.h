@@ -95,7 +95,7 @@ struct OrdinaryAtom:
   std::string text;
 
   bool unifiesWith(const OrdinaryAtom& a) const;
-  bool existsHomomorphism(const OrdinaryAtom& a) const;
+  bool existsHomomorphism(RegistryPtr reg, const OrdinaryAtom& a) const;
 
   OrdinaryAtom(IDKind kind):
     Atom(kind), text()

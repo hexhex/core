@@ -80,7 +80,7 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   createEatomGuessingRules(ctx);
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
-  xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+  xidb.reserve(idb.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(idb.begin(), idb.end(),
       inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, this, ctx, _1));

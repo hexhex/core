@@ -72,6 +72,7 @@ DLVHEX_NAMESPACE_BEGIN
  * 'd': domain predicates for auto strong safety
  * 'g': aggregate input (internal AggregatePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
+ * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
  * 'x': reserved for local use
  */
 
@@ -553,78 +554,6 @@ ID Registry::getNewConstantTerm(std::string prefix)
   return storeTerm(term);
 }
 
-ID Registry::getNewNullTerm(){
-	DBGLOG(DBG, "Creating new null term");
-	std::stringstream ss;
-	ss << "\"#" << terms.getSize() << "\"";
-	Term null(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NULL, ss.str());
-	return terms.storeAndGetID(null);
-}
-
-ID Registry::freezeNullTerms(ID oatomID){
-
-	DBGLOG(DBG, "Freezing null terms in " << oatomID);
-	const OrdinaryAtom& oatom = lookupOrdinaryAtom(oatomID);
-	BOOST_FOREACH (ID t, oatom.tuple){
-		if (t.isNullTerm() && !t.isFrozenNullTerm()){
-			// create a new atom with frozen terms
-			OrdinaryAtom frozen = oatom;
-			for (int i = 0; i < frozen.tuple.size(); ++i){
-				if (frozen.tuple[i].isNullTerm()) frozen.tuple[i].kind |= ID::PROPERTY_NULL_FROZEN;
-			}
-			return storeOrdinaryAtom(frozen);
-		}
-	}
-
-	// do not need to create a new atom
-	return oatomID;
-}
-
-void Registry::freezeNullTerms(InterpretationPtr intr){
-
-	DBGLOG(DBG, "Freezing null terms in " << *intr);
-	tmpIntr.clear();
-
-	// freeze all atoms
-	bm::bvector<>::enumerator en = intr->getStorage().first();
-	bm::bvector<>::enumerator en_end = intr->getStorage().end();
-	while (en < en_end){
-		tmpIntr.set(freezeNullTerms(ogatoms.getIDByAddress(*en)).address);
-		en++;
-	}
-
-	// copy result
-	intr->getStorage() = tmpIntr;
-}
-
-void Registry::eliminateHomomorphicAtoms(InterpretationPtr intr, const InterpretationPtr ref){
-
-	DBGLOG(DBG, "Eliminating homomorphic atoms");
-	tmpIntr.clear();
-
-	bm::bvector<>::enumerator intr_en = intr->getStorage().first();
-	bm::bvector<>::enumerator intr_en_end = intr->getStorage().end();
-	while (intr_en < intr_en_end){
-		if (!ref->getFact(*intr_en)){
-			// check if there is a homomorphic atom in ref
-			bm::bvector<>::enumerator ref_en = ref->getStorage().first();
-			bm::bvector<>::enumerator ref_en_end = ref->getStorage().end();
-			while (ref_en < ref_en_end){
-
-				const OrdinaryAtom& og1 = ogatoms.getByAddress(*intr_en);
-				const OrdinaryAtom& og2 = ogatoms.getByAddress(*ref_en);
-
-				if (og1.existsHomomorphism(og2)) tmpIntr.set(*intr_en);
-				ref_en++;
-			}
-		}
-		intr_en++;
-	}
-
-	// remove all atoms from intr which have homomorphic atoms in ref
-	intr->getStorage() -= tmpIntr;
-}
-
 // check if rule is contained in registry
 // if yes return integer id
 // otherwise store and return new id
@@ -698,7 +627,7 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 }
 
 // maps an auxiliary constant symbol back to the ID behind
-ID Registry::getIDByAuxiliaryConstantSymbol(ID auxConstantID){
+ID Registry::getIDByAuxiliaryConstantSymbol(ID auxConstantID) const{
 
   // lookup ID of auxiliary
   DBGLOG(DBG,"getIDByAuxiliaryConstantSymbol for " << auxConstantID);
@@ -714,7 +643,7 @@ ID Registry::getIDByAuxiliaryConstantSymbol(ID auxConstantID){
 }
 
 // maps an auxiliary constant symbol back to the type behind
-char Registry::getTypeByAuxiliaryConstantSymbol(ID auxConstantID){
+char Registry::getTypeByAuxiliaryConstantSymbol(ID auxConstantID) const{
 
   // lookup ID of auxiliary
   DBGLOG(DBG,"getTypeByAuxiliaryConstantSymbol for " << auxConstantID);

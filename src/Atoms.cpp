@@ -136,7 +136,7 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
   return true;
 }
 
-bool OrdinaryAtom::existsHomomorphism(const OrdinaryAtom& a) const
+bool OrdinaryAtom::existsHomomorphism(RegistryPtr reg, const OrdinaryAtom& a) const
 {
   if( tuple.size() != a.tuple.size() )
     return false;
@@ -165,10 +165,10 @@ bool OrdinaryAtom::existsHomomorphism(const OrdinaryAtom& a) const
     if( *it1 != *it2 )
     {
       // different terms
-      if( it1->isNullTerm() && !it1->isFrozenNullTerm() )
+      if( reg->isNullTerm(*it1) )
       {
         // it1 is null
-        if( it2->isNullTerm() && !it2->isFrozenNullTerm() )
+        if( reg->isNullTerm(*it2) )
         {
           // it2 is null
 
@@ -196,7 +196,7 @@ bool OrdinaryAtom::existsHomomorphism(const OrdinaryAtom& a) const
       else
       {
         // it1 is nonnull
-        if( it2->isNullTerm() && !it2->isFrozenNullTerm() )
+        if( reg->isNullTerm(*it2) )
         {
           // it2 is null
 
