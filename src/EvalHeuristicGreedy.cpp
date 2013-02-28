@@ -318,7 +318,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
         }
 
         std::set<std::pair<ComponentGraph::Component, ComponentGraph::Component> > negdep;
-        std::set<ComponentGraph::Component> nonmonotonicTransitivePredecessor;
+        std::set<ComponentGraph::Component> nonmonotonicPredecessor;
 	if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
             if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
             // check if there is a nonmonotonic external dependency from comp to comp2
@@ -331,7 +331,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
                        ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(de.get<0>())){
                       // not eliminated
                       negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
-                      nonmonotonicTransitivePredecessor.insert(compgraph.sourceOf(dep));
+                      nonmonotonicPredecessor.insert(compgraph.sourceOf(dep));
                       break;
                    }
                  }
@@ -350,11 +350,16 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
             transitivePredecessorComponents(compgraph, comp2, reachable2);
             bool nonmonTrans1 = false;
             bool nonmonTrans2 = false;
-            BOOST_FOREACH (Component c, reachable1) if (nonmonotonicTransitivePredecessor.find(c) != nonmonotonicTransitivePredecessor.end()) nonmonTrans1 = true;
-            BOOST_FOREACH (Component c, reachable2) if (nonmonotonicTransitivePredecessor.find(c) != nonmonotonicTransitivePredecessor.end()) nonmonTrans2 = true;
+            BOOST_FOREACH (Component c, reachable1) if (nonmonotonicPredecessor.find(c) != nonmonotonicPredecessor.end()) nonmonTrans1 = true;
+            BOOST_FOREACH (Component c, reachable2) if (nonmonotonicPredecessor.find(c) != nonmonotonicPredecessor.end()) nonmonTrans2 = true;
             nd = nonmonTrans1 != nonmonTrans2;
-//            bool nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
-//	                (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
+
+
+//            nd = (nonmonotonicPredecessor.find(comp) != nonmonotonicPredecessor.end()) ||
+//                 (nonmonotonicPredecessor.find(comp2) != nonmonotonicPredecessor.end());
+
+//            nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
+//	           (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
           }
 
           if (mergeComponents(ctx, compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)){

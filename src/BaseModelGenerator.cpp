@@ -1113,7 +1113,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 							domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
 							int io = 1;
 							if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
-							for (int i = io /*+ ea.inputs.size()*/; i < ogatom.tuple.size(); ++i){
+							for (int i = io; i < ogatom.tuple.size(); ++i){
 								domatom.tuple.push_back(ogatom.tuple[i]);
 							}
 							domintr->setFact(reg->storeOrdinaryGAtom(domatom).address);
