@@ -1241,6 +1241,7 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		pb.endRule();
 
 		// derive special atom if at least one head atom is true
+		#warning shouldn't this be BASICRULE?
 		pb.startRule(Clasp::CONSTRAINTRULE, 1);
 		pb.addHead(atLeastOneAtom);
 		BOOST_FOREACH (ID h, rule.head){
@@ -1249,6 +1250,7 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		pb.endRule();
 
 		// forbid that the body is true if the special atom is false (i.e. no head atom is true)
+		#warning shouldn't this be CONSTRAINTRULE with weight(1) as above?
 		pb.startRule(Clasp::BASICRULE);
 		pb.addHead(false_);
 		BOOST_FOREACH (ID b, rule.body){
