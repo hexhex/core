@@ -52,7 +52,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ProgramCtx::ProgramCtx():
-		maxint(0), onlyBestModels(false)
+		maxint(0), onlyBestModels(false), terminationRequest(false)
 {
 }
 
@@ -207,7 +207,6 @@ ProgramCtx::SubprogramAnswerSetCallback::~SubprogramAnswerSetCallback(){}
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationConstPtr edb, std::vector<ID>& idb){
 
 	ProgramCtx pc = *this;
-//	pc.changeRegistry(this->registry());
 	pc.idb = idb;
 	pc.edb = InterpretationPtr(new Interpretation(*edb));
 	pc.currentOptimum.clear();
@@ -218,7 +217,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationCons
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& ip, InterpretationConstPtr addFacts){
 
 	ProgramCtx pc = *this;
-//	pc.changeRegistry(this->registry());
 	pc.idb.clear();
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
 	pc.currentOptimum.clear();
@@ -240,7 +238,14 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.evalgraph.reset();
 	pc.compgraph.reset();
 	pc.depgraph.reset();
-//	pc.modelBuilderFactory = ctx->modelBuilderFactory;
+
+	pc.config.setOption("DumpDepGraph",0);
+	pc.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
+	pc.config.setOption("DumpCompGraph",0);
+	pc.config.setOption("DumpEvalGraph",0);
+	pc.config.setOption("DumpModelGraph",0);
+	pc.config.setOption("DumpIModelGraph",0);
+	pc.config.setOption("DumpAttrGraph",0);
 
   if( !pc.evalHeuristic )
   {

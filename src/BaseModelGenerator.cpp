@@ -591,10 +591,13 @@ bool BaseModelGenerator::verifyEAtomAnswerTuple(RegistryPtr reg,
     {
       // set all variables to this constant and continue
       ID variable = pattern[at];
-      for(unsigned i = at; i < arity; ++i)
+      if( !variable.isAnonymousVariable() )
       {
-        if( pattern[i] == variable )
-          pattern[i] = t[at];
+	      for(unsigned i = at; i < arity; ++i)
+	      {
+		if( pattern[i] == variable )
+		  pattern[i] = t[at];
+	      }
       }
     }
     else if( pattern[at] != t[at] )
