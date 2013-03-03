@@ -957,6 +957,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 	// if there are no inner external atoms, then there is nothing to do
 	if (deidbInnerEatoms.size() == 0) return InterpretationPtr(new Interpretation(reg));
 
+	InterpretationPtr auxinputs = InterpretationPtr(new Interpretation(reg));
 	InterpretationPtr herbrandBase = InterpretationPtr(new Interpretation(reg));
 	InterpretationPtr oldherbrandBase = InterpretationPtr(new Interpretation(reg));
 	InterpretationPtr homomorphicAuxInput = InterpretationPtr(new Interpretation(reg));	// stores the aux input atoms which are homomorphic to some other aux input atom in the Herbrand base
@@ -998,8 +999,8 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 						// check if it is an external atom aux input atom
 						if (reg->ogatoms.getIDByAddress(*en).kind & ID::PROPERTY_EXTERNALINPUTAUX){
 							// check if it is homomorphic to some other atom in the Herbrand base
-							bm::bvector<>::enumerator en2 = oldherbrandBase->getStorage().first();
-							bm::bvector<>::enumerator en_end2 = oldherbrandBase->getStorage().end();
+							bm::bvector<>::enumerator en2 = auxinputs->getStorage().first();
+							bm::bvector<>::enumerator en_end2 = auxinputs->getStorage().end();
 							while (en2 < en_end2){
 								const OrdinaryAtom& og2 = reg->ogatoms.getByAddress(*en2);
 								if (og1.existsHomomorphism(reg, og2)){
@@ -1008,11 +1009,13 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 								}
 								en2++;
 							}
+							auxinputs->setFact(*en);
 						}
 					}
 					en++;
 				}
 			}
+
 			DBGLOG(DBG, "Homomorphic input atoms: " << *homomorphicAuxInput);
 
 			// evaluate inner external atoms
