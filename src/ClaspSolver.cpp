@@ -487,7 +487,7 @@ void ClaspSolver::ExternalPropagator::undoNecessaryDecisionLevels(){
 		// if we have masks so support this undo
 		// (we will not have such masks if we recorded levels but never updated them,
 		// in that case we just need to reset the recorded levels ane everything is fine)
-		if( decisionLevelMasks.size() > 0 )
+		if( decisionLevelMasks.size() >= needToUndoDownToThisDecisionLevel )
 		{
 
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp undoNecDLs");
@@ -517,6 +517,12 @@ void ClaspSolver::ExternalPropagator::setHeuristics(DeferPropagationHeuristicsPt
 }
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+	// check for termination request
+	if( cs.ctx.terminationRequest ) {
+		LOG(DBG,"throwing ClaspTermination");
+		throw ClaspSolver::ClaspTermination();
+	}
+
 	// directly updating here would slow us down a lot, in particular if we
 	// are not going to use the interpretation therefore we just record on
 	// which decision level we are for later and use that information if we

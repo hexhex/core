@@ -630,16 +630,18 @@ int GringoGrounder::doRun()
 		// print ground program
 #if 1
 		if( Logger::Instance().shallPrint(Logger::DBG) )
-		{
+		{	
+			std::stringstream groungprogString;
+			RawPrinter rp(groungprogString, ctx.registry());
 			if( groundProgram.edb != 0 )
 			{
 				// print edb interpretation as facts
-				groundProgram.edb->printAsFacts(programStream);
-				programStream << "\n";
+				groundProgram.edb->printAsFacts(groungprogString);
+				groungprogString << "\n";
 			}
-			printer.printmany(groundProgram.idb, "\n");
-			programStream << std::endl;
-			LOG(DBG, "Got the following ground program from Gringo: {" << programStream.str() << "}");
+			rp.printmany(groundProgram.idb, "\n");
+			groungprogString << std::endl;
+			LOG(DBG, "Got the following ground program from Gringo: {" << groungprogString.str() << "}");
 		}
 #endif
 

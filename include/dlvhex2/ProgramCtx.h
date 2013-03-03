@@ -159,6 +159,13 @@ public:
 
   StatePtr state;
 
+  // set to true if all processing on this ProgramCtx shall be aborted
+  // (e.g., because of a global timeout)
+  // (we currently use this to shutdown cleanly if signalled, but it could
+  // become important for solving with multiple contexts where some must be
+  // aborted)
+  bool terminationRequest;
+
   void
   changeState(const boost::shared_ptr<State>&);
 
