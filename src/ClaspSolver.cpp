@@ -107,6 +107,11 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 				//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
 				// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
 				// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
+				Clasp::Var var = it->second.lit.var();
+				if( cs.claspInstance.eliminated(var) )
+				{
+					DBGLOG(DBG,"eliminated variable " << var << " is " << (s.isTrue(Clasp::Literal(var,false))?"true":"false"));
+				}
 				if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
 					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
 					// set it in the model
@@ -674,29 +679,33 @@ void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp:
 }
 
 void ClaspSolver::ExternalPropagator::initialize(Clasp::Solver& s) {
-	// set all fixed/EDB-bits in interpretation/factWasSet/changed to 1
-	// these correspond to variable 0
-	for(unsigned positive = 0; positive < 2; ++positive)
-	{
-		// this is true for positive == 0, so these are false variables
-		bool sign = (positive == 0);
+	// set eliminated or fixed/EDB-bits in interpretation/factWasSet/changed to 1
+	// these correspond to variable 0 and all that are elimniated
+	for(Clasp::Var var = 0; var <= cs.claspInstance.numVars(); ++var) {
+		if( var == 0 || cs.claspInstance.eliminated(var) ) {
+			DBGLOG(DBG,"dealing with special/eliminated variable " << var << " which is " << (s.isTrue(Clasp::Literal(var,false))?"true":"false"));
+			for(unsigned positive = 0; positive < 2; ++positive) {
+				// this is true for positive == 0, so these are false variables
+				bool sign = (positive == 0);
 
-		const Clasp::Literal lit(0, sign);
-		assert(lit.index() == 0 || lit.index() == 1);
-		AddressVector* c2h = cs.claspToHex[lit.index()];
-		// check if this literal has some meaning in HEX
-		if( !!c2h ) {
-			// go through all mappings of that literal to HEX
-			for(unsigned u = 0; u < c2h->size(); ++u) {
-				IDAddress hexAddr = (*c2h)[u];
-				changed->setFact(hexAddr);
-				factWasSet->setFact(hexAddr);
-				if( sign )
-					// clear false variables
-					interpretation->clearFact(hexAddr);
-				else
-					// set true variables
-					interpretation->setFact(hexAddr);
+				const Clasp::Literal lit(var, sign);
+				AddressVector* c2h = cs.claspToHex[lit.index()];
+				// check if this literal has some meaning in HEX
+				if( !!c2h ) {
+					// go through all mappings of that literal to HEX
+					for(unsigned u = 0; u < c2h->size(); ++u) {
+						IDAddress hexAddr = (*c2h)[u];
+						changed->setFact(hexAddr);
+						factWasSet->setFact(hexAddr);
+						DBGLOG(DBG,"setting " << hexAddr << "(" << cs.reg->ogatoms.getByAddress(hexAddr).text << ") to " << !sign);
+						if( sign )
+							// clear false variables
+							interpretation->clearFact(hexAddr);
+						else
+							// set true variables
+							interpretation->setFact(hexAddr);
+					}
+				}
 			}
 		}
 	}
@@ -771,7 +780,8 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	// just record as in propagate()
 	recordUpdateDecisionLevels(s);
 
-	DBGLOG(DBG,"propagating to HEX (isModel)");
+	const Clasp::SharedContext* sc = s.sharedContext();
+	DBGLOG(DBG,"propagating to HEX (isModel) " << s.numFreeVars() << " free " << s.numAssignedVars() << " assigned " << s.numVars() << " topLevelSize=" << sc->topLevelSize());
        	// but apply recorded changes (all so far) unconditionally
         // (because we must do prop(s) afterwards)
 	applyRecordedDecisionLevelUpdates(s);
@@ -1798,24 +1808,12 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		if( initiallyInconsistent )
 		  break;
 
-		// add propagator
-		DBGLOG(DBG, "Adding external propagator");
-		ep = new ExternalPropagator(*this);
-		{
-			// configure propagator
-			double deferMS = ctx.config.getOption("ClaspDeferMaxTMilliseconds");
-			ExternalPropagator::DeferPropagationHeuristicsPtr dh(
-					new ExternalPropagator::DeferStepsWithTimeoutDeferPropagationHeuristics(
-						*ep, ctx.config.getOption("ClaspDeferNPropagations"), deferMS / 1000.0));
-			ep->setHeuristics(dh);
-			ep->initialize(*claspInstance.master());
-		}
-		claspInstance.master()->addPost(ep);
+		const Clasp::Solver& s = *claspInstance.master();
+		LOG(DBG,"topLevelSize=" << claspInstance.topLevelSize() << " numFreeVars=" << s.numFreeVars() << " numAssigned=" << s.numAssignedVars() << " numVars=" << s.numVars() << " numEliminated=" << claspInstance.numEliminatedVars());
 
-		// like facade does
-		pb.getAssumptions(assumptions);
-
-		// like facade does
+		// like facade does (after endInit)
+		// XXX ask benjamin why after?
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidaddenum, "ClaspSolver():setProbSz");
 		uint32_t estimate = 0;
 		if( claspConfig.params.reduce.estimate() )
 			estimate = claspInstance.problemComplexity();
@@ -1829,6 +1827,25 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		}
 		LOG(DBG,"clasp estimate " << estimate << " size " << size << " r " << r << " fsize " << fsize);
 		claspInstance.setProblemSize(fsize, estimate);
+
+		// like facade does (after problem size and after endInit)
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidaddep, "ClaspSolver():ass");
+		pb.getAssumptions(assumptions);
+
+		// add propagator
+		// XXX ask benjamin when we should do this
+		DBGLOG(DBG, "Adding external propagator");
+		ep = new ExternalPropagator(*this);
+		{
+			// configure propagator
+			double deferMS = ctx.config.getOption("ClaspDeferMaxTMilliseconds");
+			ExternalPropagator::DeferPropagationHeuristicsPtr dh(
+					new ExternalPropagator::DeferStepsWithTimeoutDeferPropagationHeuristics(
+						*ep, ctx.config.getOption("ClaspDeferNPropagations"), deferMS / 1000.0));
+			ep->setHeuristics(dh);
+			ep->initialize(*claspInstance.master());
+		}
+		claspInstance.master()->addPost(ep);
 	}
 	while(false);
 
@@ -1896,6 +1913,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 		  break;
 
 		// add propagator
+		// XXX ask benjamin if adding this after endInit is valid
 		DBGLOG(DBG, "Adding external propagator");
 		ep = new ExternalPropagator(*this);
 		{
@@ -1937,9 +1955,11 @@ void ClaspSolver::configureClaspCommandline()
 	// experimental section
 	{
 	  // TODO handle these kinds of options
-	  //pb.setExtendedRuleMode(Clasp::ProgramBuilder::mode_transform_dynamic);
+	  eqOptions.ext(Clasp::ProgramBuilder::mode_transform_dynamic);
+	  eqOptions.backpropagate();
 
 	  // activate this to get errors in make check, it is very unclear to me why these errors appear, they should not
+		// XXX ask benjamin
 	  if( false ) {
 	    Clasp::SatElite::SatElite* pre = new Clasp::SatElite::SatElite();
 	    pre->options.maxIters = 20;
@@ -1952,6 +1972,7 @@ void ClaspSolver::configureClaspCommandline()
 	// use facade in a poor way to set heuristics
 	// (Clasp::ClaspConfig::applyHeuristic() could be static, as it does not use state)
 	// (let's hope they don't change this)
+	// XXX ask benjamin
 	Clasp::ClaspConfig cc;
 	cc.applyHeuristic(claspConfig);
 }
