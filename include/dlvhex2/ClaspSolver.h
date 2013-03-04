@@ -24,6 +24,7 @@
 /**
  * @file   ClaspSolver.hpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
+ * @author Peter Schueller <peterschueller@sabanciuniv.edu> (performance improvements, incremental model update)
  * 
  * @brief  Interface to genuine clasp 2.0.5-based solver.
  */
@@ -295,15 +296,28 @@ protected:
 	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::ClauseCreator* clauseCreator;
 	ExternalPropagator* ep;
-	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
-	typedef std::vector<IDAddress> AddressVector;
-	// TODO wrap functionality of claspToHex in class
-	std::vector<AddressVector*> claspToHex; // literal index to list of HEX ogatom indices (we need to use literal index due to watch flag in Clasp::Literal)
-	void resetAndResizeClaspToHex(unsigned size);
-	//std::map<uint32_t, std::vector<IDAddress> > claspToHex;
 
-	// for clasp configuration using clasp config parsers (must retain commandline cache for lifetime of clasp, so must be stored here)
+	// for clasp configuration using clasp config parsers
+        // (must retain the commandline cache for the lifetime of claspInstance, so it must be stored here)
 	boost::scoped_ptr<ClaspInHexAppOptions> claspAppOptionsHelper;
+
+	// TODO wrap functionality of hexToClasp and claspToHex in class
+
+	// special literal created from ~0x0
+        // (this is no special value for clasp, it would be the largest negative watched variable)
+	Clasp::Literal noLiteral;
+       	// hex index to clasp literal (a value of noLiteral) means there is no literal to that index
+	std::vector<Clasp::Literal> hexToClasp;
+	inline bool isMappedToClaspLiteral(IDAddress addr) const { // constant time
+		return addr < hexToClasp.size() && hexToClasp[addr] != noLiteral; }
+	void storeHexToClasp(IDAddress addr, Clasp::Literal lit);
+	inline Clasp::Literal mapHexToClasp(IDAddress addr) const { // constant time
+		assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral); return hexToClasp[addr]; }
+
+       	// literal index to list of HEX ogatom indices (we need to use literal index due to watch flag in Clasp::Literal)
+	typedef std::vector<IDAddress> AddressVector;
+	std::vector<AddressVector*> claspToHex;
+	void resetAndResizeClaspToHex(unsigned size);
 
 	// cache for incrementally updating HEX interpretation in propagator
 	std::vector<IDAddress> claspSymtabToHex; // for each entry in the optimized clasp symbol table we have one IDAddress here

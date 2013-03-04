@@ -24,6 +24,7 @@
 /**
  * @file ClaspSolver.cpp
  * @author Christoph Redl
+ * @author Peter Schueller <peterschueller@sabanciuniv.edu> (performance improvements, incremental model update)
  *
  * @brief Interface to genuine clasp 2.0.5-based Solver.
  */
@@ -827,7 +828,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 #endif
 	// only nogoods are relevant where all variables occur in this clasp instance
 	BOOST_FOREACH (ID lit, ng){
-		if (hexToClasp.find(lit.address) == hexToClasp.end()){
+		if (!isMappedToClaspLiteral(lit.address)){
 			LOG(INFO, "Skipping nogood " << ng.getStringRepresentation(reg) << " because a literal is not in Clasp's literal list");
 			return std::pair<bool, bool>(true, false);
 		}
@@ -842,30 +843,33 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 		// avoid duplicate literals
 		// if the literal was already added with the same sign, skip it
 		// if it was added with different sign, cancel adding the clause
-		if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
-			if (pos.contains(hexToClasp[lit.address].var())) continue;
-			else if (neg.contains(hexToClasp[lit.address].var())){
+
+		// mclit = mapped clasp literal
+		Clasp::Literal mclit = mapHexToClasp(lit.address);
+		if (!(mclit.sign() ^ lit.isNaf())){
+			if (pos.contains(mclit.var())) continue;
+			else if (neg.contains(mclit.var())){
 				LOG(INFO, "Dropping tautological nogood " << ng.getStringRepresentation(reg));
 				return std::pair<bool, bool>(true, false);
 			}
-			pos.insert(hexToClasp[lit.address].var());
+			pos.insert(mclit.var());
 
-			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) conflictOnLowerDL = false;
+			if (s.level(mclit.var()) == s.decisionLevel()) conflictOnLowerDL = false;
 		}else{
-			if (neg.contains(hexToClasp[lit.address].var())) continue;
-			else if (pos.contains(hexToClasp[lit.address].var())){
+			if (neg.contains(mclit.var())) continue;
+			else if (pos.contains(mclit.var())){
 				LOG(INFO, "Dropping tautological nogood " << ng.getStringRepresentation(reg));
 				return std::pair<bool, bool>(true, false);
 			}
-			neg.insert(hexToClasp[lit.address].var());
+			neg.insert(mclit.var());
 
-			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) conflictOnLowerDL = false;
+			if (s.level(mclit.var()) == s.decisionLevel()) conflictOnLowerDL = false;
 		}
 
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
 		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
 		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
-		Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
+		Clasp::Literal clit = Clasp::Literal(mclit.var(), !(mclit.sign() ^ lit.isNaf()));
 		clauseCreator->add(clit);
 
 //		// non-conflicting clauses can always be added
@@ -990,10 +994,12 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
-		if (hexToClasp.find(*en) == hexToClasp.end()){
+		if (!isMappedToClaspLiteral(*en)){
 			uint32_t c = *en + 2;
 			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
-			hexToClasp[*en] = Clasp::Literal(c, false); // create positive literal -> false
+
+		       	// create positive literal -> false
+			storeHexToClasp(*en, Clasp::Literal(c, false));
 
 			std::string str = idAddressToString(*en);
 			//claspInstance.symTab().addUnique(c, str.c_str());
@@ -1006,10 +1012,12 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 	BOOST_FOREACH (ID ruleId, p.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
-			if (hexToClasp.find(h.address) == hexToClasp.end()){
+			if (!isMappedToClaspLiteral(h.address)){
 				uint32_t c = h.address + 2;
 				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
-				hexToClasp[h.address] = Clasp::Literal(c, false); // create positive literal -> false
+
+			       	// create positive literal -> false
+				storeHexToClasp(h.address, Clasp::Literal(c, false));
 
 				std::string str = idAddressToString(h.address);
 				//claspInstance.symTab().addUnique(c, str.c_str());
@@ -1017,10 +1025,12 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 			}
 		}
 		BOOST_FOREACH (ID b, rule.body){
-			if (hexToClasp.find(b.address) == hexToClasp.end()){
+			if (!isMappedToClaspLiteral(b.address)){
 				uint32_t c = b.address + 2;
 				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
-				hexToClasp[b.address] = Clasp::Literal(c, false); // create positive literal -> false
+
+			       	// create positive literal -> false
+				storeHexToClasp(b.address, Clasp::Literal(c, false));
 
 				std::string str = idAddressToString(b.address);
 				//claspInstance.symTab().addUnique(c, str.c_str());
@@ -1037,6 +1047,9 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 
 	DBGLOG(DBG, "Building atom index");
 
+	assert(hexToClasp.empty());
+	hexToClasp.reserve(reg->ogatoms.getSize());
+
 	claspInstance.symTab().startInit();
 
 	// build symbol table and hexToClasp
@@ -1044,12 +1057,12 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
-			if (hexToClasp.find(lit.address) == hexToClasp.end()){
+			if (!isMappedToClaspLiteral(lit.address)) {
 				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
 				std::string str = idAddressToString(lit.address);
 				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
 				Clasp::Literal clasplit(c, false); // create positive literal -> false
-				hexToClasp[lit.address] = clasplit;
+				storeHexToClasp(lit.address, clasplit);
 				if( clasplit.index() > largestIdx )
 					largestIdx = clasplit.index();
 				claspInstance.symTab().addUnique(c, str.c_str()).lit = clasplit;
@@ -1058,20 +1071,31 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	}
 
 	// resize
-	resetAndResizeClaspToHex(largestIdx+1+1); // +1 because largest index must also be covered +1 because negative literal may also be there
+       	// (+1 because largest index must also be covered +1 because negative literal may also be there)
+	resetAndResizeClaspToHex(largestIdx+1+1);
 	// build back mapping
-	for(std::map<IDAddress,Clasp::Literal>::const_iterator it = hexToClasp.begin();
+	for(std::vector<Clasp::Literal>::const_iterator it = hexToClasp.begin();
 	    it != hexToClasp.end(); ++it)
 	{
-		const IDAddress hexlitaddress = it->first;
-		const Clasp::Literal& clasplit = it->second;
-		AddressVector* &c2h = claspToHex[clasplit.index()];
+		const Clasp::Literal clit = *it;
+		if( clit == noLiteral )
+			continue;
+		const IDAddress hexlitaddress = it - hexToClasp.begin();
+		AddressVector* &c2h = claspToHex[clit.index()];
 		if( !c2h )
 			c2h = new AddressVector;
 		c2h->push_back(hexlitaddress);
 	}
 
 	claspInstance.symTab().endInit();
+}
+
+void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit)
+{
+	//std::cerr << "mapping " << addr << " to " << (lit.sign()?"!":"") << lit.var() << std::endl;
+	if( addr >= hexToClasp.size() )
+		hexToClasp.resize(addr+1, noLiteral);
+       	hexToClasp[addr] = lit;
 }
 
 // free all non-NULL Pointers above size
@@ -1096,6 +1120,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	#endif
 
 	hexToClasp.clear();
+	hexToClasp.reserve(reg->ogatoms.getSize());
 	claspSymtabToHex.clear();
 
 	// go through symbol table
@@ -1108,7 +1133,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	LOG(DBG, "Symbol table of optimized program:");
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
-		hexToClasp[hexAdr] = it->second.lit;
+		storeHexToClasp(hexAdr, it->second.lit);
 		assert(it->second.lit.index() < claspToHex.size());
 		AddressVector* &c2h = claspToHex[it->second.lit.index()];
 		if( !c2h )
@@ -1189,18 +1214,19 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		BOOST_FOREACH (ID b, rule.body){
 			// add literal to body
 			if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
-			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 		}
 		pb.endRule();
 
 		for (int keep = 0; keep < rule.head.size(); ++keep){
 			pb.startRule(Clasp::BASICRULE);
-			pb.addHead(hexToClasp[rule.head[keep].address].var());
+			//std::cerr << "basic rule: " << keep << " " << rule.head[keep].address << std::endl;
+			pb.addHead(mapHexToClasp(rule.head[keep].address).var());
 			pb.addToBody(aux, true);
 			for(unsigned dontkeep = 0; dontkeep < rule.head.size(); ++dontkeep){
 				if( keep != dontkeep )
 				{
-					pb.addToBody(hexToClasp[rule.head[dontkeep].address].var(), false);
+					pb.addToBody(mapHexToClasp(rule.head[dontkeep].address).var(), false);
 				}
 			}
 			pb.endRule();
@@ -1213,18 +1239,18 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		// c :- d, not e, not a, not b.
 		for (int keep = 0; keep < rule.head.size(); ++keep){
 			pb.startRule(Clasp::BASICRULE);
-			pb.addHead(hexToClasp[rule.head[keep].address].var());
+			pb.addHead(mapHexToClasp(rule.head[keep].address).var());
 			BOOST_FOREACH (ID b, rule.body){
 				// add literal to body
 				if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
-				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+				pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 			}
 			// shifted head atoms
 			int hi = 0;
 			BOOST_FOREACH (ID h, rule.head){
 				if (hi != keep){
 					// add literal to head
-					pb.addToBody(hexToClasp[h.address].var(), false);
+					pb.addToBody(mapHexToClasp(h.address).var(), false);
 				}
 				hi++;
 			}
@@ -1244,11 +1270,11 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		// derive head atoms
 		pb.startRule(Clasp::CHOICERULE);
 		BOOST_FOREACH (ID h, rule.head){
-			pb.addHead(hexToClasp[h.address].var());
+			pb.addHead(mapHexToClasp(h.address).var());
 		}
 		BOOST_FOREACH (ID b, rule.body){
 			if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
-			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 		}
 		pb.endRule();
 
@@ -1257,7 +1283,7 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		pb.startRule(Clasp::CONSTRAINTRULE, 1);
 		pb.addHead(atLeastOneAtom);
 		BOOST_FOREACH (ID h, rule.head){
-			pb.addToBody(hexToClasp[h.address].var(), true);
+			pb.addToBody(mapHexToClasp(h.address).var(), true);
 		}
 		pb.endRule();
 
@@ -1266,7 +1292,7 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 		// constraint has false_ as head
 		pb.addHead(false_);
 		BOOST_FOREACH (ID b, rule.body){
-			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 		}
 		pb.addToBody(atLeastOneAtom, false);
 		pb.endRule();
@@ -1285,11 +1311,11 @@ void ClaspSolver::sendWeightRuleToClasp(const AnnotatedGroundProgram& p, Disjunc
 	assert(rule.head.size() != 0);
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		pb.addHead(hexToClasp[h.address].var());
+		pb.addHead(mapHexToClasp(h.address).var());
 	}
 	for (int i = 0; i < rule.body.size(); ++i){
 		// add literal to body
-		pb.addToBody(hexToClasp[rule.body[i].address].var(), !rule.body[i].isNaf(), rule.bodyWeightVector[i].address);
+		pb.addToBody(mapHexToClasp(rule.body[i].address).var(), !rule.body[i].isNaf(), rule.bodyWeightVector[i].address);
 	}
 	pb.endRule();
 }
@@ -1306,11 +1332,11 @@ void ClaspSolver::sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, Disju
 	}
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		pb.addHead(hexToClasp[h.address].var());
+		pb.addHead(mapHexToClasp(h.address).var());
 	}
 	BOOST_FOREACH (ID b, rule.body){
 		// add literal to body
-		pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+		pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 	}
 	pb.endRule();
 }
@@ -1345,11 +1371,11 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 			pb.startRule(Clasp::BASICRULE);
 			pb.addHead(nextVarIndex);
 			BOOST_FOREACH (ID b, rule.body){
-				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+				pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 			}
 			BOOST_FOREACH (ID hshifted, rule.head){
 				if (h != hshifted){
-					pb.addToBody(hexToClasp[hshifted.address].var(), false);
+					pb.addToBody(mapHexToClasp(hshifted.address).var(), false);
 				}
 			}
 			pb.endRule();
@@ -1378,7 +1404,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	while (en < en_end){
 		// add fact
 		pb.startRule(Clasp::BASICRULE);
-		pb.addHead(hexToClasp[*en].var());
+		pb.addHead(mapHexToClasp(*en).var());
 		pb.endRule();
 
 		en++;
@@ -1407,7 +1433,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 
 		pb.startRule(Clasp::BASICRULE);
 		pb.addHead(false_);
-		pb.addToBody(hexToClasp[pair.first].var(), true);
+		pb.addToBody(mapHexToClasp(pair.first).var(), true);
 		BOOST_FOREACH (int b, pair.second){
 			pb.addToBody(b, false);
 		}
@@ -1448,7 +1474,10 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 		if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
 			int level = weightAtom.tuple[2].address;
 			while (minimizeStatements.size() <= level) minimizeStatements.push_back(Clasp::WeightLitVec());
-			minimizeStatements[level].push_back(Clasp::WeightLiteral(Clasp::Literal(hexToClasp[*en].var(), hexToClasp[*en].sign()), weightAtom.tuple[1].address));
+			minimizeStatements[level].push_back(Clasp::WeightLiteral(
+				// XXX why don't we just use mapHexToClasp(*en) ?
+				Clasp::Literal(mapHexToClasp(*en).var(), mapHexToClasp(*en).sign()),
+			       	weightAtom.tuple[1].address));
 #ifndef NDEBUG
 			while (minimizeStatementsHex.size() <= level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
 			minimizeStatementsHex[level].push_back(*en);
@@ -1466,7 +1495,10 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 
 				int level = weightAtom.tuple[2].address;
 				while (minimizeStatements.size() <= level) minimizeStatements.push_back(Clasp::WeightLitVec());
-				minimizeStatements[level].push_back(Clasp::WeightLiteral(Clasp::Literal(hexToClasp[rule.head[0].address].var(), hexToClasp[rule.head[0].address].sign()), weightAtom.tuple[1].address));
+				minimizeStatements[level].push_back(Clasp::WeightLiteral(
+					// XXX why don't we just use mapHexToClasp(rule.head[0].address) ?
+					Clasp::Literal(mapHexToClasp(rule.head[0].address).var(), mapHexToClasp(rule.head[0].address).sign()),
+				       	weightAtom.tuple[1].address));
 
 #ifndef NDEBUG
 				while (minimizeStatementsHex.size() <= level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
@@ -1533,7 +1565,7 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 		// only nogoods are relevant where all variables occur in this clasp instance
 		BOOST_FOREACH (ID lit, ng){
-			if (hexToClasp.find(lit.address) == hexToClasp.end()){
+			if (!isMappedToClaspLiteral(lit.address)){
 				DBGLOG(DBG, "Skipping nogood because a literal is not in Clasp's literal list");
 				return false;
 			}
@@ -1544,23 +1576,26 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 		Set<uint32> pos;
 		Set<uint32> neg;
 		BOOST_FOREACH (ID lit, ng){
+			// mclit = mapped clasp literal
+			const Clasp::Literal mclit = mapHexToClasp(lit.address);
+
 			// avoid duplicate literals
 			// if the literal was already added with the same sign, skip it
 			// if it was added with different sign, cancel adding the clause
-			if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
-				if (pos.contains(hexToClasp[lit.address].var())) continue;
-				else if (neg.contains(hexToClasp[lit.address].var())) return false;
-				pos.insert(hexToClasp[lit.address].var());
+			if (!(mclit.sign() ^ lit.isNaf())){
+				if (pos.contains(mclit.var())) continue;
+				else if (neg.contains(mclit.var())) return false;
+				pos.insert(mclit.var());
 			}else{
-				if (neg.contains(hexToClasp[lit.address].var())) continue;
-				else if (pos.contains(hexToClasp[lit.address].var())) return false;
-				neg.insert(hexToClasp[lit.address].var());
+				if (neg.contains(mclit.var())) continue;
+				else if (pos.contains(mclit.var())) return false;
+				neg.insert(mclit.var());
 			}
 
 			// 1. cs.hexToClasp maps hex-atoms to clasp-literals
 			// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
 			// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
-			Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
+			Clasp::Literal clit = Clasp::Literal(mclit.var(), !(mclit.sign() ^ lit.isNaf()));
 			clauseCreator->add(clit);
 #ifndef NDEBUG
 			if (!first) ss << ", ";
@@ -1746,7 +1781,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
  	ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
 	claspInstance(),
 	claspConfig(*claspInstance.master()),
-	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig))
+	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig)),
+	noLiteral(Clasp::Literal::fromRep(~0x0))
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(agp)");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
@@ -1852,7 +1888,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
 	claspInstance(),
 	claspConfig(*claspInstance.master()),
-	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig))
+	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig)),
+	noLiteral(Clasp::Literal::fromRep(~0x0))
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(ngs)");
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
@@ -2001,7 +2038,7 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
-		Clasp::Literal al = Clasp::Literal(hexToClasp[a.address].var(), hexToClasp[a.address].sign() ^ a.isNaf());
+		Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
 		this->assumptions.push_back(al);
 	}
 }
