@@ -63,6 +63,8 @@
 #define WITH_THREADS 0 // this is only relevant for option parsing, so we don't care at the moment
 #include "clasp_options.h"
 
+// activate this for detailed benchmarking in this file 
+#undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 
 // experiments with singleton loop nogoods:
 // PS with housekeeping: they are much worse both for unsat proofs and for finding solutions if problem is satisfiable (tested with status bcb6222b)
@@ -978,7 +980,9 @@ std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> 
 }
 
 void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab P pb");
+	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab P pb");
+	#endif
 
 	DBGLOG(DBG, "Building atom index");
 
@@ -1027,7 +1031,9 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 }
 
 void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab ns");
+	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab ns");
+	#endif
 
 	DBGLOG(DBG, "Building atom index");
 
@@ -1085,7 +1091,9 @@ void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 }
 
 void ClaspSolver::buildOptimizedSymbolTable(){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildOptST");
+	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildOptST");
+	#endif
 
 	hexToClasp.clear();
 	claspSymtabToHex.clear();
@@ -1160,10 +1168,11 @@ void ClaspSolver::runClasp(){
 }
 
 bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendDisjRuleTC");
-
 	const Rule& rule = reg->rules.getByID(ruleId);
 	if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
+		#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sDisjRuleTC(s)");
+		#endif
 		// shifting
 		DBGLOG(DBG, "Shifting disjunctive rule" << ruleId << " " << printToString<RawPrinter>(ruleId, reg));
 		#define USE_GRINGO_METHOD
@@ -1225,6 +1234,9 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 
 		return true;
 	}else{
+		#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sDisjRuleTC(c)");
+		#endif
 		int atLeastOneAtom = nextVarIndex++;
 
 		DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
@@ -1264,7 +1276,9 @@ bool ClaspSolver::sendDisjunctiveRuleToClasp(const AnnotatedGroundProgram& p, Di
 }
 
 void ClaspSolver::sendWeightRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendWeightRuleTC");
+	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendWeightRuleTC");
+	#endif
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 	pb.startRule(Clasp::WEIGHTRULE, rule.bound.address);
@@ -1281,7 +1295,9 @@ void ClaspSolver::sendWeightRuleToClasp(const AnnotatedGroundProgram& p, Disjunc
 }
 
 void ClaspSolver::sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendOrdinaryRuleTC");
+	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendOrdinaryRuleTC");
+	#endif
 
 	const Rule& rule = reg->rules.getByID(ruleId);
 	pb.startRule(Clasp::BASICRULE);
@@ -1400,7 +1416,14 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	#endif
 
 	// Once all rules are defined, call endProgram() to load the (simplified)
-	bool initiallyInconsistent = !pb.endProgram();
+	bool initiallyInconsistent;
+	{
+		#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+		// endprogram can take a lot of time because it does preprocessing!
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC:ep");
+		#endif
+		initiallyInconsistent = !pb.endProgram();
+	}
 
 	// rebuild the symbol table as it might have changed due to optimization
 	buildOptimizedSymbolTable();
@@ -1489,7 +1512,7 @@ minc->integrateNext(*claspInstance.master());
 }
 
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
-	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
 
 	buildInitialSymbolTable(ns);
 
@@ -1751,6 +1774,10 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 		if( Logger::Instance().shallPrint(Logger::DBG) )
 		{
+		  // we always benchmark this, because
+		  // * if we do the following (print the program) then dlvhex will slow down A LOT
+		  // * we want to see this immediately in benchmarking
+		  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidaddufsc, "ClaspSolver():writeprogram");
 		  LOG(DBG, "Program in LParse format:");
 		  pb.writeProgram(Logger::Instance().stream());
 		}
