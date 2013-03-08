@@ -111,7 +111,8 @@ libdlvhex2_base_la_SOURCES = \
     UnfoundedSetChecker.cpp
 
 # dlvhex MLP component
-libdlvhex2_mlpsolver_la_SOURCES =
+libdlvhex2_mlpsolver_la_SOURCES = \
+	empty.cpp
 
 # dlvhex ASP component
 libdlvhex2_aspsolver_la_SOURCES = \
