@@ -410,13 +410,7 @@ if test "x${with_libclingo_support}" != xfalse; then
   if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
     AC_MSG_ERROR([You have to specify gringo trunk in --with-libclingo=<gringo-trunk-dir>])
   fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS}
-	                ${GRINGO_TRUNK_DIR}/build/release/libprogram_opts/CMakeFiles/program_opts-lib.dir/src/*.o
-	                ${GRINGO_TRUNK_DIR}/build/release/libgringo/CMakeFiles/gringo-lib.dir/src/*.o"
-# TODO: Directly linking the object files is a workaround for OS X: For some reason linking the archives does not work
-# The previous assignment should actually be:
-#	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
-
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
@@ -516,7 +510,11 @@ if test "x${with_libgringo_support}" != xfalse; then
   if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
     AC_MSG_ERROR([You have to specify gringo trunk in --with-libgringo=<gringo-trunk-dir>])
   fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappgringo -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${GRINGO_TRUNK_DIR}/build/release/libprogram_opts/CMakeFiles/program_opts-lib.dir/src/*.o ${GRINGO_TRUNK_DIR}/build/release/libgringo/CMakeFiles/gringo-lib.dir/src/*.o ${GRINGO_TRUNK_DIR}/build/release/libgringo/CMakeFiles/gringo-lib.dir/src/output/*.o"
+# TODO: Directly linking the object files is a workaround for OS X: For some reason linking the archives does not work
+# The previous assignment should actually be:
+#	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappgringo -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
+
 	# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
