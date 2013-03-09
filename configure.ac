@@ -485,7 +485,7 @@ if test "x${with_libclasp_support}" != xfalse; then
   if test "x$CLASP_TRUNK_DIR" = "xyes"; then
     AC_MSG_ERROR([You have to specify clasp trunk in --with-libclasp=<clasp-trunk-dir>])
   fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${CLASP_TRUNK_DIR}/build/release/libclasp/lib/*.o"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${CLASP_TRUNK_DIR}/build/release/libclasp/*.o"
 
 # TODO: Directly linking the object files is a workaround for OS X: For some reason linking the archives does not work
 # The previous assignment should actually be:
