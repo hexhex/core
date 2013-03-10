@@ -37,7 +37,7 @@ dlvhex2_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
 dlvhex2_LDADD = \
   libdlvhex2-base.la libdlvhex2-mlpsolver.la \
   libdlvhex2-aspsolver.la libdlvhex2-internalplugins.la \
-  $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) \
+  $(BOOST_THREAD_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 
@@ -205,7 +205,7 @@ libdlvhex2_internalplugins_la_SOURCES = \
 #   3. Programs may need to be changed, recompiled, relinked in order
 #   to use the new version. Bump current, set revision and age to 0.
 #
-libdlvhex2_base_la_LDFLAGS = -version-info 8:0:1
+libdlvhex2_base_la_LDFLAGS = -version-info 8:0:1 -export-dynamic $(EXTSOLVER_LDFLAGS)
 libdlvhex2_mlpsolver_la_LDFLAGS = -version-info 2:0:1
 libdlvhex2_aspsolver_la_LDFLAGS = -version-info 4:0:1
 libdlvhex2_internalplugins_la_LDFLAGS = -version-info 2:0:1
