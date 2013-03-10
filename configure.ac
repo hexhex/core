@@ -505,7 +505,7 @@ if test "x${with_libgringo_support}" != xfalse; then
   if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
     AC_MSG_ERROR([You have to specify gringo trunk in --with-libgringo=<gringo-trunk-dir>])
   fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappgringo -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
 	# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
