@@ -484,7 +484,7 @@ if test "x${with_libclasp_support}" != xfalse; then
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${CLASP_TRUNK_DIR}/build/release/libclasp/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${CLASP_TRUNK_DIR}/libclasp/ -I${CLASP_TRUNK_DIR}/libprogram_opts/ -I${CLASP_TRUNK_DIR}/app/"
   # unfortunatly there is no lib for the following lines
-  EXTSOLVER_LIBADD="${CLASP_TRUNK_DIR}/build/release/app/clasp_options.o"
+  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_options.o"
   EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_output.o"
   EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/app_options.o"
   EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/program_options.o"
@@ -507,7 +507,7 @@ if test "x${with_libgringo_support}" != xfalse; then
   fi
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
 	# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
   extsolver_found=true
