@@ -348,11 +348,11 @@ fi
 
 if test "$DLVPATH" = notfound; then
   AC_MSG_WARN([dlv not found. Download it at http://www.dlvsystem.com/])
-  AM_CONDITIONAL([HAVE_DLV],[/bin/false])
+  AM_CONDITIONAL([HAVE_DLV],[false])
 else
   extsolver_found=true
   AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
-  AM_CONDITIONAL([HAVE_DLV],[/bin/true])
+  AM_CONDITIONAL([HAVE_DLV],[true])
   AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
   WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/dlvbackend.test"
 fi
