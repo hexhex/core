@@ -47,7 +47,7 @@
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
 #define BOOST_TEST_MODULE __FILE__
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/EvalGraph.h"
