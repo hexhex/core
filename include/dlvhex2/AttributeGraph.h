@@ -79,10 +79,22 @@ public:
 
 	typedef std::pair<ID, ID> VariableLocation;	// stores rule ID and variable ID
 	typedef std::pair<ID, ID> AtomLocation;		// stores rule ID and atom ID
-private:
+	
+	class SafetyPlugin{
+	protected:
+		AttributeGraph& ag;
+	
+	public:
+		SafetyPlugin(AttributeGraph& ag) : ag(ag){}
+		virtual void run() = 0;
+		
+		typedef boost::shared_ptr<SafetyPlugin> Ptr;
+	};
+
 	RegistryPtr reg;
 	const std::vector<ID>& idb;
 
+private:
 	// attribute graph
 	Graph ag;
 	boost::unordered_map<ID, std::vector<Attribute> > attributesOfPredicate;
@@ -134,10 +146,20 @@ private:
 	bool hasInformationFlow(boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow, ID from, ID to);
 	bool isNewlySafe(Attribute at);
 
+public:
 	// trigger functions
-	void addBoundedVariable(VariableLocation vl);								// called after a new variable has become bounded to trigger further actions
-	void addDomainExpansionSafeAttribute(Attribute at);							// called after an attribute has become safe to trigger further actions
+	void addExternallyBoundedVariable(ID extAtom, VariableLocation vl);				// called for adding variables bounded by external atoms
+	void addBoundedVariable(VariableLocation vl);									// called after a new variable has become bounded to trigger further actions
+	void addDomainExpansionSafeAttribute(Attribute at);								// called after an attribute has become safe to trigger further actions
 
+	const std::vector<ID>& getIdb();
+	const Graph& getAttributeGraph();
+	const std::vector<std::vector<Attribute> >& getDepSCC();
+	const boost::unordered_set<Attribute>& getDomainExpansionSafeAttributes();
+	const boost::unordered_set<VariableLocation>& getBoundedVariables();
+	void getReachableAttributes(Attribute start, std::set<AttributeGraph::Node>& output);
+
+private:
 	// initialization
 	void computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow);	// computes for a given rule the
 																// information exchange between variables through builtins
@@ -149,12 +171,9 @@ private:
 	// computation
 	void ensureOrdinarySafety();												// restricts the optimization of necessary to keep ordinary safety
 
-	void checkStaticConditions();												// statically checks for domain-expansion safety of attributes
-																// and boundedness of variables, i.e., the checks are done only once
-	void checkDynamicConditions();												// iteratively checks for more domain-expansion safety of attributes
-																// and boundedness of variables
-	void identifyBenignCycles();												// makes output attributes in benign cycles safe
 	void computeDomainExpansionSafety();											// calls the previous methods until no more safe attributes can be derived
+	
+	std::vector<SafetyPlugin::Ptr> safetyPlugins;
 public:
 	AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb);
 
