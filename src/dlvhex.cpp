@@ -578,8 +578,8 @@ int main(int argc, char *argv[])
 			pctx.safetyCheck();
 			if( pctx.terminationRequest ) return 1;
 
-			// create attribute graph
-			pctx.createAttributeGraph();
+			// check liberal safety
+			pctx.liberalSafetyCheck();
 			if( pctx.terminationRequest ) return 1;
 
 			// create dependency graph (we need the previous step for this)

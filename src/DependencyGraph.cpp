@@ -35,7 +35,7 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/DependencyGraph.h"
-#include "dlvhex2/AttributeGraph.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -442,7 +442,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     if( itat->isExternalAtom() )
     {
       // skip external atoms which are not necessary for safety
-      if ( !!ctx.attrgraph && !ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(*itat) ){
+      if ( !!ctx.liberalSafetyChecker && !ctx.liberalSafetyChecker->isExternalAtomNecessaryForDomainExpansionSafety(*itat) ){
         DBGLOG(DBG, "Do not use " << *itat << " in input auxiliary rule because it is not necessary for safety");
         continue;
       }

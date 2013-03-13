@@ -22,18 +22,18 @@
  */
 
 /**
- * @file AttributeGraph.cpp
+ * @file LiberalSafetyChecker.cpp
  * @author Christoph Redl
  *
- * @brief Stores dependencies between attributes in a program and
- *        checks domain-expansion safety of a program.
+ * @brief Implements new safety criteria which may be used in place of
+ * strong safety.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/AttributeGraph.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -59,11 +59,11 @@ DLVHEX_NAMESPACE_BEGIN
 namespace{
 
 // Exploits semantic annotation of external atoms to ensure safety
-class ExtPropChecker : public AttributeGraph::SafetyPlugin{
+class ExtPropChecker : public LiberalSafetyChecker::SafetyPlugin{
 private:
 	bool firstRun;
 public:
-	ExtPropChecker(AttributeGraph& ag) : SafetyPlugin(ag){
+	ExtPropChecker(LiberalSafetyChecker& lsc) : SafetyPlugin(lsc){
 		firstRun = true;
 	}
 
@@ -75,21 +75,21 @@ public:
 		// 3. make input variables of external atoms bounded, if they have no output variables
 		// 4. make variables bounded, which are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
 		// 5. make variables in #int(...) atoms bounded
-		BOOST_FOREACH (ID ruleID, ag.getIdb()){
-			const Rule& rule = ag.reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID ruleID, lsc.getIdb()){
+			const Rule& rule = lsc.reg->rules.getByID(ruleID);
 			BOOST_FOREACH (ID b, rule.body){
 				if (b.isNaf()) continue;
 
 				if (b.isExternalAtom()){
-					const ExternalAtom& eatom = ag.reg->eatoms.getByID(b);
+					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
 
 					// 2.
 					for (int i = 0; i < eatom.tuple.size(); ++i){
 						if (eatom.getExtSourceProperties().hasFiniteDomain(i)){
-							AttributeGraph::VariableLocation vl(ruleID, eatom.tuple[i]);
-							if (ag.getBoundedVariables().count(vl) == 0){
+							LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.tuple[i]);
+							if (lsc.getBoundedVariables().count(vl) == 0){
 								DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because output element " << i << " of external atom " << b << " has a finite domain");
-								ag.addExternallyBoundedVariable(b, vl);
+								lsc.addExternallyBoundedVariable(b, vl);
 							}
 						}
 					}
@@ -105,10 +105,10 @@ public:
 					if (eatom.getExtSourceProperties().hasFiniteFiber() && outputBounded){
 						for (int i = 0; i < eatom.inputs.size(); ++i){
 							if (eatom.inputs[i].isVariableTerm()){
-								AttributeGraph::VariableLocation vl(ruleID, eatom.inputs[i]);
-								if (ag.getBoundedVariables().count(vl) == 0){
+								LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.inputs[i]);
+								if (lsc.getBoundedVariables().count(vl) == 0){
 									DBGLOG(DBG, "Variable " << "r" << vl.first.address << "/" << vl.second.address << " is bounded because " << b << " has a finite fiber");
-									ag.addExternallyBoundedVariable(b, vl);
+									lsc.addExternallyBoundedVariable(b, vl);
 								}
 							}
 						}
@@ -117,15 +117,15 @@ public:
 
 				// 4.
 				else if (b.isAggregateAtom()){
-					const AggregateAtom& aatom = ag.reg->aatoms.getByID(b);
-					if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) ag.addBoundedVariable(AttributeGraph::VariableLocation(ruleID, aatom.tuple[0]));
-					if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) ag.addBoundedVariable(AttributeGraph::VariableLocation(ruleID, aatom.tuple[4]));
+					const AggregateAtom& aatom = lsc.reg->aatoms.getByID(b);
+					if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, aatom.tuple[0]));
+					if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, aatom.tuple[4]));
 				}
 
 				// 5
 				else if (b.isBuiltinAtom()){
-					const BuiltinAtom& batom = ag.reg->batoms.getByID(b);
-					if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) ag.addBoundedVariable(AttributeGraph::VariableLocation(ruleID, batom.tuple[1]));
+					const BuiltinAtom& batom = lsc.reg->batoms.getByID(b);
+					if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, batom.tuple[1]));
 				}
 			}
 		}
@@ -133,17 +133,17 @@ public:
 };
 
 // Exploits well-orderings in cycles to ensure safety
-class BenignCycleChecker : public AttributeGraph::SafetyPlugin{
+class BenignCycleChecker : public LiberalSafetyChecker::SafetyPlugin{
 private:
-	std::set<AttributeGraph::Node>& cyclicAttributes;
+	std::set<LiberalSafetyChecker::Node>& cyclicAttributes;
 
 	void identifyBenignCycles(){
 
-		for (int c = 0; c < ag.getDepSCC().size(); ++c){
+		for (int c = 0; c < lsc.getDepSCC().size(); ++c){
 			// check for this SCC:
 			// 1. if it is cyclic
 			// 2. the SCC has potential to become malign
-			if (ag.getDepSCC()[c].size() > 1){
+			if (lsc.getDepSCC()[c].size() > 1){
 				DBGLOG(DBG, "Checking if cycle " << c << " is benign");
 				bool malign = false;
 
@@ -151,11 +151,11 @@ private:
 				std::vector<std::pair<ID, std::pair<int, int> > > pairsToCheck;
 
 				// for all output attributes
-				BOOST_FOREACH (AttributeGraph::Attribute oat, ag.getDepSCC()[c]){
-					if (oat.type == AttributeGraph::Attribute::External && oat.input == false && ag.getDomainExpansionSafeAttributes().count(oat) == 0){
+				BOOST_FOREACH (LiberalSafetyChecker::Attribute oat, lsc.getDepSCC()[c]){
+					if (oat.type == LiberalSafetyChecker::Attribute::External && oat.input == false && lsc.getDomainExpansionSafeAttributes().count(oat) == 0){
 						// for all corresponding input attributes which are not bounded
-						BOOST_FOREACH (AttributeGraph::Attribute iat, ag.getDepSCC()[c]){
-							if (iat.type == AttributeGraph::Attribute::External && iat.input == true && iat.eatomID == oat.eatomID && iat.ruleID == oat.ruleID && ag.getDomainExpansionSafeAttributes().count(iat) == 0){
+						BOOST_FOREACH (LiberalSafetyChecker::Attribute iat, lsc.getDepSCC()[c]){
+							if (iat.type == LiberalSafetyChecker::Attribute::External && iat.input == true && iat.eatomID == oat.eatomID && iat.ruleID == oat.ruleID && lsc.getDomainExpansionSafeAttributes().count(iat) == 0){
 								// store this pair
 								pairsToCheck.push_back(std::pair<ID, std::pair<int, int> >(iat.eatomID, std::pair<int, int>(iat.argIndex - 1, oat.argIndex - 1)));
 							}
@@ -168,7 +168,7 @@ private:
 				bool natural = true;
 				for (int p = 0; p < pairsToCheck.size(); ++p){
 					DBGLOG(DBG, "Checking if " << pairsToCheck[p].first << " has a wellordering from argument " << pairsToCheck[p].second.first << " to argument " << pairsToCheck[p].second.second);
-					const ExtSourceProperties& prop = ag.reg->eatoms.getByID(pairsToCheck[p].first).getExtSourceProperties();
+					const ExtSourceProperties& prop = lsc.reg->eatoms.getByID(pairsToCheck[p].first).getExtSourceProperties();
 					strlen &= prop.hasWellorderingStrlen(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
 					natural &= prop.hasWellorderingNatural(pairsToCheck[p].second.first, pairsToCheck[p].second.second);
 				}
@@ -178,12 +178,12 @@ private:
 					DBGLOG(DBG, "Cycle is benign");
 
 					// make all output variables of external atoms in the component bounded
-					BOOST_FOREACH (AttributeGraph::Attribute oat, ag.getDepSCC()[c]){
-						if (oat.type == AttributeGraph::Attribute::External && oat.input == false){
-							const ExternalAtom& eatom = ag.reg->eatoms.getByID(oat.eatomID);
-							AttributeGraph::VariableLocation vl(oat.ruleID, eatom.tuple[oat.argIndex - 1]);
-							if (eatom.tuple[oat.argIndex - 1].isVariableTerm() && ag.getBoundedVariables().count(vl) == 0){
-								ag.addExternallyBoundedVariable(oat.eatomID, vl);
+					BOOST_FOREACH (LiberalSafetyChecker::Attribute oat, lsc.getDepSCC()[c]){
+						if (oat.type == LiberalSafetyChecker::Attribute::External && oat.input == false){
+							const ExternalAtom& eatom = lsc.reg->eatoms.getByID(oat.eatomID);
+							LiberalSafetyChecker::VariableLocation vl(oat.ruleID, eatom.tuple[oat.argIndex - 1]);
+							if (eatom.tuple[oat.argIndex - 1].isVariableTerm() && lsc.getBoundedVariables().count(vl) == 0){
+								lsc.addExternallyBoundedVariable(oat.eatomID, vl);
 							}
 						}
 					}
@@ -195,20 +195,20 @@ private:
 	void computeCyclicAttributes(){
 
 		// find cyclic external attributes
-		std::vector<AttributeGraph::Attribute> cyclicExternal;
-		for (int c = 0; c < ag.getDepSCC().size(); ++c){
+		std::vector<LiberalSafetyChecker::Attribute> cyclicExternal;
+		for (int c = 0; c < lsc.getDepSCC().size(); ++c){
 			// check for this SCC if it contains an unsafe cyclic external attribute
-			if (ag.getDepSCC()[c].size() > 1){
+			if (lsc.getDepSCC()[c].size() > 1){
 				bool external = false;
-				BOOST_FOREACH (AttributeGraph::Attribute oat, ag.getDepSCC()[c]){
-					if (oat.type == AttributeGraph::Attribute::External && oat.input == false && ag.getDomainExpansionSafeAttributes().count(oat) == 0){
+				BOOST_FOREACH (LiberalSafetyChecker::Attribute oat, lsc.getDepSCC()[c]){
+					if (oat.type == LiberalSafetyChecker::Attribute::External && oat.input == false && lsc.getDomainExpansionSafeAttributes().count(oat) == 0){
 						external = true;
 						break;
 					}
 				}
 				if (external){
-					BOOST_FOREACH (AttributeGraph::Attribute at, ag.getDepSCC()[c]){
-						if (at.type == AttributeGraph::Attribute::External){
+					BOOST_FOREACH (LiberalSafetyChecker::Attribute at, lsc.getDepSCC()[c]){
+						if (at.type == LiberalSafetyChecker::Attribute::External){
 							DBGLOG(DBG, "Found cyclic external attribute of " << at.predicate);
 							cyclicExternal.push_back(at);
 						}
@@ -219,14 +219,14 @@ private:
 
 		// find all attributes which depend on cyclic external attributes
 		cyclicAttributes.clear();
-		BOOST_FOREACH (AttributeGraph::Attribute at, cyclicExternal){
-			ag.getReachableAttributes(at, cyclicAttributes);
+		BOOST_FOREACH (LiberalSafetyChecker::Attribute at, cyclicExternal){
+			lsc.getReachableAttributes(at, cyclicAttributes);
 		}
 		DBGLOG(DBG, "" << cyclicAttributes.size() << " attributes depend cyclically on external attributes");
 	}
 
 public:
-	BenignCycleChecker(AttributeGraph& ag, std::set<AttributeGraph::Node>& cyclicAttributes) : SafetyPlugin(ag), cyclicAttributes(cyclicAttributes){}
+	BenignCycleChecker(LiberalSafetyChecker& lsc, std::set<LiberalSafetyChecker::Node>& cyclicAttributes) : SafetyPlugin(lsc), cyclicAttributes(cyclicAttributes){}
 
 	void run(){
 		// identify benign cycles
@@ -236,11 +236,11 @@ public:
 		computeCyclicAttributes();
 
 		// make all attributes safe, except those in cyclicAttributes
-		AttributeGraph::NodeIterator it, it_end;
-		for(boost::tie(it, it_end) = boost::vertices(ag.getAttributeGraph()); it != it_end; ++it){
+		LiberalSafetyChecker::NodeIterator it, it_end;
+		for(boost::tie(it, it_end) = boost::vertices(lsc.getAttributeGraph()); it != it_end; ++it){
 			if (cyclicAttributes.count(*it) == 0){
-				DBGLOG(DBG, "Attribute " << ag.getAttributeGraph()[*it] << " is externally acyclic");
-				ag.addDomainExpansionSafeAttribute(ag.getAttributeGraph()[*it]);
+				DBGLOG(DBG, "Attribute " << lsc.getAttributeGraph()[*it] << " is externally acyclic");
+				lsc.addDomainExpansionSafeAttribute(lsc.getAttributeGraph()[*it]);
 			}
 		}
 	}
@@ -248,7 +248,7 @@ public:
 
 }
 
-bool AttributeGraph::Attribute::operator==(const Attribute& at2) const{
+bool LiberalSafetyChecker::Attribute::operator==(const Attribute& at2) const{
 	return	type == at2.type &&
 		predicate == at2.predicate &&
 		inputList == at2.inputList &&
@@ -257,7 +257,7 @@ bool AttributeGraph::Attribute::operator==(const Attribute& at2) const{
 		argIndex == at2.argIndex;
 }
 
-bool AttributeGraph::Attribute::operator<(const Attribute& at2) const{
+bool LiberalSafetyChecker::Attribute::operator<(const Attribute& at2) const{
 	if (type < at2.type) return true;
 	if (predicate < at2.predicate) return true;
 	if (inputList.size() < at2.inputList.size()) return true;
@@ -269,7 +269,7 @@ bool AttributeGraph::Attribute::operator<(const Attribute& at2) const{
 	return false;
 }
 
-std::ostream& AttributeGraph::Attribute::print(std::ostream& o) const{
+std::ostream& LiberalSafetyChecker::Attribute::print(std::ostream& o) const{
 
 	RawPrinter printer(o, reg);
 	if (type == Attribute::Ordinary){
@@ -295,7 +295,7 @@ std::ostream& AttributeGraph::Attribute::print(std::ostream& o) const{
 	return o;
 }
 
-AttributeGraph::Attribute AttributeGraph::getAttribute(ID eatomID, ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex){
+LiberalSafetyChecker::Attribute LiberalSafetyChecker::getAttribute(ID eatomID, ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex){
 
 	Attribute at;
 	at.reg = reg;
@@ -309,7 +309,7 @@ AttributeGraph::Attribute AttributeGraph::getAttribute(ID eatomID, ID predicate,
 	return at;
 }
 
-AttributeGraph::Attribute AttributeGraph::getAttribute(ID predicate, int argumentIndex){
+LiberalSafetyChecker::Attribute LiberalSafetyChecker::getAttribute(ID predicate, int argumentIndex){
 
 	Attribute at;
 	at.reg = reg;
@@ -323,7 +323,7 @@ AttributeGraph::Attribute AttributeGraph::getAttribute(ID predicate, int argumen
 	return at;
 }
 
-AttributeGraph::Node AttributeGraph::getNode(Attribute at){
+LiberalSafetyChecker::Node LiberalSafetyChecker::getNode(Attribute at){
 
 	const NodeNodeInfoIndex& idx = nm.get<NodeInfoTag>();
 	NodeNodeInfoIndex::const_iterator it = idx.find(at);
@@ -340,20 +340,19 @@ AttributeGraph::Node AttributeGraph::getNode(Attribute at){
 	}
 }
 
-bool AttributeGraph::hasInformationFlow(boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow, ID from, ID to){
+bool LiberalSafetyChecker::hasInformationFlow(boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow, ID from, ID to){
 	return from == to || builtinflow[from].count(to) > 0;
 }
 
-bool AttributeGraph::isNewlySafe(Attribute at){
+bool LiberalSafetyChecker::isNewlySafe(Attribute at){
 	return safetyPreconditions[at].first.size() == 0 && safetyPreconditions[at].second.size() == 0;
 }
 
-void AttributeGraph::addExternallyBoundedVariable(ID extAtom, VariableLocation vl){
-
-		boundedByExternals.insert(std::pair<ID, VariableLocation>(extAtom, vl));
+void LiberalSafetyChecker::addExternallyBoundedVariable(ID extAtom, VariableLocation vl){
+	boundedByExternals.insert(std::pair<ID, VariableLocation>(extAtom, vl));
 }
 
-void AttributeGraph::addBoundedVariable(VariableLocation vl){
+void LiberalSafetyChecker::addBoundedVariable(VariableLocation vl){
 
 	if (boundedVariables.count(vl) > 0) return;
 
@@ -361,87 +360,86 @@ void AttributeGraph::addBoundedVariable(VariableLocation vl){
 	std::stringstream ss;
 	RawPrinter printer(ss, reg);
 	printer.print(vl.second);
-	DBGLOG(DBG, "Variable " << "r" << vl.first.address << "/" << ss.str() << " is bounded" << (involvesExternal ? " by externals" : ""));
+	DBGLOG(DBG, "Variable " << "r" << vl.first.address << "/" << ss.str() << " is bounded");
 #endif
-		boundedVariables.insert(vl);
+	boundedVariables.insert(vl);
 
-		// notify all attributes which wait for this variable to become bounded
-		while (attributesSafeByVariable[vl].size() > 0){
-			Attribute sat = *attributesSafeByVariable[vl].begin();
-			DBGLOG(DBG, "Fulfilled precondition of attribute " << sat);
-			attributesSafeByVariable[vl].erase(attributesSafeByVariable[vl].begin());
+	// notify all attributes which wait for this variable to become bounded
+	while (attributesSafeByVariable[vl].size() > 0){
+		Attribute sat = *attributesSafeByVariable[vl].begin();
+		DBGLOG(DBG, "Fulfilled precondition of attribute " << sat);
+		attributesSafeByVariable[vl].erase(attributesSafeByVariable[vl].begin());
 
-			safetyPreconditions[sat].first.erase(vl);
-			if (isNewlySafe(sat)){
-				addDomainExpansionSafeAttribute(sat);
-			}
+		safetyPreconditions[sat].first.erase(vl);
+		if (isNewlySafe(sat)){
+			addDomainExpansionSafeAttribute(sat);
 		}
-		attributesSafeByVariable[vl].clear();
+	}
+	attributesSafeByVariable[vl].clear();
 
-		// trigger depending actions
-		BOOST_FOREACH (AtomLocation al, variableOccursIn[vl]){
+	// trigger depending actions
+	BOOST_FOREACH (AtomLocation al, variableOccursIn[vl]){
 
-			// go through all external atoms where:
-			// 1. the variable occurs in an output position --> then the corresponding output attribute becomes safe
-			// 2. the variable occurs in an output position and the external atom has a finite fiber --> then the input variables are bounded as well
-			if (al.second.isExternalAtom()){
+		// go through all external atoms where:
+		// 1. the variable occurs in an output position --> then the corresponding output attribute becomes safe
+		// 2. the variable occurs in an output position and the external atom has a finite fiber --> then the input variables are bounded as well
+		if (al.second.isExternalAtom()){
 
-				// 1.
-				const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
+			// 1.
+			const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
+			for (int i = 0; i < eatom.tuple.size(); ++i){
+				if (eatom.tuple[i] == vl.second){
+					Attribute oat = getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, i + 1);
+					if (domainExpansionSafeAttributes.count(oat) == 0){
+						addDomainExpansionSafeAttribute(oat);
+					}
+				}
+			}		
+
+			// 2.
+			if (eatom.getExtSourceProperties().hasFiniteFiber()){
+				bool outputbound = true;
 				for (int i = 0; i < eatom.tuple.size(); ++i){
-					if (eatom.tuple[i] == vl.second){
-						Attribute oat = getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, i + 1);
-						if (domainExpansionSafeAttributes.count(oat) == 0){
-//							necessaryExternalAtoms.insert(al.second.address);
-							addDomainExpansionSafeAttribute(oat);
-						}
-					}
-				}		
-
-				// 2.
-				if (eatom.getExtSourceProperties().hasFiniteFiber()){
-					bool outputbound = true;
-					for (int i = 0; i < eatom.tuple.size(); ++i){
-						if (eatom.tuple[i].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, eatom.tuple[i])) == 0){
-							outputbound = false;
-							break;
-						}
-					}
-					if (outputbound){
-						// bound the input as well
-						for (int i = 0; i < eatom.inputs.size(); ++i){
-							if (eatom.inputs[i].isVariableTerm()){
-								addExternallyBoundedVariable(al.second, VariableLocation(al.first, eatom.inputs[i]));
-							}
-						}
+					if (eatom.tuple[i].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, eatom.tuple[i])) == 0){
+						outputbound = false;
+						break;
 					}
 				}
-			}
-
-			// go through equivalence builtins
-			else if (al.second.isBuiltinAtom()){
-				const BuiltinAtom& batom = reg->batoms.getByID(al.second);
-				bool allsafe = true;
-				// for ternary: if all variables on the rhs are safe, then the variables on the lhs are safe as well
-				if (batom.tuple.size() == 4){
-					for (int i = 1; i <= 2; ++i){
-						if (batom.tuple[i].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[i])) == 0){
-							allsafe = false;
-							break;
+				if (outputbound){
+					// bound the input as well
+					for (int i = 0; i < eatom.inputs.size(); ++i){
+						if (eatom.inputs[i].isVariableTerm()){
+							addExternallyBoundedVariable(al.second, VariableLocation(al.first, eatom.inputs[i]));
 						}
 					}
-					if (allsafe) addBoundedVariable(VariableLocation(al.first, batom.tuple[3]));
-
-				// for binary: if one side is safe, then the other side is safe as well
-				}else if (batom.tuple.size() == 3 && batom.tuple[0].address == ID::TERM_BUILTIN_EQ){
-					if (batom.tuple[1].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[1])) > 0) addBoundedVariable(VariableLocation(al.first, batom.tuple[2]));
-					if (batom.tuple[2].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[2])) > 0) addBoundedVariable(VariableLocation(al.first, batom.tuple[1]));
 				}
 			}
 		}
+
+		// go through equivalence builtins
+		else if (al.second.isBuiltinAtom()){
+			const BuiltinAtom& batom = reg->batoms.getByID(al.second);
+			bool allsafe = true;
+			// for ternary: if all variables on the rhs are safe, then the variables on the lhs are safe as well
+			if (batom.tuple.size() == 4){
+				for (int i = 1; i <= 2; ++i){
+					if (batom.tuple[i].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[i])) == 0){
+						allsafe = false;
+						break;
+					}
+				}
+				if (allsafe) addBoundedVariable(VariableLocation(al.first, batom.tuple[3]));
+
+			// for binary: if one side is safe, then the other side is safe as well
+			}else if (batom.tuple.size() == 3 && batom.tuple[0].address == ID::TERM_BUILTIN_EQ){
+				if (batom.tuple[1].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[1])) > 0) addBoundedVariable(VariableLocation(al.first, batom.tuple[2]));
+				if (batom.tuple[2].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, batom.tuple[2])) > 0) addBoundedVariable(VariableLocation(al.first, batom.tuple[1]));
+			}
+		}
+	}
 }
 
-void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
+void LiberalSafetyChecker::addDomainExpansionSafeAttribute(Attribute at){
 
 	// go through all atoms where the attribute occurs
 	if (domainExpansionSafeAttributes.count(at) > 0) return;
@@ -489,29 +487,29 @@ void AttributeGraph::addDomainExpansionSafeAttribute(Attribute at){
 	}
 }
 
-const std::vector<ID>& AttributeGraph::getIdb(){
+const std::vector<ID>& LiberalSafetyChecker::getIdb(){
 	return idb;
 }
 	
-const AttributeGraph::Graph& AttributeGraph::getAttributeGraph(){
+const LiberalSafetyChecker::Graph& LiberalSafetyChecker::getAttributeGraph(){
 	return ag;
 }
 
-const std::vector<std::vector<AttributeGraph::Attribute> >& AttributeGraph::getDepSCC(){
+const std::vector<std::vector<LiberalSafetyChecker::Attribute> >& LiberalSafetyChecker::getDepSCC(){
 	return depSCC;
 }
 
-const boost::unordered_set<AttributeGraph::Attribute>& AttributeGraph::getDomainExpansionSafeAttributes(){
+const boost::unordered_set<LiberalSafetyChecker::Attribute>& LiberalSafetyChecker::getDomainExpansionSafeAttributes(){
 	return domainExpansionSafeAttributes;
 }
 
-const boost::unordered_set<AttributeGraph::VariableLocation>& AttributeGraph::getBoundedVariables(){
+const boost::unordered_set<LiberalSafetyChecker::VariableLocation>& LiberalSafetyChecker::getBoundedVariables(){
 	return boundedVariables;
 }
 
-void AttributeGraph::getReachableAttributes(Attribute start, std::set<AttributeGraph::Node>& output){
-	const AttributeGraph::NodeNodeInfoIndex& idx = nm.get<NodeInfoTag>();
-	AttributeGraph::NodeNodeInfoIndex::const_iterator it = idx.find(start);
+void LiberalSafetyChecker::getReachableAttributes(Attribute start, std::set<LiberalSafetyChecker::Node>& output){
+	const LiberalSafetyChecker::NodeNodeInfoIndex& idx = nm.get<NodeInfoTag>();
+	LiberalSafetyChecker::NodeNodeInfoIndex::const_iterator it = idx.find(start);
 	boost::breadth_first_search(ag, it->node,
 		boost::visitor(
 			boost::make_bfs_visitor(
@@ -521,7 +519,7 @@ void AttributeGraph::getReachableAttributes(Attribute start, std::set<AttributeG
 					boost::on_discover_vertex()))));
 }
 
-void AttributeGraph::computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow){
+void LiberalSafetyChecker::computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow){
 
 	BOOST_FOREACH (ID b, rule.body){
 		if (!b.isNaf() && b.isBuiltinAtom()){
@@ -550,11 +548,11 @@ void AttributeGraph::computeBuiltinInformationFlow(const Rule& rule, boost::unor
 
 }
 
-void AttributeGraph::createDependencyGraph(){
+void LiberalSafetyChecker::createDependencyGraph(){
 
 	std::vector<std::pair<Attribute, ID> > predicateInputs;
 
-	DBGLOG(DBG, "AttributeGraph::createDependencyGraph");
+	DBGLOG(DBG, "LiberalSafetyChecker::createDependencyGraph");
 	BOOST_FOREACH (ID ruleID, idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -690,7 +688,7 @@ void AttributeGraph::createDependencyGraph(){
 	}
 }
 
-void AttributeGraph::createPreconditionsAndLocationIndices(){
+void LiberalSafetyChecker::createPreconditionsAndLocationIndices(){
 
 	BOOST_FOREACH (ID ruleID, idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
@@ -770,7 +768,7 @@ void AttributeGraph::createPreconditionsAndLocationIndices(){
 	}
 }
 
-void AttributeGraph::computeCyclicAttributes(){
+void LiberalSafetyChecker::computeCyclicAttributes(){
 
 	// find cyclic external attributes
 	std::vector<Attribute> cyclicExternal;
@@ -811,7 +809,7 @@ void AttributeGraph::computeCyclicAttributes(){
 	DBGLOG(DBG, "" << cyclicAttributes.size() << " attributes depend cyclically on external attributes");
 }
 
-void AttributeGraph::ensureOrdinarySafety(){
+void LiberalSafetyChecker::ensureOrdinarySafety(){
 
 	// if a variable occurs in no ordinary atom and no necessary external atom, add an additional necessary external atom
 	BOOST_FOREACH (ID ruleID, idb){
@@ -871,7 +869,7 @@ void AttributeGraph::ensureOrdinarySafety(){
 	}
 }
 
-void AttributeGraph::computeDomainExpansionSafety(){
+void LiberalSafetyChecker::computeDomainExpansionSafety(){
 
 	// We employ the following general strategy:
 	// 1. check static conditions which make attributes domain-expansion safe or variables bounded
@@ -927,7 +925,7 @@ void AttributeGraph::computeDomainExpansionSafety(){
 	DBGLOG(DBG, "Domain Expansion Safety: " << isDomainExpansionSafe() << " (" << domainExpansionSafeAttributes.size() << " out of " << num_vertices(ag) << " attributes are safe)");
 }
 
-AttributeGraph::AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb) : reg(reg), idb(idb){
+LiberalSafetyChecker::LiberalSafetyChecker(RegistryPtr reg, const std::vector<ID>& idb) : reg(reg), idb(idb){
 	safetyPlugins.push_back(SafetyPlugin::Ptr(new ExtPropChecker(*this)));
 	safetyPlugins.push_back(SafetyPlugin::Ptr(new BenignCycleChecker(*this, cyclicAttributes)));
 
@@ -936,18 +934,18 @@ AttributeGraph::AttributeGraph(RegistryPtr reg, const std::vector<ID>& idb) : re
 	computeDomainExpansionSafety();
 }
 
-bool AttributeGraph::isDomainExpansionSafe() const{
+bool LiberalSafetyChecker::isDomainExpansionSafe() const{
 	return domainExpansionSafeAttributes.size() == num_vertices(ag);
 }
 
-bool AttributeGraph::isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const{
+bool LiberalSafetyChecker::isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const{
 	assert(isDomainExpansionSafe());
 	return necessaryExternalAtoms.count(eatomID.address) > 0;
 }
 
 namespace
 {
-	inline std::string graphviz_node_id(AttributeGraph::Node n)
+	inline std::string graphviz_node_id(LiberalSafetyChecker::Node n)
 	{
 		std::ostringstream os;
 		os << "n" << n;
@@ -955,9 +953,9 @@ namespace
 	}
 }
 
-void AttributeGraph::writeGraphViz(std::ostream& o, bool verbose) const{
+void LiberalSafetyChecker::writeGraphViz(std::ostream& o, bool verbose) const{
 
-	DBGLOG(DBG, "AttributeGraph::writeGraphViz");
+	DBGLOG(DBG, "LiberalSafetyChecker::writeGraphViz");
 
 	o << "digraph G {" << std::endl;
 
@@ -1006,7 +1004,7 @@ void AttributeGraph::writeGraphViz(std::ostream& o, bool verbose) const{
 	o << "}" << std::endl;
 }
 
-std::size_t hash_value(const AttributeGraph::Attribute& at)
+std::size_t hash_value(const LiberalSafetyChecker::Attribute& at)
 {
 	std::size_t seed = 0;
 	boost::hash_combine(seed, at.type);
@@ -1019,7 +1017,7 @@ std::size_t hash_value(const AttributeGraph::Attribute& at)
 	return seed;
 }
 
-std::size_t hash_value(const AttributeGraph::VariableLocation& vl)
+std::size_t hash_value(const LiberalSafetyChecker::VariableLocation& vl)
 {
 	std::size_t seed = 0;
 	boost::hash_combine(seed, vl.first);

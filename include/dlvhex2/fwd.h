@@ -56,8 +56,8 @@ typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 class DependencyGraph;
 typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
 
-class AttributeGraph;
-typedef boost::shared_ptr<AttributeGraph> AttributeGraphPtr;
+class LiberalSafetyChecker;
+typedef boost::shared_ptr<LiberalSafetyChecker> LiberalSafetyCheckerPtr;
 
 struct ExternalAtom;
 

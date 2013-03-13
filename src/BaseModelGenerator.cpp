@@ -42,7 +42,7 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/ExternalLearningHelper.h"
-#include "dlvhex2/AttributeGraph.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 
 #include <boost/foreach.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -857,7 +857,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
       if (!b.isNaf() && b.isExternalAtom()){
         const ExternalAtom& ea = reg->eatoms.getByID(b);
 
-          if (ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(b)){
+          if (ctx.liberalSafetyChecker->isExternalAtomNecessaryForDomainExpansionSafety(b)){
 
             // print a warning if there is a nonmonotonic external atom which is necessary for de-safety, because this makes grounding really slow
             // (exponential in the number of nonmonotonic input atoms)

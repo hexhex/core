@@ -12,7 +12,6 @@ pkginclude_HEADERS = \
   ASPSolverManager.h \
   AsynchronousModelGenerator.h \
   Atoms.h \
-  AttributeGraph.h \
   BaseModelGenerator.h \
   Benchmarking.h \
   ClaspSolver.h \
@@ -65,6 +64,7 @@ pkginclude_HEADERS = \
   ID.h \
   InputProvider.h \
   Interpretation.h \
+  LiberalSafetyChecker.h \
   Logger.h \
   MLPSolver.h \
   MLPSyntaxChecker.h \

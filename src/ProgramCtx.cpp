@@ -186,7 +186,7 @@ void ProgramCtx::mlpSolver() { state->mlpSolver(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
 void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
 void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }
-void ProgramCtx::createAttributeGraph() { state->createAttributeGraph(this); }
+void ProgramCtx::liberalSafetyCheck() { state->checkLiberalSafety(this); }
 void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
 void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }
 void ProgramCtx::strongSafetyCheck() { state->strongSafetyCheck(this); }
@@ -269,7 +269,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
 
 	pc.safetyCheck();
-	pc.createAttributeGraph();
+	pc.liberalSafetyCheck();
 	pc.createDependencyGraph();
 	pc.optimizeEDBDependencyGraph();
 	pc.createComponentGraph();

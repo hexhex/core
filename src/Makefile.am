@@ -49,7 +49,6 @@ libdlvhex2_base_la_SOURCES = \
     ASPSolverManager.cpp \
     AsynchronousModelGenerator.cpp \
     Atoms.cpp \
-    AttributeGraph.cpp \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
@@ -93,6 +92,7 @@ libdlvhex2_base_la_SOURCES = \
     InternalGrounder.cpp \
     InputProvider.cpp \
     Interpretation.cpp \
+    LiberalSafetyChecker.cpp \
     Logger.cpp \
     MLPSolver.cpp \
     MLPSyntaxChecker.cpp \

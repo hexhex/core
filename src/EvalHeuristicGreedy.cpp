@@ -37,7 +37,7 @@
 #include "dlvhex2/EvalHeuristicShared.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/AttributeGraph.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -328,7 +328,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
                  // check if the nonmonotonic predicate dependency is eliminated if we consider only necessary external atoms
                  BOOST_FOREACH (ComponentGraph::DependencyInfo::DepEdge de, di.depEdges){
                    if (de.get<2>().externalNonmonotonicPredicateInput &&
-                       ctx.attrgraph->isExternalAtomNecessaryForDomainExpansionSafety(de.get<0>())){
+                       ctx.liberalSafetyChecker->isExternalAtomNecessaryForDomainExpansionSafety(de.get<0>())){
                       // not eliminated
                       negdep.insert(std::pair<ComponentGraph::Component, ComponentGraph::Component>(compgraph.sourceOf(dep), compgraph.targetOf(dep)));
                       nonmonotonicPredecessor.insert(compgraph.sourceOf(dep));

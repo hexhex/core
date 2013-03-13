@@ -36,7 +36,7 @@
 #include "dlvhex2/FLPModelGeneratorBase.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/AttributeGraph.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 
 #include "dlvhex2/CDNLSolver.h"
 #include "dlvhex2/ClaspSolver.h"

@@ -565,20 +565,8 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
   RegistryPtr reg = ctx.registry();
   assert(!!reg);
 
-
-  if( ctx.config.getOption("DumpAttrGraph") )
-  {
-    std::string fnamev = ctx.config.getStringOption("DebugPrefix")+"_AttrGraphVerbose.dot";
-    LOG(INFO,"dumping verbose attribute graph to " << fnamev);
-    std::ofstream filev(fnamev.c_str());
-    ctx.attrgraph->writeGraphViz(filev, true);
-  }
-
   if (ctx.config.getOption("LiberalSafety"))
   {
-    if (!ctx.attrgraph->isDomainExpansionSafe()){
-      throw SyntaxError("Program is not liberally domain-expansion safe");
-    }
     return;
   }
 

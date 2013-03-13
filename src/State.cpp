@@ -51,7 +51,7 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/PluginContainer.h"
-#include "dlvhex2/AttributeGraph.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 #include "dlvhex2/DependencyGraph.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/FinalEvalGraph.h"
@@ -132,7 +132,7 @@ STATE_FUNC_DEFAULT_IMPL(moduleSyntaxCheck);
 STATE_FUNC_DEFAULT_IMPL(mlpSolver);
 STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
 STATE_FUNC_DEFAULT_IMPL(safetyCheck);
-STATE_FUNC_DEFAULT_IMPL(createAttributeGraph);
+STATE_FUNC_DEFAULT_IMPL(checkLiberalSafety);
 STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(optimizeEDBDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(createComponentGraph);
@@ -570,7 +570,7 @@ RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateAttributeGraphState);
+OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CheckLiberalSafetyState);
 
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
@@ -584,17 +584,32 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
   // check by calling the object
   schecker();
 
-  StatePtr next(new CreateAttributeGraphState);
+  StatePtr next(new CheckLiberalSafetyState);
   changeState(ctx, next);
 }
 
-MANDATORY_STATE_CONSTRUCTOR(CreateAttributeGraphState);
+MANDATORY_STATE_CONSTRUCTOR(CheckLiberalSafetyState);
 
-void CreateAttributeGraphState::createAttributeGraph(ProgramCtx* ctx)
+void CheckLiberalSafetyState::checkLiberalSafety(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building attribute graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"checking liberal safety");
 
-  ctx->attrgraph = AttributeGraphPtr(new AttributeGraph(ctx->registry(), ctx->idb));
+  ctx->liberalSafetyChecker = LiberalSafetyCheckerPtr(new LiberalSafetyChecker(ctx->registry(), ctx->idb));
+
+  if( ctx->config.getOption("DumpAttrGraph") )
+  {
+    std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_AttrGraphVerbose.dot";
+    LOG(INFO,"dumping verbose attribute graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    ctx->liberalSafetyChecker->writeGraphViz(filev, true);
+  }
+
+  if (ctx->config.getOption("LiberalSafety"))
+  {
+    if (!ctx->liberalSafetyChecker->isDomainExpansionSafe()){
+      throw SyntaxError("Program is not liberally domain-expansion safe");
+    }
+  }
 
   StatePtr next(new CreateDependencyGraphState);
   changeState(ctx, next);
