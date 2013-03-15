@@ -47,6 +47,40 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class LiberalSafetyChecker;
+
+/*
+ * Base class for safety plugins which may integrate application-specific safety criteria
+ */
+class LiberalSafetyPlugin{
+protected:
+	// reference to the safety checker which provides meta-information about the program
+	LiberalSafetyChecker& lsc;
+
+public:
+	LiberalSafetyPlugin(LiberalSafetyChecker& lsc) : lsc(lsc){}
+
+	// the run method is iteratively called and shall add
+	// - bound variables using lsc.addBoundedVariable
+	// - variables bound by externals using lsc.addExternallyBoundedVariable
+	// - de-safe attributes using lsc.addDomainExpansionSafeAttribute
+	virtual void run() = 0;
+	
+	typedef boost::shared_ptr<LiberalSafetyPlugin> Ptr;
+};
+typedef LiberalSafetyPlugin::Ptr LiberalSafetyPluginPtr;
+
+/*
+ * Factory for safety plugins.
+ */
+class LiberalSafetyPluginFactory{
+public:
+	virtual LiberalSafetyPluginPtr create(LiberalSafetyChecker& lsc) = 0;
+	typedef boost::shared_ptr<LiberalSafetyPluginFactory> Ptr;
+};
+typedef LiberalSafetyPluginFactory::Ptr LiberalSafetyPluginFactoryPtr;
+
+
 class LiberalSafetyChecker{
 public:
 	struct Attribute : private ostream_printable<Attribute>{
@@ -79,26 +113,6 @@ public:
 
 	typedef std::pair<ID, ID> VariableLocation;	// stores rule ID and variable ID
 	typedef std::pair<ID, ID> AtomLocation;		// stores rule ID and atom ID
-
-	/*
-	 * Base class for safety plugins which may integrate application-specific safety criteria
-	 */
-	class SafetyPlugin{
-	protected:
-		// reference to the safety checker which provides meta-information about the program
-		LiberalSafetyChecker& lsc;
-	
-	public:
-		SafetyPlugin(LiberalSafetyChecker& lsc) : lsc(lsc){}
-
-		// the run method is iteratively called and shall add
-		// - bound variables using lsc.addBoundedVariable
-		// - variables bound by externals using lsc.addExternallyBoundedVariable
-		// - de-safe attributes using lsc.addDomainExpansionSafeAttribute
-		virtual void run() = 0;
-		
-		typedef boost::shared_ptr<SafetyPlugin> Ptr;
-	};
 
 	RegistryPtr reg;
 	const std::vector<ID>& idb;
@@ -182,9 +196,9 @@ private:
 
 	void computeDomainExpansionSafety();											// calls the previous methods until no more safe attributes can be derived
 	
-	std::vector<SafetyPlugin::Ptr> safetyPlugins;
+	std::vector<LiberalSafetyPluginPtr> safetyPlugins;
 public:
-	LiberalSafetyChecker(RegistryPtr reg, const std::vector<ID>& idb);
+	LiberalSafetyChecker(RegistryPtr reg, const std::vector<ID>& idb, std::vector<LiberalSafetyPluginFactoryPtr> customSafetyPlugins);
 
 	bool isDomainExpansionSafe() const;
 	bool isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const;

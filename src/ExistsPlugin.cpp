@@ -45,6 +45,7 @@
 #include "dlvhex2/HexParser.h"
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
+#include "dlvhex2/LiberalSafetyChecker.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
@@ -335,7 +336,9 @@ void ExistsRewriter::rewrite(ProgramCtx& ctx)
 						eatom.tuple.push_back(v);
 					}
 				}
-				newRule.body.push_back(ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eatom)));
+				ID existsAtomID = ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eatom));
+				ctxdata.existentialSimulationAtoms.insert(existsAtomID);
+				newRule.body.push_back(existsAtomID);
 			}else{
 				newRule.head.push_back(h);
 			}
@@ -381,7 +384,6 @@ class ExistsAtom : public PluginAtom
 		ExistsAtom(int arity) : PluginAtom(getName("exists", arity), true)
 		{
 			prop.functional = true;
-			for (int i = 0; i < arity; i++) prop.finiteOutputDomain.insert(i);
 			this->arity = arity;
 
 			addInputTuple();
@@ -410,6 +412,58 @@ class ExistsAtom : public PluginAtom
 		}
 };
 
+namespace{
+
+// Exploits semantic annotation "finiteness" of external atoms to ensure safety
+class ExistsPluginSafetyPlugin : public LiberalSafetyPlugin{
+private:
+	bool firstRun;
+	ExistsPlugin::CtxData& ctxdata;
+public:
+	ExistsPluginSafetyPlugin(LiberalSafetyChecker& lsc, ExistsPlugin::CtxData& ctxdata) : ctxdata(ctxdata), LiberalSafetyPlugin(lsc){
+		firstRun = true;
+	}
+
+	void run(){
+		if (!firstRun) return;
+		firstRun = false;
+		
+		// make output variables of exists atoms bounded
+		BOOST_FOREACH (ID ruleID, lsc.getIdb()){
+			const Rule& rule = lsc.reg->rules.getByID(ruleID);
+			BOOST_FOREACH (ID b, rule.body){
+				if (b.isNaf()) continue;
+
+				if (b.isExternalAtom() && ctxdata.existentialSimulationAtoms.count(b) > 0){
+					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
+
+					for (int i = 0; i < eatom.tuple.size(); ++i){
+						LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.tuple[i]);
+						if (lsc.getBoundedVariables().count(vl) == 0){
+							DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because output element " << i << " of external atom " << b << " has a finite domain");
+							lsc.addExternallyBoundedVariable(b, vl);
+						}
+					}
+				}
+			}
+		}
+	}
+};
+
+class ExistsPluginSafetyPluginFactory : public LiberalSafetyPluginFactory{
+private:
+	ExistsPlugin::CtxData& ctxdata;
+public:
+	ExistsPluginSafetyPluginFactory(ExistsPlugin::CtxData& ctxdata) : ctxdata(ctxdata){
+	}
+
+	LiberalSafetyPluginPtr create(LiberalSafetyChecker& lsc){
+		return LiberalSafetyPluginPtr(new ExistsPluginSafetyPlugin(lsc, ctxdata));
+	}
+};
+
+}
+
 std::vector<PluginAtomPtr> ExistsPlugin::createAtoms(ProgramCtx& ctx) const{
 	std::vector<PluginAtomPtr> ret;
 
@@ -421,6 +475,8 @@ std::vector<PluginAtomPtr> ExistsPlugin::createAtoms(ProgramCtx& ctx) const{
 	for (int i = 0; i <= ctxdata.maxArity; ++i){
 		ret.push_back(PluginAtomPtr(new ExistsAtom(i), PluginPtrDeleter<PluginAtom>()));
 	}
+
+	ctx.liberalSafetyPlugins.push_back(LiberalSafetyPluginFactoryPtr(new ExistsPluginSafetyPluginFactory(ctxdata)));
 
 	return ret;
 }

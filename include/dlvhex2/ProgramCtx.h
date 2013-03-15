@@ -145,6 +145,7 @@ public:
 
   DependencyGraphPtr depgraph;
   ComponentGraphPtr compgraph;
+  std::vector<LiberalSafetyPluginFactoryPtr> liberalSafetyPlugins;
   LiberalSafetyCheckerPtr liberalSafetyChecker;
   FinalEvalGraphPtr evalgraph;
   FinalEvalGraph::EvalUnit ufinal;

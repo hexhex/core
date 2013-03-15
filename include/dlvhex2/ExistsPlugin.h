@@ -55,6 +55,9 @@ public:
     // IDs of existentially quantified atoms
     std::set<ID> existentialAtoms;
 
+    // IDs of external atoms which simulate existnaital atoms
+    std::set<ID> existentialSimulationAtoms;
+
     CtxData();
     virtual ~CtxData() {};
   };

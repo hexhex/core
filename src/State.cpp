@@ -594,7 +594,7 @@ void CheckLiberalSafetyState::checkLiberalSafety(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"checking liberal safety");
 
-  ctx->liberalSafetyChecker = LiberalSafetyCheckerPtr(new LiberalSafetyChecker(ctx->registry(), ctx->idb));
+  ctx->liberalSafetyChecker = LiberalSafetyCheckerPtr(new LiberalSafetyChecker(ctx->registry(), ctx->idb, ctx->liberalSafetyPlugins));
 
   if( ctx->config.getOption("DumpAttrGraph") )
   {

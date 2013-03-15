@@ -57,7 +57,11 @@ class DependencyGraph;
 typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
 
 class LiberalSafetyChecker;
+class LiberalSafetyPlugin;
+class LiberalSafetyPluginFactory;
 typedef boost::shared_ptr<LiberalSafetyChecker> LiberalSafetyCheckerPtr;
+typedef boost::shared_ptr<LiberalSafetyPlugin> LiberalSafetyPluginPtr;
+typedef boost::shared_ptr<LiberalSafetyPluginFactory> LiberalSafetyPluginFactoryPtr;
 
 struct ExternalAtom;
 

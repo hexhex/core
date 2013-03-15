@@ -58,12 +58,12 @@ DLVHEX_NAMESPACE_BEGIN
 		
 namespace{
 
-// Exploits semantic annotation of external atoms to ensure safety
-class ExtPropChecker : public LiberalSafetyChecker::SafetyPlugin{
+// Exploits semantic annotation "finiteness" of external atoms to ensure safety
+class FinitenessChecker : public LiberalSafetyPlugin{
 private:
 	bool firstRun;
 public:
-	ExtPropChecker(LiberalSafetyChecker& lsc) : SafetyPlugin(lsc){
+	FinitenessChecker(LiberalSafetyChecker& lsc) : LiberalSafetyPlugin(lsc){
 		firstRun = true;
 	}
 
@@ -71,10 +71,7 @@ public:
 		if (!firstRun) return;
 		firstRun = false;
 		
-		// 2. make output variables of external atoms bounded, if they are in a position with finite domain
-		// 3. make input variables of external atoms bounded, if they have no output variables
-		// 4. make variables bounded, which are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
-		// 5. make variables in #int(...) atoms bounded
+		// make output variables of external atoms bounded, if they are in a position with finite domain
 		BOOST_FOREACH (ID ruleID, lsc.getIdb()){
 			const Rule& rule = lsc.reg->rules.getByID(ruleID);
 			BOOST_FOREACH (ID b, rule.body){
@@ -83,7 +80,6 @@ public:
 				if (b.isExternalAtom()){
 					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
 
-					// 2.
 					for (int i = 0; i < eatom.tuple.size(); ++i){
 						if (eatom.getExtSourceProperties().hasFiniteDomain(i)){
 							LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.tuple[i]);
@@ -93,11 +89,37 @@ public:
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+};
 
-					// 3.
+// Exploits semantic annotation "finite fiber" of external atoms to ensure safety
+class FiniteFiberChecker : public LiberalSafetyPlugin{
+private:
+	bool firstRun;
+public:
+	FiniteFiberChecker(LiberalSafetyChecker& lsc) : LiberalSafetyPlugin(lsc){
+		firstRun = true;
+	}
+
+	void run(){
+		if (!firstRun) return;
+		firstRun = false;
+
+		// make input variables of external atoms with finite fiber bounded, if all output variables are bounded
+		BOOST_FOREACH (ID ruleID, lsc.getIdb()){
+			const Rule& rule = lsc.reg->rules.getByID(ruleID);
+			BOOST_FOREACH (ID b, rule.body){
+				if (b.isNaf()) continue;
+
+				if (b.isExternalAtom()){
+					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
+
 					bool outputBounded = true;
 					for (int i = 0; i < eatom.tuple.size(); ++i){
-						if (eatom.tuple[i].isVariableTerm()){
+						if (eatom.tuple[i].isVariableTerm() && !lsc.getBoundedVariables().count(LiberalSafetyChecker::VariableLocation(ruleID, eatom.tuple[i])) > 0){
 							outputBounded = false;
 							break;
 						}
@@ -115,14 +137,49 @@ public:
 					}
 				}
 
-				// 4.
 				else if (b.isAggregateAtom()){
 					const AggregateAtom& aatom = lsc.reg->aatoms.getByID(b);
 					if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, aatom.tuple[0]));
 					if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, aatom.tuple[4]));
 				}
 
-				// 5
+				else if (b.isBuiltinAtom()){
+					const BuiltinAtom& batom = lsc.reg->batoms.getByID(b);
+					if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, batom.tuple[1]));
+				}
+			}
+		}
+	}
+};
+
+// Aggregates and builtins to ensure safety
+class AggregateAndBuildinChecker : public LiberalSafetyPlugin{
+private:
+	bool firstRun;
+public:
+	AggregateAndBuildinChecker(LiberalSafetyChecker& lsc) : LiberalSafetyPlugin(lsc){
+		firstRun = true;
+	}
+
+	void run(){
+		if (!firstRun) return;
+		firstRun = false;
+		
+		// 1. make variables bounded, which are assigned to an aggregate (because then #maxint ensures that there are only finitly many differnt values)
+		// 2. make variables in #int(...) atoms bounded
+		BOOST_FOREACH (ID ruleID, lsc.getIdb()){
+			const Rule& rule = lsc.reg->rules.getByID(ruleID);
+			BOOST_FOREACH (ID b, rule.body){
+				if (b.isNaf()) continue;
+
+				// 1
+				if (b.isAggregateAtom()){
+					const AggregateAtom& aatom = lsc.reg->aatoms.getByID(b);
+					if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, aatom.tuple[0]));
+					if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, aatom.tuple[4]));
+				}
+
+				// 2
 				else if (b.isBuiltinAtom()){
 					const BuiltinAtom& batom = lsc.reg->batoms.getByID(b);
 					if (batom.tuple[0].address == ID::TERM_BUILTIN_INT && batom.tuple[1].isVariableTerm()) lsc.addBoundedVariable(LiberalSafetyChecker::VariableLocation(ruleID, batom.tuple[1]));
@@ -133,7 +190,7 @@ public:
 };
 
 // Exploits well-orderings in cycles to ensure safety
-class BenignCycleChecker : public LiberalSafetyChecker::SafetyPlugin{
+class BenignCycleChecker : public LiberalSafetyPlugin{
 private:
 	std::set<LiberalSafetyChecker::Node>& cyclicAttributes;
 
@@ -226,7 +283,7 @@ private:
 	}
 
 public:
-	BenignCycleChecker(LiberalSafetyChecker& lsc, std::set<LiberalSafetyChecker::Node>& cyclicAttributes) : SafetyPlugin(lsc), cyclicAttributes(cyclicAttributes){}
+	BenignCycleChecker(LiberalSafetyChecker& lsc, std::set<LiberalSafetyChecker::Node>& cyclicAttributes) : LiberalSafetyPlugin(lsc), cyclicAttributes(cyclicAttributes){}
 
 	void run(){
 		// identify benign cycles
@@ -895,7 +952,7 @@ void LiberalSafetyChecker::computeDomainExpansionSafety(){
 		int desize = domainExpansionSafeAttributes.size();
 
 		// call safety providers
-		BOOST_FOREACH (SafetyPlugin::Ptr checker, safetyPlugins){
+		BOOST_FOREACH (LiberalSafetyPluginPtr checker, safetyPlugins){
 			checker->run();
 		}
 		
@@ -925,9 +982,12 @@ void LiberalSafetyChecker::computeDomainExpansionSafety(){
 	DBGLOG(DBG, "Domain Expansion Safety: " << isDomainExpansionSafe() << " (" << domainExpansionSafeAttributes.size() << " out of " << num_vertices(ag) << " attributes are safe)");
 }
 
-LiberalSafetyChecker::LiberalSafetyChecker(RegistryPtr reg, const std::vector<ID>& idb) : reg(reg), idb(idb){
-	safetyPlugins.push_back(SafetyPlugin::Ptr(new ExtPropChecker(*this)));
-	safetyPlugins.push_back(SafetyPlugin::Ptr(new BenignCycleChecker(*this, cyclicAttributes)));
+LiberalSafetyChecker::LiberalSafetyChecker(RegistryPtr reg, const std::vector<ID>& idb, std::vector<LiberalSafetyPluginFactoryPtr> customSafetyPlugins) : reg(reg), idb(idb){
+	safetyPlugins.push_back(LiberalSafetyPluginPtr(new FinitenessChecker(*this)));
+	safetyPlugins.push_back(LiberalSafetyPluginPtr(new FiniteFiberChecker(*this)));
+	safetyPlugins.push_back(LiberalSafetyPluginPtr(new AggregateAndBuildinChecker(*this)));
+	safetyPlugins.push_back(LiberalSafetyPluginPtr(new BenignCycleChecker(*this, cyclicAttributes)));
+	BOOST_FOREACH (LiberalSafetyPluginFactoryPtr lspf, customSafetyPlugins) safetyPlugins.push_back(lspf->create(*this));
 
 	createDependencyGraph();
 	createPreconditionsAndLocationIndices();
