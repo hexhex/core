@@ -993,7 +993,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 			}
 
 			// for all new atoms in the Herbrand base
-			{
+			if (ctx.config.getOption("LiberalSafetyHomomorphismCheck")){
 				bm::bvector<>::enumerator en = herbrandBase->getStorage().first();
 				bm::bvector<>::enumerator en_end = herbrandBase->getStorage().end();
 				while (en < en_end){
@@ -1017,9 +1017,9 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 					}
 					en++;
 				}
-			}
 
-			DBGLOG(DBG, "Homomorphic input atoms: " << *homomorphicAuxInput);
+				DBGLOG(DBG, "Homomorphic input atoms: " << *homomorphicAuxInput);
+			}
 
 			// evaluate inner external atoms
 			BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(herbrandBase);

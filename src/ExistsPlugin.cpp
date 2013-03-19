@@ -100,6 +100,7 @@ void ExistsPlugin::processOptions(
 		if( str == "--exists-enable" )
 		{
 			ctxdata.enabled = true;
+			ctx.config.setOption("LiberalSafetyHomomorphismCheck", 1);
 			processed = true;
 		}
 		if( boost::starts_with(str, "--exists-maxarity=") )
