@@ -38,7 +38,6 @@
 #include "dlvhex2/SafetyChecker.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Printer.h"
-#include "dlvhex2/AttributeGraph.h"
 
 #include <fstream>
 
