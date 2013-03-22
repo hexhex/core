@@ -589,6 +589,23 @@ struct sem<HexGrammarSemantics::externalAtom>
             atom.prop.finiteOutputDomain.insert(prop.param1.address);
           }
           break;
+        case ExtSourceProperty::RELATIVEFINITEDOMAIN:
+        	{
+	  if (prop.param1 == ID_FAIL || prop.param2 == ID_FAIL) throw GeneralError("Property \"relativefinitedomain\" expects two parameters");
+	  		int wrt;
+            bool found = false;
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              if (atom.inputs[i] == prop.param2){
+				wrt = i;
+                found = true;
+                break;
+              }
+            }
+            if (!found) throw SyntaxError("Property refers to invalid input parameter");
+           	if (!prop.param1.isIntegerTerm()) throw GeneralError("The first parameter of property \"relativefinitedomain\" must be an integer");
+            atom.prop.relativeFiniteOutputDomain.insert(std::pair<int, int>(prop.param1.address, wrt));
+            }
+          break;
         case ExtSourceProperty::FINITEFIBER:
 	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"finitefiber\" expects no parameters");
           DBGLOG(DBG, "External Atom has a finite fiber");
@@ -689,6 +706,8 @@ struct sem<HexGrammarSemantics::extSourceProperty>
 		target = ExtSourceProperty(ExtSourceProperty::USES_ENVIRONMENT, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "finitedomain"){
 		target = ExtSourceProperty(ExtSourceProperty::FINITEDOMAIN, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "relativefinitedomain"){
+		target = ExtSourceProperty(ExtSourceProperty::RELATIVEFINITEDOMAIN, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "finitefiber"){
 		target = ExtSourceProperty(ExtSourceProperty::FINITEFIBER, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "wellorderingstrlen"){

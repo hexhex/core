@@ -63,6 +63,7 @@ struct ExtSourceProperty:
 		ATOMLEVELLINEAR,
 		TUPLELEVELLINEAR,
 		USES_ENVIRONMENT,
+        RELATIVEFINITEDOMAIN,
 		FINITEDOMAIN,
 		FINITEFIBER,
 		WELLORDERINGSTRLEN,
@@ -96,6 +97,7 @@ struct ExtSourceProperties
 	std::set<int> antimonotonicInputPredicates;		// indices of antimonotonic input parameters
 	std::set<int> predicateParameterNameIndependence;	// indices of input parameters whose name is irrelevant (only the extension matters)
 	std::set<int> finiteOutputDomain;			// indices of output elements with a finite domain
+	std::set<std::pair<int, int> > relativeFiniteOutputDomain;			// indices of output elements with a finite domain wrt. some input parameter
 
 	// if an external source is functional, then there must not exist multiple output tuples simultanously;
 	// "functionalStart" defines the number of non-functional output terms before the functional output starts
@@ -179,12 +181,18 @@ struct ExtSourceProperties
 	*/
 	bool doesItUseEnvironment() const
 	{ return usesEnvironment; }
-
+    
 	/**
-	* @return bool True if the specified output element has a finite domain
-	*/
+     * @return bool True if the specified output element has a finite domain
+     */
 	bool hasFiniteDomain(int outputElement) const
 	{ return finiteOutputDomain.count(outputElement) > 0; }
+    
+	/**
+     * @return bool True if the specified output element has a finite domain wrt. to the given input element
+     */
+	bool hasRelativeFiniteDomain(int outputElement, int inputElement) const
+	{ return relativeFiniteOutputDomain.count(std::pair<int, int>(outputElement, inputElement)) > 0; }
 
 	/**
 	* @return finite fiber

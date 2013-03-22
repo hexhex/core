@@ -161,8 +161,11 @@ private:
 	boost::unordered_set<IDAddress> necessaryExternalAtoms;							// external atoms which are necessary to establish domain-expansion safety
 	boost::unordered_set<std::pair<ID, VariableLocation> > boundedByExternals;				// variables bounded by externals, but not (yet) by ordinary atoms
 
+public:
 	Attribute getAttribute(ID eatomID, ID predicate, std::vector<ID> inputList, ID ruleID, bool inputAttribute, int argumentIndex);
 	Attribute getAttribute(ID predicate, int argumentIndex);
+
+private:
 	Node getNode(Attribute at);
 
 	// helper
@@ -181,6 +184,7 @@ public:
 	const boost::unordered_set<Attribute>& getDomainExpansionSafeAttributes();
 	const boost::unordered_set<VariableLocation>& getBoundedVariables();
 	void getReachableAttributes(Attribute start, std::set<Node>& output);
+    int getPredicateArity(ID predicate) const;
 
 private:
 	// initialization

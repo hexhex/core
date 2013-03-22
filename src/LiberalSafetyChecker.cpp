@@ -61,15 +61,15 @@ namespace{
 // Exploits semantic annotation "finiteness" of external atoms to ensure safety
 class FinitenessChecker : public LiberalSafetyPlugin{
 private:
-	bool firstRun;
+	bool dorun;
 public:
 	FinitenessChecker(LiberalSafetyChecker& lsc) : LiberalSafetyPlugin(lsc){
-		firstRun = true;
+		dorun = true;
 	}
 
 	void run(){
-		if (!firstRun) return;
-		firstRun = false;
+		if (!dorun) return;
+		dorun = false;
 		
 		// make output variables of external atoms bounded, if they are in a position with finite domain
 		BOOST_FOREACH (ID ruleID, lsc.getIdb()){
@@ -80,6 +80,7 @@ public:
 				if (b.isExternalAtom()){
 					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
 
+                    // finite domain
 					for (int i = 0; i < eatom.tuple.size(); ++i){
 						if (eatom.getExtSourceProperties().hasFiniteDomain(i)){
 							LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.tuple[i]);
@@ -89,6 +90,35 @@ public:
 							}
 						}
 					}
+                    
+                    // relative finite domain
+                    typedef std::pair<int, int> RelativeFinitePair;
+                    BOOST_FOREACH (RelativeFinitePair rfp, eatom.getExtSourceProperties().relativeFiniteOutputDomain){
+                        dorun = true;
+                        // check if the respective input parameter is safe in all attributes
+                        bool applies = false;
+                        if (eatom.pluginAtom->getInputType(rfp.first) == PluginAtom::CONSTANT){
+                            LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.inputs[rfp.second]);
+                            applies = lsc.getBoundedVariables().count(vl) > 0;
+                        }else{
+                            applies = true;
+                            for (int k = 0; k < lsc.getPredicateArity(eatom.inputs[rfp.second]); k++){
+                                if (lsc.getDomainExpansionSafeAttributes().count(lsc.getAttribute(eatom.inputs[rfp.second], k)) == 0){
+                                    applies = false;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // if yes, then the output is safe as well
+                        if (applies){
+                            LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.tuple[rfp.first]);
+                            if (lsc.getBoundedVariables().count(vl) == 0){
+                                DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because output element " << rfp.first << " of external atom " << b << " has a relative finite domain wrt. safe " << rfp.second);
+                                lsc.addExternallyBoundedVariable(b, vl);
+                            }
+                        }
+                    }
 				}
 			}
 		}
@@ -574,6 +604,10 @@ void LiberalSafetyChecker::getReachableAttributes(Attribute start, std::set<Libe
 					boost::identity_property_map(),
 					std::inserter(output, output.end()),
 					boost::on_discover_vertex()))));
+}
+
+int LiberalSafetyChecker::getPredicateArity(ID predicate) const{
+    return predicateArity.at(predicate);
 }
 
 void LiberalSafetyChecker::computeBuiltinInformationFlow(const Rule& rule, boost::unordered_map<ID, boost::unordered_set<ID> >& builtinflow){
