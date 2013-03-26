@@ -1,0 +1,17 @@
+% retrieve relevant part of the map
+start(1).
+end(9).
+activeedge(X, Y) :- node(X), &testReachable[edge, X](Y).
+node(X) :- start(X).
+node(X) :- end(X).
+node(Y) :- activeedge(X, Y).
+
+% compute path
+path(X, 0) :- start(X).
+:- path(X, N), path(Y, N), X != Y.
+path(Y, N) v npath(Y, N) :- node(Y), #int(N).
+:- path(X, N), path(Y, N2), N2 = N + 1, not activeedge(X, Y).
+:- #int(N), not existspath(N), existspath(N2), N2 = N + 1.
+existspath(N) :- path(X, N).
+lastnode(X) :- path(X, N), N2 = N + 1, not existspath(N2).
+:- end(Z), lastnode(Y), Z != Y.
