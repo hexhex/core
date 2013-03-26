@@ -1599,6 +1599,37 @@ public:
   }
 };
 
+class TestReachableAtom:
+  public PluginAtom
+{
+public:
+  TestReachableAtom():
+    PluginAtom("testReachable", true)
+  {
+    addInputPredicate();
+    addInputConstant();
+    setOutputArity(1);
+    
+    prop.relativeFiniteOutputDomain.insert(std::pair<int, int>(0, 0));
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+		bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+		while (en < en_end){
+			const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+			if (ogatom.tuple[1] == query.input[1]){
+				Tuple t;
+				t.push_back(ogatom.tuple[2]);
+				answer.get().push_back(t);
+			}
+			en++;
+		}
+  }
+};
+
 
 class TestFinalCallback:
 	public FinalCallback
@@ -1724,6 +1755,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestHashAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom2, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestReachableAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

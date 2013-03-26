@@ -43,10 +43,7 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
 	antimonotonicInputPredicates.insert(prop2.antimonotonicInputPredicates.begin(), prop2.antimonotonicInputPredicates.end());
 	predicateParameterNameIndependence.insert(prop2.predicateParameterNameIndependence.begin(), prop2.predicateParameterNameIndependence.end());
 	finiteOutputDomain.insert(prop2.finiteOutputDomain.begin(), prop2.finiteOutputDomain.end());
-//	BOOST_FOREACH (int i, prop2.monotonicInputPredicates) monotonicInputPredicates.insert(i);
-//	BOOST_FOREACH (int i, prop2.antimonotonicInputPredicates) antimonotonicInputPredicates.insert(i);
-//	BOOST_FOREACH (int i, prop2.predicateParameterNameIndependence) predicateParameterNameIndependence.insert(i);
-//	BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
+	relativeFiniteOutputDomain.insert(prop2.relativeFiniteOutputDomain.begin(), prop2.relativeFiniteOutputDomain.end());
 	functional |= prop2.functional;
 	functionalStart = functionalStart > prop2.functionalStart ? functionalStart : prop2.functionalStart;
 	atomlevellinear |= prop2.atomlevellinear;
