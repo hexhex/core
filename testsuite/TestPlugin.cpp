@@ -384,6 +384,53 @@ public:
 };
 
 
+class TestListSplitHalfAtom:
+  public PluginAtom
+{
+public:
+  TestListSplitHalfAtom():
+    PluginAtom("testListSplitHalf", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    setOutputArity(2);
+
+    prop.functional = true;
+    prop.wellorderingStrlen.insert(std::pair<int, int>(0, 0));
+    prop.wellorderingStrlen.insert(std::pair<int, int>(0, 1));
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	const std::string& str = registry->terms.getByID(query.input[0]).getUnquotedString();
+
+	int len = 0;
+	if (str.length() > 0) len++;
+	for (int i = 0; i < str.length(); i++){
+		if (str[i] == ';') len++;
+	}
+
+	int cnt = len / 2;
+
+	std::stringstream substr1, substr2;
+	int nr = 0;
+	for (int i = 0; i < str.length(); i++){
+		if (str[i] == ';'){
+			nr++;
+			if (nr == cnt) continue;
+		}
+		if (nr >= cnt) substr2 << str[i];
+		else substr1 << str[i];
+	}
+
+    Term t1(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + substr1.str() + "\"");
+    Term t2(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + substr2.str() + "\"");
+    Tuple tu;
+    tu.push_back(registry->storeTerm(t1));
+    tu.push_back(registry->storeTerm(t2));
+    answer.get().push_back(tu);
+  }
+};
+
 class TestListMergeAtom:
   public PluginAtom
 {
@@ -1802,6 +1849,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestListConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListLengthAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListSplitAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestListSplitHalfAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListMergeAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSubstrAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSmallerThanAtom, PluginPtrDeleter<PluginAtom>()));
