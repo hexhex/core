@@ -383,6 +383,80 @@ public:
   }
 };
 
+
+class TestListMergeAtom:
+  public PluginAtom
+{
+public:
+  TestListMergeAtom():
+    PluginAtom("testListMerge", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(1);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	const std::string& str1 = registry->terms.getByID(query.input[0]).getUnquotedString();
+	const std::string& str2 = registry->terms.getByID(query.input[1]).getUnquotedString();
+
+	std::string merged;
+
+	std::stringstream element1, element2;
+	int c1old = 0;
+	int c2old = 0;
+	int c1 = 0;
+	int c2 = 0;
+	while (true){
+		c1old = c1;
+		c2old = c2;
+	
+		// get next element from list 1
+		if (str1[c1] == ';') c1++;
+		element1.str("");
+		while (str1[c1] != ';' && str1[c1] != '\0'){
+			element1 << str1[c1];
+			c1++;
+		}
+
+		// get next element from list 2
+		if (str2[c2] == ';') c2++;
+		element2.str("");
+		while (str2[c2] != ';' && str2[c2] != '\0'){
+			element2 << str2[c2];
+			c2++;
+		}
+
+		if (element1.str().length() == 0 && element2.str().length() == 0) break;
+
+		// take the smaller element
+		if (merged.length() > 0) merged += ";";
+		
+		if (element2.str().length() == 0){
+			merged += element1.str();
+			c2 = c2old;
+		}else if (element1.str().length() == 0){
+			merged += element2.str();
+			c1 = c1old;
+		}else if(element1.str().compare(element2.str()) < 0){
+			merged += element1.str();
+			c2 = c2old;
+		}else{
+			merged += element2.str();
+			c1 = c1old;
+		}
+	}
+	
+    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + merged + "\"");
+    Tuple tu;
+    tu.push_back(registry->storeTerm(t));
+    answer.get().push_back(tu);
+  }
+};
+
 class TestSubstrAtom:
   public PluginAtom
 {
@@ -1728,6 +1802,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestListConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListLengthAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListSplitAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestListMergeAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSubstrAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSmallerThanAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestFirstAtom, PluginPtrDeleter<PluginAtom>()));

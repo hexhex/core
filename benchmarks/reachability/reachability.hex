@@ -1,6 +1,6 @@
 % retrieve relevant part of the map
 start(1).
-end(9).
+end(2).
 activeedge(X, Y) :- node(X), &testReachable[edge, X](Y).
 node(X) :- start(X).
 node(X) :- end(X).

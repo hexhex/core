@@ -1,0 +1,18 @@
+#maxint=5.
+list("y;c;d;e;f;x").
+
+% recursively split list in half
+sublist(List, Half1, Half2) :- list(List), &testListLength[List, 2](HalfLen), #int(HalfLen), &testListSplit[List, HalfLen](Half1, Half2).
+sublist(List, Half1, Half2) :- sublist(_, List, _), &testListLength[List, 2](HalfLen), #int(HalfLen), &testListSplit[List, HalfLen](Half1, Half2), Half1 != "", Half2 != "".
+sublist(List, Half1, Half2) :- sublist(_, _, List), &testListLength[List, 2](HalfLen), #int(HalfLen), &testListSplit[List, HalfLen](Half1, Half2), Half1 != "", Half2 != "".
+
+% singular lists are automatically sorted
+sorted(List, List) :- sublist(_, List, _), &testListLength[List, 1](1).
+sorted(List, List) :- sublist(_, _, List), &testListLength[List, 1](1).
+
+% merge sublists recursively
+sorted(List, Lists) :- sublist(List, Half1, Half2), sorted(Half1, Half1s), sorted(Half2, Half2s), &testListMerge[Half1s, Half2s](Lists)<finitedomain 0>.
+output(Finals) :- list(Final), sorted(Final, Finals).
+
+%len(Len) :- list(List), &testListLength[List, 1](Len).
+%result(R1, R2) :- list(List), &testListSplit[List, 2](R1, R2).
