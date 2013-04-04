@@ -272,6 +272,40 @@ public:
 };
 #endif
 
+class TestConcatAllAtom:
+  public PluginAtom
+{
+public:
+  TestConcatAllAtom():
+    PluginAtom("testConcatAll", false) // monotonic, as there is no predicate input anyway
+  {
+    addInputPredicate();
+    setOutputArity(1);
+
+    prop.functional = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    std::stringstream s;
+
+    bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+    bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+    while (en < en_end){
+      const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en);
+      BOOST_FOREACH (ID t, oatom.tuple){
+      	s << registry->terms.getByID(t).symbol;
+      }
+      en++;
+    }
+
+	Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + s.str() + "\"");
+	Tuple tu;
+    tu.push_back(registry->storeTerm(resultterm));
+    answer.get().push_back(tu);
+  }
+};
+
 class TestListConcatAtom:
   public PluginAtom
 {
@@ -1846,6 +1880,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestConcatAllAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListLengthAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListSplitAtom, PluginPtrDeleter<PluginAtom>()));
