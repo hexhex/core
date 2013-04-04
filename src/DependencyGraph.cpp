@@ -507,6 +507,10 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
           groundedInputVariableSet.insert(*itvar);
           // continue remembering which variables we already grounded
         }
+        
+        // @TODO: It should be possible that we add _all_ ordinary nonground atoms, even if they are not necessary.
+        // The more atoms we add, the more we constraint the input to external atoms and possibly avoid unnecessary evaluations.
+//        if (itat->isOrdinaryNongroundAtom() && !addedThis) auxBody.push_back(*itat);
       } // iterate over other body atom's arguments
     }
     else if( itat->isAggregateAtom() )

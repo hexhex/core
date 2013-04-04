@@ -474,65 +474,72 @@ public:
   {
     addInputConstant();
     addInputConstant();
-    setOutputArity(1);
+    addInputConstant();
+    setOutputArity(2);
 
     prop.functional = true;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
-	const std::string& str1 = registry->terms.getByID(query.input[0]).getUnquotedString();
-	const std::string& str2 = registry->terms.getByID(query.input[1]).getUnquotedString();
+	const std::string& str1 = registry->terms.getByID(query.input[1]).getUnquotedString();
+	const std::string& str2 = registry->terms.getByID(query.input[2]).getUnquotedString();
 
-	std::string merged;
-
-	std::stringstream element1, element2;
-	int c1old = 0;
-	int c2old = 0;
+	std::stringstream element1, element2, merged;
 	int c1 = 0;
 	int c2 = 0;
-	while (true){
-		c1old = c1;
-		c2old = c2;
 	
-		// get next element from list 1
+	std::vector<std::string> list1, list2;
+	
+	// extract list 1
+	while(str1[c1] != '\0'){
 		if (str1[c1] == ';') c1++;
 		element1.str("");
 		while (str1[c1] != ';' && str1[c1] != '\0'){
 			element1 << str1[c1];
 			c1++;
 		}
-
-		// get next element from list 2
+		list1.push_back(element1.str());
+	}
+	
+	// extract list 2
+	while(str2[c2] != '\0'){
 		if (str2[c2] == ';') c2++;
 		element2.str("");
 		while (str2[c2] != ';' && str2[c2] != '\0'){
 			element2 << str2[c2];
 			c2++;
 		}
-
-		if (element1.str().length() == 0 && element2.str().length() == 0) break;
-
-		// take the smaller element
-		if (merged.length() > 0) merged += ";";
-		
-		if (element2.str().length() == 0){
-			merged += element1.str();
-			c2 = c2old;
-		}else if (element1.str().length() == 0){
-			merged += element2.str();
-			c1 = c1old;
-		}else if(element1.str().compare(element2.str()) < 0){
-			merged += element1.str();
-			c2 = c2old;
-		}else{
-			merged += element2.str();
-			c1 = c1old;
-		}
+		list2.push_back(element2.str());
 	}
 	
-    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + merged + "\"");
+	// merge
+	c1 = 0;
+	c2 = 0;
+	while (c1 < list1.size() || c2 < list2.size()){
+		if (c1 > 0 || c2 > 0) merged << ";";
+		if (c1 == list1.size()){
+			merged << list2[c2];
+			c2++;
+		}
+		else if (c2 == list2.size()){
+			merged << list1[c1];
+			c1++;
+		}
+		else if (list1[c1].compare(list2[c2]) < 0){
+			merged << list1[c1];
+			c1++;
+		}
+		else{
+			assert(list1[c1].compare(list2[c2]) >= 0);
+			merged << list2[c2];
+			c2++;
+		}
+	}
+
+	Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + merged.str() + "\"");
     Tuple tu;
+    tu.push_back(query.input[0]);
     tu.push_back(registry->storeTerm(t));
     answer.get().push_back(tu);
   }
