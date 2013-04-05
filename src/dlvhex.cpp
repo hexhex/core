@@ -1325,6 +1325,9 @@ void processOptionsPrePlugin(
 	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
 		LOG(WARNING, "Model caching (modelqueuesize) is only compatible with clasp backend");
 	}
+	if (pctx.config.getOption("GenuineSolver")){
+		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
+	}
 
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);
