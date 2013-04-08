@@ -1,0 +1,20 @@
+domain(D) :- list(L), &testListDomain[L](D).
+
+% recursively split list in half
+sublist(List, Half1, Half2) :- list(List), &testListSplitHalf[List](Half1, Half2), domain(Half1), domain(Half2).
+sublist(List, Half1, Half2) :- sublist(_, List, _), &testListSplitHalf[List](Half1, Half2), Half1 != "", Half2 != "", domain(Half1), domain(Half2).
+sublist(List, Half1, Half2) :- sublist(_, _, List), &testListSplitHalf[List](Half1, Half2), Half1 != "", Half2 != "", domain(Half1), domain(Half2).
+
+% singular lists are automatically sorted
+%singularList(List) :- sublist(List, _, _), &testListLength[List, 1](1).
+%singularList(List) :- sublist(_, List, _), &testListLength[List, 1](1).
+%singularList(List) :- sublist(_, _, List), &testListLength[List, 1](1).
+%sorted(List, List) :- singularList(List).
+
+sorted(List, List) :- sublist(List, _, _), &testListLength[List, 1](1).
+sorted(List, List) :- sublist(_, List, _), &testListLength[List, 1](1).
+sorted(List, List) :- sublist(_, _, List), &testListLength[List, 1](1).
+
+% merge sublists recursively
+sorted(List, Lists) :- sublist(List, Half1, Half2), sorted(Half1, Half1s), sorted(Half2, Half2s), &testListMerge[List, Half1s, Half2s](List, Lists), domain(Lists).
+output(Finals) :- list(Final), sorted(Final, Finals).
