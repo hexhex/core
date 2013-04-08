@@ -306,6 +306,76 @@ public:
   }
 };
 
+class TestListDomainAtom:
+  public PluginAtom
+{
+public:
+  TestListDomainAtom():
+    PluginAtom("testListDomain", true) // monotonic, as there is no predicate input anyway
+  {
+    addInputTuple();
+    setOutputArity(1);
+
+    prop.functional = true;
+  }
+
+  std::vector<std::string> permute(std::vector<std::string> input){
+  
+  	if (input.size() > 0){
+ 		std::vector<std::string> res;
+	  	for (int i = 0; i < input.size(); ++i){
+	  		DBGLOG(DBG, "Choosing " << i);
+	  		std::vector<std::string> i2 = input;
+  			i2.erase(i2.begin() + i);
+  			BOOST_FOREACH (std::string subperm, permute(i2)){
+			  	std::stringstream ss;
+		  		ss << input[i] << (subperm.length() > 0 ? ";" : "") << subperm;
+		  		DBGLOG(DBG, "Permutation: " << ss.str());
+  				res.push_back(ss.str());
+
+				ss.str("");
+  		  		ss << subperm;
+		  		DBGLOG(DBG, "Permutation: " << ss.str());
+  				res.push_back(ss.str());
+			}
+  		}
+		return res;
+	}else{
+		input.push_back("");
+		return input;
+	}
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	const std::string& str = registry->terms.getByID(query.input[0]).getUnquotedString();
+
+	// extract the list elements
+	DBGLOG(DBG, "Computing elements in " << str);
+	std::vector<std::string> elements;
+	std::stringstream element;
+	for (int i = 0; i <= str.length(); i++){
+		if (str[i] == ';' || str[i] == '\0'){
+			DBGLOG(DBG, "Delimiter detected; element: " << element.str());
+			if (element.str().length() > 0) elements.push_back(element.str());
+			element.str("");
+		}else{
+			DBGLOG(DBG, "Consuming character " << str[i]);
+			element << str[i];
+		}
+	}
+
+	// compute all permutations and return them
+	DBGLOG(DBG, "Computing permutations over " << elements.size() << " elements");
+	BOOST_FOREACH (std::string perm, permute(elements)){
+      Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + perm + "\"");
+      Tuple tu;
+      tu.push_back(registry->storeTerm(t));
+      answer.get().push_back(tu);
+	}
+  }
+};
+
 class TestListConcatAtom:
   public PluginAtom
 {
@@ -1888,6 +1958,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAllAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestListDomainAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListLengthAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestListSplitAtom, PluginPtrDeleter<PluginAtom>()));
