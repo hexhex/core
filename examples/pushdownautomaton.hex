@@ -1,5 +1,5 @@
 % This example simulates a push-down automaton (stack machine) using external atoms.
-% The program is a proof of concept for the new safety criteria (--domainexpansionsafety).
+% The program is a proof of concept for the new safety criteria (--liberalsafety).
 
 % input word
 input("abc").
