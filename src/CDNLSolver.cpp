@@ -745,7 +745,7 @@ void CDNLSolver::flipDecisionLiteral(){
 
 InterpretationPtr CDNLSolver::getNextModel(){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolver, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 
 	Nogood violatedNogood;
 

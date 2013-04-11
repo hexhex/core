@@ -432,8 +432,6 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 
 bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationConstPtr modelCandidate){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-
 	// did we already verify during model construction or do we have to do the verification now?
 	bool compatible;
 	int ngCount;
