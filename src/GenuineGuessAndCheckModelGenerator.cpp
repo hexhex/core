@@ -241,7 +241,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
 	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX grounder time");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
 		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
     }
@@ -309,7 +309,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
 	// now we have postprocessed input in postprocessedInput
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "genuine guess and check loop");
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 
 	InterpretationPtr modelCandidate;
 	do
@@ -433,6 +432,8 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 
 bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationConstPtr modelCandidate){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+
 	// did we already verify during model construction or do we have to do the verification now?
 	bool compatible;
 	int ngCount;
@@ -464,6 +465,8 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 }
 
 bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatibleSet){
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 
 	// which semantics?
 	if (factory.ctx.config.getOption("WellJustified")){

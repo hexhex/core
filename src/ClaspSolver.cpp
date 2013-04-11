@@ -77,6 +77,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
 
 	// compute model
@@ -264,6 +265,7 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
 
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
 
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
@@ -551,6 +553,7 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp applyRDLU");
 
@@ -762,6 +765,7 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");
 
@@ -1160,6 +1164,7 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 
 void ClaspSolver::runClasp(){
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 
 	DBGLOG(DBG, "ClaspThread: Initialization");
 	if (strictSingleThreaded){
