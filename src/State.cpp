@@ -824,6 +824,8 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("BenchmarkController lifetime", "time to first model"));
   ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Grounder time", "Grounder time to first model"));
   ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Solver time", "Solver time to first model"));
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("HEX grounder time", "HEX grounder time to first model"));
+  ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("HEX solver time", "HEX solver time to first model"));
   ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("PluginAtom retrieve", "PluginAtom retr to first model"));
   ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Candidate compatible sets", "CandCompat sets to first model"));
 

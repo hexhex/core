@@ -141,8 +141,8 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 	const OrdinaryASPProgram* gprog;
 	GenuineGrounderPtr grounder;
 	{
-		grounder = GenuineGrounder::getInstance(ctx, p);
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+		grounder = GenuineGrounder::getInstance(ctx, p);
 		gprog = &grounder->getGroundProgram();
 	}
 	

@@ -649,6 +649,7 @@ std::string CDNLSolver::getStatistics(){
 CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1){
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	resizeVectors();
 	initListOfAllFacts();
 
@@ -744,6 +745,7 @@ void CDNLSolver::flipDecisionLiteral(){
 
 InterpretationPtr CDNLSolver::getNextModel(){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolver, "HEX solver time");
 
 	Nogood violatedNogood;
 
