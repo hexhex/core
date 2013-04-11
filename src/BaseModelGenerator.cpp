@@ -829,6 +829,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
   RegistryPtr reg = ctx.registry();
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX grounder time");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidadpacdep,"addDomainPredicatesAndCreateDomainExplorationProgram");
 
   std::vector<ID> idbWithDomainPredicates;
@@ -950,7 +951,8 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 	RegistryPtr reg = ctx.registry();
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPredicates");
-	
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX grounder time");
+
 	InterpretationPtr domintr = InterpretationPtr(new Interpretation(reg));
 	domintr->getStorage() |= edb->getStorage();
 

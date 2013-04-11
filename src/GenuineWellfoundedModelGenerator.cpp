@@ -136,6 +136,8 @@ GenuineWellfoundedModelGenerator::~GenuineWellfoundedModelGenerator(){
 GenuineWellfoundedModelGenerator::InterpretationPtr
 GenuineWellfoundedModelGenerator::generateNextModel()
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+
 	RegistryPtr reg = factory.ctx.registry();
 
 	if( !firstcall ){
@@ -166,6 +168,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 		// manage outer external atoms
 		if( !factory.outerEatoms.empty() )
 		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 			// augment input with result of external atom evaluation
 			// use newint as input and as output interpretation
 			IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
@@ -212,7 +215,10 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 
 			// evaluate inner external atoms
 			IntegrateExternalAnswerIntoInterpretationCB cb(dst);
-			evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
+			{
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+				evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
+			}
 			DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
 
 			// solve program
@@ -247,11 +253,14 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			// break if they are equal (i.e., if the fixpoint is reached)
 			// error if new one is smaller (i.e., fixpoint is not allowed)
 			// (TODO do this error check, and do it only in debug mode)
-			int cmpresult = dst->getStorage().compare(src->getStorage());
-			if( cmpresult == 0 )
 			{
-				DBGLOG(DBG,"reached fixpoint");
-				break;
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+				int cmpresult = dst->getStorage().compare(src->getStorage());
+				if( cmpresult == 0 )
+				{
+					DBGLOG(DBG,"reached fixpoint");
+					break;
+				}
 			}
 
 			// switch interpretations
@@ -274,6 +283,7 @@ reg->freezeNullTerms(ints[1]);
 			DBGLOG(DBG,"leaving loop with result 'inconsistent'");
 			return InterpretationPtr();
 		}else{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 			// does not matter which one we take, they are equal
 			InterpretationPtr result = ints[0];
 			DBGLOG(DBG,"leaving loop with result " << *result);

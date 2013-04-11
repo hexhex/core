@@ -312,6 +312,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	{
 		LOG(DBG,"asking for next model");
 		modelCandidate = solver->getNextModel();
+
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 		if( !modelCandidate )
 		{
