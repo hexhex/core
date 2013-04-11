@@ -1862,6 +1862,58 @@ public:
   }
 };
 
+class TestDLSimulatorAtom:
+  public PluginAtom
+{
+public:
+  TestDLSimulatorAtom():
+    PluginAtom("testDLSimulator", false)
+  {
+    addInputConstant();		// mode: 1=concept retrieval, 0=consistency check
+    addInputConstant();		// domain size: all even domain elements are non-Fliers, all odd domain elements are Fliers
+    addInputPredicate();	// plus-concept Flier
+    setOutputArity(1);		// \neg Flier
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+		if (query.input[0].address == 0){
+			// consistency check: check if an odd element is in plus-concept; if yes, then we have inconsistency
+			bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+			while (en < en_end){
+				const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+				if (ogatom.tuple[1].address % 2 == 0) return;	// inconsistent
+				en++;
+			}
+			Tuple t;
+			t.push_back(ID::termFromInteger(0));
+			answer.get().push_back(t);	// consistent
+		}else{
+			// concept \neg C query
+
+			// add all even elements up to the specified size; if inconsistent, then add also all odd elements
+			bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+			bool inc = false;
+			while (en < en_end){
+				const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+				if (ogatom.tuple[1].address % 2 == 0) inc = true;	// inconsistent
+				en++;
+			}
+
+			for (int i = 0; i <= query.input[1].address; ++i){
+				if (i % 2 == 0 || inc){
+					Tuple t;
+					t.push_back(ID::termFromInteger(i));
+					answer.get().push_back(t);
+				}
+			}
+		}
+  }
+};
 
 class TestFinalCallback:
 	public FinalCallback
@@ -1992,6 +2044,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom2, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestReachableAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestDLSimulatorAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
