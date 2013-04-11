@@ -240,8 +240,11 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	// append gidb to xidb
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
-	grounder = GenuineGrounder::getInstance(factory.ctx, program);
-        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX grounder time");
+		grounder = GenuineGrounder::getInstance(factory.ctx, program);
+		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+    }
 	solver = GenuineGroundSolver::getInstance(
 		factory.ctx, annotatedGroundProgram,
 		// no interleaved threading because guess and check MG will likely not profit from it
