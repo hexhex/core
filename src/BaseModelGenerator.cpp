@@ -844,6 +844,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
       DBGLOG(DBG,"not processing rule " << ruleid << " (does not contain extatoms)");
       idbWithDomainPredicates.push_back(ruleid);
       deidb.push_back(ruleid);
+      continue;
     }
 
     // add domain predicates for all external atoms which are relevant for de-safety
