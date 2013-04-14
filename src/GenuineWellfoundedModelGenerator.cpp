@@ -240,7 +240,10 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 					throw FatalError("got more than one model in Wellfounded model generator -> use other model generator!");
 
 				// cheap exchange -> thisret1 will then be free'd
-				dst->getStorage() = model->getStorage();
+				{
+					DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+					dst->getStorage() = model->getStorage();
+				}
 				DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
 				DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 			}
