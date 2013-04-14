@@ -53,6 +53,7 @@ InterpretationPtr InternalGroundDASPSolver::getNextModel(){
 
 	InterpretationPtr model = InternalGroundASPSolver::getNextModel();
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 
 	bool ufsFound = true;
 	while (model && ufsFound){

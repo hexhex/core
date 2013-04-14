@@ -77,8 +77,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
+//	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidhexsolve);
 
 	// compute model
 	InterpretationPtr model;
@@ -265,8 +266,9 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
 
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
+//	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidhexsolve);
 
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
 		// because only in this case we know what MainThread is doing and which dlvhex data structures it accesses.
@@ -553,8 +555,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+//	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidhexsolve);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp applyRDLU");
 
 	// this both must be done (in that order) if a valid interpretation is required
@@ -765,8 +768,9 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER(sidhexsolve, "HEX solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+//	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidhexsolve);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");
 
 	// in this method we must not add nogoods which cause no conflict on the current decision level!
@@ -1164,7 +1168,7 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 
 void ClaspSolver::runClasp(){
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER(sidhexsolve, "HEX solver time");
 
 	DBGLOG(DBG, "ClaspThread: Initialization");
 	if (strictSingleThreaded){
@@ -1174,13 +1178,17 @@ void ClaspSolver::runClasp(){
 
 	try{
 		DLVHEX_BENCHMARK_START(sidsolvertime);
+		DLVHEX_BENCHMARK_START(sidhexsolve);
 		Clasp::solve(claspInstance, claspConfig.params, assumptions);
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
+		DLVHEX_BENCHMARK_STOP(sidhexsolve);
 	}catch(ClaspSolver::ClaspTermination){
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
+		DLVHEX_BENCHMARK_STOP(sidhexsolve);
 		DBGLOG(DBG, "Clasp was requested to terminate before all models were enumerated");
 	}catch(...){
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
+		DLVHEX_BENCHMARK_STOP(sidhexsolve);
 		throw;
 	}
 

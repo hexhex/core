@@ -243,6 +243,15 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
+		
+		/*
+		RawPrinter rp(std::cout, factory.ctx.registry());
+		std::cout << "nonground: " << std::endl;
+		BOOST_FOREACH (ID rid, program.idb) rp.print(rid);
+		std::cout << "ground: " << std::endl;
+		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb) rp.print(rid);
+		*/
+
 		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
     }
 	solver = GenuineGroundSolver::getInstance(
@@ -432,8 +441,6 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 
 bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationConstPtr modelCandidate){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-
 	// did we already verify during model construction or do we have to do the verification now?
 	bool compatible;
 	int ngCount;
@@ -465,8 +472,6 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 }
 
 bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatibleSet){
-
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 
 	// which semantics?
 	if (factory.ctx.config.getOption("WellJustified")){

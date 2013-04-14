@@ -136,8 +136,6 @@ GenuineWellfoundedModelGenerator::~GenuineWellfoundedModelGenerator(){
 GenuineWellfoundedModelGenerator::InterpretationPtr
 GenuineWellfoundedModelGenerator::generateNextModel()
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-
 	RegistryPtr reg = factory.ctx.registry();
 
 	if( !firstcall ){

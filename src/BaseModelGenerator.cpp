@@ -829,7 +829,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
   RegistryPtr reg = ctx.registry();
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX grounder time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidadpacdep,"addDomainPredicatesAndCreateDomainExplorationProgram");
 
   std::vector<ID> idbWithDomainPredicates;
@@ -844,6 +844,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
       DBGLOG(DBG,"not processing rule " << ruleid << " (does not contain extatoms)");
       idbWithDomainPredicates.push_back(ruleid);
       deidb.push_back(ruleid);
+      continue;
     }
 
     // add domain predicates for all external atoms which are relevant for de-safety
@@ -951,7 +952,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 	RegistryPtr reg = ctx.registry();
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPredicates");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX grounder time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 
 	InterpretationPtr domintr = InterpretationPtr(new Interpretation(reg));
 	domintr->getStorage() |= edb->getStorage();
