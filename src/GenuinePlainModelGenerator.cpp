@@ -151,6 +151,8 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	// manage outer external atoms
 	if( !factory.eatoms.empty() )
 	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+
 		// augment input with result of external atom evaluation
 		// use newint as input and as output interpretation
 		IntegrateExternalAnswerIntoInterpretationCB cb(newint);
