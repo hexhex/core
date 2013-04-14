@@ -52,7 +52,7 @@ BenchmarkController::Stat::Stat(const std::string& name):
 
 // init, display start of benchmarking
 BenchmarkController::BenchmarkController():
-  myID(0), maxID(0), instrumentations(), name2id(), output(&(std::cerr)), printSkip(0)
+  myID(0), maxID(0), instrumentations(), name2id(), output(&(std::cerr)), printSkip(0), sus(0)
 {
   myID = getInstrumentationID("BenchmarkController lifetime");
   start(myID);
@@ -119,8 +119,19 @@ ID BenchmarkController::getInstrumentationID(const std::string& name)
   }
 }
 
+void BenchmarkController::suspend(){
+  boost::mutex::scoped_lock lock(mutex);
+  sus++;
+}
+
+void BenchmarkController::resume(){
+  boost::mutex::scoped_lock lock(mutex);
+  sus--;
+}
+
 std::string BenchmarkController::count(const std::string& name, int width) const
 {
+  if (sus > 0) return "-";
   std::map<std::string, ID>::const_iterator it = name2id.find(name);
   if( it == name2id.end() )
     return "-";
@@ -132,6 +143,7 @@ std::string BenchmarkController::count(const std::string& name, int width) const
 
 std::string BenchmarkController::duration(const std::string& name, int width) const
 {
+  if (sus > 0) return "-";
   std::map<std::string, ID>::const_iterator it = name2id.find(name);
   if( it == name2id.end() )
     return "-";
@@ -145,6 +157,7 @@ std::string BenchmarkController::duration(const std::string& name, int width) co
 // e.g. do this for several interesting benchmarks at first model
 void BenchmarkController::snapshot(ID id, ID intoID)
 {
+  if (sus > 0) return;
 	{
 	  boost::mutex::scoped_lock lock(mutex);
 	  Stat& st = instrumentations[id];
@@ -164,6 +177,7 @@ void BenchmarkController::snapshot(ID id, ID intoID)
 
 void BenchmarkController::snapshot(const std::string& fromstr, const std::string& tostr)
 {
+  if (sus > 0) return;
 	ID idfrom = getInstrumentationID(fromstr);
 	ID idto = getInstrumentationID(tostr);
 	snapshot(idfrom, idto);

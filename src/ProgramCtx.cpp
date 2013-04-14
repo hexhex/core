@@ -37,6 +37,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/PluginContainer.h"
@@ -210,8 +211,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationCons
 	pc.idb = idb;
 	pc.edb = InterpretationPtr(new Interpretation(*edb));
 	pc.currentOptimum.clear();
-	pc.config.setOption("NestedHEX", 1);
-
 	return evaluateSubprogram(pc, false);
 }
 
@@ -222,7 +221,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
 	pc.currentOptimum.clear();
 	pc.config.setOption("NumberOfModels",0);
-	pc.config.setOption("NestedHEX", 1);
 	if( !!addFacts )
 		pc.edb->getStorage() |= addFacts->getStorage();
 	pc.inputProvider = ip;
@@ -233,7 +231,12 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bool parse){
 
+	benchmark::BenchmarkController& ctr =
+			benchmark::BenchmarkController::Instance();
+	ctr.suspend();
+
 	DBGLOG(DBG, "Resetting context");
+	pc.config.setOption("NestedHEX", 1);
 	pc.state.reset();
 	pc.modelBuilder.reset();
 	pc.parser.reset();
@@ -291,6 +294,8 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	BOOST_FOREACH (InterpretationPtr intr, spasc->answersets){
 		result.push_back(intr);
 	}
+
+	ctr.resume();
 
 	return result;
 }

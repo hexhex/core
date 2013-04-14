@@ -426,6 +426,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
 	pctx.config.setOption("UseConstantSpace", 0); // see --help
 	pctx.config.setOption("NestedHEX", 0);
+	pctx.config.setOption("ClaspForceSingleThreaded", 0);
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -721,6 +722,7 @@ void processOptionsPrePlugin(
     { "dumpstats", no_argument, 0, 37 },
     { "iauxinaux", no_argument, 0, 38 },
     { "constspace", no_argument, 0, 39 },
+		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1313,6 +1315,9 @@ void processOptionsPrePlugin(
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
 			break;
+	case 40:
+	  pctx.config.setOption("ClaspForceSingleThreaded", 1);
+	  break;
 		}
 	}
 

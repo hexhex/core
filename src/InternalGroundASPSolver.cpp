@@ -843,7 +843,6 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	reg = ctx.registry();
 
 	resizeVectors();
@@ -903,7 +902,6 @@ void InternalGroundASPSolver::setOptimum(std::vector<int>& optimum){
 
 InterpretationPtr InternalGroundASPSolver::getNextModel(){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	Nogood violatedNogood;
 
 	if (!firstmodel && complete()){

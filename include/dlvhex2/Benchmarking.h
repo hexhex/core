@@ -168,6 +168,7 @@ public:
 
     Stat(const std::string& name);
   };
+  int sus;
 
 
 public:
@@ -219,6 +220,10 @@ public:
   // 
   // record measured things
   //
+  
+  // stop and resume benchmarking
+  void suspend();
+  void resume();
   
   // start timer
   inline void start(ID id); // inline for performance
@@ -342,6 +347,7 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
 void BenchmarkController::start(ID id)
 {
   boost::mutex::scoped_lock lock(mutex);
+  if (sus > 0) return;
   Stat& st = instrumentations[id];
   if( !st.running )
   {
@@ -354,6 +360,7 @@ void BenchmarkController::start(ID id)
 // stop and record elapsed time, print stats
 void BenchmarkController::stop(ID id, bool count)
 {
+  if (sus > 0) return;
   boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
@@ -374,6 +381,7 @@ void BenchmarkController::stop(ID id, bool count)
 // stop and do not record, handle non-started id's gracefully
 void BenchmarkController::invalidate(ID id)
 {
+  if (sus > 0) return;
   boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
@@ -385,6 +393,7 @@ void BenchmarkController::invalidate(ID id)
 // inline for performance
 void BenchmarkController::count(ID id, Count increment)
 {
+  if (sus > 0) return;
   boost::mutex::scoped_lock lock(mutex);
   Stat& s = instrumentations[id];
   s.count += increment;
