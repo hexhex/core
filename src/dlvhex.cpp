@@ -425,6 +425,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ClaspDeferMaxTMilliseconds",1000);
 	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
 	pctx.config.setOption("UseConstantSpace", 0); // see --help
+	pctx.config.setOption("NestedHEX", 0);
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default

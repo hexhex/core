@@ -210,6 +210,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationCons
 	pc.idb = idb;
 	pc.edb = InterpretationPtr(new Interpretation(*edb));
 	pc.currentOptimum.clear();
+	pc.config.setOption("NestedHEX", 1);
 
 	return evaluateSubprogram(pc, false);
 }
@@ -221,6 +222,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
 	pc.currentOptimum.clear();
 	pc.config.setOption("NumberOfModels",0);
+	pc.config.setOption("NestedHEX", 1);
 	if( !!addFacts )
 		pc.edb->getStorage() |= addFacts->getStorage();
 	pc.inputProvider = ip;
