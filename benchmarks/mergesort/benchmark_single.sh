@@ -39,7 +39,7 @@ do
 		groundertime="---"
 		solvertime="---"
 	fi
-	echo -ne $output $groundertime $solvertime
+	echo -ne "$output $groundertime $solvertime "
 	let i=i+1
 done
 echo -e -ne "\n"
