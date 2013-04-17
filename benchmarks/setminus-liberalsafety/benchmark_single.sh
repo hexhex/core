@@ -21,7 +21,7 @@ done
 echo $header
 
 # do benchmark
-echo -ne "$instance "
+echo -ne "$instance"
 
 # write HEX program
 prog="
@@ -61,7 +61,7 @@ do
 		groundertime="---"
 		solvertime="---"
 	fi
-	echo -ne "$output $groundertime $solvertime "
+	echo -ne "$output $groundertime $solvertime"
 	let i=i+1
 done
 echo -e -ne "\n"

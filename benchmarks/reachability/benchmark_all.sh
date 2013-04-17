@@ -7,7 +7,7 @@ else
 fi
 
 cd instances
-for instance in *.hex
+for instance in *.graph
 do
 	echo "
 		Executable = ../benchmark_single.sh
