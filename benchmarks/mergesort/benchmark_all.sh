@@ -6,10 +6,11 @@ else
 	to=$1
 fi
 
-for (( instance=1; instance<=20; instance++ ))
+cd instances
+for instance in *.hex
 do
 	echo "
-		Executable = ./benchmark_single.sh
+		Executable = ../benchmark_single.sh
 		Universe = vanilla
 		output = $instance.out
 		error = $instance.error
