@@ -1,10 +1,6 @@
 # $1: timeout
+
 if [ $# -le 0 ]; then
-	confstr="--extlearn --flpcheck=aufs prog$instance.hex;--extlearn --flpcheck=aufs --liberalsafety prognd$instance.hex"
-else
-	confstr=$1
-fi
-if [ $# -le 1 ]; then
 	to=300
 else
 	to=$2
@@ -25,7 +21,7 @@ do
 
 		# queue
 		request_cpus = 1 
-		Arguments = $PATH $LD_LIBRARY_PATH $instance $confstr $to
+		Arguments = $PATH $LD_LIBRARY_PATH $instance $to
 		Queue 1
 	     " > p.job
 	condor_submit p.job

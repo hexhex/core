@@ -5,8 +5,9 @@
 export PATH=$1
 export LD_LIBRARY_PATH=$2
 instance=$3
-confstr=$4
-to=$5
+to=$4
+
+confstr="--extlearn --flpcheck=aufs prog$instance.hex;--extlearn --flpcheck=aufs --liberalsafety prognd$instance.hex"
 
 # split configurations
 IFS=';' read -ra confs <<< "$confstr"
