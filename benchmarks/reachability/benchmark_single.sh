@@ -7,7 +7,7 @@ export LD_LIBRARY_PATH=$2
 instance=$3
 to=$4
 
-confstr="--extlearn --flpcheck=aufs ../reachability_strongsafety.hex $instance;--extlearn --flpcheck=aufs --liberalsafety ../reachability.hex $instance"
+confstr="--extlearn --flpcheck=aufs ../reachability_strongsafety.hex $instance -n=1;--extlearn --flpcheck=aufs --liberalsafety ../reachability.hex $instance -n=1"
 
 # split configurations
 IFS=';' read -ra confs <<< "$confstr"
