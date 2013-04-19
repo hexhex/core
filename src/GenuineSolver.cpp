@@ -145,7 +145,8 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 		grounder = GenuineGrounder::getInstance(ctx, p);
 		gprog = &grounder->getGroundProgram();
 	}
-	
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, interleavedThreading, minCheck);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
