@@ -60,18 +60,73 @@ Term::Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg): kind
 
 	symbol = ss.str();
 }
-/*
+
+// restores the hierarchical structure of a term from a string representation
 void Term::analyzeTerm(RegistryPtr reg){
 
-	// read until end of string or unquoted '('
+	// get token: function name and arguments
 	bool quoted = false;
-	for (int pos = 0; pos < symbol.length(); ++pos){
+	bool primitive = true;
+	int nestedcount = 0;
+	int start = 0;
+	int end = symbol.length();
+	std::vector<std::string> tuple;
+	for (int pos = 0; pos < end; ++pos){
 		if (symbol[pos] == '\"') quoted = !quoted;
-		if (symbol[pos] == '\0' || (symbol[pos] == '(' && !quoted)){
-			function = symbol.substr(0, pos);
+		if (symbol[pos] == '(' && !quoted && nestedcount == 0){
+			primitive = false;
+			tuple.push_back(symbol.substr(start, pos - start));
+			start = pos + 1;
+			end--;
+			nestedcount++;
+		}
+		if (symbol[pos] == ')' && !quoted){
+			nestedcount--;
+		}
+		if (symbol[pos] == ',' && !quoted && nestedcount == 0){
+			tuple.push_back(symbol.substr(start, pos - start));
+			start = pos + 1;
+		}
+		if (pos == end - 1){
+			tuple.push_back(symbol.substr(start, pos - start + 1));
 		}
 	}
+#ifndef NDEBUG
+	{
+		std::stringstream ss;
+		ss << "Term tuple: ";
+		bool first = true;
+		BOOST_FOREACH (std::string str, tuple){
+			if (!first) ss << ", ";
+			first = false;
+			ss << str;
+		}
+		DBGLOG(DBG, ss.str());
+	}
+#endif
 
+	// convert tuple of strings to terms
+	arguments.clear();
+	if (primitive){
+		arguments.push_back(ID_FAIL);
+		if (islower(symbol[0])) kind |= ID::SUBKIND_TERM_CONSTANT;
+		if (isupper(symbol[0])) kind |= ID::SUBKIND_TERM_VARIABLE;
+	}else{
+		BOOST_FOREACH (std::string str, tuple){
+			Term t(ID::MAINKIND_TERM, str);
+			t.analyzeTerm(reg);
+			if (t.arguments[0] == ID_FAIL){
+				if (islower(t.symbol[0])) t.kind |= ID::SUBKIND_TERM_CONSTANT;
+				if (isupper(t.symbol[0])) t.kind |= ID::SUBKIND_TERM_VARIABLE;
+			}else{
+				t.kind |= ID::SUBKIND_TERM_NESTED;
+			}
+			ID tid = reg->terms.getIDByString(t.symbol);
+			if (tid == ID_FAIL) tid = reg->terms.storeAndGetID(t);
+			arguments.push_back(tid);
+		}
+		kind |= ID::SUBKIND_TERM_NESTED;
+	}
 }
-*/
+
 DLVHEX_NAMESPACE_END

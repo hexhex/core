@@ -88,6 +88,9 @@ private ostream_printable<Term>
 			return symbol.substr(1, symbol.length()-2);
 		return symbol;
 	}
+
+	// splits a string representation into arguments
+	void analyzeTerm(RegistryPtr reg);
 	
   // the following method is not useful, as integers are always
   // represented in the ID.address field and never stored into a table

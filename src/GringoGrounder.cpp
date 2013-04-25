@@ -493,6 +493,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 			for(unsigned symidx = 0; symidx < arity+1; symidx++)
 			{
 				Term term(ID::MAINKIND_TERM, ogatom.text.substr(lastsymbolstart, symbolstarts[symidx]-lastsymbolstart-1));
+				term.analyzeTerm(ctx.registry());
 				GPDBGLOG(DBG,"got token '" << term.symbol << "'");
 
 				// the following takes care of int vs const/string
