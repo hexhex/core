@@ -4,6 +4,6 @@ do
 			do
 				ac=`printf "%03d" ${size}`
 				in=`printf "%03d" ${inst}`
-				./generate.sh $size > "instances/listinst_size_${size}_inst_${in}.hex"
+				./generate.sh $size > "instances/listinst_size_${ac}_inst_${in}.hex"
 			done
 done
