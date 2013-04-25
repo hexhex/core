@@ -106,6 +106,7 @@ libdlvhex2_base_la_SOURCES = \
     SafetyChecker.cpp \
     SATSolver.cpp \
     State.cpp \
+    Term.cpp \
     URLBuf.cpp \
     UnfoundedSetCheckHeuristics.cpp \
     UnfoundedSetChecker.cpp

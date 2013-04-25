@@ -123,7 +123,39 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	prefix << "Anonymous";
 	for (int i = 0; i < vlen - 8; i++) prefix << "_";
 
-	// replace anonymous variables by unique variable symbols
+	// check for nested terms in rule head
+	BOOST_FOREACH (ID a, rule.head){
+		OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
+		for (int i = 1; i < oa.tuple.size(); ++i){
+			if (oa.tuple[i].isNestedTerm()){
+				throw GeneralError("Internal grounder cannot handle function symbols");
+			}
+		}
+	}
+	BOOST_FOREACH (ID a, rule.body){
+		if (a.isOrdinaryAtom()){
+			OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
+			for (int i = 1; i < oa.tuple.size(); ++i){
+				if (oa.tuple[i].isNestedTerm()){
+					throw GeneralError("Internal grounder cannot handle function symbols");
+				}
+			}
+		}else if (a.isExternalAtom()){
+			ExternalAtom ea = reg->eatoms.getByID(a);
+			for (int i = 0; i < ea.inputs.size(); ++i){
+				if (ea.inputs[i].isNestedTerm()){
+					throw GeneralError("Internal grounder cannot handle function symbols");
+				}
+			}
+			for (int i = 0; i < ea.tuple.size(); ++i){
+				if (ea.tuple[i].isNestedTerm()){
+					throw GeneralError("Internal grounder cannot handle function symbols");
+				}
+			}
+		}
+	}
+
+	// replace anonymous variables by unique variable symbols and check for nested terms
 	int varIndex = 1;
 	BOOST_FOREACH (ID a, rule.body){
 		// check if the literals contains an anonamous variable

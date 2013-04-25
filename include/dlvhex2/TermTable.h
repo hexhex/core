@@ -85,6 +85,10 @@ public:
 	// if no, return ID_FAIL, otherwise return ID
 	inline ID getIDByString(const std::string& str) const throw();
 
+	// given an argument vector, look if already stored
+	// if no, return ID_FAIL, otherwise return ID
+//	inline ID getIDByArguments(const std::vector<ID>& args) const throw();
+
 	// store symbol, assuming it does not exist
   // assert that symbol did not exist
 	inline ID storeAndGetID(const Term& symb) throw();
@@ -101,7 +105,7 @@ TermTable::getByID(
 {
 	assert(id.isTerm());
 	// integers are not allowed in this table!
-	assert(id.isConstantTerm() || id.isVariableTerm());
+	assert(id.isConstantTerm() || id.isVariableTerm() || id.isNestedTerm());
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
@@ -130,6 +134,29 @@ ID TermTable::getIDByString(
   }
 }
 
+#if 0
+// given an argument vector, look if already stored
+// if no, return ID_FAIL, otherwise return ID
+ID TermTable::getIDByArguments(
+		const std::vector<ID>& args) const throw()
+{
+	typedef Container::index<impl::TupleTag>::type ArgIndex;
+  ReadLock lock(mutex);
+	const ArgIndex& sidx = container.get<impl::TupleTag>();
+	ArgIndex::const_iterator it = sidx.find(args);
+	if( it == sidx.end() )
+		return ID_FAIL;
+	else
+  {
+    const AddressIndex& aidx = container.get<impl::AddressTag>();
+		return ID(
+				it->kind, // kind
+				container.project<impl::AddressTag>(it) - aidx.begin() // address
+				);
+  }
+}
+#endif
+
 // store symbol, assuming it does not exist
 // assert that symbol did not exist
 ID TermTable::storeAndGetID(
@@ -137,7 +164,7 @@ ID TermTable::storeAndGetID(
 {
 	assert(ID(symb.kind,0).isTerm());
 	// integers are not allowed in this table!
-	assert(ID(symb.kind,0).isConstantTerm() || ID(symb.kind,0).isVariableTerm());
+	assert(ID(symb.kind,0).isConstantTerm() || ID(symb.kind,0).isVariableTerm() || ID(symb.kind,0).isNestedTerm());
 	assert(!symb.symbol.empty());
 
   bool success;

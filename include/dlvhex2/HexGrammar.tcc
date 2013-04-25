@@ -90,6 +90,26 @@ struct sem<HexGrammarSemantics::termFromCIdent>
   }
 };
 
+template<>
+struct sem<HexGrammarSemantics::termFromFunctionTerm>
+{
+  void operator()(HexGrammarSemantics& mgr, const boost::fusion::vector2<const std::string, boost::optional<boost::optional<std::vector<ID> > > >& source, ID& target)
+  {
+    Term functionSymbol(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, boost::fusion::at_c<0>(source));
+    ID fid = mgr.ctx.registry()->terms.getIDByString(functionSymbol.symbol);
+    if (fid == ID_FAIL) fid = mgr.ctx.registry()->terms.storeAndGetID(functionSymbol);
+
+    std::vector<ID> args;
+    args.push_back(fid);
+    if (!!boost::fusion::at_c<1>(source) && !!boost::fusion::at_c<1>(source).get() ){
+      BOOST_FOREACH (ID id, boost::fusion::at_c<1>(source).get().get()) args.push_back(id);
+    }
+
+    Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, args, mgr.ctx.registry());
+    target = mgr.ctx.registry()->terms.getIDByString(term.symbol);
+    if (target == ID_FAIL) target = mgr.ctx.registry()->terms.storeAndGetID(term);
+  }
+};
 
 template<>
 struct sem<HexGrammarSemantics::termFromInteger>
@@ -271,14 +291,16 @@ struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
     // groundness
     DBGLOG(DBG,"checking groundness of tuple " << printrange(atom.tuple));
     IDKind kind = 0;
+    std::set<ID> var;
     BOOST_FOREACH(const ID& id, atom.tuple)
     {
+      reg->getVariablesInID(id, var);
       kind |= id.kind;
       // make this sure to make the groundness check work
       // (if we add "builtin constant terms" like #supremum we might have to change the above statement)
       assert((id.kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
     }
-    const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE);
+    const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE) && var.size() == 0;
     if( ground )
     {
       atom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
@@ -958,7 +980,7 @@ struct sem<HexGrammarSemantics::add>
       // fact -> put into EDB
       if( !source.isOrdinaryGroundAtom() )
         throw SyntaxError(
-          "fact '"+reg->ogatoms.getByID(source).text+"' not safe!");
+          "fact '"+reg->onatoms.getByID(source).text+"' not safe!");
 
 		  if ( mgr.mlpMode == 0 )		    
 				{ // ordinary encoding
@@ -1041,11 +1063,13 @@ HexGrammarBase(HexGrammarSemantics& sem):
   posinteger
     = qi::ulong_;
   term
-    = cident     [ Sem::termFromCIdent(sem) ]
+    = ( cident >> qi::lit('(') >> -terms >> qi::lit(')') > qi::eps )     [ Sem::termFromFunctionTerm(sem) ]
+    | cident     [ Sem::termFromCIdent(sem) ]
     | string     [ Sem::termFromString(sem) ]
     | variable   [ Sem::termFromVariable(sem) ]
     | posinteger [ Sem::termFromInteger(sem) ]
-    | termExt;
+    | termExt
+    ;
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
   terms
     = (term > qi::eps) % qi::lit(',');
