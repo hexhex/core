@@ -152,7 +152,7 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 			const ExternalAtom& atom = reg->eatoms.getByID(*it);
 
 			bool good = true;
-			BOOST_FOREACH(ID idt, atom.inputs)
+			BOOST_FOREACH(ID idt, reg->getVariablesInTuple(atom.inputs))
 			{
 				if( idt.isVariableTerm() && safevars.find(idt) == safevars.end() )
 				{
@@ -164,7 +164,7 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 			if( good )
 			{
 				DBGLOG(DBG," -> inputs safe, adding outputs as safe");
-				BOOST_FOREACH(ID idt, atom.tuple)
+				BOOST_FOREACH(ID idt, reg->getVariablesInTuple(atom.tuple))
 				{
 					if( idt.isVariableTerm() )
 						newsafevars.insert(idt);

@@ -201,6 +201,7 @@ public:
   // (returns even local variables for aggregates)
   // id is a literal or atom
   void getVariablesInID(ID id, std::set<ID>& out) const;
+  std::set<ID> getVariablesInID(const ID& id) const;
 
   // get all IDs of variables in atom given by ID,
   // but skip input variables in external atoms.
@@ -214,6 +215,7 @@ public:
   // (returns even local variables for aggregates)
   // tuple t contains IDs of literals or atoms
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
+  std::set<ID> getVariablesInTuple(const Tuple& t) const;
 
   // get the predicate of an ordinary or external atom
   ID getPredicateOfAtom(ID atom);

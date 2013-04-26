@@ -109,14 +109,14 @@ void Term::analyzeTerm(RegistryPtr reg){
 	arguments.clear();
 	if (primitive){
 		arguments.push_back(ID_FAIL);
-		if (islower(symbol[0])) kind |= ID::SUBKIND_TERM_CONSTANT;
+		if (islower(symbol[0]) || symbol[0] == '\"') kind |= ID::SUBKIND_TERM_CONSTANT;
 		if (isupper(symbol[0])) kind |= ID::SUBKIND_TERM_VARIABLE;
 	}else{
 		BOOST_FOREACH (std::string str, tuple){
 			Term t(ID::MAINKIND_TERM, str);
 			t.analyzeTerm(reg);
 			if (t.arguments[0] == ID_FAIL){
-				if (islower(t.symbol[0])) t.kind |= ID::SUBKIND_TERM_CONSTANT;
+				if (islower(t.symbol[0]) || t.symbol[0] == '\"') t.kind |= ID::SUBKIND_TERM_CONSTANT;
 				if (isupper(t.symbol[0])) t.kind |= ID::SUBKIND_TERM_VARIABLE;
 			}else{
 				t.kind |= ID::SUBKIND_TERM_NESTED;

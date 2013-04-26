@@ -600,6 +600,10 @@ bool BaseModelGenerator::verifyEAtomAnswerTuple(RegistryPtr reg,
 	      }
       }
     }
+    else if( pattern[at].isNestedTerm() )
+    {
+      // no explicit unification check; just assume that they unify
+    }
     else if( pattern[at] != t[at] )
     {
       // mismatch

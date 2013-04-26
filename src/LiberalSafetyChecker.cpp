@@ -148,20 +148,18 @@ public:
 					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
 
 					bool outputBounded = true;
-					for (int i = 0; i < eatom.tuple.size(); ++i){
-						if (eatom.tuple[i].isVariableTerm() && !lsc.getBoundedVariables().count(LiberalSafetyChecker::VariableLocation(ruleID, eatom.tuple[i])) > 0){
+					BOOST_FOREACH (ID var, lsc.reg->getVariablesInTuple(eatom.tuple)){
+						if (!lsc.getBoundedVariables().count(LiberalSafetyChecker::VariableLocation(ruleID, var)) > 0){
 							outputBounded = false;
 							break;
 						}
 					}
 					if (eatom.getExtSourceProperties().hasFiniteFiber() && outputBounded){
-						for (int i = 0; i < eatom.inputs.size(); ++i){
-							if (eatom.inputs[i].isVariableTerm()){
-								LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.inputs[i]);
-								if (lsc.getBoundedVariables().count(vl) == 0){
-									DBGLOG(DBG, "Variable " << "r" << vl.first.address << "/" << vl.second.address << " is bounded because " << b << " has a finite fiber");
-									lsc.addExternallyBoundedVariable(b, vl);
-								}
+						BOOST_FOREACH (ID var, lsc.reg->getVariablesInTuple(eatom.inputs)){
+							LiberalSafetyChecker::VariableLocation vl(ruleID, var);
+							if (lsc.getBoundedVariables().count(vl) == 0){
+								DBGLOG(DBG, "Variable " << "r" << vl.first.address << "/" << vl.second.address << " is bounded because " << b << " has a finite fiber");
+								lsc.addExternallyBoundedVariable(b, vl);
 							}
 						}
 					}
@@ -268,9 +266,11 @@ private:
 					BOOST_FOREACH (LiberalSafetyChecker::Attribute oat, lsc.getDepSCC()[c]){
 						if (oat.type == LiberalSafetyChecker::Attribute::External && oat.input == false){
 							const ExternalAtom& eatom = lsc.reg->eatoms.getByID(oat.eatomID);
-							LiberalSafetyChecker::VariableLocation vl(oat.ruleID, eatom.tuple[oat.argIndex - 1]);
-							if (eatom.tuple[oat.argIndex - 1].isVariableTerm() && lsc.getBoundedVariables().count(vl) == 0){
-								lsc.addExternallyBoundedVariable(oat.eatomID, vl);
+							BOOST_FOREACH (ID var, lsc.reg->getVariablesInID(eatom.tuple[oat.argIndex - 1])){
+								LiberalSafetyChecker::VariableLocation vl(oat.ruleID, var);
+								if (lsc.getBoundedVariables().count(vl) == 0){
+									lsc.addExternallyBoundedVariable(oat.eatomID, vl);
+								}
 							}
 						}
 					}
@@ -486,18 +486,16 @@ void LiberalSafetyChecker::addBoundedVariable(VariableLocation vl){
 			// 2.
 			if (eatom.getExtSourceProperties().hasFiniteFiber()){
 				bool outputbound = true;
-				for (int i = 0; i < eatom.tuple.size(); ++i){
-					if (eatom.tuple[i].isVariableTerm() && boundedVariables.count(VariableLocation(al.first, eatom.tuple[i])) == 0){
+				BOOST_FOREACH (ID var, reg->getVariablesInTuple(eatom.tuple)){
+					if (boundedVariables.count(VariableLocation(al.first, var)) == 0){
 						outputbound = false;
 						break;
 					}
 				}
 				if (outputbound){
 					// bound the input as well
-					for (int i = 0; i < eatom.inputs.size(); ++i){
-						if (eatom.inputs[i].isVariableTerm()){
-							addExternallyBoundedVariable(al.second, VariableLocation(al.first, eatom.inputs[i]));
-						}
+					BOOST_FOREACH (ID var, reg->getVariablesInTuple(eatom.inputs)){
+						addExternallyBoundedVariable(al.second, VariableLocation(al.first, var));
 					}
 				}
 			}
@@ -552,16 +550,16 @@ void LiberalSafetyChecker::addDomainExpansionSafeAttribute(Attribute at){
 	BOOST_FOREACH (AtomLocation al, attributeOccursIn[at]){
 		if (al.second.isOrdinaryAtom()){
 			const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(al.second);
-			if (oatom.tuple[at.argIndex].isVariableTerm()){
-				addBoundedVariable(VariableLocation(al.first, oatom.tuple[at.argIndex]));
+			BOOST_FOREACH (ID var, reg->getVariablesInID(oatom.tuple[at.argIndex])){
+				addBoundedVariable(VariableLocation(al.first, var));
 			}
 		}
 		if (al.second.isExternalAtom()){
 			const ExternalAtom& eatom = reg->eatoms.getByID(al.second);
 			for (int o = 0; o < eatom.tuple.size(); ++o){
 				if (getAttribute(al.second, eatom.predicate, eatom.inputs, al.first, false, o + 1) == at){
-					if (eatom.tuple[o].isVariableTerm()){
-						VariableLocation vl(al.first, eatom.tuple[o]);
+					BOOST_FOREACH (ID var, reg->getVariablesInID(eatom.tuple[o])){
+						VariableLocation vl(al.first, var);
 
 						// here we COULD bound vl, but we don't do it yet, because
 						// we want to check first if we can also make it safe without exploiting the external atom
@@ -655,31 +653,37 @@ void LiberalSafetyChecker::createDependencyGraph(){
 			const OrdinaryAtom& hAtom = reg->lookupOrdinaryAtom(hID);
 
 			for (int hArg = 1; hArg < hAtom.tuple.size(); ++hArg){
-				Node headNode = getNode(getAttribute(hAtom.tuple[0], hArg));
+				BOOST_FOREACH (ID hVar, reg->getVariablesInID(hAtom.tuple[hArg])){
+					Node headNode = getNode(getAttribute(hAtom.tuple[0], hArg));
 
-				BOOST_FOREACH (ID bID, rule.body){
-					if (bID.isNaf()) continue;
+					BOOST_FOREACH (ID bID, rule.body){
+						if (bID.isNaf()) continue;
 
-					if (bID.isOrdinaryAtom()){
-						const OrdinaryAtom& bAtom = reg->lookupOrdinaryAtom(bID);
+						if (bID.isOrdinaryAtom()){
+							const OrdinaryAtom& bAtom = reg->lookupOrdinaryAtom(bID);
 
-						for (int bArg = 1; bArg < bAtom.tuple.size(); ++bArg){
-							Node bodyNode = getNode(getAttribute(bAtom.tuple[0], bArg));
+							for (int bArg = 1; bArg < bAtom.tuple.size(); ++bArg){
+								BOOST_FOREACH (ID bVar, reg->getVariablesInID(bAtom.tuple[bArg])){
+									Node bodyNode = getNode(getAttribute(bAtom.tuple[0], bArg));
 
-							if (hAtom.tuple[hArg].isVariableTerm() && bAtom.tuple[bArg].isVariableTerm() && hasInformationFlow(builtinflow, bAtom.tuple[bArg], hAtom.tuple[hArg])){
-								boost::add_edge(bodyNode, headNode, ag);
+									if (hasInformationFlow(builtinflow, bVar, hVar)){
+										boost::add_edge(bodyNode, headNode, ag);
+									}
+								}
 							}
 						}
-					}
 
-					if (bID.isExternalAtom()){
-						const ExternalAtom& eAtom = reg->eatoms.getByID(bID);
+						if (bID.isExternalAtom()){
+							const ExternalAtom& eAtom = reg->eatoms.getByID(bID);
 
-						for (int bArg = 0; bArg < eAtom.tuple.size(); ++bArg){
-							Node bodyNode = getNode(getAttribute(bID, eAtom.predicate, eAtom.inputs, ruleID, false, (bArg + 1)));
+							for (int bArg = 0; bArg < eAtom.tuple.size(); ++bArg){
+								BOOST_FOREACH (ID bVar, reg->getVariablesInID(eAtom.tuple[bArg])){
+									Node bodyNode = getNode(getAttribute(bID, eAtom.predicate, eAtom.inputs, ruleID, false, (bArg + 1)));
 
-							if (hAtom.tuple[hArg].isVariableTerm() && eAtom.tuple[bArg].isVariableTerm() && hasInformationFlow(builtinflow, eAtom.tuple[bArg], hAtom.tuple[hArg])){
-								boost::add_edge(bodyNode, headNode, ag);
+									if (hasInformationFlow(builtinflow, bVar, hVar)){
+										boost::add_edge(bodyNode, headNode, ag);
+									}
+								}
 							}
 						}
 					}
@@ -695,19 +699,22 @@ void LiberalSafetyChecker::createDependencyGraph(){
 				const OrdinaryAtom& bAtom = reg->lookupOrdinaryAtom(bID1);
 
 				for (int bArg1 = 1; bArg1 < bAtom.tuple.size(); ++bArg1){
-					Node bodyNode1 = getNode(getAttribute(bAtom.tuple[0], bArg1));
+					BOOST_FOREACH (ID bVar1, reg->getVariablesInID(bAtom.tuple[bArg1])){
+						Node bodyNode1 = getNode(getAttribute(bAtom.tuple[0], bArg1));
 
-					BOOST_FOREACH (ID bID2, rule.body){
-						if (bID2.isNaf()) continue;
+						BOOST_FOREACH (ID bID2, rule.body){
+							if (bID2.isNaf()) continue;
 
-						if (bID2.isExternalAtom()){
-							const ExternalAtom& eAtom = reg->eatoms.getByID(bID2);
+							if (bID2.isExternalAtom()){
+								const ExternalAtom& eAtom = reg->eatoms.getByID(bID2);
 
-							for (int bArg2 = 0; bArg2 < eAtom.inputs.size(); ++bArg2){
-								Node bodyNode2 = getNode(getAttribute(bID2, eAtom.predicate, eAtom.inputs, ruleID, true, (bArg2 + 1)));
-
-								if (bAtom.tuple[bArg1].isVariableTerm() && eAtom.inputs[bArg2].isVariableTerm() && hasInformationFlow(builtinflow, bAtom.tuple[bArg1], eAtom.inputs[bArg2])){
-									boost::add_edge(bodyNode1, bodyNode2, ag);
+								for (int bArg2 = 0; bArg2 < eAtom.inputs.size(); ++bArg2){
+									BOOST_FOREACH (ID bVar2, reg->getVariablesInID(eAtom.inputs[bArg2])){
+										Node bodyNode2 = getNode(getAttribute(bID2, eAtom.predicate, eAtom.inputs, ruleID, true, (bArg2 + 1)));
+										if (hasInformationFlow(builtinflow, bVar1, bVar2)){
+											boost::add_edge(bodyNode1, bodyNode2, ag);
+										}
+									}
 								}
 							}
 						}
@@ -718,19 +725,23 @@ void LiberalSafetyChecker::createDependencyGraph(){
 				const ExternalAtom& eAtom1 = reg->eatoms.getByID(bID1);
 
 				for (int bArg1 = 0; bArg1 < eAtom1.tuple.size(); ++bArg1){
-					Node bodyNode1 = getNode(getAttribute(bID1, eAtom1.predicate, eAtom1.inputs, ruleID, false, (bArg1 + 1)));
+					BOOST_FOREACH (ID bVar1, reg->getVariablesInID(eAtom1.tuple[bArg1])){
+						Node bodyNode1 = getNode(getAttribute(bID1, eAtom1.predicate, eAtom1.inputs, ruleID, false, (bArg1 + 1)));
 
-					BOOST_FOREACH (ID bID2, rule.body){
-						if (bID2.isNaf()) continue;
+						BOOST_FOREACH (ID bID2, rule.body){
+							if (bID2.isNaf()) continue;
 
-						if (bID2.isExternalAtom()){
-							const ExternalAtom& eAtom2 = reg->eatoms.getByID(bID2);
+							if (bID2.isExternalAtom()){
+								const ExternalAtom& eAtom2 = reg->eatoms.getByID(bID2);
 
-							for (int bArg2 = 0; bArg2 < eAtom2.inputs.size(); ++bArg2){
-								Node bodyNode2 = getNode(getAttribute(bID2, eAtom2.predicate, eAtom2.inputs, ruleID, true, (bArg2 + 1)));
+								for (int bArg2 = 0; bArg2 < eAtom2.tuple.size(); ++bArg2){
+									BOOST_FOREACH (ID bVar2, reg->getVariablesInID(eAtom2.inputs[bArg2])){
+										Node bodyNode2 = getNode(getAttribute(bID2, eAtom2.predicate, eAtom2.inputs, ruleID, true, (bArg2 + 1)));
 
-								if (eAtom1.tuple[bArg1].isVariableTerm() && eAtom2.inputs[bArg2].isVariableTerm() && eAtom1.tuple[bArg1] == eAtom2.inputs[bArg2]){
-									boost::add_edge(bodyNode1, bodyNode2, ag);
+										if (bVar1 == bVar2){
+											boost::add_edge(bodyNode1, bodyNode2, ag);
+										}
+									}
 								}
 							}
 						}
@@ -788,9 +799,9 @@ void LiberalSafetyChecker::createPreconditionsAndLocationIndices(){
 		BOOST_FOREACH (ID hID, rule.head){
 			const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(hID);
 			for (int i = 1; i < oatom.tuple.size(); ++i){
-				if (oatom.tuple[i].isVariableTerm()){
-					safetyPreconditions[getAttribute(oatom.tuple[0], i)].first.insert(VariableLocation(ruleID, oatom.tuple[i]));
-					attributesSafeByVariable[VariableLocation(ruleID, oatom.tuple[i])].insert(getAttribute(oatom.tuple[0], i));
+				BOOST_FOREACH (ID var, reg->getVariablesInID(oatom.tuple[i])){
+					safetyPreconditions[getAttribute(oatom.tuple[0], i)].first.insert(VariableLocation(ruleID, var));
+					attributesSafeByVariable[VariableLocation(ruleID, var)].insert(getAttribute(oatom.tuple[0], i));
 				}
 			}
 		}
@@ -807,8 +818,8 @@ void LiberalSafetyChecker::createPreconditionsAndLocationIndices(){
 				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(bID);
 				for (int i = 1; i < oatom.tuple.size(); ++i){
 					attributeOccursIn[getAttribute(oatom.tuple[0], i)].insert(AtomLocation(ruleID, bID));
-					if (oatom.tuple[i].isVariableTerm()){
-						variableOccursIn[VariableLocation(ruleID, oatom.tuple[i])].insert(AtomLocation(ruleID, bID));
+					BOOST_FOREACH (ID var, reg->getVariablesInID(oatom.tuple[i])){
+						variableOccursIn[VariableLocation(ruleID, var)].insert(AtomLocation(ruleID, bID));
 					}
 				}
 			}
@@ -829,10 +840,12 @@ void LiberalSafetyChecker::createPreconditionsAndLocationIndices(){
 						}
 					}
 					// for variables in place of constant parameters, we have to wait for the variable to become bounded
-					if (eatom.pluginAtom->getInputType(i) != PluginAtom::PREDICATE && eatom.inputs[i].isVariableTerm()){
-						safetyPreconditions[iattr].first.insert(VariableLocation(ruleID, eatom.inputs[i]));
-						attributesSafeByVariable[VariableLocation(ruleID, eatom.inputs[i])].insert(iattr);
-						variableOccursIn[VariableLocation(ruleID, eatom.inputs[i])].insert(AtomLocation(ruleID, bID));
+					BOOST_FOREACH (ID var, reg->getVariablesInID(eatom.inputs[i])){
+						if (eatom.pluginAtom->getInputType(i) != PluginAtom::PREDICATE){
+							safetyPreconditions[iattr].first.insert(VariableLocation(ruleID, var));
+							attributesSafeByVariable[VariableLocation(ruleID, var)].insert(iattr);
+							variableOccursIn[VariableLocation(ruleID, var)].insert(AtomLocation(ruleID, bID));
+						}
 					}
 
 					// for output attributes, we have to wait for all input attributes to become safe
@@ -929,6 +942,15 @@ void LiberalSafetyChecker::ensureOrdinarySafety(){
 			SafetyChecker sc(ctx2);
 
 			Tuple unsafeVariables = sc.checkSafety(false);
+
+			// check if the optimized rule contains all variables of the original rule
+			DBGLOG(DBG, "Checking variables of optimized rule");
+			std::set<ID> varOrig = reg->getVariablesInTuple(rule.body);
+			std::set<ID> varOpt = reg->getVariablesInTuple(optimizedRule.body);
+			BOOST_FOREACH (ID vo, varOrig){
+				if (varOpt.count(vo) == 0) unsafeVariables.push_back(vo);
+			}
+
 			std::set<ID> searchFor;
 			BOOST_FOREACH (ID v, unsafeVariables) searchFor.insert(v);
 			if (unsafeVariables.size() == 0){
@@ -943,11 +965,12 @@ void LiberalSafetyChecker::ensureOrdinarySafety(){
 				BOOST_FOREACH (ID b, rule.body){
 					if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b.address) == 0){
 						const ExternalAtom& eatom = reg->eatoms.getByID(b);
-						for (int i = 0; i < eatom.tuple.size(); ++i){
-							if (eatom.tuple[i].isVariableTerm() && searchFor.count(eatom.tuple[i]) > 0){
+//						for (int i = 0; i < eatom.tuple.size(); ++i){
+						BOOST_FOREACH (ID var, reg->getVariablesInTuple(eatom.tuple)){
+							if (searchFor.count(var) > 0){
 								DBGLOG(DBG, "Adding external atom " << b << " to the necessary ones for reasons of ordinary safety");
 								necessaryExternalAtoms.insert(b.address);
-								newSafeVar = eatom.tuple[i];	// breakout: do not add further external atoms but recheck safety first
+								newSafeVar = var;	// breakout: do not add further external atoms but recheck safety first
 								break;
 							}
 						}

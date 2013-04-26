@@ -390,6 +390,13 @@ void Registry::getOutVariablesInID(ID id, std::set<ID>& out) const
   }
 }
 
+std::set<ID> Registry::getVariablesInID(const ID& id) const
+{
+  std::set<ID> out;
+  getVariablesInID(id, out);
+  return out;
+}
+
 // get all IDs of variables in atoms in given tuple
 // add these ids to out
 // (returns even local variables for aggregates)
@@ -400,6 +407,13 @@ void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out) const
   {
     getVariablesInID(id, out);
   }
+}
+
+std::set<ID> Registry::getVariablesInTuple(const Tuple& t) const
+{
+  std::set<ID> out;
+  getVariablesInTuple(t, out);
+  return out;
 }
 
 // get the predicate of an ordinary or external atom

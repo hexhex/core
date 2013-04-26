@@ -388,7 +388,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     if( ((pluginAtom->getInputType(at) == PluginAtom::CONSTANT) ||
          (pluginAtom->getInputType(at) == PluginAtom::TUPLE)
         ) &&
-        (eatom.inputs[at].isVariableTerm()) )
+        (registry->getVariablesInID(eatom.inputs[at]).size() > 0) )
     {
       ID varID = eatom.inputs[at];
       LOG(DBG,"at index " << at << ": found constant input that is a variable: " << varID);
@@ -454,8 +454,9 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
       LOG(DBG,"checking eatom " << eatom2);
 
       bool addedThis = false;
-      for(Tuple::const_iterator itvar = eatom2.tuple.begin();
-          itvar != eatom2.tuple.end(); ++itvar)
+      std::set<ID> vars = registry->getVariablesInTuple(eatom2.tuple);
+      for(std::set<ID>::const_iterator itvar = vars.begin();
+          itvar != vars.end(); ++itvar)
       {
         if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
         {
@@ -493,8 +494,9 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
       assert(!!atomtuple);
 
       bool addedThis = false;
-      for(Tuple::const_iterator itvar = atomtuple->begin();
-          itvar != atomtuple->end(); ++itvar)
+      std::set<ID> vars = registry->getVariablesInTuple(*atomtuple);
+      for(std::set<ID>::const_iterator itvar = vars.begin();
+          itvar != vars.end(); ++itvar)
       {
         if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
         {
