@@ -102,7 +102,7 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 			DBGLOG(DBG, "Checking atom " << *en);
 
 			const OrdinaryAtom& currentAtom = reg->ogatoms.getByAddress(*en);
-			if (currentAtom.unifiesWith(watchedAtom)){
+			if (currentAtom.unifiesWith(watchedAtom, reg)){
 				Nogood instantiatedNG;
 				ng.match(reg, reg->ogatoms.getIDByAddress(*en), instantiatedNG);
 				DBGLOG(DBG, "Instantiated " << instantiatedNG.getStringRepresentation(reg) << " from " << ng.getStringRepresentation(reg));
@@ -191,7 +191,7 @@ void LazyNogoodGrounder::update(InterpretationConstPtr partialInterpretation, In
 			const OrdinaryAtom& currentAtom = reg->ogatoms.getByAddress(*en);
 			const OrdinaryAtom& watchedAtom = reg->onatoms.getByAddress(p.first.address);
 			// 1.
-			if (currentAtom.unifiesWith(watchedAtom)){
+			if (currentAtom.unifiesWith(watchedAtom, reg)){
 				Nogood instantiatedNG;
 				watched->getNogood(p.second).match(reg, reg->ogatoms.getIDByAddress(*en), instantiatedNG);
 				DBGLOG(DBG, "Instantiated " << instantiatedNG.getStringRepresentation(reg) << " from " << watched->getNogood(p.second).getStringRepresentation(reg));

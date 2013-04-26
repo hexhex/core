@@ -217,6 +217,9 @@ public:
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
   std::set<ID> getVariablesInTuple(const Tuple& t) const;
 
+  // recursively substitutes variables in terms
+  ID replaceVariablesInTerm(const ID term, const ID var, const ID by);
+
   // get the predicate of an ordinary or external atom
   ID getPredicateOfAtom(ID atom);
 

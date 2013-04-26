@@ -68,7 +68,10 @@ private ostream_printable<Term>
 	}
 
 	Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg);
-	
+
+	// sets the symbol to the text representation generated from the arguments of the nested term
+	void updateSymbolOfNestedTerm(Registry* reg);
+
 	bool isQuotedString() const {
 		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
 			return true;

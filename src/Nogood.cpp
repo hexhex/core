@@ -156,7 +156,7 @@ bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
 	BOOST_FOREACH (ID natID, *this){
 		const OrdinaryAtom& nat = natID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(natID) : reg->onatoms.getByID(natID);
 
-		if (atom.unifiesWith(nat)){
+		if (atom.unifiesWith(nat, reg)){
 			DBGLOG(DBG, "Unifies with " << natID);
 
 			// compute unifier

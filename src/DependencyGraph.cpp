@@ -381,6 +381,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   // collect variables at constant inputs of this external atom
   std::list<ID> inputVariables;
   std::set<ID> inputVariableSet;
+  std::set<ID> unfoldedInputVariables;
 
   // find variables for constant inputs
   for(unsigned at = 0; at != eatom.inputs.size(); ++at)
@@ -394,6 +395,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
       LOG(DBG,"at index " << at << ": found constant input that is a variable: " << varID);
       inputVariables.push_back(varID);
       inputVariableSet.insert(varID);
+      registry->getVariablesInID(varID, unfoldedInputVariables);
     }
   }
 
@@ -458,7 +460,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
       for(std::set<ID>::const_iterator itvar = vars.begin();
           itvar != vars.end(); ++itvar)
       {
-        if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
+        if( unfoldedInputVariables.count(*itvar) )
         {
           LOG(ANALYZE,"will ground variable " << *itvar << " by external atom " << eatom2 << " in auxiliary rule");
           if( !addedThis )
@@ -498,7 +500,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
       for(std::set<ID>::const_iterator itvar = vars.begin();
           itvar != vars.end(); ++itvar)
       {
-        if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
+        if( unfoldedInputVariables.count(*itvar) )
         {
           LOG(ANALYZE,"will ground variable " << *itvar << " by atom " << printvector(*atomtuple) << " in auxiliary rule");
           if( !addedThis )
@@ -528,7 +530,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   } // iterate over body of rule to find matches
 
   // check if each input variable hit at least once by auxbody
-  if( groundedInputVariableSet != inputVariableSet )
+  if( groundedInputVariableSet != unfoldedInputVariables )
   {
     std::stringstream s;
     RawPrinter printer(s, registry);
@@ -889,7 +891,7 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
       const OrdinaryAtom& oa2 = registry->lookupOrdinaryAtom(it2->id);
       DBGLOG(DBG,"checking against " << oa2);
 
-      if( !oa1.unifiesWith(oa2) )
+      if( !oa1.unifiesWith(oa2, registry) )
         continue;
 
       // now create head-head dependencies:
@@ -976,7 +978,7 @@ void DependencyGraph::createHeadBodyUnifyingDependencies(
       const OrdinaryAtom& oab = registry->lookupOrdinaryAtom(itb->id);
       DBGLOG(DBG,"checking against " << oab);
 
-      if( !oah.unifiesWith(oab) )
+      if( !oah.unifiesWith(oab, registry) )
         continue;
 
       LOG(DBG,"adding head-body dependency between " <<

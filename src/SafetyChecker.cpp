@@ -584,11 +584,6 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 		if( ci.innerEatoms.empty() )
 			continue;
 
-		// ignore components without nonmonotonic inner external atoms, negation in cycles and disjunctive heads
-		// (they will be solved by the WellfoundedModelGenerator and do not need strong safety)
-//		if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads )
-//			continue;
-
 		// check if any external atom has output variables
 		bool needToCheck = false;
 		BOOST_FOREACH(ID eaid, ci.innerEatoms)
@@ -596,7 +591,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 			const ExternalAtom& eatom = reg->eatoms.getByID(eaid);
 			BOOST_FOREACH(ID otid, eatom.tuple)
 			{
-				if( otid.isVariableTerm() )
+				if( reg->getVariablesInID(otid).size() > 0 )
 				{
 					needToCheck = true;
 					break;
@@ -668,8 +663,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 				const ExternalAtom& eatom = reg->eatoms.getByID(lid);
 				BOOST_FOREACH(ID tid, eatom.tuple)
 				{
-					if( tid.isVariableTerm() )
-						varsToCheck.insert(tid);
+					reg->getVariablesInID(tid, varsToCheck);
 				}
 			}
 
@@ -716,16 +710,12 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 					bool containsVariable = false;
 					const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(lid);
 					assert(!oatom.tuple.empty());
-					Tuple::const_iterator itv = oatom.tuple.begin();
-					itv++;
-					while( itv != oatom.tuple.end() )
-					{
-						if( *itv == vid )
+					BOOST_FOREACH (ID var, reg->getVariablesInTuple(oatom.tuple)){
+						if( var == vid )
 						{
 							containsVariable = true;
 							break;
 						}
-						itv++;
 					}
 
 					if( !containsVariable )
@@ -746,7 +736,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 								printToString<RawPrinter>(hid, reg));
 						assert(hid.isOrdinaryAtom());
 						const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
-						if( oatom.unifiesWith(hoatom) )
+						if( oatom.unifiesWith(hoatom, reg) )
 						{
 							DBGLOG(DBG,"unification successful "
 									"-> literal does not limit the domain");

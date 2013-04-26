@@ -50,6 +50,10 @@ Term::Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg): kind
 	assert(ID(kind,0).isTerm()); 
 	assert(arguments.size() > 0);
 
+	updateSymbolOfNestedTerm(reg.get());
+}
+
+void Term::updateSymbolOfNestedTerm(Registry* reg){
 	std::stringstream ss;
 	ss << reg->terms.getByID(arguments[0]).symbol;
 	ss << "(";

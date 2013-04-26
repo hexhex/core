@@ -685,7 +685,7 @@ void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
 					{
 						// *it is the index of the input term that is a variable
 						// (this also verifies that we do not overwrite a variable twice with different values)
-						assert(t[*it].isTerm() && t[*it].isVariableTerm());
+						assert(t[*it].isTerm() && (t[*it].isVariableTerm() || t[*it].isNestedTerm()));
 						t[*it] = replaceBy;
 					}
 				}

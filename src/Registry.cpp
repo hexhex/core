@@ -416,6 +416,33 @@ std::set<ID> Registry::getVariablesInTuple(const Tuple& t) const
   return out;
 }
 
+ID Registry::replaceVariablesInTerm(const ID term, const ID var, const ID by){
+  assert (term.isTerm());
+
+  DBGLOG(DBG, "Replacing variable in term " << term << ": " << var << " --> " << by);
+  if ((term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_VARIABLE){
+    return (term == var ? by : var);
+  }
+  else if ((term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_CONSTANT || (term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_PREDICATE || (term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_INTEGER || (term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_BUILTIN)
+  {
+    return term;
+  }
+  else if ((term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_NESTED)
+  {
+    Term t = terms.getByID(term);
+
+    for (int i = 1; i < t.arguments.size(); ++i){
+      t.arguments[i] = replaceVariablesInTerm(t.arguments[i], var, by);
+    }
+
+    t.updateSymbolOfNestedTerm(this);
+    ID tid = terms.getIDByString(t.symbol);
+    if (tid == ID_FAIL) tid = terms.storeAndGetID(t);
+    return tid;
+  }
+  assert (false);
+}
+
 // get the predicate of an ordinary or external atom
 ID Registry::getPredicateOfAtom(ID atom){
 	if (atom.isOrdinaryAtom()){

@@ -94,7 +94,8 @@ struct OrdinaryAtom:
   // and save a lot of effort if not everything is printed.
   std::string text;
 
-  bool unifiesWith(const OrdinaryAtom& a) const;
+  bool unifiesWith(const OrdinaryAtom& a) const; // only for atoms without function symbols
+  bool unifiesWith(const OrdinaryAtom& a, RegistryPtr reg) const; // recursive variant (with function symbols)
   bool existsHomomorphism(RegistryPtr reg, const OrdinaryAtom& a) const;
 
   OrdinaryAtom(IDKind kind):
