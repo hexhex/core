@@ -1,0 +1,4 @@
+ft(X) :- &functionCompose[f,a](X).
+decomp(F,A) :- ft(Y), &functionDecompose1[Y](F,A).
+decomp2(F,A) :- ft(Y), &functionDecompose[Y,0](F), &functionDecompose[Y,1](A).
+arity(A) :- ft(Y), &getArity[Y](A).

@@ -74,6 +74,7 @@
 #include "dlvhex2/WeakConstraintPlugin.h"
 #include "dlvhex2/ExistsPlugin.h"
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
+#include "dlvhex2/FunctionPlugin.h"
 
 #include <getopt.h>
 #include <signal.h>
@@ -463,6 +464,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
 			PluginInterfacePtr existsPlugin(new ExistsPlugin);
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
+			PluginInterfacePtr functionPlugin(new FunctionPlugin);
+			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 		}
 
 		// before anything else we dump the logo

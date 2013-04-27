@@ -1,3 +1,9 @@
+2013-04-27  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/FunctionPlugin.h: Implement external atoms for
+	function symbol processing
+	* src/FunctionPlugin.cpp: Likewise
+
 2013-04-25  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/HexGrammar.tcc: Add basic support for function

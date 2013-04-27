@@ -129,3 +129,7 @@ liberalsafety6.hex liberalsafety6.out --liberalsafety --solver=genuinegc
 liberalsafety7.hex liberalsafety7.out --liberalsafety --solver=genuinegc --heuristics=monolithic
 liberalsafety8.hex liberalsafety8.out --liberalsafety --solver=genuinegc
 liberalsafety9.hex liberalsafety9.out --liberalsafety --solver=genuinegc
+functionsymbols1.hex functionsymbols1.out --solver=genuinegc
+functionsymbols2.hex functionsymbols2.out --liberalsafety --solver=genuinegc
+functionsymbols3.hex functionsymbols3.out --liberalsafety --solver=genuinegc
+functionsymbols4.hex functionsymbols4.out --solver=genuinegc --function-maxarity=2
