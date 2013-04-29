@@ -155,6 +155,9 @@ class FunctionDecomposeAtom : public PluginAtom
 		FunctionDecomposeAtom(int arity) : PluginAtom(getName("functionDecompose", arity), true), arity(arity)
 		{
 			prop.functional = true;
+			for (int i = 0; i <= arity; ++i){
+				prop.wellorderingStrlen.insert(std::pair<int, int>(0, i));
+			}
 
 			addInputConstant();
 
@@ -234,6 +237,7 @@ class FunctionDecomposeGeneralAtom : public PluginAtom
 		FunctionDecomposeGeneralAtom() : PluginAtom("functionDecompose", true)
 		{
 			prop.functional = true;
+			prop.wellorderingStrlen.insert(std::pair<int, int>(0, 0));
 
 			addInputConstant();
 			addInputConstant();

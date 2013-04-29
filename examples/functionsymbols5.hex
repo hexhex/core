@@ -1,2 +1,2 @@
 p(f(f(f(a)))).
-p(Y) :- p(X), &functionDecompose[X, 1](Y)<wellorderingstrlen 0 0>, &isFunctionTerm[X]().
+p(Y) :- p(X), &functionDecompose[X, 1](Y), &isFunctionTerm[X]().
