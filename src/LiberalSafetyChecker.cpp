@@ -734,7 +734,7 @@ void LiberalSafetyChecker::createDependencyGraph(){
 							if (bID2.isExternalAtom()){
 								const ExternalAtom& eAtom2 = reg->eatoms.getByID(bID2);
 
-								for (int bArg2 = 0; bArg2 < eAtom2.tuple.size(); ++bArg2){
+								for (int bArg2 = 0; bArg2 < eAtom2.inputs.size(); ++bArg2){
 									BOOST_FOREACH (ID bVar2, reg->getVariablesInID(eAtom2.inputs[bArg2])){
 										Node bodyNode2 = getNode(getAttribute(bID2, eAtom2.predicate, eAtom2.inputs, ruleID, true, (bArg2 + 1)));
 

@@ -56,11 +56,13 @@ Term::Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg): kind
 void Term::updateSymbolOfNestedTerm(Registry* reg){
 	std::stringstream ss;
 	ss << reg->terms.getByID(arguments[0]).symbol;
-	ss << "(";
-	for (int i = 1; i < arguments.size(); ++i){
-		ss << (i > 1 ? "," : "") << reg->terms.getByID(arguments[i]).symbol;
+	if (arguments.size() > 1){
+		ss << "(";
+		for (int i = 1; i < arguments.size(); ++i){
+			ss << (i > 1 ? "," : "") << reg->terms.getByID(arguments[i]).symbol;
+		}
+		ss << ")";
 	}
-	ss << ")";
 
 	symbol = ss.str();
 }
