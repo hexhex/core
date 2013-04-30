@@ -490,7 +490,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::updateEANogoods(
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
 	    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterion"))){
 		boost::mutex::scoped_lock lock(ufsCheckMutex);
-		ufscm->learnNogoodsFromMainSearch();
+		ufscm->learnNogoodsFromMainSearch(true);
 		learnedEANogoods->clear();
 	}else{
 		learnedEANogoods->forgetLeastFrequentlyAdded();
