@@ -50,11 +50,11 @@ i=0
 for c in "${confs[@]}"
 do
 	echo -ne -e " "
-	output=$(timeout $to time -o time$instance.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ --verbose=8 2>verbose$instance.dat >/dev/null)
+	output=$(timeout $to time -o time$instance.$i.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ --verbose=8 2>verbose$instance.$i.dat >/dev/null)
 	ret=$?
-        output=$(cat time$instance.dat)
-	groundertime=$(cat verbose$instance.dat | grep -a "HEX grounder time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
-        solvertime=$(cat verbose$instance.dat | grep -a "HEX solver time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
+        output=$(cat time$instance.$i.dat)
+	groundertime=$(cat verbose$instance.$i.dat | grep -a "HEX grounder time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
+        solvertime=$(cat verbose$instance.$i.dat | grep -a "HEX solver time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
 
 	if [[ $ret == 124 ]]; then
 		output="---"
@@ -62,11 +62,13 @@ do
 		solvertime="---"
 	fi
 	echo -ne "$output $groundertime $solvertime"
+
+	rm time$instance.$i.dat
+	rm verbose$instance.$i.dat
+
 	let i=i+1
 done
 echo -e -ne "\n"
 
 rm prog$instance.hex
 rm prognd$instance.hex
-rm time$instance.dat
-rm verbose$instance.dat
