@@ -109,7 +109,7 @@ do
 	echo -ne -e " "
 	output=$(timeout $to time -o time$instance.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ --verbose=8 2>verbose$instance.dat >/dev/null)
 	ret=$?
-	if [[ $ret != 0 ]]; then
+	if [[ $ret == 0 ]]; then
 	        output=$(cat time$instance.dat)
 		groundertime=$(cat verbose$instance.dat | grep -a "HEX grounder time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
 	        solvertime=$(cat verbose$instance.dat | grep -a "HEX solver time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")

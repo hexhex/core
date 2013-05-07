@@ -70,7 +70,7 @@ do
 	echo -ne -e " "
 	output=$(timeout $to time -o time$instance.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ --verbose=0 prog$instance.hex 2>/dev/null >/dev/null)
 	ret=$?
-	if [[ $ret != 0 ]]; then
+	if [[ $ret == 0 ]]; then
 	        output=$(cat time$instance.dat)
 	else
 		output="---"
