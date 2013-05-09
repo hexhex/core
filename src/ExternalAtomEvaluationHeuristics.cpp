@@ -63,9 +63,15 @@ ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsI
 bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	eatom.updatePredicateInputMask();
+
+	bool aux = true;
+	if (eatom.auxInputPredicate != ID_FAIL){
+		aux = (eatom.getAuxInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eatom.getAuxInputMask()->getStorage() & programMask->getStorage()).count();
+	}
+
 	return !factWasSet ||
 		(eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count() &&
-		(eatom.getAuxInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eatom.getAuxInputMask()->getStorage() & programMask->getStorage()).count();
+		aux;
 }
 
 ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsInputCompleteFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
