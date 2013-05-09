@@ -881,7 +881,7 @@ std::vector<Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(Nogoo
 	}
 }
 
-void EncodingBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(){
+void EncodingBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 	// nothing to do
 	// (it is useless to learn nogoods now, because they will be forgetten anyway when the next UFS search is setup)
 }
@@ -1591,12 +1591,12 @@ std::vector<Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nog
 	}
 }
 
-void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(){
+void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 
 	// add newly learned nogoods from the main search (in transformed form)
 	if (ngc){
 		// detect resets of the nogood container
-		if (learnedNogoodsFromMainSearch > ngc->getNogoodCount()) learnedNogoodsFromMainSearch = 0;
+		if (learnedNogoodsFromMainSearch > ngc->getNogoodCount() || reset) learnedNogoodsFromMainSearch = 0;
 		DBGLOG(DBG, "O: Adding valid input-output relationships from nogood container");
 		for (int i = learnedNogoodsFromMainSearch; i < ngc->getNogoodCount(); ++i){
 			const Nogood& ng = ngc->getNogood(i);
@@ -1619,7 +1619,7 @@ std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(Inter
 	DBGLOG(DBG, "Performing UFS Check wrt. " << *compatibleSet);
 
 	// learn from main search
-	learnNogoodsFromMainSearch();
+	learnNogoodsFromMainSearch(true);
 
 	// load assumptions
 	setAssumptions(compatibleSet, skipProgram);
@@ -1804,12 +1804,12 @@ UnfoundedSetCheckerPtr UnfoundedSetCheckerManager::instantiateUnfoundedSetChecke
 	}
 }
 
-void UnfoundedSetCheckerManager::learnNogoodsFromMainSearch(){
+void UnfoundedSetCheckerManager::learnNogoodsFromMainSearch(bool reset){
 
 	// notify all unfounded set checkers
 	typedef std::pair<int, UnfoundedSetCheckerPtr> Pair;
 	BOOST_FOREACH (Pair p, preparedUnfoundedSetCheckers){
-		p.second->learnNogoodsFromMainSearch();
+		p.second->learnNogoodsFromMainSearch(reset);
 	}
 }
 

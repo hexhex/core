@@ -1,0 +1,4 @@
+p(f(a)).
+limit(f(a)).
+limit(f(aa)).
+p(f(Y)) :- p(f(X)), &testConcat[X,a](Y), limit(f(X)). 

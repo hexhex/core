@@ -1,0 +1,4 @@
+p(a).
+limit(a).
+limit(aa).
+p(Y) :- p(X), &idc[f(X)](f(Y)), limit(X). 

@@ -2038,8 +2038,10 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
-		Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
-		this->assumptions.push_back(al);
+		if (isMappedToClaspLiteral(a.address)){
+			Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
+			this->assumptions.push_back(al);
+		}
 	}
 }
 

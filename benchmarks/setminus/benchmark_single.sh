@@ -43,11 +43,14 @@ i=0
 for c in "${confs[@]}"
 do
 	echo -ne -e " "
-	output=$(timeout $to time -f %e dlvhex2 $c --plugindir=../../testsuite/ prog$instance.hex 2>&1 >/dev/null)
-	if [[ $? == 124 ]]; then
+	$(timeout $to time -o $instance.time.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ prog$instance.hex 2>/dev/null >/dev/null)
+	ret=$?
+	output=$(cat $instance.time.dat)
+	if [[ $ret == 124 ]]; then
 		output="---"
 	fi
 	echo -ne $output
+	rm $instance.time.dat
 	let i=i+1
 done
 echo -e -ne "\n"

@@ -600,6 +600,10 @@ bool BaseModelGenerator::verifyEAtomAnswerTuple(RegistryPtr reg,
 	      }
       }
     }
+    else if( pattern[at].isNestedTerm() )
+    {
+      // no explicit unification check; just assume that they unify
+    }
     else if( pattern[at] != t[at] )
     {
       // mismatch
@@ -681,7 +685,7 @@ void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
 					{
 						// *it is the index of the input term that is a variable
 						// (this also verifies that we do not overwrite a variable twice with different values)
-						assert(t[*it].isTerm() && t[*it].isVariableTerm());
+						assert(t[*it].isTerm() && (t[*it].isVariableTerm() || t[*it].isNestedTerm()));
 						t[*it] = replaceBy;
 					}
 				}
@@ -888,6 +892,11 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
             domainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
             chosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', b));		// reuse auxiliaries for positive and negative replacements: they don't occur in the domain
             notChosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('n', b));	// exploration program anyway
+            if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && ea.auxInputPredicate != ID_FAIL){
+              domainAtom.tuple.push_back(ea.auxInputPredicate);
+              chosenDomainAtom.tuple.push_back(ea.auxInputPredicate);
+              notChosenDomainAtom.tuple.push_back(ea.auxInputPredicate);
+            }
             BOOST_FOREACH (ID o2, ea.inputs){
               domainAtom.tuple.push_back(o2);
               chosenDomainAtom.tuple.push_back(o2);
@@ -1121,7 +1130,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 							OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 							domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
 							int io = 1;
-							if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
+//							if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
 							for (int i = io; i < ogatom.tuple.size(); ++i){
 								domatom.tuple.push_back(ogatom.tuple[i]);
 							}

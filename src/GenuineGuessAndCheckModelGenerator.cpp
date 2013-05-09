@@ -434,7 +434,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
 	    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterion"))){
-		ufscm->learnNogoodsFromMainSearch();
+		ufscm->learnNogoodsFromMainSearch(true);
 		learnedEANogoods->clear();
 	}else{
 		learnedEANogoods->forgetLeastFrequentlyAdded();

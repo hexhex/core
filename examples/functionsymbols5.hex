@@ -1,0 +1,2 @@
+p(f(f(f(a)))).
+p(Y) :- p(X), &functionDecompose[X, 1](Y), &isFunctionTerm[X]().

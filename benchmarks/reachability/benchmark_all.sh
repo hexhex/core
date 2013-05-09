@@ -15,8 +15,8 @@ do
 		output = $instance.out
 		error = $instance.error
 		Log = $instance.log
-		Requirements = machine == \"node5.kr.tuwien.ac.at\"
-		request_memory = 4096 
+		Requirements = machine == \"lion.kr.tuwien.ac.at\"
+		request_memory = 8192 
 		Initialdir = $PWD
 		notification = never
 

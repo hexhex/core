@@ -143,7 +143,7 @@ public:
 	/**
 	 * Forces the unfounded set checker to learn nogoods from main search now
 	 */
-	virtual void learnNogoodsFromMainSearch() = 0;
+	virtual void learnNogoodsFromMainSearch(bool reset) = 0;
 
 	/**
 	* constructs a nogood which encodes the essence of an unfounded set
@@ -245,7 +245,7 @@ public:
 			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
 			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
-	void learnNogoodsFromMainSearch();
+	void learnNogoodsFromMainSearch(bool reset);
 
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr compatibleSet,
@@ -309,7 +309,7 @@ public:
 			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
 			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
-	void learnNogoodsFromMainSearch();
+	void learnNogoodsFromMainSearch(bool reset);
 
 	std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>());
 };
@@ -378,7 +378,7 @@ public:
 	/**
 	 * Forces all unfounded set checker in this manager to learn nogoods from main search now
 	 */
-	void learnNogoodsFromMainSearch();
+	void learnNogoodsFromMainSearch(bool reset);
 
 	Nogood getLastUFSNogood() const;
 

@@ -206,6 +206,7 @@ void RawPrinter::print(ID id)
 		{
 		case ID::SUBKIND_TERM_CONSTANT:
 		case ID::SUBKIND_TERM_VARIABLE:
+		case ID::SUBKIND_TERM_NESTED:
 			out << registry->terms.getByID(id).symbol;
 			break;
 		case ID::SUBKIND_TERM_PREDICATE:

@@ -274,110 +274,127 @@ void Registry::getExternalAtomsInTuple(
 // id is a literal or atom
 void Registry::getVariablesInID(ID id, std::set<ID>& out) const
 {
-  assert(id.isLiteral() || id.isAtom());
-  if( id.isOrdinaryGroundAtom() )
-    return;
-  if( id.isOrdinaryNongroundAtom() )
-  {
-    const OrdinaryAtom& atom = onatoms.getByID(id);
-    BOOST_FOREACH(ID idt, atom.tuple)
-    {
-      if( idt.isVariableTerm() )
-        out.insert(idt);
+  if (id.isTerm()){
+    if (id.isVariableTerm()) out.insert(id);
+    if (id.isNestedTerm()){
+      const Term& t = terms.getByID(id);
+      BOOST_FOREACH (ID nid, t.arguments) getVariablesInID(nid, out);
     }
   }
-  else if( id.isBuiltinAtom() )
-  {
-    const BuiltinAtom& atom = batoms.getByID(id);
-    BOOST_FOREACH(ID idt, atom.tuple)
+  else if (id.isLiteral() || id.isAtom()){
+    if( id.isOrdinaryGroundAtom() )
+      return;
+    if( id.isOrdinaryNongroundAtom() )
     {
-      if( idt.isVariableTerm() )
-        out.insert(idt);
+      const OrdinaryAtom& atom = onatoms.getByID(id);
+      BOOST_FOREACH(ID idt, atom.tuple)
+      {
+        getVariablesInID(idt, out);
+      }
     }
-  }
-  else if( id.isAggregateAtom() )
-  {
-    const AggregateAtom& atom = aatoms.getByID(id);
-    // body atoms
-    BOOST_FOREACH(ID idt, atom.literals)
+    else if( id.isBuiltinAtom() )
     {
-      getVariablesInID(idt, out);
+      const BuiltinAtom& atom = batoms.getByID(id);
+      BOOST_FOREACH(ID idt, atom.tuple)
+      {
+        getVariablesInID(idt, out);
+      }
     }
-    // local variables
-    BOOST_FOREACH(ID idv, atom.variables)
+    else if( id.isAggregateAtom() )
     {
-      out.insert(idv);
+      const AggregateAtom& atom = aatoms.getByID(id);
+      // body atoms
+      BOOST_FOREACH(ID idt, atom.literals)
+      {
+        getVariablesInID(idt, out);
+      }
+      // local variables
+      BOOST_FOREACH(ID idv, atom.variables)
+      {
+        out.insert(idv);
+      }
+      // left and right term
+      assert(atom.tuple.size() == 5);
+      if( atom.tuple[0].isTerm() )
+        getVariablesInID(atom.tuple[0], out);
+      if( atom.tuple[4].isTerm() )
+        getVariablesInID(atom.tuple[4], out);
     }
-    // left and right term
-    assert(atom.tuple.size() == 5);
-    if( atom.tuple[0].isTerm() && atom.tuple[0].isVariableTerm() )
-      out.insert(atom.tuple[0]);
-    if( atom.tuple[4].isTerm() && atom.tuple[4].isVariableTerm() )
-      out.insert(atom.tuple[4]);
-  }
-  else if( id.isExternalAtom() )
-  {
-    const ExternalAtom& atom = eatoms.getByID(id);
-    BOOST_FOREACH(ID idt, boost::join(atom.tuple, atom.inputs))
+    else if( id.isExternalAtom() )	
     {
-      if( idt.isVariableTerm() )
-        out.insert(idt);
+      const ExternalAtom& atom = eatoms.getByID(id);
+      BOOST_FOREACH(ID idt, boost::join(atom.tuple, atom.inputs))
+      {
+        getVariablesInID(idt, out);
+      }
     }
   }
 }
 
 void Registry::getOutVariablesInID(ID id, std::set<ID>& out) const
 {
-  assert(id.isLiteral() || id.isAtom());
-  if( id.isOrdinaryGroundAtom() )
-    return;
-  if( id.isOrdinaryNongroundAtom() )
-  {
-    const OrdinaryAtom& atom = onatoms.getByID(id);
-    BOOST_FOREACH(ID idt, atom.tuple)
-    {
-      if( idt.isVariableTerm() )
-        out.insert(idt);
+  if (id.isTerm()){
+    if (id.isVariableTerm()) out.insert(id);
+    if (id.isNestedTerm()){
+      const Term& t = terms.getByID(id);
+      BOOST_FOREACH (ID nid, t.arguments) getOutVariablesInID(nid, out);
     }
   }
-  else if( id.isBuiltinAtom() )
-  {
-    const BuiltinAtom& atom = batoms.getByID(id);
-    BOOST_FOREACH(ID idt, atom.tuple)
+  else if (id.isLiteral() || id.isAtom()){
+    if( id.isOrdinaryGroundAtom() )
+      return;
+    if( id.isOrdinaryNongroundAtom() )
     {
-      if( idt.isVariableTerm() )
-        out.insert(idt);
+      const OrdinaryAtom& atom = onatoms.getByID(id);
+      BOOST_FOREACH(ID idt, atom.tuple)
+      {
+        getOutVariablesInID(idt, out);
+      }
+    }
+    else if( id.isBuiltinAtom() )
+    {
+      const BuiltinAtom& atom = batoms.getByID(id);
+      BOOST_FOREACH(ID idt, atom.tuple)
+      {
+        getOutVariablesInID(idt, out);
+      }
+    }
+    else if( id.isAggregateAtom() )
+    {
+      const AggregateAtom& atom = aatoms.getByID(id);
+      // body atoms
+      BOOST_FOREACH(ID idt, atom.literals)
+      {
+        getOutVariablesInID(idt, out);
+      }
+      // local variables
+      BOOST_FOREACH(ID idv, atom.variables)
+      {
+        out.insert(idv);
+      }
+      // left and right term
+      assert(atom.tuple.size() == 5);
+      if( atom.tuple[0].isTerm() )
+        getOutVariablesInID(atom.tuple[0], out);
+      if( atom.tuple[4].isTerm() )
+        getOutVariablesInID(atom.tuple[4], out);
+    }
+    else if( id.isExternalAtom() )	
+    {
+      const ExternalAtom& atom = eatoms.getByID(id);
+      BOOST_FOREACH(ID idt, atom.tuple)
+      {
+        getOutVariablesInID(idt, out);
+      }
     }
   }
-  else if( id.isAggregateAtom() )
-  {
-    const AggregateAtom& atom = aatoms.getByID(id);
-    // body atoms
-    BOOST_FOREACH(ID idt, atom.literals)
-    {
-      getVariablesInID(idt, out);
-    }
-    // local variables
-    BOOST_FOREACH(ID idv, atom.variables)
-    {
-      out.insert(idv);
-    }
-    // left and right term
-    assert(atom.tuple.size() == 5);
-    if( atom.tuple[0].isTerm() && atom.tuple[0].isVariableTerm() )
-      out.insert(atom.tuple[0]);
-    if( atom.tuple[4].isTerm() && atom.tuple[4].isVariableTerm() )
-      out.insert(atom.tuple[4]);
-  }
-  else if( id.isExternalAtom() )
-  {
-    const ExternalAtom& atom = eatoms.getByID(id);
-    BOOST_FOREACH(ID idt, atom.tuple)
-    {
-      if( idt.isVariableTerm() )
-        out.insert(idt);
-    }
-  }
+}
+
+std::set<ID> Registry::getVariablesInID(const ID& id) const
+{
+  std::set<ID> out;
+  getVariablesInID(id, out);
+  return out;
 }
 
 // get all IDs of variables in atoms in given tuple
@@ -390,6 +407,40 @@ void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out) const
   {
     getVariablesInID(id, out);
   }
+}
+
+std::set<ID> Registry::getVariablesInTuple(const Tuple& t) const
+{
+  std::set<ID> out;
+  getVariablesInTuple(t, out);
+  return out;
+}
+
+ID Registry::replaceVariablesInTerm(const ID term, const ID var, const ID by){
+  assert (term.isTerm());
+
+  DBGLOG(DBG, "Replacing variable in term " << term << ": " << var << " --> " << by);
+  if ((term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_VARIABLE){
+    return (term == var ? by : var);
+  }
+  else if ((term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_CONSTANT || (term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_PREDICATE || (term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_INTEGER || (term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_BUILTIN)
+  {
+    return term;
+  }
+  else if ((term.kind & ID::SUBKIND_MASK) == ID::SUBKIND_TERM_NESTED)
+  {
+    Term t = terms.getByID(term);
+
+    for (int i = 1; i < t.arguments.size(); ++i){
+      t.arguments[i] = replaceVariablesInTerm(t.arguments[i], var, by);
+    }
+
+    t.updateSymbolOfNestedTerm(this);
+    ID tid = terms.getIDByString(t.symbol);
+    if (tid == ID_FAIL) tid = terms.storeAndGetID(t);
+    return tid;
+  }
+  assert (false);
 }
 
 // get the predicate of an ordinary or external atom

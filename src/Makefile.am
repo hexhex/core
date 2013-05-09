@@ -72,6 +72,7 @@ libdlvhex2_base_la_SOURCES = \
     ExternalLearningHelper.cpp \
     ExtSourceProperties.cpp \
     FLPModelGeneratorBase.cpp \
+    FunctionPlugin.cpp \
     GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
@@ -106,6 +107,7 @@ libdlvhex2_base_la_SOURCES = \
     SafetyChecker.cpp \
     SATSolver.cpp \
     State.cpp \
+    Term.cpp \
     URLBuf.cpp \
     UnfoundedSetCheckHeuristics.cpp \
     UnfoundedSetChecker.cpp

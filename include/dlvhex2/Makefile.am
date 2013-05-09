@@ -47,6 +47,7 @@ pkginclude_HEADERS = \
   FinalEvalGraph.h \
   FLPModelGeneratorBase.h \
   FLPModelGeneratorBase.tcc \
+  FunctionPlugin.h \
   fwd.h \
   GraphvizHelpers.h \
   GuessAndCheckModelGenerator.h \

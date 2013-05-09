@@ -36,6 +36,7 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Logger.h"
+#include "dlvhex2/fwd.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -54,14 +55,31 @@ private ostream_printable<Term>
 	//  variable
 	std::string symbol;
 
+	// nested terms
+	// for primitive terms (constant, constant string, variable), the only element is ID_FAIL
+	// for nested terms, arguments[0] is the function symbol (primitive term) and arguments[n] for n>=1 are the arguments (which might be nested themselves)
+	// for nested terms, symbol contains a string representation of the whole term
+	std::vector<ID> arguments;
+
 	Term(IDKind kind, const std::string& symbol): kind(kind), symbol(symbol) { 
 		assert(ID(kind,0).isTerm()); 
+
+		arguments.push_back(ID_FAIL);
 	}
-	
+
+	Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg);
+
+	// sets the symbol to the text representation generated from the arguments of the nested term
+	void updateSymbolOfNestedTerm(Registry* reg);
+
 	bool isQuotedString() const {
 		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
 			return true;
 		return false;
+	}
+
+	bool isNestedTerm() const {
+		return arguments[0] != ID_FAIL;
 	}
 	
 	std::string getQuotedString() const {
@@ -73,6 +91,9 @@ private ostream_printable<Term>
 			return symbol.substr(1, symbol.length()-2);
 		return symbol;
 	}
+
+	// splits a string representation into arguments
+	void analyzeTerm(RegistryPtr reg);
 	
   // the following method is not useful, as integers are always
   // represented in the ID.address field and never stored into a table
