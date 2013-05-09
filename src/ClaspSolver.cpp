@@ -278,6 +278,7 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
 			cb->propagate(interpretation, factWasSet, changed);
 		}
+		changed->clear();
 
 		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
 		// which cannot interfere with dlvhex.
@@ -761,6 +762,7 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s
 }
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
+
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");

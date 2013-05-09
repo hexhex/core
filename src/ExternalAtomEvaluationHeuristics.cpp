@@ -33,6 +33,8 @@
 
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 
+#include <bm/bmalgo.h>
+
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Base ==============================
@@ -45,7 +47,7 @@ ExternalAtomEvaluationHeuristics::ExternalAtomEvaluationHeuristics(HeuristicsMod
 ExternalAtomEvaluationHeuristicsAlways::ExternalAtomEvaluationHeuristicsAlways(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
 }
 
-bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 	return true;
 }
 
@@ -58,16 +60,31 @@ ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsAlwaysFactor
 ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsInputComplete(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
 }
 
-bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	eatom.updatePredicateInputMask();
 	return !factWasSet ||
-		(eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() ==
-		    (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count();
+		(eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count() &&
+		(eatom.getAuxInputMask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eatom.getAuxInputMask()->getStorage() & programMask->getStorage()).count();
 }
 
 ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsInputCompleteFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
 	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsInputComplete(mg, reg));
+}
+
+// ============================== EAComplete ==============================
+
+ExternalAtomEvaluationHeuristicsEAComplete::ExternalAtomEvaluationHeuristicsEAComplete(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
+}
+
+bool ExternalAtomEvaluationHeuristicsEAComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+
+	return !factWasSet ||
+		!bm::any_sub(eatomMask->getStorage() & programMask->getStorage(), factWasSet->getStorage() & programMask->getStorage());
+}
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsEACompleteFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
+	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsEAComplete(mg, reg));
 }
 
 // ============================== Never ==============================
@@ -75,7 +92,7 @@ ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsInputComplet
 ExternalAtomEvaluationHeuristicsNever::ExternalAtomEvaluationHeuristicsNever(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : ExternalAtomEvaluationHeuristics(mg, reg){
 }
 
-bool ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 	return false;
 }
 

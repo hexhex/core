@@ -728,7 +728,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtoms(Interpretation
 				if (!eaEvaluated[eaIndex]){
 					// evaluate external atom if the heuristics decides so
 					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-					if (externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed)){
+					if (externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getEAMask(eaIndex)->mask(), annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed)){
 						// evaluate it
 						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
 

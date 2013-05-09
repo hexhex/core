@@ -245,17 +245,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
-		
-		/*
-		RawPrinter rp(std::cout, factory.ctx.registry());
-		std::cout << "nonground: " << std::endl;
-		BOOST_FOREACH (ID rid, program.idb) rp.print(rid);
-		std::cout << "ground: " << std::endl;
-		BOOST_FOREACH (ID rid, grounder->getGroundProgram().idb) rp.print(rid);
-		*/
-
 		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
-    }
+	}
 	solver = GenuineGroundSolver::getInstance(
 		factory.ctx, annotatedGroundProgram,
 		// no interleaved threading because guess and check MG will likely not profit from it
@@ -335,7 +326,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			return InterpretationPtr();
 		}
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
-
 		LOG_SCOPE(DBG,"gM", false);
 		LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
 		if (!finalCompatibilityCheck(modelCandidate))
@@ -683,21 +673,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 
 	      // *en is our new watch (as it is either undefined or was recently changed)
 	      verifyWatchList[*en].push_back(eaIndex);
-/*
-	      if (!factWasSet->getFact(*en)){
-		      // XXX why can't we just watch *en? it is undefined
-		      // watch a yet unassigned atom such that the external atom depends on it
-		      IDAddress id = getWatchedLiteral(eaIndex, factWasSet, false);
-		      assert(id != ID::ALL_ONES);
-		      verifyWatchList[id].push_back(eaIndex);
-	      }else{
-		      // XXX why can't we just watch *en? it is changed
-		      // watch a changed atom
-		      IDAddress id = getWatchedLiteral(eaIndex, changed, true);
-		      assert(id != ID::ALL_ONES);
-		      verifyWatchList[id].push_back(eaIndex);
-	      }
-*/
+
 	      // leave, we are done with this external atom as we set eaEvaluated to false
 	      break;
 	    }
@@ -709,6 +685,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	bool conflict = false;
 	en = changed->getStorage().first();
 	en_end = changed->getStorage().end();
+
 	while (en < en_end){
 		// for all external atoms which watch this atom
 		if (factWasSet->getFact(*en)){
@@ -719,7 +696,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 					bool doEval;
 					{
 					  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
-					  doEval = externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed);
+					  doEval = externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getEAMask(eaIndex)->mask(), annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed);
 					}
 					if (doEval){
 						// evaluate it
@@ -767,13 +744,14 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// if the input to the external atom was complete, then remember the verification result
 	// (for incomplete input we cannot yet decide this)
-	if( !factWasSet || bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage(), factWasSet->getStorage() ) ) {
+	if( !factWasSet || !bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(), factWasSet->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
 		bool verify = vcb.verify();
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
 		eaVerified[eaIndex] = verify;
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
-		if( factory.ctx.config.getOption("NoPropagator") == 0 )
+		if( factory.ctx.config.getOption("NoPropagator") == 0 ){
 		  eaEvaluated[eaIndex] = true;
+                }
 
 		return !verify;
 	}else{
