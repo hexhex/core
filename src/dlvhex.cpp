@@ -720,7 +720,7 @@ void processOptionsPrePlugin(
 		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
     { "dumpstats", no_argument, 0, 37 },
-    { "iauxinaux", no_argument, 0, 38 },
+    { "iauxinaux", optional_argument, 0, 38 },
     { "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ NULL, 0, NULL, 0 }
@@ -732,6 +732,8 @@ void processOptionsPrePlugin(
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
   bool specifiedModelQueueSize = false;
+  bool defiaux = false;
+  bool iaux = false;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -1305,7 +1307,14 @@ void processOptionsPrePlugin(
       break;
 
     case 38:
-      pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
+      defiaux = true;
+      if (!optarg){
+        iaux = true;
+      }else{
+        if (std::string(optarg) == "true") iaux = true;
+        else if (std::string(optarg) == "false") iaux = false;
+        else throw GeneralError("Unknown option \"" + std::string(optarg) + "\" for iauxinaux");
+      }
       break;
 
     case 39:
@@ -1333,6 +1342,9 @@ void processOptionsPrePlugin(
 	}
 	if (pctx.config.getOption("GenuineSolver")){
 		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
+	}
+	if (defiaux){
+		pctx.config.setOption("IncludeAuxInputInAuxiliaries", iaux);
 	}
 
 	// configure plugin path
