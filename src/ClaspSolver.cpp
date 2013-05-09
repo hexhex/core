@@ -93,6 +93,24 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 		model = InterpretationPtr(new Interpretation(cs.reg));
 		model->add(*cs.ep->getInterpretation());
+/*
+// extract the full interpretation
+{
+	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+	model->clear();
+	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+		//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
+		//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
+		// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
+		// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
+		if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
+			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+			// set it in the model
+			model->setFact(adr);
+		}
+	}
+}
+*/
 
 		#ifdef DEBUG
 		// create full model from symbol table and verify it against incrementally updated model
@@ -419,6 +437,8 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::undoLevel");
 
 	//DBGLOG(DBG, "recording undoLevel to " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
+
+	isModelDirty = true;
 
 	assert(s.decisionLevel() > 0);
 	// the following holds because we just undid a level so it has been reset
@@ -763,40 +783,48 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 
-	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
-	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");
+	do{
+		isModelDirty = false;
 
-	// in this method we must not add nogoods which cause no conflict on the current decision level!
-	// (the "true" parameter instructs propagateNewNogoods to do that)
-	// (see postcondition in clasp/constraint.h)
+		DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
+		DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::isModel");
 
-	// just record as in propagate()
-	recordUpdateDecisionLevels(s);
+		// in this method we must not add nogoods which cause no conflict on the current decision level!
+		// (the "true" parameter instructs propagateNewNogoods to do that)
+		// (see postcondition in clasp/constraint.h)
 
-	DBGLOG(DBG,"propagating to HEX (isModel)");
-       	// but apply recorded changes (all so far) unconditionally
-        // (because we must do prop(s) afterwards)
-	applyRecordedDecisionLevelUpdates(s);
+		// just record as in propagate()
+		recordUpdateDecisionLevels(s);
 
-	// first propagate to HEX; this invalidates external atoms that have
-	// been marked as evaluated previously if their input interpretation
-	// changed (if this is not done, reportModel() might be called and use
-	// previously computed/cached eatom values which no longer reflect the
-	// interpretation)
-	prop(s);
+		DBGLOG(DBG,"propagating to HEX (isModel)");
+	       	// but apply recorded changes (all so far) unconditionally
+		// (because we must do prop(s) afterwards)
+		applyRecordedDecisionLevelUpdates(s);
 
-	// always do propagateNewNogoods because we may obtain new nogoods from somewhere else
-	// that have been created due to reportModel and subsequent model compatibility checks
-	// (if something shall be skipped -> skip inside of prop())
-	if( propagateNewNogoods(s, true) )
-	{
-		return s.numFreeVars() == 0;
-	}
-	else
-	{
-		return false;
-	}
+		// first propagate to HEX; this invalidates external atoms that have
+		// been marked as evaluated previously if their input interpretation
+		// changed (if this is not done, reportModel() might be called and use
+		// previously computed/cached eatom values which no longer reflect the
+		// interpretation)
+		prop(s);
+
+		// always do propagateNewNogoods because we may obtain new nogoods from somewhere else
+		// that have been created due to reportModel and subsequent model compatibility checks
+		// (if something shall be skipped -> skip inside of prop())
+		if( propagateNewNogoods(s, true) )
+		{
+			// no conflict;
+			// if we have free variables, then we have no model;
+			// otherwise the interpretation might be dirty and we need another iteration
+			if (s.numFreeVars() != 0) return false;
+		}
+		else
+		{
+			return false;
+		}
+	}while(isModelDirty);
+	return s.numFreeVars() == 0;
 }
 
 bool ClaspSolver::ExternalPropagator::isComplete(const Clasp::Solver& s) const {

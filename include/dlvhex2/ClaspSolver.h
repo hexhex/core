@@ -214,6 +214,9 @@ private:
 		// (this is necessary and useful for the static level which is directly put into the interpretation)
 		void updateDecisionLevel(const Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive);
 
+		// is set to false at the beginning of isModel and set to true whenever the interpretation changes while isModel is running (which might be the case when new nogoods are added);
+		// this allows for detecting if isModel needs to do another iteration
+		bool isModelDirty;
 	public:
 		ExternalPropagator(ClaspSolver& cs);
 		void setHeuristics(DeferPropagationHeuristicsPtr deferHeuristics);
