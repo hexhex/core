@@ -306,10 +306,11 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 		}
 }
 
-bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL){
+std::pair<bool, bool> ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL){
 	// add the new nogoods to clasp
   	// if onlyOnCurrentDL, we only 
 	bool inconsistent = false;
+	bool added = false;
 	if( !cs.nogoods.empty() )
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp::propNN");
@@ -324,11 +325,11 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 		      it != cs.nogoods.end();)
 		  {
 			Nogood& ng = *it;
-			bool proc, inc;
-			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			ClaspSolver::AddNogoodToClaspResult res = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			added |= res.added;
 			count++;
 			//LOG(DBG, "proc " << proc << " inc " << inc << " cdl for nogood " << ng.getStringRepresentation(cs.reg));
-			if( proc ) {
+			if( res.processed ) {
 				// erase and goto next
 				success++;
 				it = cs.nogoods.erase(it);
@@ -336,7 +337,7 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 				// goto next
 				it++;
 			}
-			if( inc ) {
+			if( res.conflicting ) {
 				// abort
 				inconsistent = true;
 				break;
@@ -353,18 +354,18 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 		      it != cs.nogoods.end(); ++it)
 		  {
 			Nogood& ng = *it;
-			bool proc, inc;
-			boost::tie(proc, inc) = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			ClaspSolver::AddNogoodToClaspResult res = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			added |= res.added;
 			count++;
 			//LOG(DBG, "proc " << proc << " inc " << inc << " for nogood " << ng.getStringRepresentation(cs.reg));
-			if( inc )
+			if( res.conflicting )
 			{
 			  inconsistent = true;
 			  // increase it so that we will erase also this element
 			  it++;
 			  break;
 			}
-			if( proc )
+			if( res.processed )
 			  success++;
 		  }
 		  cs.nogoods.erase(cs.nogoods.begin(), it);
@@ -375,7 +376,7 @@ bool ClaspSolver::ExternalPropagator::propagateNewNogoods(Clasp::Solver& s, bool
 	}
 	assert(!inconsistent || s.hasConflict());
 
-	return !inconsistent;
+	return std::pair<bool, bool>(inconsistent, added);
 }
 
 void ClaspSolver::ExternalPropagator::printTrail(const Clasp::Solver& s, uint32_t from, uint32_t to_exclusive)
@@ -438,7 +439,7 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 
 	//DBGLOG(DBG, "recording undoLevel to " << s.decisionLevel() << "/" << s.trail().size() << " (from " << lastDL << ")");
 
-	isModelDirty = true;
+	//isModelDirty = true;
 
 	assert(s.decisionLevel() > 0);
 	// the following holds because we just undid a level so it has been reset
@@ -567,7 +568,7 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 	// always do this because we may obtain new nogoods not only from
 	// prop() but also from reportModel and model compatibility checks
-	return propagateNewNogoods(s);
+	return !propagateNewNogoods(s).first;
 }
 
 void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
@@ -783,8 +784,9 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 
+	bool inconsistent, added;
 	do{
-		isModelDirty = false;
+		//isModelDirty = false;
 
 		DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 		DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
@@ -812,7 +814,8 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 		// always do propagateNewNogoods because we may obtain new nogoods from somewhere else
 		// that have been created due to reportModel and subsequent model compatibility checks
 		// (if something shall be skipped -> skip inside of prop())
-		if( propagateNewNogoods(s, true) )
+		boost::tie(inconsistent, added) = propagateNewNogoods(s, true);
+		if( !inconsistent )
 		{
 			// no conflict;
 			// if we have free variables, then we have no model;
@@ -823,7 +826,9 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 		{
 			return false;
 		}
-	}while(isModelDirty);
+
+		DBGLOG(DBG, "isModel: do another iteration due to new clauses=" << added);
+	}while(added);
 	return s.numFreeVars() == 0;
 }
 
@@ -843,12 +848,8 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 
 /**
  * Adds a nogood to the running clasp instance.
- * @return std::pair<bool, bool>
- *             The first return value indicates if the nogood was successfully processed.
- *               That is, it is true iff it was either added or excluded from being added, and false if it might be added at some future point
-               The second is true iff adding has produced a conflict
  */
-std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogood& ng, bool onlyOnCurrentDL){
+ClaspSolver::AddNogoodToClaspResult ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogood& ng, bool onlyOnCurrentDL){
 	//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::addNogoodTC");
 
 #ifndef NDEBUG
@@ -860,7 +861,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 	BOOST_FOREACH (ID lit, ng){
 		if (!isMappedToClaspLiteral(lit.address)){
 			LOG(INFO, "Skipping nogood " << ng.getStringRepresentation(reg) << " because a literal is not in Clasp's literal list");
-			return std::pair<bool, bool>(true, false);
+			return ClaspSolver::AddNogoodToClaspResult(true, false, false);
 		}
 	}
 
@@ -880,7 +881,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 			if (pos.contains(mclit.var())) continue;
 			else if (neg.contains(mclit.var())){
 				LOG(INFO, "Dropping tautological nogood " << ng.getStringRepresentation(reg));
-				return std::pair<bool, bool>(true, false);
+				return ClaspSolver::AddNogoodToClaspResult(true, false, false);
 			}
 			pos.insert(mclit.var());
 
@@ -889,7 +890,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 			if (neg.contains(mclit.var())) continue;
 			else if (pos.contains(mclit.var())){
 				LOG(INFO, "Dropping tautological nogood " << ng.getStringRepresentation(reg));
-				return std::pair<bool, bool>(true, false);
+				return ClaspSolver::AddNogoodToClaspResult(true, false, false);
 			}
 			neg.insert(mclit.var());
 
@@ -909,7 +910,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 		// (if this method is called by isModel() then we must not cause conflicts except on the top level)
 		if (onlyOnCurrentDL && !s.isFalse(clit)){
 			LOG(DBG, "Did not add nogood " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
-			return std::pair<bool, bool>(false, false);
+			return ClaspSolver::AddNogoodToClaspResult(false, false, false);
 		}
 #ifndef NDEBUG
 		if (!first) ss << ", ";
@@ -922,7 +923,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 	// (if this method is called by isModel() then we must not cause conflicts except on the top level)
 	if (onlyOnCurrentDL && conflictOnLowerDL){
 		LOG(DBG, "Did not add nogood " << ng.getStringRepresentation(reg) << " because it is conflicting on a lower decision level");
-		return std::pair<bool, bool>(false, false);
+		return ClaspSolver::AddNogoodToClaspResult(false, false, false);
 	}
 
 #ifndef NDEBUG
@@ -930,7 +931,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, const Nogo
 #endif
 
 	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
-	std::pair<bool, bool> ret(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok());
+	ClaspSolver::AddNogoodToClaspResult ret(true, true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok());
 
 	return ret;
 }

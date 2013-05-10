@@ -216,14 +216,16 @@ private:
 
 		// is set to false at the beginning of isModel and set to true whenever the interpretation changes while isModel is running (which might be the case when new nogoods are added);
 		// this allows for detecting if isModel needs to do another iteration
-		bool isModelDirty;
+		//bool isModelDirty;
 	public:
 		ExternalPropagator(ClaspSolver& cs);
 		void setHeuristics(DeferPropagationHeuristicsPtr deferHeuristics);
 		void prop(Clasp::Solver& s);
 		void initialize(Clasp::Solver& s);
 		virtual void undoLevel(Clasp::Solver& s);
-		virtual bool propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL = false);
+		// first element: inconsistency
+		// second element: true if at least one nogood was added
+		virtual std::pair<bool, bool> propagateNewNogoods(Clasp::Solver& s, bool onlyOnCurrentDL = false);
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
@@ -235,7 +237,13 @@ private:
 	};
 
 	// interface to clasp internals
-	std::pair<bool, bool> addNogoodToClasp(Clasp::Solver& s, const Nogood& ng, bool onlyOnCurrentDL = false);
+	struct AddNogoodToClaspResult{
+		bool processed;		// true, iff nogood was added or skipped because it does not need to be added
+		bool added;		// true, iff nogood was added
+		bool conflicting;	// true, iff assignment is now conflicting
+		AddNogoodToClaspResult(bool p, bool a, bool c) : processed(p), added(a), conflicting(c){}
+	};
+	AddNogoodToClaspResult addNogoodToClasp(Clasp::Solver& s, const Nogood& ng, bool onlyOnCurrentDL = false);
 	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
