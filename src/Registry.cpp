@@ -677,13 +677,72 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   return av.id;
 }
 
+ID Registry::getAuxiliaryVariableSymbol(char type, ID id)
+{
+  DBGLOG_SCOPE(DBG,"gAVS",false);
+  DBGLOG(DBG,"getAuxiliaryVariableSymbol for " << type << " " << id);
+
+  // lookup auxiliary
+  AuxiliaryKey key(type,id);
+  AuxiliaryStorage::left_const_iterator it =
+    pimpl->auxSymbols.left.find(key);
+  if( it != pimpl->auxSymbols.left.end() )
+  {
+    DBGLOG(DBG,"found " << it->second.id);
+    return it->second.id;
+  }
+
+  // not found
+
+  // create symbol
+  std::ostringstream s;
+  s << "Auxvar_" << type << "_" << std::hex << id.kind << "_" << id.address;
+  AuxiliaryValue av(s.str(), ID_FAIL);
+  DBGLOG(DBG,"created symbol '" << av.symbol << "'");
+  Term term(
+      ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | ID::PROPERTY_AUX,
+      av.symbol);
+
+  // register ID for symbol
+  av.id = terms.getIDByString(term.symbol);
+  if( av.id != ID_FAIL)
+    throw FatalError("auxiliary collision with symbol '" +
+        term.symbol + "' (or programming error)!");
+  av.id = terms.storeAndGetID(term);
+
+  // register auxiliary
+  pimpl->auxSymbols.insert(AuxiliaryStorageTranslation(key, av));
+
+  // return
+  DBGLOG(DBG,"returning id " << av.id << " for aux var symbol " << av.symbol);
+  return av.id;
+}
+
 // maps an auxiliary constant symbol back to the ID behind
 ID Registry::getIDByAuxiliaryConstantSymbol(ID auxConstantID) const{
+  assert(auxConstantID.isConstantTerm());
 
   // lookup ID of auxiliary
   DBGLOG(DBG,"getIDByAuxiliaryConstantSymbol for " << auxConstantID);
   AuxiliaryStorage::right_const_iterator it =
     pimpl->auxSymbols.right.find(AuxiliaryValue("", auxConstantID));
+  if( it != pimpl->auxSymbols.right.end() )
+  {
+    DBGLOG(DBG,"found " << it->first.id);
+    return it->second.id;
+  }else{
+    return ID_FAIL;
+  }
+}
+
+// maps an auxiliary constant symbol back to the ID behind
+ID Registry::getIDByAuxiliaryVariableSymbol(ID auxVariableID) const{
+  assert(auxVariableID.isVariableTerm());
+
+  // lookup ID of auxiliary
+  DBGLOG(DBG,"getIDByAuxiliaryVariableSymbol for " << auxVariableID);
+  AuxiliaryStorage::right_const_iterator it =
+    pimpl->auxSymbols.right.find(AuxiliaryValue("", auxVariableID));
   if( it != pimpl->auxSymbols.right.end() )
   {
     DBGLOG(DBG,"found " << it->first.id);

@@ -1,19 +1,28 @@
+2013-05-22  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/Registry.h: Introduce auxiliary variable
+	symbols.
+	* src/Registry.cpp: Likewise.
+	* include/dlvhex2/FunctionPlugin.h: Add rewriter to transform
+	Gringo function syntax to external atoms.
+	* src/FunctionPlugin.cpp: Likewise.
+
 2013-04-27  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/FunctionPlugin.h: Implement external atoms for
-	function symbol processing
-	* src/FunctionPlugin.cpp: Likewise
+	function symbol processing.
+	* src/FunctionPlugin.cpp: Likewise.
 
 2013-04-25  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/HexGrammar.tcc: Add basic support for function
-	symbols
-	* include/dlvhex2/HexGrammar.h: Likewise
-	* include/dlvhex2/Registry.h: Likewise
-	* include/dlvhex2/Term.h: Likewise
-	* src/Registry.cpp: Likewise
-	* src/Term.cpp: Likewise
-	* src/Printer.cpp: Likewise
+	symbols.
+	* include/dlvhex2/HexGrammar.h: Likewise.
+	* include/dlvhex2/Registry.h: Likewise.
+	* include/dlvhex2/Term.h: Likewise.
+	* src/Registry.cpp: Likewise.
+	* src/Term.cpp: Likewise.
+	* src/Printer.cpp: Likewise.
 
 2013-03-12  Christoph Redl <redl@kr.tuwien.ac.at>
 

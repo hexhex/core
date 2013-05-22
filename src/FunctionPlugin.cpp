@@ -56,7 +56,7 @@ namespace spirit = boost::spirit;
 namespace qi = boost::spirit::qi;
 
 FunctionPlugin::CtxData::CtxData():
-	maxArity(1)
+	maxArity(1), rewrite(false)
 {
 }
 
@@ -74,7 +74,8 @@ FunctionPlugin::~FunctionPlugin()
 void FunctionPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --function-maxarity=<N> Maximum number of output terms in functionDecompose." << std::endl;
+	o << "     --function-maxarity=<N>    Maximum number of output terms in functionDecompose." << std::endl
+	  << "     --function-rewrite         Rewrite function symbols to external atoms" << std::endl;
 }
 
 // accepted options: --exists-enable
@@ -100,6 +101,11 @@ void FunctionPlugin::processOptions(
 			ctxdata.maxArity = boost::lexical_cast<int>(str.substr(std::string("--function-maxarity=").length()));
 			processed = true;
 		}
+		if( boost::starts_with(str, "--function-rewrite") )
+		{
+			ctxdata.rewrite = true;
+			processed = true;
+		}
 
 		if( processed )
 		{
@@ -112,6 +118,149 @@ void FunctionPlugin::processOptions(
 			it++;
 		}
 	}
+}
+
+class FunctionRewriter:
+	public PluginRewriter
+{
+private:
+	FunctionPlugin::CtxData& ctxdata;
+public:
+	FunctionRewriter(FunctionPlugin::CtxData& ctxdata) : ctxdata(ctxdata) {}
+	virtual ~FunctionRewriter() {}
+
+	ID composeTerm(ProgramCtx& ctx, ID composedTerm, Rule& rule);
+	ID decomposeTerm(ProgramCtx& ctx, ID composedTerm, Rule& rule);
+	virtual void rewrite(ProgramCtx& ctx);
+};
+
+ID FunctionRewriter::composeTerm(ProgramCtx& ctx, ID composedTerm, Rule& rule){
+
+	if (!composedTerm.isNestedTerm()) return composedTerm;
+
+	RegistryPtr reg = ctx.registry();
+	Term term = reg->terms.getByID(composedTerm);
+
+	ID newVar = reg->getAuxiliaryVariableSymbol('F', composedTerm);
+
+	ExternalAtom eatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+	std::stringstream composeStr;
+	composeStr << "functionCompose";
+	Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, composeStr.str());
+	eatom.predicate = reg->storeTerm(exPred);
+
+	BOOST_FOREACH (ID sub, term.arguments){
+		eatom.inputs.push_back(composeTerm(ctx, sub, rule));
+	}
+	eatom.tuple.push_back(newVar);
+
+	ID composeAtomID = ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eatom));
+	rule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+	rule.body.push_back(composeAtomID);
+
+	return newVar;
+}
+
+ID FunctionRewriter::decomposeTerm(ProgramCtx& ctx, ID composedTerm, Rule& rule){
+
+	if (!composedTerm.isNestedTerm()) return composedTerm;
+
+	RegistryPtr reg = ctx.registry();
+	Term term = reg->terms.getByID(composedTerm);
+
+	ID newVar = reg->getAuxiliaryVariableSymbol('F', composedTerm);
+
+	ExternalAtom eatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+	std::stringstream composeStr;
+	composeStr << "functionDecompose" << (term.arguments.size() - 1);
+	Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, composeStr.str());
+	eatom.predicate = reg->storeTerm(exPred);
+
+	BOOST_FOREACH (ID sub, term.arguments){
+		eatom.tuple.push_back(composeTerm(ctx, sub, rule));
+	}
+	eatom.inputs.push_back(newVar);
+
+	ID composeAtomID = ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eatom));
+	rule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+	rule.body.push_back(composeAtomID);
+
+	return newVar;
+}
+
+void FunctionRewriter::rewrite(ProgramCtx& ctx)
+{
+	RegistryPtr reg = ctx.registry();
+
+	std::vector<ID> newIdb;
+	BOOST_FOREACH (ID ruleID, ctx.idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		Rule newRule(rule.kind);
+		BOOST_FOREACH (ID h, rule.head){
+			if (h.isOrdinaryAtom()){
+				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(h);
+				OrdinaryAtom newAtom(oatom.kind);
+
+				BOOST_FOREACH (ID term, oatom.tuple){
+					newAtom.tuple.push_back(composeTerm(ctx, term, newRule));
+					if (newAtom.tuple[newAtom.tuple.size() - 1].isVariableTerm()){
+						newAtom.kind &= (ID::ALL_ONES - ID::SUBKIND_MASK);
+						newAtom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+					}
+				}
+				newRule.head.push_back(reg->storeOrdinaryAtom(newAtom));
+			}
+		}
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isOrdinaryAtom()){
+				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(b);
+				OrdinaryAtom newAtom(oatom.kind);
+
+				BOOST_FOREACH (ID term, oatom.tuple){
+					newAtom.tuple.push_back(decomposeTerm(ctx, term, newRule));
+					if (newAtom.tuple[newAtom.tuple.size() - 1].isVariableTerm()){
+						newAtom.kind &= (ID::ALL_ONES - ID::SUBKIND_MASK);
+						newAtom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+					}
+				}
+				if (b.isNaf()) newRule.body.push_back(ID::nafLiteralFromAtom(reg->storeOrdinaryAtom(newAtom)));
+				else newRule.body.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(newAtom)));
+			}else if (b.isExternalAtom()){
+				const ExternalAtom& eatom = reg->eatoms.getByID(b);
+				ExternalAtom newAtom(eatom.kind);
+
+				newAtom.predicate = eatom.predicate;
+				BOOST_FOREACH (ID term, eatom.inputs){
+					newAtom.inputs.push_back(composeTerm(ctx, term, newRule));
+				}
+				BOOST_FOREACH (ID term, eatom.tuple){
+					newAtom.tuple.push_back(decomposeTerm(ctx, term, newRule));
+				}
+				if (b.isNaf()) newRule.body.push_back(ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(newAtom)));
+				else newRule.body.push_back(ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(newAtom)));
+			}else{
+				newRule.body.push_back(b);
+			}
+		}
+		ID rid = reg->storeRule(newRule);
+		newIdb.push_back(rid);
+/*
+a.
+p(f(b)) :- a.
+*/
+	}
+	ctx.idb = newIdb;
+}
+
+// rewrite program by adding auxiliary query rules
+PluginRewriterPtr FunctionPlugin::createRewriter(ProgramCtx& ctx)
+{
+	FunctionPlugin::CtxData& ctxdata = ctx.getPluginData<FunctionPlugin>();
+	if( !ctxdata.rewrite )
+		return PluginRewriterPtr();
+
+	return PluginRewriterPtr(new FunctionRewriter(ctxdata));
 }
 
 class FunctionComposeAtom : public PluginAtom
