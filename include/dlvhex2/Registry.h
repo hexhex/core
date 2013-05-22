@@ -157,15 +157,17 @@ public:
   // must be called after construction and before any call to getAuxiliaryConstantSymbol
   void setupAuxiliaryGroundAtomMask();
 
-  // create or lookup auxiliary constant symbol of type <type> for ID <id>
+  // create or lookup auxiliary constant or variable symbol of type <type> for ID <id>
   // with multiple calls, for one <type>/<id> pair the same symbol/ID will be returned
   // we limit ourselves to types of one letter, this should be sufficient
   // see Registry.cpp for documentation of types used internally in dlvhex
   // (plugins may also want to use this method for their own auxiliaries)
   ID getAuxiliaryConstantSymbol(char type, ID id);
+  ID getAuxiliaryVariableSymbol(char type, ID id);
 
-  // maps an auxiliary constant symbol back to the ID behind
+  // maps an auxiliary constant or variable symbol back to the ID behind
   ID getIDByAuxiliaryConstantSymbol(ID auxConstantID) const;
+  ID getIDByAuxiliaryVariableSymbol(ID auxConstantID) const;
 
   // maps an auxiliary constant symbol back to the type behind
   char getTypeByAuxiliaryConstantSymbol(ID auxConstantID) const;

@@ -1,0 +1,1 @@
+1 grep -q "not liberally domain-expansion safe"

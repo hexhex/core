@@ -49,6 +49,9 @@ public:
     // maximal input arity
     int maxArity;
 
+    // rewrite function symbols to external atoms
+    bool rewrite;
+
     CtxData();
     virtual ~CtxData() {};
   };
@@ -65,6 +68,9 @@ public:
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+
+  // rewrite program by adding auxiliary constraints
+  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
   // plugin atoms
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
