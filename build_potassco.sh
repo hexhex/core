@@ -49,12 +49,13 @@ else
 	patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
 		{ echo "gringo patching failed!"; exit -1; }
 
-	echo "using clang: ${USING_CLANG}"
-	if test "xyes" == "x${USING_CLANG}"; then
-		echo "patching gringo (for clang)"
+# Edit: it seems that this patch is also necessary with gcc if boost version >= 1.49
+#	echo "using clang: ${USING_CLANG}"
+#	if test "xyes" == "x${USING_CLANG}"; then
+#		echo "patching gringo (for clang)"
 		patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-clang.patch ||
 			{ echo "gringo patching failed!"; exit -1; }
-	fi
+#	fi
 
 	mkdir -p gringo/build/release
 fi
