@@ -1056,7 +1056,7 @@ bool LiberalSafetyChecker::isDomainExpansionSafe() const{
 }
 
 bool LiberalSafetyChecker::isExternalAtomNecessaryForDomainExpansionSafety(ID eatomID) const{
-	assert(isDomainExpansionSafe());
+	if (!isDomainExpansionSafe()) return true;
 	return necessaryExternalAtoms.count(eatomID.address) > 0;
 }
 
