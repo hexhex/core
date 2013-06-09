@@ -798,7 +798,7 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 		BOOST_FOREACH(ID bid, rule.body)
 		{
 			// default-negated literals
-			if (!bid.isExternalAtom() && bid.isNaf()){
+			if (!bid.isExternalAtom() && bid.isNaf() &&  bid.isOrdinaryAtom()){
 				// does it unify with a head atom in this component?
 				bool stratified = true;
 				BOOST_FOREACH (ID hid, headAtomIDs){

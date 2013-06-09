@@ -78,6 +78,23 @@ namespace
     case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GE;
     case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LT;
     case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LE;
+    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_EQ;
+    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_NE;
+    default:
+      return op;
+    }
+  }
+  dlvhex::IDAddress negateBinaryOperator(dlvhex::IDAddress op)
+  {
+    // reverse operator if necessary (< switches with >, <= switches with >=)
+    switch(static_cast<dlvhex::IDAddress>(op))
+    {
+    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GE;
+    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GT;
+    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LE;
+    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LT;
+    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_NE;
+    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_EQ;
     default:
       return op;
     }
@@ -252,6 +269,11 @@ void GringoGrounder::Printer::print(ID id){
 		printAggregate(id);
 	}else if(id.isTerm() && id.isBuiltinTerm() && id == ID::termFromBuiltin(ID::TERM_BUILTIN_INT)){
 		printInt(id);
+	}else if(id.isNaf() && id.isLiteral() && id.isBuiltinAtom()){
+		const BuiltinAtom& bi = registry->batoms.getByID(id);
+		print(bi.tuple[1]);
+		print(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(negateBinaryOperator(bi.tuple[0].address))));
+		print(bi.tuple[2]);
 	}else{
 		Base::print(id);
 	}
