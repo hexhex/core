@@ -82,13 +82,13 @@ This file provides some hints how to install and run dlvhex.
 
     There is also a script which does everything automatically: checkout_build_potassco.sh
 *** DLVDB
-    FIXME
+    currently unsupported
 *** libdlv
     currently unsupported
 *** boost
     Boost is a collection of portable C++ source libraries, which are
     intended to be widely useful, and usable across a broad spectrum
-    of applications. You will need a version >= 1.41. See
+    of applications. You will need a version >= 1.43. See
     <http://www.boost.org/>.
 
     dlvhex needs the following Boost libraries:
