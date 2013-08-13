@@ -43,6 +43,12 @@ EXTRA_DIST = \
     extatom8.hex \
     extatom9.hex \
     extatom10.hex \
+    functionsymbols1.hex \
+    functionsymbols2.hex \
+    functionsymbols3.hex \
+    functionsymbols4.hex \
+    functionsymbols5.hex \
+    functionsymbols6.hex \
     higherorder1.hex \
     higherorder2.hex \
     higherorder3.hex \
@@ -169,6 +175,12 @@ EXTRA_DIST = \
     tests/extatom8.out \
     tests/extatom9.out \
     tests/extatom10.out \
+    tests/functionsymbols1.out \
+    tests/functionsymbols2.out \
+    tests/functionsymbols3.out \
+    tests/functionsymbols4.out \
+    tests/functionsymbols5.out \
+    tests/functionsymbols6.stderr \
     tests/higherorder1.out \
     tests/higherorder2.out \
     tests/higherorder3.out \
