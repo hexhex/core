@@ -9,7 +9,7 @@ AC_CONFIG_HEADER([include/config.h])
 DLVHEX_DEFINE_VERSION([DLVHEX],[$PACKAGE_VERSION])
 # for ABI and library versioning,
 # see https://github.com/hexhex/core/wiki/LibraryVersions
-DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[8.0.0])
+DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[7.2.0])
 
 AC_CANONICAL_HOST
 
