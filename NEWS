@@ -1,5 +1,13 @@
 dlvhex NEWS -- history of user-visible changes.
 
+* Version 2.2.0 (August 2013)
+
+** Support for function symbols (see examples/functionsymbols<N>.hex)
+** Existentials in the head (see examples/exists<N>.hex)
+** Liberal safety (see examples/liberalsafety<N>.hex)
+** Various performance improvements and bugfixes.
+** See Changelog for minor changes and more details.
+
 * Version 2.1.0 (October 2012)
 
 ** Gringo+Clasp can now be built as part of the dlvhex build process and
