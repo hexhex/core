@@ -1,3 +1,10 @@
+2013-08-15  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	Release 2.2.0
+	* NEWS: summarizing changes
+	* src/Makefile.am: Increasing Version numbers.
+	* configure.ac: Likewise.
+
 2013-05-22  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/Registry.h: Introduce auxiliary variable
@@ -30,11 +37,82 @@
 	safety checkers.
 	* src/LiberalSafetyChecker.cpp: Likewise.
 
+2013-03-04  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* include/dlvhex2/ClaspSolver.h: More efficiency improvments by using
+	different data structures/algorithms.
+	* src/ClaspSolver.cpp: Likewise.
+
+2013-01-27  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* src/dlvhex.cpp: Handling signals to shutdown and display statistics.
+
+2013-01-21  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* include/dlvhex2/ManualEvalHeuristicsPlugin.h: Plugin for manually
+	specifying evaluation units.
+	* src/ManualEvalHeuristicsPlugin.cpp: Likewise.
+	* examples/extatom1_manualunits*.hex: Likewise.
+
+2013-01-14  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* include/dlvhex2/ClaspSolver.h: Making clasp-to-HEX propagation more
+	performant by changing data structures, making it relative, and limiting
+	how often it is done for partial assignments.
+	* src/ClaspSolver.cpp: Likewise.
+
+2013-01-09  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* include/dlvhex2/GringoGrounder.h: Improving grounder performance by
+	adapting container data types and eliminating copy and allocation
+	operations.
+	* include/dlvhex2/PredicateMask.h: Likewise.
+	* src/GringoGrounder.cpp: Likewise.
+	* src/PredicateMask.cpp: Likewise.
+
+2013-01-07  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* src/FLPModelGeneratorBase.cpp: Fixing bug in auxiliary input processing.
+	* include/dlvhex2/Atoms.h: Likewise.
+
+2013-01-05  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* include/dlvhex2/Benchmarking.h: Making benchmarking more robust
+	wrt. multi-threading.
+	* src/Benchmarking.cpp: Likewise.
+
+	* include/dlvhex2/ExternalLearningHelper.h: Extending external
+	learning interface.
+	* src/ExternalLearningHelper.cpp: Likewise.
+
+2012-12-30  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* include/dlvhex2/ComponentGraph.h: Unifying component/eval graph
+	building and refactoring it to remove code duplications.
+	* include/dlvhex2/EvalGraphBuilder.h: Likewise.
+	* src/ComponentGraph.cpp: Likewise.
+	* src/EvalGraphBuilder.cpp: Likewise.
+	* <all evaluation heuristics>: Likewise.
+
+2012-12-21  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* src/ComponentGraph.cpp: Fixing bug in SCCi property computation.
+	* src/FLPModelGeneratorBase.cpp: Fixing efficiency problem.
+
+2012-12-20  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* src/GringoGrounder.cpp: Making gringo debug output visible
+	in verbose mode.
+
 2012-12-15  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* src/ExistsPlugin.cpp: Plugin for existential quantifiers in
 	rule heads
 	* include/dlvhex2/ExistsPlugin.h: Likewise.
+
+2012-12-12  Peter Schueller <peterschueller@sabanciuniv.edu>
+
+	* buildclaspgringo/Makefile.am: Improving clasp/gringo build.
 
 2012-11-22  Christoph Redl <redl@kr.tuwien.ac.at>
 
