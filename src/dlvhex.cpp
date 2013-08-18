@@ -1341,7 +1341,9 @@ void processOptionsPrePlugin(
 
 	// global constraints
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
-		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
+		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
+		pctx.config.setOption("FLPCheck", 1);
+		pctx.config.setOption("UFSCheck", 0);
 	}
 	if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver")){
 		throw GeneralError("Liberal safety is only supported for genuine solvers");
