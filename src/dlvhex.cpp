@@ -155,10 +155,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      Automatically instantiate learned nonground nogoods" << std::endl
       << "     --flpcheck=[explicit,ufs,ufsm,aufs,aufsm,none]" << std::endl
       << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
-      << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
+      << "                        explicit: Compute the reduct and compare its models with the candidate" << std::endl
       << "                        ufs: Use unfounded sets for minimality checking" << std::endl
       << "                        ufsm: (monolithic) Use unfounded sets for minimality checking; do not decompose the program for UFS checking" << std::endl
-      << "                        aufs: Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
+      << "                        aufs: (default) Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --noflpcriterion Do no apply decision criterion to skip the FLP check" << std::endl
@@ -366,11 +366,12 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+
   pctx.config.setOption("FLPDecisionCriterion", 1);
-  pctx.config.setOption("FLPCheck", 1);
-  pctx.config.setOption("UFSCheck", 0);
+  pctx.config.setOption("FLPCheck", 0);
+  pctx.config.setOption("UFSCheck", 1);
   pctx.config.setOption("UFSCheckMonolithic", 0);
-  pctx.config.setOption("UFSCheckAssumptionBased", 0);
+  pctx.config.setOption("UFSCheckAssumptionBased", 1);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
