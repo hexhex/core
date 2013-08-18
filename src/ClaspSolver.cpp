@@ -590,12 +590,18 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 	//printTrail(s, ((s.decisionLevel()==0)?0:s.levelStart(s.decisionLevel())), s.trail().size());
 
 	// register callback whenever decision level changes
-	if( lastDL != s.decisionLevel() )
+	// lastDL is recorded in undoLevel and if it is <= s.decisionLevel() we must register all up to s.decisionLevel()
+	if( lastDL <= s.decisionLevel() )
 	{
-		// register undo watch
-		if( s.decisionLevel() != 0 )
-			s.addUndoWatch(s.decisionLevel(), this);
-		lastDL = s.decisionLevel();
+		for(unsigned dl = lastDL; dl <= s.decisionLevel(); ++dl) {
+			// register undo watch
+			if( dl != 0 ) {
+				DBGLOG(DBG,"addUndoWatch(" << dl << ")");
+				s.addUndoWatch(dl, this);
+			}
+		}
+		// set it to the next level
+		lastDL = s.decisionLevel() + 1;
 	}
 	
 	// here we know:
