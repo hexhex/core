@@ -469,14 +469,15 @@ void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 		// some level was remembered to be undone
 		needToUndoDownToThisDecisionLevel = std::min(needToUndoDownToThisDecisionLevel, s.decisionLevel());
 	}
-	DBGLOG(DBG, "recording undoLevel down to " << needToUndoDownToThisDecisionLevel <<
-	            " at " << s.decisionLevel() << "/" << s.trail().size());
+	DBGLOG(DBG, "undoLevel at " << s.decisionLevel() << "/" << s.trail().size() <<
+		" down to " << needToUndoDownToThisDecisionLevel);
 
 	// undo down to 0 should be impossible, and we have reserved 0 as special value, make sure it never happens
 	assert(needToUndoDownToThisDecisionLevel != 0);
 
-	// we backtracked, remember decision level and trail size here
+	// remember last backtracked decision level
 	lastDL = s.decisionLevel();
+	// remember last backtracked trail size here
 	lastTrail = s.trail().size();
 }
 
@@ -583,6 +584,10 @@ void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Cl
 
 void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
 	// incremental update of HEX interpretation from clasp interpretation
+	DBGLOG(DBG,"recordUpdateDecisionLevels at " << s.decisionLevel() <<
+		 " start " << ((s.decisionLevel()==0)?0:s.levelStart(s.decisionLevel())) <<
+		 " trailsize " << s.trail().size());
+	//printTrail(s, ((s.decisionLevel()==0)?0:s.levelStart(s.decisionLevel())), s.trail().size());
 
 	// register callback whenever decision level changes
 	if( lastDL != s.decisionLevel() )
@@ -783,6 +788,7 @@ void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s
 }
 
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
+	DBGLOG(DBG,"isModel");
 
 	bool inconsistent, added;
 	do{
