@@ -324,9 +324,21 @@ void AnnotatedGroundProgram::computeECycles(){
 
 	DBGLOG(DBG, "Computing e-cycles of components");
 
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		eCycles.push_back(false);
+	}
+
+	// for each e-edge x -> y: if x and y are in the same component, then y is cyclic
+	typedef std::pair<IDAddress, IDAddress> Edge;
+	BOOST_FOREACH (Edge e, externalEdges){
+		if (componentOfAtom[e.first] == componentOfAtom[e.second]){
+			eCycles[componentOfAtom[e.second]] = true;
+		}
+	}
+
 	eCyclesTotal = false;
 	for (int comp = 0; comp < depSCC.size(); ++comp){
-
+/*
 		// check for each e-edge x -> y if there is a path from y to x
 		// if yes, then y is a cyclic predicate input
 		InterpretationPtr cyclicInputAtoms = InterpretationPtr(new Interpretation(reg));
@@ -334,8 +346,6 @@ void AnnotatedGroundProgram::computeECycles(){
 		BOOST_FOREACH (Edge e, externalEdges){
 			if (!programComponents[comp].componentAtoms->getFact(e.first)) continue;
 			if (!programComponents[comp].componentAtoms->getFact(e.second)) continue;
-			//if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
-			//if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
 
 			std::vector<Graph::vertex_descriptor> reachable;
 			boost::breadth_first_search(depGraph, depNodes[e.second],
@@ -352,25 +362,8 @@ void AnnotatedGroundProgram::computeECycles(){
 			}
 		}
 		eCycles.push_back(cyclicInputAtoms->getStorage().count() > 0);
-		eCyclesTotal |= eCycles[eCycles.size() - 1];
-
-#ifndef NDEBUG
-		std::stringstream ss;
-		bool first = true;
-		bm::bvector<>::enumerator en = cyclicInputAtoms->getStorage().first();
-		bm::bvector<>::enumerator en_end = cyclicInputAtoms->getStorage().end();
-		while (en < en_end){
-			if (!first) ss << ", ";
-			first = false;
-			ss << *en;
-			en++;
-		}
-		if (cyclicInputAtoms->getStorage().count() > 0){
-			DBGLOG(DBG, "Component " << comp << ": 1 with cyclic input atoms " << ss.str());
-		}else{
-			DBGLOG(DBG, "Component " << comp << ": 0");
-		}
-#endif
+*/
+		eCyclesTotal |= eCycles[comp];
 	}
 }
 
