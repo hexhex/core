@@ -445,7 +445,7 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false){
 			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " was evaluated but falsified");
 			compatible = false;
-			break;
+			if (!factory.ctx.config.getOption("AlwaysEvaluateAllExternalAtoms")) break;
 		}
 		if (eaEvaluated[eaIndex] == false){
 			// try to verify
@@ -455,7 +455,7 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 			if (eaVerified[eaIndex] == false){
 				compatible = false;
-				break;
+				if (!factory.ctx.config.getOption("AlwaysEvaluateAllExternalAtoms")) break;
 			}
 		}
 	}
@@ -739,7 +739,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	}
 	// evaluate the external atom (and learn nogoods if external learning is used)
 	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
-	evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+	evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") && eatom.inputs.size() > 2 ? learnedEANogoods : NogoodContainerPtr());
 	updateEANogoods(partialInterpretation, factWasSet, changed);
 
 	// if the input to the external atom was complete, then remember the verification result

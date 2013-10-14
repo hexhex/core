@@ -151,6 +151,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        generalize: Generalize learned ground nogoods to nonground nogoods" << std::endl
       << "                      By default, all options except \"generalize\" are enabled" << std::endl
+      << "     --evalall	Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
+      << "     	                This makes nogood learning more independent of the sequence of external atom checks." << std::endl
+      << "     	                Only useful with --extlearn." << std::endl
       << "     --nongroundnogoods" << std::endl
       << "                      Automatically instantiate learned nonground nogoods" << std::endl
       << "     --flpcheck=[explicit,ufs,ufsm,aufs,aufsm,none]" << std::endl
@@ -384,6 +387,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningNeg", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
   pctx.config.setOption("ExternalLearningGeneralize", 0);
+  pctx.config.setOption("AlwaysEvaluateAllExternalAtoms", 0);
   pctx.config.setOption("NongroundNogoodInstantiation", 0);
   pctx.config.setOption("UFSCheckHeuristics", 0);
   pctx.config.setOption("ModelQueueSize", 5);
@@ -710,6 +714,7 @@ void processOptionsPrePlugin(
 		{ "split", no_argument, &longid, 16 },
 		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
+		{ "evalall", no_argument, 0, 19 },
 		{ "flpcheck", required_argument, 0, 20 },
 		{ "ufslearn", optional_argument, 0, 23 },
 		{ "noflpcriterion", no_argument, 0, 35 },
@@ -1142,6 +1147,12 @@ void processOptionsPrePlugin(
 
 			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
 			break;
+
+		case 19:
+			{
+				pctx.config.setOption("AlwaysEvaluateAllExternalAtoms", 1);
+				break;
+			}
 
 		case 20:
 			{
