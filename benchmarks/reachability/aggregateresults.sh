@@ -62,7 +62,7 @@ do
 		else
 			array[0]="${array[0]} 1"
 		fi
-		line=$(echo ${array[@]} | grep -v "#" | sed "s/\ \([0-9]*\)\.\([0-9]*\)/ \1.\2 0/g" | sed "s/---/$to 1/g")
+		line=$(echo ${array[@]} | grep -v "#" | sed "s/\ \([0-9]*\)\.\([0-9]*\)/ \1.\2 0/g" | sed "s/--- --- ---/$to 1 $to 1 0.00 0/g")
 		file=$(echo "$file\n$line")
 	fi
 done
