@@ -817,6 +817,9 @@ public:
     addInputPredicate();
     addInputPredicate();
     setOutputArity(1);
+    prop.monotonicInputPredicates.insert(0);
+    prop.antimonotonicInputPredicates.insert(1);
+    prop.finiteOutputDomain.insert(0);
   }
 
   virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
