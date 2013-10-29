@@ -168,6 +168,15 @@ This file provides some hints how to install and run dlvhex.
    boost-headers, make sure that you have the necesary parts of boost
    installed and that their version is sufficiently recent (see
    Dependencies above).
+   
+   On Apple OS X, it is recommended to use GNU CC instead of the compiler
+   shipped with OS X. Moreover, you will need to install the GNU tools
+   cmake, automake and pkgconfig. For this, before starting with the
+   installation procedure described above, install
+   MacPorts (http://www.macports.org) and type
+
+   sudo port install cmake automake gcc47 pkgconfig
+   sudo port select --set gcc mp-gcc47
 
 ** Documentation
    Run `make doxygen-doc' to create the html documentation (a
