@@ -49,6 +49,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/config_values.h"
+
 #include "dlvhex2/Error.h"
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -469,6 +471,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
+	pctx.config.setOption(CFG_HT_MODELS, 0);
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -792,6 +795,7 @@ void processOptionsPrePlugin(
 		{ "lazyufscheckerinitialization", no_argument, 0, 47 },
 		{ "supportsets", no_argument, 0, 48 },
 		{ "forcegc", no_argument, 0, 49 },
+		{ "ht-models", no_argument, 0, 41 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1468,6 +1472,12 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("ForceGC", 1);
 			pctx.config.setOption("LiberalSafety", 1);
 			break;
+	case 40:
+	  pctx.config.setOption("ClaspForceSingleThreaded", 1);
+	  break;
+	case 41: {
+		pctx.config.setOption(CFG_HT_MODELS, 1);}
+		break;
 		}
 	}
 

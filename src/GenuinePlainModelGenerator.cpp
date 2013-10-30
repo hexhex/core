@@ -33,6 +33,8 @@
 #include "config.h"
 #endif
 
+#include "dlvhex2/config_values.h"
+
 #include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/InternalGrounder.h"
 #include "dlvhex2/Logger.h"
@@ -168,7 +170,8 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
-	solver = GenuineSolver::getInstance(factory.ctx, program);
+	bool sat = factory.ctx.config.getOption(CFG_HT_MODELS);
+	solver = GenuineSolver::getInstance(factory.ctx, program, true, true, sat);
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
