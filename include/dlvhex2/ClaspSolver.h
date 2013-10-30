@@ -248,6 +248,7 @@ private:
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
 	void buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
+	void buildInitialSymbolTable(const OrdinaryASPProgram& p);
 	void buildInitialSymbolTable(const NogoodSet& ns);
 	void buildOptimizedSymbolTable();
 
@@ -265,6 +266,7 @@ private:
 	void sendOrdinaryRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, ID ruleId);
 	void sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm, int& nextVarIndex, std::map<IDAddress, std::vector<int> >& singletonNogoods, ID ruleId);
 	bool sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm);
+	bool sendProgramToClasp(const AnnotatedGroundProgram& p);
 	void addMinimizeConstraints(const AnnotatedGroundProgram& p);
 	bool sendNogoodSetToClasp(const NogoodSet& ns);
 
@@ -342,7 +344,7 @@ public:
 	//       external learners might be different from the next model returned by getNextModel().
 	//       Therefore external learners MUST NOT store state information about the current interpretation
 	//       which is reused in getNextModel().
-	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
+	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting, bool sat = false);
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
 	void shutdownClasp();
@@ -371,7 +373,7 @@ private:
 	UnfoundedSetCheckerManager ufscm;
 
 public:
-	DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true);
+	DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, bool sat = false);
 	virtual ~DisjunctiveClaspSolver();
 
 	virtual InterpretationPtr getNextModel();

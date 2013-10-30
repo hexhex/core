@@ -112,7 +112,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 	}
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck, bool sat){
   //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "grounding (GenuineGroundS.::getInst)");
 
 	switch (ctx.config.getOption("GenuineSolver")){
@@ -127,7 +127,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, ClaspSolver::ChoiceRules));
+		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, sat) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, ClaspSolver::ChoiceRules, sat));
 		return ptr;
 		}
 #else
@@ -137,7 +137,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck, bool sat){
 	const OrdinaryASPProgram* gprog;
 	GenuineGrounderPtr grounder;
 	{
@@ -147,7 +147,7 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 	}
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, interleavedThreading, minCheck);
+	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, interleavedThreading, minCheck, sat);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
 

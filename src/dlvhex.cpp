@@ -44,6 +44,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/config_values.h"
+
 #include "dlvhex2/Error.h"
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -434,6 +436,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("UseConstantSpace", 0); // see --help
 	pctx.config.setOption("NestedHEX", 0);
 	pctx.config.setOption("ClaspForceSingleThreaded", 0);
+	pctx.config.setOption(CFG_HT_MODELS, 0);
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -733,6 +736,7 @@ void processOptionsPrePlugin(
     { "iauxinaux", optional_argument, 0, 38 },
     { "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
+		{ "ht-models", no_argument, 0, 41 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1347,6 +1351,9 @@ void processOptionsPrePlugin(
 	case 40:
 	  pctx.config.setOption("ClaspForceSingleThreaded", 1);
 	  break;
+	case 41: {
+		pctx.config.setOption(CFG_HT_MODELS, 1);}
+		break;
 		}
 	}
 

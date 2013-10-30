@@ -1083,6 +1083,68 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 	}
 }
 
+void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p)
+{
+	assert(hexToClasp.empty());
+	hexToClasp.reserve(reg->ogatoms.getSize());
+
+	unsigned largestidx = 0;
+	claspInstance.symTab().startInit();
+	BOOST_FOREACH (ID ruleId, p.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID h, rule.head){
+			if (!isMappedToClaspLiteral(h.address)) {
+				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
+
+				// create positive literal -> false
+				Clasp::Literal clit(c, false);
+				storeHexToClasp(h.address, clit);
+
+				if (clit.index() > largestidx) {
+					largestidx = clit.index();
+				}
+
+				std::string str = idAddressToString(h.address);
+				claspInstance.symTab().addUnique(c, str.c_str()).lit = clit;
+			}
+		}
+		BOOST_FOREACH (ID b, rule.body) {
+			if (!isMappedToClaspLiteral(b.address)) {
+				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
+
+				// create positive literal -> false
+				Clasp::Literal clit(c, false);
+				storeHexToClasp(b.address, clit);
+
+				if (clit.index() > largestidx) {
+					largestidx = clit.index();
+				}
+
+				std::string str = idAddressToString(b.address);
+				claspInstance.symTab().addUnique(c, str.c_str()).lit = clit;
+			}
+		}
+	}
+	// resize
+	// (+1 because largest index must also be covered +1 because negative literal may also be there)
+	resetAndResizeClaspToHex(largestidx+1+1);
+	// build back mapping
+	for(std::vector<Clasp::Literal>::const_iterator it = hexToClasp.begin(); it != hexToClasp.end(); ++it) {
+		const Clasp::Literal clit = *it;
+		if( clit == noLiteral )
+			continue;
+		const IDAddress hexlitaddress = it - hexToClasp.begin();
+		AddressVector* &c2h = claspToHex[clit.index()];
+		if( !c2h )
+			c2h = new AddressVector;
+		c2h->push_back(hexlitaddress);
+	}
+
+	claspInstance.symTab().endInit();
+}
+
 void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab ns");
@@ -1428,6 +1490,24 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 		}
 	}
 	#endif
+}
+
+bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p) {
+
+	buildInitialSymbolTable(p.getGroundProgram());
+	claspInstance.startAddConstraints();
+	BOOST_FOREACH (ID ruleid, p.getGroundProgram().idb) {
+		const Rule& rule = reg->rules.getByID(ruleid);
+		clauseCreator->start();
+		BOOST_FOREACH (ID lit, rule.head) {
+			clauseCreator->add(Clasp::Literal(mapHexToClasp(lit.address).var(), false));
+		}
+		BOOST_FOREACH (ID lit, rule.body) {
+			clauseCreator->add(Clasp::Literal(mapHexToClasp(lit.address).var(), !lit.isNaf()));
+		}
+		clauseCreator->end();
+	}
+	return false;
 }
 
 bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
@@ -1820,8 +1900,17 @@ class ClaspSolver::ClaspInHexAppOptions:
     char** argv;
 };
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm):
- 	ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(c.config.getOption("ClaspForceSingleThreaded") || !interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize")),
+ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm, bool sat):
+ 	ctx(c),
+	projectionMask(p.getGroundProgram().mask),
+	sem_request(0),
+	sem_answer(0),
+	terminationRequest(false),
+	endOfModels(false),
+	sem_dlvhexDataStructures(1),
+	strictSingleThreaded(c.config.getOption("ClaspForceSingleThreaded") || !interleavedThreading),
+	claspStarted(false),
+	modelqueueSize(c.config.getOption("ModelQueueSize")),
 	claspInstance(),
 	claspConfig(*claspInstance.master()),
 	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig)),
@@ -1839,7 +1928,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 	do
 	{
-		initiallyInconsistent = sendProgramToClasp(p, dm);
+		// TODO needs consolidation
+		initiallyInconsistent = sat ? sendProgramToClasp(p) : sendProgramToClasp(p, dm);
 		if( initiallyInconsistent )
 			break;
 
@@ -2294,8 +2384,8 @@ std::string ClaspSolver::getStatistics(){
 
 // ============================== DisjunctiveClaspSolver ==============================
 
-DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading) :
-	ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules),
+DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading, bool sat) :
+	ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules, sat),
 	program(p), ufscm(ctx, p, true){
 }
 
