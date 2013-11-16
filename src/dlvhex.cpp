@@ -35,7 +35,7 @@
  *
  * \section intro_sec Overview
  *
- * \image html ../images/biglogo_whitebg.png
+ * \image html logo.png
  * This is the sourcecode documentation of the dlvhex system.
  *
  * You will look into this documentation most likely to implement a
