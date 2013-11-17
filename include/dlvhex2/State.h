@@ -169,6 +169,9 @@ class DLVHEX_EXPORT CreateEvalGraphState : public State
 public:
   CreateEvalGraphState();
   virtual void createEvalGraph(ProgramCtx*);
+protected:
+  template<typename EvalGraphT>
+  void createGraph(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT SetupProgramCtxState : public State
@@ -178,6 +181,7 @@ public:
   virtual void setupProgramCtx(ProgramCtx*);
 };
 
+template<typename EvalGraphT>
 class DLVHEX_EXPORT EvaluateState : public State
 {
 public:
