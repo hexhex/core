@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 	#endif
 
 	// default eval heuristic = "greedy" heuristic
-	pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
+	pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_Greedy);
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
@@ -873,32 +873,34 @@ void processOptionsPrePlugin(
 				std::string heuri(optarg);
 				if( heuri == "old" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicOldDlvhex);
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_OldDlvhex);
 				}
 				else if( heuri == "trivial" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicTrivial);
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_Trivial);
 				}
 				else if( heuri == "easy" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_Easy);
 				}
 				else if( heuri == "greedy" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_Greedy);
 				}
 				else if( heuri == "monolithic" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_Monolithic);
 					pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicFromFile(heuri.substr(7)));
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_FromFile);
+					pctx.config.setStringOption(CFG_EVAL_HEURISTIC_ARG, heuri.substr(7));
 				}
 				else if( heuri.substr(0,4) == "asp:" )
 				{
-					pctx.evalHeuristic.reset(new EvalHeuristicASP(heuri.substr(4)));
+					pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_ASP);
+					pctx.config.setStringOption(CFG_EVAL_HEURISTIC_ARG, heuri.substr(4));
 				}
 				else
 				{
