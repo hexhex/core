@@ -7,7 +7,7 @@ else
 fi
 
 requirements=$(cat req 2> /dev/null)
-for (( instance=1; instance<=25; instance++ ))
+for (( instance=1; instance<=65; instance++ ))
 do
 	echo "
 		Executable = ./benchmark_single.sh
