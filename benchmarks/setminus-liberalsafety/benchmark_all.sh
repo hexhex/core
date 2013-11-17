@@ -6,7 +6,7 @@ else
 	to=$2
 fi
 
-reqirements=$(cat req 2> /dev/null)
+requirements=$(cat req 2> /dev/null)
 for (( instance=1; instance<=25; instance++ ))
 do
 	echo "

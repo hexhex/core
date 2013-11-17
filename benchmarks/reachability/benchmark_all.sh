@@ -6,7 +6,7 @@ else
 	to=$1
 fi
 
-reqirements=$(cat req 2> /dev/null)
+requirements=$(cat req 2> /dev/null)
 cd instances
 for instance in *.graph
 do
