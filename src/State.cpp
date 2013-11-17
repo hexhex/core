@@ -41,7 +41,9 @@
 #  include "config.h"
 #endif
 
+#include "dlvhex2/config_values.h"
 #include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/EvalContext.h"
 #include "dlvhex2/Error.h"
 #include "dlvhex2/Printhelpers.h"
 #include "dlvhex2/Benchmarking.h"
@@ -734,19 +736,42 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   assert(!!ctx->compgraph &&
       "need component graph for creating evaluation graph");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
+  if( ctx->config.getOption(CFG_HT_MODELS) )
+  {
+    createGraph<HTEvalGraph>(ctx);
+  }
+  else
+  {
+    createGraph<FinalEvalGraph>(ctx);
+  }
+}
 
-  FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
+template<typename EvalGraphT>
+void CreateEvalGraphState::createGraph(ProgramCtx* ctx)
+{
+  typedef EvalGraphT EvalGraph;
+  typedef typename EvalGraph::EvalUnit EvalUnit;
+  typedef typename EvalGraph::EvalUnitPropertyBundle EvalUnitPropertyBundle;
+  typedef typename EvalGraph::EvalUnitIterator EvalUnitIterator;
+  typedef boost::shared_ptr<EvalGraph> EvalGraphPtr;
+  typedef boost::shared_ptr<EvalGraphBuilder<EvalGraphT> > EvalGraphBuilderPtr;
+  typedef typename EvalContext<EvalGraph>::Ptr EvalContextPtr;
+
+  EvalContextPtr evalctx = boost::reinterpret_pointer_cast<EvalContext<EvalGraph> >(ctx->evalcontext);
+  assert(evalctx && "need evalcontext");
+
+  EvalGraphPtr evalgraph(new EvalGraph);
 
   EvalGraphBuilderPtr egbuilder;
   if( ctx->config.getOption("DumpEvaluationPlan") )
   {
-      egbuilder.reset(new DumpingEvalGraphBuilder(
+      egbuilder.reset(new DumpingEvalGraphBuilder<EvalGraph>(
                   *ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware,
                   ctx->config.getStringOption("DumpEvaluationPlanFile")));
   }
   else
   {
-      egbuilder.reset(new EvalGraphBuilder(
+      egbuilder.reset(new EvalGraphBuilder<EvalGraph>(
                   *ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware));
   }
 
@@ -766,9 +791,9 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   }
 
   // use configured eval heuristic
-  assert(!!ctx->evalHeuristic && "need configured heuristic");
+  assert(evalctx->heuristic && "need configured heuristic");
   DBGLOG(DBG,"invoking build() on eval heuristic");
-  ctx->evalHeuristic->build(*egbuilder);
+  evalctx->heuristic->build(*egbuilder);
   // do not destruct heuristic because we might reuse it in evaluateSubprogram
   //DBGLOG(DBG,"destructing eval heuristic");
   //ctx->evalHeuristic.reset();
@@ -777,8 +802,7 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   // setup final unit used to get full models
   #warning TODO if we project answer sets, or do querying, we could reduce the number of units used here!
-  FinalEvalGraph::EvalUnit ufinal =
-    evalgraph->addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
+  EvalUnit ufinal = evalgraph->addUnit(EvalUnitPropertyBundle());
   LOG(DBG,"created virtual final unit ufinal = " << ufinal);
 
   FinalEvalGraph::EvalUnitIterator it, itend;
@@ -794,20 +818,20 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
         FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
   }
 
-  ctx->ufinal = ufinal;
-  ctx->evalgraph = evalgraph;
+  evalctx->ufinal = ufinal;
+  evalctx->evalgraph = evalgraph;
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
     std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose eval graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
-    ctx->evalgraph->writeGraphViz(filev, true);
+    evalctx->evalgraph->writeGraphViz(filev, true);
 
     std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_EvalGraphTerse.dot";
     LOG(INFO,"dumping terse eval graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
-    ctx->evalgraph->writeGraphViz(filet, false);
+    evalctx->evalgraph->writeGraphViz(filet, false);
   }
 
   StatePtr next(new SetupProgramCtxState);
@@ -843,11 +867,13 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   // let plugins setup the program ctx (removing the default hooks is permitted)
   ctx->setupByPlugins();
 
-  StatePtr next(new EvaluateState);
+  // TODO: consider HTEvalGraph
+  StatePtr next(new EvaluateState<FinalEvalGraph>);
   changeState(ctx, next);
 }
 
-MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
+template<typename EvalGraphT>
+EvaluateState<EvalGraphT>::EvaluateState(): State() {}
 
 namespace
 {
@@ -862,21 +888,30 @@ namespace
 		}
 }
 
-void
-EvaluateState::evaluate(ProgramCtx* ctx)
+template<typename EvalGraphT>
+void EvaluateState<EvalGraphT>::evaluate(ProgramCtx* ctx)
 {
+}
+
+template<>
+void EvaluateState<FinalEvalGraph>::evaluate(ProgramCtx* ctx)
+{
+  typedef EvalContext<FinalEvalGraph>::Ptr EvalContextPtr;
   typedef ModelBuilder<FinalEvalGraph>::Model Model;
   typedef ModelBuilder<FinalEvalGraph>::OptionalModel OptionalModel;
   typedef ModelBuilder<FinalEvalGraph>::MyModelGraph MyModelGraph;
 
   bool didSnapshot = false;
 
+  EvalContextPtr evalctx = boost::reinterpret_pointer_cast<EvalContext<FinalEvalGraph> >(ctx->evalcontext);
+  assert(evalctx && "need evalcontext");
+  
   do
   {
     LOG(INFO,"creating model builder");
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
-	  ModelBuilderConfig<FinalEvalGraph> cfg(*ctx->evalgraph);
+	  ModelBuilderConfig<FinalEvalGraph> cfg(*evalctx->evalgraph);
 	  cfg.redundancyElimination = true;
 	  cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
       ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(cfg));
@@ -896,7 +931,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       gotModel = false;
       DBGLOG(DBG,"requesting imodel");
       DLVHEX_BENCHMARK_START(sidgetnextmodel);
-      OptionalModel om = mb.getNextIModel(ctx->ufinal);
+      OptionalModel om = mb.getNextIModel(evalctx->ufinal);
       DLVHEX_BENCHMARK_STOP(sidgetnextmodel);
       if( !!om )
       {
