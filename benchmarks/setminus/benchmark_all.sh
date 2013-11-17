@@ -6,7 +6,8 @@ else
 	to=$1
 fi
 
-for (( instance=1; instance<=20; instance++ ))
+reqirements=$(cat req 2> /dev/null)
+for (( instance=1; instance<=25; instance++ ))
 do
 	echo "
 		Executable = ./benchmark_single.sh
@@ -14,8 +15,7 @@ do
 		output = $instance.out
 		error = $instance.error
 		Log = $instance.log
-		Requirements = machine == \"lion.kr.tuwien.ac.at\"
-		request_memory = 4096 
+		$requirements
 		Initialdir = $PWD
 		notification = never
 

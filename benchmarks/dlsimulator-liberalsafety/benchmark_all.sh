@@ -6,6 +6,7 @@ else
 	to=$1
 fi
 
+reqirements=$(cat req 2> /dev/null)
 for (( instance=1; instance<=20; instance++ ))
 do
 	echo "
@@ -14,8 +15,7 @@ do
 		output = $instance.out
 		error = $instance.error
 		Log = $instance.log
-		Requirements = machine == \"lion.kr.tuwien.ac.at\"
-		request_memory = 8192 
+		$requirements
 		Initialdir = $PWD
 		notification = never
 
