@@ -44,8 +44,7 @@
 #include "dlvhex2/InputProvider.h"
 #include "dlvhex2/FinalEvalGraph.h"
 #include "dlvhex2/EvalHeuristicBase.h"
-#include "dlvhex2/EvalGraphBuilder.h"
-#include "dlvhex2/ExternalAtomEvaluationHeuristicsInterface.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
 #include "dlvhex2/UnfoundedSetCheckHeuristics.h"
 #include "dlvhex2/ModelBuilder.h"
 #include "dlvhex2/Registry.h"
@@ -61,9 +60,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-typedef boost::shared_ptr<EvalHeuristicBase<EvalGraphBuilder> >
-  EvalHeuristicPtr;
-
 typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
   ModelBuilderPtr;
 
@@ -72,6 +68,8 @@ typedef boost::function<ModelBuilder<FinalEvalGraph>*(ModelBuilderConfig<FinalEv
 
 typedef std::map<std::string, PluginAtomPtr>
 	PluginAtomMap;
+
+typedef boost::shared_ptr<void> VoidPtr;
 
 /**
  * @brief Program context class.
@@ -97,8 +95,8 @@ public:
 
   void setupPluginContainer(PluginContainerPtr pluginContainer);
 
-  // factory for eval heuristics
-  EvalHeuristicPtr evalHeuristic;
+  // evaluation context
+  VoidPtr evalcontext;
   // factory for model builders
   ModelBuilderFactory modelBuilderFactory;
   // factory for external atom evaluation heuristic and ufs check heuristic
@@ -152,8 +150,6 @@ public:
   ComponentGraphPtr compgraph;
   std::vector<LiberalSafetyPluginFactoryPtr> liberalSafetyPlugins;
   LiberalSafetyCheckerPtr liberalSafetyChecker;
-  FinalEvalGraphPtr evalgraph;
-  FinalEvalGraph::EvalUnit ufinal;
   std::list<ModelCallbackPtr> modelCallbacks;
   std::list<FinalCallbackPtr> finalCallbacks;
   ModelBuilderPtr modelBuilder;
