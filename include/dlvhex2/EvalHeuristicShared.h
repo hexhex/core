@@ -63,7 +63,8 @@ struct BuildCommand
 };
 typedef std::vector<BuildCommand> CommandVector;
 
-void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder);
+template<typename EvalGraphT>
+void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder<EvalGraphT>& builder);
 
 // template implementation
 template<typename ComponentGraphIntOrRest, typename Sequence>

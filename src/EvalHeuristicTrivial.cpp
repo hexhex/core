@@ -39,12 +39,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicTrivial::EvalHeuristicTrivial():
+template<typename EvalGraphT>
+EvalHeuristicTrivial<EvalGraphT>::EvalHeuristicTrivial():
   Base()
 {
 }
 
-EvalHeuristicTrivial::~EvalHeuristicTrivial()
+template<typename EvalGraphT>
+EvalHeuristicTrivial<EvalGraphT>::~EvalHeuristicTrivial()
 {
 }
 
@@ -55,10 +57,12 @@ typedef std::vector<Component> ComponentContainer;
 // trivial strategy:
 // do a topological sort of the tree
 // build eval units in that order
-void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicTrivial<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
-  const ComponentGraph& compgraph = builder.getComponentGraph();
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
 
+  const ComponentGraph& compgraph = builder.getComponentGraph();
   ComponentContainer comps;
   evalheur::topologicalSortComponents(compgraph.getInternalGraph(), comps);
 
@@ -67,7 +71,7 @@ void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
   {
 		std::list<Component> comps, ccomps;
 		comps.push_back(*it);
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+    EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }

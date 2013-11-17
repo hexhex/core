@@ -103,13 +103,15 @@ void translateIdxBuildCommandsToBuildCommands(
 
 }
 
-EvalHeuristicFromFile::EvalHeuristicFromFile(const std::string& fname):
+template<typename EvalGraphT>
+EvalHeuristicFromFile<EvalGraphT>::EvalHeuristicFromFile(const std::string& fname):
   Base(),
   fname(fname)
 {
 }
 
-EvalHeuristicFromFile::~EvalHeuristicFromFile()
+template<typename EvalGraphT>
+EvalHeuristicFromFile<EvalGraphT>::~EvalHeuristicFromFile()
 {
 }
 
@@ -119,10 +121,12 @@ void parseCommandFile(const std::string& fname, IdxCommandVector& commands);
 
 // manual strategy:
 // get commands from file
-void EvalHeuristicFromFile::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicFromFile<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
-  const ComponentGraph& compgraph = builder.getComponentGraph();
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
 
+  const ComponentGraph& compgraph = builder.getComponentGraph();
 	// get commands from file
   IdxCommandVector icommands;
   parseCommandFile(fname, icommands);
@@ -145,7 +149,7 @@ void EvalHeuristicFromFile::build(EvalGraphBuilder& builder)
   {
 		std::list<Component> comps, ccomps;
 		comps.push_back(*it);
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+    EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(WARNING,"component " << *it << " was not specified in input file "
 				"and became eval unit " << u);
   }

@@ -38,24 +38,28 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicMonolithic::EvalHeuristicMonolithic():
+template<typename EvalGraphT>
+EvalHeuristicMonolithic<EvalGraphT>::EvalHeuristicMonolithic():
   Base()
 {
 }
 
-EvalHeuristicMonolithic::~EvalHeuristicMonolithic()
+template<typename EvalGraphT>
+EvalHeuristicMonolithic<EvalGraphT>::~EvalHeuristicMonolithic()
 {
 }
 
 // trivial strategy:
 // do a topological sort of the tree
 // build eval units in that order
-void EvalHeuristicMonolithic::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicMonolithic<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
   typedef ComponentGraph::Component Component;
   const ComponentGraph& compgraph = builder.getComponentGraph();
   std::list<Component> comps(compgraph.getComponents().first, compgraph.getComponents().second), constraintcomps;
-  EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, constraintcomps);
+  EvalUnit u = builder.createEvalUnit(comps, constraintcomps);
   LOG(ANALYZE,"got since eval unit " << u);
 }
 

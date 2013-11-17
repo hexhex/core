@@ -52,7 +52,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-bool EvalHeuristicGreedy::mergeComponents(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2, bool negativeExternalDependency) const{
+template<typename EvalGraphT>
+bool EvalHeuristicGreedy<EvalGraphT>::mergeComponents(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2, bool negativeExternalDependency) const{
 
 	if (ctx.config.getOption("LiberalSafety") && ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
 		// here we could always merge
@@ -77,12 +78,14 @@ bool EvalHeuristicGreedy::mergeComponents(ProgramCtx& ctx, const ComponentGraph:
 	}
 }
 
-EvalHeuristicGreedy::EvalHeuristicGreedy():
+template<typename EvalGraphT>
+EvalHeuristicGreedy<EvalGraphT>::EvalHeuristicGreedy():
   Base()
 {
 }
 
-EvalHeuristicGreedy::~EvalHeuristicGreedy()
+template<typename EvalGraphT>
+EvalHeuristicGreedy<EvalGraphT>::~EvalHeuristicGreedy()
 {
 }
 
@@ -145,8 +148,11 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
 // required for some GCCs for DFSVisitor CopyConstructible Concept Check
 using namespace internalgreedy;
 
-void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicGreedy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
+
   ProgramCtx& ctx = builder.getProgramCtx();
   ComponentGraph& compgraph = builder.getComponentGraph();
   #if 0
@@ -430,7 +436,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
     std::list<Component> comps;
     comps.push_back(*it);
     std::list<Component> ccomps;
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+    EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }

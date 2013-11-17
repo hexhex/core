@@ -81,13 +81,15 @@ DLVHEX_NAMESPACE_BEGIN
 
 using namespace evalheur;
 
-EvalHeuristicASP::EvalHeuristicASP(const std::string& scriptname):
+template<typename EvalGraphT>
+EvalHeuristicASP<EvalGraphT>::EvalHeuristicASP(const std::string& scriptname):
   Base(),
   scriptname(scriptname)
 {
 }
 
-EvalHeuristicASP::~EvalHeuristicASP()
+template<typename EvalGraphT>
+EvalHeuristicASP<EvalGraphT>::~EvalHeuristicASP()
 {
 }
 
@@ -105,8 +107,9 @@ void transformComponentGraphIntoASPFacts(
     const ComponentGraph& cg,
     RegistryPtr reg);
 
+template<typename EvalGraphT>
 void buildEvalUnitsFromAnswerSet(
-    EvalGraphBuilder& builder,
+    EvalGraphBuilder<EvalGraphT>& builder,
     AnswerSet::Ptr as,
     const std::map<unsigned, Component>& componentindices);
 
@@ -115,7 +118,8 @@ void buildEvalUnitsFromAnswerSet(
 // ASP strategy:
 // send component graph to ASP
 // get commands from first answer set
-void EvalHeuristicASP::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicASP<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
   typedef ComponentGraph::Component Component;
   LOG(INFO,"using ASP evaluation heuristic '" << scriptname << "'");
@@ -196,8 +200,9 @@ struct EvalUnitInfo
     gotUnit(false) {}
 };
 
+template<typename EvalGraphT>
 void buildEvalUnitsFromAnswerSet(
-    EvalGraphBuilder& builder,
+    EvalGraphBuilder<EvalGraphT>& builder,
     AnswerSet::Ptr as,
     const std::map<unsigned, Component>& componentindices)
 {
