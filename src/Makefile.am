@@ -62,6 +62,7 @@ libdlvhex2_base_la_SOURCES = \
     DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
+    EvalHeuristic.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicGreedy.cpp \
