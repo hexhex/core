@@ -34,9 +34,9 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Interpretation.h"
+#include "dlvhex2/HTInterpretation.h"
 #include "dlvhex2/ModelGenerator.h"
 #include "dlvhex2/EvalGraph.h"
-//#include "dlvhex2/ComponentGraph.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -61,7 +61,7 @@ struct FinalEvalUnitPropertyBase:
 typedef EvalGraph<FinalEvalUnitPropertyBase<Interpretation> > FinalEvalGraph;
 typedef boost::shared_ptr<FinalEvalGraph> FinalEvalGraphPtr;
 
-typedef EvalGraph<FinalEvalUnitPropertyBase<InterpretationBase> > HTEvalGraph;
+typedef EvalGraph<FinalEvalUnitPropertyBase<HTInterpretation> > HTEvalGraph;
 typedef boost::shared_ptr<HTEvalGraph> HTEvalGraphPtr;
 
 DLVHEX_NAMESPACE_END
