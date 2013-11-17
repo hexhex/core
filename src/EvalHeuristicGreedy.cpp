@@ -94,7 +94,7 @@ typedef ComponentGraph::ComponentIterator ComponentIterator;
 typedef std::vector<Component> ComponentContainer;
 typedef ComponentGraph::ComponentSet ComponentSet;
 
-namespace internalgreedy
+namespace greedy
 {
 
 // collect all components on the way
@@ -145,9 +145,6 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
 
 }
 
-// required for some GCCs for DFSVisitor CopyConstructible Concept Check
-using namespace internalgreedy;
-
 template<typename EvalGraphT>
 void EvalHeuristicGreedy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
@@ -190,7 +187,7 @@ void EvalHeuristicGreedy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builde
 
       // get predecessors
       ComponentSet preds;
-      transitivePredecessorComponents(compgraph, comp, preds);
+      greedy::transitivePredecessorComponents(compgraph, comp, preds);
 
       // get successors
       ComponentSet collapse;
@@ -292,7 +289,7 @@ void EvalHeuristicGreedy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builde
         BOOST_FOREACH (Component comp2s, preds2){
 
           ComponentSet reachable;
-          transitivePredecessorComponents(compgraph, comp2s, reachable);
+          greedy::transitivePredecessorComponents(compgraph, comp2s, reachable);
 
           if (std::find(reachable.begin(), reachable.end(), comp) != reachable.end() && comp2s != comp){ // path of length >=2
             DBGLOG(DBG, "do not merge because this would break a cycle");
@@ -315,7 +312,7 @@ void EvalHeuristicGreedy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builde
         BOOST_FOREACH (Component comps, preds){
 
           ComponentSet reachable;
-          transitivePredecessorComponents(compgraph, comps, reachable);
+          greedy::transitivePredecessorComponents(compgraph, comps, reachable);
 
           if (std::find(reachable.begin(), reachable.end(), comp2) != reachable.end() && comps != comp2){ // path of length >=2
             DBGLOG(DBG, "do not merge because this would break a cycle");
@@ -361,8 +358,8 @@ void EvalHeuristicGreedy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builde
             //     C1
             // Here, C1 is not merged with C3, which is by intend: merging them would prevent the merging of C3 with C4
             ComponentSet reachable1, reachable2;
-            transitivePredecessorComponents(compgraph, comp, reachable1);
-            transitivePredecessorComponents(compgraph, comp2, reachable2);
+            greedy::transitivePredecessorComponents(compgraph, comp, reachable1);
+            greedy::transitivePredecessorComponents(compgraph, comp2, reachable2);
             bool nonmonTrans1 = false;
             bool nonmonTrans2 = false;
             BOOST_FOREACH (Component c, reachable1) if (nonmonotonicPredecessor.find(c) != nonmonotonicPredecessor.end()) nonmonTrans1 = true;

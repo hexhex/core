@@ -61,7 +61,7 @@ typedef ComponentGraph::ComponentIterator ComponentIterator;
 typedef std::vector<Component> ComponentContainer;
 typedef ComponentGraph::ComponentSet ComponentSet;
 
-namespace internal
+namespace easy
 {
 
 // collect all components on the way
@@ -112,9 +112,6 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
 
 }
 
-// required for some GCCs for DFSVisitor CopyConstructible Concept Check
-using namespace internal;
-
 template<typename EvalGraphT>
 void EvalHeuristicEasy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
@@ -147,7 +144,7 @@ void EvalHeuristicEasy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 
       // get predecessors
       ComponentSet preds;
-      transitivePredecessorComponents(compgraph, comp, preds);
+      easy::transitivePredecessorComponents(compgraph, comp, preds);
 
       // get successors
       ComponentSet collapse;
