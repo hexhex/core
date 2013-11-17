@@ -37,6 +37,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/config_values.h"
+
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/Registry.h"
@@ -73,8 +75,8 @@ ProgramCtx::~ProgramCtx()
   DBGLOG(DBG,"resetting parser");
   parser.reset();
 
-  DBGLOG(DBG,"resetting evalgraph");
-  evalgraph.reset();
+  DBGLOG(DBG, "resetting evalcontext");
+  evalcontext.reset();
 
   DBGLOG(DBG,"resetting compgraph");
   compgraph.reset();
@@ -240,7 +242,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.state.reset();
 	pc.modelBuilder.reset();
 	pc.parser.reset();
-	pc.evalgraph.reset();
+	pc.evalcontext.reset();
 	pc.compgraph.reset();
 	pc.depgraph.reset();
 
@@ -252,10 +254,10 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.config.setOption("DumpIModelGraph",0);
 	pc.config.setOption("DumpAttrGraph",0);
 
-  if( !pc.evalHeuristic )
+  if (pc.config.getOption(CFG_EVAL_HEURISTIC) == Eval_None)
   {
     DBGLOG(DBG, "Setting eval heuristics");
-    pc.evalHeuristic.reset(new EvalHeuristicEasy);
+    pc.config.setOption(CFG_EVAL_HEURISTIC, Eval_Easy);
   }
 
 	DBGLOG(DBG, "Starting state pipeline " << (parse ? "with" : "without") << " parsing");
