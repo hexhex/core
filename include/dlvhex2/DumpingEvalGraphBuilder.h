@@ -37,9 +37,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+template<typename EvalGraphT>
 class DumpingEvalGraphBuilder:
-	public EvalGraphBuilder
+	public EvalGraphBuilder<EvalGraphT>
 {
+public:
+	typedef EvalGraphBuilder<EvalGraphT> Base;
+	typedef typename Base::EvalUnit EvalUnit;
+	typedef typename Base::Component Component;
 protected:
 	std::ofstream output;
   std::map<ComponentGraph::Component, unsigned> componentidx;

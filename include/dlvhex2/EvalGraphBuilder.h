@@ -58,17 +58,19 @@ class ProgramCtx;
  * All evaluation planning heuristics must use this builder for creating evaluation
  * units and evaluation graphs.
  */
-//template<typename EvalGraphT>
 // TODO make this a template for EvalGraphT and ComponentGraphT, for faster prototyping we use fixed types for these graphs
-class DLVHEX_EXPORT EvalGraphBuilder
+template<typename EvalGraphT>
+class EvalGraphBuilder
 {
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
-	typedef FinalEvalGraph EvalGraphT;
-	typedef EvalGraphT::EvalUnit EvalUnit;
+  typedef typename EvalGraphT::EvalUnit EvalUnit;
+  typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitProperties;
+  typedef typename EvalGraphT::EvalUnitDepPropertyBundle EvalUnitDepProperties;
   typedef ComponentGraph::Component Component;
+  typedef ComponentGraph::ComponentInfo ComponentInfo;
   typedef ComponentGraph::Dependency Dependency;
 
 protected:
@@ -147,8 +149,10 @@ protected:
   boost::scoped_ptr<ComponentGraph> clonedcgptr;
   // component graph (reference to cloned storage)
   ComponentGraph& cg;
-	// eval graph
-	EvalGraphT& eg;
+  // eval graph
+  EvalGraphT& eg;
+  // empty properties
+  EvalUnitProperties eup_empty;
   // configuration for model generator factory
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
 
@@ -216,8 +220,9 @@ public:
 	//   constraint pushing restrictions (this will be asserted by createEvalUnit))
   virtual EvalUnit createEvalUnit(
 			const std::list<Component>& comps, const std::list<Component>& ccomps);
+
+  void setFactory(EvalUnit& u, const ComponentInfo& ci);
 };
-typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 
 DLVHEX_NAMESPACE_END
 

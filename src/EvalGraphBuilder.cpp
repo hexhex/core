@@ -59,7 +59,8 @@ namespace
   typedef ComponentGraph::DepMap DepMap;
 }
 
-EvalGraphBuilder::EvalGraphBuilder(
+template<typename EvalGraphT>
+EvalGraphBuilder<EvalGraphT>::EvalGraphBuilder(
     ProgramCtx& ctx, 
 		ComponentGraph& cg,
     EvalGraphT& eg,
@@ -76,35 +77,83 @@ EvalGraphBuilder::EvalGraphBuilder(
 {
 }
 
-EvalGraphBuilder::~EvalGraphBuilder()
+template<typename EvalGraphT>
+EvalGraphBuilder<EvalGraphT>::~EvalGraphBuilder()
 {
 }
 
-RegistryPtr EvalGraphBuilder::registry()
+template<typename EvalGraphT>
+RegistryPtr EvalGraphBuilder<EvalGraphT>::registry()
 {
   return ctx.registry();
 }
 
-namespace
+template<typename EvalGraphT>
+typename EvalGraphBuilder<EvalGraphT>::Component
+EvalGraphBuilder<EvalGraphT>::getComponentForUnit(EvalGraphBuilder::EvalUnit u) const
 {
-  typedef FinalEvalGraph::EvalUnitPropertyBundle EvalUnitProperties;
-  typedef FinalEvalGraph::EvalUnitDepPropertyBundle EvalUnitDepProperties;
-
-  EvalUnitProperties eup_empty;
-}
-
-EvalGraphBuilder::Component EvalGraphBuilder::getComponentForUnit(EvalGraphBuilder::EvalUnit u) const
-{
-  ComponentEvalUnitMapping::right_map::const_iterator it =
+  typename ComponentEvalUnitMapping::right_map::const_iterator it =
     mapping.right.find(u);
   if( it == mapping.right.end() )
     throw std::runtime_error("tried to get component for unit not created here!");
   return it->second;
 }
 
+template<typename EvalGraphT>
+void EvalGraphBuilder<EvalGraphT>::setFactory(EvalUnit& u, const ComponentInfo& ci)
+{
+}
 
-EvalGraphBuilder::EvalUnit
-EvalGraphBuilder::createEvalUnit(
+template<>
+void EvalGraphBuilder<FinalEvalGraph>::setFactory(EvalUnit& u, const ComponentInfo& ci)
+{
+  // configure unit
+  EvalUnitProperties& uprops = eg.propsOf(u);
+  if( ci.innerEatoms.empty() && !ctx.config.getOption("ForceGC") )
+  {
+    // no inner external atoms -> plain model generator factory
+    LOG(DBG,"configuring plain model generator factory for eval unit " << u);
+    if (ctx.config.getOption("GenuineSolver") > 0){
+      uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
+            ctx, ci, externalEvalConfig));
+    }else{
+      uprops.mgf.reset(new PlainModelGeneratorFactory(
+            ctx, ci, externalEvalConfig));
+    }
+  }
+  else
+  {
+    if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
+    {
+      // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
+      // -> wellfounded/fixpoint model generator factory
+      LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
+      if (ctx.config.getOption("GenuineSolver") > 0){
+        uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }else{
+        uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }
+    }
+    else
+    {
+      // everything else -> guess and check model generator factory
+      LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
+      if (ctx.config.getOption("GenuineSolver") > 0){
+        uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }else{
+        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }
+    }
+  }
+}
+
+template<typename EvalGraphT>
+typename EvalGraphBuilder<EvalGraphT>::EvalUnit
+EvalGraphBuilder<EvalGraphT>::createEvalUnit(
 		const std::list<Component>& comps, const std::list<Component>& ccomps)
 {
   LOG_SCOPE(ANALYZE,"cEU",true);
@@ -146,7 +195,7 @@ EvalGraphBuilder::createEvalUnit(
 
   // associate new comp with eval unit
   {
-    typedef ComponentEvalUnitMapping::value_type MappedPair;
+    typedef typename ComponentEvalUnitMapping::value_type MappedPair;
 		bool success = mapping.insert(MappedPair(newComp, u)).second;
 		assert(success); // component must not already exist here
 	}
@@ -160,51 +209,13 @@ EvalGraphBuilder::createEvalUnit(
 
     if (!!ctx.customModelGeneratorProvider)
     {
-            LOG(DBG,"configuring custom model generator factory for eval unit " << u);
-            uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
+      LOG(DBG,"configuring custom model generator factory for eval unit " << u);
+      uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
     }
     else
     {     
-      if( ci.innerEatoms.empty() && !ctx.config.getOption("ForceGC") )
-      {
-        // no inner external atoms -> plain model generator factory
-        LOG(DBG,"configuring plain model generator factory for eval unit " << u);
-        if (ctx.config.getOption("GenuineSolver") > 0){
-          uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
-                ctx, ci, externalEvalConfig));
-        }else{
-          uprops.mgf.reset(new PlainModelGeneratorFactory(
-                ctx, ci, externalEvalConfig));
-        }
-      }
-      else
-      {
-        if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
-        {
-          // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
-	  			// -> wellfounded/fixpoint model generator factory
-          LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
-          if (ctx.config.getOption("GenuineSolver") > 0){
-            uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
-                  ctx, ci, externalEvalConfig));
-          }else{
-            uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
-                  ctx, ci, externalEvalConfig));
-          }
-        }
-        else
-        {
-          // everything else -> guess and check model generator factory
-          LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-          if (ctx.config.getOption("GenuineSolver") > 0){
-            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
-                  ctx, ci, externalEvalConfig));
-          }else{
-            uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-                  ctx, ci, externalEvalConfig));
-          }
-        }
-      }
+      // set model generator factory
+      setFactory(u, newUnitInfo);
     }
   }
 
@@ -217,7 +228,7 @@ EvalGraphBuilder::createEvalUnit(
     Component tocomp = cg.targetOf(*dit);
 
     // get eval unit corresponding to tocomp
-    ComponentEvalUnitMapping::left_map::iterator itdo =
+    typename ComponentEvalUnitMapping::left_map::iterator itdo =
       mapping.left.find(tocomp);
     assert(itdo != mapping.left.end());
     EvalUnit dependsOn = itdo->second;
@@ -230,6 +241,9 @@ EvalGraphBuilder::createEvalUnit(
 
   return u;
 }
+
+template class EvalGraphBuilder<FinalEvalGraph>;
+template class EvalGraphBuilder<HTEvalGraph>;
 
 DLVHEX_NAMESPACE_END
 

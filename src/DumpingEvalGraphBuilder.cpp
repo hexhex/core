@@ -40,31 +40,34 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-DumpingEvalGraphBuilder::DumpingEvalGraphBuilder(
+template<typename EvalGraphT>
+DumpingEvalGraphBuilder<EvalGraphT>::DumpingEvalGraphBuilder(
     ProgramCtx& ctx, 
 		ComponentGraph& cg,
     EvalGraphT& eg,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig,
 		const std::string& ofname):
-	EvalGraphBuilder(ctx, cg, eg, externalEvalConfig),
+	EvalGraphBuilder<EvalGraphT>(ctx, cg, eg, externalEvalConfig),
 	output(ofname.c_str(), std::ios::out | std::ios::trunc)
 {
   throw std::runtime_error("TODO revitalize this functionality as follows: record indices of components here, cg.collapseComponents must record in the component which components get into a goal component, then createEvalUnit can dump which original component indices become which units (this is the clean and only useful way to do it)");
 }
 
-DumpingEvalGraphBuilder::~DumpingEvalGraphBuilder()
+template<typename EvalGraphT>
+DumpingEvalGraphBuilder<EvalGraphT>::~DumpingEvalGraphBuilder()
 {
 }
 
-DumpingEvalGraphBuilder::EvalUnit
-DumpingEvalGraphBuilder::createEvalUnit(
+template<typename EvalGraphT>
+typename DumpingEvalGraphBuilder<EvalGraphT>::EvalUnit
+DumpingEvalGraphBuilder<EvalGraphT>::createEvalUnit(
 		const std::list<Component>& comps, const std::list<Component>& ccomps)
 {
   if( componentidx.empty() )
   {
     ComponentGraph::ComponentIterator cit, cit_end;
     unsigned idx = 0;
-    for(boost::tie(cit, cit_end) = cg.getComponents();
+    for(boost::tie(cit, cit_end) = Base::cg.getComponents();
         cit != cit_end; ++cit, ++idx)
     {
       componentidx[*cit] = idx;
@@ -86,16 +89,15 @@ DumpingEvalGraphBuilder::createEvalUnit(
 		output << "share" << printrange(iccomps, " ", " ", " ");
 	output << std::endl;
 
-	DumpingEvalGraphBuilder::EvalUnit u(
-		EvalGraphBuilder::createEvalUnit(comps, ccomps));
+	EvalUnit u(Base::createEvalUnit(comps, ccomps));
 
 	#ifndef NDEBUG
-	typedef EvalGraphBuilder::ComponentGraphRest CGRest;
+	typedef typename Base::ComponentGraphRest CGRest;
 	typedef boost::graph_traits<CGRest> CGRestTraits;
-	const CGRest& cgrest = getComponentGraphRest();
+	const CGRest& cgrest = Base::getComponentGraphRest();
 	DBGLOG(DBG, "after createEvalUnit with result " << u);
 	DBGLOG_SCOPE(DBG,"cgrest",false);
-	CGRestTraits::vertex_iterator cit, cit_end;
+	typename CGRestTraits::vertex_iterator cit, cit_end;
 	for(boost::tie(cit, cit_end) = boost::vertices(cgrest);
 			cit != cit_end; ++cit)
 	{
@@ -104,6 +106,9 @@ DumpingEvalGraphBuilder::createEvalUnit(
 	#endif
   return u;
 }
+
+template class DumpingEvalGraphBuilder<FinalEvalGraph>;
+template class DumpingEvalGraphBuilder<HTEvalGraph>;
 
 DLVHEX_NAMESPACE_END
 
