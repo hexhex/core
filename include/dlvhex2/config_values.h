@@ -32,6 +32,22 @@
 #ifndef CONFIG_VALUES_H
 #define CONFIG_VALUES_H
 
-#define CFG_HT_MODELS	"ht_models"
+#define CFG_HT_MODELS			"ht_models"
+
+#define CFG_EVAL_HEURISTIC		"eval_heuristic"
+#define CFG_EVAL_HEURISTIC_ARG	"eval_heuristic_arg"
+
+enum EvalHeuristic
+{
+	Eval_None = 0,
+	Eval_Easy,
+	Eval_Greedy,
+	Eval_OldDlvhex,
+	Eval_Trivial,
+	Eval_Monolithic,
+	Eval_FromFile,
+	Eval_ASP,
+	Eval_FromHEXSourcecode,
+};
 
 #endif
