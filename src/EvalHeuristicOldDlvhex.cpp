@@ -44,12 +44,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicOldDlvhex::EvalHeuristicOldDlvhex():
+template<typename EvalGraphT>
+EvalHeuristicOldDlvhex<EvalGraphT>::EvalHeuristicOldDlvhex():
   Base()
 {
 }
 
-EvalHeuristicOldDlvhex::~EvalHeuristicOldDlvhex()
+template<typename EvalGraphT>
+EvalHeuristicOldDlvhex<EvalGraphT>::~EvalHeuristicOldDlvhex()
 {
 }
 
@@ -73,8 +75,11 @@ namespace
 //    * is no external component and depends only on prior eval units or "take" components
 // 3) build eval unit from all marked as "take"
 // 4) restart
-void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicOldDlvhex<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
+
   const ComponentGraph& compgraph = builder.getComponentGraph();
 
   // get internal compgraph
@@ -138,7 +143,7 @@ void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
 		{
 			std::list<Component> comps(markedcomps.begin(), markedcomps.end());
 			std::list<Component> ccomps;
-			EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+			EvalUnit u = builder.createEvalUnit(comps, ccomps);
       Component c = builder.getComponentForUnit(u);
 			LOG(ANALYZE,"components " << printrange(comps) << " became eval unit " << u << " and component " << c);
       finishedcompsSet.insert(c);

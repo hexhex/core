@@ -32,7 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-//#define BOOST_SPIRIT_DEBUG
+#include "dlvhex2/config_values.h"
 
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/PlatformDefinitions.h"
@@ -66,27 +66,29 @@ typedef ManualEvalHeuristicsPlugin::CtxData::InstructionList InstructionList;
 typedef std::map<unsigned, std::list<Component> > UnitMap;
 typedef std::map<Component, unsigned > UnitBackMap;
 
+template<typename EvalGraphT>
 class EvalHeuristicFromHEXSourcecode:
-  public EvalHeuristicBase<EvalGraphBuilder>
+  public EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> >
 {
   // types
 public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+  typedef EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> > Base;
 
   // methods
 public:
   EvalHeuristicFromHEXSourcecode() { }
   virtual ~EvalHeuristicFromHEXSourcecode() { }
 
-  virtual void build(EvalGraphBuilder& builder);
+  virtual void build(EvalGraphBuilder<EvalGraphT>& builder);
 
 protected:
-  virtual void preprocessComponents(EvalGraphBuilder& builder);
+  virtual void preprocessComponents(EvalGraphBuilder<EvalGraphT>& builder);
 };
 
 // collapse certain combinations of rules that belong to one unit:
 // components that consist of one external atom
-void EvalHeuristicFromHEXSourcecode::preprocessComponents(EvalGraphBuilder& builder) {
+template<typename EvalGraphT>
+void EvalHeuristicFromHEXSourcecode<EvalGraphT>::preprocessComponents(EvalGraphBuilder<EvalGraphT>& builder) {
 	RegistryPtr reg = builder.registry();
 	ComponentGraph& compgraph = builder.getComponentGraph();
 
@@ -185,9 +187,10 @@ void EvalHeuristicFromHEXSourcecode::postprocessComponents(EvalGraphBuilder& bui
 }
 #endif
 
-void EvalHeuristicFromHEXSourcecode::build(EvalGraphBuilder& builder) {
+template<typename EvalGraphT>
+void EvalHeuristicFromHEXSourcecode<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder) {
 	RegistryPtr reg = builder.registry();
-	ManualEvalHeuristicsPlugin::CtxData& ctxdata = builder.getProgramCtx().getPluginData<ManualEvalHeuristicsPlugin>();
+	ManualEvalHeuristicsPlugin::CtxData& ctxdata = builder.getProgramCtx().template getPluginData<ManualEvalHeuristicsPlugin>();
 
 	// preprocess ctxdata.instructions: make sure first element is ID_FAIL
 	// (defaults to eval unit 0 if not given)
@@ -514,7 +517,7 @@ void ManualEvalHeuristicsPlugin::processOptions(
 	if( ctxdata.enabled )
 	{
 		// directly uses data from ctxdata
-		ctx.evalHeuristic.reset(new EvalHeuristicFromHEXSourcecode);
+		ctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_FromHEXSourcecode);
 	}
 }
 	

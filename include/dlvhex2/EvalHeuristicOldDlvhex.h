@@ -36,18 +36,19 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+template<typename EvalGraphT>
 class EvalHeuristicOldDlvhex:
-  public EvalHeuristicBase<EvalGraphBuilder>
+  public EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> >
 {
   // types
 public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+  typedef EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> > Base;
 
   // methods
 public:
   EvalHeuristicOldDlvhex();
   virtual ~EvalHeuristicOldDlvhex();
-  virtual void build(EvalGraphBuilder& builder);
+  virtual void build(EvalGraphBuilder<EvalGraphT>& builder);
 };
 
 DLVHEX_NAMESPACE_END

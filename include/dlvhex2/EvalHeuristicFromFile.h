@@ -36,18 +36,19 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+template<typename EvalGraphT>
 class EvalHeuristicFromFile:
-  public EvalHeuristicBase<EvalGraphBuilder>
+  public EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> >
 {
   // types
 public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+  typedef EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> > Base;
 
   // methods
 public:
   EvalHeuristicFromFile(const std::string& fname);
   virtual ~EvalHeuristicFromFile();
-  virtual void build(EvalGraphBuilder& builder);
+  virtual void build(EvalGraphBuilder<EvalGraphT>& builder);
 
   // data
 protected:

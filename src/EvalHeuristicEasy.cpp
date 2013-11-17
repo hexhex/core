@@ -44,12 +44,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicEasy::EvalHeuristicEasy():
+template<typename EvalGraphT>
+EvalHeuristicEasy<EvalGraphT>::EvalHeuristicEasy():
   Base()
 {
 }
 
-EvalHeuristicEasy::~EvalHeuristicEasy()
+template<typename EvalGraphT>
+EvalHeuristicEasy<EvalGraphT>::~EvalHeuristicEasy()
 {
 }
 
@@ -112,8 +114,11 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
 // required for some GCCs for DFSVisitor CopyConstructible Concept Check
 using namespace internal;
 
-void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void EvalHeuristicEasy<EvalGraphT>::build(EvalGraphBuilder<EvalGraphT>& builder)
 {
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
+
   ComponentGraph& compgraph = builder.getComponentGraph();
 
   bool didSomething;
@@ -398,7 +403,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
     std::list<Component> comps;
     comps.push_back(*it);
     std::list<Component> ccomps;
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+    EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }

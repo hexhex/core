@@ -39,8 +39,10 @@ DLVHEX_NAMESPACE_BEGIN
 namespace evalheur
 {
 
-void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder)
+template<typename EvalGraphT>
+void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder<EvalGraphT>& builder)
 {
+  typedef typename EvalGraphBuilder<EvalGraphT>::EvalUnit EvalUnit;
   const ComponentGraph& compgraph = builder.getComponentGraph();
 
   // collapse according to commands
@@ -51,7 +53,7 @@ void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& build
 				" and shared components " << printvector(cmd.share));
 		std::list<Component> comps(cmd.collapse.begin(), cmd.collapse.end());
 		std::list<Component> ccomps(cmd.share.begin(), cmd.share.end());
-		EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+		EvalUnit u = builder.createEvalUnit(comps, ccomps);
 		LOG(ANALYZE,"yields eval unit " << u);
   }
 }
