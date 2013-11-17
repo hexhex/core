@@ -1,0 +1,107 @@
+# -*- org -*-
+#+STARTUP: showall
+
+Concept for referencing Entities in dlvhex:
+
+TODO: checkout ASPils, maybe we can "re-use" some ids, or at least
+make it compatible such that we can easily retrieve them
+
+* Entities are:
+** Atoms (ordinary, builtin, aggregate, external)
+** Literals
+** Terms (integers, constants, strings, variables)
+** Rules (regular rules, constraints, weak constraints)
+
+Entities are stored in Tables and referenced by IDs.
+IDs consist of a kind part and a table index part.
+
+An ID of any Entity allows to infer the kind of entity (i.e., in which table it is stored).
+
+An ID of ~0x0 indicates an error (not found ...).
+
+* ID Concept:
+** 64 bit unsigned integer ID = 32 bit unsigned "kind" integer + 32 bit unsigned "address" integer
+** address integer = index into container where entity is registered
+** Kind bits specify mainkind, subkind, and properties of entity
+
+* Kind integer concept:
+** 1 bit "NAFbit" (MSB) (reserved for literal)
+   mask 0x80000000
+** 3 bits "Mainkind"
+   mask 0x70000000
+** 4 bits "Subkind"
+   mask 0x0F000000
+** 8 bits "Properties"
+   mask 0x00FF0000
+** 16 bits unused
+   mask 0x0000FFFF
+
+* Mainkinds:
+** 0x0 Atom
+   Subkinds (all Non-Ordinary Atoms have bit 0x2 set):
+   * 0x0 Ordinary Ground Atom
+     Address points into OrdinaryAtom-Table
+     Properties:
+        [mask 0x01: positive (0) vs strongly negated (1)]
+        [  Address points to non-negated item's Address in OrdinaryGroundAtom-Table]
+        mask 0x02: user-defined (0) vs dlvhex-defined/auxiliary (1)
+        mask 0x0C: output (print) mode
+          0x00 default print mode (policy may be hide or show)
+          0x04 hide mode (for dlvhex-defined, or for explicitly hidden)
+          0x08 show mode (explicitly shown)
+          0x0C unused
+   * 0x1 Ordinary Nonground Atom
+     Address points into OrdinaryAtom-Table
+     Properties:
+        [mask 0x01: positive (0) vs strongly negated (1)]
+        [  (no special treatment of Address)]
+        mask 0x02: user-defined (0) vs dlvhex-defined/auxiliary (1)
+   * 0x2 Builtin Atom
+     Address points into BuiltinAtom-Table
+   * 0x3 Aggregate Atom
+     Address points into AggregateAtom-Table
+   * 0x6 External Atom
+     Address points into ExternalAtom-Table
+   * 0xA Module Atom
+     Address points into ModuleAtom-Table
+
+** 0x1 Term
+   Subkinds:
+   * 0x0 Constant or Quoted String
+     Address points into Term-Table
+     For quoted strings, all namespaces are stored expanded
+     Properties:
+        mask 0x02: user-defined (0) vs dlvhex-defined/auxiliary (1)
+   * 0x1 Integer
+     Address = Value of Integer, no Table
+   * 0x2 Variable
+     Address points into Term-Table (anonymous variables are marked and expanded to real variables)
+     Properties:
+        mask 0x1: non-anonymous (0) vs anonymous (1)
+   * 0x3 Builtin
+     Address = builtin code of term, e.g., =, !=, <, <=, #sum, #int
+   * 0x4 Predicate
+     Address points into Predicate-Table
+
+** 0x2 Literal
+   Subkinds inherited from Atom
+   Properties inherited from Atom
+   Address points into corresponding Atom-Tables!
+   NAFBit: positive (0) vs negation as failure (1)
+
+** 0x3 Rule
+   Address points into Rule-Table
+   Subkinds:
+   * 0x0 regular rule
+     Properties:
+        mask 0x08: not containing external atoms(0) vs containing external atoms (1)
+        mask 0x10: non-disjunctive (0) vs disjunctive (1)
+        mask 0x20: non-auxiliary (0) vs auxiliary (1)
+   * 0x1 constraint
+   * 0x2 weak constraint
+   Properties for all subkinds:
+     mask 0x01: ground (0) vs nonground (1)
+     mask 0x02: first order (0) vs higher order (1)
+     mask 0x04: no aggregates atoms (0) vs contains aggregate atoms (1)
+     mask 0x08: no external atoms (0) vs contains external atoms (1)
+		 mask 0x40: user-defined (0) vs dlvhex-defined/auxiliary (1)
