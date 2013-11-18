@@ -218,10 +218,11 @@ public:
   void safetyCheck();                // optional (if you know that your program is safe!)
   void createDependencyGraph();
   void liberalSafetyCheck();
-	void optimizeEDBDependencyGraph(); // optional
-	void createComponentGraph();
+  void optimizeEDBDependencyGraph(); // optional
+  void createComponentGraph();
   void strongSafetyCheck();          // optional (if you know that your program is safe!)
-	void createEvalGraph();
+  void setupEvalContext();
+  void createEvalGraph();
   void setupProgramCtx();
   void evaluate();
   void postProcess();

@@ -617,6 +617,10 @@ int main(int argc, char *argv[])
 				if( pctx.terminationRequest ) return 1;
 			}
 			
+			// setup evalcontext
+			pctx.setupEvalContext();
+			if( pctx.terminationRequest ) return 1;
+				
 			// select heuristics and create eval graph
 			pctx.createEvalGraph();
 			if( pctx.terminationRequest ) return 1;
@@ -628,7 +632,7 @@ int main(int argc, char *argv[])
 			// setup model builder and configure plugin/dlvhex model processing hooks
 			pctx.setupProgramCtx();
 			if( pctx.terminationRequest ) return 1;
-				
+
 			// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
 			// (individual model output should happen here)
 			pctx.evaluate();
