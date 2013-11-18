@@ -198,6 +198,7 @@ void ProgramCtx::liberalSafetyCheck() { state->checkLiberalSafety(this); }
 void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
 void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }
 void ProgramCtx::strongSafetyCheck() { state->strongSafetyCheck(this); }
+void ProgramCtx::setupEvalContext() { state->setupEvalContext(this); }
 void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }
 void ProgramCtx::setupProgramCtx() { state->setupProgramCtx(this); }
 void ProgramCtx::evaluate() { state->evaluate(this); }

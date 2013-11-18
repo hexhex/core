@@ -59,6 +59,13 @@
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/FinalEvalGraph.h"
 #include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/EvalHeuristicEasy.h"
+#include "dlvhex2/EvalHeuristicGreedy.h"
+#include "dlvhex2/EvalHeuristicOldDlvhex.h"
+#include "dlvhex2/EvalHeuristicTrivial.h"
+#include "dlvhex2/EvalHeuristicMonolithic.h"
+#include "dlvhex2/EvalHeuristicFromFile.h"
+#include "dlvhex2/EvalHeuristicASP.h"
 #include "dlvhex2/DumpingEvalGraphBuilder.h"
 #include "dlvhex2/AnswerSetPrinterCallback.h"
 #include "dlvhex2/PlainAuxPrinter.h"
@@ -140,6 +147,7 @@ STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(optimizeEDBDependencyGraph);
 STATE_FUNC_DEFAULT_IMPL(createComponentGraph);
 STATE_FUNC_DEFAULT_IMPL(strongSafetyCheck);
+STATE_FUNC_DEFAULT_IMPL(setupEvalContext);
 STATE_FUNC_DEFAULT_IMPL(createEvalGraph);
 STATE_FUNC_DEFAULT_IMPL(setupProgramCtx);
 STATE_FUNC_DEFAULT_IMPL(evaluate);
@@ -732,6 +740,48 @@ void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
   // check by calling the object
   sschecker();
 
+  StatePtr next(new SetupEvalContextState);
+  changeState(ctx, next);
+}
+
+MANDATORY_STATE_CONSTRUCTOR(SetupEvalContextState)
+
+void SetupEvalContextState::setupEvalContext(ProgramCtx* ctx)
+{
+  if (ctx->config.getOption(CFG_HT_MODELS)) {
+    setupEvalContext<HTEvalGraph>(ctx);
+  } else {
+    setupEvalContext<FinalEvalGraph>(ctx);
+  }
+}
+
+template<typename EvalGraphT>
+void SetupEvalContextState::setupEvalContext(ProgramCtx* ctx)
+{
+  typedef typename EvalContext<EvalGraphT>::Ptr EvalContextPtr;
+  EvalContextPtr evalctx = EvalContextPtr(new EvalContext<EvalGraphT>);
+
+  #define CASE(type) \
+    case Eval_ ## type: evalctx->heuristic.reset(new EvalHeuristic ## type<EvalGraphT>); break;
+  #define CASE_ARG(type) \
+    case Eval_ ## type:  \
+      evalctx->heuristic.reset(new EvalHeuristic ## type<EvalGraphT>(ctx->config.getStringOption(CFG_EVAL_HEURISTIC_ARG))); break;
+  unsigned heuristic = ctx->config.getOption(CFG_EVAL_HEURISTIC);
+  switch (heuristic) {
+    CASE(Easy)
+    CASE(Greedy)
+    CASE(OldDlvhex)
+    CASE(Trivial)
+    CASE(Monolithic)
+    CASE_ARG(FromFile)
+    CASE_ARG(ASP)
+    case Eval_FromHEXSourcecode: // TODO: split ManualEvalHeuristicsPlugin.cpp
+    default: DBGLOG(DBG, "no valid EvalHeuristic stored in ctx.config");
+  }
+  #undef CASE
+
+  ctx->evalcontext = evalctx;
+
   StatePtr next(new CreateEvalGraphState);
   changeState(ctx, next);
 }
@@ -745,16 +795,16 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
   if( ctx->config.getOption(CFG_HT_MODELS) )
   {
-    createGraph<HTEvalGraph>(ctx);
+    createEvalGraph<HTEvalGraph>(ctx);
   }
   else
   {
-    createGraph<FinalEvalGraph>(ctx);
+    createEvalGraph<FinalEvalGraph>(ctx);
   }
 }
 
 template<typename EvalGraphT>
-void CreateEvalGraphState::createGraph(ProgramCtx* ctx)
+void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 {
   typedef EvalGraphT EvalGraph;
   typedef typename EvalGraph::EvalUnit EvalUnit;
@@ -874,13 +924,11 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   // let plugins setup the program ctx (removing the default hooks is permitted)
   ctx->setupByPlugins();
 
-  // TODO: consider HTEvalGraph
-  StatePtr next(new EvaluateState<FinalEvalGraph>);
+  StatePtr next(new EvaluateState);
   changeState(ctx, next);
 }
 
-template<typename EvalGraphT>
-EvaluateState<EvalGraphT>::EvaluateState(): State() {}
+MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
 
 namespace
 {
@@ -895,13 +943,16 @@ namespace
 		}
 }
 
-template<typename EvalGraphT>
-void EvaluateState<EvalGraphT>::evaluate(ProgramCtx* ctx)
+void EvaluateState::evaluate(ProgramCtx* ctx)
 {
+  if (ctx->config.getOption(CFG_HT_MODELS)) {
+    evaluateHTModels(ctx);
+  } else {
+    evaluateAnswerSets(ctx);
+  }
 }
 
-template<>
-void EvaluateState<FinalEvalGraph>::evaluate(ProgramCtx* ctx)
+void EvaluateState::evaluateAnswerSets(ProgramCtx* ctx)
 {
   typedef EvalContext<FinalEvalGraph>::Ptr EvalContextPtr;
   typedef ModelBuilder<FinalEvalGraph>::Model Model;
@@ -1179,6 +1230,12 @@ void EvaluateState<FinalEvalGraph>::evaluate(ProgramCtx* ctx)
     benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << std::endl;
   #endif
 
+  StatePtr next(new PostProcessState);
+  changeState(ctx, next);
+}
+
+void EvaluateState::evaluateHTModels(ProgramCtx* ctx)
+{
   StatePtr next(new PostProcessState);
   changeState(ctx, next);
 }

@@ -62,16 +62,17 @@ public:
   virtual void showPlugins(ProgramCtx*);
   virtual void convert(ProgramCtx*);
   virtual void parse(ProgramCtx*);
-  	virtual void  moduleSyntaxCheck(ProgramCtx*);
-  	virtual void  mlpSolver(ProgramCtx*);
-	virtual void rewriteEDBIDB(ProgramCtx*);
+  virtual void moduleSyntaxCheck(ProgramCtx*);
+  virtual void mlpSolver(ProgramCtx*);
+  virtual void rewriteEDBIDB(ProgramCtx*);
   virtual void safetyCheck(ProgramCtx*);
   virtual void createDependencyGraph(ProgramCtx*);
   virtual void checkLiberalSafety(ProgramCtx*);
-	virtual void optimizeEDBDependencyGraph(ProgramCtx*);
-	virtual void createComponentGraph(ProgramCtx*);
+  virtual void optimizeEDBDependencyGraph(ProgramCtx*);
+  virtual void createComponentGraph(ProgramCtx*);
   virtual void strongSafetyCheck(ProgramCtx*);
-	virtual void createEvalGraph(ProgramCtx*);
+  virtual void setupEvalContext(ProgramCtx*);
+  virtual void createEvalGraph(ProgramCtx*);
   virtual void setupProgramCtx(ProgramCtx*);
   virtual void evaluate(ProgramCtx*);
   virtual void postProcess(ProgramCtx*);
@@ -164,6 +165,16 @@ public:
   virtual void strongSafetyCheck(ProgramCtx*);
 };
 
+class DLVHEX_EXPORT SetupEvalContextState : public State
+{
+public:
+  SetupEvalContextState();
+  virtual void setupEvalContext(ProgramCtx*);
+protected:
+  template<typename EvalGraphT>
+  void setupEvalContext(ProgramCtx*);
+};
+
 class DLVHEX_EXPORT CreateEvalGraphState : public State
 {
 public:
@@ -171,7 +182,7 @@ public:
   virtual void createEvalGraph(ProgramCtx*);
 protected:
   template<typename EvalGraphT>
-  void createGraph(ProgramCtx*);
+  void createEvalGraph(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT SetupProgramCtxState : public State
@@ -181,12 +192,14 @@ public:
   virtual void setupProgramCtx(ProgramCtx*);
 };
 
-template<typename EvalGraphT>
 class DLVHEX_EXPORT EvaluateState : public State
 {
 public:
   EvaluateState();
   virtual void evaluate(ProgramCtx*);
+protected:
+  void evaluateAnswerSets(ProgramCtx*);
+  void evaluateHTModels(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT PostProcessState : public State
