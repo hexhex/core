@@ -85,6 +85,7 @@ pkginclude_HEADERS = \
   OfflineModelBuilder.h \
   OnlineModelBuilder.h \
   OrdinaryAtomTable.h \
+  PhantomPlugin.h \
   PlainAuxPrinter.h \
   PlainModelGenerator.h \
   GenuinePlainModelGenerator.h \

@@ -78,6 +78,7 @@
 #include "dlvhex2/ExistsPlugin.h"
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/FunctionPlugin.h"
+#include "dlvhex2/PhantomPlugin.h"
 
 #include <getopt.h>
 #include <signal.h>
@@ -447,6 +448,14 @@ int main(int argc, char *argv[])
 	// defaults of main
 	Config config;
 
+	// deconstruct benchmarking (= output results) at scope exit 
+	int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
+	BOOST_SCOPE_EXIT( (dummy) ) {
+  	(void)dummy;
+		benchmark::BenchmarkController::finish();
+	}
+	BOOST_SCOPE_EXIT_END
+
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try
 	{
@@ -475,6 +484,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
+			PluginInterfacePtr phantomPlugin(new PhantomPlugin);
+			pctx.pluginContainer()->addInternalPlugin(phantomPlugin);
 		}
 
 		// before anything else we dump the logo
@@ -494,13 +505,7 @@ int main(int argc, char *argv[])
 		}
 		else
 			ctr.setOutput(0);
-		// deconstruct benchmarking (= output results) at scope exit 
-		int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
-		BOOST_SCOPE_EXIT( (dummy) ) {
-	  	(void)dummy;
-			benchmark::BenchmarkController::finish();
-		}
-		BOOST_SCOPE_EXIT_END
+
 		// also deconstruct & output at SIGTERM/SIGINT
 		{
 			if( SIG_ERR == signal(SIGTERM, signal_handler) )
@@ -650,6 +655,7 @@ int main(int argc, char *argv[])
 	}
   catch(const GeneralError &ge)
 	{
+pctx.modelBuilder.reset();
 		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
 		return 1;
 	}
@@ -747,6 +753,7 @@ void processOptionsPrePlugin(
   bool specifiedModelQueueSize = false;
   bool defiaux = false;
   bool iaux = false;
+  bool heuristicChosen = false;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -808,6 +815,7 @@ void processOptionsPrePlugin(
 		case 'e':
 			// heuristics={old,trivial,easy,manual:>filename>}
 			{
+				heuristicChosen = true;
 				std::string heuri(optarg);
 				if( heuri == "old" )
 				{
@@ -1354,6 +1362,13 @@ void processOptionsPrePlugin(
 	}
 
 	// global constraints
+	if (pctx.config.getOption("Repair")){
+		// repair answer set computation needs monolithic heuristic and liberal safety
+		if (heuristicChosen) throw GeneralError("Option --repair is incompatible with --repair. Repair answer set builder chooses the heuristic automatically.");
+		pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
+		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
+		pctx.config.setOption("LiberalSafety", 1);
+	}
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
 		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
 		pctx.config.setOption("FLPCheck", 1);

@@ -1,3 +1,10 @@
+2013-11-18  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* src/PhantomPlugin.cpp: Add support for dummy implementations
+	of external predicates.
+	* include/dlvhex2/PhantomPlugin.h: Likewise.
+	* src/dlvhex.cpp: Likewise.
+
 2013-08-19  Peter Schueller <peterschueller@sabanciuniv.edu>
 
 	Release 2.2.0
