@@ -19,72 +19,54 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with dlvhex; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * 02110-1301 USA.
  */
-
 
 /**
- * @file   HTInterpretation.h
+ * @file   HTModel.h
  * @author Andreas Humenberger <e1026602@student.tuwien.ac.at>
  * 
- * @brief  HT interpretation
- * 
+ * @brief  HT model container.
  */
 
-#ifndef HT_INTERPRETATION_H
-#define HT_INTERPRETATION_H
+#ifndef HT_MODEL_H
+#define HT_MODEL_H
 
-#include "dlvhex2/ModelGenerator.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.h"
+#include "dlvhex2/Printhelpers.h"
+#include "dlvhex2/HTInterpretation.h"
 
-#include <bm/bm.h>
 #include <boost/shared_ptr.hpp>
-#include <ostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
-class HTInterpretation:
-	public InterpretationBase,
-	public ostream_printable<HTInterpretation>
+class HTModel:
+  public ostream_printable<HTModel>
 {
 public:
-	typedef boost::shared_ptr<HTInterpretation> Ptr;
-	typedef boost::shared_ptr<const HTInterpretation> ConstPtr;
-	typedef bm::bvector<> Storage;
-protected:
-	// TODO: naming convention???
-	// registry
-	RegistryPtr registry_;
-	// storage
-	Storage here_;
-	Storage there_;
-public:
-	RegistryPtr registry()
-	{	return registry_;	}
-	const Storage& here() const
-	{	return here_;	}
-	Storage& here()
-	{	return here_;	}
-	const Storage& there() const
-	{	return there_;	}
-	Storage& there()
-	{	return there_;	}
-	void add(const HTInterpretation& other)
-	{
-		here_ |= other.here_;
-		there_ |= other.there_;
-	}
-	virtual std::ostream& print(std::ostream& o) const {}
+  // types
+  typedef boost::shared_ptr<HTModel> Ptr;
+  typedef boost::shared_ptr<const HTModel> ConstPtr;
 
-	HTInterpretation() {}
-	HTInterpretation(RegistryPtr reg):
-		registry_(reg)
-	{
-	}
+  // storage
+  HTInterpretationPtr interpretation;
+
+  HTModel(RegistryPtr registry): 
+    interpretation(new HTInterpretation(registry))
+  {
+  }
+  HTModel(HTInterpretationPtr interpretation):
+    interpretation(interpretation)
+  {
+  }
+  virtual ~HTModel() {}
+
+  virtual std::ostream& print(std::ostream& o) const {}
 };
 
-typedef HTInterpretation::Ptr HTInterpretationPtr;
-typedef HTInterpretation::ConstPtr HTInterpretationConstPtr;
+typedef boost::shared_ptr<HTModel> HTModelPtr;
 
 DLVHEX_NAMESPACE_END
 
-#endif // HT_INTERPRETATION_H
+#endif // HT_MODEL_H
