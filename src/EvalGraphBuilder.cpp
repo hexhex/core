@@ -2,7 +2,6 @@
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
  * Copyright (C) 2009, 2010 Peter Schüller
- * Copyright (C) 2011, 2012, 2013 Christoph Redl
  * 
  * This file is part of dlvhex.
  *
@@ -40,6 +39,8 @@
 #include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
+#include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
+#include "dlvhex2/HTPlainModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -102,6 +103,15 @@ EvalGraphBuilder<EvalGraphT>::getComponentForUnit(EvalGraphBuilder::EvalUnit u) 
 template<typename EvalGraphT>
 void EvalGraphBuilder<EvalGraphT>::setFactory(EvalUnit& u, const ComponentInfo& ci)
 {
+}
+
+template<>
+void EvalGraphBuilder<HTEvalGraph>::setFactory(EvalUnit& u, const ComponentInfo& ci)
+{
+  // TODO: check ComponentInfo
+  // configure unit
+  EvalUnitProperties& uprops = eg.propsOf(u);
+  uprops.mgf.reset(new HTPlainModelGeneratorFactory(ctx, ci, externalEvalConfig));
 }
 
 template<>
