@@ -43,6 +43,7 @@ class AnswerSetPrinterCallback:
 public:
   AnswerSetPrinterCallback(ProgramCtx& ctx);
   virtual bool operator()(AnswerSetPtr model);
+  virtual bool operator()(HTModelPtr model);
 
 protected:
   PredicateMaskPtr filterpm;
