@@ -408,6 +408,7 @@ void ProgramCtx::associateExtAtomsWithPluginAtoms(
     assert(it->isExternalAtom());
 
     const ExternalAtom& eatom = _registry->eatoms.getByID(*it);
+
     const std::string& predicate = _registry->getTermStringByID(eatom.predicate);
     // lookup pluginAtom to this eatom predicate
     PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
