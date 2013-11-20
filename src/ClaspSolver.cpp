@@ -1941,7 +1941,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 			ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
 		}
 
-		if( Logger::Instance().shallPrint(Logger::DBG) )
+		if( Logger::Instance().shallPrint(Logger::DBG) && !sat )
 		{
 		  // we always benchmark this, because
 		  // * if we do the following (print the program) then dlvhex will slow down A LOT
