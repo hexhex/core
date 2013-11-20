@@ -130,7 +130,7 @@ PlainModelGenerator::PlainModelGenerator(
 {
 }
 
-PlainModelGenerator::InterpretationPtr
+PlainModelGenerator::InterprPtr
 PlainModelGenerator::generateNextModel()
 {
   RegistryPtr reg = factory.ctx.registry();
