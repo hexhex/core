@@ -40,6 +40,7 @@
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
+#include "dlvhex2/HTPlainModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -102,6 +103,15 @@ EvalGraphBuilder<EvalGraphT>::getComponentForUnit(EvalGraphBuilder::EvalUnit u) 
 template<typename EvalGraphT>
 void EvalGraphBuilder<EvalGraphT>::setFactory(EvalUnit& u, const ComponentInfo& ci)
 {
+}
+
+template<>
+void EvalGraphBuilder<HTEvalGraph>::setFactory(EvalUnit& u, const ComponentInfo& ci)
+{
+  // TODO: check ComponentInfo
+  // configure unit
+  EvalUnitProperties& uprops = eg.propsOf(u);
+  uprops.mgf.reset(new HTPlainModelGeneratorFactory(ctx, ci, externalEvalConfig));
 }
 
 template<>
