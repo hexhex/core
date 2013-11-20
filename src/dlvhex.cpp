@@ -35,10 +35,7 @@
  *
  * \section intro_sec Overview
  *
- * \image html logo.png
- * This is the sourcecode documentation of the dlvhex system.
- *
- * You will look into this documentation most likely to implement a
+ * You will look into the documentation of dlvhex most likely to implement a
  * plugin. In this case, please continue with the \ref pluginframework
  * "Plugin Interface Module", which contains all necessary information.
  */
@@ -155,17 +152,14 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        generalize: Generalize learned ground nogoods to nonground nogoods" << std::endl
       << "                      By default, all options except \"generalize\" are enabled" << std::endl
-      << "     --evalall	Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
-      << "     	                This makes nogood learning more independent of the sequence of external atom checks." << std::endl
-      << "     	                Only useful with --extlearn." << std::endl
       << "     --nongroundnogoods" << std::endl
       << "                      Automatically instantiate learned nonground nogoods" << std::endl
       << "     --flpcheck=[explicit,ufs,ufsm,aufs,aufsm,none]" << std::endl
       << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
-      << "                        explicit: Compute the reduct and compare its models with the candidate" << std::endl
+      << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
       << "                        ufs: Use unfounded sets for minimality checking" << std::endl
       << "                        ufsm: (monolithic) Use unfounded sets for minimality checking; do not decompose the program for UFS checking" << std::endl
-      << "                        aufs: (default) Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
+      << "                        aufs: Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
       << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --noflpcriterion Do no apply decision criterion to skip the FLP check" << std::endl
@@ -174,11 +168,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        none (default): No learning" << std::endl
       << "                        reduct: Learning is based on the FLP-reduct" << std::endl
       << "                        ufs: Learning is based on the unfounded set" << std::endl
-      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,never]" << std::endl
+      << "     --eaevalheuristics=[always,inputcomplete,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
-      << "                      eacomplete: Evaluate whenever all atoms relevant for the external atom are assigned" << std::endl
       << "                      never (default): Only evaluate at the end" << std::endl
       << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
       << "                      post (default): Do UFS check only over complete interpretations" << std::endl
@@ -244,6 +237,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
       << "                      attr   - Attribute dependency graph (once per program)" << std::endl
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
+      << "     --repair=[ontology name]" << std::endl
+
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)" << std::endl
       << "     --constspace     Free partial models immediately after using them. This may cause some models" << std::endl
@@ -373,12 +368,11 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
-
   pctx.config.setOption("FLPDecisionCriterion", 1);
-  pctx.config.setOption("FLPCheck", 0);
-  pctx.config.setOption("UFSCheck", 1);
+  pctx.config.setOption("FLPCheck", 1);
+  pctx.config.setOption("UFSCheck", 0);
   pctx.config.setOption("UFSCheckMonolithic", 0);
-  pctx.config.setOption("UFSCheckAssumptionBased", 1);
+  pctx.config.setOption("UFSCheckAssumptionBased", 0);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
@@ -391,7 +385,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningNeg", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
   pctx.config.setOption("ExternalLearningGeneralize", 0);
-  pctx.config.setOption("AlwaysEvaluateAllExternalAtoms", 0);
   pctx.config.setOption("NongroundNogoodInstantiation", 0);
   pctx.config.setOption("UFSCheckHeuristics", 0);
   pctx.config.setOption("ModelQueueSize", 5);
@@ -422,6 +415,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
+  pctx.config.setOption("Repair",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("DumpStats",0);
@@ -723,11 +717,11 @@ void processOptionsPrePlugin(
 		{ "split", no_argument, &longid, 16 },
 		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
-		{ "evalall", no_argument, 0, 19 },
 		{ "flpcheck", required_argument, 0, 20 },
 		{ "ufslearn", optional_argument, 0, 23 },
 		{ "noflpcriterion", no_argument, 0, 35 },
 		{ "welljustified", optional_argument, 0, 25 },
+		{ "repair", required_argument, 0, 41 },
 		{ "eaevalheuristics", required_argument, 0, 26 },
 		{ "ufscheckheuristics", required_argument, 0, 27 },
 		{ "benchmarkeastderr", no_argument, 0, 28 }, // perhaps only temporary
@@ -739,7 +733,7 @@ void processOptionsPrePlugin(
 		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
     { "dumpstats", no_argument, 0, 37 },
-    { "iauxinaux", optional_argument, 0, 38 },
+    { "iauxinaux", no_argument, 0, 38 },
     { "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ NULL, 0, NULL, 0 }
@@ -1159,12 +1153,6 @@ void processOptionsPrePlugin(
 			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
 			break;
 
-		case 19:
-			{
-				pctx.config.setOption("AlwaysEvaluateAllExternalAtoms", 1);
-				break;
-			}
-
 		case 20:
 			{
 				std::string check(optarg);
@@ -1248,10 +1236,6 @@ void processOptionsPrePlugin(
 				else if (heur == "inputcomplete")
 				{
 					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
-				}
-				else if (heur == "eacomplete")
-				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
 				}
 				else if (heur == "never")
 				{
@@ -1338,14 +1322,7 @@ void processOptionsPrePlugin(
       break;
 
     case 38:
-      defiaux = true;
-      if (!optarg){
-        iaux = true;
-      }else{
-        if (std::string(optarg) == "true") iaux = true;
-        else if (std::string(optarg) == "false") iaux = false;
-        else throw GeneralError("Unknown option \"" + std::string(optarg) + "\" for iauxinaux");
-      }
+      pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
       break;
 
     case 39:
@@ -1358,6 +1335,12 @@ void processOptionsPrePlugin(
 	case 40:
 	  pctx.config.setOption("ClaspForceSingleThreaded", 1);
 	  break;
+
+	case 41:
+	  std::string ontologyName(optarg);
+	  pctx.config.setOption("Repair", 1);
+	  pctx.config.setStringOption("OntologyName", ontologyName);
+			break;
 		}
 	}
 
@@ -1370,9 +1353,7 @@ void processOptionsPrePlugin(
 		pctx.config.setOption("LiberalSafety", 1);
 	}
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
-		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
-		pctx.config.setOption("FLPCheck", 1);
-		pctx.config.setOption("UFSCheck", 0);
+		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
 	}
 	if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver")){
 		throw GeneralError("Liberal safety is only supported for genuine solvers");
@@ -1382,9 +1363,6 @@ void processOptionsPrePlugin(
 	}
 	if (pctx.config.getOption("GenuineSolver")){
 		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
-	}
-	if (defiaux){
-		pctx.config.setOption("IncludeAuxInputInAuxiliaries", iaux);
 	}
 
 	// configure plugin path

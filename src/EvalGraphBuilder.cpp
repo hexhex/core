@@ -40,6 +40,7 @@
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
+#include "dlvhex2/RepairModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -189,7 +190,12 @@ EvalGraphBuilder::createEvalUnit(
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
         if (ctx.config.getOption("GenuineSolver") > 0){
-          if (ctx.config.getOption("MultiThreading")){
+	  if (ctx.config.getOption("Repair"))
+	  {
+            uprops.mgf.reset(new RepairModelGeneratorFactory(
+                  ctx, ci, externalEvalConfig));
+          }
+          else if (ctx.config.getOption("MultiThreading")){
             uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorAsyncFactory(
                   ctx, ci, externalEvalConfig));
           }else{
