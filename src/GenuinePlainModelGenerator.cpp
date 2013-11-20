@@ -177,7 +177,7 @@ GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
-GenuinePlainModelGenerator::InterpretationPtr
+GenuinePlainModelGenerator::InterprPtr
 GenuinePlainModelGenerator::generateNextModel()
 {
 	if (solver == GenuineSolverPtr()){

@@ -72,25 +72,25 @@ class ModelGeneratorBase:
 public:
   BOOST_CONCEPT_ASSERT((boost::Convertible<InterpretationT, InterpretationBase>));
 
-  typedef InterpretationT Interpretation;
+  typedef InterpretationT Interpr;
   // those typedefs are just to remove the 'typename's from the interface
-  typedef typename Interpretation::ConstPtr InterpretationConstPtr;
-  typedef typename Interpretation::Ptr InterpretationPtr;
-  typedef boost::shared_ptr<ModelGeneratorBase<Interpretation> > Ptr;
+  typedef typename Interpr::ConstPtr InterprConstPtr;
+  typedef typename Interpr::Ptr InterprPtr;
+  typedef boost::shared_ptr<ModelGeneratorBase<Interpr> > Ptr;
 
   // storage
 protected:
-  InterpretationConstPtr input;
+  InterprConstPtr input;
 
   // members
 public:
   // initialize with factory and input interpretation
-  ModelGeneratorBase(InterpretationConstPtr input):
+  ModelGeneratorBase(InterprConstPtr input):
     input(input) {}
   virtual ~ModelGeneratorBase() {}
 
   // generate and return next model, return null after last model
-  virtual InterpretationPtr generateNextModel() = 0;
+  virtual InterprPtr generateNextModel() = 0;
 
   // debug output
   virtual std::ostream& print(std::ostream& o) const
@@ -107,7 +107,7 @@ class ModelGeneratorFactoryBase:
 {
   // types
 public:
-  typedef InterpretationT Interpretation;
+  typedef InterpretationT Interpr;
 
 public:
   typedef boost::shared_ptr<
@@ -115,8 +115,8 @@ public:
 
   typedef ModelGeneratorBase<InterpretationT> MyModelGeneratorBase;
   typedef typename MyModelGeneratorBase::Ptr ModelGeneratorPtr;
-  typedef typename MyModelGeneratorBase::InterpretationConstPtr
-		InterpretationConstPtr;
+  typedef typename MyModelGeneratorBase::InterprConstPtr
+		InterprConstPtr;
 
   // methods
 public:
@@ -124,7 +124,7 @@ public:
   virtual ~ModelGeneratorFactoryBase() {}
 
   virtual ModelGeneratorPtr createModelGenerator(
-      InterpretationConstPtr input) = 0;
+      InterprConstPtr input) = 0;
   virtual std::ostream& print(std::ostream& o) const
     { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }
 };

@@ -127,7 +127,7 @@ WellfoundedModelGenerator::WellfoundedModelGenerator(
 {
 }
 
-WellfoundedModelGenerator::InterpretationPtr
+WellfoundedModelGenerator::InterprPtr
 WellfoundedModelGenerator::generateNextModel()
 {
   RegistryPtr reg = factory.ctx.registry();
