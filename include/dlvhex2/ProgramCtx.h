@@ -60,12 +60,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
-  ModelBuilderPtr;
-
-typedef boost::function<ModelBuilder<FinalEvalGraph>*(ModelBuilderConfig<FinalEvalGraph>&)>
-  ModelBuilderFactory;
-
 typedef std::map<std::string, PluginAtomPtr>
 	PluginAtomMap;
 
@@ -97,8 +91,6 @@ public:
 
   // evaluation context
   VoidPtr evalcontext;
-  // factory for model builders
-  ModelBuilderFactory modelBuilderFactory;
   // factory for external atom evaluation heuristic and ufs check heuristic
   ExternalAtomEvaluationHeuristicsFactoryPtr defaultExternalAtomEvaluationHeuristicsFactory;
   UnfoundedSetCheckHeuristicsFactoryPtr unfoundedSetCheckHeuristicsFactory;
@@ -152,9 +144,6 @@ public:
   LiberalSafetyCheckerPtr liberalSafetyChecker;
   std::list<ModelCallbackPtr> modelCallbacks;
   std::list<FinalCallbackPtr> finalCallbacks;
-  ModelBuilderPtr modelBuilder;
-  // model graph is only accessible via modelbuilder->getModelGraph()!
-  // (model graph is part of the model builder) TODO think about that
 
   // which benchmarks shall be preserved at first model?
   std::map<std::string, std::string> benchmarksToSnapshotAtFirstModel;

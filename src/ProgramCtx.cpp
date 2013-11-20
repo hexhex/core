@@ -74,9 +74,6 @@ ProgramCtx::~ProgramCtx()
   modelCallbacks.clear();
   finalCallbacks.clear();
 
-  DBGLOG(DBG,"resetting modelBuilder");
-  modelBuilder.reset();
-
   DBGLOG(DBG,"resetting parser");
   parser.reset();
 
@@ -246,7 +243,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	DBGLOG(DBG, "Resetting context");
 	pc.config.setOption("NestedHEX", 1);
 	pc.state.reset();
-	pc.modelBuilder.reset();
 	pc.parser.reset();
 	pc.evalcontext.reset();
 	pc.compgraph.reset();

@@ -34,6 +34,15 @@
 
 #define CFG_HT_MODELS			"ht_models"
 
+#define CFG_MODEL_BUILDER		"model_builder"
+
+enum ModelBuilder
+{
+	ModelBuilder_None = 0,
+	ModelBuilder_Offline,
+	ModelBuilder_Online,
+};
+
 #define CFG_EVAL_HEURISTIC		"eval_heuristic"
 #define CFG_EVAL_HEURISTIC_ARG	"eval_heuristic_arg"
 

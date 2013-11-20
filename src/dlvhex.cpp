@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 	// default eval heuristic = "greedy" heuristic
 	pctx.config.setOption(CFG_EVAL_HEURISTIC, Eval_Greedy);
 	// default model builder = "online" model builder
-	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
+	pctx.config.setOption(CFG_MODEL_BUILDER, ModelBuilder_Online);
 
   pctx.config.setOption("FLPDecisionCriterionHead", 1);
   pctx.config.setOption("FLPDecisionCriterionE", 1);
@@ -920,13 +920,11 @@ void processOptionsPrePlugin(
 				std::string modelbuilder(optarg);
 				if( modelbuilder == "offline" )
 				{
-					pctx.modelBuilderFactory =
-						boost::factory<OfflineModelBuilder<FinalEvalGraph>*>();
+					pctx.config.setOption(CFG_MODEL_BUILDER, ModelBuilder_Offline);
 				}
 				else if( modelbuilder == "online" )
 				{
-					pctx.modelBuilderFactory =
-						boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
+					pctx.config.setOption(CFG_MODEL_BUILDER, ModelBuilder_Online);
 				}
 				else
 				{
