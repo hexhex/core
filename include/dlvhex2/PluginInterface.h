@@ -191,6 +191,7 @@
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/ExtSourceProperties.h"
 #include "dlvhex2/ExternalAtomEvaluationHeuristicsInterface.h"
+#include "dlvhex2/HTModel.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -1253,6 +1254,7 @@ public:
    * returning false stops the model generation process
    */
   virtual bool operator()(AnswerSetPtr as) = 0;
+  virtual bool operator()(HTModelPtr htm) {}
 };
 typedef boost::shared_ptr<ModelCallback> ModelCallbackPtr;
 

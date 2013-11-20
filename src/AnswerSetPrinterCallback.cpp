@@ -133,5 +133,90 @@ bool AnswerSetPrinterCallback::operator()(
   return true;
 }
 
+bool AnswerSetPrinterCallback::operator()(
+    HTModelPtr model)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
+
+  // uses the Registry to print the interpretation, including
+  // possible influence from AuxiliaryPrinter objects (if any are registered)
+
+  HTInterpretation::Storage::enumerator h_it, h_it_end, t_it, t_it_end;
+
+  RegistryPtr reg = model->interpretation->registry();
+  HTInterpretation::Storage filteredbits; // must be in this scope!
+  if( !filterpm )
+  {
+    const HTInterpretation::Storage& h_bits =
+      model->interpretation->here();
+    h_it = h_bits.first();
+    h_it_end = h_bits.end();
+    const HTInterpretation::Storage& t_bits =
+      model->interpretation->there();
+    t_it = t_bits.first();
+    t_it_end = t_bits.end();
+  }
+  else
+  {
+	// TODO: filter
+  #if 0
+    filterpm->updateMask();
+    filteredbits =
+      as->interpretation->getStorage() & filterpm->mask()->getStorage();
+    it = filteredbits.first();
+    it_end = filteredbits.end();
+  #endif
+  }
+
+  std::ostream& o = std::cout;
+
+  #warning TODO think about more efficient printing
+  o << "{{";
+  if( h_it != h_it_end )
+  {
+    bool gotOutput =
+      reg->printAtomForUser(o, *h_it);
+    h_it++;
+    for(; h_it != h_it_end; ++h_it)
+    {
+      if( gotOutput )
+      {
+        gotOutput |=
+          reg->printAtomForUser(o, *h_it, ",");
+      }
+      else
+      {
+        gotOutput |=
+          reg->printAtomForUser(o, *h_it);
+      }
+    }
+  }
+  o << "},{";
+  if( t_it != t_it_end )
+  {
+    bool gotOutput =
+      reg->printAtomForUser(o, *t_it);
+   	t_it++;
+    for(; t_it != t_it_end; ++t_it)
+    {
+      if( gotOutput )
+      {
+        gotOutput |=
+          reg->printAtomForUser(o, *t_it, ",");
+      }
+      else
+      {
+        gotOutput |=
+          reg->printAtomForUser(o, *t_it);
+      }
+    }
+  }
+  o << "}}";
+  o << std::endl;
+
+  // never abort
+  return true;
+}
+
 DLVHEX_NAMESPACE_END
 
