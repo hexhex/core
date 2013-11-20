@@ -71,6 +71,8 @@
 #include "dlvhex2/SafetyChecker.h"
 #include "dlvhex2/MLPSyntaxChecker.h"
 #include "dlvhex2/MLPSolver.h"
+#include "dlvhex2/OfflineModelBuilder.h"
+#include "dlvhex2/OnlineModelBuilder.h"
 
 #include <boost/foreach.hpp>
 
@@ -773,6 +775,15 @@ void SetupEvalContextState::setupEvalContext(ProgramCtx* ctx)
   }
   #undef CASE
 
+  unsigned mbtype = ctx->config.getOption(CFG_MODEL_BUILDER);
+  if (mbtype == ModelBuilder_Offline) {
+    evalctx->mbfactory = boost::factory<OfflineModelBuilder<EvalGraphT>*>();
+  } else if (mbtype == ModelBuilder_Online) {
+    evalctx->mbfactory = boost::factory<OnlineModelBuilder<EvalGraphT>*>();
+  } else {
+    DBGLOG(DBG, "no valid model builder stored in ctx.config");
+  }
+
   ctx->evalcontext = evalctx;
 
   StatePtr next(new CreateEvalGraphState);
@@ -951,6 +962,7 @@ void EvaluateState::evaluateAnswerSets(ProgramCtx* ctx)
   typedef ModelBuilder<FinalEvalGraph>::Model Model;
   typedef ModelBuilder<FinalEvalGraph>::OptionalModel OptionalModel;
   typedef ModelBuilder<FinalEvalGraph>::MyModelGraph MyModelGraph;
+  typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> > ModelBuilderPtr;
 
   bool didSnapshot = false;
 
@@ -965,9 +977,9 @@ void EvaluateState::evaluateAnswerSets(ProgramCtx* ctx)
 	  ModelBuilderConfig<FinalEvalGraph> cfg(*evalctx->evalgraph);
 	  cfg.redundancyElimination = true;
 	  cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
-      ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(cfg));
+      evalctx->modelbuilder = ModelBuilderPtr(evalctx->mbfactory(cfg));
     }
-    ModelBuilder<FinalEvalGraph>& mb = *ctx->modelBuilder;
+    ModelBuilder<FinalEvalGraph>& mb = *evalctx->modelbuilder;
 
     // get model and call all callbacks
     // abort if one callback returns false
@@ -1229,6 +1241,52 @@ void EvaluateState::evaluateAnswerSets(ProgramCtx* ctx)
 
 void EvaluateState::evaluateHTModels(ProgramCtx* ctx)
 {
+  typedef EvalContext<HTEvalGraph>::Ptr EvalContextPtr;
+  typedef ModelBuilder<HTEvalGraph>::Model Model;
+  typedef ModelBuilder<HTEvalGraph>::OptionalModel OptionalModel;
+  typedef ModelBuilder<HTEvalGraph>::MyModelGraph MyModelGraph;
+  typedef boost::shared_ptr<ModelBuilder<HTEvalGraph> > ModelBuilderPtr;
+
+  EvalContextPtr evalctx = boost::reinterpret_pointer_cast<EvalContext<HTEvalGraph> >(ctx->evalcontext);
+  assert(evalctx && "need evalcontext");
+  
+  bool gotmodel;
+    LOG(INFO,"creating model builder");
+    {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
+	  ModelBuilderConfig<HTEvalGraph> cfg(*evalctx->evalgraph);
+	  cfg.redundancyElimination = true;
+	  cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
+      evalctx->modelbuilder = ModelBuilderPtr(evalctx->mbfactory(cfg));
+    }
+    ModelBuilder<HTEvalGraph>& mb = *evalctx->modelbuilder;
+  do {
+    gotmodel = false;
+    DBGLOG(DBG, "before mb.getNextIModel");
+    OptionalModel om = mb.getNextIModel(evalctx->ufinal);
+    DBGLOG(DBG, "after mb.getNextIModel");
+    if (om) {
+      Model m = om.get();
+      HTInterpretationConstPtr interpr = mb.getModelGraph().propsOf(m).interpretation;
+      if (!interpr) {
+        DBGLOG(DBG, "interpr is NULL");
+        assert(mb.getModelGraph().propsOf(m).dummy == true);
+        interpr.reset(new HTInterpretation(ctx->registry()));
+      }
+      gotmodel = true;
+      HTModelPtr model(new HTModel(ctx->registry()));
+      model->interpretation->here() = interpr->here();
+      model->interpretation->there() = interpr->there();
+      BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks) {
+        // TODO: react to abort
+        bool aborthere = !(*mcb)(model);
+        //abort |= aborthere;
+        //if( aborthere )
+        // LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+      }
+    }
+  } while (gotmodel);
+
   StatePtr next(new PostProcessState);
   changeState(ctx, next);
 }
@@ -1239,10 +1297,11 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"postProcess");
 
+	// TODO: cleanup, where?
 	// cleanup some stuff that is better not automatically destructed
-	DBGLOG(DBG,"usage count of model builder before reset is " <<
-			ctx->modelBuilder.use_count());
-	ctx->modelBuilder.reset();
+	//DBGLOG(DBG,"usage count of model builder before reset is " <<
+	//		evalctx->modelbuilder.use_count());
+	//evalctx->modelbuilder.reset();
 
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);

@@ -43,9 +43,16 @@ template<typename EvalGraphT>
 struct EvalContext
 {
 	// member types
+	typedef boost::shared_ptr<ModelBuilder<EvalGraphT> > ModelBuilderPtr;
+	typedef boost::function<ModelBuilder<EvalGraphT>*(ModelBuilderConfig<EvalGraphT>&)> ModelBuilderFactory;
 	typedef typename EvalGraphT::EvalUnit EvalUnit;
 	typedef boost::shared_ptr<EvalGraphT> EvalGraphPtr;
 	typedef boost::shared_ptr<EvalHeuristicBase<EvalGraphBuilder<EvalGraphT> > > EvalHeuristicPtr;
+	// factory for model builders
+	ModelBuilderFactory mbfactory;
+	// model graph is only accessible via modelbuilder->getModelGraph()!
+	// (model graph is part of the model builder) TODO think about that
+	ModelBuilderPtr modelbuilder;
 	// factory for eval heuristics
 	EvalHeuristicPtr heuristic;
 	// eval graph
