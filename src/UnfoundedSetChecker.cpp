@@ -32,6 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/config_values.h"
 #include "dlvhex2/BaseModelGenerator.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/Printer.h"
@@ -1819,8 +1820,9 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		SimpleNogoodContainerPtr ngc){
 
 	bool flpdc = ctx.config.getOption("FLPDecisionCriterion");
+	bool htmodels = ctx.config.getOption(CFG_HT_MODELS);
 
-	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles()) && flpdc){
+	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles()) && flpdc && !htmodels){
 		DBGLOG(DBG, "Skipping UFS check program  it contains neither head-cycles nor e-cycles");
 		return std::vector<IDAddress>();
 	}
@@ -1861,7 +1863,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp)) && flpdc){
+			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp)) && flpdc && !htmodels){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
 				continue;
 			}
