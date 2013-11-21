@@ -34,9 +34,10 @@
 
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/ModelGenerator.h"
-#include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/ComponentGraph.h"
+#include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/HTInterpretation.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -47,12 +48,15 @@ class HTPlainModelGenerator:
 {
 public:
   typedef HTPlainModelGeneratorFactory Factory;
-  typedef boost::shared_ptr<ModelGeneratorBase<Interpretation> > PlainModelGeneratorPtr;
 protected:
   Factory& factory;
-  PlainModelGeneratorPtr modelgen;
+  // genuine solver
+  GenuineSolverPtr solver;
+  // UFS checker manager
+  UnfoundedSetCheckerManagerPtr ufscm;
+
 public:
-  HTPlainModelGenerator(Factory& factory, PlainModelGeneratorPtr modelgen, InterprConstPtr input);
+  HTPlainModelGenerator(Factory& factory, InterprConstPtr input);
   virtual ~HTPlainModelGenerator();
 
   virtual InterprPtr generateNextModel();
@@ -61,13 +65,16 @@ public:
 class HTPlainModelGeneratorFactory:
   public ModelGeneratorFactoryBase<HTInterpretation>
 {
+  friend class HTPlainModelGenerator;
 public:
   typedef ModelGeneratorFactoryBase<HTInterpretation> Base;
-  typedef boost::shared_ptr<ModelGeneratorBase<Interpretation> > PlainModelGeneratorPtr;
   typedef ComponentGraph::ComponentInfo ComponentInfo;
 protected:
   ProgramCtx ctx;
-  GenuinePlainModelGeneratorFactory factory;
+  // rewritten idb (containing replacements for eatoms)
+  // (x stands for transformed)
+  std::vector<ID> xidb;
+
 public:
   HTPlainModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
@@ -76,8 +83,7 @@ public:
 
   virtual ModelGeneratorPtr createModelGenerator(InterprConstPtr input)
   {
-    PlainModelGeneratorPtr modelgen = factory.createModelGenerator(InterpretationConstPtr(new Interpretation(ctx.registry())));
-    return ModelGeneratorPtr(new HTPlainModelGenerator(*this, modelgen, input));
+    return ModelGeneratorPtr(new HTPlainModelGenerator(*this, input));
   }
 };
 
