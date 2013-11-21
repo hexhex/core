@@ -279,6 +279,9 @@ protected:
 	InterpretationConstPtr projectionMask;
 	RegistryPtr reg;
 
+	// get classical models
+	bool sat;
+
 	// communiaction between main thread and clasp thread
 	int modelqueueSize;
 	boost::mutex modelsMutex;	// exclusive access of preparedModels

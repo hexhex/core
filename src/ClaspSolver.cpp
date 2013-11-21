@@ -1090,6 +1090,28 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p)
 
 	unsigned largestidx = 0;
 	claspInstance.symTab().startInit();
+
+	// edb
+	bm::bvector<>::enumerator en = p.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
+	while (en < en_end){
+		if (!isMappedToClaspLiteral(*en)){
+			uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
+
+			// create positive literal -> false
+			Clasp::Literal clit(c, false);
+			storeHexToClasp(*en, clit);
+
+			if (clit.index() > largestidx) {
+				largestidx = clit.index();
+			}
+
+			std::string str = idAddressToString(*en);
+			claspInstance.symTab().addUnique(c, str.c_str()).lit = clit;
+		}
+		en++;
+	}
 	BOOST_FOREACH (ID ruleId, p.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
@@ -1496,6 +1518,14 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p) {
 
 	buildInitialSymbolTable(p.getGroundProgram());
 	claspInstance.startAddConstraints();
+	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+	while (en < en_end){
+		clauseCreator->start();
+		clauseCreator->add(Clasp::Literal(mapHexToClasp(*en).var(), false));
+		clauseCreator->end();
+		en++;
+	}
 	BOOST_FOREACH (ID ruleid, p.getGroundProgram().idb) {
 		const Rule& rule = reg->rules.getByID(ruleid);
 		clauseCreator->start();
@@ -1914,7 +1944,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 	claspInstance(),
 	claspConfig(*claspInstance.master()),
 	claspAppOptionsHelper(new ClaspInHexAppOptions(&claspConfig)),
-	noLiteral(Clasp::Literal::fromRep(~0x0))
+	noLiteral(Clasp::Literal::fromRep(~0x0)),
+	sat(sat)
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "ClaspSolver(agp)");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
@@ -2400,13 +2431,14 @@ InterpretationPtr DisjunctiveClaspSolver::getNextModel(){
 	while (model && ufsFound){
 		ufsFound = false;
 
-		std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
-
-		if (ufs.size() > 0){
-			Nogood ng = ufscm.getLastUFSNogood();
-			addNogood(ng);
-			ufsFound = true;
-			model = ClaspSolver::getNextModel();
+		if (!sat) {
+			std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
+			if (ufs.size() > 0){
+				Nogood ng = ufscm.getLastUFSNogood();
+				addNogood(ng);
+				ufsFound = true;
+				model = ClaspSolver::getNextModel();
+			}
 		}
 	}
 	return model;
