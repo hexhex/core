@@ -58,6 +58,7 @@ libdlvhex2_base_la_SOURCES = \
     ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
     Configuration.cpp \
+    Converter.cpp \
     DependencyGraph.cpp \
     DumpingEvalGraphBuilder.cpp \
     Error.cpp \
