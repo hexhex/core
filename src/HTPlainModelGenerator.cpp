@@ -3,7 +3,7 @@
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
  * Copyright (C) 2009, 2010 Peter Schüller
  * Copyright (C) 2013 Andreas Humenberger
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,25 +25,69 @@
 /**
  * @file   HTPlainModelGenerator.cpp
  * @author Andreas Humenberger <e1026602@student.tuwien.ac.at>
- * 
- * @brief  
+ *
+ * @brief
  */
 
 #include "dlvhex2/HTPlainModelGenerator.h"
+#include "dlvhex2/Converter.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 HTPlainModelGeneratorFactory::HTPlainModelGeneratorFactory(ProgramCtx& ctx, const ComponentInfo& ci, ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
-  ctx(ctx),
-  factory(ctx, ci, externalEvalConfig)
+	ctx(ctx)
 {
+	// transform original innerRules and innerConstraints
+	// to xidb with only auxiliaries
+	RuleConverter converter(ctx);
+	xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+	std::back_insert_iterator<std::vector<ID> > inserter(xidb);
+	std::transform(ci.innerRules.begin(), ci.innerRules.end(),
+	               inserter, boost::bind(
+	                   &RuleConverter::convertRule, converter, _1));
+	std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
+	               inserter, boost::bind(
+	                   &RuleConverter::convertRule, converter, _1));
+
 }
 
-HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, PlainModelGeneratorPtr modelgen, InterprConstPtr input):
-  ModelGeneratorBase<HTInterpretation>(input),
-  factory(factory),
-  modelgen(modelgen)
+HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr input):
+	ModelGeneratorBase<HTInterpretation>(input),
+	factory(factory)
 {
+	RegistryPtr reg = factory.ctx.registry();
+	// create new interpretation as copy
+	InterpretationPtr newint;
+	if( input == 0 ) {
+		// empty construction
+		newint.reset(new Interpretation(reg));
+	} else {
+		// TODO: handle input
+		// copy construction
+		// newint.reset(new Interpretation(*input));
+	}
+	// augment input with edb
+	newint->add(*factory.ctx.edb);
+
+#if 0
+	// manage outer external atoms
+	if( !factory.eatoms.empty() ) {
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+
+		// augment input with result of external atom evaluation
+		// use newint as input and as output interpretation
+		IntegrateExternalAnswerIntoInterpretationCB cb(newint);
+		evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
+		DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
+		                          "outer eatom computations");
+		DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
+	}
+#endif
+
+	OrdinaryASPProgram program(reg, factory.xidb, newint, factory.ctx.maxint);
+
+	solver = GenuineSolver::getInstance(factory.ctx, program, true, true, true);
+	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(factory.ctx, AnnotatedGroundProgram(factory.ctx, program), true));
 }
 
 HTPlainModelGenerator::~HTPlainModelGenerator()
@@ -52,14 +96,25 @@ HTPlainModelGenerator::~HTPlainModelGenerator()
 
 HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 {
-  InterpretationConstPtr there = modelgen->generateNextModel();
-  if (there) {
-    // TODO: get unfounded sets
-    InterprPtr interpr(new HTInterpretation());
-    interpr->there() = there->getStorage();
-    return interpr;
-  }
-  return InterprPtr();
+	if (solver == GenuineSolverPtr()) {
+		return HTInterpretationPtr();
+	}
+
+	InterpretationPtr model = solver->getNextModel();
+	if (model) {
+		// TODO: get ALL unfounded sets
+		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(model);
+		DBGLOG(DBG, "generateNextModel: [ufs size] " << ufs.size());
+		HTInterpretation::Storage here = model->getStorage();
+		BOOST_FOREACH(IDAddress id, ufs) {
+			here.clear_bit(id);
+		}
+		InterprPtr htmodel(new HTInterpretation());
+		htmodel->there() = model->getStorage();
+		htmodel->here() = here;
+		return htmodel;
+	}
+	return InterprPtr();
 }
 
 DLVHEX_NAMESPACE_END
