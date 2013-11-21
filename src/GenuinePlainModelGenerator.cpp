@@ -169,8 +169,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
-	bool sat = factory.ctx.config.getOption(CFG_HT_MODELS);
-	solver = GenuineSolver::getInstance(factory.ctx, program, true, true, sat);
+	solver = GenuineSolver::getInstance(factory.ctx, program, true, true);
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
