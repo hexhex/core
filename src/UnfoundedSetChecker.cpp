@@ -33,6 +33,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/config_values.h"
 #include "dlvhex2/BaseModelGenerator.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/Printer.h"
