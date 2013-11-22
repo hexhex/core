@@ -35,6 +35,10 @@
  *
  * \section intro_sec Overview
  *
+ * \image html logo.png
+ *
+ * This is the sourcecode documentation of the dlvhex system.
+ *
  * You will look into the documentation of dlvhex most likely to implement a
  * plugin. In this case, please continue with the \ref pluginframework
  * "Plugin Interface Module", which contains all necessary information.
