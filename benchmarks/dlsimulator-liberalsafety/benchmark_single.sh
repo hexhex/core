@@ -8,6 +8,10 @@ instance=$3
 to=$4
 
 confstr="--extlearn --flpcheck=aufs prog$instance.hex;--extlearn --flpcheck=aufs --liberalsafety prognd$instance.hex"
+confstr2=$(cat conf)
+if [ $? == 0 ]; then
+        confstr=$confstr2
+fi
 
 # split configurations
 IFS=';' read -ra confs <<< "$confstr"

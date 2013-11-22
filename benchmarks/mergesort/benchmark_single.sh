@@ -8,6 +8,10 @@ instance=$3
 to=$4
 
 confstr="--extlearn --flpcheck=aufs ../mergesort_strongsafety.hex $instance;--extlearn --flpcheck=aufs --liberalsafety ../mergesort.hex $instance"
+confstr2=$(cat conf)
+if [ $? == 0 ]; then
+        confstr=$confstr2
+fi
 
 # split configurations
 IFS=';' read -ra confs <<< "$confstr"
