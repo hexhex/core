@@ -1,5 +1,6 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2010 Peter Schüller
+ * Copyright (C) 2011, 2012, 2013 Christoph Redl
  * 
  * This file is part of dlvhex.
  *
