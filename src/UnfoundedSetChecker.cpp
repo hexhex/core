@@ -1818,17 +1818,18 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		std::set<ID> skipProgram,
 		SimpleNogoodContainerPtr ngc){
 
-	bool flpdc = ctx.config.getOption("FLPDecisionCriterion");
+	bool flpdc_head = ctx.config.getOption("FLPDecisionCriterionHead");
+	bool flpdc_e = ctx.config.getOption("FLPDecisionCriterionE");
 
-	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles()) && flpdc){
-		DBGLOG(DBG, "Skipping UFS check program  it contains neither head-cycles nor e-cycles");
+	if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e)){
+		DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");
 		return std::vector<IDAddress>();
 	}
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "UnfoundedSetChkMgr::getUFS");
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
-		if (mg && (agp.hasECycles() || !flpdc)){
+		if (mg && (agp.hasECycles() || !flpdc_e)){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			if (preparedUnfoundedSetCheckers.size() == 0){
 				preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
@@ -1861,13 +1862,13 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp)) && flpdc){
+			if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp) && flpdc_e)){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
 				continue;
 			}
 
 			DBGLOG(DBG, "Checking for UFS in component " << comp);
-			if (mg && (agp.hasECycles(comp) || !flpdc)){
+			if (mg && (agp.hasECycles(comp) || !flpdc_e)){
 				DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 				if (preparedUnfoundedSetCheckers.find(comp) == preparedUnfoundedSetCheckers.end()){
 					preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>

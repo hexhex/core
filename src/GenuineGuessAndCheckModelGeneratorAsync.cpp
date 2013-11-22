@@ -488,7 +488,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::updateEANogoods(
 	// for encoding-based UFS checkers and explicit FLP checks, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
 	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
-	    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterion"))){
+	    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionE"))){
 		boost::mutex::scoped_lock lock(ufsCheckMutex);
 		ufscm->learnNogoodsFromMainSearch(true);
 		learnedEANogoods->clear();
@@ -570,7 +570,7 @@ bool GenuineGuessAndCheckModelGeneratorAsync::isModel(InterpretationConstPtr com
 		}
 	}else{
 		// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterion")){
+		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
 			DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
 			return true;
 		}else{
