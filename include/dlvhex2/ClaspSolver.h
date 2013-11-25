@@ -158,9 +158,6 @@ private:
 		// for deciding whether to defer propagation
 		DeferPropagationHeuristicsPtr deferHeuristics;
 
-		// extract interpretation incrementally or not
-		bool incremental;
-
 		// last clasp decision level where we were called
 		uint32_t lastDL;
 		// last clasp trail size where we were called

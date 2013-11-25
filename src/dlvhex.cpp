@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 	// frumpy is the name of the failsafe clasp config option
 	pctx.config.setStringOption("ClaspConfiguration","frumpy");
-	pctx.config.setOption("ClaspIncrementalInterpretationExtraction",1);
+	pctx.config.setOption("ClaspIncrementalInterpretationExtraction",0);
   // propagate at least once per second, but also propagate all 10000 times we can propagate 
   // TODO we should experiment with these
   pctx.config.setOption("ClaspDeferNPropagations", 10000);

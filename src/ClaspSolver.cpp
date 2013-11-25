@@ -292,7 +292,7 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 			DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 		}
 
-		if (!incremental){
+		if (!cs.incremental){
                         interpretation->clear();
                         factWasSet->clear();
                         const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
@@ -328,7 +328,7 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 		}
 		changed->clear();
 
-		if (!incremental){
+		if (!cs.incremental){
 	                previousInterpretation->getStorage() = interpretation->getStorage();
         	        previousFactWasSet->getStorage() = factWasSet->getStorage();
 		}
@@ -609,6 +609,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 }
 
 void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
+
+	assert(cs.incremental && "applyRecordedDecisionLevelUpdates can only be called in incremental mode");
+	
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp applyRDLU");
@@ -619,6 +622,9 @@ void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Cl
 }
 
 void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
+
+	assert(cs.incremental && "recordUpdateDecisionLevels can only be called in incremental mode");
+
 	// incremental update of HEX interpretation from clasp interpretation
 	DBGLOG(DBG,"recordUpdateDecisionLevels at " << s.decisionLevel() <<
 		 " start " << ((s.decisionLevel()==0)?0:s.levelStart(s.decisionLevel())) <<
@@ -671,6 +677,9 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 }
 
 void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp::Solver& s){
+
+	assert(cs.incremental && "updateNecessaryDecisionLevels can only be called in incremental mode");
+
 	DBGLOG(DBG,"updateNecessaryDecisionLevels at " << s.decisionLevel() << "/"
 	           "trail size " << s.trail().size() << ", need update from " <<
 		   needToUpdateFromTrail << " and from level " << needToUpdateFromDecisionLevel);
@@ -773,6 +782,9 @@ void ClaspSolver::ExternalPropagator::initialize(Clasp::Solver& s) {
 }
 
 void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
+
+	assert(cs.incremental && "updateDecisionLevel can only be called in incremental mode");
+
 	if( Logger::Instance().shallPrint(Logger::DBG) )
 	{
 		LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
@@ -881,6 +893,9 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 }
 
 bool ClaspSolver::ExternalPropagator::isComplete(const Clasp::Solver& s) const {
+
+	assert(cs.incremental && "isComplete can only be called in incremental mode");
+
 	//DBGLOG(DBG,"isComplete called with needToUndoDownToThisDecisionLevel=" << needToUndoDownToThisDecisionLevel << ", needToUpdateFromTrail=" << needToUpdateFromTrail << ", trail().size()=" << s.trail().size() << " and decision level " << s.decisionLevel());
 	return (needToUndoDownToThisDecisionLevel == 0) &&
 	       (s.trail().size() == needToUpdateFromTrail);
