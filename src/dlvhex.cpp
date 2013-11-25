@@ -437,6 +437,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 	// frumpy is the name of the failsafe clasp config option
 	pctx.config.setStringOption("ClaspConfiguration","frumpy");
+	pctx.config.setOption("ClaspIncrementalInterpretationExtraction",1);
   // propagate at least once per second, but also propagate all 10000 times we can propagate 
   // TODO we should experiment with these
   pctx.config.setOption("ClaspDeferNPropagations", 10000);
@@ -746,6 +747,7 @@ void processOptionsPrePlugin(
 		{ "liberalsafety", no_argument, 0, 33 },
 		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
+    { "claspincremental", no_argument, 0, 43 },
     { "dumpstats", no_argument, 0, 37 },
     { "iauxinaux", no_argument, 0, 38 },
     { "constspace", no_argument, 0, 39 },
@@ -1382,6 +1384,9 @@ void processOptionsPrePlugin(
 				pctx.config.setOption("FLPDecisionCriterionE", 1);
 				pctx.config.setOption("FLPDecisionCriterionHead", 1);
 			}
+			break;
+		case 43:
+			pctx.config.setOption("ClaspIncrementalInterpretationExtraction", 1);
 			break;
 		}
 	}

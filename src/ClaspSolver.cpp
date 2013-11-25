@@ -81,37 +81,34 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
 
 	// compute model
-	InterpretationPtr model;
+	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
 		// assert that we have a propagator that incrementally builds our interpretation
 		assert(cs.ep);
 
 		// if reportModel is called without ep->isModel before (XXX yes, this happens, but i am not sure why)
-		cs.ep->applyRecordedDecisionLevelUpdates(s);
+		if (cs.incremental){
+			cs.ep->applyRecordedDecisionLevelUpdates(s);
 
-		assert(cs.ep->isComplete(s));
+			assert(cs.ep->isComplete(s));
 
-		model = InterpretationPtr(new Interpretation(cs.reg));
-		model->add(*cs.ep->getInterpretation());
-/*
-// extract the full interpretation
-{
-	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-	model->clear();
-	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-		//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
-		//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
-		// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
-		// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
-		if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
-			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-			// set it in the model
-			model->setFact(adr);
+			model->add(*cs.ep->getInterpretation());
+		}else{
+			// extract the full interpretation
+			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+			for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+				//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
+				//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
+				// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
+				// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
+				if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
+					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+					// set it in the model
+					model->setFact(adr);
+				}
+			}
 		}
-	}
-}
-*/
 
 		#ifdef DEBUG
 		// create full model from symbol table and verify it against incrementally updated model
@@ -273,6 +270,8 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) :
 	interpretation = InterpretationPtr(new Interpretation(cs.reg));
 	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
 	changed = InterpretationPtr(new Interpretation(cs.reg));
+	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
+	previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
 }
 
 void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
@@ -293,11 +292,46 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 			DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 		}
 
+		if (!incremental){
+                        interpretation->clear();
+                        factWasSet->clear();
+                        const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+                        assert(symTab.size() == cs.claspSymtabToHex.size());
+                        Clasp::SymbolTable::const_iterator it;
+                        std::vector<IDAddress>::const_iterator ita;
+                        for(it = symTab.begin(),
+                         ita = cs.claspSymtabToHex.begin();
+                         it != symTab.end(); ++it, ++ita) {
+                                bool istrue = s.isTrue(it->second.lit);
+                                bool isfalse = s.isFalse(it->second.lit);
+                                // bitset of all assigned values
+                                if( istrue || isfalse ) {
+                                        factWasSet->setFact(*ita);
+                                }
+                                // bitset of true values (partial interpretation)
+                                if( istrue ) {
+                                        interpretation->setFact(*ita);
+                                }
+                        }
+                        // a fact changed iff
+                        // 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
+                        // 2. it was set before and is still set but the truth value is different
+                        changed->clear();
+                        changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
+                        changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
+                        DBGLOG(DBG, "Changed truth values: " << *changed);
+		}
+
 		DBGLOG(DBG, "Calling external propagators");
 		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
 			cb->propagate(interpretation, factWasSet, changed);
 		}
 		changed->clear();
+
+		if (!incremental){
+	                previousInterpretation->getStorage() = interpretation->getStorage();
+        	        previousFactWasSet->getStorage() = factWasSet->getStorage();
+		}
 
 		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
 		// which cannot interfere with dlvhex.
@@ -544,6 +578,7 @@ void ClaspSolver::ExternalPropagator::setHeuristics(DeferPropagationHeuristicsPt
 }
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+
 	// check for termination request
 	if( cs.ctx.terminationRequest ) {
 		LOG(DBG,"throwing ClaspTermination");
@@ -555,14 +590,14 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	// which decision level we are for later and use that information if we
 	// really do Hex-Interpretation-Propagation
 	//updateDecisionLevels(s);
-	recordUpdateDecisionLevels(s);
+	if (cs.incremental) recordUpdateDecisionLevels(s);
 
 	// here we can skip propagations, as many as we want, we can even skip all
 	// (e.g. for --eaevalheuristics=never, because isModel() never skips)
 	if( !deferHeuristics || deferHeuristics->shallWePropagate(s) )
 	{
 		DBGLOG(DBG,"propagating to HEX (!!deferHeuristics) == " << (!!deferHeuristics));
-		applyRecordedDecisionLevelUpdates(s);
+		if (cs.incremental) applyRecordedDecisionLevelUpdates(s);
 
 		// propagate in external atoms (this may add new nogoods)
 		prop(s);
@@ -810,12 +845,12 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 		// (see postcondition in clasp/constraint.h)
 
 		// just record as in propagate()
-		recordUpdateDecisionLevels(s);
+		if (cs.incremental) recordUpdateDecisionLevels(s);
 
 		DBGLOG(DBG,"propagating to HEX (isModel)");
 	       	// but apply recorded changes (all so far) unconditionally
 		// (because we must do prop(s) afterwards)
-		applyRecordedDecisionLevelUpdates(s);
+		if (cs.incremental) applyRecordedDecisionLevelUpdates(s);
 
 		// first propagate to HEX; this invalidates external atoms that have
 		// been marked as evaluated previously if their input interpretation
@@ -2035,6 +2070,8 @@ void ClaspSolver::configureClaspCommandline()
 	// (let's hope they don't change this)
 	Clasp::ClaspConfig cc;
 	cc.applyHeuristic(claspConfig);
+
+	incremental = ctx.config.getOption("ClaspIncrementalInterpretationExtraction");
 }
 
 ClaspSolver::~ClaspSolver(){

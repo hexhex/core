@@ -158,6 +158,9 @@ private:
 		// for deciding whether to defer propagation
 		DeferPropagationHeuristicsPtr deferHeuristics;
 
+		// extract interpretation incrementally or not
+		bool incremental;
+
 		// last clasp decision level where we were called
 		uint32_t lastDL;
 		// last clasp trail size where we were called
@@ -177,10 +180,10 @@ private:
 		// debug the clasp solver trail
 		void printTrail(const Clasp::Solver& s, uint32_t from, uint32_t to_exclusive);
 
-		// current partial interpretation
-		InterpretationPtr interpretation;
-		// current mask (which atoms are defined)
-		InterpretationPtr factWasSet;
+		// current and previous partial interpretation
+		InterpretationPtr interpretation, previousInterpretation;
+		// current and previous mask (which atoms are defined)
+		InterpretationPtr factWasSet, previousFactWasSet;
 		// which bits of interpretation changed their truth value, or became defined or became undefined
 		InterpretationPtr changed;
 
@@ -277,6 +280,7 @@ protected:
 	ProgramCtx& ctx;
 	InterpretationConstPtr projectionMask;
 	RegistryPtr reg;
+	bool incremental;
 
 	// communiaction between main thread and clasp thread
 	int modelqueueSize;
