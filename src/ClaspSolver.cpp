@@ -68,10 +68,6 @@
 // activate this for detailed benchmarking in this file 
 #undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 
-// experiments with singleton loop nogoods:
-// PS with housekeeping: they are much worse both for unsat proofs and for finding solutions if problem is satisfiable (tested with status bcb6222b)
-#undef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
-
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ClaspSolver ==============================
@@ -1455,30 +1451,30 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 		}
 	}
 
-	#ifdef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
-	// check support of singleton atoms
-	// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
-	if (!ruleId.isWeightRule()){
-		DBGLOG(DBG, "Generating singleton loop nogoods");
-		BOOST_FOREACH (ID h, rule.head){
-			// shiftedBody is true iff the original body is true and all other head atoms are false
-			pb.startRule(Clasp::BASICRULE);
-			pb.addHead(nextVarIndex);
-			BOOST_FOREACH (ID b, rule.body){
-				pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
-			}
-			BOOST_FOREACH (ID hshifted, rule.head){
-				if (h != hshifted){
-					pb.addToBody(mapHexToClasp(hshifted.address).var(), false);
+	if (ctx.config.getOption("ClaspSingletonLoopNogoods")){
+		// check support of singleton atoms
+		// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
+		if (!ruleId.isWeightRule()){
+			DBGLOG(DBG, "Generating singleton loop nogoods");
+			BOOST_FOREACH (ID h, rule.head){
+				// shiftedBody is true iff the original body is true and all other head atoms are false
+				pb.startRule(Clasp::BASICRULE);
+				pb.addHead(nextVarIndex);
+				BOOST_FOREACH (ID b, rule.body){
+					pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 				}
-			}
-			pb.endRule();
+				BOOST_FOREACH (ID hshifted, rule.head){
+					if (h != hshifted){
+						pb.addToBody(mapHexToClasp(hshifted.address).var(), false);
+					}
+				}
+				pb.endRule();
 
-			// remember supporting shifted rule
-			singletonNogoods[h.address].push_back(nextVarIndex++);
+				// remember supporting shifted rule
+				singletonNogoods[h.address].push_back(nextVarIndex++);
+			}
 		}
 	}
-	#endif
 }
 
 bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
@@ -1518,22 +1514,22 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 		sendRuleToClasp(p, dm, nextVarIndex, singletonNogoods, ruleId);
 	}
 
-	#ifdef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
-	// an atom is not true if no supporting shifted rule fires
-	typedef std::pair<IDAddress, std::vector<int> > Pair;
-	BOOST_FOREACH (Pair pair, singletonNogoods){
-		// exception: facts are always true
-		if (p.getGroundProgram().edb->getFact(pair.first)) continue;
+	if (ctx.config.getOption("ClaspSingletonLoopNogoods")){
+		// an atom is not true if no supporting shifted rule fires
+		typedef std::pair<IDAddress, std::vector<int> > Pair;
+		BOOST_FOREACH (Pair pair, singletonNogoods){
+			// exception: facts are always true
+			if (p.getGroundProgram().edb->getFact(pair.first)) continue;
 
-		pb.startRule(Clasp::BASICRULE);
-		pb.addHead(false_);
-		pb.addToBody(mapHexToClasp(pair.first).var(), true);
-		BOOST_FOREACH (int b, pair.second){
-			pb.addToBody(b, false);
+			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(false_);
+			pb.addToBody(mapHexToClasp(pair.first).var(), true);
+			BOOST_FOREACH (int b, pair.second){
+				pb.addToBody(b, false);
+			}
+			pb.endRule();
 		}
-		pb.endRule();
 	}
-	#endif
 
 	// Once all rules are defined, call endProgram() to load the (simplified)
 	bool initiallyInconsistent;
