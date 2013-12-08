@@ -180,12 +180,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        none (default): No learning" << std::endl
       << "                        reduct: Learning is based on the FLP-reduct" << std::endl
       << "                        ufs: Learning is based on the unfounded set" << std::endl
-      << "     --eaevalheuristics=[always,inputcomplete,never]" << std::endl
-      << "                      Selects the heuristics for external atom evaluation" << std::endl
+      << "     --eaevalheuristic=[always,inputcomplete,never]" << std::endl
+      << "                      Selects the heuristic for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
       << "                      never (default): Only evaluate at the end" << std::endl
-      << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
+      << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
       << "                      post (default): Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
       << "                      periodic: Do UFS check in periodic intervals" << std::endl
@@ -738,8 +738,10 @@ void processOptionsPrePlugin(
 		{ "flpcriterion", optional_argument, 0, 42 },
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "repair", required_argument, 0, 41 },
-		{ "eaevalheuristics", required_argument, 0, 26 },
-		{ "ufscheckheuristics", required_argument, 0, 27 },
+		{ "eaevalheuristic", required_argument, 0, 26 },
+                { "eaevalheuristics", required_argument, 0, 26 }, // compatibility
+		{ "ufscheckheuristic", required_argument, 0, 27 },
+                { "ufscheckheuristics", required_argument, 0, 27 }, // compatibility
 		{ "benchmarkeastderr", no_argument, 0, 28 }, // perhaps only temporary
 		{ "explicitflpunshift", no_argument, 0, 29 }, // perhaps only temporary
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
@@ -1262,7 +1264,7 @@ void processOptionsPrePlugin(
 				}
 				else
 				{
-					throw GeneralError(std::string("Unknown external atom evaluation heuristics: \"") + heur + std::string("\""));
+					throw GeneralError(std::string("Unknown external atom evaluation heuristic: \"") + heur + std::string("\""));
 				}
 			}
 			break;
@@ -1287,7 +1289,7 @@ void processOptionsPrePlugin(
 				}
 				else
 				{
-					throw GeneralError(std::string("Unknown UFS check heuristics: \"") + heur + std::string("\""));
+					throw GeneralError(std::string("Unknown UFS check heuristic: \"") + heur + std::string("\""));
 				}
 			}
 			break;
