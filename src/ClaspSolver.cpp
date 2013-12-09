@@ -1080,11 +1080,16 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 
 	DBGLOG(DBG, "Building atom index");
 
+	// avoid iterative expansion of hexToClasp
+	typedef std::pair<IDAddress, Clasp::Literal> HexToClaspEntry;
+	std::vector<HexToClaspEntry> tmpHexToClasp;
+	InterpretationPtr ismapped = InterpretationPtr(new Interpretation(reg));
+
 	// edb
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
-		if (!isMappedToClaspLiteral(*en)){
+		if (!ismapped->getFact(*en)){
 			uint32_t c = *en + 2;
 			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
 
@@ -1094,6 +1099,8 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 			std::string str = idAddressToString(*en);
 			//claspInstance.symTab().addUnique(c, str.c_str());
 			pb.setAtomName(c, str.c_str());
+
+			ismapped->setFact(*en);
 		}
 		en++;
 	}
@@ -1102,7 +1109,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 	BOOST_FOREACH (ID ruleId, p.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
-			if (!isMappedToClaspLiteral(h.address)){
+			if (!ismapped->getFact(h.address)){
 				uint32_t c = h.address + 2;
 				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
 
@@ -1112,10 +1119,12 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 				std::string str = idAddressToString(h.address);
 				//claspInstance.symTab().addUnique(c, str.c_str());
 				pb.setAtomName(c, str.c_str());
+
+				ismapped->setFact(h.address);
 			}
 		}
 		BOOST_FOREACH (ID b, rule.body){
-			if (!isMappedToClaspLiteral(b.address)){
+			if (!ismapped->getFact(b.address)){
 				uint32_t c = b.address + 2;
 				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
 
@@ -1125,9 +1134,17 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 				std::string str = idAddressToString(b.address);
 				//claspInstance.symTab().addUnique(c, str.c_str());
 				pb.setAtomName(c, str.c_str());
+
+				ismapped->setFact(b.address);
 			}
 		}
 	}
+
+	// now expand hexToClasp to the necessary size and add the entries
+	IDAddress max = 0;
+	BOOST_FOREACH (HexToClaspEntry htce, tmpHexToClasp) max = htce.first > max ? htce.first : max;
+	hexToClasp.resize(max+1, noLiteral);
+	BOOST_FOREACH (HexToClaspEntry htce, tmpHexToClasp) storeHexToClasp(htce.first, htce.second);
 }
 
 void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
@@ -1140,6 +1157,11 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	assert(hexToClasp.empty());
 	hexToClasp.reserve(reg->ogatoms.getSize());
 
+	// avoid iterative expansion of hexToClasp
+	typedef std::pair<IDAddress, Clasp::Literal> HexToClaspEntry;
+	std::vector<HexToClaspEntry> tmpHexToClasp;
+	InterpretationPtr ismapped = InterpretationPtr(new Interpretation(reg));
+
 	claspInstance.symTab().startInit();
 
 	// build symbol table and hexToClasp
@@ -1147,18 +1169,26 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
-			if (!isMappedToClaspLiteral(lit.address)) {
+			if (!ismapped->getFact(lit.address)) {
 				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
 				std::string str = idAddressToString(lit.address);
 				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
 				Clasp::Literal clasplit(c, false); // create positive literal -> false
-				storeHexToClasp(lit.address, clasplit);
+				tmpHexToClasp.push_back(HexToClaspEntry(lit.address, clasplit));
 				if( clasplit.index() > largestIdx )
 					largestIdx = clasplit.index();
 				claspInstance.symTab().addUnique(c, str.c_str()).lit = clasplit;
+
+				ismapped->setFact(lit.address);
 			}
 		}
 	}
+
+	// now expand hexToClasp to the necessary size and add the entries
+	IDAddress max = 0;
+	BOOST_FOREACH (HexToClaspEntry htce, tmpHexToClasp) max = htce.first > max ? htce.first : max;
+	hexToClasp.resize(max+1, noLiteral);
+	BOOST_FOREACH (HexToClaspEntry htce, tmpHexToClasp) storeHexToClasp(htce.first, htce.second);
 
 	// resize
        	// (+1 because largest index must also be covered +1 because negative literal may also be there)
