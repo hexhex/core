@@ -1361,6 +1361,9 @@ void processOptionsPrePlugin(
 	
 		case 41:
 			{
+			#if !defined(HAVE_OWLCPP)
+			throw std::runtime_error("sorry, no support for ontologies compiled into this binary; reconfigure with --with-owlcpp");
+			#endif
 			  std::string ontologyName(optarg);
 			  pctx.config.setOption("Repair", 1);
 			  pctx.config.setStringOption("OntologyName", ontologyName);
