@@ -9,6 +9,11 @@ fi
 OWLCPPMAINDIR=`cd ./$TOP_SRCDIR/owlcpp; pwd`
 OWLCPP_ROOT=$1
 
+if [ -f $OWLCPPMAINDIR/exists ]; then
+	echo "Skipping owlcpp because it was already built without errors"
+	exit 0
+fi
+
 echo "Building owlcpp in $OWLCPPMAINDIR"
 if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 
@@ -195,4 +200,5 @@ rm $OWLCPPMAINDIR/libs/*.a
 ln -s $(ls $OWLCPP_ROOT/out/bin/io/*/release/link-static/libowlcpp_io.a | head) $OWLCPPMAINDIR/libs/libowlcpp_io.a
 ln -s $(ls $OWLCPP_ROOT/out/bin/logic/*/release/link-static/libowlcpp_logic.a | head) $OWLCPPMAINDIR/libs/libowlcpp_logic.a
 ln -s $(ls $OWLCPP_ROOT/out/bin/rdf/*/release/link-static/libowlcpp_rdf.a | head) $OWLCPPMAINDIR/libs/libowlcpp_rdf.a
+touch $OWLCPPMAINDIR/exists
 
