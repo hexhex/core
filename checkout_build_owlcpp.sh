@@ -86,20 +86,20 @@ if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 
 	echo "Extracting archives"
 	if [ ! -d $OWLCPPMAINDIR/owlcpp-v$OWLCPPV ]; then
-		unzip $OWLCPPMAINDIR/owlcpp-v$OWLCPPV.zip
+		unzip $OWLCPPMAINDIR/owlcpp-v$OWLCPPV.zip > /dev/null 2> /dev/null
 	fi
 	OWLCPP_ROOT=$OWLCPPMAINDIR/owlcpp-v$OWLCPPV
 	if [ ! -d $OWLCPPMAINDIR/boost_$BOOSTVU ]; then
-		tar -xzf $OWLCPPMAINDIR/boost-$BOOSTV.tar.gz
+		tar -xzf $OWLCPPMAINDIR/boost-$BOOSTV.tar.gz > /dev/null 2> /dev/null
 	fi
 	if [ ! -d $OWLCPPMAINDIR/libxml2-$LIBXML2V ]; then
-		unzip $OWLCPPMAINDIR/libxml2-$LIBXML2V.zip
+		unzip $OWLCPPMAINDIR/libxml2-$LIBXML2V.zip > /dev/null 2> /dev/null
 	fi
 	if [ ! -d $OWLCPPMAINDIR/raptor2-$RAPTOR2V ]; then
-		tar -xzf $OWLCPPMAINDIR/raptor2-$RAPTOR2V.tar.gz
+		tar -xzf $OWLCPPMAINDIR/raptor2-$RAPTOR2V.tar.gz > /dev/null 2> /dev/null
 	fi
 	if [ ! -d $OWLCPPMAINDIR/FaCT++-$FACTPPV ]; then
-		tar -xzf $OWLCPPMAINDIR/FaCTpp-src-v$FACTPPV.tar.gz
+		tar -xzf $OWLCPPMAINDIR/FaCTpp-src-v$FACTPPV.tar.gz > /dev/null 2> /dev/null
 	fi
 
 	echo "Generating user-config.jam"
