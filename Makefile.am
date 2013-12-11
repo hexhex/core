@@ -31,9 +31,9 @@ uninstall-local:
 	-rm -rf $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)
 
 SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} \
-  libltdl examples include src owlcpp testsuite
+  libltdl owlcpp examples include src testsuite
 DIST_SUBDIRS = buildclaspgringo \
-  libltdl examples include src owlcpp testsuite
+  libltdl owlcpp examples include src testsuite
 
 EXTRA_DIST = \
     bm3.7.0 \

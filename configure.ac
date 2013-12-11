@@ -269,9 +269,10 @@ if test "x$with_owlcpp" == xauto; then
 	BOOST_REQUIRE([1.43.0])
 elif test "x$with_owlcpp" != xauto -a "x$with_owlcpp" != x; then
 	OWLCPP_ROOT=$with_owlcpp
+	LOCAL_OWLCPP_ROOT=`cd ./owlcpp; pwd`
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$OWLCPP_ROOT/libs"
-	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$OWLCPP_ROOT/include"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$LOCAL_OWLCPP_ROOT/libs"
+	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$LOCAL_OWLCPP_ROOT/include"
 
 	AC_SUBST([DO_BUILDOWLCPP], ["no"])
 	AC_DEFINE([HAVE_OWLCPP], [1], [Defined if we found owlcpp.])
