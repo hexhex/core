@@ -141,7 +141,9 @@ protected:
    * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
    *   of previously recorded verfication results are used to compute the return value.
    */
-  bool finalCompatibilityCheck(InterpretationConstPtr modelCandidate);
+  //************bool finalCompatibilityCheck(InterpretationConstPtr modelCandidate);
+   bool repairCheck(InterpretationConstPtr modelCandidate);
+  
 
   /**
    * Checks if a compatible set is a model, i.e., it does the FLP check.

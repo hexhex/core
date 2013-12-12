@@ -181,8 +181,8 @@ RepairModelGenerator::RepairModelGenerator(
   factory(factory),
   reg(factory.reg)
 {
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");
-    DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "Repair model generator constructor");
+    DBGLOG(DBG, "Repair model generator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
 
     RegistryPtr reg = factory.reg;
 
@@ -317,17 +317,16 @@ InterpretationPtr RepairModelGenerator::generateNextModel()
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 
 		LOG_SCOPE(DBG,"gM", false);
-		LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
-		if (!finalCompatibilityCheck(modelCandidate))
+		
+		if (!repairCheck(modelCandidate))
 		{
-			LOG(DBG,"compatibility failed");
-			continue;
+			LOG(DBG,"No repair that turns a model candidate into a compatible set was found");
 		}
-
-		DBGLOG(DBG, "Checking if model candidate is a model");
+		
+		DBGLOG(DBG, "Checking if a model candidate is a model");
 		if (!isModel(modelCandidate))
 		{
-			LOG(DBG,"isModel failed");
+			LOG(DBG,"Model candidate is not a model (isModel failed)");
 			continue;
 		}
 
@@ -335,7 +334,7 @@ InterpretationPtr RepairModelGenerator::generateNextModel()
 		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
 		modelCandidate->getStorage() -= factory.gnMask.mask()->getStorage();
 		modelCandidate->getStorage() -= mask->getStorage();
-
+		
 		LOG(DBG,"returning model without guess: " << *modelCandidate);
 		return modelCandidate;
 	}while(true);
@@ -422,36 +421,19 @@ void RepairModelGenerator::updateEANogoods(
 	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
 }
 
-bool RepairModelGenerator::finalCompatibilityCheck(InterpretationConstPtr modelCandidate){
+bool RepairModelGenerator::repairCheck(InterpretationConstPtr modelCandidate){
 
 	// did we already verify during model construction or do we have to do the verification now?
-	bool compatible;
+	bool repairExists;
 	int ngCount;
 
-	compatible = true;
+	repairExists = true;
 	for (int eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
-		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == true){
-		}
-		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false){
-			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " was evaluated but falsified");
-			compatible = false;
-			break;
-		}
-		if (eaEvaluated[eaIndex] == false){
-			// try to verify
-			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " is not verified, trying to do this now");
-			verifyExternalAtom(eaIndex, modelCandidate);
-			DBGLOG(DBG, "Verification result: " << eaVerified[eaIndex]);
-
-			if (eaVerified[eaIndex] == false){
-				compatible = false;
-				break;
-			}
-		}
+		
 	}
-	DBGLOG(DBG, "Compatible: " << compatible);
+	DBGLOG(DBG, "**********Repair ABox existence: " << repairExists);
 
-	return compatible;
+	return repairExists;
 }
 
 bool RepairModelGenerator::isModel(InterpretationConstPtr compatibleSet){
