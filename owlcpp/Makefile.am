@@ -1,6 +1,6 @@
 clean-local:
 	if test x$(DO_BUILDOWLCPP) == xyes; then \
-		echo "" > /dev/null
+		echo "" > /dev/null \
 	fi
 
 all-local:
