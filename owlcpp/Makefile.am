@@ -1,7 +1,7 @@
 clean-local:
-	if test x$(DO_BUILDOWLCPP) == xyes; then \
-		echo "" > /dev/null \
-	fi
+#	if test x$(DO_BUILDOWLCPP) == xyes; then \
+#		echo "" > /dev/null \
+#	fi
 
 all-local:
 	if test x$(DO_BUILDOWLCPP) == xyes; then \
