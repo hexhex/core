@@ -181,7 +181,7 @@ if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 	export BOOST_ROOT=$OWLCPPMAINDIR/boost_$BOOSTVU
 	export BOOST_BUILD_PATH=$OWLCPPMAINDIR/boost_$BOOSTVU/tools/build/v2
 	pushd $OWLCPPMAINDIR/owlcpp-v$OWLCPPV > /dev/null
-	$BOOST_ROOT/tools/build/v2/b2 release "$params" > $OWLCPPMAINDIR/output.out 2>&1
+	$BOOST_ROOT/tools/build/v2/b2 release cxxflags="-fpic" "$params" > $OWLCPPMAINDIR/output.out 2>&1
 	ret=$?
 	export HOME=$REALHOME
 	if [ $ret -gt 0 ]; then
