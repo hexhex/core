@@ -31,9 +31,9 @@ uninstall-local:
 	-rm -rf $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)
 
 SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} \
-  libltdl examples include src testsuite
+  libltdl owlcpp examples include src testsuite
 DIST_SUBDIRS = buildclaspgringo \
-  libltdl examples include src testsuite
+  libltdl owlcpp examples include src testsuite
 
 EXTRA_DIST = \
     bm3.7.0 \
@@ -42,6 +42,7 @@ EXTRA_DIST = \
     clasp-2.1.3-source.tar.gz \
     gringo-3.0.4-source.tar.gz \
     build_potassco.sh \
+    checkout_build_owlcpp.sh \
     dlvhex2.pc.in \
     doxygen.am \
     doxygen.cfg

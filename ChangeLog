@@ -1,3 +1,9 @@
+2013-12-11  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* checkout_build_owlcpp.cpp: Add owlcpp for
+	RepairModelGenerator.
+	* owlcpp/Makefile.am: Likewise.
+
 2013-11-18  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* src/PhantomPlugin.cpp: Add support for dummy implementations

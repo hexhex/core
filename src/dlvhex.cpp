@@ -1505,12 +1505,12 @@ void configurePluginPath(std::string& userPlugindir)
       << "                        none (default): No learning" << std::endl
       << "                        reduct: Learning is based on the FLP-reduct" << std::endl
       << "                        ufs: Learning is based on the unfounded set" << std::endl
-      << "     --eaevalheuristics=[always,inputcomplete,never]" << std::endl
-      << "                      Selects the heuristics for external atom evaluation" << std::endl
+      << "     --eaevalheuristic=[always,inputcomplete,never]" << std::endl
+      << "                      Selects the heuristic for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
       << "                      never (default): Only evaluate at the end" << std::endl
-      << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
+      << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
       << "                      post (default): Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
       << "                      periodic: Do UFS check in periodic intervals" << std::endl
@@ -1763,6 +1763,8 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 	// frumpy is the name of the failsafe clasp config option
 	pctx.config.setStringOption("ClaspConfiguration","frumpy");
+	pctx.config.setOption("ClaspIncrementalInterpretationExtraction",1);
+	pctx.config.setOption("ClaspSingletonLoopNogoods",0);
   // propagate at least once per second, but also propagate all 10000 times we can propagate 
   // TODO we should experiment with these
   pctx.config.setOption("ClaspDeferNPropagations", 10000);
@@ -2062,8 +2064,10 @@ void processOptionsPrePlugin(
 		{ "flpcriterion", optional_argument, 0, 42 },
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "repair", required_argument, 0, 41 },
-		{ "eaevalheuristics", required_argument, 0, 26 },
-		{ "ufscheckheuristics", required_argument, 0, 27 },
+		{ "eaevalheuristic", required_argument, 0, 26 },
+                { "eaevalheuristics", required_argument, 0, 26 }, // compatibility
+		{ "ufscheckheuristic", required_argument, 0, 27 },
+                { "ufscheckheuristics", required_argument, 0, 27 }, // compatibility
 		{ "benchmarkeastderr", no_argument, 0, 28 }, // perhaps only temporary
 		{ "explicitflpunshift", no_argument, 0, 29 }, // perhaps only temporary
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
@@ -2072,6 +2076,8 @@ void processOptionsPrePlugin(
 		{ "liberalsafety", no_argument, 0, 33 },
 		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
+    { "noclaspincremental", no_argument, 0, 43 },
+    { "claspsingletonloopnogoods", no_argument, 0, 44 },
     { "dumpstats", no_argument, 0, 37 },
     { "iauxinaux", no_argument, 0, 38 },
     { "constspace", no_argument, 0, 39 },
@@ -2584,7 +2590,7 @@ void processOptionsPrePlugin(
 				}
 				else
 				{
-					throw GeneralError(std::string("Unknown external atom evaluation heuristics: \"") + heur + std::string("\""));
+					throw GeneralError(std::string("Unknown external atom evaluation heuristic: \"") + heur + std::string("\""));
 				}
 			}
 			break;
@@ -2609,7 +2615,7 @@ void processOptionsPrePlugin(
 				}
 				else
 				{
-					throw GeneralError(std::string("Unknown UFS check heuristics: \"") + heur + std::string("\""));
+					throw GeneralError(std::string("Unknown UFS check heuristic: \"") + heur + std::string("\""));
 				}
 			}
 			break;
@@ -2681,6 +2687,9 @@ void processOptionsPrePlugin(
 	
 		case 41:
 			{
+			#if !defined(HAVE_OWLCPP)
+			throw std::runtime_error("sorry, no support for ontologies compiled into this binary; reconfigure with --with-owlcpp");
+			#endif
 			  std::string ontologyName(optarg);
 			  pctx.config.setOption("Repair", 1);
 			  pctx.config.setStringOption("OntologyName", ontologyName);
@@ -2708,6 +2717,12 @@ void processOptionsPrePlugin(
 				pctx.config.setOption("FLPDecisionCriterionE", 1);
 				pctx.config.setOption("FLPDecisionCriterionHead", 1);
 			}
+			break;
+		case 43:
+			pctx.config.setOption("ClaspIncrementalInterpretationExtraction", 0);
+			break;
+		case 44:
+			pctx.config.setOption("ClaspSingletonLoopNogoods", 0);
 			break;
 		}
 	}

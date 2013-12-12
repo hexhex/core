@@ -68,10 +68,6 @@
 // activate this for detailed benchmarking in this file 
 #undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 
-// experiments with singleton loop nogoods:
-// PS with housekeeping: they are much worse both for unsat proofs and for finding solutions if problem is satisfiable (tested with status bcb6222b)
-#undef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
-
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ClaspSolver ==============================
@@ -81,37 +77,34 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidsolvertime);
 
 	// compute model
-	InterpretationPtr model;
+	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrm, "ClaspThr::MdlEnum::reportModel");
 		// assert that we have a propagator that incrementally builds our interpretation
 		assert(cs.ep);
 
 		// if reportModel is called without ep->isModel before (XXX yes, this happens, but i am not sure why)
-		cs.ep->applyRecordedDecisionLevelUpdates(s);
+		if (cs.incremental){
+			cs.ep->applyRecordedDecisionLevelUpdates(s);
 
-		assert(cs.ep->isComplete(s));
+			assert(cs.ep->isComplete(s));
 
-		model = InterpretationPtr(new Interpretation(cs.reg));
-		model->add(*cs.ep->getInterpretation());
-/*
-// extract the full interpretation
-{
-	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-	model->clear();
-	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-		//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
-		//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
-		// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
-		// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
-		if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
-			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-			// set it in the model
-			model->setFact(adr);
+			model->add(*cs.ep->getInterpretation());
+		}else{
+			// extract the full interpretation
+			const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+			for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+				//DBGLOG(DBG,"saw literal " << it->second.lit.index() << " with sign " << it->second.lit.sign() <<
+				//	   " and name " << it->second.name.c_str() << ": istrue=" << s.isTrue(it->second.lit));
+				// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
+				// s.isTrue does everything correct wrt sign of lit, therefore we don't need to care about it here
+				if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
+					IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+					// set it in the model
+					model->setFact(adr);
+				}
+			}
 		}
-	}
-}
-*/
 
 		#ifdef DEBUG
 		// create full model from symbol table and verify it against incrementally updated model
@@ -273,6 +266,8 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) :
 	interpretation = InterpretationPtr(new Interpretation(cs.reg));
 	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
 	changed = InterpretationPtr(new Interpretation(cs.reg));
+	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
+	previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
 }
 
 void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
@@ -293,11 +288,46 @@ void ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s){
 			DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 		}
 
+		if (!cs.incremental){
+                        interpretation->clear();
+                        factWasSet->clear();
+                        const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+                        assert(symTab.size() == cs.claspSymtabToHex.size());
+                        Clasp::SymbolTable::const_iterator it;
+                        std::vector<IDAddress>::const_iterator ita;
+                        for(it = symTab.begin(),
+                         ita = cs.claspSymtabToHex.begin();
+                         it != symTab.end(); ++it, ++ita) {
+                                bool istrue = s.isTrue(it->second.lit);
+                                bool isfalse = s.isFalse(it->second.lit);
+                                // bitset of all assigned values
+                                if( istrue || isfalse ) {
+                                        factWasSet->setFact(*ita);
+                                }
+                                // bitset of true values (partial interpretation)
+                                if( istrue ) {
+                                        interpretation->setFact(*ita);
+                                }
+                        }
+                        // a fact changed iff
+                        // 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
+                        // 2. it was set before and is still set but the truth value is different
+                        changed->clear();
+                        changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
+                        changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
+                        DBGLOG(DBG, "Changed truth values: " << *changed);
+		}
+
 		DBGLOG(DBG, "Calling external propagators");
 		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
 			cb->propagate(interpretation, factWasSet, changed);
 		}
 		changed->clear();
+
+		if (!cs.incremental){
+	                previousInterpretation->getStorage() = interpretation->getStorage();
+        	        previousFactWasSet->getStorage() = factWasSet->getStorage();
+		}
 
 		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
 		// which cannot interfere with dlvhex.
@@ -544,6 +574,7 @@ void ClaspSolver::ExternalPropagator::setHeuristics(DeferPropagationHeuristicsPt
 }
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+
 	// check for termination request
 	if( cs.ctx.terminationRequest ) {
 		LOG(DBG,"throwing ClaspTermination");
@@ -555,14 +586,14 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	// which decision level we are for later and use that information if we
 	// really do Hex-Interpretation-Propagation
 	//updateDecisionLevels(s);
-	recordUpdateDecisionLevels(s);
+	if (cs.incremental) recordUpdateDecisionLevels(s);
 
 	// here we can skip propagations, as many as we want, we can even skip all
 	// (e.g. for --eaevalheuristics=never, because isModel() never skips)
 	if( !deferHeuristics || deferHeuristics->shallWePropagate(s) )
 	{
 		DBGLOG(DBG,"propagating to HEX (!!deferHeuristics) == " << (!!deferHeuristics));
-		applyRecordedDecisionLevelUpdates(s);
+		if (cs.incremental) applyRecordedDecisionLevelUpdates(s);
 
 		// propagate in external atoms (this may add new nogoods)
 		prop(s);
@@ -574,6 +605,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 }
 
 void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Clasp::Solver& s){
+
+	assert(cs.incremental && "applyRecordedDecisionLevelUpdates can only be called in incremental mode");
+	
 	DLVHEX_BENCHMARK_REGISTER(sidslv, "Solver time");
 	DLVHEX_BENCHMARK_SUSPEND_SCOPE(sidslv);
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv ExtProp applyRDLU");
@@ -584,6 +618,9 @@ void ClaspSolver::ExternalPropagator::applyRecordedDecisionLevelUpdates(const Cl
 }
 
 void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& s){
+
+	assert(cs.incremental && "recordUpdateDecisionLevels can only be called in incremental mode");
+
 	// incremental update of HEX interpretation from clasp interpretation
 	DBGLOG(DBG,"recordUpdateDecisionLevels at " << s.decisionLevel() <<
 		 " start " << ((s.decisionLevel()==0)?0:s.levelStart(s.decisionLevel())) <<
@@ -636,6 +673,9 @@ void ClaspSolver::ExternalPropagator::recordUpdateDecisionLevels(Clasp::Solver& 
 }
 
 void ClaspSolver::ExternalPropagator::updateNecessaryDecisionLevels(const Clasp::Solver& s){
+
+	assert(cs.incremental && "updateNecessaryDecisionLevels can only be called in incremental mode");
+
 	DBGLOG(DBG,"updateNecessaryDecisionLevels at " << s.decisionLevel() << "/"
 	           "trail size " << s.trail().size() << ", need update from " <<
 		   needToUpdateFromTrail << " and from level " << needToUpdateFromDecisionLevel);
@@ -738,6 +778,9 @@ void ClaspSolver::ExternalPropagator::initialize(Clasp::Solver& s) {
 }
 
 void ClaspSolver::ExternalPropagator::updateDecisionLevel(const Clasp::Solver& s, uint32_t level, uint32_t from, uint32_t to_exclusive){
+
+	assert(cs.incremental && "updateDecisionLevel can only be called in incremental mode");
+
 	if( Logger::Instance().shallPrint(Logger::DBG) )
 	{
 		LOG(DBG, "updateDecisionLevel " << level << " trail[" << from << "," << to_exclusive << ")");
@@ -810,12 +853,12 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 		// (see postcondition in clasp/constraint.h)
 
 		// just record as in propagate()
-		recordUpdateDecisionLevels(s);
+		if (cs.incremental) recordUpdateDecisionLevels(s);
 
 		DBGLOG(DBG,"propagating to HEX (isModel)");
 	       	// but apply recorded changes (all so far) unconditionally
 		// (because we must do prop(s) afterwards)
-		applyRecordedDecisionLevelUpdates(s);
+		if (cs.incremental) applyRecordedDecisionLevelUpdates(s);
 
 		// first propagate to HEX; this invalidates external atoms that have
 		// been marked as evaluated previously if their input interpretation
@@ -846,6 +889,9 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 }
 
 bool ClaspSolver::ExternalPropagator::isComplete(const Clasp::Solver& s) const {
+
+	assert(cs.incremental && "isComplete can only be called in incremental mode");
+
 	//DBGLOG(DBG,"isComplete called with needToUndoDownToThisDecisionLevel=" << needToUndoDownToThisDecisionLevel << ", needToUpdateFromTrail=" << needToUpdateFromTrail << ", trail().size()=" << s.trail().size() << " and decision level " << s.decisionLevel());
 	return (needToUndoDownToThisDecisionLevel == 0) &&
 	       (s.trail().size() == needToUpdateFromTrail);
@@ -1405,30 +1451,30 @@ void ClaspSolver::sendRuleToClasp(const AnnotatedGroundProgram& p, DisjunctionMo
 		}
 	}
 
-	#ifdef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
-	// check support of singleton atoms
-	// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
-	if (!ruleId.isWeightRule()){
-		DBGLOG(DBG, "Generating singleton loop nogoods");
-		BOOST_FOREACH (ID h, rule.head){
-			// shiftedBody is true iff the original body is true and all other head atoms are false
-			pb.startRule(Clasp::BASICRULE);
-			pb.addHead(nextVarIndex);
-			BOOST_FOREACH (ID b, rule.body){
-				pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
-			}
-			BOOST_FOREACH (ID hshifted, rule.head){
-				if (h != hshifted){
-					pb.addToBody(mapHexToClasp(hshifted.address).var(), false);
+	if (ctx.config.getOption("ClaspSingletonLoopNogoods")){
+		// check support of singleton atoms
+		// because body atoms of weight rules have a different meaning and do not directly support the head atom, we do not create such rules in this case
+		if (!ruleId.isWeightRule()){
+			DBGLOG(DBG, "Generating singleton loop nogoods");
+			BOOST_FOREACH (ID h, rule.head){
+				// shiftedBody is true iff the original body is true and all other head atoms are false
+				pb.startRule(Clasp::BASICRULE);
+				pb.addHead(nextVarIndex);
+				BOOST_FOREACH (ID b, rule.body){
+					pb.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
 				}
-			}
-			pb.endRule();
+				BOOST_FOREACH (ID hshifted, rule.head){
+					if (h != hshifted){
+						pb.addToBody(mapHexToClasp(hshifted.address).var(), false);
+					}
+				}
+				pb.endRule();
 
-			// remember supporting shifted rule
-			singletonNogoods[h.address].push_back(nextVarIndex++);
+				// remember supporting shifted rule
+				singletonNogoods[h.address].push_back(nextVarIndex++);
+			}
 		}
 	}
-	#endif
 }
 
 bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
@@ -1468,22 +1514,22 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 		sendRuleToClasp(p, dm, nextVarIndex, singletonNogoods, ruleId);
 	}
 
-	#ifdef SINGLETON_LOOP_NOGOOD_OPTIMIZATION
-	// an atom is not true if no supporting shifted rule fires
-	typedef std::pair<IDAddress, std::vector<int> > Pair;
-	BOOST_FOREACH (Pair pair, singletonNogoods){
-		// exception: facts are always true
-		if (p.getGroundProgram().edb->getFact(pair.first)) continue;
+	if (ctx.config.getOption("ClaspSingletonLoopNogoods")){
+		// an atom is not true if no supporting shifted rule fires
+		typedef std::pair<IDAddress, std::vector<int> > Pair;
+		BOOST_FOREACH (Pair pair, singletonNogoods){
+			// exception: facts are always true
+			if (p.getGroundProgram().edb->getFact(pair.first)) continue;
 
-		pb.startRule(Clasp::BASICRULE);
-		pb.addHead(false_);
-		pb.addToBody(mapHexToClasp(pair.first).var(), true);
-		BOOST_FOREACH (int b, pair.second){
-			pb.addToBody(b, false);
+			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(false_);
+			pb.addToBody(mapHexToClasp(pair.first).var(), true);
+			BOOST_FOREACH (int b, pair.second){
+				pb.addToBody(b, false);
+			}
+			pb.endRule();
 		}
-		pb.endRule();
 	}
-	#endif
 
 	// Once all rules are defined, call endProgram() to load the (simplified)
 	bool initiallyInconsistent;
@@ -2035,6 +2081,8 @@ void ClaspSolver::configureClaspCommandline()
 	// (let's hope they don't change this)
 	Clasp::ClaspConfig cc;
 	cc.applyHeuristic(claspConfig);
+
+	incremental = ctx.config.getOption("ClaspIncrementalInterpretationExtraction");
 }
 
 ClaspSolver::~ClaspSolver(){
