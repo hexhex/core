@@ -143,6 +143,19 @@ This file provides some hints how to install and run dlvhex.
     for some N; install one of these and you will be able to compile
     dlvhex.
 
+*** owlcpp
+    This library is necessary for repair answer set computation
+    (option --repair). To link the library, use either
+       ./configure --with-owlcpp=PATH
+    where PATH points to the main directory of an owlcpp build,
+    or
+       ./configure --with-owlcpp=auto
+   to download and build owlcpp and its dependencies automatically
+   as part of the dlvhex build process (internet connection required).
+
+   If dlvhex is built without --with-owlcpp, no support for ontologies
+   will be compiled into the binary and --repair is not available.
+
 ** Configuration
    Run `configure' to create the necessary Makefiles. As usual, use
    the --prefix switch to specify a custom installation

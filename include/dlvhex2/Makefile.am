@@ -103,6 +103,7 @@ pkginclude_HEADERS = \
   ProgramCtx.h \
   QueryPlugin.h \
   Registry.h \
+  RepairModelGenerator.h \
   Rule.h \
   RuleTable.h \
   StrongNegationPlugin.h \

@@ -228,6 +228,10 @@ esac
 CXXFLAGS="$CXXFLAGS $debuginfo $optlevel $prof"
 CPPFLAGS="$CPPFLAGS $defines"
 
+# third-party solvers
+EXTSOLVER_LIBS=
+EXTSOLVER_LDFLAGS=
+EXTSOLVER_CPPFLAGS=
 
 # libtool
 LT_INIT([dlopen])
@@ -248,9 +252,44 @@ m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 PKG_PROG_PKG_CONFIG
 AC_CACHE_SAVE
 
+# check owlcpp support
+AM_CONDITIONAL([DO_BUILDOWLCPP],[test "x${with_owlcpp}" == xauto])
+if test "x$with_owlcpp" == xauto; then
+	OWLCPP_ROOT=`cd ./owlcpp; pwd`
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$OWLCPP_ROOT/libs"
+	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$OWLCPP_ROOT/include"
+
+	AC_SUBST([DO_BUILDOWLCPP], ["yes"])
+	AC_DEFINE([HAVE_OWLCPP], [1], [Defined if we found owlcpp.])
+	AM_CONDITIONAL([HAVE_OWLCPP],[true])
+
+	# for owlcpp we need 1.55 for functional/factory
+#	BOOST_REQUIRE([1.55.0])
+	BOOST_REQUIRE([1.43.0])
+elif test "x$with_owlcpp" != xauto -a "x$with_owlcpp" != x; then
+	OWLCPP_ROOT=$with_owlcpp
+	LOCAL_OWLCPP_ROOT=`cd ./owlcpp; pwd`
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$LOCAL_OWLCPP_ROOT/libs"
+	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$LOCAL_OWLCPP_ROOT/include"
+
+	AC_SUBST([DO_BUILDOWLCPP], ["no"])
+	AC_DEFINE([HAVE_OWLCPP], [1], [Defined if we found owlcpp.])
+	AM_CONDITIONAL([HAVE_OWLCPP],[true])
+
+	# we need 1.43 for functional/factory
+	BOOST_REQUIRE([1.43.0])
+else
+	AC_SUBST([DO_BUILDOWLCPP], ["no"])
+	AM_CONDITIONAL([HAVE_OWLCPP],[false])
+
+	# we need 1.43 for functional/factory
+	BOOST_REQUIRE([1.43.0])
+fi
+AC_SUBST([OWLCPP_ROOT])
+
 # checking for boost libs
-# we need 1.43 for functional/factory
-BOOST_REQUIRE([1.43.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
@@ -278,6 +317,7 @@ if test "x$with_boost" != xno -a "x$with_boost" != xyes -a "x$with_boost" != x; 
   NESTED_BOOSTROOT=$with_boost
 fi
 AC_SUBST([NESTED_BOOSTROOT])
+AC_SUBST([BOOST_MAJOR_VERSION],[$boost_major_version])
 
 #
 # the default system-wide plugin dir ${pkglibdir}/plugins can be
@@ -324,10 +364,6 @@ AC_SUBST(WHICH_DLVHEX_TESTS)
 # * dlv as shared library (libdlv (nonfunctional))
 # * clingo as shared library (limited language features but efficient)
 #
-
-EXTSOLVER_LIBS=
-EXTSOLVER_LDFLAGS=
-EXTSOLVER_CPPFLAGS=
 
 extsolver_found=false
 
@@ -627,6 +663,7 @@ AC_CONFIG_FILES([
            include/common.h
            include/dlvhex2/Makefile
            src/Makefile
+           owlcpp/Makefile
            testsuite/Makefile
 ])
 
@@ -634,6 +671,11 @@ AC_CONFIG_FILES([
 AC_OUTPUT
 
 dnl output configuration
+if test "x${with_owlcpp}" == xauto ; then
+	OWLCPP_OUT="$OWLCPP_ROOT (download and build automatically)"
+else
+	OWLCPP_OUT="$OWLCPP_ROOT"
+fi
 cat <<EOF
 
 $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
@@ -669,6 +711,7 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  Bitmagic: $BM_VERSION $BM_CPPFLAGS
  Boost: $boost_major_version $BOOST_CPPFLAGS
  Curl: $libcurl_cv_lib_curl_version $LIBCURL_CPPFLAGS
+ owlcpp: $OWLCPP_OUT
 
  - Doxygen support:
  doxygen: $DX_DOXYGEN

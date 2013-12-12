@@ -158,8 +158,16 @@ EvalGraphBuilder::createEvalUnit(
 
   // configure model generator factory, depending on type of component
   {
-    const ComponentGraph::ComponentInfo& ci = newUnitInfo;
-    if( ci.innerEatoms.empty() )
+   const ComponentGraph::ComponentInfo& ci = newUnitInfo;
+
+    if (ctx.config.getOption("Repair"))
+	  {
+            uprops.mgf.reset(new RepairModelGeneratorFactory(
+                  ctx, ci, externalEvalConfig));
+          }
+    else
+	  {     
+       if( ci.innerEatoms.empty() )
     {
       // no inner external atoms -> plain model generator factory
       LOG(DBG,"configuring plain model generator factory for eval unit " << u);
@@ -191,12 +199,7 @@ EvalGraphBuilder::createEvalUnit(
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
         if (ctx.config.getOption("GenuineSolver") > 0){
-	  if (ctx.config.getOption("Repair"))
-	  {
-            uprops.mgf.reset(new RepairModelGeneratorFactory(
-                  ctx, ci, externalEvalConfig));
-          }
-          else if (ctx.config.getOption("MultiThreading")){
+	   if (ctx.config.getOption("MultiThreading")){
             uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorAsyncFactory(
                   ctx, ci, externalEvalConfig));
           }else{
@@ -210,7 +213,7 @@ EvalGraphBuilder::createEvalUnit(
       }
     }
   }
-
+}
   // create dependencies
   unsigned joinOrder = 0; // TODO define join order in a more intelligent way?
   ComponentGraph::PredecessorIterator dit, dend;
