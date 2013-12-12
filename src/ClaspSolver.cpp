@@ -1137,6 +1137,8 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 
 	DBGLOG(DBG, "Building atom index");
 
+	bool inverselits = ctx.config.getOption("ClaspInverseLiterals");
+
 	assert(hexToClasp.empty());
 	hexToClasp.reserve(reg->ogatoms.getSize());
 
@@ -1151,7 +1153,7 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
 				std::string str = idAddressToString(lit.address);
 				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
-				Clasp::Literal clasplit(c, false); // create positive literal -> false
+				Clasp::Literal clasplit(c, inverselits); // create positive literal -> false
 				storeHexToClasp(lit.address, clasplit);
 				if( clasplit.index() > largestIdx )
 					largestIdx = clasplit.index();

@@ -69,7 +69,7 @@ echo "making gringo"
 (
   cd gringo/build/release
   CXX=$CXX \
-  cmake ../../ -DCMAKE_CXX_FLAGS="-Wall -fPIC" -DCMAKE_BUILD_TYPE=release -DWITH_LUA=none ||
+  BOOST_ROOT=$BOOST_ROOT cmake ../../ -DCMAKE_CXX_FLAGS="-Wall -fPIC" -DCMAKE_BUILD_TYPE=release -DWITH_LUA=none ||
     { echo "gringo cmake failed!"; exit -1; }
   make gringo-app clingo-app VERBOSE=1 ||
     { echo "gringo make failed!"; exit -1; }
