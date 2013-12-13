@@ -249,7 +249,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
       << "                      attr   - Attribute dependency graph (once per program)" << std::endl
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
-      << "     --repair=[ontology name]" << std::endl
+// TODO: uncomment this line when implementation is finished
+//      << "     --repair=[ontology name]" << std::endl
 
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)" << std::endl
@@ -1409,7 +1410,7 @@ void processOptionsPrePlugin(
 	// global constraints
 	if (pctx.config.getOption("Repair")){
 		// repair answer set computation needs monolithic heuristic and liberal safety
-		if (heuristicChosen) throw GeneralError("Option --repair is incompatible with --repair. Repair answer set builder chooses the heuristic automatically.");
+		if (heuristicChosen) throw GeneralError("Option --repair is incompatible with --heuristic. Repair answer set builder chooses the heuristic automatically.");
 		pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
 		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
 		pctx.config.setOption("LiberalSafety", 1);

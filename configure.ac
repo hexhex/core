@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([dlvhex],[2.2.0],[dlvhex-devel@lists.sourceforge.net])
+AC_INIT([dlvhex],[2.3.0],[dlvhex-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([-Wall gnu check-news 1.10])
 
 AC_CONFIG_SRCDIR([src/dlvhex.cpp])
@@ -9,7 +9,7 @@ AC_CONFIG_HEADER([include/config.h])
 DLVHEX_DEFINE_VERSION([DLVHEX],[$PACKAGE_VERSION])
 # for ABI and library versioning,
 # see https://github.com/hexhex/core/wiki/LibraryVersions
-DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[7.2.0])
+DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[7.3.0])
 
 AC_CANONICAL_HOST
 
