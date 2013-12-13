@@ -1,5 +1,11 @@
 dlvhex NEWS -- history of user-visible changes.
 
+* Version 2.3.0 (December 2013)
+
+** Various performance improvements and bugfixes.
+** Fine-tuning of heuristics.
+** See Changelog for minor changes and more details.
+
 * Version 2.2.0 (August 2013)
 
 ** Support for function symbols (see examples/functionsymbols<N>.hex)
