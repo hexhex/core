@@ -197,8 +197,20 @@ rm $OWLCPPMAINDIR/include
 ln -s $OWLCPP_ROOT/include $OWLCPPMAINDIR/include
 mkdir $OWLCPPMAINDIR/libs 2> /dev/null
 rm $OWLCPPMAINDIR/libs/*.a
+if [ $(ls $OWLCPP_ROOT/out/bin/io/*/release/link-static/libowlcpp_io.a | wc -l) -eq 0 ]; then
+	echo "Error: libowlcpp_io.a not found in $OWLCPP_ROOT/out/bin/io/*/release/link-static"
+	exit 1
+fi
 ln -s $(ls $OWLCPP_ROOT/out/bin/io/*/release/link-static/libowlcpp_io.a | head) $OWLCPPMAINDIR/libs/libowlcpp_io.a
+if [ $(ls $OWLCPP_ROOT/out/bin/logic/*/release/link-static/libowlcpp_logic.a | wc -l) -eq 0 ]; then
+        echo "Error: libowlcpp_logic.a not found in $OWLCPP_ROOT/out/bin/logic/*/release/link-static"
+        exit 1
+fi
 ln -s $(ls $OWLCPP_ROOT/out/bin/logic/*/release/link-static/libowlcpp_logic.a | head) $OWLCPPMAINDIR/libs/libowlcpp_logic.a
+if [ $(ls $OWLCPP_ROOT/out/bin/rdf/*/release/link-static/libowlcpp_rdf.a | wc -l) -eq 0 ]; then
+        echo "Error: libowlcpp_rdf.a not found in $OWLCPP_ROOT/out/bin/rdf/*/release/link-static"
+        exit 1
+fi
 ln -s $(ls $OWLCPP_ROOT/out/bin/rdf/*/release/link-static/libowlcpp_rdf.a | head) $OWLCPPMAINDIR/libs/libowlcpp_rdf.a
 echo "This file just marks that owlcpp was successfully built. Remove it to rebuild." > $OWLCPPMAINDIR/successfully_built
 
