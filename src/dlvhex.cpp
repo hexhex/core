@@ -419,6 +419,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("NoFacts",0);
   pctx.config.setOption("NumberOfModels",0);
   pctx.config.setOption("RepeatEvaluation",0);
+  pctx.config.setOption("LegacyECycleDetection",0);
   pctx.config.setOption("NMLP", 0);
   pctx.config.setOption("MLP", 0);
   pctx.config.setOption("Forget", 0);
@@ -757,6 +758,7 @@ void processOptionsPrePlugin(
     { "claspinverseliterals", no_argument, 0, 45 },
     { "dumpstats", no_argument, 0, 37 },
     { "iauxinaux", no_argument, 0, 38 },
+    { "legacyecycledetection", no_argument, 0, 46 },
     { "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ NULL, 0, NULL, 0 }
@@ -1404,6 +1406,9 @@ void processOptionsPrePlugin(
                 case 45:
                         pctx.config.setOption("ClaspInverseLiterals", 1);
                         break;
+		case 46:
+			pctx.config.setOption("LegacyECycleDetection", 1);
+			break;
 		}
 	}
 

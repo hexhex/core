@@ -359,46 +359,72 @@ void AnnotatedGroundProgram::computeECycles(){
 
 	DBGLOG(DBG, "Computing e-cycles of components");
 
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		eCycles.push_back(false);
-	}
+	if (ctx->config.getOption("LegacyECycleDetection")){
+	        eCyclesTotal = false;
+        	for (int comp = 0; comp < depSCC.size(); ++comp){
 
-	// for each e-edge x -> y: if x and y are in the same component, then y is cyclic
-	typedef std::pair<IDAddress, IDAddress> Edge;
-	BOOST_FOREACH (Edge e, externalEdges){
-		if (componentOfAtom[e.first] == componentOfAtom[e.second]){
-			eCycles[componentOfAtom[e.second]] = true;
+               		// check for each e-edge x -> y if there is a path from y to x
+	                // if yes, then y is a cyclic predicate input
+        	        InterpretationPtr cyclicInputAtoms = InterpretationPtr(new Interpretation(reg));
+                	typedef std::pair<IDAddress, IDAddress> Edge;
+	                BOOST_FOREACH (Edge e, externalEdges){
+        	                if (!programComponents[comp].componentAtoms->getFact(e.first)) continue;
+                	        if (!programComponents[comp].componentAtoms->getFact(e.second)) continue;
+                        	//if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
+	                        //if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
+
+	                        std::vector<Graph::vertex_descriptor> reachable;
+        	                boost::breadth_first_search(depGraph, depNodes[e.second],
+                	                boost::visitor(
+                        	                boost::make_bfs_visitor(
+                                	                boost::write_property(
+                                        	                boost::identity_property_map(),
+                                                	        std::back_inserter(reachable),
+                                                        	boost::on_discover_vertex()))));
+
+	                        if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()){
+        	                        // yes, there is a cycle
+                	                cyclicInputAtoms->setFact(e.second);
+                        	}
+              		}
+                	eCycles.push_back(cyclicInputAtoms->getStorage().count() > 0);
+                	eCyclesTotal |= eCycles[eCycles.size() - 1];
+
+#ifndef NDEBUG
+	                std::stringstream ss;
+        	        bool first = true;
+                	bm::bvector<>::enumerator en = cyclicInputAtoms->getStorage().first();
+	                bm::bvector<>::enumerator en_end = cyclicInputAtoms->getStorage().end();
+        	        while (en < en_end){
+                	        if (!first) ss << ", ";
+                        	first = false;
+                        	ss << *en;
+                        	en++;
+                	}
+                	if (cyclicInputAtoms->getStorage().count() > 0){
+                        	DBGLOG(DBG, "Component " << comp << ": 1 with cyclic input atoms " << ss.str());
+               		}else{
+                	        DBGLOG(DBG, "Component " << comp << ": 0");
+                	}
+#endif
+        	}
+	}else{
+		for (int comp = 0; comp < depSCC.size(); ++comp){
+			eCycles.push_back(false);
 		}
-	}
 
-	eCyclesTotal = false;
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-/*
-		// check for each e-edge x -> y if there is a path from y to x
-		// if yes, then y is a cyclic predicate input
-		InterpretationPtr cyclicInputAtoms = InterpretationPtr(new Interpretation(reg));
+		// for each e-edge x -> y: if x and y are in the same component, then y is cyclic
 		typedef std::pair<IDAddress, IDAddress> Edge;
 		BOOST_FOREACH (Edge e, externalEdges){
-			if (!programComponents[comp].componentAtoms->getFact(e.first)) continue;
-			if (!programComponents[comp].componentAtoms->getFact(e.second)) continue;
-
-			std::vector<Graph::vertex_descriptor> reachable;
-			boost::breadth_first_search(depGraph, depNodes[e.second],
-				boost::visitor(
-					boost::make_bfs_visitor(
-						boost::write_property(
-							boost::identity_property_map(),
-							std::back_inserter(reachable),
-							boost::on_discover_vertex())))); 
-
-			if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()){
-				// yes, there is a cycle
-				cyclicInputAtoms->setFact(e.second);
+			if (componentOfAtom[e.first] == componentOfAtom[e.second]){
+				eCycles[componentOfAtom[e.second]] = true;
 			}
 		}
-		eCycles.push_back(cyclicInputAtoms->getStorage().count() > 0);
-*/
-		eCyclesTotal |= eCycles[comp];
+
+		eCyclesTotal = false;
+		for (int comp = 0; comp < depSCC.size(); ++comp){
+			eCyclesTotal |= eCycles[comp];
+		}
 	}
 }
 
