@@ -860,6 +860,65 @@ struct sem<HexGrammarSemantics::rule>
 
 
 template<>
+struct sem<HexGrammarSemantics::ruleVariableDisjunction>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector3<
+      dlvhex::ID,
+      std::vector<dlvhex::ID>,
+      boost::optional<std::vector<dlvhex::ID> >
+    >& source,
+    ID& target)
+  {
+    RegistryPtr reg = mgr.ctx.registry();
+    Tuple head;
+    head.push_back(boost::fusion::at_c<0>(source));
+    const Tuple& headGuard = boost::fusion::at_c<1>(source);
+    bool hasBody = !!boost::fusion::at_c<2>(source);
+
+    if( hasBody )
+    {
+      // rule -> put into IDB
+      Tuple body = boost::fusion::at_c<2>(source).get();
+      body.insert(body.end(), headGuard.begin(), headGuard.end());
+
+      Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body, headGuard);
+      if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
+      mgr.markExternalPropertyIfExternalBody(reg, r);
+      mgr.markModulePropertyIfModuleBody(reg, r);
+      // mark as disjunctive if required
+      if( r.head.size() > 1 )
+        r.kind |= ID::PROPERTY_RULE_DISJ;
+      target = reg->storeRule(r);
+    }
+    else
+    {
+      if( head.size() > 1 )
+      {
+        // disjunctive fact -> create rule
+        Tuple body;
+        body.insert(body.end(), headGuard.begin(), headGuard.end());
+        Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
+          head, body, headGuard);
+        if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
+        mgr.markExternalPropertyIfExternalBody(reg, r);
+        mgr.markModulePropertyIfModuleBody(reg, r);
+        target = reg->storeRule(r);
+      }
+      else
+      {
+        assert(head.size() == 1);
+
+        // return ID of fact
+        target = *head.begin();
+      }
+    }
+  }
+};
+
+
+template<>
 struct sem<HexGrammarSemantics::constraint>
 {
   void operator()(
@@ -1215,7 +1274,15 @@ HexGrammarBase(HexGrammarSemantics& sem):
           (bodyLiteral % qi::char_(','))
         ) >>
         qi::lit('.')
-      ) [ Sem::rule(sem) ];
+      ) [ Sem::rule(sem) ]
+    | (
+        headAtom >> qi::lit(':') >> (bodyLiteral % qi::char_(',')) >>
+       -(
+          qi::lit(":-") >
+          (bodyLiteral % qi::char_(','))
+        ) >>
+        qi::lit('.')
+      ) [ Sem::ruleVariableDisjunction(sem) ];
   constraint
     = (
         qi::lit(":-") >>

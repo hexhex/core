@@ -1,0 +1,16 @@
+% Non-3-colorability using saturation encoding
+% This instance is indeed not 3-colorable
+
+assign(N, C) : color(C) :- node(N).
+
+saturate :- assign(N, C), assign(M, C), edge(N, M).
+assign(N, C) :- saturate, node(N), color(C).
+
+color(red). color(green). color(blue).
+node(a). node(b). node(c). node(d).
+edge(a, b). edge(a, c). edge(b, c).
+edge(a, d). edge(b, d). edge(c, d).
+
+edge(X, Y) :- edge(Y, X).
+
+:- not saturate.

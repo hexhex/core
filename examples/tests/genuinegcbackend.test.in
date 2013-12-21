@@ -140,3 +140,5 @@ functionsymbols3.hex functionsymbols3.out --liberalsafety --solver=genuinegc --f
 functionsymbols4.hex functionsymbols4.out --solver=genuinegc --function-maxarity=2 --function-rewrite
 functionsymbols5.hex functionsymbols5.out --liberalsafety --solver=genuinegc --function-maxarity=2 --function-rewrite
 functionsymbols6.hex functionsymbols6.stderr --liberalsafety --solver=genuinegc --function-maxarity=2 --function-rewrite
+non3col.hex non3col.out --solver=genuinegc
+non3col2.hex non3col2.out --solver=genuinegc

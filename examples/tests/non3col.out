@@ -1,0 +1,1 @@
+{saturate,color(red),color(green),color(blue),node(a),node(b),node(c),node(d),edge(a,b),edge(a,c),edge(b,c),edge(a,d),edge(b,d),edge(c,d),edge(d,c),edge(d,b),edge(d,a),edge(c,b),edge(c,a),edge(b,a),assign(d,blue),assign(c,blue),assign(b,blue),assign(a,blue),assign(d,green),assign(c,green),assign(b,green),assign(a,green),assign(d,red),assign(c,red),assign(b,red),assign(a,red)}
