@@ -93,7 +93,7 @@ struct ID:
 	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ       = 0x00100000;
-	static const IDKind PROPERTY_RULE_HEADGUARD  = 0x00200000;
+	static const IDKind PROPERTY_RULE_HEADGUARD  = 0x00300000;
 	static const IDKind PROPERTY_RULE_MODATOMS   = 0x00400000;
 	static const IDKind PROPERTY_RULE_UNMODATOMS = 0xFFBFFFFF;
 	static const IDKind PROPERTY_AUX             = 0x00800000;
