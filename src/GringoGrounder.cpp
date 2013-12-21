@@ -158,13 +158,13 @@ void GringoGrounder::Printer::printRule(ID id){
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
 					continue;
 				}
-				
-				litindex++;
 			}
 
 			if (!first) out << ", ";
 			first = false;
 			print(b);
+
+			litIndex++;
 		}
 	}
 	out << ".";
