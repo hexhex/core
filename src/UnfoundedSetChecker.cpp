@@ -1595,7 +1595,7 @@ std::vector<Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nog
 void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 
 	// add newly learned nogoods from the main search (in transformed form)
-	if (ngc){
+	if (!!ngc){
 		// detect resets of the nogood container
 		if (learnedNogoodsFromMainSearch > ngc->getNogoodCount() || reset) learnedNogoodsFromMainSearch = 0;
 		DBGLOG(DBG, "O: Adding valid input-output relationships from nogood container");
@@ -1717,10 +1717,12 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		BaseModelGenerator& mg,
 		ProgramCtx& ctx,
 		const AnnotatedGroundProgram& agp,
-		bool choiceRuleCompatible) :
-			mg(&mg), ctx(ctx), agp(agp){
+		bool choiceRuleCompatible,
+		SimpleNogoodContainerPtr ngc) :
+			mg(&mg), ctx(ctx), agp(agp), ngc(ngc){
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
+	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
@@ -1730,6 +1732,42 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 			ctx(ctx), mg(0), agp(agp){
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
+	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
+}
+
+void UnfoundedSetCheckerManager::initializeUnfoundedSetCheckers(){
+
+	bool flpdc_head = ctx.config.getOption("FLPDecisionCriterionHead");
+	bool flpdc_e = ctx.config.getOption("FLPDecisionCriterionE");
+
+	if (ctx.config.getOption("UFSCheckMonolithic")){
+		if (mg && (agp.hasECycles() || !flpdc_e)){
+			preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
+				(0, instantiateUnfoundedSetChecker(*mg, ctx, agp.getGroundProgram(), agp, InterpretationConstPtr(), ngc))
+			);
+		}else{
+			preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
+				(0, instantiateUnfoundedSetChecker(ctx, agp.getGroundProgram(), InterpretationConstPtr(), ngc))
+			);
+		}
+	}else{
+		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
+			if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp) && flpdc_e)){
+				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
+				continue;
+			}
+
+			if (mg && (agp.hasECycles(comp) || !flpdc_e)){
+				preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
+					(comp, instantiateUnfoundedSetChecker(*mg, ctx, agp.getProgramOfComponent(comp), agp, agp.getAtomsOfComponent(comp), ngc))
+				);
+			}else{
+				preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
+					(comp, instantiateUnfoundedSetChecker(ctx, agp.getProgramOfComponent(comp), agp.getAtomsOfComponent(comp), ngc))
+				);
+			}
+		}
+	}
 }
 
 void UnfoundedSetCheckerManager::computeChoiceRuleCompatibility(bool choiceRuleCompatible){

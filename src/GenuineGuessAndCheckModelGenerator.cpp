@@ -270,7 +270,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     // initialize UFS checker
     //   Concerning the last parameter, note that clasp backend uses choice rules for implementing disjunctions:
     //   this must be regarded in UFS checking (see examples/trickyufs.hex)
-    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3));
+    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
 
     // overtake nogoods from the factory
     {
@@ -426,6 +426,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
 	    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionE"))){
 		ufscm->learnNogoodsFromMainSearch(true);
+		nogoodGrounder->resetWatched(learnedEANogoods);
 		learnedEANogoods->clear();
 	}else{
 		learnedEANogoods->forgetLeastFrequentlyAdded();

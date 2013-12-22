@@ -455,6 +455,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("UseConstantSpace", 0); // see --help
 	pctx.config.setOption("NestedHEX", 0);
 	pctx.config.setOption("ClaspForceSingleThreaded", 0);
+	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -767,6 +768,7 @@ void processOptionsPrePlugin(
     { "legacyecycledetection", no_argument, 0, 46 },
     { "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
+		{ "lazyufscheckerinitialization", no_argument, 0, 47 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1433,6 +1435,10 @@ void processOptionsPrePlugin(
                         break;
 		case 46:
 			pctx.config.setOption("LegacyECycleDetection", 1);
+			break;
+		
+		case 47:
+			pctx.config.setOption("LazyUFSCheckerInitialization", 1);
 			break;
 		}
 	}
