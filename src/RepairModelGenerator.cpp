@@ -33,6 +33,7 @@
 #include "config.h"
 #endif
 
+
 #include "dlvhex2/RepairModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"

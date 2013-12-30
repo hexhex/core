@@ -7,6 +7,7 @@ export LD_LIBRARY_PATH=$2
 instance=$3
 to=$4
 
+# list of commend line parameters passed to the system (if there are no configurations)
 confstr="--extlearn --flpcheck=aufs ../reachability_strongsafety.hex $instance -n=1;--extlearn --flpcheck=aufs --liberalsafety ../reachability.hex $instance -n=1"
 confstr2=$(cat conf)
 if [ $? == 0 ]; then

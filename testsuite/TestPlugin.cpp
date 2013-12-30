@@ -945,6 +945,7 @@ public:
 		en++;
 	}
 
+	// Learning of the nogoods
 	BOOST_FOREACH (Tuple t, tuples1){
 		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
 			answer.get().push_back(t);
@@ -978,10 +979,14 @@ public:
   }
 };
 
+// ***** Impementation of setminus plugin (example)
 class TestSetMinusNongroundNogoodBasedLearningAtom:	// tests user-defined external learning
   public PluginAtom
 {
+
 public:
+
+// ***** Constructor of setminus plugin
   TestSetMinusNongroundNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNongroundNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
     #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
@@ -2001,6 +2006,159 @@ public:
 		}
 	}
 
+
+// ***** Impementation of SetUnion plugin (example)
+class TestSetUnionAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+
+public:
+
+// ***** Constructor of setunion plugin
+
+    TestSetUnionAtom():
+		// testSetUnion is the name of our external atom
+    PluginAtom("testSetUnion", true) // monotonic
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+		DBGLOG(DBG,"Constructor of SetUnion plugi is started!");
+    addInputPredicate(); // the first set
+    addInputPredicate(); // the second set
+    setOutputArity(1); // arity of the output list
+  }
+
+// function that evaluates external atom without learning
+// input parameters: 
+// 1. Query is a class, defined in PluginInterface.h (struct DLVHEX_EXPORT Query)
+// 2. Answer is a class, defined in PluginInterface.h (struct DLVHEX_EXPORT Answer)
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	// Iterators (objects that mark the begin and the end of some structure)
+  DBGLOG(DBG,"Retrieve function is started");
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	// go through all atoms using the iterator
+	while (en < en_end){
+	// extract the current atom
+	// *emn is the id of the current atom, to which the iterator points	
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+	// Iterate over the input elements of the current atom (for p(x,y), we go through x and y)
+	// We start with 1 because the position 0 is the predicate itself 
+		for (int i = 1; i < atom.tuple.size(); ++i){
+	// Get element number i from the input list
+			tu.push_back(atom.tuple[i]);
+		}
+	
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+
+	// for each element t of tuples1 add t to the answer 
+	BOOST_FOREACH (Tuple t, tuples1){
+		answer.get().push_back(t);
+	}
+
+	BOOST_FOREACH (Tuple t, tuples2){
+		answer.get().push_back(t);
+	}
+  }
+
+
+// If there is a finstion with nogoods then the one without nogoods should never be called 
+// function that evaluates external atom with learning
+// input parameters: 
+// 1. Query is a class, defined in PluginInterface.h (struct DLVHEX_EXPORT Query)
+// 2. Answer is a class, defined in PluginInterface.h (struct DLVHEX_EXPORT Answer)
+// 3. Learnt Nogoods
+
+  virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+  {
+	// find relevant input
+	// Iterators (objects that mark the begin and the end of some structure)
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	// go through all atoms using the iterator
+	while (en < en_end){
+	// extract the current atom
+	// *emn is the id of the current atom, to which the iterator points	
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+	// Iterate over the input elements of the current atom (for p(x,y), we go through x and y)
+	// We start with 1 because the position 0 is the predicate itself 
+		for (int i = 1; i < atom.tuple.size(); ++i){
+	// Get element number i from the input list
+			tu.push_back(atom.tuple[i]);
+		}
+	
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+	
+	// for each element t of tuples1 add t to the answer 
+	BOOST_FOREACH (Tuple t, tuples1){
+		answer.get().push_back(t);
+		// G in the end stands for ground learning (N for nonground)
+		// Create a new object where we store the copy of the first input predictae
+		OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+		// Copy input predicate with the parameters to at1
+		at1.tuple.push_back(query.input[0]);
+		// arity is always 1 here
+		BOOST_FOREACH (ID i, t) {	
+			at1.tuple.push_back(i);
+		}
+		// Start with empty nogood
+		Nogood nogood;
+		// Add the first literal
+		// In case of a nonground nogood, we need to store NAtom (storeOrdinaryNAtom)
+		// First true is the sign of the literal
+		// Second parameter is true if we create ground nogood
+ 
+		nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true, true));
+
+		// ExternalLearningHelper is a function that helps to create an element in a nogood for external atom: call the function for the given output tuple
+		// Always the same (add the false output in case if under the input parameters the result is true)
+		nogood.insert(NogoodContainer::createLiteral(ExternalLearningHelper::getOutputAtom(query, t, false).address, true, false));
+		// add the nogood to the set of all nogoods if nogoods is not zero
+		if (!!nogoods)
+			nogoods->addNogood(nogood);
+    DBGLOG(DBG,"nogood is " << nogood);
+
+	}
+
+	BOOST_FOREACH (Tuple t, tuples2){
+		answer.get().push_back(t);
+	}
+  }
+
+
+
+
+
+
+
+};
+
+
+
+// DO NOT FORGET to register the new atom!!!
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2029,6 +2187,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNongroundNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
@@ -2051,6 +2210,7 @@ public:
 
     return ret;
 	}
+
 
   virtual void setupProgramCtx(ProgramCtx& ctx)
 	{
@@ -2078,7 +2238,3 @@ void * PLUGINIMPORTFUNCTION()
 }
 
 /* vim: set noet sw=2 ts=2 tw=80: */
-
-// Local Variables:
-// mode: C++
-// End:
