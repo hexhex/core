@@ -993,6 +993,8 @@ public:
   {
     addInputPredicate();
     addInputPredicate();
+    prop.monotonicInputPredicates.insert(0);
+    prop.antimonotonicInputPredicates.insert(1);
     setOutputArity(1);
   }
 

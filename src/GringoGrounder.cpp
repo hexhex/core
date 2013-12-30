@@ -125,11 +125,19 @@ void GringoGrounder::Printer::printRule(ID id){
 
 	// disjunction in rule heads is | not v
 	printmany(r.head, " | ");
+	if(r.headGuard.size() > 0){
+		out << " : ";
+		printmany(r.headGuard, ",");
+	}
 	if( !r.body.empty() )
 	{
 		out << " :- ";
 		bool first = true;
+		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
+			// body contains also the head guard at the end, which needs to be skipped here
+			if (litIndex == r.body.size() - r.headGuard.size()) break;
+
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms
 			if (b.isBuiltinAtom()){
@@ -155,6 +163,8 @@ void GringoGrounder::Printer::printRule(ID id){
 			if (!first) out << ", ";
 			first = false;
 			print(b);
+
+			litIndex++;
 		}
 	}
 	out << ".";

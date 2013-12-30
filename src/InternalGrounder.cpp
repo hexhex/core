@@ -110,6 +110,10 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	Rule newrule = rule;
 	newrule.body.clear();
 
+	if (ruleID.hasRuleHeadGuard()){
+		throw GeneralError("Internal grounder cannot handle guards in rule heads");
+	}
+
 	// find length of the longest variable name
 	std::set<ID> vars;
 	BOOST_FOREACH (ID a, rule.body){

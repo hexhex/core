@@ -69,6 +69,12 @@ public:
 	 */
 	virtual void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr()) = 0;
 
+	/**
+	 * Changes the watched nogood container
+	 * @param watched Pointer to the new watched nogood container
+	 */
+	virtual void resetWatched(SimpleNogoodContainerPtr watched);
+
 	typedef boost::shared_ptr<NogoodGrounder> Ptr;
 };
 
@@ -83,6 +89,7 @@ private:
 public:
 	ImmediateNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
 	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+	void resetWatched(SimpleNogoodContainerPtr watched);
 };
 
 /**
@@ -97,6 +104,7 @@ private:
 public:
 	LazyNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
 	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+	void resetWatched(SimpleNogoodContainerPtr watched);
 };
 
 DLVHEX_NAMESPACE_END

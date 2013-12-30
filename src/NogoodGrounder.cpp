@@ -48,6 +48,10 @@ NogoodGrounder::NogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched
 	reg(reg), watched(watched), destination(destination), agp(agp){
 }
 
+void NogoodGrounder::resetWatched(SimpleNogoodContainerPtr watched){
+	this->watched = watched;
+}
+
 ImmediateNogoodGrounder::ImmediateNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp) :
 	NogoodGrounder(reg, watched, destination, agp), instantiatedNongroundNogoodsIndex(0){
 }
@@ -120,6 +124,11 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 
 	}
 	instantiatedNongroundNogoodsIndex = max;
+}
+
+void ImmediateNogoodGrounder::resetWatched(SimpleNogoodContainerPtr watched){
+	NogoodGrounder::resetWatched(watched);
+	instantiatedNongroundNogoodsIndex = 0;
 }
 
 LazyNogoodGrounder::LazyNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp) :
@@ -209,6 +218,11 @@ void LazyNogoodGrounder::update(InterpretationConstPtr partialInterpretation, In
 		en++;
 	}
 }
+
+void LazyNogoodGrounder::resetWatched(SimpleNogoodContainerPtr watched){
+	NogoodGrounder::resetWatched(watched);
+}
+
 
 DLVHEX_NAMESPACE_END
 

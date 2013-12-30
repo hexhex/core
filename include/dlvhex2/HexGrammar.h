@@ -198,6 +198,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(mlpModuleAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(ruleVariableDisjunction, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(weakconstraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);

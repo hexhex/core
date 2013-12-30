@@ -1,3 +1,12 @@
+2013-12-21  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/HexGrammar.tcc: Implement disjunctions
+	with variable length.
+	* include/dlvhex2/HexGrammar.h: Likewise.
+	* src/HexGrammar.cpp: Likewise.
+	* src/InternalGrounder.cpp: Likewise.	
+	* src/GringoGrounder.cpp: Likewise.	
+
 2013-12-11  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* checkout_build_owlcpp.cpp: Add owlcpp for

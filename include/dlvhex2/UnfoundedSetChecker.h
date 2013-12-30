@@ -322,6 +322,8 @@ private:
 	BaseModelGenerator* mg;
 	AnnotatedGroundProgram agp;
 	Nogood ufsnogood;
+	SimpleNogoodContainerPtr ngc;
+	
 	std::map<int, UnfoundedSetCheckerPtr> preparedUnfoundedSetCheckers;
 
 	std::vector<bool> intersectsWithNonHCFDisjunctiveRules;
@@ -351,12 +353,14 @@ public:
 	 * @param choiceRuleCompatible This parameter is necessary for the clasp backend, which implements non-head cycle free disjunctive rules using choice rules.
 	 *                             However, this transformation must be regarded in the optimization of UFS checking. More specifically, the UFS check MUST NOT BE SKIPPED
 	 *                             for HFC-free components if they contain such choice rules. For more information, see examples/trickyufs.hex.
+	 * @param ngc Pointer to a container with valid input-output relationships (EANogoods)
 	 */
 	UnfoundedSetCheckerManager(
 			BaseModelGenerator& mg,
 			ProgramCtx& ctx,
 			const AnnotatedGroundProgram& agp,
-			bool choiceRuleCompatible = false);
+			bool choiceRuleCompatible = false,
+			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
 	/**
 	 * Initializes the UFS checker without support for external atoms (they are considered as ordinary ones).
@@ -375,6 +379,11 @@ public:
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),
 			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
+
+	/**
+	 * Initializes the unfounded set checkers for all program components.
+	 */
+	void initializeUnfoundedSetCheckers();
 
 	/**
 	 * Forces all unfounded set checker in this manager to learn nogoods from main search now

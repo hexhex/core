@@ -93,6 +93,7 @@ struct ID:
 	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ       = 0x00100000;
+	static const IDKind PROPERTY_RULE_HEADGUARD  = 0x00300000;
 	static const IDKind PROPERTY_RULE_MODATOMS   = 0x00400000;
 	static const IDKind PROPERTY_RULE_UNMODATOMS = 0xFFBFFFFF;
 	static const IDKind PROPERTY_AUX             = 0x00800000;
@@ -182,6 +183,7 @@ struct ID:
 	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
 	inline bool doesRuleContainModatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_MODATOMS) == PROPERTY_RULE_MODATOMS; }
 	inline bool isRuleDisjunctive() const { assert(isRule()); return (kind & PROPERTY_RULE_DISJ) == PROPERTY_RULE_DISJ; }
+	inline bool hasRuleHeadGuard() const { assert(isRule()); return (kind & PROPERTY_RULE_HEADGUARD) == PROPERTY_RULE_HEADGUARD; }
 	inline bool isAnonymousVariable() const { assert(isVariableTerm()); return (kind & PROPERTY_VAR_ANONYMOUS) == PROPERTY_VAR_ANONYMOUS; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
