@@ -170,6 +170,13 @@ public:
   ID getIDByAuxiliaryConstantSymbol(ID auxConstantID) const;
   ID getIDByAuxiliaryVariableSymbol(ID auxConstantID) const;
 
+  // checks if an external atom auxiliary is positive or negated
+  bool isPositiveExternalAtomAuxiliaryAtom(ID auxID);
+  bool isNegativeExternalAtomAuxiliaryAtom(ID auxID);
+
+  // transforms an atom of form aux() into n_aux() and vice versa
+  ID swapExternalAtomAuxiliaryAtom(ID auxID);
+
   // maps an auxiliary constant symbol back to the type behind
   char getTypeByAuxiliaryConstantSymbol(ID auxConstantID) const;
 

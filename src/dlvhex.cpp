@@ -157,6 +157,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        generalize: Generalize learned ground nogoods to nonground nogoods" << std::endl
       << "                      By default, all options except \"generalize\" are enabled" << std::endl
+      << "     --supportsets     Exploits support sets for evaluation" << std::endl
       << "     --evalall  Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
       << "                       This makes nogood learning more independent of the sequence of external atom checks." << std::endl
       << "                       Only useful with --extlearn." << std::endl
@@ -456,6 +457,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("NestedHEX", 0);
 	pctx.config.setOption("ClaspForceSingleThreaded", 0);
 	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
+	pctx.config.setOption("SupportSets", 0);
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -769,6 +771,7 @@ void processOptionsPrePlugin(
     { "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ "lazyufscheckerinitialization", no_argument, 0, 47 },
+		{ "supportsets", no_argument, 0, 48 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1436,9 +1439,11 @@ void processOptionsPrePlugin(
 		case 46:
 			pctx.config.setOption("LegacyECycleDetection", 1);
 			break;
-		
 		case 47:
 			pctx.config.setOption("LazyUFSCheckerInitialization", 1);
+			break;
+		case 48:
+			pctx.config.setOption("SupportSets", 1);
 			break;
 		}
 	}

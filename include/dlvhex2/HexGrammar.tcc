@@ -644,6 +644,23 @@ struct sem<HexGrammarSemantics::externalAtom>
           DBGLOG(DBG, "External Atom has a wellordering using natural");
           atom.prop.wellorderingNatural.insert(std::pair<int, int>(prop.param1.address, prop.param2.address));
           break;
+        case ExtSourceProperty::PROVIDES_SUPPORTSETS:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"providessupportsets\" expects no parameters");
+          DBGLOG(DBG, "External Atom has a wellordering using natural");
+          atom.prop.providesSupportSets = true;
+          break;
+        case ExtSourceProperty::PROVIDES_COMPLETEPOSITIVESUPPORTSETS:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"providescompletepositivesupportsets\" expects no parameters");
+          DBGLOG(DBG, "External Atom has a wellordering using natural");
+          atom.prop.providesSupportSets = true;
+          atom.prop.providesCompletePositiveSupportSets = true;
+          break;
+        case ExtSourceProperty::PROVIDES_COMPLETENEGATIVESUPPORTSETS:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"providescompletepositivesupportsets\" expects no parameters");
+          DBGLOG(DBG, "External Atom has a wellordering using natural");
+          atom.prop.providesSupportSets = true;
+          atom.prop.providesCompleteNegativeSupportSets = true;
+          break;
       }
     }
   }
@@ -735,6 +752,12 @@ struct sem<HexGrammarSemantics::extSourceProperty>
 		target = ExtSourceProperty(ExtSourceProperty::FINITEFIBER, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "wellorderingstrlen"){
 		target = ExtSourceProperty(ExtSourceProperty::WELLORDERINGSTRLEN, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "providessupportsets"){
+		target = ExtSourceProperty(ExtSourceProperty::PROVIDES_SUPPORTSETS, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "providescompletepositivesupportsets"){
+		target = ExtSourceProperty(ExtSourceProperty::PROVIDES_COMPLETEPOSITIVESUPPORTSETS, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "providescompletenegativesupportsets"){
+		target = ExtSourceProperty(ExtSourceProperty::PROVIDES_COMPLETENEGATIVESUPPORTSETS, p1, p2);
 	}else{
 		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
 	}

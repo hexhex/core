@@ -1925,6 +1925,76 @@ public:
   }
 };
 
+class TestCautiousQueryAtom:
+  public PluginAtom
+{
+private:
+	ProgramCtx& ctx;
+
+public:
+  TestCautiousQueryAtom(ProgramCtx& ctx):
+    ctx(ctx), PluginAtom("testCautiousQuery", false)
+  {
+    addInputConstant();		// program file
+    addInputPredicate();		// input interpretation
+    addInputConstant();	// query atom
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+		InputProviderPtr ip(new InputProvider());
+		ip->addFileInput(getRegistry()->getTermStringByID(query.input[0]));
+
+    OrdinaryAtom queryAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+		queryAtom.tuple.push_back(query.input[2]);
+		ID queryAtomID = getRegistry()->storeOrdinaryAtom(queryAtom);
+
+		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(ip, query.interpretation);
+		BOOST_FOREACH (InterpretationPtr intr, answersets){
+			if (intr->getFact(queryAtomID.address) == false) return;
+		}
+		Tuple t;
+		answer.get().push_back(t);
+  }
+};
+
+class TestBraveQueryAtom:
+  public PluginAtom
+{
+private:
+	ProgramCtx& ctx;
+
+public:
+  TestBraveQueryAtom(ProgramCtx& ctx):
+    ctx(ctx), PluginAtom("testBraveQuery", false)
+  {
+    addInputConstant();		// program file
+    addInputPredicate();		// input interpretation
+    addInputConstant();	// query atom
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+		InputProviderPtr ip(new InputProvider());
+		ip->addFileInput(getRegistry()->getTermStringByID(query.input[0]));
+
+    OrdinaryAtom queryAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+		queryAtom.tuple.push_back(query.input[2]);
+		ID queryAtomID = getRegistry()->storeOrdinaryAtom(queryAtom);
+
+		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(ip, query.interpretation);
+		BOOST_FOREACH (InterpretationPtr intr, answersets){
+			if (intr->getFact(queryAtomID.address) == true){
+				Tuple t;
+				answer.get().push_back(t);
+				return;
+			}
+		}
+  }
+};
+
 class TestFinalCallback:
 	public FinalCallback
 {
@@ -2149,13 +2219,6 @@ public:
 		answer.get().push_back(t);
 	}
   }
-
-
-
-
-
-
-
 };
 
 
@@ -2189,7 +2252,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNongroundNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
@@ -2209,6 +2272,8 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestTrueMultiInpAtom2, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestReachableAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestDLSimulatorAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestCautiousQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestBraveQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

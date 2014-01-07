@@ -272,6 +272,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     //   this must be regarded in UFS checking (see examples/trickyufs.hex)
     ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
 
+    learnSupportSets();
+
     // overtake nogoods from the factory
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init nogoods");
@@ -375,6 +377,36 @@ void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 	// learn related nonground nogoods
 	int oldCount = learnedEANogoods->getNogoodCount();
 	ea.pluginAtom->generalizeNogood(ng, &factory.ctx, learnedEANogoods);
+}
+
+void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
+
+	if (factory.ctx.config.getOption("SupportSets")){
+		for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
+			InterpretationPtr evalIntr(new Interpretation(factory.reg));
+
+			// make sure that ALL input and input auxiliary atoms are true
+			evalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+
+			// evaluate the external atom if it provides support sets
+			const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+			if (eatom.getExtSourceProperties().providesSupportSets){
+				DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " for support set learning");
+				IntegrateExternalAnswerIntoInterpretationCB dummyCB(evalIntr);
+				evaluateExternalAtom(factory.ctx, eatom, evalIntr, dummyCB, supportSets);
+			}
+		}
+
+		// ground the support sets
+		NogoodGrounderPtr nogoodgrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), supportSets, supportSets, annotatedGroundProgram));
+		nogoodgrounder->update();
+
+		// all support sets are also learned nogoods
+		for (int i = 0; i < supportSets->getNogoodCount(); ++i){
+			const Nogood& ng = supportSets->getNogood(i);
+			if (ng.isGround()) learnedEANogoods->addNogood(ng);
+		}
+	}
 }
 
 void GenuineGuessAndCheckModelGenerator::updateEANogoods(
@@ -726,38 +758,133 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	       	InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtom");
 
-	// prepare EA evaluation
-	InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-	VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
 
-	InterpretationConstPtr evalIntr = partialInterpretation;
-	if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
-		// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
-		// clone and extend
-		InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
-		ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
-		evalIntr = ncevalIntr;
-	}
-	// evaluate the external atom (and learn nogoods if external learning is used)
-	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
-	evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
-	updateEANogoods(partialInterpretation, factWasSet, changed);
+	// if support sets are enabled, and the external atom provides complete support sets, we use them for verification
+	if (factory.ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets)){
 
-	// if the input to the external atom was complete, then remember the verification result
-	// (for incomplete input we cannot yet decide this)
-	if( !factWasSet || !bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(), factWasSet->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
-		bool verify = vcb.verify();
-		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
+		bool supportSetPolarity = eatom.getExtSourceProperties().providesCompletePositiveSupportSets;
+
+		DBGLOG(DBG, "Verifying external atom " << factory.innerEatoms[eaIndex] << " using complete support sets");
+
+		// The external atom is verified wrt. interpretation I iff
+		//      (i) it provides complete positive (negative) support sets
+		//  and (ii) for each ground instance which is true (false) in I, there is a support set which contains this ground instance negatively (positively)
+		//                                              and such that the remaining atoms are true in I.
+		// This is checked as follows:
+		//   1. Identify all support sets (Inp \cup { EA }) s.t. Inp \subseteq I is a set of ordinary literals and EA is an external atom replacement
+		//   2. Keep the set S of all positive EAs that must be true (false)
+		//   3. All positive ground instances which are true (false) in I must occur in S
+
+		InterpretationPtr implications(new Interpretation(factory.reg));	// this is set S
+		for (int i = 0; i < supportSets->getNogoodCount(); i++){
+			bool match = true;
+			ID ea = ID_FAIL;
+			const Nogood& ng = supportSets->getNogood(i);
+			if (ng.isGround()){
+				BOOST_FOREACH (ID id, ng){
+					if (id.isExternalAuxiliary()){
+						if (ea != ID_FAIL) throw GeneralError("Support set " + ng.getStringRepresentation(factory.reg) + " is invalid becaues it contains multiple external atom replacement literals");
+						ea = id;
+					}else if (!id.isNaf() != partialInterpretation->getFact(id.address)){
+						match = false;
+						break;
+					}
+				}
+				if (match){
+					if (ea == ID_FAIL) throw GeneralError("Support set " + ng.getStringRepresentation(factory.reg) + " is invalid becaues it contains no external atom replacement literal");
+
+					if (supportSetPolarity == true){
+						// store all and only the positive replacement atoms which must be true 
+						if (factory.reg->isPositiveExternalAtomAuxiliaryAtom(ea) && ea.isNaf()){
+							implications->setFact(ea.address);
+						}else if(factory.reg->isNegativeExternalAtomAuxiliaryAtom(ea) && !ea.isNaf()){
+							implications->setFact(factory.reg->swapExternalAtomAuxiliaryAtom(ea).address);
+						}else{
+							throw GeneralError("Set " + ng.getStringRepresentation(factory.reg) + " is an invalid positive support set");
+						}
+					}else{
+						// store all and only the positive replacement atoms which must be false
+						if (factory.reg->isPositiveExternalAtomAuxiliaryAtom(ea) && !ea.isNaf()){
+							implications->setFact(ea.address);
+						}else if(factory.reg->isNegativeExternalAtomAuxiliaryAtom(ea) && ea.isNaf()){
+							implications->setFact(factory.reg->swapExternalAtomAuxiliaryAtom(ea).address);
+						}else{
+							throw GeneralError("Set " + ng.getStringRepresentation(factory.reg) + " is an invalid negative support set");
+						}
+					}
+				}
+			}
+		}
+
+		bool verify = true;
+		bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
+		while (en < en_end){
+			ID id = reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary()){
+
+				if (factory.reg->isPositiveExternalAtomAuxiliaryAtom(id)){
+					if (implications->getFact(id.address) != supportSetPolarity){
+						verify = false;
+						break;
+					}
+				}else if (factory.reg->isNegativeExternalAtomAuxiliaryAtom(id)){
+					id = factory.reg->swapExternalAtomAuxiliaryAtom(id);
+
+					if (implications->getFact(id.address) == supportSetPolarity){
+						verify = false;
+						break;
+					}
+				}else{
+					assert("ID is neither a positive nor a negative external atom replacement");
+				}
+			}
+			en++;
+		}
+
 		eaVerified[eaIndex] = verify;
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
 		if( factory.ctx.config.getOption("NoPropagator") == 0 ){
 		  eaEvaluated[eaIndex] = true;
-                }
+		}
 
 		return !verify;
 	}else{
-		return false;
+		// otherwise we need to evaluate the external atom
+
+		// prepare EA evaluation
+		InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
+		VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
+
+		InterpretationConstPtr evalIntr = partialInterpretation;
+		if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+			// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
+			// clone and extend
+			InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
+			ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
+			evalIntr = ncevalIntr;
+		}
+		// evaluate the external atom (and learn nogoods if external learning is used)
+		DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
+		evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+		updateEANogoods(partialInterpretation, factWasSet, changed);
+
+		// if the input to the external atom was complete, then remember the verification result
+		// (for incomplete input we cannot yet decide this)
+		if( !factWasSet || !bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(), factWasSet->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
+			bool verify = vcb.verify();
+			DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
+			eaVerified[eaIndex] = verify;
+			// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
+			if( factory.ctx.config.getOption("NoPropagator") == 0 ){
+			  eaEvaluated[eaIndex] = true;
+		        }
+
+			return !verify;
+		}else{
+			return false;
+		}
 	}
 }
 

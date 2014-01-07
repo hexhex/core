@@ -137,6 +137,7 @@ protected:
   // internal solver
   NogoodGrounderPtr nogoodGrounder;		// grounder for nonground nogoods
   SimpleNogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
+  SimpleNogoodContainerPtr supportSets;		// all learned support sets
   int learnedEANogoodsTransferredIndex;		// the highest index in learnedEANogoods which has already been transferred to the solver
   GenuineGrounderPtr grounder;
   GenuineGroundSolverPtr solver;
@@ -149,6 +150,11 @@ protected:
    * Learns related nonground nogoods
    */
   void generalizeNogood(Nogood ng);
+
+  /**
+   * Learns all support sets provided by external sources and adds them to supportSets
+   */
+  void learnSupportSets();
 
   /**
    * Triggern nonground nogood learning and instantiation

@@ -64,11 +64,14 @@ struct ExtSourceProperty:
 		ATOMLEVELLINEAR,
 		TUPLELEVELLINEAR,
 		USES_ENVIRONMENT,
-        RELATIVEFINITEDOMAIN,
+		RELATIVEFINITEDOMAIN,
 		FINITEDOMAIN,
 		FINITEFIBER,
 		WELLORDERINGSTRLEN,
-		WELLORDERINGNATURAL
+		WELLORDERINGNATURAL,
+		PROVIDES_SUPPORTSETS,
+		PROVIDES_COMPLETEPOSITIVESUPPORTSETS,
+		PROVIDES_COMPLETENEGATIVESUPPORTSETS
 	};
 
 	Type type;
@@ -106,12 +109,14 @@ struct ExtSourceProperties
 	//          Then functionalStart=2 and the source may generate e.g. (a,b,c), (b,b,d), (b,a,d) but not (a,b,c), (a,b,d)
 	bool functional;
 	int functionalStart;
+	bool providesSupportSets;
+	bool providesCompletePositiveSupportSets;
+	bool providesCompleteNegativeSupportSets;
 
 	bool atomlevellinear;		// predicate input can be split into single atoms
 	bool tuplelevellinear;		// predicate input can be split such that only atoms with the same arguments must be grouped
 	bool usesEnvironment;		// external atom uses the environment (cf. acthex)
 	bool finiteFiber;		// a fixed output value can be produced only by finitly many different inputs
-//	bool wellorderingStrlen;	// the output uses constants which are at most as long as the longest input
 	std::set<std::pair<int, int> > wellorderingStrlen;	// <i,j> means that output value at position j is strictly smaller than at input position i (strlen)
 	std::set<std::pair<int, int> > wellorderingNatural;	// <i,j> means that output value at position j is strictly smaller than at input position i (wrt. natural numbers)
 
@@ -121,6 +126,9 @@ struct ExtSourceProperties
 		tuplelevellinear = false;
 		usesEnvironment = false;
 		finiteFiber = false;
+		providesSupportSets = false;
+		providesCompletePositiveSupportSets = false;
+		providesCompleteNegativeSupportSets = false;
 	}
 
 	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
