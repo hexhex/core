@@ -644,22 +644,27 @@ struct sem<HexGrammarSemantics::externalAtom>
           DBGLOG(DBG, "External Atom has a wellordering using natural");
           atom.prop.wellorderingNatural.insert(std::pair<int, int>(prop.param1.address, prop.param2.address));
           break;
-        case ExtSourceProperty::PROVIDES_SUPPORTSETS:
-	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"providessupportsets\" expects no parameters");
-          DBGLOG(DBG, "External Atom has a wellordering using natural");
-          atom.prop.providesSupportSets = true;
+        case ExtSourceProperty::SUPPORTSETS:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"supportsets\" expects no parameters");
+          DBGLOG(DBG, "External Atom provides support sets");
+          atom.prop.supportSets = true;
           break;
-        case ExtSourceProperty::PROVIDES_COMPLETEPOSITIVESUPPORTSETS:
-	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"providescompletepositivesupportsets\" expects no parameters");
-          DBGLOG(DBG, "External Atom has a wellordering using natural");
-          atom.prop.providesSupportSets = true;
-          atom.prop.providesCompletePositiveSupportSets = true;
+        case ExtSourceProperty::COMPLETEPOSITIVESUPPORTSETS:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"completepositivesupportsets\" expects no parameters");
+          DBGLOG(DBG, "External Atom provides complete positive support sets");
+          atom.prop.supportSets = true;
+          atom.prop.completePositiveSupportSets = true;
           break;
-        case ExtSourceProperty::PROVIDES_COMPLETENEGATIVESUPPORTSETS:
-	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"providescompletepositivesupportsets\" expects no parameters");
-          DBGLOG(DBG, "External Atom has a wellordering using natural");
-          atom.prop.providesSupportSets = true;
-          atom.prop.providesCompleteNegativeSupportSets = true;
+        case ExtSourceProperty::COMPLETENEGATIVESUPPORTSETS:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"completepositivesupportsets\" expects no parameters");
+          DBGLOG(DBG, "External Atom provides complete negative support sets");
+          atom.prop.supportSets = true;
+          atom.prop.completeNegativeSupportSets = true;
+          break;
+        case ExtSourceProperty::VARIABLEOUTPUTARITY:
+	  if (prop.param1 != ID_FAIL || prop.param2 != ID_FAIL) throw GeneralError("Property \"variableoutputarity\" expects no parameters");
+          DBGLOG(DBG, "External Atom has a variable output arity");
+          atom.prop.variableOutputArity = true;
           break;
       }
     }
@@ -752,12 +757,14 @@ struct sem<HexGrammarSemantics::extSourceProperty>
 		target = ExtSourceProperty(ExtSourceProperty::FINITEFIBER, p1, p2);
         }else if (boost::fusion::at_c<0>(source) == "wellorderingstrlen"){
 		target = ExtSourceProperty(ExtSourceProperty::WELLORDERINGSTRLEN, p1, p2);
-        }else if (boost::fusion::at_c<0>(source) == "providessupportsets"){
-		target = ExtSourceProperty(ExtSourceProperty::PROVIDES_SUPPORTSETS, p1, p2);
-        }else if (boost::fusion::at_c<0>(source) == "providescompletepositivesupportsets"){
-		target = ExtSourceProperty(ExtSourceProperty::PROVIDES_COMPLETEPOSITIVESUPPORTSETS, p1, p2);
-        }else if (boost::fusion::at_c<0>(source) == "providescompletenegativesupportsets"){
-		target = ExtSourceProperty(ExtSourceProperty::PROVIDES_COMPLETENEGATIVESUPPORTSETS, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "supportsets"){
+		target = ExtSourceProperty(ExtSourceProperty::SUPPORTSETS, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "completepositivesupportsets"){
+		target = ExtSourceProperty(ExtSourceProperty::COMPLETEPOSITIVESUPPORTSETS, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "completenegativesupportsets"){
+		target = ExtSourceProperty(ExtSourceProperty::COMPLETENEGATIVESUPPORTSETS, p1, p2);
+        }else if (boost::fusion::at_c<0>(source) == "variableoutputarity"){
+		target = ExtSourceProperty(ExtSourceProperty::VARIABLEOUTPUTARITY, p1, p2);
 	}else{
 		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
 	}

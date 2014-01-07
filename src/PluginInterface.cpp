@@ -185,7 +185,7 @@ PluginAtom::setOutputArity(const unsigned arity)
 bool
 PluginAtom::checkOutputArity(const unsigned arity) const
 {
-    return arity == outputSize;
+    return getExtSourceProperties().hasVariableOutputArity() || (arity == outputSize);
 }
 
 

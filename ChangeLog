@@ -1,3 +1,10 @@
+2014-01-07  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* include/ExtSourceProperties.h: Implement external atoms
+	with variable output arity
+	* include/HexGrammar.tcc: Likewise.
+	* src/PluginInterface.cpp: Likewise.
+
 2013-12-21  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/HexGrammar.tcc: Implement disjunctions

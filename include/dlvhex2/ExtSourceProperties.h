@@ -69,9 +69,10 @@ struct ExtSourceProperty:
 		FINITEFIBER,
 		WELLORDERINGSTRLEN,
 		WELLORDERINGNATURAL,
-		PROVIDES_SUPPORTSETS,
-		PROVIDES_COMPLETEPOSITIVESUPPORTSETS,
-		PROVIDES_COMPLETENEGATIVESUPPORTSETS
+		SUPPORTSETS,
+		COMPLETEPOSITIVESUPPORTSETS,
+		COMPLETENEGATIVESUPPORTSETS,
+		VARIABLEOUTPUTARITY
 	};
 
 	Type type;
@@ -109,9 +110,10 @@ struct ExtSourceProperties
 	//          Then functionalStart=2 and the source may generate e.g. (a,b,c), (b,b,d), (b,a,d) but not (a,b,c), (a,b,d)
 	bool functional;
 	int functionalStart;
-	bool providesSupportSets;
-	bool providesCompletePositiveSupportSets;
-	bool providesCompleteNegativeSupportSets;
+	bool supportSets;
+	bool completePositiveSupportSets;
+	bool completeNegativeSupportSets;
+	bool variableOutputArity;
 
 	bool atomlevellinear;		// predicate input can be split into single atoms
 	bool tuplelevellinear;		// predicate input can be split such that only atoms with the same arguments must be grouped
@@ -126,9 +128,10 @@ struct ExtSourceProperties
 		tuplelevellinear = false;
 		usesEnvironment = false;
 		finiteFiber = false;
-		providesSupportSets = false;
-		providesCompletePositiveSupportSets = false;
-		providesCompleteNegativeSupportSets = false;
+		supportSets = false;
+		completePositiveSupportSets = false;
+		completeNegativeSupportSets = false;
+		variableOutputArity = false;
 	}
 
 	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
@@ -220,6 +223,30 @@ struct ExtSourceProperties
 	*/
 	bool hasWellorderingNatural(int from, int to) const
 	{ return wellorderingNatural.count(std::pair<int, int>(from, to)) > 0; }
+
+	/**
+	* @return supportSets
+	*/
+	bool providesSupportSets() const
+	{ return supportSets; }
+
+	/**
+	* @return completePositiveSupportSets
+	*/
+	bool providesCompletePositiveSupportSets() const
+	{ return completePositiveSupportSets; }
+
+	/**
+	* @return completeNegativeSupportSets
+	*/
+	bool providesCompleteNegativeSupportSets() const
+	{ return completeNegativeSupportSets; }
+
+	/**
+	* @return variableOutputArity
+	*/
+	bool hasVariableOutputArity() const
+	{ return variableOutputArity; }
 };
 
 DLVHEX_NAMESPACE_END

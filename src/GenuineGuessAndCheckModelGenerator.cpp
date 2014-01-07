@@ -390,7 +390,7 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 
 			// evaluate the external atom if it provides support sets
 			const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-			if (eatom.getExtSourceProperties().providesSupportSets){
+			if (eatom.getExtSourceProperties().providesSupportSets()){
 				DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " for support set learning");
 				IntegrateExternalAnswerIntoInterpretationCB dummyCB(evalIntr);
 				evaluateExternalAtom(factory.ctx, eatom, evalIntr, dummyCB, supportSets);
@@ -761,9 +761,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 
 	// if support sets are enabled, and the external atom provides complete support sets, we use them for verification
-	if (factory.ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets)){
+	if (factory.ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets())){
 
-		bool supportSetPolarity = eatom.getExtSourceProperties().providesCompletePositiveSupportSets;
+		bool supportSetPolarity = eatom.getExtSourceProperties().providesCompletePositiveSupportSets();
 
 		DBGLOG(DBG, "Verifying external atom " << factory.innerEatoms[eaIndex] << " using complete support sets");
 

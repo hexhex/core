@@ -1939,23 +1939,51 @@ public:
     addInputPredicate();		// input interpretation
     addInputConstant();	// query atom
     setOutputArity(0);
+		prop.variableOutputArity = true;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
 		InputProviderPtr ip(new InputProvider());
-		ip->addFileInput(getRegistry()->getTermStringByID(query.input[0]));
+		ip->addFileInput(getRegistry()->terms.getByID(query.input[0]).getUnquotedString());
 
     OrdinaryAtom queryAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 		queryAtom.tuple.push_back(query.input[2]);
-		ID queryAtomID = getRegistry()->storeOrdinaryAtom(queryAtom);
 
+		// compute all answer sets of the subprogram
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(ip, query.interpretation);
-		BOOST_FOREACH (InterpretationPtr intr, answersets){
-			if (intr->getFact(queryAtomID.address) == false) return;
+
+		// create a mask for the query predicate
+		PredicateMaskPtr pm = PredicateMaskPtr(new PredicateMask());
+		pm->setRegistry(getRegistry());
+		pm->addPredicate(query.input[2]);
+		pm->updateMask();
+
+		// special case: if there are no answer sets, cautious ground queries are trivially true, cautious non-ground queries are false for all ground substituions (by definition)
+		if (answersets.size() == 0){
+			if (query.pattern.size() == 0){
+				Tuple t;
+				answer.get().push_back(t);
+			}
+		}else{
+			// get the set of atoms over the query predicate which are true in all answer sets
+			InterpretationPtr out = InterpretationPtr(new Interpretation(getRegistry()));
+			out->add(*pm->mask());
+			BOOST_FOREACH (InterpretationPtr intr, answersets){
+				out->getStorage() &= intr->getStorage();
+			}
+
+			// retrieve the output tuples
+		  bm::bvector<>::enumerator en = out->getStorage().first();
+		  bm::bvector<>::enumerator en_end = out->getStorage().end();
+		  while (en < en_end){
+				const OrdinaryAtom& gatom = getRegistry()->ogatoms.getByAddress(*en);
+				Tuple t;
+				for (int i = 1; i < gatom.tuple.size(); ++i) t.push_back(gatom.tuple[i]);
+				answer.get().push_back(t);
+				en++;
+			}
 		}
-		Tuple t;
-		answer.get().push_back(t);
   }
 };
 
@@ -1973,24 +2001,42 @@ public:
     addInputPredicate();		// input interpretation
     addInputConstant();	// query atom
     setOutputArity(0);
+		prop.variableOutputArity = true;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
 		InputProviderPtr ip(new InputProvider());
-		ip->addFileInput(getRegistry()->getTermStringByID(query.input[0]));
+		ip->addFileInput(getRegistry()->terms.getByID(query.input[0]).getUnquotedString());
 
     OrdinaryAtom queryAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 		queryAtom.tuple.push_back(query.input[2]);
-		ID queryAtomID = getRegistry()->storeOrdinaryAtom(queryAtom);
 
+		// compute all answer sets of the subprogram
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(ip, query.interpretation);
+
+		// create a mask for the query predicate
+		PredicateMaskPtr pm = PredicateMaskPtr(new PredicateMask());
+		pm->setRegistry(getRegistry());
+		pm->addPredicate(query.input[2]);
+		pm->updateMask();
+
+		// special case: if there are no answer sets, cautious ground queries are trivially true, cautious non-ground queries are false for all ground substituions (by definition)
+		// get the set of atoms over the query predicate which are true in at least one answer set
+		InterpretationPtr out = InterpretationPtr(new Interpretation(getRegistry()));
 		BOOST_FOREACH (InterpretationPtr intr, answersets){
-			if (intr->getFact(queryAtomID.address) == true){
-				Tuple t;
-				answer.get().push_back(t);
-				return;
-			}
+			out->getStorage() |= (pm->mask()->getStorage() & intr->getStorage());
+		}
+
+		// retrieve the output tuples
+	  bm::bvector<>::enumerator en = out->getStorage().first();
+	  bm::bvector<>::enumerator en_end = out->getStorage().end();
+	  while (en < en_end){
+			const OrdinaryAtom& gatom = getRegistry()->ogatoms.getByAddress(*en);
+			Tuple t;
+			for (int i = 1; i < gatom.tuple.size(); ++i) t.push_back(gatom.tuple[i]);
+			answer.get().push_back(t);
+			en++;
 		}
   }
 };
