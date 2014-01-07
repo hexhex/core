@@ -382,6 +382,7 @@ void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 
 	if (factory.ctx.config.getOption("SupportSets")){
+		supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());		
 		for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
 			InterpretationPtr evalIntr(new Interpretation(factory.reg));
 
