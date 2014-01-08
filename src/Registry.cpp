@@ -756,28 +756,28 @@ ID Registry::getIDByAuxiliaryVariableSymbol(ID auxVariableID) const{
 bool Registry::isPositiveExternalAtomAuxiliaryAtom(ID auxID){
 	assert(auxID.isExternalAuxiliary() && !auxID.isExternalInputAuxiliary() && "auxID must be an external atom auxiliary ID");
 
-	OrdinaryAtom ogatom = ogatoms.getByID(auxID);
-	ID pos = getAuxiliaryConstantSymbol('r', getIDByAuxiliaryConstantSymbol(ogatom.tuple[0]));
-	return (ogatom.tuple[0] == pos);
+	const OrdinaryAtom& oatom = lookupOrdinaryAtom(auxID);
+	ID pos = getAuxiliaryConstantSymbol('r', getIDByAuxiliaryConstantSymbol(oatom.tuple[0]));
+	return (oatom.tuple[0] == pos);
 }
 
 bool Registry::isNegativeExternalAtomAuxiliaryAtom(ID auxID){
 	assert(auxID.isExternalAuxiliary() && !auxID.isExternalInputAuxiliary() && "auxID must be an external atom auxiliary ID");
 
-	OrdinaryAtom ogatom = ogatoms.getByID(auxID);
-	ID neg = getAuxiliaryConstantSymbol('n', getIDByAuxiliaryConstantSymbol(ogatom.tuple[0]));
-	return (ogatom.tuple[0] == neg);
+	const OrdinaryAtom& oatom = lookupOrdinaryAtom(auxID);
+	ID neg = getAuxiliaryConstantSymbol('n', getIDByAuxiliaryConstantSymbol(oatom.tuple[0]));
+	return (oatom.tuple[0] == neg);
 }
 
 ID Registry::swapExternalAtomAuxiliaryAtom(ID auxID){
 	assert(auxID.isExternalAuxiliary() && !auxID.isExternalInputAuxiliary() && "auxID must be an external atom auxiliary ID");
 
-	OrdinaryAtom ogatom = ogatoms.getByID(auxID);
-	ID pos = getAuxiliaryConstantSymbol('r', getIDByAuxiliaryConstantSymbol(ogatom.tuple[0]));
-	ID neg = getAuxiliaryConstantSymbol('n', getIDByAuxiliaryConstantSymbol(ogatom.tuple[0]));
+	OrdinaryAtom oatom = lookupOrdinaryAtom(auxID);
+	ID pos = getAuxiliaryConstantSymbol('r', getIDByAuxiliaryConstantSymbol(oatom.tuple[0]));
+	ID neg = getAuxiliaryConstantSymbol('n', getIDByAuxiliaryConstantSymbol(oatom.tuple[0]));
 
-	ogatom.tuple[0] = (ogatom.tuple[0] == pos ? neg : pos);
-	ID newID = storeOrdinaryGAtom(ogatom);
+	oatom.tuple[0] = (oatom.tuple[0] == pos ? neg : pos);
+	ID newID = storeOrdinaryAtom(oatom);
 	newID.kind = auxID.kind;
 
 	return newID;

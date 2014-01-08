@@ -1925,7 +1925,11 @@ public:
   }
 };
 
-class TestCautiousQueryAtom:
+// Common base class for cautious and brave queries.
+// The only difference between answering cautious and brave queries
+// concerns the aggregation of the answer sets of the subprogram,
+// thus almost everything is implemented in this class.
+class TestASPQueryAtom:
   public PluginAtom
 {
 private:
@@ -1933,16 +1937,19 @@ private:
 	bool learnedSupportSets;	// we need to learn them only once
 
 public:
-  TestCautiousQueryAtom(ProgramCtx& ctx):
-    ctx(ctx), PluginAtom("testCautiousQuery", false)
+  TestASPQueryAtom(ProgramCtx& ctx, std::string atomName):
+    ctx(ctx), PluginAtom(atomName, false /* not monotonic */)
   {
     addInputConstant();		// program file
-    addInputPredicate();		// input interpretation
-    addInputConstant();	// query atom
+    addInputPredicate();	// input interpretation
+    addInputConstant();		// query predicate
     setOutputArity(0);
-		prop.variableOutputArity = true;
-		prop.supportSets = true;
-		prop.completePositiveSupportSets = true;
+
+		prop.variableOutputArity = true;					// the output arity of this external atom depends on the arity of the query predicate
+		prop.supportSets = true;									// we provide support sets
+		prop.completePositiveSupportSets = true;	// we even provide (positive) complete support sets
+
+		// optimization (see below)
 		learnedSupportSets = false;
   }
 
@@ -1955,135 +1962,166 @@ public:
   {
 		RegistryPtr reg = getRegistry();
 
+		// input parameters to external atom &testCautiousQuery["prog", p, q](x):
+		//	query.input[0] (i.e. "prog"): filename of the program P over which we do query answering
+		//	query.input[1] (i.e. p): a predicate name; the set F of all atoms over this predicate are added to P as facts before evaluation
+		//	query.input[2] (i.e. q): name of the query predicate; the external atom will be true for all output vectors x such that q(x) is true in every answer set of P \cup F
+
+		// read the subprogram from the file
 		InputProviderPtr ip(new InputProvider());
 		ip->addFileInput(getRegistry()->terms.getByID(query.input[0]).getUnquotedString());
 
-    OrdinaryAtom queryAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		queryAtom.tuple.push_back(query.input[2]);
-
-		// compute all answer sets of the subprogram
+		// prepare data structures for the subprogram P
 		ProgramCtx pc = ctx;
 		pc.idb.clear();
 		pc.edb = InterpretationPtr(new Interpretation(reg));
 		pc.currentOptimum.clear();
 		pc.config.setOption("NumberOfModels",0);
-		pc.edb->getStorage() |= query.interpretation->getStorage();
 		pc.inputProvider = ip;
 		ip.reset();
+
+		// add facts F to the EDB of P
+		pc.edb->getStorage() |= query.interpretation->getStorage();
+
+		// compute all answer sets of P \cup F
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
 
-		// learn support sets
+		// learn support sets (only if --supportsets option is specified on the command line)
 		if (!learnedSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
+			// for all rules r of P
 			BOOST_FOREACH (ID ruleID, pc.idb){
 				const Rule& rule = reg->rules.getByID(ruleID);
-				// For each rule of kind
-				//			h :- B,
-				// where h is a single atom and B contains only positive atoms,
-				// we learn the support set: { T b | b \in B } \cup { F h }, i.e.,
-				// whenever all body atoms are true, then the head atom is also true.
-				if (rule.head.size() == 1){
+
+				// Check if r is a rule of form
+				//			hatom :- B,
+				// where hatom=q(X) is a single atom over query predicate q and B contains only positive atoms.
+				bool posBody = true;
+				BOOST_FOREACH (ID b, rule.body){
+					if (b.isNaf()) posBody = false;
+				}
+				if (rule.head.size() == 1 && posBody){
 					const OrdinaryAtom& hatom = reg->lookupOrdinaryAtom(rule.head[0]);
 					if (hatom.tuple[0] == query.input[2]){
 
+						// We learn the following (nonground) support set: { T b | b \in B } \cup { F e_{&testCautiousQuery["prog", p, q]}(X) }.
+						// This is because if all body atoms are in the input (atoms over predicate p), then q(X) is true in every answer set of P \cup F.
+						// But then, since q is the query predicate, also &testCautiousQuery["prog", p, q](X) is true.
 						Nogood supportset;
+
+						// add all (positive) body atoms
 						BOOST_FOREACH (ID blit, rule.body) supportset.insert(NogoodContainer::createLiteral(blit));
-						supportset.insert(NogoodContainer::createLiteral(ExternalLearningHelper::getOutputAtom(query, Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()), false).address, true, rule.head[0].isOrdinaryGroundAtom()));
+
+						// add e_{&testCautiousQuery["prog", p, q]}(X) using a helper function	
+						supportset.insert(NogoodContainer::createLiteral(
+																ExternalLearningHelper::getOutputAtom(
+																		query,	// this parameter is always the same
+																		Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()),	// hatom.tuple[0]=q and hatom.tuple[i] for i >= 1 stores the elements of X;
+																																												// here we need only the X and use hatom.tuple.begin() + 1 to eliminate the predicate q
+																		true /* technical detail, is set to true almost always */).address,
+																false,																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
+																rule.head[0].isOrdinaryGroundAtom()										/* specify if this literal is ground or nonground (the same as the head atom) */ ));
 
 						DBGLOG(DBG, "Learn support set: " << supportset.getStringRepresentation(reg));
+
+						// actually learn this nogood
 						nogoods->addNogood(supportset);
 					}
 				}
 			}
+
+			// learn support sets only once (just an optimization)
 			learnedSupportSets = true;
 		}
 
-
-		// create a mask for the query predicate
+		// create a mask for the query predicate, i.e., retrieve all atoms over the query predicate
 		PredicateMaskPtr pm = PredicateMaskPtr(new PredicateMask());
 		pm->setRegistry(reg);
 		pm->addPredicate(query.input[2]);
 		pm->updateMask();
 
-		// special case: if there are no answer sets, cautious ground queries are trivially true, cautious non-ground queries are false for all ground substituions (by definition)
+		// now since we know all answer sets, we can answer the query
+		answerQuery(pm, answersets, query, answer);
+  }
+
+  // define an abstract method for aggregating the answer sets (this part is specific for cautious and brave queries)
+	virtual void answerQuery(PredicateMaskPtr pm, std::vector<InterpretationPtr>& answersets, const Query& query, Answer& answer) = 0;
+};
+
+class TestCautiousQueryAtom:
+  public TestASPQueryAtom
+{
+public:
+  TestCautiousQueryAtom(ProgramCtx& ctx):
+    TestASPQueryAtom(ctx, "testCautiousQuery")
+  { }
+
+	// implement the specific part
+	void answerQuery(PredicateMaskPtr pm, std::vector<InterpretationPtr>& answersets, const Query& query, Answer& answer){
+
+		RegistryPtr reg = getRegistry();
+
+		// special case: if there are no answer sets, cautious ground queries are trivially true, but cautious non-ground queries are always false for all ground substituions (by definition)
 		if (answersets.size() == 0){
 			if (query.pattern.size() == 0){
+				// return the empty tuple
 				Tuple t;
 				answer.get().push_back(t);
 			}
 		}else{
-			// get the set of atoms over the query predicate which are true in all answer sets
+
 			InterpretationPtr out = InterpretationPtr(new Interpretation(reg));
 			out->add(*pm->mask());
+
+			// get the set of atoms over the query predicate which are true in all answer sets
 			BOOST_FOREACH (InterpretationPtr intr, answersets){
 				out->getStorage() &= intr->getStorage();
 			}
 
-			// retrieve the output tuples
-		  bm::bvector<>::enumerator en = out->getStorage().first();
-		  bm::bvector<>::enumerator en_end = out->getStorage().end();
-		  while (en < en_end){
-				const OrdinaryAtom& gatom = reg->ogatoms.getByAddress(*en);
-				Tuple t;
-				for (int i = 1; i < gatom.tuple.size(); ++i) t.push_back(gatom.tuple[i]);
-				answer.get().push_back(t);
+			// retrieve all output atoms oatom=q(c)
+			bm::bvector<>::enumerator en = out->getStorage().first();
+			bm::bvector<>::enumerator en_end = out->getStorage().end();
+			while (en < en_end){
+				const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
+
+				// add c to the output
+				answer.get().push_back(Tuple(oatom.tuple.begin() + 1, oatom.tuple.end()));
 				en++;
 			}
 		}
-  }
+	}
 };
 
 class TestBraveQueryAtom:
-  public PluginAtom
+  public TestASPQueryAtom
 {
-private:
-	ProgramCtx& ctx;
-
 public:
   TestBraveQueryAtom(ProgramCtx& ctx):
-    ctx(ctx), PluginAtom("testBraveQuery", false)
-  {
-    addInputConstant();		// program file
-    addInputPredicate();		// input interpretation
-    addInputConstant();	// query atom
-    setOutputArity(0);
-		prop.variableOutputArity = true;
-  }
+    TestASPQueryAtom(ctx, "testCautiousBrave")
+  { }
 
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-		InputProviderPtr ip(new InputProvider());
-		ip->addFileInput(getRegistry()->terms.getByID(query.input[0]).getUnquotedString());
+	// implement the specific part
+	virtual void answerQuery(PredicateMaskPtr pm, std::vector<InterpretationPtr>& answersets, const Query& query, Answer& answer){
 
-    OrdinaryAtom queryAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		queryAtom.tuple.push_back(query.input[2]);
+		RegistryPtr reg = getRegistry();
 
-		// compute all answer sets of the subprogram
-		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(ip, query.interpretation);
+		InterpretationPtr out = InterpretationPtr(new Interpretation(reg));
 
-		// create a mask for the query predicate
-		PredicateMaskPtr pm = PredicateMaskPtr(new PredicateMask());
-		pm->setRegistry(getRegistry());
-		pm->addPredicate(query.input[2]);
-		pm->updateMask();
-
-		// special case: if there are no answer sets, cautious ground queries are trivially true, cautious non-ground queries are false for all ground substituions (by definition)
-		// get the set of atoms over the query predicate which are true in at least one answer set
-		InterpretationPtr out = InterpretationPtr(new Interpretation(getRegistry()));
+		// get the set of atoms over the query predicate which are true in all answer sets
 		BOOST_FOREACH (InterpretationPtr intr, answersets){
 			out->getStorage() |= (pm->mask()->getStorage() & intr->getStorage());
 		}
 
-		// retrieve the output tuples
-	  bm::bvector<>::enumerator en = out->getStorage().first();
-	  bm::bvector<>::enumerator en_end = out->getStorage().end();
-	  while (en < en_end){
-			const OrdinaryAtom& gatom = getRegistry()->ogatoms.getByAddress(*en);
-			Tuple t;
-			for (int i = 1; i < gatom.tuple.size(); ++i) t.push_back(gatom.tuple[i]);
-			answer.get().push_back(t);
+		// retrieve all output atoms oatom=q(c)
+		bm::bvector<>::enumerator en = out->getStorage().first();
+		bm::bvector<>::enumerator en_end = out->getStorage().end();
+		while (en < en_end){
+			const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
+
+			// add c to the output
+			answer.get().push_back(Tuple(oatom.tuple.begin() + 1, oatom.tuple.end()));
 			en++;
 		}
-  }
+	}
 };
 
 class TestFinalCallback:
@@ -2313,8 +2351,6 @@ public:
 };
 
 
-
-// DO NOT FORGET to register the new atom!!!
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;

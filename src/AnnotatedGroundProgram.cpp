@@ -645,7 +645,7 @@ bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaI
 			BOOST_FOREACH (ID id, ng){
 				// because nogoods eliminate unnecessary flags from IDs in order to store them in a uniform way,
 				// we need to lookup the atom here to get its attributes
-				IDKind kind = reg->lookupOrdinaryAtom(id).kind;
+				IDKind kind = reg->lookupOrdinaryAtom(id).kind | (id.isNaf() ? ID::NAF_MASK : 0);
 				if ((kind & ID::PROPERTY_EXTERNALAUX) == ID::PROPERTY_EXTERNALAUX){
 					if (ea != ID_FAIL) throw GeneralError("Support set " + ng.getStringRepresentation(reg) + " is invalid becaues it contains multiple external atom replacement literals");
 					ea = ID(kind, id.address);

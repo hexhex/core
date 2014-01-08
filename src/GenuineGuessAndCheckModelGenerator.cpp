@@ -398,9 +398,13 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 			}
 		}
 
-		// ground the support sets
+		// ground the support sets exhaustively
 		NogoodGrounderPtr nogoodgrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), supportSets, supportSets, annotatedGroundProgram));
-		nogoodgrounder->update();
+		int nc = 0;
+		while (nc < supportSets->getNogoodCount()){
+			nc = supportSets->getNogoodCount();
+			nogoodgrounder->update();
+		}
 
 		// add them to the annotated ground program to make use of them for verification
 		DBGLOG(DBG, "Adding support sets to annotated ground program");
