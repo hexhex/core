@@ -1930,6 +1930,7 @@ class TestCautiousQueryAtom:
 {
 private:
 	ProgramCtx& ctx;
+	bool learnedSupportSets;	// we need to learn them only once
 
 public:
   TestCautiousQueryAtom(ProgramCtx& ctx):
@@ -1940,10 +1941,20 @@ public:
     addInputConstant();	// query atom
     setOutputArity(0);
 		prop.variableOutputArity = true;
+		prop.supportSets = true;
+		prop.completePositiveSupportSets = true;
+		learnedSupportSets = false;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
+		assert(false);
+	}
+
+  virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+  {
+		RegistryPtr reg = getRegistry();
+
 		InputProviderPtr ip(new InputProvider());
 		ip->addFileInput(getRegistry()->terms.getByID(query.input[0]).getUnquotedString());
 
@@ -1951,11 +1962,45 @@ public:
 		queryAtom.tuple.push_back(query.input[2]);
 
 		// compute all answer sets of the subprogram
-		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(ip, query.interpretation);
+		ProgramCtx pc = ctx;
+		pc.idb.clear();
+		pc.edb = InterpretationPtr(new Interpretation(reg));
+		pc.currentOptimum.clear();
+		pc.config.setOption("NumberOfModels",0);
+		pc.edb->getStorage() |= query.interpretation->getStorage();
+		pc.inputProvider = ip;
+		ip.reset();
+		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
+
+		// learn support sets
+		if (!learnedSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
+			BOOST_FOREACH (ID ruleID, pc.idb){
+				const Rule& rule = reg->rules.getByID(ruleID);
+				// For each rule of kind
+				//			h :- B,
+				// where h is a single atom and B contains only positive atoms,
+				// we learn the support set: { T b | b \in B } \cup { F h }, i.e.,
+				// whenever all body atoms are true, then the head atom is also true.
+				if (rule.head.size() == 1){
+					const OrdinaryAtom& hatom = reg->lookupOrdinaryAtom(rule.head[0]);
+					if (hatom.tuple[0] == query.input[2]){
+
+						Nogood supportset;
+						BOOST_FOREACH (ID blit, rule.body) supportset.insert(NogoodContainer::createLiteral(blit));
+						supportset.insert(NogoodContainer::createLiteral(ExternalLearningHelper::getOutputAtom(query, Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()), false).address, true, rule.head[0].isOrdinaryGroundAtom()));
+
+						DBGLOG(DBG, "Learn support set: " << supportset.getStringRepresentation(reg));
+						nogoods->addNogood(supportset);
+					}
+				}
+			}
+			learnedSupportSets = true;
+		}
+
 
 		// create a mask for the query predicate
 		PredicateMaskPtr pm = PredicateMaskPtr(new PredicateMask());
-		pm->setRegistry(getRegistry());
+		pm->setRegistry(reg);
 		pm->addPredicate(query.input[2]);
 		pm->updateMask();
 
@@ -1967,7 +2012,7 @@ public:
 			}
 		}else{
 			// get the set of atoms over the query predicate which are true in all answer sets
-			InterpretationPtr out = InterpretationPtr(new Interpretation(getRegistry()));
+			InterpretationPtr out = InterpretationPtr(new Interpretation(reg));
 			out->add(*pm->mask());
 			BOOST_FOREACH (InterpretationPtr intr, answersets){
 				out->getStorage() &= intr->getStorage();
@@ -1977,7 +2022,7 @@ public:
 		  bm::bvector<>::enumerator en = out->getStorage().first();
 		  bm::bvector<>::enumerator en_end = out->getStorage().end();
 		  while (en < en_end){
-				const OrdinaryAtom& gatom = getRegistry()->ogatoms.getByAddress(*en);
+				const OrdinaryAtom& gatom = reg->ogatoms.getByAddress(*en);
 				Tuple t;
 				for (int i = 1; i < gatom.tuple.size(); ++i) t.push_back(gatom.tuple[i]);
 				answer.get().push_back(t);

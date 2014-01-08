@@ -54,6 +54,10 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
 	BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
 	wellorderingStrlen.insert(prop2.wellorderingStrlen.begin(), prop2.wellorderingStrlen.end());
 	wellorderingNatural.insert(prop2.wellorderingNatural.begin(), prop2.wellorderingNatural.end());
+	supportSets |= prop2.supportSets;
+	completePositiveSupportSets |= prop2.completePositiveSupportSets;
+	completeNegativeSupportSets |= prop2.completeNegativeSupportSets;
+	variableOutputArity |= prop2.variableOutputArity;
 }
 
 /**

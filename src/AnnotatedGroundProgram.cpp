@@ -86,7 +86,8 @@ AnnotatedGroundProgram::operator=(
 	eCycles = other.eCycles;
 	programComponents = other.programComponents;
 	headCyclesTotal = other.headCyclesTotal;
-  eCyclesTotal = other.eCyclesTotal;
+	eCyclesTotal = other.eCyclesTotal;
+	supportSets = other.supportSets;
   return *this;
 }
 
@@ -600,6 +601,142 @@ ID AnnotatedGroundProgram::getIndexedEAtom(int index) const{
 InterpretationConstPtr AnnotatedGroundProgram::getProgramMask() const{
 	assert(!!programMask);
 	return programMask;
+}
+
+
+void AnnotatedGroundProgram::setCompleteSupportSetsForVerification(SimpleNogoodContainerPtr supportSets){
+	this->supportSets = supportSets;
+}
+
+bool AnnotatedGroundProgram::allowsForVerificationUsingCompleteSupportSets() const{
+	return !!supportSets;
+}
+
+SimpleNogoodContainerPtr AnnotatedGroundProgram::getCompleteSupportSetsForVerification(){
+	return supportSets;
+}
+
+bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation){
+
+	const ExternalAtom& eatom = reg->eatoms.getByID(indexedEatoms[eaIndex]);
+
+	bool supportSetPolarity = eatom.getExtSourceProperties().providesCompletePositiveSupportSets();
+
+	DBGLOG(DBG, "Verifying external atom " << indexedEatoms[eaIndex] << " using complete support sets");
+
+	// The external atom is verified wrt. interpretation I iff
+	//      (i) it provides complete positive (negative) support sets
+	//  and (ii) for each ground instance which is true (false) in I, there is a support set which contains this ground instance negatively (positively)
+	//                                              and such that the remaining atoms are true in I.
+	// This is checked as follows:
+	//   1. Identify all support sets (Inp \cup { EA }) s.t. Inp \subseteq I is a set of ordinary literals and EA is an external atom replacement
+	//   2. Keep the set S of all positive EAs that must be true (false)
+	//   3. All positive ground instances which are true (false) in I must occur in S
+
+#ifdef DEBUG
+	Nogood impl_ng;
+#endif
+	InterpretationPtr implications(new Interpretation(reg));	// this is set S
+	for (int i = 0; i < supportSets->getNogoodCount(); i++){
+		ID mismatch = ID_FAIL;
+		ID ea = ID_FAIL;
+		const Nogood& ng = supportSets->getNogood(i);
+		if (ng.isGround()){
+			BOOST_FOREACH (ID id, ng){
+				// because nogoods eliminate unnecessary flags from IDs in order to store them in a uniform way,
+				// we need to lookup the atom here to get its attributes
+				IDKind kind = reg->lookupOrdinaryAtom(id).kind;
+				if ((kind & ID::PROPERTY_EXTERNALAUX) == ID::PROPERTY_EXTERNALAUX){
+					if (ea != ID_FAIL) throw GeneralError("Support set " + ng.getStringRepresentation(reg) + " is invalid becaues it contains multiple external atom replacement literals");
+					ea = ID(kind, id.address);
+				}else if (!id.isNaf() != interpretation->getFact(id.address)){
+#ifdef DEBUG
+					std::stringstream ss;
+					RawPrinter printer(ss, reg);
+					printer.print(id);
+					ss << " is false in " << *interpretation;
+					DBGLOG(DBG, "Mismatch: " << ss.str());
+#endif
+					mismatch = id;
+					break;
+				}
+			}
+			DBGLOG(DBG, "Analyzing support set " << ng.getStringRepresentation(reg) << " yielded " << (mismatch != ID_FAIL ? "mis" : "") << "match");
+			if (mismatch == ID_FAIL){
+				if (ea == ID_FAIL) throw GeneralError("Support set " + ng.getStringRepresentation(reg) + " is invalid becaues it contains no external atom replacement literal");
+
+				if (supportSetPolarity == true){
+					// store all and only the positive replacement atoms which must be true 
+					if (reg->isPositiveExternalAtomAuxiliaryAtom(ea) && ea.isNaf()){
+#ifdef DEBUG
+						impl_ng.insert(ea);
+#endif
+						implications->setFact(ea.address);
+					}else if(reg->isNegativeExternalAtomAuxiliaryAtom(ea) && !ea.isNaf()){
+#ifdef DEBUG
+						impl_ng.insert(ea);
+#endif
+						implications->setFact(reg->swapExternalAtomAuxiliaryAtom(ea).address);
+					}else{
+						throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is an invalid positive support set");
+					}
+				}else{
+					// store all and only the positive replacement atoms which must be false
+					if (reg->isPositiveExternalAtomAuxiliaryAtom(ea) && !ea.isNaf()){
+#ifdef DEBUG
+						impl_ng.insert(ea);
+#endif
+						implications->setFact(ea.address);
+					}else if(reg->isNegativeExternalAtomAuxiliaryAtom(ea) && ea.isNaf()){
+#ifdef DEBUG
+						impl_ng.insert(ea);
+#endif
+						implications->setFact(reg->swapExternalAtomAuxiliaryAtom(ea).address);
+					}else{
+						throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is an invalid negative support set");
+					}
+				}
+			}
+		}
+	}
+#ifdef DEBUG
+	DBGLOG(DBG, "Implications: " << impl_ng.getStringRepresentation(reg));
+#endif
+
+	bool verify = true;
+	bm::bvector<>::enumerator en = getEAMask(eaIndex)->mask()->getStorage().first();
+	bm::bvector<>::enumerator en_end = getEAMask(eaIndex)->mask()->getStorage().end();
+	while (en < en_end){
+		ID id = reg->ogatoms.getIDByAddress(*en);
+		if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary() && interpretation->getFact(*en)){
+#ifdef DEBUG
+			std::stringstream ss;
+			RawPrinter printer(ss, reg);
+			printer.print(id);
+			DBGLOG(DBG, "Verifying " << ss.str());
+#endif
+			if (reg->isPositiveExternalAtomAuxiliaryAtom(id)){
+				if (implications->getFact(id.address) != supportSetPolarity){
+					DBGLOG(DBG, "Failed because " << implications->getFact(id.address) << " != " << supportSetPolarity);
+					verify = false;
+					break;
+				}
+			}else if (reg->isNegativeExternalAtomAuxiliaryAtom(id)){
+				id = reg->swapExternalAtomAuxiliaryAtom(id);
+
+				if (implications->getFact(id.address) == supportSetPolarity){
+					DBGLOG(DBG, "Failed because " << implications->getFact(id.address) << " == " << supportSetPolarity);
+					verify = false;
+					break;
+				}
+			}else{
+				assert("ID is neither a positive nor a negative external atom replacement");
+			}
+		}
+		en++;
+	}
+
+	return verify;
 }
 
 DLVHEX_NAMESPACE_END

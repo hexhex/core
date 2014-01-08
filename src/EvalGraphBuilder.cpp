@@ -161,59 +161,60 @@ EvalGraphBuilder::createEvalUnit(
    const ComponentGraph::ComponentInfo& ci = newUnitInfo;
 
     if (ctx.config.getOption("Repair"))
-	  {
+    {
             uprops.mgf.reset(new RepairModelGeneratorFactory(
                   ctx, ci, externalEvalConfig));
-          }
-    else
-	  {     
-       if( ci.innerEatoms.empty() )
-    {
-      // no inner external atoms -> plain model generator factory
-      LOG(DBG,"configuring plain model generator factory for eval unit " << u);
-      if (ctx.config.getOption("GenuineSolver") > 0){
-        uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
-      }else{
-        uprops.mgf.reset(new PlainModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
-      }
     }
     else
-    {
-      if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads )
+    {     
+      if( ci.innerEatoms.empty() && !ctx.config.getOption("ForceGC") )
       {
-        // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
-				// -> wellfounded/fixpoint model generator factory
-        LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
+        // no inner external atoms -> plain model generator factory
+        LOG(DBG,"configuring plain model generator factory for eval unit " << u);
         if (ctx.config.getOption("GenuineSolver") > 0){
-          uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+          uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
                 ctx, ci, externalEvalConfig));
         }else{
-          uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+          uprops.mgf.reset(new PlainModelGeneratorFactory(
                 ctx, ci, externalEvalConfig));
         }
       }
       else
       {
-        // everything else -> guess and check model generator factory
-        LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-        if (ctx.config.getOption("GenuineSolver") > 0){
-	   if (ctx.config.getOption("MultiThreading")){
-            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorAsyncFactory(
+        if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
+        {
+          // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
+	  			// -> wellfounded/fixpoint model generator factory
+          LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
+          if (ctx.config.getOption("GenuineSolver") > 0){
+            uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
                   ctx, ci, externalEvalConfig));
           }else{
-            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+            uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
                   ctx, ci, externalEvalConfig));
           }
-        }else{
-          uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-                ctx, ci, externalEvalConfig));
+        }
+        else
+        {
+          // everything else -> guess and check model generator factory
+          LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
+          if (ctx.config.getOption("GenuineSolver") > 0){
+	     if (ctx.config.getOption("MultiThreading")){
+              uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorAsyncFactory(
+                    ctx, ci, externalEvalConfig));
+            }else{
+              uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+                    ctx, ci, externalEvalConfig));
+            }
+          }else{
+            uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+                  ctx, ci, externalEvalConfig));
+          }
         }
       }
     }
   }
-}
+
   // create dependencies
   unsigned joinOrder = 0; // TODO define join order in a more intelligent way?
   ComponentGraph::PredecessorIterator dit, dend;

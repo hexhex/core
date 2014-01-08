@@ -127,17 +127,12 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 	// remove the UFS from the compatible set, but do not remove EA auxiliaries
 	// this does not hurt because EA auxiliaries can never be in the input to an external atom, but keeping them has the advantage that negative learning is more effective
 	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
-//	eaInput->add(*compatibleSet);	// do not remove auxiliaries here because this prevents negative learning!
-//	eaInput->getStorage() -= ufsCandidate->getStorage();
-////	eaInput->getStorage() |= (compatibleSet->getStorage() - compatibleSetWithoutAux->getStorage());
 
 	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
-//	eaResult->add(*compatibleSetWithoutAux);
-//	eaResult->getStorage() -= ufsCandidate->getStorage();
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
 
 	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
-	DBGLOG(DBG, "Evaluating external atoms");
+	DBGLOG(DBG, "Verifying external atoms");
 	int evalCnt = 0;
 	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		ID eaID = agp.getIndexedEAtom(eaIndex);
@@ -147,52 +142,62 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		}
 		const ExternalAtom& eatom = reg->eatoms.getByID(eaID);
 
-		// evaluate
-		DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification, ngc=" << (!!ngc ? "true" : "false"));
+		if (ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) && agp.allowsForVerificationUsingCompleteSupportSets()){
+			DBGLOG(DBG, "Verifying " << eaID << " for UFS verification using complete support sets");
 
-		if (!!ngc && !!solver){
-			// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
-			int oldNogoodCount = ngc->getNogoodCount();
-			mg->evaluateExternalAtom(ctx, eatom, eaInput, cb, ngc);
-			DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
-			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
-
-				const Nogood& ng = ngc->getNogood(i);
-				if (ng.isGround()){
-					DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
-
-					std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-					BOOST_FOREACH (Nogood tng, transformed){
-						solver->addNogood(tng);
-					}
-				}
+			if (agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, ufsCandidate)){
+				// all atoms which belong to this external atom are verified
+				eaResult->add(*agp.getEAMask(eaIndex)->mask());
 			}
 		}else{
-			mg->evaluateExternalAtom(ctx, eatom, eaInput, cb);
-		}
 
-#ifndef NDEBUG
-		evalCnt++;
-#endif
+			// evaluate
+			DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification, ngc=" << (!!ngc ? "true" : "false"));
 
-		// remove the external atom from the remaining lists
-		BOOST_FOREACH (int i, eaToAuxIndex[eaID]){
-			if ( !auxiliaryDependsOnEA[i].empty() ){
-				auxiliaryDependsOnEA[i].erase(eaID);
-				// if no external atoms remain to be verified, then the truth/falsity of the auxiliary is finally known
-				if ( auxiliaryDependsOnEA[i].empty() ){
-					// check if the auxiliary, which was assumed to be unfounded, is indeed _not_ in eaResult
-					if (eaResult->getFact(auxiliariesToVerify[i]) != ufsCandidate->getFact(auxiliariesToVerify[i])){
-						// wrong guess: the auxiliary is _not_ unfounded
-						DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is not justified --> Candidate is not an unfounded set");
-						DBGLOG(DBG, "Evaluated " << evalCnt << " of " << agp.getIndexedEAtoms().size() << " external atoms");
-						return false;
-					}else{
-						DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is justified");
+			if (!!ngc && !!solver){
+				// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
+				int oldNogoodCount = ngc->getNogoodCount();
+				mg->evaluateExternalAtom(ctx, eatom, eaInput, cb, ngc);
+				DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
+				for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
+
+					const Nogood& ng = ngc->getNogood(i);
+					if (ng.isGround()){
+						DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
+
+						std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
+						BOOST_FOREACH (Nogood tng, transformed){
+							solver->addNogood(tng);
+						}
 					}
 				}
+			}else{
+				mg->evaluateExternalAtom(ctx, eatom, eaInput, cb);
 			}
-    		}
+
+#ifndef NDEBUG
+			evalCnt++;
+#endif
+
+			// remove the external atom from the remaining lists
+			BOOST_FOREACH (int i, eaToAuxIndex[eaID]){
+				if ( !auxiliaryDependsOnEA[i].empty() ){
+					auxiliaryDependsOnEA[i].erase(eaID);
+					// if no external atoms remain to be verified, then the truth/falsity of the auxiliary is finally known
+					if ( auxiliaryDependsOnEA[i].empty() ){
+						// check if the auxiliary, which was assumed to be unfounded, is indeed _not_ in eaResult
+						if (eaResult->getFact(auxiliariesToVerify[i]) != ufsCandidate->getFact(auxiliariesToVerify[i])){
+							// wrong guess: the auxiliary is _not_ unfounded
+							DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is not justified --> Candidate is not an unfounded set");
+							DBGLOG(DBG, "Evaluated " << evalCnt << " of " << agp.getIndexedEAtoms().size() << " external atoms");
+							return false;
+						}else{
+							DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is justified");
+						}
+					}
+				}
+	    		}
+		}
 	}
 	DBGLOG(DBG, "Evaluated " << agp.getIndexedEAtoms().size() << " of " << agp.getIndexedEAtoms().size() << " external atoms");
 

@@ -233,6 +233,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
 			<< "     --dumpevalplan=F dump evaluation plan (usable as manual heuristics) to file F" << std::endl
+      << " --forcegc            Always use the guess and check model generator" << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
@@ -458,6 +459,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ClaspForceSingleThreaded", 0);
 	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
 	pctx.config.setOption("SupportSets", 0);
+	pctx.config.setOption("ForceGC", 0);
 
 	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
 	// but if we have genuinegc, take genuinegc as default
@@ -772,6 +774,7 @@ void processOptionsPrePlugin(
 		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ "lazyufscheckerinitialization", no_argument, 0, 47 },
 		{ "supportsets", no_argument, 0, 48 },
+		{ "forcegc", no_argument, 0, 49 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1444,6 +1447,10 @@ void processOptionsPrePlugin(
 			break;
 		case 48:
 			pctx.config.setOption("SupportSets", 1);
+			pctx.config.setOption("ForceGC", 1);
+			break;
+		case 49:
+			pctx.config.setOption("ForceGC", 1);
 			break;
 		}
 	}

@@ -43,6 +43,7 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/OrdinaryASPProgram.h"
 #include "dlvhex2/PredicateMask.h"
+#include "dlvhex2/Nogood.h"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -67,6 +68,10 @@ class AnnotatedGroundProgram{
 	std::vector<ID> indexedEatoms;
 	std::vector<boost::shared_ptr<ExternalAtomMask> > eaMasks;
 	boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
+
+	// set of complete support sets for the external atoms in this ground program
+	// (can be used for compatibility checking without actual external calls)
+	SimpleNogoodContainerPtr supportSets;
 
 	// index of all atoms in the program
 	InterpretationPtr programMask;
@@ -106,7 +111,7 @@ public:
 	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
 	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
-  const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
+	const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
 
 	void setIndexEAtoms(std::vector<ID> indexedEatoms);
 
@@ -130,6 +135,17 @@ public:
 	const std::vector<ID>& getIndexedEAtoms() const;
 	ID getIndexedEAtom(int index) const;
 	InterpretationConstPtr getProgramMask() const;
+
+	// sets support sets for verification
+	void setCompleteSupportSetsForVerification(SimpleNogoodContainerPtr supportSets);
+
+	// returns if complete support sets have been defined
+	bool allowsForVerificationUsingCompleteSupportSets() const;
+	SimpleNogoodContainerPtr getCompleteSupportSetsForVerification();
+
+	// tries to verify an external atom which allows for verification using support sets and returns the result of this check
+	// (only supported if support sets have been defined)
+	bool verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation);
 };
 
 DLVHEX_NAMESPACE_END
