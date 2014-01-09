@@ -1988,44 +1988,73 @@ public:
 
 		// learn support sets (only if --supportsets option is specified on the command line)
 		if (!learnedSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
+			SimpleNogoodContainerPtr preparedNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+
 			// for all rules r of P
 			BOOST_FOREACH (ID ruleID, pc.idb){
 				const Rule& rule = reg->rules.getByID(ruleID);
 
 				// Check if r is a rule of form
 				//			hatom :- B,
-				// where hatom=q(X) is a single atom over query predicate q and B contains only positive atoms.
+				// where hatom is a single atom and B contains only positive atoms.
 				bool posBody = true;
 				BOOST_FOREACH (ID b, rule.body){
 					if (b.isNaf()) posBody = false;
 				}
 				if (rule.head.size() == 1 && posBody){
-					const OrdinaryAtom& hatom = reg->lookupOrdinaryAtom(rule.head[0]);
-					if (hatom.tuple[0] == query.input[2]){
+					// We learn the following (nonground) nogoods: { T b | b \in B } \cup { F hatom }.
+					Nogood nogood;
 
-						// We learn the following (nonground) support set: { T b | b \in B } \cup { F e_{&testCautiousQuery["prog", p, q]}(X) }.
-						// This is because if all body atoms are in the input (atoms over predicate p), then q(X) is true in every answer set of P \cup F.
-						// But then, since q is the query predicate, also &testCautiousQuery["prog", p, q](X) is true.
-						Nogood supportset;
+					// add all (positive) body atoms
+					BOOST_FOREACH (ID blit, rule.body) nogood.insert(NogoodContainer::createLiteral(blit));
 
-						// add all (positive) body atoms
-						BOOST_FOREACH (ID blit, rule.body) supportset.insert(NogoodContainer::createLiteral(blit));
+					// add the negated head atom
+					nogood.insert(NogoodContainer::createLiteral(rule.head[0] | ID(ID::NAF_MASK, 0)));
 
+					// actually learn this nogood
+					DBGLOG(DBG, "Learn prepared nogood " << nogood.getStringRepresentation(reg));
+					preparedNogoods->addNogood(nogood);
+				}
+			}
+
+			// exhaustively generate all resolvents of the prepared nogoods
+			DBGLOG(DBG, "Computing resolvents of prepared nogoods up to size " << (query.interpretation->getStorage().count() + 1));
+			preparedNogoods->addAllResolvents(reg, query.interpretation->getStorage().count() + 1);
+
+			// all nogoods of form
+			//		{ T b | b \in B } \cup { F q(X) }
+			// containing only atoms over p and q are transformed into support sets of form
+			//		{ T b | b \in B } \cup { F e_{&testCautiousQuery["prog", p, q]}(X) }
+			// This is because if all body atoms are in the input (atoms over predicate p), then q(X) is true in every answer set of P \cup F.
+			// But then, since q is the query predicate, also &testCautiousQuery["prog", p, q](X) is true.
+			DBGLOG(DBG, "Extracting support sets from prepared nogoods");
+			for (int i = 0; i < preparedNogoods->getNogoodCount(); i++){
+				const Nogood& ng = preparedNogoods->getNogood(i);
+				bool isSupportSet = true;
+				Nogood supportSet;
+				BOOST_FOREACH (ID id, ng){
+					ID pred = reg->lookupOrdinaryAtom(id).tuple[0];
+					if (!id.isNaf() && pred == query.input[1]){
+						supportSet.insert(id);
+					}else if (id.isNaf() && pred == query.input[2]){
+						const OrdinaryAtom& hatom = reg->lookupOrdinaryAtom(id);
 						// add e_{&testCautiousQuery["prog", p, q]}(X) using a helper function	
-						supportset.insert(NogoodContainer::createLiteral(
+						supportSet.insert(NogoodContainer::createLiteral(
 																ExternalLearningHelper::getOutputAtom(
 																		query,	// this parameter is always the same
 																		Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()),	// hatom.tuple[0]=q and hatom.tuple[i] for i >= 1 stores the elements of X;
 																																												// here we need only the X and use hatom.tuple.begin() + 1 to eliminate the predicate q
 																		true /* technical detail, is set to true almost always */).address,
 																false,																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
-																rule.head[0].isOrdinaryGroundAtom()										/* specify if this literal is ground or nonground (the same as the head atom) */ ));
-
-						DBGLOG(DBG, "Learn support set: " << supportset.getStringRepresentation(reg));
-
-						// actually learn this nogood
-						nogoods->addNogood(supportset);
+																id.isOrdinaryGroundAtom()															/* specify if this literal is ground or nonground (the same as the head atom) */ ));
+					}else{
+						isSupportSet = false;
+						break;
 					}
+				}
+				if (isSupportSet){
+					DBGLOG(DBG, "Learn support set: " << supportSet.getStringRepresentation(reg));
+					nogoods->addNogood(supportSet);
 				}
 			}
 

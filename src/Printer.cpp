@@ -205,8 +205,10 @@ void RawPrinter::print(ID id)
 	case ID::MAINKIND_TERM:
 		switch(id.kind & ID::SUBKIND_MASK)
 		{
-		case ID::SUBKIND_TERM_CONSTANT:
 		case ID::SUBKIND_TERM_VARIABLE:
+			out << (id.isAnonymousVariable() ? "_" : "") << registry->terms.getByID(id).symbol;
+			break;
+		case ID::SUBKIND_TERM_CONSTANT:
 		case ID::SUBKIND_TERM_NESTED:
 			out << registry->terms.getByID(id).symbol;
 			break;

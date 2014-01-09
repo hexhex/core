@@ -49,16 +49,25 @@ class Nogood : public Set<ID>, public ostream_printable<Nogood>{
 private:
 	std::size_t hashValue;
 	bool ground;
+
+	struct VariableSorter{
+		typedef std::pair<ID, std::vector<int> > VarType;
+		bool operator() (VarType p1, VarType p2);
+	};
+
 public:
 	Nogood();
 	void recomputeHash();
 	size_t getHash();
-  const Nogood& operator=(const Nogood& other);
+	const Nogood& operator=(const Nogood& other);
 	bool operator==(const Nogood& ng2);
 	bool operator!=(const Nogood& ng2);
 	std::ostream& print(std::ostream& o) const;
 	std::string getStringRepresentation(RegistryPtr reg) const;
-	Nogood resolve(Nogood& ng2, IDAddress litadr);
+	Nogood resolve(const Nogood& ng2, IDAddress groundlitadr);
+	Nogood resolve(const Nogood& ng2, ID lit);
+	void applyVariableSubstitution(RegistryPtr reg, const std::map<ID, ID>& subst);
+	void heuristicNormalization(RegistryPtr reg);
 	void insert(ID lit);
 	template <class InputIterator> void insert(InputIterator begin, InputIterator end){
 		for (InputIterator it = begin; it != end; ++it){
@@ -130,6 +139,7 @@ public:
 	Nogood& getNogood(int index);
 	int getNogoodCount();
 	void clear();
+	void addAllResolvents(RegistryPtr reg, int maxSize = -1);
 
 	void forgetLeastFrequentlyAdded();
 
