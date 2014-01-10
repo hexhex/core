@@ -55,7 +55,6 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/ID.h"
-#include "dlvhex2/ExtSourceProperties.h"
 
 #if BOOST_VERSION == 104700
 // workaround for spirit 1.47 issue with optional< optional<T> >
@@ -194,7 +193,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(aggregateAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(externalAtom, ID);
-  DLVHEX_DEFINE_SEMANTIC_ACTION(extSourceProperty, ExtSourceProperty);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(extSourceProperty, std::vector<ID>);
   DLVHEX_DEFINE_SEMANTIC_ACTION(mlpModuleAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
@@ -267,9 +266,9 @@ struct HexGrammarBase
   // rules that are extended by modules
   typename Rule<ID>::type
     toplevelExt, bodyAtomExt, headAtomExt, termExt;
-  typename Rule<std::vector<ExtSourceProperty> >::type
+  typename Rule<std::vector<std::vector<ID> > >::type
     externalAtomProperties;
-  typename Rule<ExtSourceProperty>::type
+  typename Rule<std::vector<ID> >::type
     externalAtomProperty;
   // symbol tables
   boost::spirit::qi::symbols<char, ID>

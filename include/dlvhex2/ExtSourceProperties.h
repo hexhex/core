@@ -29,12 +29,13 @@
  * @brief  Definition of properties of external sources
  */
 
-#ifndef EXTSOURCEPROPERTIES_HPP_INCLUDED__14012011
-#define EXTSOURCEPROPERTIES_HPP_INCLUDED__14012011
+#ifndef EXTSOURCEPROPERTIES_HPP_
+#define EXTSOURCEPROPERTIES_HPP_
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ID.h"
+#include "dlvhex2/fwd.h"
 #include "dlvhex2/Printhelpers.h"
 
 #include <vector>
@@ -45,52 +46,34 @@ DLVHEX_NAMESPACE_BEGIN
 #warning TODO what is the difference/intended usage of ExtSourceProperty vs ExtSourceProperties? (the names are not very intuitive)
 
 /**
- * This struct is only used during parsing to store exactly one property tag of an external atom.
- * E.g. in
- *   &foo[n,m](X,Y)<monotonic n, antimonotonic m>
- * the parser will create two instances of this struct:
- * - one for "monotonic n" (where type=MONOTONIC and param="ID of term n")
- * - one for "antimonotonic m" (where type=ANTIMONOTONIC and param="ID of term m")
- * After all tags an external atom have been parsed, the vector<ExtSourceProperty> is transformed into an instance of ExtSourceProperties,
- * which stores the properties in a format which allows for efficient property querying.
- */
-struct ExtSourceProperty:
-  private ostream_printable<ExtSourceProperty> 
-{
-	enum Type{
-		MONOTONIC,
-		ANTIMONOTONIC,
-		FUNCTIONAL,
-		ATOMLEVELLINEAR,
-		TUPLELEVELLINEAR,
-		USES_ENVIRONMENT,
-		RELATIVEFINITEDOMAIN,
-		FINITEDOMAIN,
-		FINITEFIBER,
-		WELLORDERINGSTRLEN,
-		WELLORDERINGNATURAL,
-		SUPPORTSETS,
-		COMPLETEPOSITIVESUPPORTSETS,
-		COMPLETENEGATIVESUPPORTSETS,
+ This struct is used to store sets of properties of an external atom.
+ E.g. in
+   &foo[n,m](X,Y)<monotonic n, antimonotonic m>
+ we need to store two properties
+ - one for "monotonic n"
+ - one for "antimonotonic m"
+
+ Currently the following properties are supported:
+		MONOTONIC
+		ANTIMONOTONIC
+		FUNCTIONAL
+		ATOMLEVELLINEAR
+		TUPLELEVELLINEAR
+		USES_ENVIRONMENT
+		RELATIVEFINITEDOMAIN
+		FINITEDOMAIN
+		FINITEFIBER
+		WELLORDERINGSTRLEN
+		WELLORDERINGNATURAL
+		SUPPORTSETS
+		COMPLETEPOSITIVESUPPORTSETS
+		COMPLETENEGATIVESUPPORTSETS
 		VARIABLEOUTPUTARITY
-	};
-
-	Type type;
-	ID param1, param2;
-
-	ExtSourceProperty(){}
-	ExtSourceProperty(Type t, ID p1, ID p2) : type(t), param1(p1), param2(p2){}
-	ExtSourceProperty(Type t) : type(t), param1(ID_FAIL), param2(ID_FAIL){}
-  
-  std::ostream& print(std::ostream& o) const
-    { return o << "ExtSourceProperty(type=" << type << ",param1=" << param1 << ",param2=" << param2 << ")"; }
-};
+*/
 
 // Stores properties of an external source on one of two levels:
 // 1. on the level of plugin atoms
 // 2. on the level of individual external atoms
-struct ExternalAtom;	// fwd declaration
-class PluginAtom;	// fwd declaration
 struct ExtSourceProperties
 {
 	// exactly one of the following pointers will be NULL
@@ -195,14 +178,14 @@ struct ExtSourceProperties
 	{ return usesEnvironment; }
     
 	/**
-     * @return bool True if the specified output element has a finite domain
-     */
+	* @return bool True if the specified output element has a finite domain
+	*/
 	bool hasFiniteDomain(int outputElement) const
 	{ return finiteOutputDomain.count(outputElement) > 0; }
     
 	/**
-     * @return bool True if the specified output element has a finite domain wrt. to the given input element
-     */
+	* @return bool True if the specified output element has a finite domain wrt. to the given input element
+	*/
 	bool hasRelativeFiniteDomain(int outputElement, int inputElement) const
 	{ return relativeFiniteOutputDomain.count(std::pair<int, int>(outputElement, inputElement)) > 0; }
 
@@ -247,6 +230,11 @@ struct ExtSourceProperties
 	*/
 	bool hasVariableOutputArity() const
 	{ return variableOutputArity; }
+
+	/**
+	* Parses external source properties given as vectors of terms and integrates them into the current instance of the class
+	*/
+	void interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<ID> >& props);
 };
 
 DLVHEX_NAMESPACE_END
