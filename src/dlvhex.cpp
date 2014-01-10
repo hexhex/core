@@ -1447,6 +1447,8 @@ void processOptionsPrePlugin(
 			break;
 		case 48:
 			pctx.config.setOption("SupportSets", 1);
+			pctx.config.setOption("ExternalLearningUser", 1);
+			pctx.config.setOption("ExternalLearning", 1);
 			pctx.config.setOption("ForceGC", 1);
 			break;
 		case 49:
