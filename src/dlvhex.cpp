@@ -1451,6 +1451,7 @@ void processOptionsPrePlugin(
 			break;
 		case 49:
 			pctx.config.setOption("ForceGC", 1);
+			pctx.config.setOption("LiberalSafety", 1);
 			break;
 		}
 	}
