@@ -8,7 +8,7 @@ fi
 
 requirements=$(cat req 2> /dev/null)
 cd instances
-for instance in *nodecount_005*.graph
+for instance in *.graph
 do
 	echo "
 		Executable = ../benchmark_single.sh

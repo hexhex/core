@@ -7,7 +7,7 @@ export LD_LIBRARY_PATH=$2
 instance=$3
 to=$4
 
-confstr=";--supportsets"
+confstr="checkNon3Colorability.hex;checkNon3Colorability.hex --supportsets;checkNon3ColorabilityPlain.hex"
 confstr2=$(cat conf)
 if [ $? == 0 ]; then
         confstr=$confstr2
@@ -32,13 +32,19 @@ i=0
 for c in "${confs[@]}"
 do
 	echo -ne -e " "
-	pushd ..
-	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ checkNon3Colorability.hex $instance --verbose=8 2>$instance.$i.verbose.dat >/dev/null)
+	pushd .. > /dev/null 2>&1
+	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ instances/$instance --verbose=8 2>$instance.$i.verbose.dat > /dev/null)
 	ret=$?
 	if [[ $ret == 0 ]]; then
 	        output=$(cat $instance.$i.time.dat)
 		groundertime=$(cat $instance.$i.verbose.dat | grep -a "HEX grounder time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
+		if [[ groundertime -eq "" ]]; then
+			groundertime="0.000"
+		fi
 	        solvertime=$(cat $instance.$i.verbose.dat | grep -a "HEX solver time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
+		if [[ solvertime -eq "" ]]; then
+			solvertime="0.000"
+		fi
 	else
 		output="---"
 		groundertime="---"
@@ -49,7 +55,7 @@ do
 	rm $instance.$i.time.dat
 	rm $instance.$i.verbose.dat
 
-	popd
+	popd > /dev/null 2>&1
 	let i=i+1
 done
 echo -e -ne "\n"
