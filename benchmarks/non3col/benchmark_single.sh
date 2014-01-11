@@ -35,7 +35,6 @@ do
 	pushd ..
 	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ checkNon3Colorability.hex $instance --verbose=8 2>$instance.$i.verbose.dat >/dev/null)
 	ret=$?
-	popd
 	if [[ $ret == 0 ]]; then
 	        output=$(cat $instance.$i.time.dat)
 		groundertime=$(cat $instance.$i.verbose.dat | grep -a "HEX grounder time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
@@ -50,6 +49,7 @@ do
 	rm $instance.$i.time.dat
 	rm $instance.$i.verbose.dat
 
+	popd
 	let i=i+1
 done
 echo -e -ne "\n"
