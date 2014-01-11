@@ -38,13 +38,7 @@ do
 	if [[ $ret == 0 ]]; then
 	        output=$(cat $instance.$i.time.dat)
 		groundertime=$(cat $instance.$i.verbose.dat | grep -a "HEX grounder time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
-		if [[ groundertime -eq "" ]]; then
-			groundertime="0.000"
-		fi
 	        solvertime=$(cat $instance.$i.verbose.dat | grep -a "HEX solver time:" | tail -n 1 | grep -P -o '[0-9]+\.[0-9]+s' | sed "s/s//")
-		if [[ solvertime -eq "" ]]; then
-			solvertime="0.000"
-		fi
 	else
 		output="---"
 		groundertime="---"
