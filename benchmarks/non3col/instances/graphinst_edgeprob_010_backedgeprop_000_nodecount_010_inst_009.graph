@@ -1,7 +1,0 @@
-#maxint=10.
-edge(1,7).
-edge(3,9).
-edge(3,10).
-edge(5,4).
-edge(6,3).
-edge(7,3).

@@ -1,4 +1,0 @@
-#maxint=5.
-edge(1,5).
-edge(4,3).
-edge(5,2).

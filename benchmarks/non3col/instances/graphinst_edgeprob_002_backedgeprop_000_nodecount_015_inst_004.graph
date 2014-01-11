@@ -1,5 +1,0 @@
-#maxint=15.
-edge(1,15).
-edge(2,11).
-edge(8,8).
-edge(12,9).
