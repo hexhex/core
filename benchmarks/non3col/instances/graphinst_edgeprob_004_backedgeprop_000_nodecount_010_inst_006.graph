@@ -1,0 +1,5 @@
+#maxint=10.
+edge(4,1).
+edge(5,1).
+edge(8,6).
+edge(9,8).

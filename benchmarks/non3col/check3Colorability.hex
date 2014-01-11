@@ -1,0 +1,12 @@
+% define colors
+color(red).
+color(green).
+color(blue).
+
+% graph is undirected
+edge(Y, X) :- edge(X, Y).
+
+% guess all colorings
+coloring(N, C) : color(C) :- node(N).
+
+:- coloring(N, C), coloring(M, C), edge(N, M).

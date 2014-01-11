@@ -1,0 +1,4 @@
+#maxint=5.
+edge(1,1).
+edge(1,4).
+edge(1,5).

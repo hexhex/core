@@ -1,0 +1,14 @@
+#maxint=25.
+edge(1,20).
+edge(1,23).
+edge(7,8).
+edge(7,23).
+edge(10,20).
+edge(11,8).
+edge(13,21).
+edge(17,10).
+edge(17,14).
+edge(18,3).
+edge(18,5).
+edge(20,21).
+edge(23,17).
