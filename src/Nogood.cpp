@@ -83,7 +83,7 @@ const Nogood& Nogood::operator=(const Nogood& other)
   return *this;
 }
 
-bool Nogood::operator==(const Nogood& ng2){
+bool Nogood::operator==(const Nogood& ng2) const{
 
 	// compare hash value
 	if (hashValue != ng2.hashValue) return false;
@@ -102,7 +102,7 @@ bool Nogood::operator==(const Nogood& ng2){
 	return true;
 }
 
-bool Nogood::operator!=(const Nogood& ng2){
+bool Nogood::operator!=(const Nogood& ng2) const{
 	return !(this->operator==(ng2));
 }
 

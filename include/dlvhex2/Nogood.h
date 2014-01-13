@@ -60,8 +60,8 @@ public:
 	void recomputeHash();
 	size_t getHash();
 	const Nogood& operator=(const Nogood& other);
-	bool operator==(const Nogood& ng2);
-	bool operator!=(const Nogood& ng2);
+	bool operator==(const Nogood& ng2) const;
+	bool operator!=(const Nogood& ng2) const;
 	std::ostream& print(std::ostream& o) const;
 	std::string getStringRepresentation(RegistryPtr reg) const;
 	Nogood resolve(const Nogood& ng2, IDAddress groundlitadr);

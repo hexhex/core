@@ -931,6 +931,17 @@ public:
   virtual void setupProperties(const ExternalAtom& eatom) {}
 
   /**
+   * Decides for a ground support set if it should be kept (in possibly modified form) or rejected.
+   * This allows for checking the satisfaction of guard literals in the nogood, which depend on the external source.
+   * @param keep Must be set to true iff ng should be kept.
+   * @param ng The ground nogood, for which the method calls must decide if it should be kept.
+   *           If keep==true, then ng might be modified such that the resulting nogood is a subset of the original one.
+   *           If keep==false, then ng must be unchanged.
+   * @param eaReplacement The ID of the external atom replacement in ng (just for user convenience)
+   */
+  virtual void guardSupportSet(bool& keep, Nogood& ng, const ID eaReplacement) { assert(ng.isGround()); keep = true; }
+
+  /**
    * \brief Retrieve answer object according to a query (cached).
    *
    * This function implements the query cache, if enabled, and will rarely need to be

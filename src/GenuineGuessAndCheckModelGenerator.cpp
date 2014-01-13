@@ -411,9 +411,46 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 		annotatedGroundProgram.setCompleteSupportSetsForVerification(supportSets);
 
 		// all support sets are also learned nogoods
+		bool keep;
 		for (int i = 0; i < supportSets->getNogoodCount(); ++i){
 			const Nogood& ng = supportSets->getNogood(i);
-			if (ng.isGround()) learnedEANogoods->addNogood(ng);
+			if (ng.isGround()){
+				// determine the external atom replacement in ng
+				ID eaAux = ID_FAIL;
+				BOOST_FOREACH (ID lit, ng){
+					if (reg->ogatoms.getIDByAddress(lit.address).isExternalAuxiliary()){
+						if (eaAux != ID_FAIL) throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is not a valid support set because it contains multiple external literals");
+						eaAux = lit;
+					}
+				}
+				if (eaAux == ID_FAIL) throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is not a valid support set because it contains no external literals");
+
+				// determine the according external atom
+				if (annotatedGroundProgram.mapsAux(eaAux.address)){
+					DBGLOG(DBG, "Evaluating guards of " << ng.getStringRepresentation(reg));
+					keep = true;
+					Nogood ng2 = ng;
+					reg->eatoms.getByID(annotatedGroundProgram.getAuxToEA(eaAux.address)[0]).pluginAtom->guardSupportSet(keep, ng2, eaAux);
+					if (keep){
+#ifdef DEBUG
+						// ng2 must be a subset of ng and still a valid support set
+						ID aux = ID_FAIL;
+						BOOST_FOREACH (ID id, ng2){
+							if (reg->ogatoms.getIDByAddress(id.address).isExternalAuxiliary()) aux = id;
+							assert(std::find(ng.begin(), ng.end(), id) != ng.end());
+						}
+						assert(aux != ID_FAIL);
+#endif
+						DBGLOG(DBG, "Keeping in form " << ng.getStringRepresentation(reg));
+						learnedEANogoods->addNogood(ng2);
+#ifdef DEBUG
+					}else{
+						assert(ng == ng2);
+						DBGLOG(DBG, "Rejecting " << ng2.getStringRepresentation(reg));
+#endif
+					}
+				}
+			}
 		}
 	}
 }
