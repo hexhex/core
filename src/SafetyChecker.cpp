@@ -520,7 +520,9 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 		{
 			DBGLOG(DBG,"storing back rule " << printToString<RawPrinter>(idrule, reg));
 			newRule.head = rule.head;
-			reg->rules.update(rule, newRule);
+			if (reg->rules.getIDByElement(newRule) == ID_FAIL){
+				reg->rules.update(rule, newRule);
+			}
 			DBGLOG(DBG,"-> reordered rule " << printToString<RawPrinter>(idrule, reg));
 			assert(&rule == &(reg->rules.getByID(idrule)));
 		}

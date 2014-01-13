@@ -2001,7 +2001,7 @@ public:
 				BOOST_FOREACH (ID b, rule.body){
 					if (b.isNaf()) posBody = false;
 				}
-				if (rule.head.size() == 1 && posBody){
+				if (rule.head.size() == 1 /*&& posBody*/){
 					// We learn the following (nonground) nogoods: { T b | b \in B } \cup { F hatom }.
 					Nogood nogood;
 
@@ -2034,9 +2034,9 @@ public:
 				Nogood supportSet;
 				BOOST_FOREACH (ID id, ng){
 					ID pred = reg->lookupOrdinaryAtom(id).tuple[0];
-					if (!id.isNaf() && pred == query.input[1]){
+					if (pred == query.input[1]){
 						supportSet.insert(id);
-					}else if (id.isNaf() && pred == query.input[2]){
+					}else if (pred == query.input[2]){
 						const OrdinaryAtom& hatom = reg->lookupOrdinaryAtom(id);
 						// add e_{&testCautiousQuery["prog", p, q]}(X) using a helper function	
 						supportSet.insert(NogoodContainer::createLiteral(
@@ -2045,7 +2045,7 @@ public:
 																		Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()),	// hatom.tuple[0]=q and hatom.tuple[i] for i >= 1 stores the elements of X;
 																																												// here we need only the X and use hatom.tuple.begin() + 1 to eliminate the predicate q
 																		true /* technical detail, is set to true almost always */).address,
-																false,																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
+																!id.isNaf(),																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
 																id.isOrdinaryGroundAtom()															/* specify if this literal is ground or nonground (the same as the head atom) */ ));
 					}else{
 						isSupportSet = false;
