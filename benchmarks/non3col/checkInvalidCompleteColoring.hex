@@ -1,2 +1,2 @@
 isInvalid :- input(coloring, X, C), input(coloring, Y, C), input(edge, X, Y).
-isComplete :- input(color, C1, C2), input(edge, X, Y), input(coloring, X, C1), input(coloring, Y, C2).
+isComplete(C1, C2) :- input(color, C1, C2), input(edge, X, Y), input(coloring, X, C1), input(coloring, Y, C2).
