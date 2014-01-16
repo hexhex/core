@@ -40,5 +40,5 @@ personTOroom(P,R) :- personTOthing(P,X), cabinetTOthing(C,X), roomTOcabinet(R,C)
 
 input(cabinetTOthing, X, Y) :- cabinetTOthing(X, Y).
 input(personTOroom, X, Y) :- personTOroom(X, Y).
-input(inequality, X, Y) :- personTOthing(P1,Y1), personTOthing(P2,Y2), P1 != P2.
+input(inequality, P1, P2) :- personTOthing(P1,Y1), personTOthing(P2,Y2), P1 != P2.
 :- &testCautiousQuery["houseCheck.hex", input, violated]().
