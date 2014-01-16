@@ -33,7 +33,7 @@ for c in "${confs[@]}"
 do
 	echo -ne -e " "
 	pushd .. > /dev/null 2>&1
-	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ instances/$instance --verbose=8 2>$instance.$i.verbose.dat > /dev/null)
+	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --heuristics=monolithic --plugindir=../../testsuite/ instances/$instance --verbose=8 2>$instance.$i.verbose.dat > /dev/null)
 	ret=$?
 	if [[ $ret == 0 ]]; then
 	        output=$(cat $instance.$i.time.dat)
