@@ -1,0 +1,2 @@
+violated :- input(cabinetTOthing,X,Y1), input(cabinetTOthing,X,Y2), input(personTOthing,P1,Y1), input(personTOthing,P2,Y2), input(inequality, P1, P2).
+violated :- input(personTOroom,P1,R), input(personTOroom,P2,R).
