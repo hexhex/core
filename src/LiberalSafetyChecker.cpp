@@ -933,7 +933,7 @@ void LiberalSafetyChecker::ensureOrdinarySafety(){
 				if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b.address) == 0) continue;
 				optimizedRule.body.push_back(b);
 			}
-			ID optimizedRuleID = reg->storeRule(optimizedRule);
+			ID optimizedRuleID = (optimizedRule.head.size() > 0 || optimizedRule.body.size() > 0) ? reg->storeRule(optimizedRule) : ruleID;
 
 			// safety check
 			DBGLOG(DBG, "Checking safety of optimized rule");
