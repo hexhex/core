@@ -3,17 +3,24 @@
 
 echo "#maxint=$1."
 
-prop=$((32768 * $2 / 100)) 
 for (( i=1; i <= $1; i++ ))
 do
 	echo "person($i)."
-        echo "thing($i)."
+done
+
+for (( i=1; i <= 2 * $1; i++ ))
+do
         echo "cabinet($i)."
+done
+
+for (( i=1; i <= 1 + $1 / 2; i++ ))
+do
         echo "room($i)."
-	for (( j = 1; j <= $1; j++ ))
-	do
-		if [ $RANDOM -le $prop ]; then
-			echo "personTOthing($i,$j)."
-		fi
-	done
+done
+
+for (( i=1; i <= 3 * $1; i++ ))
+do
+	echo "thing($i)."
+	p=$((1 + $1 * $RANDOM / 32768))
+	echo "personTOthing($p,$i)."
 done
