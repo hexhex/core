@@ -7,7 +7,7 @@ export LD_LIBRARY_PATH=$2
 instance=$3
 to=$4
 
-confstr="houseGuess.hex;houseGuess.hex --supportsets;houseDirect.hex"
+confstr="houseGuess.hex;houseGuess.hex --supportsets;houseDirect.hex;houseGuess.hex -n=1;houseGuess.hex --supportsets -n=1;houseDirect.hex -n=1"
 confstr2=$(cat conf)
 if [ $? == 0 ]; then
         confstr=$confstr2

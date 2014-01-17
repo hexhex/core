@@ -10,4 +10,4 @@ personTOroom(P,R) :- personTOthing(P,X), cabinetTOthing(C,X), roomTOcabinet(R,C)
 
 :- cabinetTOthing(X,Y1), cabinetTOthing(X,Y2), personTOthing(P1,Y1), personTOthing(P2,Y2), P1 != P2.
 
-:- personTOroom(P1,R), personTOroom(P2,R).
+:- personTOroom(P1,R), personTOroom(P2,R), P1 != P2.
