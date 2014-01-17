@@ -1,7 +1,7 @@
 # $1: node count
 # $2: edge propability
-
-echo "#maxint=$1."
+m=$(($1 * 3))
+echo "#maxint=$m."
 
 for (( i=1; i <= $1; i++ ))
 do
