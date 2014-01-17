@@ -2,6 +2,10 @@ cabinetTOthing(X,Y) : cabinet(X) :- thing(Y).
 roomTOcabinet(X,Y) : room(X) :- cabinet(Y).
 personTOroom(P,R) :- personTOthing(P,X), cabinetTOthing(C,X), roomTOcabinet(R,C).
 
+input(room, X, X) :- room(X).
+input(cabinet, X, X) :- cabinet(X).
+input(thing, X, X) :- thing(X).
+input(person, X, X) :- person(X).
 input(cabinetTOthing, X, Y) :- cabinetTOthing(X, Y).
 input(roomTOcabinet, X, Y) :- roomTOcabinet(X, Y).
 input(personTOroom, X, Y) :- personTOroom(X, Y).
