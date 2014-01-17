@@ -1,33 +1,3 @@
-person(1).
-person(2).
-person(3).
-person(4).
-person(5).
-thing(6).
-thing(7).
-thing(8).
-thing(9).
-thing(10).
-thing(11).
-thing(12).
-cabinet(500).
-cabinet(501).
-cabinet(502).
-cabinet(503).
-cabinet(504).
-room(1000).
-room(1001).
-room(1002).
-room(1003).
-room(1004).
-personTOthing(1,6).
-personTOthing(1,7).
-personTOthing(2,8).
-personTOthing(2,9).
-personTOthing(3,10).
-personTOthing(4,11).
-personTOthing(5,12).
-
 cabinetTOthing(X,Y) : cabinet(X) :- thing(Y).
 %:- 6 {cabinetTOthing(X,Y):thing(Y)}, cabinet(X).
 :- cabinetTOthing(X,Y1), cabinetTOthing(X,Y2), cabinetTOthing(X,Y3), cabinetTOthing(X,Y4), cabinetTOthing(X,Y5), cabinetTOthing(X,Y6), cabinetTOthing(X,Y7), thing(Y1), thing(Y2), thing(Y3), thing(Y4), thing(Y5), thing(Y6), thing(Y7), Y1 != Y2, Y1 != Y3, Y1 != Y4, Y1 != Y5, Y1 != Y6, Y1 != Y7, Y2 != Y3, Y2 != Y4, Y2 != Y5, Y2 != Y6, Y2 != Y7, Y3 != Y4, Y3 != Y5, Y3 != Y6, Y3 != Y7, Y4 != Y5, Y4 != Y6, Y4 != Y7, Y5 != Y6, Y5 != Y7, Y6 != Y7, cabinet(X).
