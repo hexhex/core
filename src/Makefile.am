@@ -98,6 +98,7 @@ libdlvhex2_base_la_SOURCES = \
     Interpretation.cpp \
     LiberalSafetyChecker.cpp \
     Logger.cpp \
+	ManualEvalHeuristicsPlugin.cpp \
     MLPSolver.cpp \
     MLPSyntaxChecker.cpp \
     Nogood.cpp \

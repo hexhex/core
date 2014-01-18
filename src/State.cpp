@@ -66,6 +66,7 @@
 #include "dlvhex2/EvalHeuristicMonolithic.h"
 #include "dlvhex2/EvalHeuristicFromFile.h"
 #include "dlvhex2/EvalHeuristicASP.h"
+#include "dlvhex2/EvalHeuristicFromHEXSourcecode.h"
 #include "dlvhex2/DumpingEvalGraphBuilder.h"
 #include "dlvhex2/AnswerSetPrinterCallback.h"
 #include "dlvhex2/PlainAuxPrinter.h"
@@ -732,7 +733,7 @@ void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-OPTIONAL_STATE_CONSTRUCTOR(StrongSafetyCheckState,CreateEvalGraphState);
+OPTIONAL_STATE_CONSTRUCTOR(StrongSafetyCheckState,SetupEvalContextState);
 
 void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 {
@@ -777,8 +778,8 @@ void SetupEvalContextState::setupEvalContext(ProgramCtx* ctx)
     CASE(Monolithic)
     CASE_ARG(FromFile)
     CASE_ARG(ASP)
-    case Eval_FromHEXSourcecode: // TODO: split ManualEvalHeuristicsPlugin.cpp
-    default: DBGLOG(DBG, "no valid EvalHeuristic stored in ctx.config");
+    CASE(FromHEXSourcecode)
+    default: DBGLOG(DBG, "no valid EvalHeuristic stored in ctx.config [value: " << heuristic << "]");
   }
   #undef CASE
 
