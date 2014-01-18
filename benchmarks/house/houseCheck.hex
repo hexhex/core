@@ -5,4 +5,4 @@ violated :- input(cabinetTOthing,X,Y1), input(cabinetTOthing,X,Y2), input(cabine
 violated :- input(roomTOcabinet,X,Y1), input(roomTOcabinet,X,Y2), input(roomTOcabinet,X,Y3), input(roomTOcabinet,X,Y4), input(roomTOcabinet,X,Y5), input(roomTOcabinet,X,Y6), input(cabinet, Y1, Y1), input(cabinet, Y2, Y2), input(cabinet, Y3, Y3), input(cabinet, Y4, Y4), input(cabinet, Y5, Y5), input(cabinet, Y6, Y6), input(ineqCabinet, Y1, Y2), input(ineqCabinet, Y1, Y3), input(ineqCabinet, Y1, Y4), input(ineqCabinet, Y1, Y5), input(ineqCabinet, Y1, Y6), input(ineqCabinet, Y2, Y3), input(ineqCabinet, Y2, Y4), input(ineqCabinet, Y2, Y5), input(ineqCabinet, Y2, Y6), input(ineqCabinet, Y3, Y4), input(ineqCabinet, Y3, Y5), input(ineqCabinet, Y3, Y6), input(ineqCabinet, Y4, Y5), input(ineqCabinet, Y4, Y6), input(ineqCabinet, Y5, Y6), input(room, X, X).
 
 violated :- input(cabinetTOthing,X,Y1), input(cabinetTOthing,X,Y2), input(personTOthing,P1,Y1), input(personTOthing,P2,Y2), input(inequPerson, P1, P2).
-violated :- input(personTOroom,P1,R), input(personTOroom,P2,R).
+violated :- input(personTOroom,P1,R), input(personTOroom,P2,R), input(inequPerson, P1, P2).
