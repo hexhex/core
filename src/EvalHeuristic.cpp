@@ -38,6 +38,7 @@
 #include "EvalHeuristicMonolithic.cpp"
 #include "EvalHeuristicFromFile.cpp"
 #include "EvalHeuristicASP.cpp"
+#include "EvalHeuristicFromHEXSourcecode.cpp"
 #include "EvalHeuristicShared.cpp"
 
 #define INST_CLASS(classname, tempname) \
@@ -56,6 +57,7 @@ EVAL_INST(Trivial)
 EVAL_INST(Monolithic)
 EVAL_INST(FromFile)
 EVAL_INST(ASP)
+EVAL_INST(FromHEXSourcecode)
 
 template void executeBuildCommands<FinalEvalGraph>(const CommandVector&, EvalGraphBuilder<FinalEvalGraph>&);
 template void executeBuildCommands<HTEvalGraph>(const CommandVector&, EvalGraphBuilder<HTEvalGraph>&);
