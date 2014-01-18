@@ -37,7 +37,7 @@
 using namespace dlvhex;
 
 TestModelGeneratorFactory::ModelGenerator::ModelGenerator(
-    InterpretationConstPtr input,
+    InterprConstPtr input,
     TestModelGeneratorFactory& factory):
   ModelGeneratorBase<TestInterpretation>(input),
   factory(factory),
