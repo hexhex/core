@@ -101,11 +101,11 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
 
     // create builder that supervises the construction of eg
     ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
+    EvalGraphBuilder<FinalEvalGraph> egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder
-      EvalHeuristicOldDlvhex heuristicOldDlvhex;
+      EvalHeuristicOldDlvhex<FinalEvalGraph> heuristicOldDlvhex;
       heuristicOldDlvhex.build(egbuilder);
       LOG(INFO,"building eval graph finished");
 
@@ -163,11 +163,11 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
 
     // create builder that supervises the construction of eg
     ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
+    EvalGraphBuilder<FinalEvalGraph> egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder
-      EvalHeuristicOldDlvhex heuristicOldDlvhex;
+      EvalHeuristicOldDlvhex<FinalEvalGraph> heuristicOldDlvhex;
       heuristicOldDlvhex.build(egbuilder);
       LOG(INFO,"building eval graph finished");
 
@@ -225,11 +225,11 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
 
     // create builder that supervises the construction of eg
     ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
+    EvalGraphBuilder<FinalEvalGraph> egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder
-      EvalHeuristicOldDlvhex heuristicOldDlvhex;
+      EvalHeuristicOldDlvhex<FinalEvalGraph> heuristicOldDlvhex;
       heuristicOldDlvhex.build(egbuilder);
       LOG(INFO,"building eval graph finished");
 

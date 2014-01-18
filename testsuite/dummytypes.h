@@ -139,7 +139,7 @@ public:
 
   public:
     ModelGenerator(
-        InterpretationConstPtr input,
+        InterprConstPtr input,
         TestModelGeneratorFactory& factory);
 
     virtual ~ModelGenerator()
@@ -147,7 +147,7 @@ public:
       LOG_VSCOPE(INFO,"~ModelGenerator()",this,true);
     }
 
-    virtual InterpretationPtr generateNextModel()
+    virtual InterprPtr generateNextModel()
     {
 			const std::string& rules = factory.ctx.rules;
       LOG_VSCOPE(INFO,"generateNextModel()",this,true);
@@ -156,11 +156,11 @@ public:
       if( mit == models.end() )
       {
         LOG(INFO,"null");
-        return InterpretationPtr();
+        return InterprPtr();
       }
       else
       {
-        InterpretationPtr ret = *mit;
+        InterprPtr ret = *mit;
         mit++;
         LOG(INFO,*ret);
         return ret;
