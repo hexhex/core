@@ -37,6 +37,14 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#if defined(HAVE_OWLCPP)
+#include "owlcpp/rdf/triple_store.hpp"
+#include "owlcpp/io/input.hpp"
+#include "owlcpp/io/catalog.hpp"
+#include "owlcpp/terms/node_tags_owl.hpp"
+#endif 
+
+
 #include "dlvhex2/ExternalLearningHelper.h"
 #include "dlvhex2/ComfortPluginInterface.h"
 #include "dlvhex2/Term.h"
@@ -45,6 +53,9 @@
 
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/program_options.hpp>
+#include <boost/range.hpp>
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <sstream>
@@ -1872,6 +1883,8 @@ public:
   }
 };
 
+
+
 class TestDLSimulatorAtom:
   public PluginAtom
 {
@@ -1924,6 +1937,9 @@ public:
 		}
   }
 };
+
+
+
 
 // Common base class for cautious and brave queries.
 // The only difference between answering cautious and brave queries
@@ -2237,6 +2253,8 @@ public:
 	}
 
 
+
+
 // ***** Impementation of SetUnion plugin (example)
 class TestSetUnionAtom:	// tests user-defined external learning
   public PluginAtom
@@ -2249,7 +2267,7 @@ public:
     TestSetUnionAtom():
 		// testSetUnion is the name of our external atom
     PluginAtom("testSetUnion", true) // monotonic
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    #warning TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning
   {
 		DBGLOG(DBG,"Constructor of SetUnion plugi is started!");
     addInputPredicate(); // the first set
@@ -2380,6 +2398,35 @@ public:
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2409,6 +2456,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNongroundNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));
+		ret.push_back(PluginAtomPtr(new TestDLAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));

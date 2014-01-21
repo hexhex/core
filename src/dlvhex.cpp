@@ -81,6 +81,8 @@
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/FunctionPlugin.h"
 #include "dlvhex2/PhantomPlugin.h"
+#include "dlvhex2/DLPlugin.h"
+
 
 #include <getopt.h>
 #include <signal.h>
@@ -508,6 +510,10 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 			PluginInterfacePtr phantomPlugin(new PhantomPlugin);
 			pctx.pluginContainer()->addInternalPlugin(phantomPlugin);
+			//#if defined(HAVE_OWLCPP)
+			PluginInterfacePtr dLPlugin(new DLPlugin);
+			pctx.pluginContainer()->addInternalPlugin(dLPlugin);
+			//#endif
 		}
 
 		// before anything else we dump the logo

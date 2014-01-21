@@ -101,6 +101,7 @@ libdlvhex2_base_la_SOURCES = \
     Nogood.cpp \
     NogoodGrounder.cpp \
     PhantomPlugin.cpp \
+    DLPlugin.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \
