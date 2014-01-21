@@ -42,6 +42,19 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Printhelpers.h"
 #include "dlvhex2/Logger.h"
+#include <iostream>
+#include <string>
+#include "boost/program_options.hpp"
+#include "boost/range.hpp"
+#include "boost/foreach.hpp"
+#include "boost/filesystem.hpp"
+
+#if defined(HAVE_OWLCPP)
+#include "owlcpp/rdf/triple_store.hpp"
+#include "owlcpp/io/input.hpp"
+#include "owlcpp/io/catalog.hpp"
+#include "owlcpp/terms/node_tags_owl.hpp"
+#endif //HAVE_OWLCPP
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
@@ -58,7 +71,7 @@ class CDLAtom:	// tests user-defined external learning
 
 public:		// testDL is the name of our external atom
     	CDLAtom():
-	PluginAtom("cdL", true) // monotonic
+	PluginAtom("cDL", true) // monotonic
   {
 		DBGLOG(DBG,"Constructor of DL plugin is started");
 		addInputConstant(); // the ontology
@@ -87,12 +100,36 @@ virtual void retrieve(const Query& query, Answer& answer)
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
   {
+	#if defined(HAVE_OWLCPP)
+	RegistryPtr reg = getRegistry();
 
-//	owlcpp::Triple_store store;	 
-	
+
+	owlcpp::Triple_store store;
+	owlcpp::Triple_store::result_b<0,0,0,0>::type r = store.find_triple(
+			   	   owlcpp::any(),
+			   	   owlcpp::any(),
+			   	   owlcpp::any(),
+	               owlcpp::any());
+
+	load_file("/home/dasha/Documents/test/mytest.owl",store);
+	/*BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
+	        	if(to_string(t.obj_,store)=="owl:Class") {
+	        		std::cout
+	        		<< '\"'
+	        		<< to_string(t.subj_, store) << "\"\t\"";
+	        	}
+	        	if(to_string(t.pred_,store)=="rdfs:subClassOf") {
+	                		std::cout
+	                		<< '\"'
+	                		<< to_string(t.subj_, store) << "\"\t\""
+	                		<< to_string(t.pred_, store) << "\"\t\""
+	                		<< to_string(t.obj_, store) << "\"\t\n";
+	                	}
+	         }*/
 	
 
 	// Iterators (objects that mark the begin and the end of some structure)
+
 	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
 	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
 
@@ -139,7 +176,7 @@ virtual void retrieve(const Query& query, Answer& answer)
 		at1.tuple.push_back(query.input[1]);
 		// arity is always 1 here
 		BOOST_FOREACH (ID i, t) {	
-			at1.tuple.push_back(i);
+		at1.tuple.push_back(i);
 		}
 		// Start with empty nogood
 		Nogood nogood;
@@ -169,7 +206,9 @@ BOOST_FOREACH (Tuple t, tuples2){
 BOOST_FOREACH (Tuple t, tuples3){
 		answer.get().push_back(t);
 	}
+#endif //HAVE_OWLCPP
   }
+
 
 };
 
