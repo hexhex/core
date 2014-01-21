@@ -166,7 +166,13 @@ if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 	#if [ ! -f $OWLCPPMAINDIR/raptor2-$RAPTOR2V/src/raptor_nfc_data.c ]; then
 	#	echo "Building raptor2"
 	#	pushd $OWLCPPMAINDIR/raptor2-$RAPTOR2V > /dev/null
-	#	./autogen.sh
+	#	./configure
+        #        if [ $? -gt 0 ]; then
+        #                echo "Configuring raptor2 failed; aborting"
+        #                popd > /dev/null
+        #                exit 1
+        #        fi
+	#        make
 	#	if [ $? -gt 0 ]; then
 	#		echo "Building raptor2 failed; aborting"
 	#		popd > /dev/null
@@ -175,13 +181,32 @@ if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 	#	popd > /dev/null
 	#fi
 
+        #if [ ! -f $OWLCPPMAINDIR/FaCT++-$FACTPPV/src/raptor_nfc_data.c ]; then
+        #        echo "Building FaCT++"
+        #        pushd $OWLCPPMAINDIR/FaCT++-$FACTPPV/src/Kernel > /dev/null
+        #        make
+        #        if [ $? -gt 0 ]; then
+        #                echo "Building FaCT++ failed; aborting"
+        #                popd > /dev/null
+        #                exit 1
+        #        fi
+        #        pushd $OWLCPPMAINDIR/FaCT++-$FACTPPV/src/FaCT++ > /dev/null
+        #        make
+        #        if [ $? -gt 0 ]; then
+        #                echo "Building FaCT++ failed; aborting"
+        #                popd > /dev/null
+        #                exit 1
+        #        fi
+        #        popd > /dev/null
+        #fi
+
 	echo "Building owlcpp"
 	REALHOME=$HOME
 	export HOME=$OWLCPPMAINDIR/owlcpp-v$OWLCPPV
 	export BOOST_ROOT=$OWLCPPMAINDIR/boost_$BOOSTVU
 	export BOOST_BUILD_PATH=$OWLCPPMAINDIR/boost_$BOOSTVU/tools/build/v2
 	pushd $OWLCPPMAINDIR/owlcpp-v$OWLCPPV > /dev/null
-	$BOOST_ROOT/tools/build/v2/b2 release cxxflags="-fpic" "$params" > $OWLCPPMAINDIR/output.out 2>&1
+	$BOOST_ROOT/tools/build/v2/b2 release cxxflags="-fpic -export-dynamic" cflags="-fpic -export-dynamic" "$params" > $OWLCPPMAINDIR/output.out 2>&1
 	ret=$?
 	export HOME=$REALHOME
 	if [ $ret -gt 0 ]; then
@@ -197,20 +222,54 @@ rm $OWLCPPMAINDIR/include
 ln -s $OWLCPP_ROOT/include $OWLCPPMAINDIR/include
 mkdir $OWLCPPMAINDIR/libs 2> /dev/null
 rm $OWLCPPMAINDIR/libs/*.a
+
 if [ $(ls $OWLCPP_ROOT/out/bin/io/*/release/link-static/libowlcpp_io.a | wc -l) -eq 0 ]; then
 	echo "Error: libowlcpp_io.a not found in $OWLCPP_ROOT/out/bin/io/*/release/link-static"
 	exit 1
 fi
 ln -s $(ls $OWLCPP_ROOT/out/bin/io/*/release/link-static/libowlcpp_io.a | head) $OWLCPPMAINDIR/libs/libowlcpp_io.a
+
 if [ $(ls $OWLCPP_ROOT/out/bin/logic/*/release/link-static/libowlcpp_logic.a | wc -l) -eq 0 ]; then
         echo "Error: libowlcpp_logic.a not found in $OWLCPP_ROOT/out/bin/logic/*/release/link-static"
         exit 1
 fi
 ln -s $(ls $OWLCPP_ROOT/out/bin/logic/*/release/link-static/libowlcpp_logic.a | head) $OWLCPPMAINDIR/libs/libowlcpp_logic.a
+
 if [ $(ls $OWLCPP_ROOT/out/bin/rdf/*/release/link-static/libowlcpp_rdf.a | wc -l) -eq 0 ]; then
         echo "Error: libowlcpp_rdf.a not found in $OWLCPP_ROOT/out/bin/rdf/*/release/link-static"
         exit 1
 fi
 ln -s $(ls $OWLCPP_ROOT/out/bin/rdf/*/release/link-static/libowlcpp_rdf.a | head) $OWLCPPMAINDIR/libs/libowlcpp_rdf.a
+
+if [ $(ls $OWLCPP_ROOT/out/ext/factpp/factpp/*/release/link-static/libfactpp_kernel*.a | wc -l) -eq 0 ]; then
+        echo "Error: libfactpp_kernel*.a not found in $OWLCPP_ROOT/out/ext/factpp/factpp/*/release/link-static/libfactpp_kernel*.a"
+        exit 1
+fi
+ln -s $(ls $OWLCPP_ROOT/out/ext/factpp/factpp/*/release/link-static/libfactpp_kernel*.a | head) $OWLCPPMAINDIR/libs/libfactpp_kernel.a
+
+if [ $(ls $OWLCPP_ROOT/out/ext/libxml2/libxml2/*/release/libxml2-version-*/link-static/libxml2*.a | wc -l) -eq 0 ]; then
+        echo "Error: libxml2*.a not found in $OWLCPP_ROOT/out/ext/libxml2/libxml2/*/release/libxml2-version-*/link-static/libxml2*.a"
+        exit 1
+fi
+ln -s $(ls $OWLCPP_ROOT/out/ext/libxml2/libxml2/*/release/libxml2-version-*/link-static/libxml2*.a | head) $OWLCPPMAINDIR/libs/libxml2.a
+
+if [ $(ls $OWLCPP_ROOT/out/ext/raptor/raptor/*/release/link-static/raptor-*/libraptor*.a | wc -l) -eq 0 ]; then
+        echo "Error: libraptor*.a not found in $OWLCPP_ROOT/out/ext/raptor/raptor/*/release/link-static/raptor-*/libraptor*.a"
+        exit 1
+fi
+ln -s $(ls $OWLCPP_ROOT/out/ext/raptor/raptor/*/release/link-static/raptor-*/libraptor*.a | head) $OWLCPPMAINDIR/libs/libraptor2.a
+
+#if [ $(ls $OWLCPPMAINDIR/raptor2-$RAPTOR2V/src/.libs/libraptor2.a | wc -l) -eq 0 ]; then
+#        echo "Error: libraptor2.a not found in $OWLCPPMAINDIR/raptor2-$RAPTOR2V/src/.libs"
+#        exit 1
+#fi
+#ln -s $(ls $OWLCPPMAINDIR/raptor2-$RAPTOR2V/src/.libs/libraptor2.a | head) $OWLCPPMAINDIR/libs/libraptor2.a
+
+#if [ $(ls $OWLCPPMAINDIR/FaCT++-$FACTPPV/src/FaCT++/FaCT++ | wc -l) -eq 0 ]; then
+#        echo "Error: libraptor2.a not found in $OWLCPPMAINDIR/raptor2-$RAPTOR2V/src/.libs"
+#        exit 1
+#fi
+#ln -s $(ls $OWLCPPMAINDIR/raptor2-$RAPTOR2V/src/.libs/libraptor2.a | head) $OWLCPPMAINDIR/libs/libraptor2.a
+
 echo "This file just marks that owlcpp was successfully built. Remove it to rebuild." > $OWLCPPMAINDIR/successfully_built
 

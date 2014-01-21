@@ -256,7 +256,7 @@ AC_CACHE_SAVE
 AM_CONDITIONAL([DO_BUILDOWLCPP],[test "x${with_owlcpp}" == xauto])
 if test "x$with_owlcpp" == xauto; then
 	OWLCPP_ROOT=`cd ./owlcpp; pwd`
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf"
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf -lfactpp_kernel -lraptor2 -lxml2"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$OWLCPP_ROOT/libs"
 	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$OWLCPP_ROOT/include"
 
@@ -270,7 +270,7 @@ if test "x$with_owlcpp" == xauto; then
 elif test "x$with_owlcpp" != xauto -a "x$with_owlcpp" != x; then
 	OWLCPP_ROOT=$with_owlcpp
 	LOCAL_OWLCPP_ROOT=`cd ./owlcpp; pwd`
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf"
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lowlcpp_io -lowlcpp_logic -lowlcpp_rdf -lfactpp_kernel -lraptor2 -lxml2"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$LOCAL_OWLCPP_ROOT/libs"
 	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$LOCAL_OWLCPP_ROOT/include"
 
