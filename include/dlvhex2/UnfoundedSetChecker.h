@@ -70,6 +70,10 @@ protected:
 	SimpleNogoodContainerPtr ngc;
 	InterpretationPtr domain; // domain of all problem variables
 
+	// compatible set for current solver instance
+	InterpretationConstPtr compatibleSet;
+	InterpretationConstPtr compatibleSetWithoutAux;
+
 	// in AssumptionBasedUnfoundedSetChecker, solver is defined during the whole lifetime of the object
 	// In EncodingBasedUnfoundedSetChecker, solver is only defined while getUnfoundedSet runs
 	SATSolverPtr solver;
@@ -168,21 +172,32 @@ public:
 	virtual ~UnfoundedSetChecker() {}
 
 	/**
-	* Returns an unfounded set of groundProgram wrt. compatibleSet;
-	* If the empty set is returned,
-	* then there does not exist a greater (nonempty) unfounded set.
-	* 
-	* The method supports also unfounded set detection over partial interpretations.
-	* For this purpose, skipProgram specifies all rules which shall be ignored
-	* in the search. The interpretation must be complete and compatible over the non-ignored part.
-	* Each detected unfounded set will remain an unfounded set for all possible
-	* completions of the interpretation.
-	*
-	* @param compatibleSet The interpretation for which we want to compute an unfounded set
-	* @param skipProgram The set of rules which shall be ignored in the UFS check (because the assignment might be incomplete wrt. these rules)
-	* @return std::vector<IDAddress> An unfounded set (might be of size 0)
-	*/
-	virtual std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram) = 0;
+	 * Initializes the UFS checker wrt. compatibleSet.
+	 *
+	 * @param compatibleSet The interpretation for which we want to compute an unfounded set
+	 * @param skipProgram The set of rules which shall be ignored in the UFS check (because the assignment might be incomplete wrt. these rules)
+	 */
+	virtual void initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>()) = 0;
+
+	/**
+	 * Returns an unfounded set of groundProgram wrt. compatibleSet;
+	 * If the empty set is returned,
+	 * then there does not exist a greater (nonempty) unfounded set.
+	 * 
+	 * The method supports also unfounded set detection over partial interpretations.
+	 * For this purpose, skipProgram specifies all rules which shall be ignored
+	 * in the search. The interpretation must be complete and compatible over the non-ignored part.
+	 * Each detected unfounded set will remain an unfounded set for all possible
+	 * completions of the interpretation.
+	 *
+	 * @return std::vector<IDAddress> The next unfounded set (might be of size 0)
+	 */
+	virtual std::vector<IDAddress> getNextUnfoundedSet() = 0;
+
+	/**
+	 * Terminates UFS detection for current instance. 
+	 */
+	virtual void terminate() = 0;
 
 	/**
 	 * Forces the unfounded set checker to learn nogoods from main search now
@@ -190,11 +205,11 @@ public:
 	virtual void learnNogoodsFromMainSearch(bool reset) = 0;
 
 	/**
-	* constructs a nogood which encodes the essence of an unfounded set
-	* @param ufs The unfounded set to construct the nogood for
-	* @param interpretation The interpretation which was used to compute the unfounded set for
-	* @return Nogood The UFS-nogood
-	*/
+	 * constructs a nogood which encodes the essence of an unfounded set
+	 * @param ufs The unfounded set to construct the nogood for
+	 * @param interpretation The interpretation which was used to compute the unfounded set for
+	 * @return Nogood The UFS-nogood
+	 */
 	Nogood getUFSNogood(
 			const std::vector<IDAddress>& ufs,
 			InterpretationConstPtr interpretation);
@@ -291,9 +306,11 @@ public:
 
 	void learnNogoodsFromMainSearch(bool reset);
 
-	std::vector<IDAddress> getUnfoundedSet(
+	void initialize(
 			InterpretationConstPtr compatibleSet,
-			const std::set<ID>& skipProgram);
+			std::set<ID> skipProgram = std::set<ID>());
+	std::vector<IDAddress> getNextUnfoundedSet();
+	void terminate();
 };
 
 class AssumptionBasedUnfoundedSetChecker : public UnfoundedSetChecker{
@@ -355,7 +372,11 @@ public:
 
 	void learnNogoodsFromMainSearch(bool reset);
 
-	std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram);
+	void initialize(
+			InterpretationConstPtr compatibleSet,
+			std::set<ID> skipProgram = std::set<ID>());
+	std::vector<IDAddress> getNextUnfoundedSet();
+	void terminate();
 };
 
 class DLVHEX_EXPORT UnfoundedSetCheckerManager{
@@ -423,8 +444,9 @@ public:
 			const std::set<ID>& skipProgram,
 			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
-	std::vector<IDAddress> getUnfoundedSet(
-			InterpretationConstPtr interpretation);
+	void initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>());
+	std::vector<IDAddress> getNextUnfoundedSet();
+	void terminate();
 
 	/**
 	 * Initializes the unfounded set checkers for all program components.
