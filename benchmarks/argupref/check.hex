@@ -1,10 +1,20 @@
 % S is no proper subset of T
 % (i) S is no subset of T at all
-isNoSubset :- input(s, X, X), not input(t, X, X).
-ok :- isNoSubset.
+%isNoSubset :- input(s, X, X), not input(t, X, X).
+%ok :- isNoSubset.
 % (ii) S is no PROPER subset, i.e., every element of T is in S
-notEveryElementOfTIsInS :- input(t, X, X), not input(s, X, X).
-ok :- not isNoSubset, not notEveryElementOfTIsInS.
+%notEveryElementOfTIsInS :- input(t, X, X), not input(s, X, X).
+%ok :- not isNoSubset, not notEveryElementOfTIsInS.
+
+
+% S is a superset of T
+noSuperSet :- input(s, X, X), not input(t, X, X).
+ok :- not noSuperSet.
+
+% S and T are incomparible
+ok :- input(s, X, X), not input(t, X, X), not input(s, Y, Y), input(t, Y, Y).
+
+
 
 % T is not admissible
 % possibility 1: T is conflicting
