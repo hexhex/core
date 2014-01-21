@@ -171,7 +171,7 @@ bool AnswerSetPrinterCallback::operator()(
   std::ostream& o = std::cout;
 
   #warning TODO think about more efficient printing
-  o << "{{";
+  o << "({";
   if( h_it != h_it_end )
   {
     bool gotOutput =
@@ -211,7 +211,7 @@ bool AnswerSetPrinterCallback::operator()(
       }
     }
   }
-  o << "}}";
+  o << "})";
   o << std::endl;
 
   // never abort
