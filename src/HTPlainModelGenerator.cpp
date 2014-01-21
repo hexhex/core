@@ -53,7 +53,8 @@ HTPlainModelGeneratorFactory::HTPlainModelGeneratorFactory(ProgramCtx& ctx, cons
 
 HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr input):
 	ModelGeneratorBase<HTInterpretation>(input),
-	factory(factory)
+	factory(factory),
+	nextmodel(true)
 {
 	RegistryPtr reg = factory.ctx.registry();
 	// create new interpretation as copy
@@ -100,21 +101,28 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 		return HTInterpretationPtr();
 	}
 
-	InterpretationPtr model = solver->getNextModel();
-	if (model) {
-		// TODO: get ALL unfounded sets
-		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(model);
-		DBGLOG(DBG, "generateNextModel: [ufs size] " << ufs.size());
-		HTInterpretation::Storage here = model->getStorage();
-		BOOST_FOREACH(IDAddress id, ufs) {
-			here.clear_bit(id);
+	if (nextmodel) {
+		model = solver->getNextModel();
+		if (!model) {
+			return HTInterpretationPtr();
 		}
-		InterprPtr htmodel(new HTInterpretation());
-		htmodel->there() = model->getStorage();
-		htmodel->here() = here;
-		return htmodel;
+		nextmodel = false;
+		ufscm->initialize(model);
 	}
-	return InterprPtr();
+	std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
+	if (ufs.size() == 0) {
+		nextmodel = true;
+		ufscm->terminate();
+	}
+	DBGLOG(DBG, "generateNextModel: [ufs size] " << ufs.size());
+	HTInterpretation::Storage here = model->getStorage();
+	BOOST_FOREACH(IDAddress id, ufs) {
+		here.clear_bit(id);
+	}
+	InterprPtr htmodel(new HTInterpretation());
+	htmodel->there() = model->getStorage();
+	htmodel->here() = here;
+	return htmodel;
 }
 
 DLVHEX_NAMESPACE_END

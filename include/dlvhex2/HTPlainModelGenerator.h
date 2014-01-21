@@ -54,6 +54,10 @@ protected:
   GenuineSolverPtr solver;
   // UFS checker manager
   UnfoundedSetCheckerManagerPtr ufscm;
+  // indicates if a new (classical) model should be generated
+  bool nextmodel;
+  // current (classical) model
+  InterpretationPtr model;
 
 public:
   HTPlainModelGenerator(Factory& factory, InterprConstPtr input);
