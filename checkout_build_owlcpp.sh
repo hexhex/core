@@ -116,6 +116,12 @@ if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 	echo " constant FACTPP : \"$OWLCPPMAINDIR/FaCT++-$FACTPPV\" $FACTPPV ;" >> user-config.jam
 	cd ..
 
+	echo "Updating jamroot.jam"
+	cd owlcpp-v$OWLCPPV
+	cat jamroot.jam | sed 's/-fvisibility=hidden/-fvisibility=default/' | sed 's/-fvisibility-inlines-hidden//' > jamroot.jam.up
+	mv jamroot.jam.up jamroot.jam
+	cd ..
+
 	if [ ! -f $OWLCPPMAINDIR/boost_$BOOSTVU/tools/build/v2/b2 ]; then
 		echo "Building boost.build"
 		pushd $OWLCPPMAINDIR/boost_$BOOSTVU/tools/build/v2 > /dev/null
