@@ -145,10 +145,21 @@ This file provides some hints how to install and run dlvhex.
 
 *** owlcpp
     This library is necessary for repair answer set computation
-    (option --repair). To link the library, use either
+    (option --repair). To link the library, use one of the
+    following options:
+
+    1.
        ./configure --with-owlcpp=PATH
-    where PATH points to the main directory of an owlcpp build,
-    or
+    where PATH points to the main directory of an owlcpp build.
+    In this case, make sure that owlcpp and the core are built
+    using the same version of boost. Moreover, make sure that
+    owlcpp exports all symbols such that they can be used from
+    shared libraries; this can be achieved by
+    editing the file jamroot.jam in the owlcpp directory such that
+    "-fvisibility=hidden" is replaced by "-fvisibility=default" and
+    "-fvisibility-inlines-hidden" is removed.
+    
+    2.
        ./configure --with-owlcpp=auto
    to download and build owlcpp and its dependencies automatically
    as part of the dlvhex build process (internet connection required).
