@@ -398,13 +398,20 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 			}
 		}
 
+		DLVHEX_BENCHMARK_REGISTER(sidnongroundsupportsets, "nonground supportsets");
+		DLVHEX_BENCHMARK_COUNT(sidnongroundsupportsets, supportSets->getNogoodCount());
+
+
 		// ground the support sets exhaustively
 		NogoodGrounderPtr nogoodgrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), supportSets, supportSets, annotatedGroundProgram));
+
 		int nc = 0;
 		while (nc < supportSets->getNogoodCount()){
 			nc = supportSets->getNogoodCount();
 			nogoodgrounder->update();
 		}
+                DLVHEX_BENCHMARK_REGISTER(sidgroundsupportsets, "ground supportsets");
+                DLVHEX_BENCHMARK_COUNT(sidgroundsupportsets, supportSets->getNogoodCount());
 
 		// add them to the annotated ground program to make use of them for verification
 		DBGLOG(DBG, "Adding support sets to annotated ground program");
