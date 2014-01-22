@@ -125,7 +125,7 @@ This file provides some hints how to install and run dlvhex.
 
     $ ./bootstrap.h --prefix=/path/to/install/boost
     $ ./b2 --build-type=complete --layout=tagged threading=single,multi variant=release
-    $ ./b2 install
+    $ ./b2 install --layout=tagged
 
     If you have compiled boost by yourself, you have to tell the
     dlvhex configure script where you have installed it with
