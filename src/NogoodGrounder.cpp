@@ -114,18 +114,27 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 
 				// check if the instance of the nogood contains a ground literal which does not appear in the program
 				bool relevant = true;
-				BOOST_FOREACH (ID lit, ng){
+				Nogood simplifiedNG;
+				BOOST_FOREACH (ID lit, instantiatedNG){
 					if (lit.isOrdinaryGroundAtom() && !agp.getProgramMask()->getFact(lit.address)){
-						relevant = false;
-						break;
+						if (!lit.isNaf()){
+							// can never be true --> remove whole instance
+							relevant = false;
+							break;
+						}else{
+							// is always true --> remove literal
+						}
+					}else{
+						// might be true --> keep literal
+						simplifiedNG.insert(lit);
 					}
 				}
 
 				if (relevant){
-					if (instantiatedNG.isGround()){
-						destination->addNogood(instantiatedNG);
+					if (simplifiedNG.isGround()){
+						destination->addNogood(simplifiedNG);
 					}else{
-						watched->addNogood(instantiatedNG);
+						watched->addNogood(simplifiedNG);
 					}
 				}
 			}
