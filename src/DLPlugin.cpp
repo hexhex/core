@@ -221,42 +221,43 @@ virtual void retrieve(const Query& query, Answer& answer)
 	DBGLOG(DBG,"******onto File is loaded");
 	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
 				if (to_string(t.obj_,store)=="owl:Class") {
-		        	DBGLOG(DBG,"*****Class is " << to_string(t.subj_, store));
+		        	DBGLOG(DBG,"*****Class is " << to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
 		        	DBGLOG(DBG,"*****Construct facts of the form op(C,negC), sub(C,C) for this class.");
-		        	ID c1id = reg->storeConstantTerm(to_string(t.subj_, store));
-		        	ID c2id = reg->storeConstantTerm("neg_"+to_string(t.subj_, store));
+		        //	ID c1id = reg->storeConstantTerm(to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
+		        //	ID c2id = reg->storeConstantTerm("neg_"+to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
 				}	
-				if (to_string(t.obj_,store)=="owl:ObjectProperty") {
-						        	DBGLOG(DBG,"*****ObjectProperty "<< to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#"),to_string(t.subj_, store).length()));
+				if (to_string(t.obj_,store)=="owl:ObjectProperty")
+								{
+						        	DBGLOG(DBG,"*****ObjectProperty "<< to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
 						        	DBGLOG(DBG,"*****Construct facts of the form op(Subj,negSubj), sub(Subj,Subj)");
-				}
+								}
 
 				if (to_string(t.pred_,store)=="owl:subClassOf")
-				{
-									DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store) << to_string(t.obj_, store));
+								{
+									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << to_string(t.pred_, store).substr(to_string(t.pred_, store).find("#")+1,to_string(t.pred_, store).length()) << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
 									DBGLOG(DBG,"*****Construct facts of the form sub(Subj,Obj)");
-				}
+								}
 
 				if (to_string(t.pred_,store)=="owl:subPropertyOf")
 								{
-													DBGLOG(DBG,to_string(t.subj_, store) <<"    "<< to_string(t.pred_, store) << "   " << to_string(t.obj_, store));
+									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << to_string(t.pred_, store).substr(to_string(t.pred_, store).find("#")+1,to_string(t.pred_, store).length()) << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
 													DBGLOG(DBG,"*****Construct facts of the form sub(Subj,Obj)");
 								}
 
 				if (to_string(t.pred_,store)=="owl:disjointWith")
 								{
-													DBGLOG(DBG,to_string(t.subj_, store) << "      "<<to_string(t.pred_, store)<< "    "<<to_string(t.obj_, store));
+									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << to_string(t.pred_, store).substr(to_string(t.pred_, store).find("#")+1,to_string(t.pred_, store).length()) << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
 													DBGLOG(DBG,"*****Construct facts of the form sub(Subj,negObj)");
 								}
 				if (to_string(t.pred_,store)=="owl:propertyDisjointWith")
 											{
-													DBGLOG(DBG,to_string(t.subj_, store)  << "      "<< to_string(t.pred_, store) << "      "<< to_string(t.obj_, store));
+									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << to_string(t.pred_, store).substr(to_string(t.pred_, store).find("#")+1,to_string(t.pred_, store).length()) << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
 													DBGLOG(DBG,"*****Construct facts of the form sub(Subj,Obj)");
 											}
 				if (to_string(t.pred_,store)=="rdfs:Domain")
 															{
-																	DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store)<< to_string(t.obj_, store));
-																	DBGLOG(DBG,"*****Construct facts of the form sub(exSubj,Obj)");
+									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << to_string(t.pred_, store).substr(to_string(t.pred_, store).find("#")+1,to_string(t.pred_, store).length()) << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
+									DBGLOG(DBG,"*****Construct facts of the form sub(exSubj,Obj)");
 															}
 
 
