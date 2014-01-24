@@ -226,36 +226,36 @@ virtual void retrieve(const Query& query, Answer& answer)
 		        }
 				if (to_string(t.obj_,store)=="owl:ObjectProperty")
 								{
-						        	DBGLOG(DBG,"*****ObjectProperty: "<< to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
-						        	DBGLOG(DBG,"*****Construct facts of the form op(Subj,negSubj), sub(Subj,Subj)");
+						        	DBGLOG(DBG,"ObjectProperty: "<< to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
+						        	DBGLOG(DBG,"TODO: Construct facts of the form op(Subj,negSubj), sub(Subj,Subj)");
 								}
 
 				if (to_string(t.pred_,store)=="owl:subClassOf")
 								{
 									DBGLOG(DBG,"Subclass relation: "<< to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "   "<<to_string(t.pred_, store)<< "    "<< to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
-									DBGLOG(DBG,"*****Construct facts of the form sub(Subj,Obj)");
+									DBGLOG(DBG,"TODO: Construct facts of the form sub(Subj,Obj)");
 								}
 
 				if (to_string(t.pred_,store)=="owl:subPropertyOf")
 								{
-									DBGLOG(DBG,"Subproperty relation" <<to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "   "<<to_string(t.pred_, store)<< "   "<<to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
-													DBGLOG(DBG,"*****Construct facts of the form sub(Subj,Obj)");
+									DBGLOG(DBG,"Subproperty relation: " <<to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "   "<<to_string(t.pred_, store)<< "   "<<to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
+													DBGLOG(DBG,"TODO: Construct facts of the form sub(Subj,Obj)");
 								}
 
 				if (to_string(t.pred_,store)=="owl:disjointWith")
 								{
-									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "    "<< to_string(t.pred_, store)<<"    " << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
-													DBGLOG(DBG,"*****Construct facts of the form sub(Subj,negObj)");
+									DBGLOG(DBG,"Class disjointness: " <<to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "    "<< to_string(t.pred_, store)<<"    " << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
+													DBGLOG(DBG,"TODO: Construct facts of the form sub(Subj,negObj)");
 								}
 				if (to_string(t.pred_,store)=="owl:propertyDisjointWith")
 											{
-									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "    "<<to_string(t.pred_, store)<<"    " << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
-													DBGLOG(DBG,"*****Construct facts of the form sub(Subj,Obj)");
+									DBGLOG(DBG,"Role disjointness: " <<to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "    "<<to_string(t.pred_, store)<<"    " << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
+													DBGLOG(DBG,"TODO: Construct facts of the form sub(Subj,Obj)");
 											}
 				if (to_string(t.pred_,store)=="rdfs:Domain")
 															{
-									DBGLOG(DBG,to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "    "<<to_string(t.pred_, store)<<"    " << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
-									DBGLOG(DBG,"*****Construct facts of the form sub(exSubj,Obj)");
+									DBGLOG(DBG,"Domain restriction, i.e. axiom of the form \existsR \sqsubseteq C: "<<to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()) << "    "<<to_string(t.pred_, store)<<"    " << to_string(t.obj_, store).substr(to_string(t.obj_, store).find("#")+1,to_string(t.obj_, store).length()));
+									DBGLOG(DBG,"TODO: Construct facts of the form sub(exSubj,Obj)");
 															}
 
 
