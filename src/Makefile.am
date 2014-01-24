@@ -80,6 +80,7 @@ libdlvhex2_base_la_SOURCES = \
     PlainModelGenerator.cpp \
     GenuinePlainModelGenerator.cpp \
     HTPlainModelGenerator.cpp \
+    SEQPlainModelGenerator.cpp \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
     GenuineWellfoundedModelGenerator.cpp \

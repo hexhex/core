@@ -54,9 +54,9 @@ HTPlainModelGeneratorFactory::HTPlainModelGeneratorFactory(ProgramCtx& ctx, cons
 HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr input):
 	ModelGeneratorBase<HTInterpretation>(input),
 	factory(factory),
+	reg(factory.ctx.registry()),
 	nextmodel(true)
 {
-	RegistryPtr reg = factory.ctx.registry();
 	// create new interpretation as copy
 	InterpretationPtr newint;
 	if( input == 0 ) {
@@ -100,7 +100,6 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 	if (solver == GenuineSolverPtr()) {
 		return HTInterpretationPtr();
 	}
-
 	if (nextmodel) {
 		model = solver->getNextModel();
 		if (!model) {
@@ -112,7 +111,6 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 	std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
 	if (ufs.size() == 0) {
 		nextmodel = true;
-		ufscm->terminate();
 	}
 	DBGLOG(DBG, "generateNextModel: [ufs size] " << ufs.size());
 	HTInterpretation::Storage here = model->getStorage();
