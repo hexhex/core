@@ -195,11 +195,6 @@ public:
 	virtual std::vector<IDAddress> getNextUnfoundedSet() = 0;
 
 	/**
-	 * Terminates UFS detection for current instance. 
-	 */
-	virtual void terminate() = 0;
-
-	/**
 	 * Forces the unfounded set checker to learn nogoods from main search now
 	 */
 	virtual void learnNogoodsFromMainSearch(bool reset) = 0;
@@ -310,7 +305,6 @@ public:
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>());
 	std::vector<IDAddress> getNextUnfoundedSet();
-	void terminate();
 };
 
 class AssumptionBasedUnfoundedSetChecker : public UnfoundedSetChecker{
@@ -376,7 +370,6 @@ public:
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>());
 	std::vector<IDAddress> getNextUnfoundedSet();
-	void terminate();
 };
 
 class DLVHEX_EXPORT UnfoundedSetCheckerManager{
@@ -446,7 +439,6 @@ public:
 
 	void initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>());
 	std::vector<IDAddress> getNextUnfoundedSet();
-	void terminate();
 
 	/**
 	 * Initializes the unfounded set checkers for all program components.
