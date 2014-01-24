@@ -54,6 +54,7 @@
 #include "owlcpp/io/input.hpp"
 #include "owlcpp/io/catalog.hpp"
 #include "owlcpp/terms/node_tags_owl.hpp"
+
 #endif //HAVE_OWLCPP
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -75,12 +76,12 @@ public:		// testDL is the name of our external atom
   {
 		DBGLOG(DBG,"Constructor of DL plugin is started");
 		addInputConstant(); // the ontology
-    		addInputPredicate(); // the positive concept
-    		addInputPredicate(); // the negative concept
+    	addInputPredicate(); // the positive concept
+    	addInputPredicate(); // the negative concept
 		addInputPredicate(); // the positive role
 		addInputPredicate(); // the negative role
 		addInputConstant(); // the query
-    		setOutputArity(1); // arity of the output list
+    	setOutputArity(1); // arity of the output list
   }
 
 
@@ -100,33 +101,70 @@ virtual void retrieve(const Query& query, Answer& answer)
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
   {
+
 	#if defined(HAVE_OWLCPP)
+
+	  DBGLOG(DBG,"*****Retrieve is started");
+	// Ontology name
+
 	RegistryPtr reg = getRegistry();
+	ID subid = reg->storeConstantTerm("sub");
+	ID xid = reg->storeVariableTerm("X");
+	ID yid = reg->storeVariableTerm("Y");
+	//reg->terms.getByID to get it
+
+	OrdinaryAtom bodysub1 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	bodysub1.tuple.push_back(subid);
+	bodysub1.tuple.push_back(xid);
+	bodysub1.tuple.push_back(yid);
+
+	ID bodysub1id = reg->storeOrdinaryAtom(bodysub1);
+
+	Rule trans(ID::MAINKIND_RULE);
+	trans.body.push_back(bodysub1id);
+	trans.head.push_back(bodysub1id);
+	ID transid = reg->storeRule(trans);
+
+	std::string ontoName = getRegistry()->terms.getByID(query.input[0]).getUnquotedString();
+	DBGLOG(DBG,"******Name of the onto");
+	DBGLOG(DBG,ontoName);
+
 
 
 	owlcpp::Triple_store store;
 	owlcpp::Triple_store::result_b<0,0,0,0>::type r = store.find_triple(
 			   	   owlcpp::any(),
-			   	   owlcpp::any(),
-			   	   owlcpp::any(),
+				   owlcpp::any(),
+				   owlcpp::any(),
 	               owlcpp::any());
+	DBGLOG(DBG,"******Before loading the file");
+	load_file("/home/dasha/Documents/benchmarkConstruction/test/mytest.owl",store);
+	DBGLOG(DBG,"******onto File is loaded");
+	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
+				if (to_string(t.subj_,store)=="owl:Class") {
+		        	DBGLOG(DBG,to_string(t.subj_, store));
+		        	DBGLOG(DBG,"Construct facts of the form op(C,negC), sub(C,C) for this class.");
+				}	
+				if (to_string(t.subj_,store)=="owl:ObjectProperty") {
+						        	DBGLOG(DBG,to_string(t.subj_, store));
+						        	DBGLOG(DBG,"Construct facts of the form op(R,negR), sub(R,R), sup(exR,exR)");
+				}
 
-	load_file("/home/dasha/Documents/test/mytest.owl",store);
-	/*BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
-	        	if(to_string(t.obj_,store)=="owl:Class") {
-	        		std::cout
-	        		<< '\"'
-	        		<< to_string(t.subj_, store) << "\"\t\"";
-	        	}
-	        	if(to_string(t.pred_,store)=="rdfs:subClassOf") {
-	                		std::cout
-	                		<< '\"'
-	                		<< to_string(t.subj_, store) << "\"\t\""
-	                		<< to_string(t.pred_, store) << "\"\t\""
-	                		<< to_string(t.obj_, store) << "\"\t\n";
-	                	}
-	         }*/
-	
+				if (to_string(t.pred_,store)=="owl:subClassOf")
+				{
+									DBGLOG(DBG,to_string(t.subj_, store));
+									DBGLOG(DBG,"Construct facts of the form sub(C,D)");
+				}
+
+	         }
+
+	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
+				if (to_string(t.subj_,store)=="rdfs:SubClassOf") {
+			  		to_string(t.obj_,store);
+				}	
+	         }
+
+
 
 	// Iterators (objects that mark the begin and the end of some structure)
 
