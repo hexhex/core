@@ -988,7 +988,7 @@ void EncodingBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 
 void EncodingBasedUnfoundedSetChecker::initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
 
-	// TODO: consider benchmarks in initialize/getNextUnfoundedSet/terminate
+	// TODO: consider benchmarks in initialize/getNextUnfoundedSet
 
 	UnfoundedSetChecker::compatibleSet = compatibleSet;
 
@@ -1028,13 +1028,6 @@ void EncodingBasedUnfoundedSetChecker::initialize(InterpretationConstPtr compati
 		// solve the ufs problem
 		solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
 	}
-}
-
-void EncodingBasedUnfoundedSetChecker::terminate(){
-
-	solver.reset();
-	compatibleSet.reset();
-	compatibleSetWithoutAux.reset();
 }
 
 std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getNextUnfoundedSet(){
@@ -1758,12 +1751,6 @@ void AssumptionBasedUnfoundedSetChecker::initialize(InterpretationConstPtr compa
 	compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
 }
 
-void AssumptionBasedUnfoundedSetChecker::terminate(){
-
-	compatibleSet.reset();
-	compatibleSetWithoutAux.reset();
-}
-
 std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getNextUnfoundedSet(){
 
 	DBGLOG(DBG, "Performing UFS Check wrt. " << *compatibleSet);
@@ -1995,14 +1982,13 @@ void UnfoundedSetCheckerManager::initialize(
 		InterpretationConstPtr interpretation,
 		std::set<ID> skipProgram){
 
-	UnfoundedSetCheckerPtr ufsc = instantiateUnfoundedSetChecker(*mg, ctx, agp.getGroundProgram(), agp, InterpretationConstPtr());
+	if (preparedUnfoundedSetCheckers.size() == 0) {
+		preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
+			(0, instantiateUnfoundedSetChecker(*mg, ctx, agp.getGroundProgram(), agp, InterpretationConstPtr()))
+		);
+	}
+	UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
 	ufsc->initialize(interpretation, skipProgram);
-	preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>(0, ufsc));
-}
-
-void UnfoundedSetCheckerManager::terminate(){
-
-	preparedUnfoundedSetCheckers.find(0)->second->terminate();
 }
 
 std::vector<IDAddress> UnfoundedSetCheckerManager::getNextUnfoundedSet(){
@@ -2037,7 +2023,6 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
 			ufsc->initialize(interpretation, skipProgram);
 			std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
-			ufsc->terminate();
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
 				ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
@@ -2052,7 +2037,6 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
 			ufsc->initialize(interpretation, skipProgram);
 			std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
-			ufsc->terminate();
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
 				ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
@@ -2078,7 +2062,6 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(comp)->second;
 				ufsc->initialize(interpretation, skipProgram);
 				std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
-				ufsc->terminate();
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
@@ -2094,7 +2077,6 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(comp)->second;
 				ufsc->initialize(interpretation, skipProgram);
 				std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
-				ufsc->terminate();
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
