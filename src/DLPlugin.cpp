@@ -70,7 +70,7 @@ class CDLAtom:	// tests user-defined external learning
   public PluginAtom
 {
 
-public:		// testDL is the name of our external atom
+public:
     	CDLAtom():
 	PluginAtom("cDL", true) // monotonic
   {
@@ -104,7 +104,7 @@ virtual void retrieve(const Query& query, Answer& answer)
 
 	#if defined(HAVE_OWLCPP)
 
-	  DBGLOG(DBG,"*****Retrieve is started");
+	  DBGLOG(DBG,"*****Retrieve method is started");
 
 	  DBGLOG(DBG,"*****Construction of the program for computing the TBox closure");
 
@@ -117,21 +117,18 @@ virtual void retrieve(const Query& query, Answer& answer)
 	ID zid = reg->storeVariableTerm("Z");
 
 
-	DBGLOG(DBG,"*****Create atom sub(X,Y)");
 	OrdinaryAtom bodysub1 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
 	bodysub1.tuple.push_back(subid);
 	bodysub1.tuple.push_back(xid);
 	bodysub1.tuple.push_back(yid);
 
 
-	DBGLOG(DBG,"*****Create atom sub(Y,Z)");
 	OrdinaryAtom bodysub2 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
 	bodysub2.tuple.push_back(subid);
 	bodysub2.tuple.push_back(yid);
 	bodysub2.tuple.push_back(zid);
 
 
-	DBGLOG(DBG,"*****Create atom sub(X,Z)");
 	OrdinaryAtom headsub (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
 	headsub.tuple.push_back(subid);
 	headsub.tuple.push_back(yid);
@@ -142,13 +139,13 @@ virtual void retrieve(const Query& query, Answer& answer)
 	ID headsubid = reg->storeOrdinaryAtom(headsub);
 
 
-	DBGLOG(DBG,"*****Create a rule");
 	Rule trans(ID::MAINKIND_RULE);
 	trans.body.push_back(bodysub1id);
 	trans.body.push_back(bodysub2id);
 	trans.head.push_back(headsubid);
 	ID transid = reg->storeRule(trans);
 
+	//DBGLOG(DBG,"*****Rule 1.   " << reg->rules.getByID(transid).print());
 
 	DBGLOG(DBG,"*****2. Contraposition rule: sub(Y',X'):-op(X,X'),op(Y,Y'),sub(X,Y).");
 
@@ -176,6 +173,7 @@ virtual void retrieve(const Query& query, Answer& answer)
 
 	ID opposid = reg->storeRule(oppos);
 
+	//DBGLOG(DBG,"*****Rule 2.   " << reg->rules.getByID(opposid).print());
 
 	DBGLOG(DBG,"*****3. Conflict rule: conf(X,Y):-op(X,Y),sub(X,Y).");
 
@@ -194,16 +192,29 @@ virtual void retrieve(const Query& query, Answer& answer)
 
 	ID bodyconf1id = reg->storeOrdinaryAtom(bodyconf1);
 
-	Rule conf(ID::MAINKIND_RULE);
+	Rule conflict(ID::MAINKIND_RULE);
 
-	conf.head.push_back(headconfid);
-	conf.body.push_back(bodyconf1id);
-	conf.body.push_back(bodysub1id);
+	conflict.head.push_back(headconfid);
+	conflict.body.push_back(bodyconf1id);
+	conflict.body.push_back(bodysub1id);
+
+	ID conflictid = reg->storeRule(conflict);
+
+	//DBGLOG(DBG,"*****Rule 3.   " << reg->rules.getByID(conflictid).print());
+
+
+
+	/*DBGLOG(DBG,"****Preparing data structures for the program that classifies TBox: ");
+			ProgramCtx& ctx;
+			pc = ctx;
+			pc.idb.clear();
+			pc.edb = InterpretationPtr(new Interpretation(reg));
+			pc.currentOptimum.clear();
+			pc.config.setOption("NumberOfModels",0);*/
 
 
 	std::string ontoName = getRegistry()->terms.getByID(query.input[0]).getUnquotedString();
-	DBGLOG(DBG,"******Name of the onto");
-	DBGLOG(DBG,ontoName);
+	DBGLOG(DBG,"******Name of the onto: "<< ontoName);
 
 
 
@@ -213,16 +224,15 @@ virtual void retrieve(const Query& query, Answer& answer)
 				   owlcpp::any(),
 				   owlcpp::any(),
 	               owlcpp::any());
-	DBGLOG(DBG,"******Before loading the file");
 
 	//load_file("/home/dasha/ontologies/taxi/taxi.owl",store);
 	load_file(ontoName,store);
 
-	DBGLOG(DBG,"******onto File is loaded");
+	DBGLOG(DBG,"******Ontology is loaded. Parsing is started.");
 	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
 				if (to_string(t.obj_,store)=="owl:Class") {
-		        	DBGLOG(DBG,"*****Class: " << to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
-		        	DBGLOG(DBG,"*****Construct facts of the form op(C,negC), sub(C,C) for this class.");
+		        	DBGLOG(DBG,"Class: " << to_string(t.subj_, store).substr(to_string(t.subj_, store).find("#")+1,to_string(t.subj_, store).length()));
+		        	DBGLOG(DBG,"TODO: Construct facts of the form op(C,negC), sub(C,C) for this class.");
 		        }
 				if (to_string(t.obj_,store)=="owl:ObjectProperty")
 								{
