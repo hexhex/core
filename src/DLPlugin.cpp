@@ -108,7 +108,7 @@ virtual void retrieve(const Query& query, Answer& answer)
 
 	  DBGLOG(DBG,"*****Construction of the program for computing the TBox closure");
 
-	  DBGLOG(DBG,"*****1. Transitivity rule: sub(Y,Z):-sub(X,Y),sub(Y,Z)");
+	  DBGLOG(DBG,"*****1. Transitivity rule: sub(X,Z):-sub(X,Y),sub(Y,Z)");
 
 	RegistryPtr reg = getRegistry();
 	ID subid = reg->storeConstantTerm("sub");
@@ -116,32 +116,33 @@ virtual void retrieve(const Query& query, Answer& answer)
 	ID yid = reg->storeVariableTerm("Y");
 	ID zid = reg->storeVariableTerm("Z");
 
-	//reg->terms.getByID to get it
 
+	DBGLOG(DBG,"*****Create atom sub(X,Y)");
 	OrdinaryAtom bodysub1 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
 	bodysub1.tuple.push_back(subid);
 	bodysub1.tuple.push_back(xid);
 	bodysub1.tuple.push_back(yid);
 
 
+	DBGLOG(DBG,"*****Create atom sub(Y,Z)");
 	OrdinaryAtom bodysub2 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
 	bodysub2.tuple.push_back(subid);
 	bodysub2.tuple.push_back(yid);
 	bodysub2.tuple.push_back(zid);
 
 
+	DBGLOG(DBG,"*****Create atom sub(X,Z)");
 	OrdinaryAtom headsub (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
 	headsub.tuple.push_back(subid);
 	headsub.tuple.push_back(yid);
 	headsub.tuple.push_back(zid);
-
 
 	ID bodysub1id = reg->storeOrdinaryAtom(bodysub1);
 	ID bodysub2id = reg->storeOrdinaryAtom(bodysub2);
 	ID headsubid = reg->storeOrdinaryAtom(headsub);
 
 
-
+	DBGLOG(DBG,"*****Create a rule");
 	Rule trans(ID::MAINKIND_RULE);
 	trans.body.push_back(bodysub1id);
 	trans.body.push_back(bodysub2id);
@@ -150,6 +151,29 @@ virtual void retrieve(const Query& query, Answer& answer)
 
 
 	DBGLOG(DBG,"*****2. Contraposition rule: sub(Y',X'):-op(X,X'),op(Y,Y'),sub(X,Y).");
+
+
+	ID opid = reg->storeConstantTerm("op");
+	ID nxid = reg->storeVariableTerm("NX");
+	ID nyid = reg->storeVariableTerm("NY");
+
+	OrdinaryAtom bodyop1 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	bodyop1.tuple.push_back(opid);
+	bodyop1.tuple.push_back(xid);
+	bodyop1.tuple.push_back(nxid);
+
+	OrdinaryAtom bodyop2 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	bodyop2.tuple.push_back(opid);
+	bodyop2.tuple.push_back(yid);
+	bodyop2.tuple.push_back(nyid);
+
+/*	Rule op(ID::MAINKIND_RULE);
+	op.body.push_back(bodyop1);
+	op.body.push_back(bodyop2);
+	op.head.push_back(bodysub1);
+
+	ID opid = reg->storeRule(op);
+*/
 
 
 	DBGLOG(DBG,"*****3. Conflict rule: conf(X,Y):-op(X,Y),sub(X,Y).");
