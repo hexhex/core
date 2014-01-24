@@ -152,7 +152,6 @@ virtual void retrieve(const Query& query, Answer& answer)
 
 	DBGLOG(DBG,"*****2. Contraposition rule: sub(Y',X'):-op(X,X'),op(Y,Y'),sub(X,Y).");
 
-
 	ID opid = reg->storeConstantTerm("op");
 	ID nxid = reg->storeVariableTerm("NX");
 	ID nyid = reg->storeVariableTerm("NY");
@@ -167,16 +166,39 @@ virtual void retrieve(const Query& query, Answer& answer)
 	bodyop2.tuple.push_back(yid);
 	bodyop2.tuple.push_back(nyid);
 
-/*	Rule op(ID::MAINKIND_RULE);
-	op.body.push_back(bodyop1);
-	op.body.push_back(bodyop2);
-	op.head.push_back(bodysub1);
+	ID bodyop1id = reg->storeOrdinaryAtom(bodyop1);
+	ID bodyop2id = reg->storeOrdinaryAtom(bodyop2);
 
-	ID opid = reg->storeRule(op);
-*/
+	Rule oppos(ID::MAINKIND_RULE);
+	oppos.body.push_back(bodyop1id);
+	oppos.body.push_back(bodyop2id);
+	oppos.head.push_back(bodysub1id);
+
+	ID opposid = reg->storeRule(oppos);
 
 
 	DBGLOG(DBG,"*****3. Conflict rule: conf(X,Y):-op(X,Y),sub(X,Y).");
+
+	ID confid = reg->storeConstantTerm("conf");
+	OrdinaryAtom headconf (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	headconf.tuple.push_back(confid);
+	headconf.tuple.push_back(xid);
+	headconf.tuple.push_back(yid);
+
+	ID headconfid = reg->storeOrdinaryAtom(headconf);
+
+	OrdinaryAtom bodyconf1 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	bodyconf1.tuple.push_back(opid);
+	bodyconf1.tuple.push_back(xid);
+	bodyconf1.tuple.push_back(yid);
+
+	ID bodyconf1id = reg->storeOrdinaryAtom(bodyconf1);
+
+	Rule conf(ID::MAINKIND_RULE);
+
+	conf.head.push_back(headconfid);
+	conf.body.push_back(bodyconf1id);
+	conf.body.push_back(bodysub1id);
 
 
 	std::string ontoName = getRegistry()->terms.getByID(query.input[0]).getUnquotedString();
@@ -192,12 +214,16 @@ virtual void retrieve(const Query& query, Answer& answer)
 				   owlcpp::any(),
 	               owlcpp::any());
 	DBGLOG(DBG,"******Before loading the file");
+
 	load_file("/home/dasha/ontologies/taxi/taxi.owl",store);
 	DBGLOG(DBG,"******onto File is loaded");
 	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
 				if (to_string(t.subj_,store)=="owl:Class") {
 		        	DBGLOG(DBG,to_string(t.subj_, store));
-		        	DBGLOG(DBG,"Construct facts of the form op(C,negC), sub(C,C) for this class.");
+		        	DBGLOG(DBG,"*****Construct facts of the form op(C,negC), sub(C,C) for this class.");
+		        	ID c1id = reg->storeConstantTerm(to_string(t.subj_, store));
+		        	ID c2id = reg->storeConstantTerm("neg_"+to_string(t.subj_, store));
+
 				}	
 				if (to_string(t.subj_,store)=="owl:ObjectProperty") {
 						        	DBGLOG(DBG,to_string(t.subj_, store));
