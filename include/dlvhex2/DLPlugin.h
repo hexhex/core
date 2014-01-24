@@ -24,11 +24,10 @@
 
 /**
  * @file DLPlugin.h
+ * @author Daria Stepanova
  * @author Christoph Redl
  *
- * @brief Provides dummy implementations of external predicates
- *        which are never evaluated. This is useful in combination
- *        with special model generators.
+ * @brief Implements interface to DL-Lite using owlcpp.
  */
 
 #ifndef DL_PLUGIN__HPP_INCLUDED_
@@ -38,48 +37,101 @@
 #include "dlvhex2/PluginInterface.h"
 #include <set>
 
+#if defined(HAVE_OWLCPP)
+#include "owlcpp/rdf/triple_store.hpp"
+#include "owlcpp/io/input.hpp"
+#include "owlcpp/io/catalog.hpp"
+#include "owlcpp/terms/node_tags_owl.hpp"
+#endif //HAVE_OWLCPP
+
 DLVHEX_NAMESPACE_BEGIN
 
 class DLPlugin:
   public PluginInterface
 {
+public:
+	// this class caches an ontology
+	// add member variables here if additional information about the ontology must be stored
+	struct CachedOntology{
+
+#ifdef HAVE_OWLCPP
+		ID ontologyName;
+		bool loaded;
+		owlcpp::Triple_store store;
+		InterpretationPtr classification;
+#endif
+
+		CachedOntology();
+		void operator=(CachedOntology& co);
+		void load(RegistryPtr reg, ID ontologyName);
+	};
+
 private:
+	// base class for all DL atoms
+	class DLPluginAtom : public PluginAtom{
+	private:
+		bool learnedSupportSets;
+	protected:
+		ProgramCtx& ctx;
 
-   
+		// IDB of the classification program
+		std::vector<ID> classificationIDB;
 
-  // A plugin atom without real implementation.
-  // Useful for external atoms which are never evaluated, e.g., if special model generators are used.
-  class DLPluginAtom : public PluginAtom{
-  public:
-    DLPluginAtom(const std::string& predicate, bool monotonic, std::vector<InputType> inputParameters = std::vector<InputType>(), int outputArity = 0) :
-      PluginAtom(predicate, monotonic){
+		// reference to the set of cached ontologies
+		std::vector<CachedOntology>& ontologies;
 
-      BOOST_FOREACH (InputType it, inputParameters){
-        switch (it){
-          case CONSTANT:
-            addInputConstant();
-            break;
-          case PREDICATE:
-            addInputPredicate();
-            break;
-          case TUPLE:
-            addInputTuple();
-            break;
-        }
-        setOutputArity(outputArity);
-      }
-    }
-    void retrieve(const Query&, Answer&){
-      throw PluginError("Tried to evaluate DL external atom " + predicate);
-    }
-  };
+		// computed the DL-negation of a concept, i.e., "C" --> "-C"
+		inline ID dlNeg(ID id);
+
+		// creates for concept "C" the concept "exC" (the same for roles)
+		inline ID dlEx(ID id);
+
+		// frequently used IDs
+		ID subID, opID, confID;
+
+		// constructs the classification program and initialized the above frequent IDs (should be called only once)
+		void constructClassificationProgram();
+
+		// computes the classification for a given ontology
+		InterpretationPtr computeClassification(ProgramCtx& ctx, CachedOntology& ontology);
+
+		// loads an ontology and computes its classification or returns a reference to it if already present
+		CachedOntology& prepareOntology(ProgramCtx& ctx, ID ontologyNameID);
+
+		// checks the guard atoms wrt. the Abox, removes them from ng and sets keep to true in this case, and sets keep to false otherwise
+		virtual void guardSupportSet(bool& keep, Nogood& ng, const ID eaReplacement);
+
+		// learns a complete set of support sets for the ontology specified in query.input[0] and adds them to nogoods
+		void learnSupportSets(const Query& query, NogoodContainerPtr nogoods);
+	public:
+		DLPluginAtom(std::string predName, ProgramCtx& ctx, std::vector<CachedOntology>& ontologies);
+
+		virtual void retrieve(const Query& query, Answer& answer);
+		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
+	};
+
+	// concept queries
+	class CDLAtom : public DLPluginAtom{
+	public:
+		CDLAtom(ProgramCtx& ctx, std::vector<CachedOntology>& ontologies);
+		virtual void retrieve(const Query& query, Answer& answer);
+		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
+	};
+
+	// role queries
+	class RDLAtom : public DLPluginAtom{
+	public:
+		RDLAtom(ProgramCtx& ctx, std::vector<CachedOntology>& ontologies);
+		virtual void retrieve(const Query& query, Answer& answer);
+		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
+	};
 
 public:
-  DLPlugin();
-  virtual ~DLPlugin();
+	DLPlugin();
+	virtual ~DLPlugin();
 
-  // plugin atoms
-  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
+	// plugin atoms
+	virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
 };
 
 DLVHEX_NAMESPACE_END
