@@ -32,6 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/config_values.h"
 #include "dlvhex2/EvalGraphBuilder.h"
 #include "dlvhex2/PlainModelGenerator.h"
 #include "dlvhex2/WellfoundedModelGenerator.h"
@@ -41,6 +42,7 @@
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
 #include "dlvhex2/HTPlainModelGenerator.h"
+#include "dlvhex2/SEQPlainModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -111,7 +113,11 @@ void EvalGraphBuilder<HTEvalGraph>::setFactory(EvalUnit& u, const ComponentInfo&
   // TODO: check ComponentInfo
   // configure unit
   EvalUnitProperties& uprops = eg.propsOf(u);
-  uprops.mgf.reset(new HTPlainModelGeneratorFactory(ctx, ci, externalEvalConfig));
+  if (ctx.config.getOption(CFG_SEQ_MODELS)){
+    uprops.mgf.reset(new SEQPlainModelGeneratorFactory(ctx, ci, externalEvalConfig));
+  }else{
+    uprops.mgf.reset(new HTPlainModelGeneratorFactory(ctx, ci, externalEvalConfig));
+  }
 }
 
 template<>

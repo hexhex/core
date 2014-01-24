@@ -800,6 +800,7 @@ void processOptionsPrePlugin(
 		{ "supportsets", no_argument, 0, 48 },
 		{ "forcegc", no_argument, 0, 49 },
 		{ "ht-models", no_argument, 0, 41 },
+		{ "seq-models", no_argument, 0, 42 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1479,8 +1480,12 @@ void processOptionsPrePlugin(
 	case 40:
 	  pctx.config.setOption("ClaspForceSingleThreaded", 1);
 	  break;
-	case 41: {
-		pctx.config.setOption(CFG_HT_MODELS, 1);}
+	case 41:
+		pctx.config.setOption(CFG_HT_MODELS, 1);
+		break;
+	case 42:
+		pctx.config.setOption(CFG_HT_MODELS, 1);
+		pctx.config.setOption(CFG_SEQ_MODELS, 1);
 		break;
 		}
 	}

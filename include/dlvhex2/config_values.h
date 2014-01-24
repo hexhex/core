@@ -33,6 +33,7 @@
 #define CONFIG_VALUES_H
 
 #define CFG_HT_MODELS			"ht_models"
+#define CFG_SEQ_MODELS			"seq_models"
 
 #define CFG_MODEL_BUILDER		"model_builder"
 
