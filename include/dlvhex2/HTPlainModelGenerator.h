@@ -49,7 +49,10 @@ class HTPlainModelGenerator:
 public:
   typedef HTPlainModelGeneratorFactory Factory;
 protected:
+  // corresponding factory
   Factory& factory;
+  // common registry
+  RegistryPtr reg;
   // genuine solver
   GenuineSolverPtr solver;
   // UFS checker manager
