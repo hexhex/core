@@ -105,12 +105,17 @@ virtual void retrieve(const Query& query, Answer& answer)
 	#if defined(HAVE_OWLCPP)
 
 	  DBGLOG(DBG,"*****Retrieve is started");
-	// Ontology name
+
+	  DBGLOG(DBG,"*****Construction of the program for computing the TBox closure");
+
+	  DBGLOG(DBG,"*****1. Transitivity rule: sub(Y,Z):-sub(X,Y),sub(Y,Z)");
 
 	RegistryPtr reg = getRegistry();
 	ID subid = reg->storeConstantTerm("sub");
 	ID xid = reg->storeVariableTerm("X");
 	ID yid = reg->storeVariableTerm("Y");
+	ID zid = reg->storeVariableTerm("Z");
+
 	//reg->terms.getByID to get it
 
 	OrdinaryAtom bodysub1 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
@@ -118,12 +123,37 @@ virtual void retrieve(const Query& query, Answer& answer)
 	bodysub1.tuple.push_back(xid);
 	bodysub1.tuple.push_back(yid);
 
+
+	OrdinaryAtom bodysub2 (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	bodysub2.tuple.push_back(subid);
+	bodysub2.tuple.push_back(yid);
+	bodysub2.tuple.push_back(zid);
+
+
+	OrdinaryAtom headsub (ID::MAINKIND_ATOM|ID::SUBKIND_ATOM_ORDINARYN);
+	headsub.tuple.push_back(subid);
+	headsub.tuple.push_back(yid);
+	headsub.tuple.push_back(zid);
+
+
 	ID bodysub1id = reg->storeOrdinaryAtom(bodysub1);
+	ID bodysub2id = reg->storeOrdinaryAtom(bodysub2);
+	ID headsubid = reg->storeOrdinaryAtom(headsub);
+
+
 
 	Rule trans(ID::MAINKIND_RULE);
 	trans.body.push_back(bodysub1id);
-	trans.head.push_back(bodysub1id);
+	trans.body.push_back(bodysub2id);
+	trans.head.push_back(headsubid);
 	ID transid = reg->storeRule(trans);
+
+
+	DBGLOG(DBG,"*****2. Contraposition rule: sub(Y',X'):-op(X,X'),op(Y,Y'),sub(X,Y).");
+
+
+	DBGLOG(DBG,"*****3. Conflict rule: conf(X,Y):-op(X,Y),sub(X,Y).");
+
 
 	std::string ontoName = getRegistry()->terms.getByID(query.input[0]).getUnquotedString();
 	DBGLOG(DBG,"******Name of the onto");
@@ -138,7 +168,7 @@ virtual void retrieve(const Query& query, Answer& answer)
 				   owlcpp::any(),
 	               owlcpp::any());
 	DBGLOG(DBG,"******Before loading the file");
-	load_file("/home/dasha/Documents/benchmarkConstruction/test/mytest.owl",store);
+	load_file("/home/dasha/ontologies/taxi/taxi.owl",store);
 	DBGLOG(DBG,"******onto File is loaded");
 	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
 				if (to_string(t.subj_,store)=="owl:Class") {
@@ -147,22 +177,42 @@ virtual void retrieve(const Query& query, Answer& answer)
 				}	
 				if (to_string(t.subj_,store)=="owl:ObjectProperty") {
 						        	DBGLOG(DBG,to_string(t.subj_, store));
-						        	DBGLOG(DBG,"Construct facts of the form op(R,negR), sub(R,R), sup(exR,exR)");
+						        	DBGLOG(DBG,"Construct facts of the form op(Subj,negSubj), sub(Subj,Subj), sup(Subj,Subj)");
 				}
 
 				if (to_string(t.pred_,store)=="owl:subClassOf")
 				{
-									DBGLOG(DBG,to_string(t.subj_, store));
-									DBGLOG(DBG,"Construct facts of the form sub(C,D)");
+									DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store) << to_string(t.obj_, store));
+									DBGLOG(DBG,"Construct facts of the form sub(Subj,Obj)");
 				}
 
+				if (to_string(t.pred_,store)=="owl:subPropertyOf")
+								{
+													DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store)<< to_string(t.obj_, store));
+													DBGLOG(DBG,"Construct facts of the form sub(Subj,Obj)");
+								}
+
+				if (to_string(t.pred_,store)=="owl:disjointWith")
+								{
+													DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store)<< to_string(t.obj_, store));
+													DBGLOG(DBG,"Construct facts of the form sub(Subj,negObj)");
+								}
+				if (to_string(t.pred_,store)=="owl:propertyDisjointWith")
+											{
+													DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store)<< to_string(t.obj_, store));
+													DBGLOG(DBG,"Construct facts of the form sub(Subj,Obj)");
+											}
+				if (to_string(t.pred_,store)=="rdfs:Domain")
+															{
+																	DBGLOG(DBG,to_string(t.subj_, store) << to_string(t.pred_, store)<< to_string(t.obj_, store));
+																	DBGLOG(DBG,"Construct facts of the form sub(exSubj,Obj)");
+															}
+
+
+
 	         }
 
-	BOOST_FOREACH( owlcpp::Triple const& t, store.map_triple() ) {
-				if (to_string(t.subj_,store)=="rdfs:SubClassOf") {
-			  		to_string(t.obj_,store);
-				}	
-	         }
+
 
 
 
