@@ -116,10 +116,15 @@ if test $OWLCPPMAINDIR == $OWLCPP_ROOT; then
 	echo " constant FACTPP : \"$OWLCPPMAINDIR/FaCT++-$FACTPPV\" $FACTPPV ;" >> user-config.jam
 	cd ..
 
-	echo "Updating jamroot.jam"
+	echo "Updating jam files"
 	cd owlcpp-v$OWLCPPV
 	cat jamroot.jam | sed 's/-fvisibility=hidden/-fvisibility=default/' | sed 's/-fvisibility-inlines-hidden//' > jamroot.jam.up
 	mv jamroot.jam.up jamroot.jam
+	for f in external/ext/*.jam
+	do
+		cat $f | sed 's/-fvisibility=hidden/-fvisibility=default/' | sed 's/-fvisibility-inlines-hidden//' > $f.up
+		mv $f.up $f
+	done
 	cd ..
 
 	if [ ! -f $OWLCPPMAINDIR/boost_$BOOSTVU/tools/build/v2/b2 ]; then
@@ -224,8 +229,12 @@ fi
 
 # scan $(OWLCPP_ROOT) for .a and header files and create symbolic links in $OWLCPPMAINDIR/include and $OWLCPPMAINDIR/libs
 echo "Creating symbolic links to owlcpp"
-rm $OWLCPPMAINDIR/include
-ln -s $OWLCPP_ROOT/include $OWLCPPMAINDIR/include
+mkdir $OWLCPPMAINDIR/include 2> /dev/null
+rm $OWLCPPMAINDIR/include/*
+ln -s $OWLCPP_ROOT/include/owlcpp $OWLCPPMAINDIR/include/owlcpp
+ln -s $OWLCPP_ROOT/out/include/factpp $OWLCPPMAINDIR/include/factpp
+ln -s $OWLCPP_ROOT/out/include/libxml $OWLCPPMAINDIR/include/libxml
+ln -s $OWLCPP_ROOT/out/include/raptor $OWLCPPMAINDIR/include/raptor
 mkdir $OWLCPPMAINDIR/libs 2> /dev/null
 rm $OWLCPPMAINDIR/libs/*.a
 

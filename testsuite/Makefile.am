@@ -107,7 +107,7 @@ TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/libdlvhex2-aspsolver.la \
   $(top_builddir)/src/libdlvhex2-internalplugins.la \
   $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LDFLAGS) \
-  $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) \
+  $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) $(EXTSOLVER_LIBADD) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 # the following line is just to make sure TestPlugin.cpp will be built separately
 # for libdlvhextest_la and for TestTestPluginStatic (seems like a automake/libtool bug)

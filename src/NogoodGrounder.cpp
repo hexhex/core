@@ -112,10 +112,30 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 				ng.match(reg, reg->ogatoms.getIDByAddress(*en), instantiatedNG);
 				DBGLOG(DBG, "Instantiated " << instantiatedNG.getStringRepresentation(reg) << " from " << ng.getStringRepresentation(reg));
 
-				if (instantiatedNG.isGround()){
-					destination->addNogood(instantiatedNG);
-				}else{
-					watched->addNogood(instantiatedNG);
+				// check if the instance of the nogood contains a ground literal which does not appear in the program
+				bool relevant = true;
+				Nogood simplifiedNG;
+				BOOST_FOREACH (ID lit, instantiatedNG){
+					if (lit.isOrdinaryGroundAtom() && !agp.getProgramMask()->getFact(lit.address)){
+						if (!lit.isNaf()){
+							// can never be true --> remove whole instance
+							relevant = false;
+							break;
+						}else{
+							// is always true --> remove literal
+						}
+					}else{
+						// might be true --> keep literal
+						simplifiedNG.insert(lit);
+					}
+				}
+
+				if (relevant){
+					if (simplifiedNG.isGround()){
+						destination->addNogood(simplifiedNG);
+					}else{
+						watched->addNogood(simplifiedNG);
+					}
 				}
 			}
 

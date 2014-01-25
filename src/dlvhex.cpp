@@ -510,10 +510,10 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 			PluginInterfacePtr phantomPlugin(new PhantomPlugin);
 			pctx.pluginContainer()->addInternalPlugin(phantomPlugin);
-			//#if defined(HAVE_OWLCPP)
+			#if defined(HAVE_OWLCPP)
 			PluginInterfacePtr dLPlugin(new DLPlugin);
 			pctx.pluginContainer()->addInternalPlugin(dLPlugin);
-			//#endif
+			#endif
 		}
 
 		// before anything else we dump the logo
@@ -524,7 +524,7 @@ int main(int argc, char *argv[])
 		// (this cannot be outsourced due to the scope)
 		benchmark::BenchmarkController& ctr =
 			benchmark::BenchmarkController::Instance();
-		if( pctx.config.doVerbose(Configuration::PROFILING) )
+		if( pctx.config.doVerbose(dlvhex::Configuration::PROFILING) )
 		{
 			LOG(INFO,"initializing benchmarking output");
 			ctr.setOutput(&Logger::Instance().stream());
