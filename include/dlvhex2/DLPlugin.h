@@ -54,9 +54,9 @@ public:
 	// this class caches an ontology
 	// add member variables here if additional information about the ontology must be stored
 	struct CachedOntology{
+#ifdef HAVE_OWLCPP
 		typedef boost::shared_ptr<ReasoningKernel> ReasoningKernelPtr;
 
-#ifdef HAVE_OWLCPP
 		ID ontologyName;
 		bool loaded;
 		owlcpp::Triple_store store;

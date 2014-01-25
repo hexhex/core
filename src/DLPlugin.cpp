@@ -65,8 +65,11 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Class CachedOntology ==============================
 
-DLPlugin::CachedOntology::CachedOntology() : loaded(false){
+DLPlugin::CachedOntology::CachedOntology(){
+#ifdef HAVE_OWLCPP
+	loaded = false;
 	kernel = ReasoningKernelPtr(new ReasoningKernel());
+#endif
 }
 
 DLPlugin::CachedOntology::~CachedOntology(){
@@ -74,6 +77,7 @@ DLPlugin::CachedOntology::~CachedOntology(){
 
 void DLPlugin::CachedOntology::load(RegistryPtr reg, ID ontologyName){
 
+#ifdef HAVE_OWLCPP
 	DBGLOG(DBG, "Assigning ontology name");
 	this->ontologyName = ontologyName;
 
@@ -99,8 +103,10 @@ void DLPlugin::CachedOntology::load(RegistryPtr reg, ID ontologyName){
 	}
 
 	loaded = true;
+#endif
 }
 
+#ifdef HAVE_OWLCPP
 bool DLPlugin::CachedOntology::checkConceptAssertion(RegistryPtr reg, ID guardAtomID) const{
 	return conceptAssertions->getFact(guardAtomID.address);
 }
@@ -113,6 +119,7 @@ bool DLPlugin::CachedOntology::checkRoleAssertion(RegistryPtr reg, ID guardAtomI
 	}
 	return false;
 }
+#endif
 
 // ============================== Class DLPluginAtom::Actor_collector ==============================
 
@@ -147,22 +154,29 @@ DLPlugin::DLPluginAtom::DLPluginAtom(std::string predName, ProgramCtx& ctx) : Pl
 }
 
 ID DLPlugin::DLPluginAtom::dlNeg(ID id){
+#ifdef HAVE_OWLCPP
 	RegistryPtr reg = getRegistry();
 	return reg->storeConstantTerm("\"-" + reg->terms.getByID(id).getUnquotedString() + "\"");
+#endif
 }
 
 ID DLPlugin::DLPluginAtom::dlEx(ID id){
+#ifdef HAVE_OWLCPP
 	RegistryPtr reg = getRegistry();
 	return reg->storeConstantTerm("\"Ex" + reg->terms.getByID(id).getUnquotedString() + "\"");
+#endif
 }
 
 std::string DLPlugin::DLPluginAtom::afterSymbol(std::string str, char c){
+#ifdef HAVE_OWLCPP
 	if (str.find_last_of(c) == std::string::npos) return str;
 	else return str.substr(str.find_last_of(c) + 1);
+#endif
 }
 
 void DLPlugin::DLPluginAtom::constructClassificationProgram(){
 
+#ifdef HAVE_OWLCPP
 	if (classificationIDB.size() > 0){
 		DBGLOG(DBG, "Classification program was already constructed");
 		return;
@@ -255,10 +269,12 @@ void DLPlugin::DLPluginAtom::constructClassificationProgram(){
 	classificationIDB.push_back(transID);
 	classificationIDB.push_back(contraID);
 	classificationIDB.push_back(conflictID);
+#endif
 }
 
 void DLPlugin::DLPluginAtom::constructAbox(ProgramCtx& ctx, CachedOntology& ontology){
 
+#ifdef HAVE_OWLCPP
 	if (!!ontology.conceptAssertions){
 		DBGLOG(DBG, "Skipping constructAbox (already done)");
 	}
@@ -298,12 +314,13 @@ void DLPlugin::DLPluginAtom::constructAbox(ProgramCtx& ctx, CachedOntology& onto
 		//				reg->storeConstantTerm("\"" + to_string(INDIVIDUAL2_NAME, ontology.store) + "\"") )));
 	}
 	DBGLOG(DBG, "Concept assertions: " << *ontology.conceptAssertions);
-
+#endif
 }
 
 // computes the classification for a given ontology
 InterpretationPtr DLPlugin::DLPluginAtom::computeClassification(ProgramCtx& ctx, CachedOntology& ontology){
 
+#ifdef HAVE_OWLCPP
 	assert(!ontology.classification && "Classification for this ontology was already computed");
 	RegistryPtr reg = getRegistry();
 
@@ -448,10 +465,12 @@ InterpretationPtr DLPlugin::DLPluginAtom::computeClassification(ProgramCtx& ctx,
 
 	ontology.classification = answersets[0];
 	assert(!!ontology.classification && "Could not compute classification");
+#endif
 }
 
 DLPlugin::CachedOntology& DLPlugin::DLPluginAtom::prepareOntology(ProgramCtx& ctx, ID ontologyNameID){
 
+#ifdef HAVE_OWLCPP
 	std::vector<CachedOntologyPtr>& ontologies = ctx.getPluginData<DLPlugin>().ontologies;
 
 	DBGLOG(DBG, "prepareOntology");
@@ -472,10 +491,12 @@ DLPlugin::CachedOntology& DLPlugin::DLPluginAtom::prepareOntology(ProgramCtx& ct
 	constructAbox(ctx, *co);
 	ontologies.push_back(co);
 	return *co;
+#endif
 }
 
 void DLPlugin::DLPluginAtom::guardSupportSet(bool& keep, Nogood& ng, const ID eaReplacement)
 {
+#if defined(HAVE_OWLCPP)
 	DBGLOG(DBG, "guardSupportSet");
 	assert(ng.isGround());
 
@@ -506,7 +527,6 @@ void DLPlugin::DLPluginAtom::guardSupportSet(bool& keep, Nogood& ng, const ID ea
 				holds = ontology.checkRoleAssertion(reg, litID);
 			}
 
-#if defined(HAVE_OWLCPP)
 			if (holds){
 				// remove the guard atom
 				Nogood restricted;
@@ -522,11 +542,11 @@ void DLPlugin::DLPluginAtom::guardSupportSet(bool& keep, Nogood& ng, const ID ea
 				DBGLOG(DBG, "Removing support set " << ng.getStringRepresentation(reg) << " because guard atom is unsatisfied");
 				keep = false;
 			}
-#endif
 		}
 	}
 	DBGLOG(DBG, "Keeping support set " << ng.getStringRepresentation(reg) << " without guard atom");
 	keep = true;
+#endif
 }
 
 void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContainerPtr nogoods){
@@ -857,6 +877,7 @@ void DLPlugin::DLPluginAtom::retrieve(const Query& query, Answer& answer)
 
 void DLPlugin::DLPluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
 
+#ifdef HAVE_OWLCPP
 	DBGLOG(DBG, "DLPluginAtom::retrieve");
 
 	// check if we want to learn support sets (but do this only once)
@@ -864,6 +885,7 @@ void DLPlugin::DLPluginAtom::retrieve(const Query& query, Answer& answer, Nogood
 		learnSupportSets(query, nogoods);
 		learnedSupportSets = true;
 	}
+#endif
 }
 
 // ============================== Class CDLAtom ==============================
