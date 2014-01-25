@@ -54,7 +54,6 @@
 #include "owlcpp/io/input.hpp"
 #include "owlcpp/io/catalog.hpp"
 #include "owlcpp/terms/node_tags_owl.hpp"
-
 #endif //HAVE_OWLCPP
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -67,11 +66,17 @@ DLVHEX_NAMESPACE_BEGIN
 DLPlugin::CachedOntology::CachedOntology() : loaded(false){
 }
 
+DLPlugin::CachedOntology::~CachedOntology(){
+}
+
 void DLPlugin::CachedOntology::operator=(CachedOntology& co){
 	assert(false && "Copy constructor not supported");
 }
 
 void DLPlugin::CachedOntology::load(RegistryPtr reg, ID ontologyName){
+
+	DBGLOG(DBG, "Assigning ontology name");
+	this->ontologyName = ontologyName;
 
 	// load and prepare the ontology here
 	owlcpp::Triple_store::result_b<0,0,0,0>::type r = store.find_triple(
@@ -81,7 +86,9 @@ void DLPlugin::CachedOntology::load(RegistryPtr reg, ID ontologyName){
 		       owlcpp::any());
 
 	try{
+		DBGLOG(DBG, "Reading file " << reg->terms.getByID(ontologyName).getUnquotedString());
 		load_file(reg->terms.getByID(ontologyName).getUnquotedString(), store);
+		DBGLOG(DBG, "Done");
 	}catch(std::exception e){
 		throw PluginError("Error while loading ontology " + reg->terms.getByID(ontologyName).getUnquotedString() + ": " + e.what());
 	}
@@ -89,9 +96,22 @@ void DLPlugin::CachedOntology::load(RegistryPtr reg, ID ontologyName){
 	loaded = true;
 }
 
+bool DLPlugin::CachedOntology::checkConceptAssertion(RegistryPtr reg, ID guardAtomID) const{
+	return conceptAssertions->getFact(guardAtomID.address);
+}
+
+bool DLPlugin::CachedOntology::checkRoleAssertion(RegistryPtr reg, ID guardAtomID) const{
+	const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(guardAtomID.address);
+	assert(ogatom.tuple.size() == 3 && "Role guard atoms must be of arity 2");
+	BOOST_FOREACH (RoleAssertion ra, roleAssertions){
+		if (ra.first == ogatom.tuple[0] && ra.second.first == ogatom.tuple[1] && ra.second.second == ogatom.tuple[2]) return true;
+	}
+	return false;
+}
+
 // ============================== Class DLPluginAtom ==============================
 
-DLPlugin::DLPluginAtom::DLPluginAtom(std::string predName, ProgramCtx& ctx, std::vector<CachedOntology>& ontologies) : PluginAtom(predName, true), ctx(ctx), ontologies(ontologies), learnedSupportSets(false){
+DLPlugin::DLPluginAtom::DLPluginAtom(std::string predName, ProgramCtx& ctx) : PluginAtom(predName, true), ctx(ctx), learnedSupportSets(false){
 }
 
 ID DLPlugin::DLPluginAtom::dlNeg(ID id){
@@ -101,7 +121,12 @@ ID DLPlugin::DLPluginAtom::dlNeg(ID id){
 
 ID DLPlugin::DLPluginAtom::dlEx(ID id){
 	RegistryPtr reg = getRegistry();
-	return reg->storeConstantTerm("Ex" + reg->terms.getByID(id).getUnquotedString());
+	return reg->storeConstantTerm("\"Ex" + reg->terms.getByID(id).getUnquotedString() + "\"");
+}
+
+std::string DLPlugin::DLPluginAtom::afterSymbol(std::string str, char c){
+	if (str.find_last_of(c) == std::string::npos) return str;
+	else return str.substr(str.find_last_of(c) + 1);
 }
 
 void DLPlugin::DLPluginAtom::constructClassificationProgram(){
@@ -118,11 +143,11 @@ void DLPlugin::DLPluginAtom::constructClassificationProgram(){
 	subID = reg->storeConstantTerm("sub");
 	opID = reg->storeConstantTerm("op");
 	confID = reg->storeConstantTerm("conf");
-	ID xID = reg->storeVariableTerm("X");
-	ID yID = reg->storeVariableTerm("Y");
+	xID = reg->storeVariableTerm("X");
+	yID = reg->storeVariableTerm("Y");
+	zID = reg->storeVariableTerm("Z");
 	ID x2ID = reg->storeVariableTerm("X2");
 	ID y2ID = reg->storeVariableTerm("Y2");
-	ID zID = reg->storeVariableTerm("Z");
 
 	OrdinaryAtom subxy(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
 	subxy.tuple.push_back(subID);
@@ -174,24 +199,24 @@ void DLPlugin::DLPluginAtom::constructClassificationProgram(){
 
 	// Transitivity rule: sub(X,Z) :- sub(X,Y), sub(Y,Z)
 	Rule trans(ID::MAINKIND_RULE);
-	trans.body.push_back(subxyID);
-	trans.body.push_back(subyzID);
+	trans.body.push_back(ID::posLiteralFromAtom(subxyID));
+	trans.body.push_back(ID::posLiteralFromAtom(subyzID));
 	trans.head.push_back(subxzID);
 	ID transID = reg->storeRule(trans);
 
 	// Contraposition rule: sub(Y',X') :- op(X,X'), op(Y,Y'), sub(X,Y)
 	Rule contra(ID::MAINKIND_RULE);
-	contra.body.push_back(opxx2ID);
-	contra.body.push_back(opyy2ID);
-	contra.body.push_back(subxyID);
-	trans.head.push_back(suby2x2ID);
+	contra.body.push_back(ID::posLiteralFromAtom(opxx2ID));
+	contra.body.push_back(ID::posLiteralFromAtom(opyy2ID));
+	contra.body.push_back(ID::posLiteralFromAtom(subxyID));
+	contra.head.push_back(suby2x2ID);
 	ID contraID = reg->storeRule(contra);
 
 	// Conflict rule: conf(X,Y) :- op(X,Y), sub(X,Y)
 	Rule conflict(ID::MAINKIND_RULE);
-	conflict.body.push_back(opxyID);
-	conflict.body.push_back(subxyID);
-	conflict.body.push_back(confxyID);
+	conflict.body.push_back(ID::posLiteralFromAtom(opxyID));
+	conflict.body.push_back(ID::posLiteralFromAtom(subxyID));
+	conflict.head.push_back(confxyID);
 	ID conflictID = reg->storeRule(conflict);
 
 	// assemble program
@@ -200,14 +225,46 @@ void DLPlugin::DLPluginAtom::constructClassificationProgram(){
 	classificationIDB.push_back(conflictID);
 }
 
+void DLPlugin::DLPluginAtom::constructAbox(ProgramCtx& ctx, CachedOntology& ontology){
+
+	if (!!ontology.conceptAssertions){
+		DBGLOG(DBG, "Skipping constructAbox (already done)");
+	}
+
+	DBGLOG(DBG, "Constructing Abox");
+	RegistryPtr reg = getRegistry();
+	ontology.conceptAssertions = InterpretationPtr(new Interpretation(reg));
+
+	BOOST_FOREACH(owlcpp::Triple const& t, ontology.store.map_triple()) {
+		DBGLOG(DBG, "Current triple: " << to_string(t.subj_, ontology.store) << " / " << to_string(t.pred_, ontology.store) << " / " << to_string(t.obj_, ontology.store));
+		if (to_string(t.obj_, ontology.store) != "owl:Class" && to_string(t.obj_, ontology.store) != "owl:ObjectProperty" && to_string(t.pred_, ontology.store) == "rdf:type") {
+
+			// concept assertion
+			ID conceptPredicate = reg->getAuxiliaryConstantSymbol('o', reg->storeConstantTerm("\"" + afterSymbol(to_string(t.obj_, ontology.store)) + "\""));
+			OrdinaryAtom guard(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			guard.tuple.push_back(conceptPredicate);
+			guard.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+			ontology.conceptAssertions->setFact(reg->storeOrdinaryAtom(guard).address);
+
+
+//			if (concepts->getFact(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.obj_, ontology.store)) + "\"").address))
+		}
+
+		// TODO: role assertions
+	}
+	DBGLOG(DBG, "Concept assertions: " << *ontology.conceptAssertions);
+
+}
+
 // computes the classification for a given ontology
 InterpretationPtr DLPlugin::DLPluginAtom::computeClassification(ProgramCtx& ctx, CachedOntology& ontology){
 
-	assert(!ontology->classification && "Classification for this ontology was already computed");
+	assert(!ontology.classification && "Classification for this ontology was already computed");
+	RegistryPtr reg = getRegistry();
+
 	constructClassificationProgram();
 
 	DBGLOG(DBG, "Computing classification");
-	RegistryPtr reg = getRegistry();
 
 	// prepare data structures for the subprogram P
 	ProgramCtx pc = ctx;
@@ -215,122 +272,124 @@ InterpretationPtr DLPlugin::DLPluginAtom::computeClassification(ProgramCtx& ctx,
 	InterpretationPtr edb = InterpretationPtr(new Interpretation(reg));
 	pc.edb = edb;
 	pc.currentOptimum.clear();
+	InputProviderPtr ip(new InputProvider());
 	pc.config.setOption("NumberOfModels",0);
+	ip->addStringInput("", "empty");
+	pc.inputProvider = ip;
+	ip.reset();
 
 	// use the ontology to construct the EDB
 	DBGLOG(DBG,"Ontology file was loaded");
 	BOOST_FOREACH(owlcpp::Triple const& t, ontology.store.map_triple()) {
-		DBGLOG(DBG, "Current triple: " << to_string(t.subj_, store) << " / " << to_string(t.pred_, ontology.store) << " / " << to_string(t.obj_, ontology.store));
-		if (to_string(t.subj_, ontology.store) == "owl:Class" && to_string(t.pred_, ontology.store) == "rdf:type") {
+		DBGLOG(DBG, "Current triple: " << to_string(t.subj_, ontology.store) << " / " << to_string(t.pred_, ontology.store) << " / " << to_string(t.obj_, ontology.store));
+		if (afterSymbol(to_string(t.obj_, ontology.store), ':') == "Class" && afterSymbol(to_string(t.pred_, ontology.store), ':') == "type") {
 			DBGLOG(DBG,"Construct facts of the form op(C,negC), sub(C,C) for this class.");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(opID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(dlNeg(reg->storeConstantTerm(to_string(t.subj_, ontology.store))));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(dlNeg(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\"")));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);;
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}	
-		if (to_string(t.obj_, ontology.store) == "owl:ObjectProperty" && to_string(t.pred_, ontology.store) == "rdf:type") {
+		if (afterSymbol(to_string(t.obj_, ontology.store), ':') == "ObjectProperty" && afterSymbol(to_string(t.pred_, ontology.store), ':') == "type") {
 			DBGLOG(DBG,"Construct facts of the form op(Subj,negSubj), sub(Subj,Subj), sub(exSubj,negexSubj), sub(exSubj,exSubj)");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(opID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(dlNeg(reg->storeConstantTerm(to_string(t.subj_, ontology.store))));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(dlNeg(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\"")));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(dlEx(reg->storeConstantTerm(to_string(t.subj_, ontology.store))));
-				fact.tuple.push_back(dlEx(dlEx(reg->storeConstantTerm(to_string(t.subj_, ontology.store)))));
+				fact.tuple.push_back(dlEx(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\"")));
+				fact.tuple.push_back(dlEx(dlEx(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""))));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(dlEx(reg->storeConstantTerm(to_string(t.subj_, ontology.store))));
-				fact.tuple.push_back(dlEx(reg->storeConstantTerm(to_string(t.subj_, ontology.store))));
+				fact.tuple.push_back(dlEx(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\"")));
+				fact.tuple.push_back(dlEx(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\"")));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}
 
-		if (to_string(t.pred_, ontology.store) == "owl:subClassOf")
+		if (afterSymbol(to_string(t.pred_, ontology.store), ':') == "subClassOf")
 		{
 			DBGLOG(DBG,"Construct facts of the form sub(Subj,Obj)");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.obj_, ontology.store)));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.obj_, ontology.store)) + "\""));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}
 
-		if (to_string(t.pred_, ontology.store) == "owl:subPropertyOf")
+		if (afterSymbol(to_string(t.pred_, ontology.store), ':') == "subPropertyOf")
 		{
 			DBGLOG(DBG,"Construct facts of the form sub(Subj,Obj)");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.obj_, ontology.store)));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.obj_, ontology.store)) + "\""));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}
 
-		if (to_string(t.pred_, ontology.store) == "owl:disjointWith")
+		if (afterSymbol(to_string(t.pred_, ontology.store), ':') == "disjointWith")
 		{
 			DBGLOG(DBG,"Construct facts of the form sub(Subj,negObj)");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(dlNeg(reg->storeConstantTerm(to_string(t.obj_, ontology.store))));
+				fact.tuple.push_back(reg->storeConstantTerm(afterSymbol(to_string(t.subj_, ontology.store))));
+				fact.tuple.push_back(dlNeg(reg->storeConstantTerm(afterSymbol(to_string(t.obj_, ontology.store)))));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}
-		if (to_string(t.pred_, ontology.store) == "owl:propertyDisjointWith")
+		if (afterSymbol(to_string(t.pred_, ontology.store), ':') == "propertyDisjointWith")
 		{
-			DBGLOG(DBG,to_string(t.subj_, ontology.store) << to_string(t.pred_, ontology.store)<< to_string(t.obj_, ontology.store));
 			DBGLOG(DBG,"Construct facts of the form sub(Subj,Obj)");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.subj_, ontology.store)));
-				fact.tuple.push_back(dlNeg(reg->storeConstantTerm(to_string(t.obj_, ontology.store))));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\""));
+				fact.tuple.push_back(dlNeg(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.obj_, ontology.store)) + "\"")));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}
-		if (to_string(t.pred_, ontology.store) == "rdfs:Domain")
+		if (afterSymbol(to_string(t.pred_, ontology.store), ':') == "Domain")
 		{
-			DBGLOG(DBG,to_string(t.subj_, ontology.store) << to_string(t.pred_, ontology.store)<< to_string(t.obj_, ontology.store));
 			DBGLOG(DBG,"Construct facts of the form sub(exSubj,Obj)");
 			{
 				OrdinaryAtom fact(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				fact.tuple.push_back(subID);
-				fact.tuple.push_back(dlEx(reg->storeConstantTerm(to_string(t.subj_, ontology.store))));
-				fact.tuple.push_back(reg->storeConstantTerm(to_string(t.obj_, ontology.store)));
+				fact.tuple.push_back(dlEx(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.subj_, ontology.store)) + "\"")));
+				fact.tuple.push_back(reg->storeConstantTerm("\"" + afterSymbol(to_string(t.obj_, ontology.store)) + "\""));
 				edb->setFact(reg->storeOrdinaryAtom(fact).address);
 			}
 		}
 	}
-	DBGLOG(DBG, "EDB to classification program: " << *edb);
+	DBGLOG(DBG, "EDB of classification program: " << *edb);
 
 	// evaluate the subprogram and return its unique answer set
 	std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
@@ -338,11 +397,14 @@ InterpretationPtr DLPlugin::DLPluginAtom::computeClassification(ProgramCtx& ctx,
 	DBGLOG(DBG, "Classification: " << *answersets[0]);
 
 	ontology.classification = answersets[0];
-	assert(!!ontology->classification && "Could not compute classification");
+	assert(!!ontology.classification && "Could not compute classification");
 }
 
 DLPlugin::CachedOntology& DLPlugin::DLPluginAtom::prepareOntology(ProgramCtx& ctx, ID ontologyNameID){
 
+	std::vector<CachedOntology>& ontologies = ctx.getPluginData<DLPlugin>().ontologies;
+
+	DBGLOG(DBG, "prepareOntology");
 	RegistryPtr reg = getRegistry();
 
 	BOOST_FOREACH (CachedOntology o, ontologies){
@@ -357,17 +419,20 @@ DLPlugin::CachedOntology& DLPlugin::DLPluginAtom::prepareOntology(ProgramCtx& ct
 	ontologies.push_back(CachedOntology());
 	ontologies[ontologies.size() - 1].load(reg, ontologyNameID);
 	computeClassification(ctx, ontologies[ontologies.size() - 1]);
+	constructAbox(ctx, ontologies[ontologies.size() - 1]);
 	return ontologies[ontologies.size() - 1];
 }
 
 void DLPlugin::DLPluginAtom::guardSupportSet(bool& keep, Nogood& ng, const ID eaReplacement)
 {
+	DBGLOG(DBG, "guardSupportSet");
 	assert(ng.isGround());
 
 	RegistryPtr reg = getRegistry();
 
 	// get the ontology name
 	ID ontologyNameID = reg->ogatoms.getByID(eaReplacement).tuple[1];
+	CachedOntology& ontology = prepareOntology(ctx, ontologyNameID);
 
 	// find guard atom in the nogood
 	BOOST_FOREACH (ID lit, ng){
@@ -378,12 +443,20 @@ void DLPlugin::DLPluginAtom::guardSupportSet(bool& keep, Nogood& ng, const ID ea
 		if (litID.isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(litID) == 'o'){
 			const OrdinaryAtom& guardAtom = reg->ogatoms.getByID(litID);
 
-			// recover the concept name and the individual
-			ID conceptID = reg->getIDByAuxiliaryConstantSymbol(guardAtom.tuple[0]);	// let this be concept C
-			ID individualID = guardAtom.tuple[1];	// let this be an individual a
+			// concept or role guard?
+			bool holds;
+			if (guardAtom.tuple.size() == 2){
+				// concept guard
+				holds = ontology.checkConceptAssertion(reg, litID);
+			}else{
+				assert(guardAtom.tuple.size() == 3 && "invalid guard atom");
+
+				// role guard
+				holds = ontology.checkRoleAssertion(reg, litID);
+			}
 
 #if defined(HAVE_OWLCPP)
-			if ( true /* TODO: check here if C(a) holds */ ){
+			if (holds){
 				// remove the guard atom
 				Nogood restricted;
 				BOOST_FOREACH (ID lit2, ng){
@@ -410,11 +483,9 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 #if defined(HAVE_OWLCPP)
 		DBGLOG(DBG, "Learning support sets");
 
-		assert(!learnedSupportSets && "tried to learn support sets multiple times");
-
 		// make sure that the ontology is in the cache and retrieve its classification
 		InterpretationPtr classification = prepareOntology(ctx, query.input[0]).classification;
-
+		DBGLOG(DBG, "Using classification " << *classification);
 		RegistryPtr reg = getRegistry();
 
 		// prepare output variable, tuple and negative output atom
@@ -449,9 +520,9 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 #ifdef DEBUG
 				{
 					std::stringstream ss;
-					Printer printer(reg, ss);
+					RawPrinter printer(ss, reg);
 					printer.print(subcqID);
-					DBGLOG(DBG, "Checking if " << ss.str() << " is holds");
+					DBGLOG(DBG, "Checking if " << ss.str() << " is holds: ");
 				}
 #endif
 				if (classification->getFact(subcqID.address)){
@@ -468,14 +539,14 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 
 				// check if conf(C, C) is true in the classification assignment
 				OrdinaryAtom confcc(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-				subcq.tuple.push_back(confID);
-				subcq.tuple.push_back(cID);
-				subcq.tuple.push_back(cID);
+				confcc.tuple.push_back(confID);
+				confcc.tuple.push_back(cID);
+				confcc.tuple.push_back(cID);
 				ID confccID = reg->storeOrdinaryAtom(confcc);
 #ifdef DEBUG
 				{
 					std::stringstream ss;
-					Printer printer(reg, ss);
+					RawPrinter printer(ss, reg);
 					printer.print(confccID);
 					DBGLOG(DBG, "Checking if " << ss.str() << " is holds");
 				}
@@ -493,6 +564,7 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 				}
 
 				// check if sub(C, C') is true in the classification assignment (for some C')
+				DBGLOG(DBG, "Checking if sub(C, C') is true in the classification assignment (for some C')");
 				bm::bvector<>::enumerator en2 = classification->getStorage().first();
 				bm::bvector<>::enumerator en2_end = classification->getStorage().end();
 				while (en2 < en2_end){
@@ -503,12 +575,12 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 
 						OrdinaryAtom cpcy(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
 						cpcy.tuple.push_back(cID);
-						cpcy.tuple.push_back(reg->storeVariableTerm("Y"));
+						cpcy.tuple.push_back(yID);
 						supportset.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(cpcy)));
 
-						OrdinaryAtom negcp(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+						OrdinaryAtom negcp(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 						negcp.tuple.push_back(reg->getAuxiliaryConstantSymbol('o', dlNeg(cl.tuple[2])));
-						negcp.tuple.push_back(reg->storeVariableTerm("Y"));
+						negcp.tuple.push_back(yID);
 						supportset.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(negcp)));
 
 						supportset.insert(outlit);
@@ -528,13 +600,13 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 								OrdinaryAtom cpcy(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 								cpcy.tuple.push_back(query.input[1]);
 								cpcy.tuple.push_back(cID);
-								cpcy.tuple.push_back(reg->storeVariableTerm("Y"));
+								cpcy.tuple.push_back(yID);
 								supportset.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(cpcy)));
 
 								OrdinaryAtom cmcy(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 								cpcy.tuple.push_back(query.input[2]);
 								cpcy.tuple.push_back(cID);
-								cpcy.tuple.push_back(reg->storeVariableTerm("Y"));
+								cpcy.tuple.push_back(yID);
 								supportset.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(cpcy)));
 
 								supportset.insert(outlit);
@@ -563,7 +635,7 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 #ifdef DEBUG
 				{
 					std::stringstream ss;
-					Printer printer(reg, ss);
+					RawPrinter printer(ss, reg);
 					printer.print(subncqID);
 					DBGLOG(DBG, "Checking if " << ss.str() << " is holds");
 				}
@@ -595,7 +667,7 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 #ifdef DEBUG
 				{
 					std::stringstream ss;
-					Printer printer(reg, ss);
+					RawPrinter printer(ss, reg);
 					printer.print(subexrqID);
 					DBGLOG(DBG, "Checking if " << ss.str() << " is holds");
 				}
@@ -605,7 +677,7 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 					rprxy.tuple.push_back(query.input[3]);
 					rprxy.tuple.push_back(rID);
 					rprxy.tuple.push_back(outvarID);
-					rprxy.tuple.push_back(reg->storeVariableTerm("Y"));
+					rprxy.tuple.push_back(yID);
 					Nogood supportset;
 					supportset.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(rprxy)));
 					supportset.insert(outlit);
@@ -628,8 +700,8 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 #ifdef DEBUG
 				{
 					std::stringstream ss;
-					Printer printer(reg, ss);
-					printer.print(subexrqID);
+					RawPrinter printer(ss, reg);
+					printer.print(subnexrqID);
 					DBGLOG(DBG, "Checking if " << ss.str() << " is holds");
 				}
 #endif
@@ -638,7 +710,7 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 					rprxy.tuple.push_back(query.input[4]);
 					rprxy.tuple.push_back(rID);
 					rprxy.tuple.push_back(outvarID);
-					rprxy.tuple.push_back(reg->storeVariableTerm("Y"));
+					rprxy.tuple.push_back(yID);
 					Nogood supportset;
 					supportset.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(rprxy)));
 					supportset.insert(outlit);
@@ -649,8 +721,6 @@ void DLPlugin::DLPluginAtom::learnSupportSets(const Query& query, NogoodContaine
 
 			en++;
 		}
-
-		learnedSupportSets = true;
 #else
 		assert("No support for owlcpp compiled into this binary");
 		throw PluginError("Error: No support for owlcpp compiled into this binary");
@@ -664,15 +734,18 @@ void DLPlugin::DLPluginAtom::retrieve(const Query& query, Answer& answer)
 
 void DLPlugin::DLPluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
 
+	DBGLOG(DBG, "DLPluginAtom::retrieve");
+
 	// check if we want to learn support sets (but do this only once)
 	if (!learnedSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
 		learnSupportSets(query, nogoods);
+		learnedSupportSets = true;
 	}
 }
 
 // ============================== Class CDLAtom ==============================
 
-DLPlugin::CDLAtom::CDLAtom(ProgramCtx& ctx, std::vector<CachedOntology>& ontologies) : DLPluginAtom("cDL", ctx, ontologies)
+DLPlugin::CDLAtom::CDLAtom(ProgramCtx& ctx) : DLPluginAtom("cDL", ctx)
 {
 	DBGLOG(DBG,"Constructor of cDL plugin is started");
 	addInputConstant(); // the ontology
@@ -691,6 +764,8 @@ void DLPlugin::CDLAtom::retrieve(const Query& query, Answer& answer)
 
 void DLPlugin::CDLAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
 {
+	DBGLOG(DBG, "CDLAtom::retrieve");
+
 	// learn support sets (if enabled)
 	DLPluginAtom::retrieve(query, answer, nogoods);
 
@@ -699,7 +774,7 @@ void DLPlugin::CDLAtom::retrieve(const Query& query, Answer& answer, NogoodConta
 
 // ============================== Class RDLAtom ==============================
 
-DLPlugin::RDLAtom::RDLAtom(ProgramCtx& ctx, std::vector<CachedOntology>& ontologies) : DLPluginAtom("rDL", ctx, ontologies)
+DLPlugin::RDLAtom::RDLAtom(ProgramCtx& ctx) : DLPluginAtom("rDL", ctx)
 {
 	DBGLOG(DBG,"Constructor of cDL plugin is started");
 	addInputConstant(); // the ontology
@@ -718,10 +793,18 @@ void DLPlugin::RDLAtom::retrieve(const Query& query, Answer& answer)
 
 void DLPlugin::RDLAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
 {
+	DBGLOG(DBG, "RDLAtom::retrieve");
+
 	// learn support sets (if enabled)
 	DLPluginAtom::retrieve(query, answer, nogoods);
 
-	// answer the query (TODO)
+	// TODO: answer the query without support sets
+
+	// answer the query by checking if a support set applies (since we do not have an actual DL-reasoner)
+//	SimpleNogoodContainerPtr scn = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+//	DLPluginAtom::retrieve(query, answer, snc);
+//	for (int i = 0; i < scn->getNogoodCount(); ++i){
+//	}
 }
 
 // ============================== Class DLPlugin ==============================
@@ -738,11 +821,10 @@ DLPlugin::~DLPlugin()
 }
 
 // Define two external atoms: for the roles and for the concept queries
-std::vector<DLPlugin::CachedOntology> ontologies;
 std::vector<PluginAtomPtr> DLPlugin::createAtoms(ProgramCtx& ctx) const{
 	std::vector<PluginAtomPtr> ret;
-	ret.push_back(PluginAtomPtr(new CDLAtom(ctx, ontologies)));
-	ret.push_back(PluginAtomPtr(new RDLAtom(ctx, ontologies)));
+	ret.push_back(PluginAtomPtr(new CDLAtom(ctx)));
+	ret.push_back(PluginAtomPtr(new RDLAtom(ctx)));
 	return ret;
 }
 

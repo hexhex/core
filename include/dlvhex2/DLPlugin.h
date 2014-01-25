@@ -59,11 +59,29 @@ public:
 		bool loaded;
 		owlcpp::Triple_store store;
 		InterpretationPtr classification;
+
+		InterpretationPtr concepts, roles;
+
+		typedef std::pair<ID, std::pair<ID, ID> > RoleAssertion;
+		InterpretationPtr conceptAssertions;
+		std::vector<RoleAssertion> roleAssertions;
+		inline bool checkConceptAssertion(RegistryPtr reg, ID guardAtomID) const;
+		inline bool checkRoleAssertion(RegistryPtr reg, ID guardAtomID) const;
 #endif
 
 		CachedOntology();
 		void operator=(CachedOntology& co);
 		void load(RegistryPtr reg, ID ontologyName);
+
+		virtual ~CachedOntology();
+	};
+
+	class CtxData : public PluginData
+	{
+	public:
+		std::vector<DLPlugin::CachedOntology> ontologies;
+		CtxData() {};
+		virtual ~CtxData() {};
 	};
 
 private:
@@ -77,23 +95,26 @@ private:
 		// IDB of the classification program
 		std::vector<ID> classificationIDB;
 
-		// reference to the set of cached ontologies
-		std::vector<CachedOntology>& ontologies;
-
 		// computed the DL-negation of a concept, i.e., "C" --> "-C"
 		inline ID dlNeg(ID id);
 
 		// creates for concept "C" the concept "exC" (the same for roles)
 		inline ID dlEx(ID id);
 
+		// extracts from a string the postfix after the given symbol
+		inline std::string afterSymbol(std::string str, char c = '#');
+
 		// frequently used IDs
-		ID subID, opID, confID;
+		ID subID, opID, confID, xID, yID, zID;
 
 		// constructs the classification program and initialized the above frequent IDs (should be called only once)
 		void constructClassificationProgram();
 
 		// computes the classification for a given ontology
 		InterpretationPtr computeClassification(ProgramCtx& ctx, CachedOntology& ontology);
+
+		// constructs the concept and role assertions
+		void constructAbox(ProgramCtx& ctx, CachedOntology& ontology);
 
 		// loads an ontology and computes its classification or returns a reference to it if already present
 		CachedOntology& prepareOntology(ProgramCtx& ctx, ID ontologyNameID);
@@ -104,7 +125,7 @@ private:
 		// learns a complete set of support sets for the ontology specified in query.input[0] and adds them to nogoods
 		void learnSupportSets(const Query& query, NogoodContainerPtr nogoods);
 	public:
-		DLPluginAtom(std::string predName, ProgramCtx& ctx, std::vector<CachedOntology>& ontologies);
+		DLPluginAtom(std::string predName, ProgramCtx& ctx);
 
 		virtual void retrieve(const Query& query, Answer& answer);
 		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
@@ -113,7 +134,7 @@ private:
 	// concept queries
 	class CDLAtom : public DLPluginAtom{
 	public:
-		CDLAtom(ProgramCtx& ctx, std::vector<CachedOntology>& ontologies);
+		CDLAtom(ProgramCtx& ctx);
 		virtual void retrieve(const Query& query, Answer& answer);
 		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
 	};
@@ -121,7 +142,7 @@ private:
 	// role queries
 	class RDLAtom : public DLPluginAtom{
 	public:
-		RDLAtom(ProgramCtx& ctx, std::vector<CachedOntology>& ontologies);
+		RDLAtom(ProgramCtx& ctx);
 		virtual void retrieve(const Query& query, Answer& answer);
 		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
 	};
