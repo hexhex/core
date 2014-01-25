@@ -510,10 +510,10 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 			PluginInterfacePtr phantomPlugin(new PhantomPlugin);
 			pctx.pluginContainer()->addInternalPlugin(phantomPlugin);
-			//#if defined(HAVE_OWLCPP)
+			#if defined(HAVE_OWLCPP)
 			PluginInterfacePtr dLPlugin(new DLPlugin);
 			pctx.pluginContainer()->addInternalPlugin(dLPlugin);
-			//#endif
+			#endif
 		}
 
 		// before anything else we dump the logo
