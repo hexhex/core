@@ -85,8 +85,6 @@ pkginclude_HEADERS = \
   OfflineModelBuilder.h \
   OnlineModelBuilder.h \
   OrdinaryAtomTable.h \
-  PhantomPlugin.h \
-  DLPlugin.h \
   PlainAuxPrinter.h \
   PlainModelGenerator.h \
   GenuinePlainModelGenerator.h \
@@ -104,7 +102,6 @@ pkginclude_HEADERS = \
   ProgramCtx.h \
   QueryPlugin.h \
   Registry.h \
-  RepairModelGenerator.h \
   Rule.h \
   RuleTable.h \
   StrongNegationPlugin.h \

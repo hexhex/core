@@ -84,7 +84,6 @@ libdlvhex2_base_la_SOURCES = \
     GuessAndCheckModelGenerator.cpp \
     GenuineGuessAndCheckModelGenerator.cpp \
     GenuineGuessAndCheckModelGeneratorAsync.cpp \
-    RepairModelGenerator.cpp \
     GenuineSolver.cpp \
     GringoGrounder.cpp \
     HexGrammar.cpp \
@@ -101,7 +100,6 @@ libdlvhex2_base_la_SOURCES = \
     MLPSyntaxChecker.cpp \
     Nogood.cpp \
     NogoodGrounder.cpp \
-    PhantomPlugin.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \
@@ -132,7 +130,6 @@ libdlvhex2_aspsolver_la_SOURCES = \
 # dlvhex internal plugins
 libdlvhex2_internalplugins_la_SOURCES = \
     AggregatePlugin.cpp \
-    DLPlugin.cpp \
     ExistsPlugin.cpp \
     HigherOrderPlugin.cpp \
     ManualEvalHeuristicsPlugin.cpp \

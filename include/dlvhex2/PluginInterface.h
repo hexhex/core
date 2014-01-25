@@ -187,6 +187,7 @@
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/Error.h"
 #include "dlvhex2/CDNLSolver.h"
+#include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/ExtSourceProperties.h"
 
 #include <boost/shared_ptr.hpp>
@@ -391,6 +392,21 @@ public:
    * See PluginConverter documentation.
    */
   virtual std::vector<PluginConverterPtr> createConverters(ProgramCtx& ctx);
+
+  /**
+   * \brief Returns if this plugin provides a custom model generator factory.
+   *
+   * This method calls createConverter, you can override it to provide
+   * multiple converters.
+   */
+  virtual bool providesCustomModelGeneratorFactory() const { return false; }
+
+  /**
+   * \brief Must create a model generator factory for the component described by ci.
+   * Needs to be implemented only if providesCustomModelGeneratorFactory return true;
+   */
+  virtual BaseModelGeneratorFactoryPtr getCustomModelGeneratorFactory(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci) const
+	{ assert(false && "This plugin does not provide a custom model generator factory"); }
 
   /**
    * \brief Provide parser modules

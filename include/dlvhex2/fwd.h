@@ -51,6 +51,9 @@ typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
 class AuxPrinter;
 typedef boost::shared_ptr<AuxPrinter> AuxPrinterPtr;
 
+class BaseModelGeneratorFactory;
+typedef boost::shared_ptr<BaseModelGeneratorFactory> BaseModelGeneratorFactoryPtr;
+
 class ComponentGraph;
 typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 

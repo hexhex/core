@@ -125,6 +125,10 @@ public:
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 
+  // might be set to a plugin which provides a custom model generator factoy
+  // if set to 0, then the default algorithms are used
+  PluginInterfacePtr customModelGeneratorProvider;
+
   // stores the weight vector of the best known model
   // if the vector is empty, then there was no solution so far
   std::vector<int> currentOptimum;

@@ -373,6 +373,12 @@ void ProgramCtx::addPluginAtomsFromPluginContainer()
         pluginAtoms[pred] = pap;
       }
     }
+
+    // check if this plugin provides a custom model generator
+    if (plugin->providesCustomModelGeneratorFactory()){
+      if (customModelGeneratorProvider == 0) customModelGeneratorProvider = plugin;
+      else throw PluginError("Multiple plugins prove alternative model generator factories. Do not know which one to use. Please change command-line options.");
+    }
   }
 }
 
