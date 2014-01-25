@@ -42,6 +42,7 @@
 #include "owlcpp/io/input.hpp"
 #include "owlcpp/io/catalog.hpp"
 #include "owlcpp/terms/node_tags_owl.hpp"
+#include "factpp/Kernel.hpp"
 #endif //HAVE_OWLCPP
 
 DLVHEX_NAMESPACE_BEGIN
@@ -53,14 +54,16 @@ public:
 	// this class caches an ontology
 	// add member variables here if additional information about the ontology must be stored
 	struct CachedOntology{
+		typedef boost::shared_ptr<ReasoningKernel> ReasoningKernelPtr;
 
 #ifdef HAVE_OWLCPP
 		ID ontologyName;
 		bool loaded;
 		owlcpp::Triple_store store;
 		InterpretationPtr classification;
+		ReasoningKernelPtr kernel;
 
-		InterpretationPtr concepts, roles;
+		InterpretationPtr concepts, roles, individuals;
 
 		typedef std::pair<ID, std::pair<ID, ID> > RoleAssertion;
 		InterpretationPtr conceptAssertions;
@@ -68,18 +71,19 @@ public:
 		inline bool checkConceptAssertion(RegistryPtr reg, ID guardAtomID) const;
 		inline bool checkRoleAssertion(RegistryPtr reg, ID guardAtomID) const;
 #endif
-
 		CachedOntology();
-		void operator=(CachedOntology& co);
-		void load(RegistryPtr reg, ID ontologyName);
-
 		virtual ~CachedOntology();
+
+		void load(RegistryPtr reg, ID ontologyName);
+//		CachedOntology(CachedOntology&){ assert(false); } // disallow copying
+//		void operator=(CachedOntology& co){ assert(false); }  // disallow copying
 	};
+	typedef boost::shared_ptr<CachedOntology> CachedOntologyPtr;
 
 	class CtxData : public PluginData
 	{
 	public:
-		std::vector<DLPlugin::CachedOntology> ontologies;
+		std::vector<DLPlugin::CachedOntologyPtr> ontologies;
 		CtxData() {};
 		virtual ~CtxData() {};
 	};
@@ -124,6 +128,31 @@ private:
 
 		// learns a complete set of support sets for the ontology specified in query.input[0] and adds them to nogoods
 		void learnSupportSets(const Query& query, NogoodContainerPtr nogoods);
+
+#ifdef HAVE_OWLCPP
+		// expands the Abox with the facts given in the interpretation
+		std::vector<TDLAxiom*> expandAbox(const Query& query);
+
+		// recorvers the original Abox
+		void restoreAbox(const Query& query, std::vector<TDLAxiom*> addedAxioms);
+
+		// used for query answering using FaCT++
+		class Actor_collector{
+		public:
+			enum Type{Concept, Role};
+		private:
+			RegistryPtr reg;
+			Type type;
+			Tuple currentTuple;
+			Answer& answer;
+			CachedOntology& ontology;
+		public:
+			Actor_collector(RegistryPtr reg, Answer& answer, CachedOntology& ontology, Type t);
+			virtual ~Actor_collector();
+			bool apply(const TaxonomyVertex& node);
+			void processTuple(Tuple tup);
+		};
+#endif
 	public:
 		DLPluginAtom(std::string predName, ProgramCtx& ctx);
 

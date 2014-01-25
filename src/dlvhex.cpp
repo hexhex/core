@@ -524,7 +524,7 @@ int main(int argc, char *argv[])
 		// (this cannot be outsourced due to the scope)
 		benchmark::BenchmarkController& ctr =
 			benchmark::BenchmarkController::Instance();
-		if( pctx.config.doVerbose(Configuration::PROFILING) )
+		if( pctx.config.doVerbose(dlvhex::Configuration::PROFILING) )
 		{
 			LOG(INFO,"initializing benchmarking output");
 			ctr.setOutput(&Logger::Instance().stream());
