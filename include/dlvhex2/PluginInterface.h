@@ -399,7 +399,7 @@ public:
    * This method calls createConverter, you can override it to provide
    * multiple converters.
    */
-  virtual bool providesCustomModelGeneratorFactory() const { return false; }
+  virtual bool providesCustomModelGeneratorFactory(ProgramCtx& ctx) const { return false; }
 
   /**
    * \brief Must create a model generator factory for the component described by ci.
