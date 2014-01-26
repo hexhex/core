@@ -567,6 +567,18 @@ int main(int argc, char *argv[])
 		// use configured plugins to obtain plugin atoms
 		pctx.addPluginAtomsFromPluginContainer();
 
+		// check if this plugin provides a custom model generator
+		BOOST_FOREACH(PluginInterfacePtr plugin, pctx.pluginContainer()->getPlugins()){
+			if (plugin->providesCustomModelGeneratorFactory(pctx)){
+				if (pctx.customModelGeneratorProvider == 0){
+					LOG(DBG, "Plugin provides custom model generator factory");
+					pctx.customModelGeneratorProvider = plugin;
+				}else{
+					throw PluginError("Multiple plugins prove alternative model generator factories. Do not know which one to use. Please change command-line options.");
+				}
+			}
+		}
+
 		// now we check if we got input
 		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
 			throw UsageError("no input specified!");

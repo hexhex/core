@@ -61,6 +61,9 @@ ProgramCtx::ProgramCtx():
 
 ProgramCtx::~ProgramCtx()
 {
+  DBGLOG(DBG,"resetting custom model generator provider");
+  if (!!customModelGeneratorProvider) customModelGeneratorProvider.reset();
+
   DBGLOG(DBG,"resetting state");
   state.reset();
 
@@ -371,16 +374,6 @@ void ProgramCtx::addPluginAtomsFromPluginContainer()
       {
         pap->setRegistry(registry());
         pluginAtoms[pred] = pap;
-      }
-    }
-
-    // check if this plugin provides a custom model generator
-    if (plugin->providesCustomModelGeneratorFactory(*this)){
-      if (customModelGeneratorProvider == 0){
-        LOG(DBG, "Plugin provides custom model generator factory");
-        customModelGeneratorProvider = plugin;
-      }else{
-        throw PluginError("Multiple plugins prove alternative model generator factories. Do not know which one to use. Please change command-line options.");
       }
     }
   }

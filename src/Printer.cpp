@@ -286,6 +286,13 @@ void RawPrinter::print(ID id)
 	}
 }
 
+std::string RawPrinter::toString(RegistryPtr reg, ID id){
+	std::stringstream ss;
+	RawPrinter printer(ss, reg);
+	printer.print(id);
+	return ss.str();
+}
+
 // remove the prefix
 // from m0___p1__q(a) to q(a)
 std::string RawPrinter::removeModulePrefix(const std::string& text)
