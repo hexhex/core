@@ -161,6 +161,7 @@ EvalGraphBuilder::createEvalUnit(
 
     if (!!ctx.customModelGeneratorProvider)
     {
+            LOG(DBG,"configuring custom model generator factory for eval unit " << u);
             uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
     }
     else
