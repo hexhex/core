@@ -116,7 +116,7 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 				bool relevant = true;
 				Nogood simplifiedNG;
 				BOOST_FOREACH (ID lit, instantiatedNG){
-					if (lit.isOrdinaryGroundAtom() && !agp.getProgramMask()->getFact(lit.address)){
+					if (lit.isOrdinaryGroundAtom() && !reg->ogatoms.getIDByAddress(lit.address).isAuxiliary() && !agp.getProgramMask()->getFact(lit.address)){
 						if (!lit.isNaf()){
 							// can never be true --> remove whole instance
 							relevant = false;
@@ -143,6 +143,7 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 		}
 
 	}
+	DBGLOG(DBG, "Finished updating");
 	instantiatedNongroundNogoodsIndex = max;
 }
 
