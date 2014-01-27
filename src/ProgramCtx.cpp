@@ -43,6 +43,7 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/PluginContainer.h"
 #include "dlvhex2/State.h"
+#include "dlvhex2/Printer.h"
 //#include "dlvhex2/DLVProcess.h"
 #include "dlvhex2/EvalHeuristicEasy.h"
 
@@ -423,6 +424,12 @@ void ProgramCtx::associateExtAtomsWithPluginAtoms(
       eatom.pluginAtom = itpa->second.get();
       eatom.prop |= itpa->second->getExtSourceProperties();
       eatom.pluginAtom->setupProperties(eatom);
+
+      if (!eatom.pluginAtom->checkOutputArity(eatom.tuple.size())){
+	std::stringstream ss;
+	ss << "External Atom " << RawPrinter::toString(_registry, *it) << " has a wrong output arity (should be " << eatom.pluginAtom->getOutputArity() << ")";
+	throw GeneralError(ss.str());
+      }
     }
     else
     {
