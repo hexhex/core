@@ -1950,7 +1950,6 @@ class TestASPQueryAtom:
 {
 private:
 	ProgramCtx& ctx;
-	bool learnedSupportSets;	// we need to learn them only once
 
 public:
   TestASPQueryAtom(ProgramCtx& ctx, std::string atomName):
@@ -1964,9 +1963,6 @@ public:
 		prop.variableOutputArity = true;					// the output arity of this external atom depends on the arity of the query predicate
 		prop.supportSets = true;									// we provide support sets
 		prop.completePositiveSupportSets = true;	// we even provide (positive) complete support sets
-
-		// optimization (see below)
-		learnedSupportSets = false;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
@@ -2003,7 +1999,7 @@ public:
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
 
 		// learn support sets (only if --supportsets option is specified on the command line)
-		if (!learnedSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
+		if (!!nogoods && query.ctx->config.getOption("SupportSets")){
 			SimpleNogoodContainerPtr preparedNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 
 			// for all rules r of P
@@ -2073,9 +2069,6 @@ public:
 					nogoods->addNogood(supportSet);
 				}
 			}
-
-			// learn support sets only once (just an optimization)
-			learnedSupportSets = true;
 		}
 
 		// create a mask for the query predicate, i.e., retrieve all atoms over the query predicate

@@ -382,7 +382,8 @@ void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 
 	if (factory.ctx.config.getOption("SupportSets")){
-		SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());		
+		SimpleNogoodContainerPtr potentialSupportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+		SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 		for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
 			InterpretationPtr evalIntr(new Interpretation(factory.reg));
 
@@ -394,33 +395,28 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 			if (eatom.getExtSourceProperties().providesSupportSets()){
 				DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " for support set learning");
 				IntegrateExternalAnswerIntoInterpretationCB dummyCB(evalIntr);
-				evaluateExternalAtom(factory.ctx, eatom, evalIntr, dummyCB, supportSets);
+				evaluateExternalAtom(factory.ctx, eatom, evalIntr, dummyCB, potentialSupportSets);
 			}
 		}
 
-		DLVHEX_BENCHMARK_REGISTER(sidnongroundsupportsets, "nonground supportsets");
-		DLVHEX_BENCHMARK_COUNT(sidnongroundsupportsets, supportSets->getNogoodCount());
-
+		DLVHEX_BENCHMARK_REGISTER(sidnongroundpsupportsets, "nonground potential supportsets");
+		DLVHEX_BENCHMARK_COUNT(sidnongroundpsupportsets, potentialSupportSets->getNogoodCount());
 
 		// ground the support sets exhaustively
-		NogoodGrounderPtr nogoodgrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), supportSets, supportSets, annotatedGroundProgram));
+		NogoodGrounderPtr nogoodgrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), potentialSupportSets, potentialSupportSets, annotatedGroundProgram));
 
 		int nc = 0;
-		while (nc < supportSets->getNogoodCount()){
-			nc = supportSets->getNogoodCount();
+		while (nc < potentialSupportSets->getNogoodCount()){
+			nc = potentialSupportSets->getNogoodCount();
 			nogoodgrounder->update();
 		}
-                DLVHEX_BENCHMARK_REGISTER(sidgroundsupportsets, "ground supportsets");
-                DLVHEX_BENCHMARK_COUNT(sidgroundsupportsets, supportSets->getNogoodCount());
-
-		// add them to the annotated ground program to make use of them for verification
-		DBGLOG(DBG, "Adding support sets to annotated ground program");
-		annotatedGroundProgram.setCompleteSupportSetsForVerification(supportSets);
+                DLVHEX_BENCHMARK_REGISTER(sidgroundpsupportsets, "ground potential supportsets");
+                DLVHEX_BENCHMARK_COUNT(sidgroundpsupportsets, supportSets->getNogoodCount());
 
 		// all support sets are also learned nogoods
 		bool keep;
-		for (int i = 0; i < supportSets->getNogoodCount(); ++i){
-			const Nogood& ng = supportSets->getNogood(i);
+		for (int i = 0; i < potentialSupportSets->getNogoodCount(); ++i){
+			const Nogood& ng = potentialSupportSets->getNogood(i);
 			if (ng.isGround()){
 				// determine the external atom replacement in ng
 				ID eaAux = ID_FAIL;
@@ -450,6 +446,7 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 #endif
 						DBGLOG(DBG, "Keeping in form " << ng2.getStringRepresentation(reg));
 						learnedEANogoods->addNogood(ng2);
+						supportSets->addNogood(ng2);
 #ifdef DEBUG
 					}else{
 						assert(ng == ng2);
@@ -459,6 +456,13 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 				}
 			}
 		}
+
+                DLVHEX_BENCHMARK_REGISTER(sidgroundsupportsets, "final ground supportsets");
+                DLVHEX_BENCHMARK_COUNT(sidgroundsupportsets, supportSets->getNogoodCount());
+
+		// add them to the annotated ground program to make use of them for verification
+		DBGLOG(DBG, "Adding support sets to annotated ground program");
+		annotatedGroundProgram.setCompleteSupportSetsForVerification(supportSets);
 	}
 }
 
