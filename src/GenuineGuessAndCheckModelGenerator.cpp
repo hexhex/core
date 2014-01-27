@@ -448,7 +448,7 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 						}
 						assert(aux != ID_FAIL);
 #endif
-						DBGLOG(DBG, "Keeping in form " << ng.getStringRepresentation(reg));
+						DBGLOG(DBG, "Keeping in form " << ng2.getStringRepresentation(reg));
 						learnedEANogoods->addNogood(ng2);
 #ifdef DEBUG
 					}else{
