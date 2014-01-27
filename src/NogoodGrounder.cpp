@@ -119,6 +119,10 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 					if (lit.isOrdinaryGroundAtom() && !reg->ogatoms.getIDByAddress(lit.address).isAuxiliary() && !agp.getProgramMask()->getFact(lit.address)){
 						if (!lit.isNaf()){
 							// can never be true --> remove whole instance
+#ifndef NDEBUG
+							std::string str = RawPrinter::toString(reg, lit);
+							DBGLOG(DBG, "Removing because negative " << str << " can never be true");
+#endif
 							relevant = false;
 							break;
 						}else{
@@ -132,10 +136,14 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 
 				if (relevant){
 					if (simplifiedNG.isGround()){
+						DBGLOG(DBG, "Keeping ground nogood " << simplifiedNG.getStringRepresentation(reg));
 						destination->addNogood(simplifiedNG);
 					}else{
+						DBGLOG(DBG, "Keeping nonground nogood " << simplifiedNG.getStringRepresentation(reg));
 						watched->addNogood(simplifiedNG);
 					}
+				}else{
+						DBGLOG(DBG, "Removing nogood " << simplifiedNG.getStringRepresentation(reg));
 				}
 			}
 
