@@ -1066,7 +1066,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::externalAtom(sem) ];
 
   externalAtomPropertyString
-    = qi::lexeme[ (ascii::lower >> *(ascii::alnum) > qi::eps) ];
+    = qi::lexeme[ (ascii::alnum >> *(ascii::alnum) > qi::eps) ];
 
   externalAtomProperty
     = (externalAtomPropertyString > -(externalAtomPropertyString % qi::eps) > qi::eps) [ Sem::extSourceProperty(sem) ];
