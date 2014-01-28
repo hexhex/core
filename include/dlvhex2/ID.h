@@ -101,6 +101,7 @@ struct ID:
 									// (the genuine solver needs to distinct them from other auxiliaries like HO-, strong negation-replacements and EA-input)
 	static const IDKind PROPERTY_EXTERNALINPUTAUX= 0x00200000;	// used for auxiliaries which represent aux input to external atoms
 									// (the genuine solver needs to distinct them from other auxiliaries like HO-, strong negation-replacements and EA-input)
+	static const IDKind PROPERTY_GUARDAUX   = 0x00A00000;		// used to mark atoms as guards, whose truth value is determined wrt. external sources (relevant for nogood grounding)
 	static const IDKind PROPERTY_FLPAUX     = 0x00100000;		// used for auxiliaries which represent rule satisfaction for FLP reduct computation in the explicit FLP check
 
   // for builtin terms, this is the address part (no table)
@@ -172,6 +173,7 @@ struct ID:
 	inline bool isAuxiliary() const     { return (kind & PROPERTY_AUX) == PROPERTY_AUX; }
 	inline bool isExternalAuxiliary() const     { return (kind & PROPERTY_EXTERNALAUX) == PROPERTY_EXTERNALAUX; }
 	inline bool isExternalInputAuxiliary() const     { return (kind & PROPERTY_EXTERNALINPUTAUX) == PROPERTY_EXTERNALINPUTAUX; }
+	inline bool isGuardAuxiliary() const     { return (kind & PROPERTY_GUARDAUX) == PROPERTY_GUARDAUX; }
 	inline bool isFLPAuxiliary() const     { return (kind & PROPERTY_FLPAUX) == PROPERTY_FLPAUX; }
   
 	inline bool isRule() const          { return (kind & MAINKIND_MASK) == MAINKIND_RULE; }

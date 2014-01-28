@@ -72,6 +72,7 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 		ID watchedLit = ID_FAIL;
 		BOOST_FOREACH (ID lit, ng){
 			if (lit.isOrdinaryGroundAtom()) continue;
+			if (reg->onatoms.getIDByAddress(lit.address).isGuardAuxiliary()) continue;
 
 			const OrdinaryAtom& atom = reg->onatoms.getByID(lit);
 
@@ -91,7 +92,10 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 				watchedLit = lit;
 			}
 		}
-		assert (watchedLit != ID_FAIL);
+		if (watchedLit == ID_FAIL){
+			DBGLOG(DBG, "Skipping nogood " << i << " because it contains only guard atoms");
+			continue;
+		}
 
 		// watch the atom and the corresponding nogood
 		DBGLOG(DBG, "Watching literal " << watchedLit << " in nogood " << i);
@@ -183,6 +187,7 @@ void LazyNogoodGrounder::update(InterpretationConstPtr partialInterpretation, In
 		ID watchedLit = ID_FAIL;
 		BOOST_FOREACH (ID lit, ng){
 			if (lit.isOrdinaryGroundAtom()) continue;
+			if (reg->onatoms.getIDByAddress(lit.address).isGuardAuxiliary()) continue;
 
 			const OrdinaryAtom& atom = reg->onatoms.getByID(lit);
 
@@ -202,11 +207,13 @@ void LazyNogoodGrounder::update(InterpretationConstPtr partialInterpretation, In
 				watchedLit = lit;
 			}
 		}
-		assert (watchedLit != ID_FAIL);
-
-		// watch the atom and the corresponding nogood
-		DBGLOG(DBG, "Watching literal " << watchedLit << " in nogood " << i);
-		watchedLiterals.push_back(std::pair<ID, int>(watchedLit, i));
+		if (watchedLit == ID_FAIL){
+			DBGLOG(DBG, "Skipping nogood " << i << " because it contains only guard atoms");
+		}else{
+			// watch the atom and the corresponding nogood
+			DBGLOG(DBG, "Watching literal " << watchedLit << " in nogood " << i);
+			watchedLiterals.push_back(std::pair<ID, int>(watchedLit, i));
+		}
 	}
 	watchedNogoodsCount = watched->getNogoodCount();
 
