@@ -220,9 +220,10 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
           "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
-      assert(!factory.xidb.empty() &&
-          "the guess and check model generator is not required for "
-          "non-idb components! (use plain)");
+//	We might still want to use G&C model generator even if it is not required (e.g. if support sets are used)
+//      assert(!factory.xidb.empty() &&
+//          "the guess and check model generator is not required for "
+//          "non-idb components! (use plain)");
     }
 
     // compute extensions of domain predicates and add it to the input
