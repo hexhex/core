@@ -540,7 +540,7 @@ struct sem<HexGrammarSemantics::externalAtom>
       ID,
       boost::optional<boost::optional<std::vector<ID> > >,
       boost::optional<boost::optional<std::vector<ID> > >,
-      boost::optional<boost::optional<std::vector<std::vector<ID> > > >
+      boost::optional<boost::optional<std::vector<std::vector<std::string> > > >
     >& source,
     ID& target)
   {
@@ -582,9 +582,9 @@ struct sem<HexGrammarSemantics::extSourceProperty>
   void operator()(
 	HexGrammarSemantics& mgr,
 	const boost::fusion::vector2<
-		ID,
-		boost::optional<boost::optional<std::vector<ID> > > >& source,
-	std::vector<ID>& target)
+		std::string,
+		boost::optional<boost::optional<std::vector<std::string> > > >& source,
+	std::vector<std::string>& target)
   {
 	target.push_back(boost::fusion::at_c<0>(source));
 	if( (!!boost::fusion::at_c<1>(source)) &&
@@ -1065,8 +1065,11 @@ HexGrammarBase(HexGrammarSemantics& sem):
         -(qi::lit('<') > -externalAtomProperties >> qi::lit('>')) > qi::eps
       ) [ Sem::externalAtom(sem) ];
 
+  externalAtomPropertyString
+    = qi::lexeme[ (ascii::lower >> *(ascii::alnum) > qi::eps) ];
+
   externalAtomProperty
-    = (term > -((term > qi::eps) % qi::eps) > qi::eps) [ Sem::extSourceProperty(sem) ];
+    = (externalAtomPropertyString > -(externalAtomPropertyString % qi::eps) > qi::eps) [ Sem::extSourceProperty(sem) ];
 
   externalAtomProperties
     = (externalAtomProperty > qi::eps) % qi::lit(',');
@@ -1080,7 +1083,6 @@ HexGrammarBase(HexGrammarSemantics& sem):
         -(qi::lit('[') > -preds >> qi::lit(']')) > qi::eps >  // for input
 	qi::lit(':') > qi::lit(':') > classicalAtom > qi::eps // for output
       ) [ Sem::mlpModuleAtom(sem) ];
-
 
   predDecl
     = (cident > qi::lit('/') > qi::ulong_)[ Sem::predFromPredDecl(sem) ];
@@ -1191,7 +1193,9 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(term);
   BOOST_SPIRIT_DEBUG_NODE(externalAtom);
   BOOST_SPIRIT_DEBUG_NODE(externalAtomPredicate);
+  BOOST_SPIRIT_DEBUG_NODE(externalAtomPropertyString);
   BOOST_SPIRIT_DEBUG_NODE(externalAtomProperty);
+  BOOST_SPIRIT_DEBUG_NODE(externalAtomProperties);
   BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtom);
   BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);

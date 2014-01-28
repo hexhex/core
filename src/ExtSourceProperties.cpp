@@ -37,6 +37,8 @@
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/PluginInterface.h"
 
+#include "boost/lexical_cast.hpp"
+
 DLVHEX_NAMESPACE_BEGIN
 
 ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& prop2){
@@ -92,14 +94,30 @@ bool ExtSourceProperties::isAntimonotonic() const{
 	return true;
 }
 
-void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<ID> >& props){
+void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<std::string> >& props){
 
-	typedef std::vector<ID> Prop;
+	typedef std::vector<std::string> Prop;
 	BOOST_FOREACH (Prop p, props){
-		std::string name = reg->terms.getByID(p[0]).getUnquotedString();
-		ID param1 = p.size() > 1 ? p[1] : ID_FAIL;
-		ID param2 = p.size() > 2 ? p[2] : ID_FAIL;
+		// parameter interpretation
+		ID param1 = ID_FAIL;
+		ID param2 = ID_FAIL;
+		if (p.size() > 1){
+			try{
+				param1 = ID::termFromInteger(boost::lexical_cast<int>(p[1]));
+			}catch(boost::bad_lexical_cast&){
+				param1 = reg->storeConstantTerm(p[1]);
+			}
+		}
+		if (p.size() > 2){
+			try{
+				param2 = ID::termFromInteger(boost::lexical_cast<int>(p[2]));
+			}catch(boost::bad_lexical_cast&){
+				param2 = reg->storeConstantTerm(p[2]);
+			}
+		}
 
+		// property interpretation
+		std::string name = p[0];
 		if (name == "functional"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"functional\" expects no parameters");
 			DBGLOG(DBG, "External Atom is functional");

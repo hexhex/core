@@ -234,7 +234,7 @@ struct ExtSourceProperties
 	/**
 	* Parses external source properties given as vectors of terms and integrates them into the current instance of the class
 	*/
-	void interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<ID> >& props);
+	void interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<std::string> >& props);
 };
 
 DLVHEX_NAMESPACE_END

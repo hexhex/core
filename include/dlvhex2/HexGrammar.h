@@ -193,7 +193,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(aggregateAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(externalAtom, ID);
-  DLVHEX_DEFINE_SEMANTIC_ACTION(extSourceProperty, std::vector<ID>);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(extSourceProperty, std::vector<std::string>);
   DLVHEX_DEFINE_SEMANTIC_ACTION(mlpModuleAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
@@ -251,7 +251,7 @@ struct HexGrammarBase
   typename Rule<>::type
     start, toplevel, toplevelBuiltin, mlpModuleHeader;
   typename Rule<std::string>::type
-    cident, string, variable, mlpModuleName;
+    cident, string, variable, externalAtomPropertyString, mlpModuleName;
   typename Rule<uint32_t>::type
     posinteger;
   typename Rule<ID>::type
@@ -266,9 +266,9 @@ struct HexGrammarBase
   // rules that are extended by modules
   typename Rule<ID>::type
     toplevelExt, bodyAtomExt, headAtomExt, termExt;
-  typename Rule<std::vector<std::vector<ID> > >::type
+  typename Rule<std::vector<std::vector<std::string> > >::type
     externalAtomProperties;
-  typename Rule<std::vector<ID> >::type
+  typename Rule<std::vector<std::string> >::type
     externalAtomProperty;
   // symbol tables
   boost::spirit::qi::symbols<char, ID>
