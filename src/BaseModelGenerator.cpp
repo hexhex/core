@@ -555,7 +555,7 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
   //   call learn support sets
 
   // if this is wrong, we might have mixed up registries between plugin and program
-  assert(!!eatom.pluginAtom && eatom.pluginAtom->getExtSourceProperties().providesSupportSets() && eatom.predicate == eatom.pluginAtom->getPredicateID());
+  assert(!!eatom.pluginAtom && eatom.getExtSourceProperties().providesSupportSets() && eatom.predicate == eatom.pluginAtom->getPredicateID());
 
   // update masks (inputMask and auxInputMask)
   eatom.updatePredicateInputMask();
