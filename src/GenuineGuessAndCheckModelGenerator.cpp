@@ -386,17 +386,17 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 		SimpleNogoodContainerPtr potentialSupportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 		SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 		for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
-			InterpretationPtr evalIntr(new Interpretation(factory.reg));
+//			InterpretationPtr evalIntr(new Interpretation(factory.reg));
 
 			// make sure that ALL input and input auxiliary atoms are true
-			evalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+//			evalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 
 			// evaluate the external atom if it provides support sets
 			const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 			if (eatom.getExtSourceProperties().providesSupportSets()){
-				DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " for support set learning");
-				IntegrateExternalAnswerIntoInterpretationCB dummyCB(evalIntr);
-				evaluateExternalAtom(factory.ctx, eatom, evalIntr, dummyCB, potentialSupportSets);
+				DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " for support set learning");
+//				IntegrateExternalAnswerIntoInterpretationCB dummyCB(evalIntr);
+				learnSupportSetsForExternalAtom(factory.ctx, eatom, potentialSupportSets);
 			}
 		}
 

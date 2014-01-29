@@ -981,6 +981,11 @@ public:
   virtual void retrieve(const Query&, Answer&, NogoodContainerPtr nogoods);
 
   /**
+   * \brief Is called for learning support sets. Needs to be implemented if prop.providesSupportSets() = true.
+   */
+  virtual void learnSupportSets(const Query&, NogoodContainerPtr nogoods);
+
+  /**
    * \brief Tries to generalize learned nogoods to nonground nogoods. Should only be overridden by experienced users.
    *
    * \@param ng A learned nogood with some external atom auxiliary over this external predicate

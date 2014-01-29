@@ -6,6 +6,10 @@ color(blue).
 % graph is undirected
 edge(Y, X) :- edge(X, Y).
 
+% extract nodes
+node(X) :- edge(X, Y).
+node(Y) :- edge(X, Y).
+
 % guess all colorings
 coloring(N, C) : color(C) :- node(N).
 

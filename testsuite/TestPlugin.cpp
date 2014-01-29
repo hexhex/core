@@ -1970,7 +1970,19 @@ public:
 		assert(false);
 	}
 
+
+  virtual void learnSupportSets(const Query& query, NogoodContainerPtr nogoods)
+  {
+    Answer ans;
+    retrieveOrLearnSupportSets(query, ans, nogoods, true);
+  }
+
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+  {
+    retrieveOrLearnSupportSets(query, answer, nogoods, false);
+  }
+
+  virtual void retrieveOrLearnSupportSets(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool learnSupportSets)
   {
 		RegistryPtr reg = getRegistry();
 
@@ -1999,7 +2011,7 @@ public:
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
 
 		// learn support sets (only if --supportsets option is specified on the command line)
-		if (!!nogoods && query.ctx->config.getOption("SupportSets")){
+		if (learnSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
 			SimpleNogoodContainerPtr preparedNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 
 			// for all rules r of P

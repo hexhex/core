@@ -203,6 +203,13 @@ protected:
     ExternalAnswerTupleCallback& cb,
     NogoodContainerPtr nogoods) const;
 
+  // calculates constant input tuples from auxiliary input predicates and from given constants
+  // calls eatom function with each input tuple and maximum input for support set learning
+  // returns false if process was aborted by callback, true otherwise
+  virtual void learnSupportSetsForExternalAtom(ProgramCtx& ctx,
+    const ExternalAtom& eatom,
+    NogoodContainerPtr nogoods) const;
+
   // calls evaluateExternalAtom for each atom in eatoms
   //
   // returns false if process was aborted by callback, true otherwise
