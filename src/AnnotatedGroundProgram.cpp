@@ -199,7 +199,7 @@ void AnnotatedGroundProgram::initialize(){
 void AnnotatedGroundProgram::computeAtomDependencyGraph(){
 
 	// construct atom dependency graph
-	DBGLOG(DBG, "Contructing atom dependency graph");
+	DBGLOG(DBG, "Contructing atom dependency graph for " << groundProgram.idb.size() << " rules");
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 

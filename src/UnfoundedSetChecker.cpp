@@ -121,15 +121,32 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		}
 	}
 
+	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(reg));
+
+	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
+	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
+
 	// construct: compatibleSetWithoutAux - ufsCandidate
 	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
-	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(reg));
+
 	// remove the UFS from the compatible set, but do not remove EA auxiliaries
 	// this does not hurt because EA auxiliaries can never be in the input to an external atom, but keeping them has the advantage that negative learning is more effective
 	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
 
-	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
-	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
+	InterpretationPtr supportSetVerification = InterpretationPtr(new Interpretation(reg));
+	if (ctx.config.getOption("SupportSets")){
+		DBGLOG(DBG, "Constructing interpretation for external atom evaluation");
+
+		// take external atom values from the ufsCandidate and ordinary atoms from I \ U
+		supportSetVerification->getStorage() = (compatibleSetWithoutAux->getStorage() - ufsCandidate->getStorage());
+		bm::bvector<>::enumerator en = ufsCandidate->getStorage().first();
+		bm::bvector<>::enumerator en_end = ufsCandidate->getStorage().end();
+		while (en < en_end){
+			ID id = reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary()) supportSetVerification->setFact(*en);
+			en++;
+		}
+	}
 
 	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
 	DBGLOG(DBG, "Verifying external atoms");
@@ -145,9 +162,12 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		if (ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) && agp.allowsForVerificationUsingCompleteSupportSets()){
 			DBGLOG(DBG, "Verifying " << eaID << " for UFS verification using complete support sets");
 
-			if (agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, ufsCandidate)){
+			if (agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, supportSetVerification)){
 				// all atoms which belong to this external atom are verified
+				DBGLOG(DBG, "Verification succeeded");
 				eaResult->add(*agp.getEAMask(eaIndex)->mask());
+			}else{
+				return false;
 			}
 		}else{
 
