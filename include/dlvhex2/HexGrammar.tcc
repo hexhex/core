@@ -791,7 +791,7 @@ struct sem<HexGrammarSemantics::constraint>
       DBGLOG(DBG,"created constraint " << r << " with id " << target);
     }
     else
-      target = ID_FAIL;
+      target = existing; // ID_FAIL;
   }
 };
 
@@ -823,7 +823,7 @@ struct sem<HexGrammarSemantics::weakconstraint>
       DBGLOG(DBG,"created weak constraint " << r << " with id " << target);
     }
     else
-      target = ID_FAIL;
+      target = existing; // ID_FAIL;
   }
 };
 
