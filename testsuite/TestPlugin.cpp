@@ -2068,8 +2068,8 @@ public:
 																		query,	// this parameter is always the same
 																		Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()),	// hatom.tuple[0]=q and hatom.tuple[i] for i >= 1 stores the elements of X;
 																																												// here we need only the X and use hatom.tuple.begin() + 1 to eliminate the predicate q
-																		true /* technical detail, is set to true almost always */).address,
-																!id.isNaf(),																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
+																		!id.isNaf() /* technical detail, is set to true almost always */).address,
+																true,																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
 																id.isOrdinaryGroundAtom()															/* specify if this literal is ground or nonground (the same as the head atom) */ ));
 					}else{
 						isSupportSet = false;
