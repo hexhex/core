@@ -51,6 +51,8 @@ public:
 protected:
   // corresponding factory
   Factory& factory;
+  // program context
+  ProgramCtx& ctx;
   // common registry
   RegistryPtr reg;
   // genuine solver

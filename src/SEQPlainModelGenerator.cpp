@@ -30,6 +30,7 @@
  */
 
 #include "dlvhex2/SEQPlainModelGenerator.h"
+#include "dlvhex2/config_values.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -49,37 +50,45 @@ SEQPlainModelGenerator::~SEQPlainModelGenerator()
 
 void SEQPlainModelGenerator::generateModels()
 {
+	bool onlyanswersets = (ctx.config.getOption(CFG_SEQ_MODELS) == SEQModels_AnswerSets);
 	InterpretationPtr model = solver->getNextModel();
 	while (model) {
 		ufscm->initialize(model);
 		MVec tmpmodels;
-		bool nextufs = true;
-		while (nextufs) {
+		if (onlyanswersets) {
 			std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
 			if (ufs.size() == 0) {
-				nextufs = false;
+				models.push_back(Pair(BVec(), model));
 			}
-			BVec bufs;
-			BOOST_FOREACH (IDAddress id, ufs) {
-				if (!reg->ogatoms.getIDByAddress(id).isAuxiliary()) {
-					bufs.set(id);
+		} else {
+			bool nextufs = true;
+			while (nextufs) {
+				std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
+				if (ufs.size() == 0) {
+					nextufs = false;
+				}
+				BVec bufs;
+				BOOST_FOREACH (IDAddress id, ufs) {
+					if (!reg->ogatoms.getIDByAddress(id).isAuxiliary()) {
+						bufs.set(id);
+					}
+				}
+				bool insert = tmpmodels.size() == 0;
+				MVec::iterator it = tmpmodels.begin();
+				while (it != tmpmodels.end()) {
+					if (bm_subset((*it).first, bufs)) {
+						it = tmpmodels.erase(it);
+						insert = true;
+					} else {
+						++it;
+					}
+				}
+				if (insert) {
+					tmpmodels.push_back(Pair(bufs, model));
 				}
 			}
-			bool insert = tmpmodels.size() == 0;
-			MVec::iterator it = tmpmodels.begin();
-			while (it != tmpmodels.end()) {
-				if (bm_subset((*it).first, bufs)) {
-					it = tmpmodels.erase(it);
-					insert = true;
-				} else {
-					++it;
-				}
-			}
-			if (insert) {
-				tmpmodels.push_back(Pair(bufs, model));
-			}
+			incorporateModels(tmpmodels);
 		}
-		incorporateModels(tmpmodels);
 		model = solver->getNextModel();
 	}
 	modeliterator = models.begin();

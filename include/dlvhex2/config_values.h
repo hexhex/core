@@ -35,6 +35,12 @@
 #define CFG_HT_MODELS			"ht_models"
 #define CFG_SEQ_MODELS			"seq_models"
 
+enum SEQModels
+{
+	SEQModels_All = 1,
+	SEQModels_AnswerSets,
+};
+
 #define CFG_MODEL_BUILDER		"model_builder"
 
 enum ModelBuilder
