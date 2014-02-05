@@ -54,6 +54,7 @@ HTPlainModelGeneratorFactory::HTPlainModelGeneratorFactory(ProgramCtx& ctx, cons
 HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr input):
 	ModelGeneratorBase<HTInterpretation>(input),
 	factory(factory),
+	ctx(factory.ctx),
 	reg(factory.ctx.registry()),
 	nextmodel(true)
 {

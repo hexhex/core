@@ -200,6 +200,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      Only display instances of the specified predicate(s)." << std::endl
       << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
+      << "     --ht-models      Print HT-models." << std::endl
+      << "     --seq-models[={all,as}]" << std::endl
+      << "                      Use model generator for semi-equilibrium models." << std::endl
+      << "                        all - (default) print all semi-equilibrium models" << std::endl
+      << "                        as  - print semi-equilibrium models which are answer sets too" << std::endl
 //      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
 //      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
@@ -725,7 +730,7 @@ void processOptionsPrePlugin(
     { "constspace", no_argument, 0, 39 },
     { "forcesinglethreading", no_argument, 0, 40 },
     { "ht-models", no_argument, 0, 41 },
-    { "seq-models", no_argument, 0, 42 },
+    { "seq-models", optional_argument, 0, 42 },
     { NULL, 0, NULL, 0 }
   };
 
@@ -1239,7 +1244,11 @@ void processOptionsPrePlugin(
         break;
       case 42:
         pctx.config.setOption(CFG_HT_MODELS, 1);
-        pctx.config.setOption(CFG_SEQ_MODELS, 1);
+        if (optarg && strcmp(optarg, "as") == 0) {
+          pctx.config.setOption(CFG_SEQ_MODELS, SEQModels_AnswerSets);
+        } else {
+          pctx.config.setOption(CFG_SEQ_MODELS, SEQModels_All);
+        }
         break;
     }
   }
