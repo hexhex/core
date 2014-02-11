@@ -203,8 +203,8 @@ ID FLPModelGeneratorFactoryBase::createEatomGuessingRule(const ProgramCtx& ctx, 
           {
             const BuiltinAtom& biatom = reg->batoms.getByID(lit);
             // !=, <, >, <= and >= cannot provide grounding
-            if (biatom.tuple[0] == ID::TERM_BUILTIN_NE || biatom.tuple[0] == ID::TERM_BUILTIN_LT || biatom.tuple[0] == ID::TERM_BUILTIN_LE ||
-                biatom.tuple[0] == ID::TERM_BUILTIN_GT || biatom.tuple[0] == ID::TERM_BUILTIN_GE) continue;
+            if (biatom.tuple[0].address == ID::TERM_BUILTIN_NE || biatom.tuple[0].address == ID::TERM_BUILTIN_LT || biatom.tuple[0].address == ID::TERM_BUILTIN_LE ||
+                biatom.tuple[0].address == ID::TERM_BUILTIN_GT || biatom.tuple[0].address == ID::TERM_BUILTIN_GE) continue;
 
             // look if this atom grounds any variables we need
             BOOST_FOREACH(ID term, biatom.tuple)
