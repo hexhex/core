@@ -30,62 +30,65 @@
  *         unfounded set checks in genuine G&C model generators.
  */
 
-#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/UnfoundedSetCheckHeuristics.h"
+#include "dlvhex2/Interpretation.h"
+#include "dlvhex2/OrdinaryASPProgram.h"
+#include "dlvhex2/Printer.h"
 
-#include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
+#include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Base ==============================
 
-UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : mg(mg), reg(reg){
+UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(RegistryPtr reg) : reg(reg){
 }
 
 // ============================== Post ==============================
 
-UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : UnfoundedSetCheckHeuristics(mg, reg){
+UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(RegistryPtr reg) : UnfoundedSetCheckHeuristics(reg){
 }
 
-std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsPost::doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsPost::doUFSCheck(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 	return std::pair<bool, std::set<ID> >(false, std::set<ID>() );
 }
 
-UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPostFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
-	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPost(mg, reg));
+UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPostFactory::createHeuristics(RegistryPtr reg){
+	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPost(reg));
 }
 
 // ============================== Max ==============================
 
-UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : UnfoundedSetCheckHeuristics(mg, reg){
+UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(RegistryPtr reg) : UnfoundedSetCheckHeuristics(reg){
 }
 
-std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsMax::doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsMax::doUFSCheck(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
 	// partial UFS check
-	const std::vector<ID>& idb = mg->getGroundProgram().idb;
+	const std::vector<ID>& idb = groundProgram.idb;
 	std::set<ID> skipProgram;
 	BOOST_FOREACH (ID ruleID, idb){
 		// check if all atoms in the rule have been assigned
 		const Rule& rule = reg->rules.getByID(ruleID);
 		if (rule.isEAGuessingRule()) continue;
-		bool assigned = true;
+		bool allassigned = true;
 		BOOST_FOREACH (ID h, rule.head){
-			if (!factWasSet->getFact(h.address)){
-				assigned = false;
+			if (!assigned->getFact(h.address)){
+				allassigned = false;
 				break;
 			}
 		}
 		BOOST_FOREACH (ID b, rule.body){
-			if (!factWasSet->getFact(b.address)){
-				assigned = false;
+			if (!assigned->getFact(b.address)){
+				allassigned = false;
 				break;
 			}
-			if (b.isExternalAuxiliary()){	
-				assigned = mg->isVerified(b, factWasSet);
-				if (!assigned) break;
+			if (b.isExternalAuxiliary()){
+				allassigned = verifiedAuxes->getFact(b.address);
+				if (!allassigned) break;
 			}
 		}
-		if (!assigned){
+		if (!allassigned){
 			skipProgram.insert(ruleID);
 		}
 	}
@@ -105,27 +108,27 @@ std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsMax::doUFSCheck(Interp
 	return std::pair<bool, std::set<ID> >(true, skipProgram);
 }
 
-UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsMaxFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
-	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsMax(mg, reg));
+UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsMaxFactory::createHeuristics(RegistryPtr reg){
+	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsMax(reg));
 }
 
 // ============================== Periodic ==============================
 
-UnfoundedSetCheckHeuristicsPeriodic::UnfoundedSetCheckHeuristicsPeriodic(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg) : UnfoundedSetCheckHeuristicsMax(mg, reg), counter(0){
+UnfoundedSetCheckHeuristicsPeriodic::UnfoundedSetCheckHeuristicsPeriodic(RegistryPtr reg) : UnfoundedSetCheckHeuristicsMax(reg), counter(0){
 }
 
-std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 	counter++;
 	if (counter >= 10){
 		counter = 0;
-		return UnfoundedSetCheckHeuristicsMax::doUFSCheck(partialInterpretation, factWasSet, changed);
+		return UnfoundedSetCheckHeuristicsMax::doUFSCheck(groundProgram, verifiedAuxes, partialAssignment, assigned, changed);
 	}else{
 		return std::pair<bool, std::set<ID> >(false, std::set<ID>() );
 	}
 }
 
-UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPeriodicFactory::createHeuristics(HeuristicsModelGeneratorInterface* mg, RegistryPtr reg){
-	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPeriodic(mg, reg));
+UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPeriodicFactory::createHeuristics(RegistryPtr reg){
+	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPeriodic(reg));
 }
 
 DLVHEX_NAMESPACE_END

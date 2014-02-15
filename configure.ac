@@ -488,17 +488,17 @@ if test "x${with_libclasp_support}" != xfalse; then
   if test "x$CLASP_TRUNK_DIR" = "xyes"; then
     AC_MSG_ERROR([You have to specify clasp trunk in --with-libclasp=<clasp-trunk-dir>])
   fi
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lclasp"
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lclasp -lprogram_opts"
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${CLASP_TRUNK_DIR}/build/release/libclasp/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${CLASP_TRUNK_DIR}/build/release/libclasp/lib/ -L${CLASP_TRUNK_DIR}/build/release/libprogram_opts/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${CLASP_TRUNK_DIR}/libclasp/ -I${CLASP_TRUNK_DIR}/libprogram_opts/ -I${CLASP_TRUNK_DIR}/app/"
   # unfortunatly there is no lib for the following lines
-  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_options.o"
-  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_output.o"
-  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/app_options.o"
-  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/program_options.o"
-  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_parser.o"
-  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_store.o"
+#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_options.o"
+#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_output.o"
+#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/app_options.o"
+#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/program_options.o"
+#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_parser.o"
+#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_store.o"
   extsolver_found=true
 fi
 

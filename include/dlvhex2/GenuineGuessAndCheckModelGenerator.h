@@ -72,10 +72,6 @@ protected:
   // outer external atoms
   std::vector<ID> outerEatoms;
 
-  // nogoods which shall be kept beyond the lifespan of the model generator
-  // (useful for nonground nogoods)
-  SimpleNogoodContainerPtr globalLearnedEANogoods;
-
 public:
   GenuineGuessAndCheckModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
@@ -88,29 +84,11 @@ public:
   virtual std::ostream& print(std::ostream& o, bool verbose) const;
 };
 
-class HeuristicsModelGeneratorInterface{
-public:
-	/**
-	* Checks if an external atom auxiliary value can be taken for sure (i.e. it has already been verified against the external source).
-	* The internal check depends on the selected eaVerificationMode.
-	* @param eaAux The ID of the auxiliary in question
-	* @param factWasSet The set of atoms assigned so far
-	*/
-	virtual bool isVerified(ID eaAux, InterpretationConstPtr factWasSet) = 0;
-
-	/**
-	* Returns the ground program in this component
-	* @return const std::vector<ID>& Reference to the ground program in this component
-	*/
-	virtual const OrdinaryASPProgram& getGroundProgram() = 0;
-};
-
 // the model generator (accesses and uses the factory)
 class GenuineGuessAndCheckModelGenerator:
   public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
-  public PropagatorCallback,
-  public HeuristicsModelGeneratorInterface
+  public PropagatorCallback
 {
   // types
 public:
@@ -123,9 +101,13 @@ protected:
 
   RegistryPtr reg;
 
-  std::vector<bool> eaVerified;
-  std::vector<bool> eaEvaluated;
+  // information about verification/falsification of current external atom guesses
   boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList;
+  std::vector<bool> eaEvaluated;	// is true iff the external atom guess was checked against the semantics (i.e., it is either verified or falsified)
+  std::vector<bool> eaVerified;		// if eaEvaluated is true, then: eaVerified is true iff the check verified the guess
+  InterpretationPtr verifiedAuxes;	// the set of currently verified external atom auxiliaries
+
+  // heuristics
   ExternalAtomEvaluationHeuristicsPtr externalAtomEvalHeuristics;
   UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
 
@@ -146,6 +128,11 @@ protected:
   // members
 
   /**
+   * Initializes heuristics for external atom evaluation and UFS checking over partial assignments
+   */
+  void setHeuristics();
+
+  /**
    * Learns related nonground nogoods
    */
   void generalizeNogood(Nogood ng);
@@ -159,7 +146,7 @@ protected:
    * Triggern nonground nogood learning and instantiation
    * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly
    */
-  void updateEANogoods(InterpretationConstPtr compatibleSet = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+  void updateEANogoods(InterpretationConstPtr compatibleSet = InterpretationConstPtr(), InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
    * Checks after completion of an assignment if it is compatible.
@@ -179,19 +166,11 @@ protected:
   /**
    * Makes an unfounded set check over a (possibly) partial interpretation if useful.
    * @param partialInterpretation The current assignment
-   * @param factWasSet Currently assigned atoms (if 0, then the assignment is assumed to be complete)
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
    * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
    * @return True if the current assignment contains an unfounded set which will be contained in any completion of the assignment, otherwise false.
    */
-  bool partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
-
-  /**
-   * Checks if an external atom auxiliary value can be taken for sure (i.e. it has already been verified against the external source).
-   * The internal check depends on the selected eaVerificationMode.
-   * @param eaAux The ID of the auxiliary in question
-   * @param factWasSet The set of atoms assigned so far
-   */
-  bool isVerified(ID eaAux, InterpretationConstPtr factWasSet);
+  bool partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
    * Finds a new atom in the scope of an external atom which shall be watched wrt. an interpretation.
@@ -204,13 +183,19 @@ protected:
   IDAddress getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue);
 
   /**
+   * Removes verification results for external atoms if relevant parts of the input have changed.
+   * @param changed The set of atoms with modified truth value since the last call
+   */
+  void unverifyExternalAtoms(InterpretationConstPtr changed);
+
+  /**
    * Heuristically decides if and which external atoms we evaluate.
    * @param partialInterpretation The current assignment
-   * @param factWasSet Currently assigned atoms
+   * @param assigned Currently assigned atoms
    * @param changed The set of atoms with modified truth value since the last call
    * @return bool True if evaluation yielded a conflict, otherwise false.
    */
-  bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 
   /**
    * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete).
@@ -218,11 +203,40 @@ protected:
    * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
    * @param eaIndex The index of the external atom to verify
    * @param partialInterpretation The current assignment
-   * @param factWasSet Currently assigned atoms (if 0, then the assignment is assumed to be complete)
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
    * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
    * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
    */
-  bool verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+  bool verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation,
+					           InterpretationConstPtr assigned = InterpretationConstPtr(),
+					           InterpretationConstPtr changed = InterpretationConstPtr());
+  /**
+   * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete) using explicit evaluation.
+   * Learns nogoods if external learning is activated.
+   * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
+   * @param eaIndex The index of the external atom to verify
+   * @param partialInterpretation The current assignment
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   */
+  bool verifyExternalAtomByEvaluation(int eaIndex, InterpretationConstPtr partialInterpretation,
+					           InterpretationConstPtr assigned = InterpretationConstPtr(),
+					           InterpretationConstPtr changed = InterpretationConstPtr());
+
+  /**
+   * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete) using complete support sets.
+   * Learns nogoods if external learning is activated.
+   * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
+   * @param eaIndex The index of the external atom to verify
+   * @param partialInterpretation The current assignment
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   */
+  bool verifyExternalAtomBySupportSets(int eaIndex, InterpretationConstPtr partialInterpretation,
+					            InterpretationConstPtr assigned = InterpretationConstPtr(),
+					            InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
    * Returns the ground program in this component
@@ -234,13 +248,11 @@ protected:
    * Is called by the ASP solver in its propagation method.
    * This function can add additional (learned) nogoods to the solver to force implications or tell the solver that the current assignment is conflicting.
    * @param partialInterpretation The current assignment
-   * @param factWasSet Currently assigned atoms
+   * @param assigned Currently assigned atoms
    * @param changed The set of atoms with modified truth value since the last call
    */
-  void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 
-  // initialization
-  void setHeuristics();
 
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);

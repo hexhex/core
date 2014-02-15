@@ -203,7 +203,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --weaksafety     Skip strong safety check." << std::endl
       << "     --liberalsafety" << std::endl
       << "                      Uses more liberal safety conditions than strong safety" << std::endl
-      << "     --multithreading Parallelizes model candidate computation and external atom verification (experimental)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -431,7 +430,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("LiberalSafety",0);
   pctx.config.setOption("LiberalSafetyNullFreezeCount",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
-  pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
@@ -766,7 +764,6 @@ void processOptionsPrePlugin(
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
 		{ "liberalsafety", no_argument, 0, 33 },
-		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
     { "noclaspincremental", no_argument, 0, 43 },
     { "claspsingletonloopnogoods", no_argument, 0, 44 },
@@ -1361,8 +1358,6 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("LiberalSafety", 1);
 			pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
 			break;
-
-		case 34: pctx.config.setOption("MultiThreading", 1); break;
 
 		case 35:
 			pctx.config.setOption("FLPDecisionCriterionHead", 0);

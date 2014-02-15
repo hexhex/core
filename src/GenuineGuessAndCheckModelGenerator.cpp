@@ -89,8 +89,6 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   // transform xidb for flp calculation
   if (ctx.config.getOption("FLPCheck")) createFLPRules();
 
-  globalLearnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-
   // output rules
   {
     std::ostringstream s;
@@ -219,11 +217,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
-
-//	We might still want to use G&C model generator even if it is not required (e.g. if support sets are used)
-//      assert(!factory.xidb.empty() &&
-//          "the guess and check model generator is not required for "
-//          "non-idb components! (use plain)");
     }
 
     // compute extensions of domain predicates and add it to the input
@@ -251,38 +244,31 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	}
 	solver = GenuineGroundSolver::getInstance(
 		factory.ctx, annotatedGroundProgram,
-		// no interleaved threading because guess and check MG will likely not profit from it
+		// this parameter is ignored since upgrade to clasp 3.0 (but still passed for backward compatibility)
 		false,
 		// do the UFS check for disjunctions only if we don't do
 		// a minimality check in this class;
 		// this will not find unfounded sets due to external sources,
 		// but at least unfounded sets due to disjunctions
 		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
-	learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-	learnedEANogoodsTransferredIndex = 0;
-	nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
-
-	if( factory.ctx.config.getOption("NoPropagator") == 0 )
-	  solver->addPropagator(this);
     }
 
-    setHeuristics();
-
+    // external learning related initialization
+    learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+    learnedEANogoodsTransferredIndex = 0;
+    nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
+    if(factory.ctx.config.getOption("NoPropagator") == 0) solver->addPropagator(this);
     learnSupportSets();
 
-    // initialize UFS checker
-    //   Concerning the last parameter, note that clasp backend uses choice rules for implementing disjunctions:
-    //   this must be regarded in UFS checking (see examples/trickyufs.hex)
-    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram, factory.ctx.config.getOption("GenuineSolver") >= 3, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
-
-    // overtake nogoods from the factory
-    {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init nogoods");
-      for (int i = 0; i < factory.globalLearnedEANogoods->getNogoodCount(); ++i){
-        learnedEANogoods->addNogood(factory.globalLearnedEANogoods->getNogood(i));
-      }
-      updateEANogoods();
-    }
+    // external atom evaluation and unfounded set checking
+    //   initialize UFS checker
+    //     Concerning the last parameter, note that clasp backend uses choice rules for implementing disjunctions:
+    //     this must be regarded in UFS checking (see examples/trickyufs.hex)
+    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram,
+                                                                         factory.ctx.config.getOption("GenuineSolver") >= 3,
+                                                                         factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
+    //   incremental algorithms
+    setHeuristics();
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
@@ -292,23 +278,24 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 
 void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 
-    // set external atom evaluation strategy according to selected heuristics
-    for (int i = 0; i < factory.innerEatoms.size(); ++i){
-      eaEvaluated.push_back(false);
-      eaVerified.push_back(false);
+	// set external atom evaluation strategy according to selected heuristics
+	for (int i = 0; i < factory.innerEatoms.size(); ++i){
+		eaEvaluated.push_back(false);
+		eaVerified.push_back(false);
 
-      // watch all atoms in the scope of the external atom for unverification
-      bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
-      bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().end();
-      if (en < en_end){
-        // watch one input atom for verification
-        verifyWatchList[*en].push_back(i);
-      }
-    }
-    externalAtomEvalHeuristics = factory.ctx.externalAtomEvaluationHeuristicsFactory->createHeuristics(this, reg);
+		// watch all atoms in the scope of the external atom for unverification
+		bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().end();
+		if (en < en_end){
+			// watch one input atom for verification
+			verifyWatchList[*en].push_back(i);
+		}
+	}
+	externalAtomEvalHeuristics = factory.ctx.externalAtomEvaluationHeuristicsFactory->createHeuristics(reg);
 
-    // create ufs check heuristics as selected
-    ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(this, reg);
+	// create ufs check heuristics as selected
+	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(reg);
+	verifiedAuxes = InterpretationPtr(new Interpretation(reg));
 }
 
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
@@ -386,16 +373,10 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 		SimpleNogoodContainerPtr potentialSupportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 		SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 		for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
-//			InterpretationPtr evalIntr(new Interpretation(factory.reg));
-
-			// make sure that ALL input and input auxiliary atoms are true
-//			evalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
-
 			// evaluate the external atom if it provides support sets
 			const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 			if (eatom.getExtSourceProperties().providesSupportSets()){
 				DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " for support set learning");
-//				IntegrateExternalAnswerIntoInterpretationCB dummyCB(evalIntr);
 				learnSupportSetsForExternalAtom(factory.ctx, eatom, potentialSupportSets);
 			}
 		}
@@ -471,6 +452,8 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 
 
 #if 0
+		// possible optimization:
+
 		// generate rules for this support set
 		int sscnt = 0;
 		typedef std::pair<ID, Nogood> SupportSetPair;
@@ -568,7 +551,7 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 
 void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	InterpretationConstPtr compatibleSet,
-	InterpretationConstPtr factWasSet,
+	InterpretationConstPtr assigned,
 	InterpretationConstPtr changed){
 
 	// generalize ground nogoods to nonground ones
@@ -581,7 +564,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 
 	// instantiate nonground nogoods
 	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")){
-		nogoodGrounder->update(compatibleSet, factWasSet, changed);
+		nogoodGrounder->update(compatibleSet, assigned, changed);
 	}
 
 	// transfer nogoods to the solver
@@ -602,12 +585,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 			}
 			LOG(DBG,"learned nogood " << ng.getStringRepresentation(reg));
 		}
-		if (ng.isGround()){
-			solver->addNogood(ng);
-		}else{
-			// keep nonground nogoods beyond the lifespan of this model generator
-			factory.globalLearnedEANogoods->addNogood(ng);
-		}
+		if (ng.isGround()) solver->addNogood(ng);
 	}
 
 	// for encoding-based UFS checkers and explicit FLP checks, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
@@ -677,7 +655,8 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 		}
 	}else{
 		// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
+		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 &&
+		    factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
 			DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
 			return true;
 		}else{
@@ -687,7 +666,8 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("FLPCheck")){
 				DBGLOG(DBG, "FLP Check");
 				// do FLP check (possibly with nogood learning) and add the learned nogoods to the main search
-				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx,
+				                                                     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 				updateEANogoods(compatibleSet);
 				return result;
 			}
@@ -695,7 +675,8 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(),
+				                                                    factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 				updateEANogoods(compatibleSet);
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Got a UFS");
@@ -716,7 +697,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	}
 }
 
-bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c partialUFSchk");
 
 	if (!factory.ctx.config.getOption("UFSCheck")) return false;
@@ -724,13 +705,14 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 	// ufs check without nogood learning makes no sense if the interpretation is not complete
 	if (factory.ctx.config.getOption("UFSLearning")){
 
-		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(partialInterpretation, factWasSet, changed);
+		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(annotatedGroundProgram.getGroundProgram(), verifiedAuxes, partialInterpretation, assigned, changed);
 
 		if (decision.first){
 
-			DBGLOG(DBG, "Heuristic decides to do an UFS check");
-			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
+			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
+			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second,
+			                                                    factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *assigned << ")");
 
 			if (ufs.size() > 0){
 				Nogood ng = ufscm->getLastUFSNogood();
@@ -739,7 +721,7 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 
 				// check if nogood is violated
 				BOOST_FOREACH (ID l, ng){
-					if (!factWasSet->getFact(l.address) || l.isNaf() == partialInterpretation->getFact(l.address)) return false;
+					if (!assigned->getFact(l.address) || l.isNaf() == partialInterpretation->getFact(l.address)) return false;
 				}
 
 				return true;
@@ -752,24 +734,6 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 	return false;
 }
 
-bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationConstPtr factWasSet){
-
-	assert(annotatedGroundProgram.getAuxToEA(eaAux.address).size() > 0);
-
-	// check if at least one of the external atoms which can derive this auxiliary were verified
-	BOOST_FOREACH (ID ea, annotatedGroundProgram.getAuxToEA(eaAux.address)){
-		int eaIndex = 0;
-		while (factory.innerEatoms[eaIndex] != ea) eaIndex++;
-
-		if (eaEvaluated[eaIndex] && eaVerified[eaIndex]){
-			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is verified by " << ea);
-			return true;
-		}
-	}
-	DBGLOG(DBG, "Auxiliary " << eaAux.address << " is not verified");
-	return false;
-}
-
 IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "getWatchedLiteral");
@@ -778,51 +742,20 @@ IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, Int
 	bm::bvector<>::enumerator searchb = search->getStorage().first();
 	bm::bvector<>::enumerator searchb_end = search->getStorage().end();
 
-	#if 1
 	// go through eamask
 	while (eaDepAtoms < eaDepAtoms_end){
 		// if search bitset has correct truth value
 		if (search->getFact(*eaDepAtoms) == truthValue){
 			DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
-			return *eaDepAtoms; // reg->ogatoms.getIDByAddress(*eaDepAtoms);
+			return *eaDepAtoms;
 		}
 		eaDepAtoms++;
 	}
-	#else
-	// optimized for truthValue (not a good optimization, as optimization on small eamask is the best we can do, and it is done above) XXX only thing we could improve is a queue of watches so that we have constant time for getWatchedLiteral
-	if( truthValue )
-	{
-	  // looking for the first common bit in eaDepAtoms and searchb
-	  while( eaDepAtoms != eaDepAtoms_end && searchb != searchb_end ) {
-	    if( *eaDepAtoms == *searchb ) {
-	      DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
-	      return *eaDepAtoms; // reg->ogatoms.getIDByAddress(*eaDepAtoms);
-	    } else if( *eaDepAtoms < *searchb ) {
-	      eaDepAtoms++;
-	    } else { assert( *eaDepAtoms > *searchb );
-	      searchb++;
-	    }
-	  }
-	} else {
-	  // looking for the first bit in eaDepAtoms that is not in searchb
-	  while( eaDepAtoms != eaDepAtoms_end && searchb != searchb_end ) {
-	    if( *eaDepAtoms == *searchb ) { // we need to find a different pair
-	      eaDepAtoms++;
-	      searchb++;
-	    } else if( *eaDepAtoms < *searchb ) { // found it!
-	      DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
-	      return *eaDepAtoms; //reg->ogatoms.getIDByAddress(*eaDepAtoms);
-	    } else { assert( *eaDepAtoms > *searchb ); // we found a bit that is in searchb but not in eaDepAtoms
-	      searchb++;
-	    }
-	  }
-	}
-	#endif
 
-	return ID::ALL_ONES; //ID_FAIL;
+	return ID::ALL_ONES;
 }
 
-bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationConstPtr changed){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms");
 
 	DBGLOG(DBG, "Evaluating External Atoms");
@@ -832,72 +765,79 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	bm::bvector<>::enumerator en_end = changed->getStorage().end();
 
 	{
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms wl");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms wl");
 
-	// for each eatom, if it is evaluated:
-	// * look if there is a bit in changed that matches the eatom mask
-	// * if yes:
-	//     * unverify eatom and use the changed bit as new watch
-	//     * if a watched atom was assigned, possibly evaluate the external atom (driven by a heuristics)
+		// for each eatom, if it is evaluated:
+		// * look if there is a bit in changed that matches the eatom mask
+		// * if yes:
+		//     * unverify eatom and use the changed bit as new watch
+		//     * if a watched atom was assigned, possibly evaluate the external atom (driven by a heuristics)
 
-	// unverify/unfalsify external atoms which watch this atom
-	for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
-	  if( !eaEvaluated[eaIndex] )
-	    // we don't need to verify watches because the eatom was not evaluated
-	    continue;
+		// unverify/unfalsify external atoms which watch this atom
+		for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
+			if( !eaEvaluated[eaIndex] )
+				// we don't need to verify watches because the eatom was not evaluated
+				continue;
 
-	  const InterpretationConstPtr& mask = annotatedGroundProgram.getEAMask(eaIndex)->mask();
+			  const InterpretationConstPtr& mask = annotatedGroundProgram.getEAMask(eaIndex)->mask();
 
-	  // check if something in its mask was changed
-	  en = en_begin;
-	  while (en < en_end){
-	    if( mask->getFact(*en) )
-	    {
-	      // yes, it changed, so we unverify and leave
-	      DBGLOG(DBG, "atom " << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg) <<
-		 " changed and unverified external atom " <<
-		 printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
+			  // check if something in its mask was changed
+			  en = en_begin;
+			  while (en < en_end){
+				if(mask->getFact(*en)){
+					// yes, it changed, so we unverify and leave
+					DBGLOG(DBG, "atom " << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg) <<
+						    " changed and unverified external atom " <<
+					printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
 
-	      // unverify
-	      eaVerified[eaIndex] = false;
-	      eaEvaluated[eaIndex] = false;
+					// unverify
+					eaVerified[eaIndex] = false;
+					eaEvaluated[eaIndex] = false;
+					if (eaVerified[eaIndex]) verifiedAuxes->getStorage() -= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 
-	      // *en is our new watch (as it is either undefined or was recently changed)
-	      verifyWatchList[*en].push_back(eaIndex);
+					// *en is our new watch (as it is either undefined or was recently changed)
+					verifyWatchList[*en].push_back(eaIndex);
 
-	      // leave, we are done with this external atom as we set eaEvaluated to false
-	      break;
-	    }
-	    en++;
-	  }
+					// leave, we are done with this external atom as we set eaEvaluated to false
+					break;
+				}
+				en++;
+			}
+		}
 	}
-	}
+}
 
+bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+
+	// go through all changed atoms which are now assigned
 	bool conflict = false;
-	en = changed->getStorage().first();
-	en_end = changed->getStorage().end();
-
+	bm::bvector<>::enumerator en = changed->getStorage().first();
+	bm::bvector<>::enumerator en_end = changed->getStorage().end();
 	while (en < en_end){
-		// for all external atoms which watch this atom
-		if (factWasSet->getFact(*en)){
+		if (assigned->getFact(*en)){
+
+			// for all external atoms which watch this atom
 			BOOST_FOREACH (int eaIndex, verifyWatchList[*en]){
 				if (!eaEvaluated[eaIndex]){
 					// evaluate external atom if the heuristics decides so
 					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 					bool doEval;
 					{
-					  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
-					  doEval = externalAtomEvalHeuristics->doEvaluate(eatom, annotatedGroundProgram.getEAMask(eaIndex)->mask(), annotatedGroundProgram.getProgramMask(), partialInterpretation, factWasSet, changed);
+						DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
+						doEval = externalAtomEvalHeuristics->doEvaluate(eatom,
+						                                                annotatedGroundProgram.getEAMask(eaIndex)->mask(),
+						                                                annotatedGroundProgram.getProgramMask(),
+						                                                partialInterpretation, assigned, changed);
 					}
 					if (doEval){
 						// evaluate it
-						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
+						DBGLOG(DBG, "Heuristic decides to evaluate external atom " << factory.innerEatoms[eaIndex]);
+						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, assigned, changed));
 					}
 					if (!eaEvaluated[eaIndex]){
 						// find a new yet unassigned atom to watch
-						IDAddress id = getWatchedLiteral(eaIndex, factWasSet, false);
-						if (id != ID::ALL_ONES)
-						  verifyWatchList[id].push_back(eaIndex);
+						IDAddress id = getWatchedLiteral(eaIndex, assigned, false);
+						if (id != ID::ALL_ONES) verifyWatchList[id].push_back(eaIndex);
 					}
 				}
 			}
@@ -911,74 +851,95 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	return conflict;
 }
 
-bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation,
-	       	InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtom");
 
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 
 	// if support sets are enabled, and the external atom provides complete support sets, we use them for verification
-	if (factory.ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) && annotatedGroundProgram.allowsForVerificationUsingCompleteSupportSets()){
-		assert (!factWasSet && !changed && " verification using complete support sets is only possible wrt. complete interpretations");
+	if (!assigned && !changed && factory.ctx.config.getOption("SupportSets") &&
+	    (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) &&
+	    annotatedGroundProgram.allowsForVerificationUsingCompleteSupportSets()){
+		return verifyExternalAtomBySupportSets(eaIndex, partialInterpretation, assigned, changed);
+	}else{
+		return verifyExternalAtomByEvaluation(eaIndex, partialInterpretation, assigned, changed);
+	}
+}
 
-		eaVerified[eaIndex] = annotatedGroundProgram.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, partialInterpretation, InterpretationPtr());
+bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtom by evaluation");
+
+	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+
+	// prepare EA evaluation
+	InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
+	VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
+	InterpretationConstPtr evalIntr = partialInterpretation;
+	if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
+		// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
+		// clone and extend
+		InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
+		ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
+		evalIntr = ncevalIntr;
+	}
+
+	// evaluate the external atom and learn nogoods if external learning is used
+	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
+	evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb,
+	                     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+	updateEANogoods(partialInterpretation, assigned, changed);
+
+	// if the input to the external atom was complete, then remember the verification result;
+	// for incomplete input we cannot yet decide this yet, evaluation is only done for learning purposes in this case
+	if( !assigned ||
+	    !bm::any_sub(annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(),
+	                 assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
+		eaVerified[eaIndex] = vcb.verify();
+		if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
 
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
-		if( factory.ctx.config.getOption("NoPropagator") == 0 ){
-		  eaEvaluated[eaIndex] = true;
+		if(factory.ctx.config.getOption("NoPropagator") == 0){
+			eaEvaluated[eaIndex] = true;
 		}
 
 		return !eaVerified[eaIndex];
 	}else{
-		// otherwise we need to evaluate the external atom
-
-		// prepare EA evaluation
-		InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
-		VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
-
-		InterpretationConstPtr evalIntr = partialInterpretation;
-		if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
-			// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
-			// clone and extend
-			InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
-			ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
-			evalIntr = ncevalIntr;
-		}
-		// evaluate the external atom (and learn nogoods if external learning is used)
-		DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
-		evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
-		updateEANogoods(partialInterpretation, factWasSet, changed);
-
-		// if the input to the external atom was complete, then remember the verification result
-		// (for incomplete input we cannot yet decide this)
-		if( !factWasSet || !bm::any_sub( annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(), factWasSet->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
-			bool verify = vcb.verify();
-			DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << verify << ")");
-			eaVerified[eaIndex] = verify;
-			// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
-			if( factory.ctx.config.getOption("NoPropagator") == 0 ){
-			  eaEvaluated[eaIndex] = true;
-		        }
-
-			return !verify;
-		}else{
-			return false;
-		}
+		return false;
 	}
+}
+
+bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomBySupportSets(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+
+	assert (!assigned && !changed && " verification using complete support sets is only possible wrt. complete interpretations");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtom by suoport sets");
+
+	eaVerified[eaIndex] = annotatedGroundProgram.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, partialInterpretation, InterpretationPtr());
+	if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+
+	// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
+	if( factory.ctx.config.getOption("NoPropagator") == 0 ){
+		eaEvaluated[eaIndex] = true;
+	}
+
+	return !eaVerified[eaIndex];
 }
 
 const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram(){
 	return grounder->getGroundProgram();
 }
 
-void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
-	bool conflict = verifyExternalAtoms(partialInterpretation, factWasSet, changed);
+	// update external atom verification results
+	unverifyExternalAtoms(changed);
+	bool conflict = verifyExternalAtoms(partialAssignment, assigned, changed);
 
 	// UFS check requires a conflict-free interpretation
 	if (conflict) return;
 
-	partialUFSCheck(partialInterpretation, factWasSet, changed);
+	partialUFSCheck(partialAssignment, assigned, changed);
 }
 
 DLVHEX_NAMESPACE_END

@@ -103,7 +103,8 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, p, interleavedThreading) : new ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules));
+		//GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, p, interleavedThreading) : new ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules));
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p));
 		return ptr;
 		}
 #else
@@ -128,7 +129,8 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, ClaspSolver::ChoiceRules));
+		//GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, ClaspSolver::ChoiceRules));
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p)));
 		return ptr;
 		}
 #else
