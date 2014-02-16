@@ -706,6 +706,10 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns)
 	currentChanged = InterpretationPtr(new Interpretation(reg));
 	assignmentExtractor.setAssignment(currentIntr, currentAssigned, currentChanged);
 
+	DBGLOG(DBG, "Adding post propagator");
+	ep = new ExternalPropagator(*this);
+	libclasp.ctx.master()->addPost(ep);
+
 	DBGLOG(DBG, "Prepare model enumerator");
 	modelEnumerator.setStrategy(Clasp::ModelEnumerator::strategy_backtrack);
 }
