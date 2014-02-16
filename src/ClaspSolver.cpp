@@ -725,6 +725,7 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 	}
 
 	DBGLOG(DBG, "Setting assumptions");
+	libclasp.ctx.master()->clearAssumptions();
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
 		if (isMappedToClaspLiteral(a.address)){
@@ -761,7 +762,21 @@ InterpretationPtr ClaspSolver::getNextModel(){
 		modelEnumerator.start(solve->solver());
 		bool conflicting = !solve->assume(assumptions);
 		DBGLOG(DBG, "Assumptions are " << (!conflicting ? "not " : "") << "conflicting");
-		if (conflicting) return InterpretationPtr();
+		if (conflicting){
+#ifndef NDEBUG
+			std::stringstream ss;
+			for (Clasp::SymbolTable::const_iterator it = libclasp.ctx.symbolTable().begin(); it != libclasp.ctx.symbolTable().end(); ++it) {
+				if (libclasp.ctx.master()->isTrue(it->second.lit) && !it->second.name.empty()) {
+					ss << (it->second.lit.sign() ? "" : "!") << it->second.lit.var() << "@" << libclasp.ctx.master()->level(it->second.lit.var()) << " ";
+				}
+				if (libclasp.ctx.master()->isFalse(it->second.lit) && !it->second.name.empty()) {
+					ss << (!it->second.lit.sign() ? "" : "!") << it->second.lit.var() << "@" << libclasp.ctx.master()->level(it->second.lit.var()) << " ";
+				}
+			}
+			DBGLOG(DBG, "Conflicting assignment: " << ss.str());
+#endif
+			return InterpretationPtr();
+		}
 	}
 
 	DBGLOG(DBG, "ClaspSolver::getNextModel");
