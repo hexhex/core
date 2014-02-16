@@ -178,7 +178,7 @@ Clasp::Constraint::PropResult ClaspSolver::AssignmentExtractor::propagate(Clasp:
 
 	int level = s.level(p.var());
 
-	DBGLOG(DBG, "Clasp notified about literal (idx " << p.index() << ")" << (p.sign() ? "!" : "") << p.var() << " becoming true on dl " << level);
+	DBGLOG(DBG, "Clasp notified about literal (idx " << p.index() << ")" << (p.sign() ? "" : "!") << p.var() << " becoming true on dl " << level);
 	if (cs.claspToHex.size() > p.index()){
 		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[p.index()]){
 			DBGLOG(DBG, "Assigning " << adr << " to true");
@@ -195,7 +195,7 @@ Clasp::Constraint::PropResult ClaspSolver::AssignmentExtractor::propagate(Clasp:
 		}
 	}
 
-	DBGLOG(DBG, "This implies that literal (idx " << pneg.index() << ")" << (pneg.sign() ? "!" : "") << p.var() << " becomes false on dl " << level);
+	DBGLOG(DBG, "This implies that literal (idx " << pneg.index() << ")" << (pneg.sign() ? "" : "!") << p.var() << " becomes false on dl " << level);
 	if (cs.claspToHex.size() > pneg.index()){
 		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[pneg.index()]){
 			DBGLOG(DBG, "Assigning " << adr << " to false");
@@ -636,7 +636,6 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 
 	LOG(DBG, "Symbol table of optimized program:");
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		storeHexToClasp(hexAdr, it->second.lit);
 		assert(it->second.lit.index() < claspToHex.size());
@@ -644,7 +643,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 		if( !c2h ) c2h = new AddressVector;
 		c2h->push_back(hexAdr);
 		DBGLOG(DBG, "Hex " << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
-		            "(idx " << it->second.lit.index() << ")" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var());
+		            "(idx " << it->second.lit.index() << ")" << (it->second.lit.sign() ? "" : "!") << it->second.lit.var());
 	}
 
 	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
@@ -687,7 +686,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p)
 	libclasp.ctx.master()->addPost(ep);
 
 	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.init(libclasp.ctx, 0);
+	modelEnumerator.setStrategy(Clasp::ModelEnumerator::strategy_backtrack);
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns)
@@ -708,7 +707,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns)
 	assignmentExtractor.setAssignment(currentIntr, currentAssigned, currentChanged);
 
 	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.init(libclasp.ctx, 0);
+	modelEnumerator.setStrategy(Clasp::ModelEnumerator::strategy_backtrack);
 }
 
 ClaspSolver::~ClaspSolver(){
@@ -729,7 +728,7 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
 		if (isMappedToClaspLiteral(a.address)){
-			DBGLOG(DBG, "Setting assumption " << RawPrinter::toString(reg, a) << " / " << a.isNaf());
+			DBGLOG(DBG, "Setting assumption " << RawPrinter::toString(reg, a) << " (clasp: " << (mapHexToClasp(a.address).sign() ^ a.isNaf() ? "" : "!") << mapHexToClasp(a.address).var() << ")");
 			Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
 			this->assumptions.push_back(al);
 		}else{
@@ -758,10 +757,11 @@ InterpretationPtr ClaspSolver::getNextModel(){
 	if (!solve){
 		DBGLOG(DBG, "Starting search");
 		solve = new Clasp::BasicSolve(*libclasp.ctx.master());
-		solve->assume(assumptions);
 		modelEnumerator.init(libclasp.ctx, 0);
-		bool conflicting = !modelEnumerator.start(solve->solver());
+		modelEnumerator.start(solve->solver());
+		bool conflicting = !solve->assume(assumptions);
 		DBGLOG(DBG, "Assumptions are " << (!conflicting ? "not " : "") << "conflicting");
+		if (conflicting) return InterpretationPtr();
 	}
 
 	DBGLOG(DBG, "ClaspSolver::getNextModel");
@@ -776,6 +776,11 @@ InterpretationPtr ClaspSolver::getNextModel(){
 		ss << "model " << *nextModel << "; incrementally extracted one " << *currentIntr;
 		DBGLOG(DBG, ss.str());
 		assert (currentIntr->getStorage() == nextModel->getStorage());
+
+		// check if the model respects the assumptions
+		BOOST_FOREACH (Clasp::Literal lit, assumptions){
+			assert (solve->solver().isTrue(lit) && "assumption violated");
+		}
 #endif
 		InterpretationPtr model(new Interpretation(reg));
 		model->add(*currentIntr);
