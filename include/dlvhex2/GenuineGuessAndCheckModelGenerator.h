@@ -108,7 +108,8 @@ protected:
   InterpretationPtr verifiedAuxes;	// the set of currently verified external atom auxiliaries
 
   // heuristics
-  ExternalAtomEvaluationHeuristicsPtr externalAtomEvalHeuristics;
+  ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;
+  std::vector<ExternalAtomEvaluationHeuristicsPtr> eaEvalHeuristics;	// stores for each external atom its evaluation heuristics
   UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms

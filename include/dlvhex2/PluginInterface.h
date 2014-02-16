@@ -27,6 +27,7 @@
  * \file   PluginInterface.h
  * \author Roman Schindlauer
  * \author Peter Schüller
+ * \author Christoph Redl
  *
  * \brief Interface that can/should be implemented by a plugin.
  */
@@ -189,6 +190,7 @@
 #include "dlvhex2/CDNLSolver.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/ExtSourceProperties.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -394,10 +396,9 @@ public:
   virtual std::vector<PluginConverterPtr> createConverters(ProgramCtx& ctx);
 
   /**
-   * \brief Returns if this plugin provides a custom model generator factory.
+   * \brief Returns if this plugin provides a custom evaluation heuristics for a certain external atom.
    *
-   * This method calls createConverter, you can override it to provide
-   * multiple converters.
+   * @param 
    */
   virtual bool providesCustomModelGeneratorFactory(ProgramCtx& ctx) const { return false; }
 
@@ -1025,6 +1026,19 @@ public:
    */
   const std::vector<InputType>& getInputTypes() const
     { return inputType; }
+
+  /**
+   * \brief Returns if this external atom provides a custom model generator factory.
+   *
+   */
+  virtual bool providesCustomExternalAtomEvaluationHeuristicsFactory() const { return false; }
+
+  /**
+   * \brief Must create a model generator factory for the component described by ci.
+   * Needs to be implemented only if providesCustomExternalAtomEvaluationHeuristicsFactory return true;
+   */
+  virtual ExternalAtomEvaluationHeuristicsFactoryPtr getCustomExternalAtomEvaluationHeuristicsFactory() const
+	{ assert(false && "This plugin atom does not provide a custom external atom evaluation heuristics factory"); }
 
   /**
    * @return general monotonicity

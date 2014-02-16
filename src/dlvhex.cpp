@@ -781,7 +781,7 @@ void processOptionsPrePlugin(
 
   // default settings
   pctx.config.setOption("NoPropagator", 0);
-  pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+  pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
   bool specifiedModelQueueSize = false;
@@ -1278,19 +1278,19 @@ void processOptionsPrePlugin(
 				std::string heur(optarg);
 				if (heur == "always")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
 				}
 				else if (heur == "inputcomplete")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
 				}
 				else if (heur == "eacomplete")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
 				}
 				else if (heur == "never")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
 					pctx.config.setOption("NoPropagator", 1);
 				}
 				else

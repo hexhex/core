@@ -278,10 +278,23 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 
 void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 
+	defaultExternalAtomEvalHeuristics = factory.ctx.defaultExternalAtomEvaluationHeuristicsFactory->createHeuristics(reg);
+
 	// set external atom evaluation strategy according to selected heuristics
 	for (int i = 0; i < factory.innerEatoms.size(); ++i){
+		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[i]);
+
 		eaEvaluated.push_back(false);
 		eaVerified.push_back(false);
+
+		// custom or default heuristics?
+		if (eatom.pluginAtom->providesCustomExternalAtomEvaluationHeuristicsFactory()){
+			DBGLOG(DBG, "Using custom external atom heuristics for external atom " << factory.innerEatoms[i]);
+			eaEvalHeuristics.push_back(eatom.pluginAtom->getCustomExternalAtomEvaluationHeuristicsFactory()->createHeuristics(reg));
+		}else{
+			DBGLOG(DBG, "Using default external atom heuristics for external atom " << factory.innerEatoms[i]);
+			eaEvalHeuristics.push_back(defaultExternalAtomEvalHeuristics);
+		}
 
 		// watch all atoms in the scope of the external atom for unverification
 		bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
@@ -291,7 +304,6 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 			verifyWatchList[*en].push_back(i);
 		}
 	}
-	externalAtomEvalHeuristics = factory.ctx.externalAtomEvaluationHeuristicsFactory->createHeuristics(reg);
 
 	// create ufs check heuristics as selected
 	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(reg);
@@ -824,7 +836,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 					bool doEval;
 					{
 						DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
-						doEval = externalAtomEvalHeuristics->doEvaluate(eatom,
+						doEval = eaEvalHeuristics[eaIndex]->doEvaluate(eatom,
 						                                                annotatedGroundProgram.getEAMask(eaIndex)->mask(),
 						                                                annotatedGroundProgram.getProgramMask(),
 						                                                partialInterpretation, assigned, changed);

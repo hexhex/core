@@ -82,6 +82,15 @@ class PropagatorCallback;
 
 class ClaspSolver : public GenuineGroundSolver, public SATSolver{
 private:
+	// handles clasp models
+	class ModelHandler : public Clasp::EventHandler {
+	private:
+		ClaspSolver& cs;
+	public:
+		ModelHandler(ClaspSolver& cs);
+		bool onModel(const Clasp::Solver& s, const Clasp::Model& m);
+	};
+
 	// propagator for external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{
 	private:
@@ -162,6 +171,8 @@ private:
 	// output filtering (works on given interpretation and modifies it)
 	void outputProject(InterpretationPtr intr);
 
+	// for debugging
+	std::string printCurrentClaspInterpretation();
 protected:
 	// structural program information
 	ProgramCtx& ctx;
@@ -178,14 +189,16 @@ protected:
 	// interface to clasp internals
 	ProgramOptions::ParsedOptions parsedOptions;
 	Clasp::Cli::ClaspCliConfig config;
-	Clasp::SharedContext claspctx;
-	Clasp::BasicSolve* solve;
-	std::auto_ptr<ProgramOptions::OptionContext> allOpts;
-	std::auto_ptr<Clasp::Enumerator> modelEnumerator;
-	std::auto_ptr<ProgramOptions::ParsedValues> parsedValues;
+	Clasp::ClaspFacade libclasp;
 	Clasp::LitVec assumptions;
 	ExternalPropagator* ep;
 	AssignmentExtractor assignmentExtractor;
+
+	// threading
+	void runClasp();
+	boost::thread* claspThread;
+	bool terminateClaspThread, endOfModels;
+	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
 
 	// statistics
 	int modelCount;
