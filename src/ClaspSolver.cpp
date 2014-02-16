@@ -359,7 +359,6 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	Clasp::SatBuilder& sat = libclasp.startSat(config);
 
 	buildInitialSymbolTable(sat, ns);
-	DBGLOG(DBG, "SAT instance has " << sat.numVars() << " variables");
 
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
@@ -368,6 +367,8 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 		if (!ngClasp.tautological){
 			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
 			sat.addClause(ngClasp.clause);
+		}else{
+			DBGLOG(DBG, "Skipping tautological nogood");
 		}
 	}
 
@@ -554,6 +555,7 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSe
 	#endif
 
 	DBGLOG(DBG, "Building atom index");
+	DBGLOG(DBG, "symbol table has " << libclasp.ctx.symbolTable().size() << " entries");
 
 	bool inverselits = ctx.config.getOption("ClaspInverseLiterals");
 
@@ -599,6 +601,7 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSe
 
 	libclasp.ctx.symbolTable().endInit();
 
+	DBGLOG(DBG, "SAT instance has " << varCnt << " variables, symbol table has " << libclasp.ctx.symbolTable().size() << " entries");
 	sat.prepareProblem(varCnt);
 }
 
@@ -633,6 +636,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 
 	LOG(DBG, "Symbol table of optimized program:");
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		storeHexToClasp(hexAdr, it->second.lit);
 		assert(it->second.lit.index() < claspToHex.size());
@@ -642,6 +646,8 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 		DBGLOG(DBG, "Hex " << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
 		            "(idx " << it->second.lit.index() << ")" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var());
 	}
+
+	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
 }
 
 void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit){
@@ -665,8 +671,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p)
 
 	DBGLOG(DBG, "Configure clasp");
 	config.reset();
-	interpretClaspCommandline(Clasp::Problem_t::SAT);
-//	config.enumerate.numModels = 0;
+//	interpretClaspCommandline(Clasp::Problem_t::SAT);
+	config.enumerate.numModels = 0;
 
 	sendProgramToClasp(p);
 
@@ -691,7 +697,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns)
 	DBGLOG(DBG, "Configure clasp");
 	config.reset();
 	config.enumerate.numModels = 0;
-	interpretClaspCommandline(Clasp::Problem_t::SAT);
+//	interpretClaspCommandline(Clasp::Problem_t::SAT);
 
 	sendNogoodSetToClasp(ns);
 
@@ -712,25 +718,24 @@ ClaspSolver::~ClaspSolver(){
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
-	if(!!solve) delete solve;
+	DBGLOG(DBG, "Restarting search");
+	if(!!solve){
+		delete solve;
+		modelCount = 0;
+		solve = 0;
+	}
 
 	DBGLOG(DBG, "Setting assumptions");
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
 		if (isMappedToClaspLiteral(a.address)){
+			DBGLOG(DBG, "Setting assumption " << RawPrinter::toString(reg, a) << " / " << a.isNaf());
 			Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
 			this->assumptions.push_back(al);
+		}else{
+			DBGLOG(DBG, "Ignoring assumption " << RawPrinter::toString(reg, a));
 		}
 	}
-
-	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.init(libclasp.ctx, 0);
-
-	DBGLOG(DBG, "Restarting search");
-	modelCount = 0;
-	solve = new Clasp::BasicSolve(*libclasp.ctx.master());
-	solve->assume(this->assumptions);
-	modelEnumerator.start(solve->solver());
 }
 
 void ClaspSolver::addPropagator(PropagatorCallback* pb){
@@ -753,7 +758,10 @@ InterpretationPtr ClaspSolver::getNextModel(){
 	if (!solve){
 		DBGLOG(DBG, "Starting search");
 		solve = new Clasp::BasicSolve(*libclasp.ctx.master());
-		modelEnumerator.start(solve->solver());
+		solve->assume(assumptions);
+		modelEnumerator.init(libclasp.ctx, 0);
+		bool conflicting = !modelEnumerator.start(solve->solver());
+		DBGLOG(DBG, "Assumptions are " << (!conflicting ? "not " : "") << "conflicting");
 	}
 
 	DBGLOG(DBG, "ClaspSolver::getNextModel");
