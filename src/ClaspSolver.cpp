@@ -824,7 +824,8 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
 InterpretationPtr ClaspSolver::getNextModel(){
 
-	#define ENUMALGODBG(msg) { if (problemType == SAT) { std::cerr << "(" msg << ")"; } }
+//	#define ENUMALGODBG(msg) { if (problemType == SAT) { std::cerr << "(" msg << ")"; } }
+	#define ENUMALGODBG(msg) { }
 
 	/*
 		This method essentially implements the following algorithm:
@@ -895,16 +896,10 @@ nextmodel:
 		DBGLOG(DBG, "Starting new search");
 		restart = false;
 
-		if (assumptions.size() == 0){
+//		if (assumptions.size() == 0){
 			DBGLOG(DBG, "Adding step literal to assumptions");
 			assumptions.push_back(claspctx.stepLiteral());
-		}
-
-Clasp::LitVec ass;
-ass.push_back(claspctx.stepLiteral());
-//Clasp::LitVec ass = assumptions;
-//int s = 5;
-//ass.insert(ass.end(), assumptions.begin(), assumptions.begin() + (s > assumptions.size() ? assumptions.size() : s));
+//		}
 
 		DBGLOG(DBG, "Starting enumerator with " << assumptions.size() << " assumptions (including step literal)");
 		assert(!!modelEnumerator.get() && !!solve.get());
@@ -912,18 +907,20 @@ ass.push_back(claspctx.stepLiteral());
 			modelEnumerator->end(solve->solver());
 		}
 		enumerationStarted = true;
+		moreSymmetricModels = false;
+		optContinue = true;
 
 		modelEnumerator.reset(config.enumerate.createEnumerator());
 		modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-		if (modelEnumerator->start(solve->solver(), ass)){
-			ENUMALGODBG("sat");
-			DBGLOG(DBG, "Problem is satisfiable wrt. assumptions");
-			moreSymmetricModels = false;
-			optContinue = true;
+		if (modelEnumerator->start(solve->solver(), assumptions)){
+			ENUMALGODBG("add");
+			DBGLOG(DBG, "Added assumptions");
+
 		}else{
-			ENUMALGODBG("ust");
-			DBGLOG(DBG, "Problem is unsatisfiable wrt. assumptions");
-			return InterpretationPtr();
+			// TODO: why can this happen?
+			ENUMALGODBG("nad");
+			DBGLOG(DBG, "Did not add assumptions");
+//			return InterpretationPtr();
 		}
 	}else{
 		DBGLOG(DBG, "Continue search");
@@ -1013,24 +1010,21 @@ ass.push_back(claspctx.stepLiteral());
 		return InterpretationPtr();
 	}
 
-#ifndef NDEBUG
-bool c = false;
+	// Actually, contradictions should not occur, thus this should be only asserted.
+	// However, currently for some reason the assertions are sometimes not added.
+//#ifndef NDEBUG
+	bool contradictingAssumptions = false;
 	if (!!model){
 		BOOST_FOREACH (Clasp::Literal lit, assumptions){
-			if (lit != claspctx.stepLiteral() && !modelEnumerator->lastModel().isTrue(lit)){
-DBGLOG(DBG, "C:" << lit.index() << "/" << (lit.sign() ? "" : "!") << lit.var() << " is false!");
-c=true;
-break;
-				assert(false && "Model contradicts assumptions");
+			if (lit != claspctx.stepLiteral() &&  !modelEnumerator->lastModel().isTrue(lit)){
+				contradictingAssumptions = true;
+//				assert(false && "Model contradicts assumptions");
+				break;
 			}
 		}
 	}
-if (problemType == SAT) {
-//	std::cout << "Found SAT Model" << std::endl;
-//	std::cout << "Contradicting assumptions: " << c << std::endl;
-	if (c) goto nextmodel;
-}
-#endif
+	if (contradictingAssumptions) goto nextmodel;
+//#endif
 
 	return model;
 }

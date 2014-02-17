@@ -1724,7 +1724,6 @@ std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(Inter
 		mCnt++;
 
 		if (mode == Ordinary || isUnfoundedSet(compatibleSet, compatibleSetWithoutAux, model)){
-std::cout << "IS A UFS" << std::endl;
 			DBGLOG(DBG, "Found UFS: " << *model << " (interpretation: " << *compatibleSet << ")");
 
 			std::vector<IDAddress> ufs;
