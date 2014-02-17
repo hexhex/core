@@ -101,7 +101,7 @@ private:
 	// in order to get informed if a literal is changed. This
 	// allows for immediate translation to HEX.
 	// The constraint as such is always satisfied.
-	class AssignmentExtractor : Clasp::Constraint{
+	class AssignmentExtractor : public Clasp::Constraint{
 	private:
 		ClaspSolver& cs;
 		InterpretationPtr intr, assigned, changed;
@@ -175,17 +175,27 @@ protected:
 	Set<PropagatorCallback*> propagators;
 	std::list<Nogood> nogoods;
 
+	// instance information
+	enum ProblemType { ASP, SAT };
+	ProblemType problemType;
+
 	// interface to clasp internals
 	ProgramOptions::ParsedOptions parsedOptions;
 	Clasp::Cli::ClaspCliConfig config;
 	Clasp::SharedContext claspctx;
-	Clasp::BasicSolve* solve;
+	std::auto_ptr<Clasp::BasicSolve> solve;
 	std::auto_ptr<ProgramOptions::OptionContext> allOpts;
 	std::auto_ptr<Clasp::Enumerator> modelEnumerator;
 	std::auto_ptr<ProgramOptions::ParsedValues> parsedValues;
-	Clasp::LitVec assumptions;
-	ExternalPropagator* ep;
+	std::auto_ptr<ExternalPropagator> ep;
 	AssignmentExtractor assignmentExtractor;
+
+	// control flow
+	Clasp::LitVec assumptions;
+	bool moreSymmetricModels, optContinue;	// for clasp internals
+	bool enumerationStarted;		// true if we are currently in an enumeration
+	bool restart;				// true if next call of getNextModel should start a new search
+	bool inconsistent;			// true if the instance is inconsistent (wrt. any assumptions)
 
 	// statistics
 	int modelCount;
