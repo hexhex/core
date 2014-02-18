@@ -685,98 +685,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p)
 	config.reset();
 	interpretClaspCommandline(Clasp::Problem_t::ASP);
 
-
-
-{
-std::cout << "==========" << std::endl;
-Clasp::SatBuilder sat;
-sat.startProgram(claspctx);
-sat.prepareProblem(15);
-
-
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(4, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(4, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(4, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(6, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(6, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(6, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(7, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(7, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(7, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(8, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(8, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(8, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(9, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(9, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(9, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(10, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(10, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(10, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(11, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(11, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(11, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(12, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(12, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(12, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(1, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 0)); v.push_back(Clasp::Literal(7, 1)); v.push_back(Clasp::Literal(14, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 1)); v.push_back(Clasp::Literal(7, 1)); v.push_back(Clasp::Literal(14, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(15, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(15, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 0)); v.push_back(Clasp::Literal(10, 0)); v.push_back(Clasp::Literal(14, 0)); v.push_back(Clasp::Literal(15, 0)); sat.addClause(v); }
-
-bool inconsistent = !sat.endProgram();
-
-if (inconsistent){
-std::cout << "incon" << std::endl;
-}
-
-modelEnumerator.reset(config.enumerate.createEnumerator());
-modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-
-DBGLOG(DBG, "Finalizing initialization");
-if (!claspctx.endInit()){
-	DBGLOG(DBG, "Program is unsatisfiable");
-}
-
-solve->reset(new Clasp::BasicSolve(*claspctx.master()));
-
-
-Clasp::Literal l1(3, true); this->assumptions.push_back(l1);
-Clasp::Literal l2(14, true); this->assumptions.push_back(l2);
-Clasp::Literal l3(5, false); this->assumptions.push_back(l3);
-Clasp::Literal l4(1, false); this->assumptions.push_back(l4);
-
-
-DBGLOG(DBG, "Solving");
-while (solve->solve() == Clasp::value_true) {
-DBGLOG(DBG, "Committing");
-	if (modelEnumerator->commitModel(solve->solver())) {
-	   do {
-		 std::cout << "Model" << std::endl;
-	   } while (modelEnumerator->commitSymmetric(solve->solver()));
-	}
-	modelEnumerator->update(solve->solver());
-}
-
-
-this->assumptions.clear();
-std::cout << "==========" << std::endl;
-
-}
-
-/*
-:- not a(a).
-a(a) :- &id[a](a).
-
-*/
-
-
-
-
-
-
 //	config.enumerate.type = Clasp::EnumOptions::enum_bt;
 
 //	claspctx.requestStepVar();
@@ -813,6 +721,187 @@ a(a) :- &id[a](a).
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns)
  : ctx(ctx), assignmentExtractor(*this), solve(0), ep(0), modelCount(0), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
+
+
+bool useConfig = ctx.config.getStringOption("ClaspConfiguration").length() > 0;
+
+/*
+
+
+
+
+
+NogoodSet ns;
+
+Nogood ng1;
+ng1.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 0)));
+ng1.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 1)));
+
+Nogood ng2;
+ng2.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
+ng2.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 1)));
+
+ns.addNogood(ng1);
+ns.addNogood(ng2);
+
+SATSolverPtr solver = SATSolver::getInstance(factory.ctx, ns);
+std::vector<ID> ass;
+ass.push_back(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
+//ass.push_back(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
+solver->restartWithAssumptions(ass);
+InterpretationPtr intr;
+while (!!(intr = solver->getNextModel())){
+
+}
+
+
+*/
+
+
+
+{
+
+
+std::cout << "==========" << std::endl;
+
+Clasp::SharedContext ctx;
+
+std::string claspconfigstr = "";
+ProgramOptions::OptionContext allOpts("<clasp_dlvhex>");
+Clasp::Cli::ClaspCliConfig config;
+config.addOptions(allOpts);
+ProgramOptions::ParsedValues parsedValues = ProgramOptions::parseCommandString(claspconfigstr, allOpts);
+parsedOptions.assign(parsedValues);
+allOpts.assignDefaults(parsedOptions);
+
+config.finalize(parsedOptions, Clasp::Problem_t::SAT, true);
+config.enumerate.numModels = 0;
+
+if (useConfig){
+	ctx.setConfiguration(&config, false);
+}
+
+Clasp::SatBuilder sat;
+sat.startProgram(ctx);
+sat.prepareProblem(15);
+
+/*
+ { 1 }
+ { -2, 3, -4 }
+ { -3, 4 }
+ { 2, 4 }
+ { -1, 5, -6 }
+ { -5, 6 }
+ { 1, 6 }
+ { 2, 3, -7 }
+ { -3, 7 }
+ { -2, 7 }
+ { 1, 5, -8 }
+ { -5, 8 }
+ { -1, 8 }
+ { -3, 9 }
+ { -2, 9 }
+ { 2, 3, -9 }
+ { -3, -10 }
+ { 2, -10 }
+ { -2, 3, 10 }
+ { -5, 11 }
+ { -1, 11 }
+ { 1, 5, -11 }
+ { -5, -12 }
+ { 1, -12 }
+ { -1, 5, 12 }
+ { -2, -1 }
+ { 13, -7, -14 }
+ { -13, -7, 14 }
+ { -2, 15 }
+ { 2, -15 }
+ { 13, 10, 14, 15 }
+*/
+
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(4, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(4, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(4, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(6, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(6, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(6, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(7, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(7, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(7, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(8, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(8, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(8, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(9, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(9, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(9, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(10, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(10, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(10, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(11, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(11, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(11, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(12, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(12, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(12, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(1, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 0)); v.push_back(Clasp::Literal(7, 1)); v.push_back(Clasp::Literal(14, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 1)); v.push_back(Clasp::Literal(7, 1)); v.push_back(Clasp::Literal(14, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(15, 0)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(15, 1)); sat.addClause(v); }
+{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 0)); v.push_back(Clasp::Literal(10, 0)); v.push_back(Clasp::Literal(14, 0)); v.push_back(Clasp::Literal(15, 0)); sat.addClause(v); }
+
+if (!sat.endProgram()){
+	std::cout << "Program is unsatisfiable" << std::endl;
+}else{
+	std::auto_ptr<Clasp::Enumerator> modelEnumerator;
+	modelEnumerator.reset(config.enumerate.createEnumerator());
+	modelEnumerator->init(ctx, 0, config.enumerate.numModels);
+	if (!ctx.endInit()){
+		std::cout << "Program is unsatisfiable" << std::endl;
+	}else{
+		Clasp::BasicSolve solve(*ctx.master());
+
+		// Assumptions: { -3, -14, 5, 1 }
+		Clasp::LitVec assumptions;
+		assumptions.push_back(Clasp::Literal(3, true));
+		assumptions.push_back(Clasp::Literal(14, true));
+		assumptions.push_back(Clasp::Literal(5, false));
+		assumptions.push_back(Clasp::Literal(1, false));
+
+		std::cout << "Solving" << std::endl;
+		if (!modelEnumerator->start(solve.solver(), assumptions)){
+			std::cout << "Problem is unsatisfiable wrt. assumptions" << std::endl;
+		}else{
+			int i = 0;
+			while (solve.solve() == Clasp::value_true) {
+				if (modelEnumerator->commitModel(solve.solver())) {
+				   do {
+					 std::cout << "Model #" << ++i << std::endl;
+				   } while (modelEnumerator->commitSymmetric(solve.solver()));
+				}
+				modelEnumerator->update(solve.solver());
+			}
+		}
+	}
+}
+
+std::cout << "==========" << std::endl;
+assert(false);
+
+
+}
+
+/*
+:- not a(a).
+a(a) :- &id[a](a).
+
+*/
+
+
+
+
+
 
 	DBGLOG(DBG, "Configure clasp in SAT mode");
 	problemType = SAT;
