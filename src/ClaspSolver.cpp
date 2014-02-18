@@ -126,7 +126,7 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
 	DBGLOG(DBG, "ExternalPropagator::propagateFixpoint");
 	for (;;){
 		if (propToHEX(s)){
-			DBGLOG(DBG, "Propagation led to conflict");
+			DBGLOG(DBG, "Propagation led to conflict: " << s.queueSize() << ", " << s.hasConflict());
 			assert(s.queueSize() == 0 || s.hasConflict());
 			return false;
 		}
