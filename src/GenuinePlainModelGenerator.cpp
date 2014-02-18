@@ -44,6 +44,8 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/ClaspSolver.h"
 
+#include "dlvhex2/SATSolver.h"
+
 #include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -168,7 +170,35 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
-	solver = GenuineSolver::getInstance(factory.ctx, program);
+
+
+
+
+NogoodSet ns;
+
+Nogood ng1;
+ng1.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 0)));
+ng1.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 1)));
+
+Nogood ng2;
+ng2.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
+ng2.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 1)));
+
+ns.addNogood(ng1);
+ns.addNogood(ng2);
+
+SATSolverPtr solver = SATSolver::getInstance(factory.ctx, ns);
+std::vector<ID> ass;
+ass.push_back(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
+//ass.push_back(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
+solver->restartWithAssumptions(ass);
+InterpretationPtr intr;
+while (!!(intr = solver->getNextModel())){
+
+}
+
+
+//	solver = GenuineSolver::getInstance(factory.ctx, program);
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
