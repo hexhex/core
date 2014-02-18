@@ -394,6 +394,12 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	inconsistent = !sat.endProgram();
 	DBGLOG(DBG, "SAT instance has " << sat.numVars() << " variables");
+
+	DBGLOG(DBG, "Setting variables to frozen");
+	for (int i = 1; i <= sat.numVars(); i++){
+		claspctx.setFrozen(i, true);
+	}
+
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
 }
 
@@ -685,19 +691,23 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p)
 	config.reset();
 	interpretClaspCommandline(Clasp::Problem_t::ASP);
 
-//	config.enumerate.type = Clasp::EnumOptions::enum_bt;
-
-//	claspctx.requestStepVar();
+	claspctx.requestStepVar();
 	sendProgramToClasp(p);
+
+	if (inconsistent){
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		return;
+	}
 
 	DBGLOG(DBG, "Prepare model enumerator");
 	modelEnumerator.reset(config.enumerate.createEnumerator());
 	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-//	modelEnumerator->setStrategy(Clasp::Enumerator::strategy_backtrack);
 
 	DBGLOG(DBG, "Finalizing initialization");
 	if (!claspctx.endInit()){
-		DBGLOG(DBG, "Program is unsatisfiable");
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		inconsistent = true;
+		return;
 	}
 
 	buildOptimizedSymbolTable();
@@ -722,187 +732,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns)
  : ctx(ctx), assignmentExtractor(*this), solve(0), ep(0), modelCount(0), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
-
-bool useConfig = ctx.config.getStringOption("ClaspConfiguration").length() > 0;
-
-/*
-
-
-
-
-
-NogoodSet ns;
-
-Nogood ng1;
-ng1.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 0)));
-ng1.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 1)));
-
-Nogood ng2;
-ng2.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
-ng2.insert(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 1)));
-
-ns.addNogood(ng1);
-ns.addNogood(ng2);
-
-SATSolverPtr solver = SATSolver::getInstance(factory.ctx, ns);
-std::vector<ID> ass;
-ass.push_back(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
-//ass.push_back(NogoodContainer::createLiteral(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, 0)));
-solver->restartWithAssumptions(ass);
-InterpretationPtr intr;
-while (!!(intr = solver->getNextModel())){
-
-}
-
-
-*/
-
-
-
-{
-
-
-std::cout << "==========" << std::endl;
-
-Clasp::SharedContext ctx;
-
-std::string claspconfigstr = "";
-ProgramOptions::OptionContext allOpts("<clasp_dlvhex>");
-Clasp::Cli::ClaspCliConfig config;
-config.addOptions(allOpts);
-ProgramOptions::ParsedValues parsedValues = ProgramOptions::parseCommandString(claspconfigstr, allOpts);
-parsedOptions.assign(parsedValues);
-allOpts.assignDefaults(parsedOptions);
-
-config.finalize(parsedOptions, Clasp::Problem_t::SAT, true);
-config.enumerate.numModels = 0;
-
-if (useConfig){
-	ctx.setConfiguration(&config, false);
-}
-
-Clasp::SatBuilder sat;
-sat.startProgram(ctx);
-sat.prepareProblem(15);
-
-/*
- { 1 }
- { -2, 3, -4 }
- { -3, 4 }
- { 2, 4 }
- { -1, 5, -6 }
- { -5, 6 }
- { 1, 6 }
- { 2, 3, -7 }
- { -3, 7 }
- { -2, 7 }
- { 1, 5, -8 }
- { -5, 8 }
- { -1, 8 }
- { -3, 9 }
- { -2, 9 }
- { 2, 3, -9 }
- { -3, -10 }
- { 2, -10 }
- { -2, 3, 10 }
- { -5, 11 }
- { -1, 11 }
- { 1, 5, -11 }
- { -5, -12 }
- { 1, -12 }
- { -1, 5, 12 }
- { -2, -1 }
- { 13, -7, -14 }
- { -13, -7, 14 }
- { -2, 15 }
- { 2, -15 }
- { 13, 10, 14, 15 }
-*/
-
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(4, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(4, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(4, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(6, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(6, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(6, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(7, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(7, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(7, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(8, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(8, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(8, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(9, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(9, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(9, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(3, 1)); v.push_back(Clasp::Literal(10, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(10, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(3, 0)); v.push_back(Clasp::Literal(10, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(11, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(11, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(11, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(5, 1)); v.push_back(Clasp::Literal(12, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 0)); v.push_back(Clasp::Literal(12, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(1, 1)); v.push_back(Clasp::Literal(5, 0)); v.push_back(Clasp::Literal(12, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(1, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 0)); v.push_back(Clasp::Literal(7, 1)); v.push_back(Clasp::Literal(14, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 1)); v.push_back(Clasp::Literal(7, 1)); v.push_back(Clasp::Literal(14, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 1)); v.push_back(Clasp::Literal(15, 0)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(2, 0)); v.push_back(Clasp::Literal(15, 1)); sat.addClause(v); }
-{ Clasp::LitVec v; v.push_back(Clasp::Literal(13, 0)); v.push_back(Clasp::Literal(10, 0)); v.push_back(Clasp::Literal(14, 0)); v.push_back(Clasp::Literal(15, 0)); sat.addClause(v); }
-
-if (!sat.endProgram()){
-	std::cout << "Program is unsatisfiable" << std::endl;
-}else{
-	std::auto_ptr<Clasp::Enumerator> modelEnumerator;
-	modelEnumerator.reset(config.enumerate.createEnumerator());
-	modelEnumerator->init(ctx, 0, config.enumerate.numModels);
-	if (!ctx.endInit()){
-		std::cout << "Program is unsatisfiable" << std::endl;
-	}else{
-		Clasp::BasicSolve solve(*ctx.master());
-
-		// Assumptions: { -3, -14, 5, 1 }
-		Clasp::LitVec assumptions;
-		assumptions.push_back(Clasp::Literal(3, true));
-		assumptions.push_back(Clasp::Literal(14, true));
-		assumptions.push_back(Clasp::Literal(5, false));
-		assumptions.push_back(Clasp::Literal(1, false));
-
-		std::cout << "Solving" << std::endl;
-		if (!modelEnumerator->start(solve.solver(), assumptions)){
-			std::cout << "Problem is unsatisfiable wrt. assumptions" << std::endl;
-		}else{
-			int i = 0;
-			while (solve.solve() == Clasp::value_true) {
-				if (modelEnumerator->commitModel(solve.solver())) {
-				   do {
-					 std::cout << "Model #" << ++i << std::endl;
-				   } while (modelEnumerator->commitSymmetric(solve.solver()));
-				}
-				modelEnumerator->update(solve.solver());
-			}
-		}
-	}
-}
-
-std::cout << "==========" << std::endl;
-assert(false);
-
-
-}
-
-/*
-:- not a(a).
-a(a) :- &id[a](a).
-
-*/
-
-
-
-
-
-
 	DBGLOG(DBG, "Configure clasp in SAT mode");
 	problemType = SAT;
 	config.reset();
@@ -911,37 +740,40 @@ a(a) :- &id[a](a).
 	claspctx.requestStepVar();
 	sendNogoodSetToClasp(ns);
 
+	if (inconsistent){
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		return;
+	}
+
 	DBGLOG(DBG, "Prepare model enumerator");
 	modelEnumerator.reset(config.enumerate.createEnumerator());
 	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-//	modelEnumerator->setStrategy(Clasp::ModelEnumerator::strategy_backtrack);
 
 	DBGLOG(DBG, "Finalizing initialization");
 	if (!claspctx.endInit()){
 		DBGLOG(DBG, "SAT instance is unsatisfiable");
+		inconsistent = true;
+		return;
 	}
 
 	buildOptimizedSymbolTable();
 
 #ifndef NDEBUG
-	std::stringstream ss, cpp;
+	std::stringstream ss;
 	InterpretationPtr vars = InterpretationPtr(new Interpretation(reg));
 	for (int ngi = 0; ngi < ns.getNogoodCount(); ++ngi){
 		const Nogood& ng = ns.getNogood(ngi);
 		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng);		
 		bool first = true;
 		ss << ":- ";
-		cpp << "{ Clasp::LitVec v; ";
 		for (int i = 0; i < ngClasp.clause.size(); ++i){
 			Clasp::Literal lit = ngClasp.clause[i];
 			if (!first) ss << ", ";
 			first = false;
 			ss << (lit.sign() ? "-" : "") << "a" << lit.var();
-			cpp << "v.push_back(Clasp::Literal(" << lit.var() << ", " << lit.sign() << ")); ";
 			vars->setFact(lit.var());
 		}
 		if (!first) ss << "." << std::endl;
-		cpp << "sat.addClause(v); }" << std::endl;
 	}
 	bm::bvector<>::enumerator en = vars->getStorage().first();
 	bm::bvector<>::enumerator en_end = vars->getStorage().end();
@@ -951,9 +783,7 @@ a(a) :- &id[a](a).
 	}
 
 	DBGLOG(DBG, "SAT instance in ASP format:" << std::endl << ss.str());
-	DBGLOG(DBG, "SAT instance in CPP format:" << std::endl << cpp.str());
 #endif
-
 
 	DBGLOG(DBG, "Initializing assignment extractor");
 	currentIntr = InterpretationPtr(new Interpretation(reg));
@@ -962,8 +792,8 @@ a(a) :- &id[a](a).
 	assignmentExtractor.setAssignment(currentIntr, currentAssigned, currentChanged);
 
 	DBGLOG(DBG, "Adding post propagator");
-//	ep.reset(new ExternalPropagator(*this));
-//	claspctx.master()->addPost(ep.get());
+	ep.reset(new ExternalPropagator(*this));
+	claspctx.master()->addPost(ep.get());
 
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
@@ -980,10 +810,10 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	DBGLOG(DBG, "Restarting search");
 
-#ifndef NDEBUG
-	std::stringstream ss;
-std::cout << "Assumption: ";
-#endif
+	if (inconsistent){
+		DBGLOG(DBG, "Program is unconditionally inconsistent, ignoring assumptions");
+		return;
+	}
 
 	DBGLOG(DBG, "Setting new assumptions");
 	this->assumptions.clear();
@@ -991,20 +821,12 @@ std::cout << "Assumption: ";
 		if (isMappedToClaspLiteral(a.address)){
 			DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << mapHexToClasp(a.address).index() << "/" << (mapHexToClasp(a.address).sign() ^ a.isNaf() ? "!" : "") << mapHexToClasp(a.address).var() << ")");
 			Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
-#ifndef NDEBUG
-std::cout << "H:" << (a.isNaf() ? "not " : "") << a.address << ",C:" << al.index() << "/" << (al.sign() ? "!" : "") /*<< (mapHexToClasp(a.address).sign() ? "-" : "+") << (a.isNaf() ? "-" : "+")*/ << al.var() << " ";
-			ss << (mapHexToClasp(a.address).sign() ^ a.isNaf() ? "" : "-" ) << "a" << mapHexToClasp(a.address).var() << ". " << std::endl;
-#endif
+			this->assumptions.push_back(al);
 		}else{
 			DBGLOG(DBG, "Ignoring assumption H:" << RawPrinter::toString(reg, a));
 		}
 	}
 	restart = true;
-
-#ifndef NDEBUG
-std::cout << std::endl;
-	DBGLOG(DBG, "Assumptions in ASP format:" << std::endl << ss.str());
-#endif
 }
 
 void ClaspSolver::addPropagator(PropagatorCallback* pb){
@@ -1045,141 +867,30 @@ InterpretationPtr ClaspSolver::getNextModel(){
 
 	DBGLOG(DBG, "ClaspSolver::getNextModel");
 
-
-#if 0
-if (problemType == SAT)
-{
-static bool x = true;
-if (x){
-x=false;
-
-	for (int it = 0; it < 10; it++){
-		int mod = 0;
-
-		Clasp::LitVec ass;
-		ass.push_back(claspctx.stepLiteral());
-		std::auto_ptr<Clasp::Enumerator> modelEnumerator;
-		modelEnumerator.reset(config.enumerate.createEnumerator());
-		modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-
-		modelEnumerator->start(solve->solver(), ass);
-
-		while (solve->solve() == Clasp::value_true) {
-			if (modelEnumerator->commitModel(solve->solver())) {
-			   do {
-	/*
-				std::cout << "MO: ";
-				for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
-					if (modelEnumerator->lastModel().isTrue(it->second.lit) && !it->second.name.empty()) {
-						std::cout << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-					}
-				}
-				std::cout << std::endl;
-	*/
-				mod++;
-			   } while (modelEnumerator->commitSymmetric(solve->solver()));
-			}
-			modelEnumerator->update(solve->solver());
-		}
-		modelEnumerator->end(solve->solver());
-		std::cout << "mod: " << mod << std::endl;
-	}
-
-}
-}
-#endif
-
-nextmodel:
-static bool ignoredAssumptions;
-
 	if (inconsistent) return InterpretationPtr();
 	if (restart){
 		DBGLOG(DBG, "Starting new search");
 		restart = false;
 
-//		if (assumptions.size() == 0){
-//if (problemType == ASP){
-			DBGLOG(DBG, "Adding step literal to assumptions");
-			assumptions.push_back(claspctx.stepLiteral());
-//}
-//		}
+		DBGLOG(DBG, "Adding step literal to assumptions");
+		assumptions.push_back(claspctx.stepLiteral());
 
 		DBGLOG(DBG, "Starting enumerator with " << assumptions.size() << " assumptions (including step literal)");
 		assert(!!modelEnumerator.get() && !!solve.get());
 		if (enumerationStarted){
 			modelEnumerator->end(solve->solver());
 		}
-if (problemType == SAT){
-std::cout << "clearAssumptions: " << claspctx.master()->clearAssumptions() << std::endl;
-}
 		enumerationStarted = true;
 		moreSymmetricModels = false;
 		optContinue = true;
-ignoredAssumptions = false;
-//		modelEnumerator.reset(config.enumerate.createEnumerator());
-//		modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-std::cout << "Assignment: ";
-for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
-	if (claspctx.master()->isTrue(it->second.lit) && !it->second.name.empty()) {
-		std::cout << "+C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-	else if (claspctx.master()->isFalse(it->second.lit) && !it->second.name.empty()) {
-		std::cout << "-C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-}
-std::cout << std::endl;
 
 		if (modelEnumerator->start(solve->solver(), assumptions)){
 			ENUMALGODBG("sat");
 			DBGLOG(DBG, "Instance is satisfiable wrt. assumptions");
-if (problemType == SAT){
-	std::cout << "SAT" << std::endl;
-
-std::cout << "Assignment: ";
-for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
-	if (claspctx.master()->isTrue(it->second.lit) && !it->second.name.empty()) {
-		std::cout << "+C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-	if (claspctx.master()->isFalse(it->second.lit) && !it->second.name.empty()) {
-		std::cout << "+C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-}
-std::cout << std::endl;
-}
 		}else{
-			// TODO: why can this happen?
 			ENUMALGODBG("ust");
 			DBGLOG(DBG, "Instance is unsatisfiable wrt. assumptions");
-if (problemType == SAT){
-	std::cout << "UNSAT" << std::endl;
-
-std::cout << "Assignment: ";
-for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
-	if (claspctx.master()->isTrue(it->second.lit) && !it->second.name.empty()) {
-		std::cout << "+C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-	if (claspctx.master()->isFalse(it->second.lit) && !it->second.name.empty()) {
-		std::cout << "+C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-}
-std::cout << std::endl;
-
-	std::cout << "trying without assumptions" << std::endl;
-	modelEnumerator->end(solve->solver());
-	modelEnumerator.reset(config.enumerate.createEnumerator());
-	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
-	Clasp::LitVec assumptions1;
-	assumptions1.push_back(claspctx.stepLiteral());
-	if (modelEnumerator->start(solve->solver(), assumptions1)){
-		std::cout << "now sat" << std::endl;
-		ignoredAssumptions = true;
-	}else{
-		std::cout << "still unsat" << std::endl;
-		return InterpretationPtr();
-	}
-}else{
 			return InterpretationPtr();
-}
 		}
 
 
@@ -1271,46 +982,16 @@ std::cout << std::endl;
 		return InterpretationPtr();
 	}
 
-	// Actually, contradictions should not occur, thus this should be only asserted.
-	// However, currently for some reason the assertions are sometimes not added.
-//#ifndef NDEBUG
-std::stringstream ssat;
-	bool contradictingAssumptions = false;
+#ifndef NDEBUG
 	if (!!model){
 		BOOST_FOREACH (Clasp::Literal lit, assumptions){
-			if (/*lit != claspctx.stepLiteral() && */!modelEnumerator->lastModel().isTrue(lit)){
-				contradictingAssumptions = true;
-//				assert(false && "Model contradicts assumptions");
-				break;
+			if (lit != claspctx.stepLiteral() && !modelEnumerator->lastModel().isTrue(lit)){
+				assert(false && "Model contradicts assumptions");
 			}else{
-ssat << lit.index() << "/" << (lit.sign() ? "!" : "") << lit.var() << " ";
 			}
 		}
 	}
-	if (contradictingAssumptions){
-		goto nextmodel;
-	}else{
-		if (ignoredAssumptions && problemType == SAT){
-std::cout << "Previously ignored assumptions due to inconsistency, but now found a model which satisfies " << ssat.str() << std::endl;
-		}
-	}
-//#endif
-
-
-if (problemType == SAT){
-	std::cout << "SAT" << std::endl;
-
-std::cout << "Model: ";
-for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
-	if (modelEnumerator->lastModel().isTrue(it->second.lit) /* && !it->second.name.empty()*/) {
-		std::cout << "+C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}else{
-		std::cout << "-C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " ";
-	}
-}
-std::cout << std::endl;
-}
-
+#endif
 
 	return model;
 }
