@@ -76,6 +76,12 @@ public:
 	}
 	bool isGround() const;
 	bool match(RegistryPtr reg, ID atomID, Nogood& instance) const;
+
+#ifndef NDEBUG
+	// saves the nogood as string or loads it back (for debug purposes)
+	std::string dbgsave() const;
+	void dbgload(std::string str);
+#endif
 };
 
 class NogoodSet : private ostream_printable<NogoodSet>{

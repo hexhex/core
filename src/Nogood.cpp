@@ -301,6 +301,28 @@ bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
 	return false;
 }
 
+#ifndef NDEBUG
+
+std::string Nogood::dbgsave() const{
+	std::stringstream ss;
+	BOOST_FOREACH (ID id, *this){
+		ss << (id.isNaf() ? "-" : "+") << "/" << id.address << ";";
+	}
+	return ss.str();
+}
+
+void Nogood::dbgload(std::string str){
+
+	while (str.find_first_of("/") != std::string::npos){
+		std::string sign = str.substr(0, str.find_first_of("/"));
+		std::string adr = str.substr(str.find_first_of("/") + 1, str.find_first_of(";"));
+		str = str.substr(str.find_first_of(";") + 1);
+		insert(NogoodContainer::createLiteral(atoi(str.c_str()), sign[0] == '+'));
+	}
+}
+
+#endif
+
 // ---------- Class NogoodSet ----------
 
 const NogoodSet& NogoodSet::operator=(const NogoodSet& other)

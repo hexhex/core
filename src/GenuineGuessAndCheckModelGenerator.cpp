@@ -269,6 +269,12 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
                                                                          factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
     //   incremental algorithms
     setHeuristics();
+
+
+Nogood ng;
+//ng.dbgload("+/0;-/2;+/6;+/7;+/9;+/10;+/11;+/12;+/13;+/14;-/16;+/21;+/23;+/25;+/26;+/27;-/29;+/34;+/36;+/41;+/44;+/46;+/47;+/59;+/60;");
+ng.dbgload("+/0;+/6;+/7;+/9;+/10;+/11;+/12;+/13;+/14;+/20;+/23;+/24;+/25;+/26;+/27;+/33;+/36;+/41;+/44;+/45;+/46;+/47;");
+//learnedEANogoods->addNogood(ng);
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
@@ -748,7 +754,16 @@ void GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 			if (ufs.size() > 0){
 				Nogood ng = ufscm->getLastUFSNogood();
 				DBGLOG(DBG, "Adding UFS nogood: " << ng);
+
+#ifndef NDEBUG
+				// the learned nogood must not talk about unassigned atoms
+				BOOST_FOREACH (ID lit, ng){
+					assert(assigned->getFact(lit.address));
+				}
+#endif
+
 				solver->addNogood(ng);
+
 			}
 		}else{
 			DBGLOG(DBG, "Heuristic decides not to do an UFS check");
@@ -828,7 +843,7 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationCon
 			// unverify
 			eaVerified[eaIndex] = false;
 			eaEvaluated[eaIndex] = false;
-			if (eaVerified[eaIndex]) verifiedAuxes->getStorage() -= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+			verifiedAuxes->getStorage() -= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 
 			// *en is our new watch (as it is either undefined or was recently changed)
 			verifyWatchList[*en].push_back(eaIndex);
@@ -939,12 +954,13 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
 	    !bm::any_sub(annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(),
 	                 assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
 		eaVerified[eaIndex] = vcb.verify();
-		if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+
 		DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
 
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
 		if(factory.ctx.config.getOption("NoPropagator") == 0){
 			eaEvaluated[eaIndex] = true;
+			if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 		}
 
 		return !eaVerified[eaIndex];
