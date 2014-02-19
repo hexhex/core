@@ -972,8 +972,7 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 		constructUFSDetectionProblem(ufsDetectionProblem, compatibleSet, compatibleSetWithoutAux, skipProgram, ufsProgram);
 
 		// solve the ufs problem
-		InterpretationPtr emptyInt(new Interpretation(reg)); // since we do not work with assumptions, any variable can be frozen (i.e., is eligible to optimization)
-		solver = SATSolver::getInstance(ctx, ufsDetectionProblem, emptyInt);
+		solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
 	}
 	InterpretationConstPtr model;
 

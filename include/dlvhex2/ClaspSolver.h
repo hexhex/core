@@ -92,34 +92,26 @@ private:
 		boost::posix_time::time_duration skipMaxDuration;
 		int skipAmount;
 		int skipCounter;
+
+		// current clasp assignment in terms of HEX
+		void startAssignmentExtraction();
+		void stopAssignmentExtraction();
+		InterpretationPtr currentIntr, currentAssigned, currentChanged;
+		std::vector<std::vector<IDAddress> > assignmentsOnDecisionLevel;
 	public:
 		ExternalPropagator(ClaspSolver& cs);
+		virtual ~ExternalPropagator();
 
 		void callHexPropagators(Clasp::Solver& s);
 		bool addNewNogoodsToClasp(Clasp::Solver& s);
 		virtual bool propagateFixpoint(Clasp::Solver& s, Clasp::PostPropagator* ctx);
 		virtual bool isModel(Clasp::Solver& s);
-	
-		virtual uint32 priority() const;
-	};
-
-	// This is not an actual constraint, but is only added to clasp
-	// in order to get informed if a literal is changed. This
-	// allows for immediate translation to HEX.
-	// The constraint as such is always satisfied.
-	class AssignmentExtractor : public Clasp::Constraint{
-	private:
-		ClaspSolver& cs;
-		InterpretationPtr intr, assigned, changed;
-
-		std::vector<std::vector<IDAddress> > assignmentsOnDecisionLevel;
-	public:
-		AssignmentExtractor(ClaspSolver& cs);
-		void setAssignment(Clasp::Solver& solver, InterpretationPtr intr, InterpretationPtr assigned, InterpretationPtr changed);
-		virtual Clasp::Constraint* cloneAttach(Clasp::Solver& other);
+//		virtual Clasp::Constraint* cloneAttach(Clasp::Solver& other);
 		virtual Clasp::Constraint::PropResult propagate(Clasp::Solver& s, Clasp::Literal p, uint32& data);
 		virtual void undoLevel(Clasp::Solver& s);
-		virtual void reason(Clasp::Solver& s, Clasp::Literal p, Clasp::LitVec& lits);
+//		virtual void reason(Clasp::Solver& s, Clasp::Literal p, Clasp::LitVec& lits);
+	
+		virtual uint32 priority() const;
 	};
 
 	// interface to clasp internals
@@ -176,9 +168,6 @@ protected:
 	InterpretationConstPtr projectionMask;
 	RegistryPtr reg;
 
-	// current state of the search
-	InterpretationPtr currentIntr, currentAssigned, currentChanged;
-
 	// external learning
 	Set<PropagatorCallback*> propagators;
 	std::list<Nogood> nogoods;
@@ -196,8 +185,6 @@ protected:
 	std::auto_ptr<Clasp::Enumerator> modelEnumerator;
 	std::auto_ptr<ProgramOptions::ParsedValues> parsedValues;
 	std::auto_ptr<ExternalPropagator> ep;
-
-	AssignmentExtractor assignmentExtractor;
 
 	// control flow
 	Clasp::LitVec assumptions;

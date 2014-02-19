@@ -69,6 +69,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 
+	startAssignmentExtraction();
+
+	// initialize propagation deferring
 	lastPropagation = boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time());
 	double deferMS = cs.ctx.config.getOption("ClaspDeferMaxTMilliseconds");
 	skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000.0);
@@ -77,20 +80,72 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 	skipCounter = 0;
 }
 
+ClaspSolver::ExternalPropagator::~ExternalPropagator(){
+	stopAssignmentExtraction();
+}
+
+void ClaspSolver::ExternalPropagator::startAssignmentExtraction(){
+
+	DBGLOG(DBG, "Initializing assignment extraction");
+	currentIntr = InterpretationPtr(new Interpretation(cs.reg));
+	currentAssigned = InterpretationPtr(new Interpretation(cs.reg));
+	currentChanged = InterpretationPtr(new Interpretation(cs.reg));
+
+	// add watches for all literals
+	for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
+		// skip eliminated variables
+		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+
+		DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
+		cs.claspctx.master()->addWatch(it->second.lit, this);
+		cs.claspctx.master()->addWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
+	}
+
+	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
+	DBGLOG(DBG, "Extracting full interpretation from clasp");
+	cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
+}
+
+void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
+
+	// remove watches for all literals
+	for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
+		// skip eliminated variables
+		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+
+		DBGLOG(DBG, "Removing watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
+		cs.claspctx.master()->removeWatch(it->second.lit, this);
+		cs.claspctx.master()->removeWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
+	}
+
+	// remove watches for all decision levels
+	for (int i = 0; i <= assignmentsOnDecisionLevel.size(); i++){
+		if (cs.claspctx.master()->validLevel(i)){
+			DBGLOG(DBG, "Removing watch for decision level " << i);
+			cs.claspctx.master()->removeUndoWatch(i, this);
+		}
+	}
+
+	currentIntr.reset();
+	currentAssigned.reset();
+	currentChanged.reset();
+}
+
 void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 
 	DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
 #ifndef NDEBUG
 	// extract model and compare with the incrementally extracted one
-	InterpretationPtr currentIntr = InterpretationPtr(new Interpretation(cs.reg));
-	InterpretationPtr currentAssigned = InterpretationPtr(new Interpretation(cs.reg));
-	cs.extractClaspInterpretation(s, currentIntr, currentAssigned, InterpretationPtr());
+	InterpretationPtr fullyExtractedCurrentIntr = InterpretationPtr(new Interpretation(cs.reg));
+	InterpretationPtr fullyExtractedCurrentAssigned = InterpretationPtr(new Interpretation(cs.reg));
+	cs.extractClaspInterpretation(s, fullyExtractedCurrentIntr, fullyExtractedCurrentAssigned, InterpretationPtr());
+
 	std::stringstream ss;
-	ss << "Partial assignment: " << *currentIntr << " (assigned: " << *currentAssigned << ")" << std::endl;
-	ss << "Incrementally extracted partial assignment: " << *cs.currentIntr << " (assigned: " << *cs.currentAssigned << ")" << std::endl;
-	ss << "Changed atoms: " << *cs.currentChanged;
+	ss << "Partial assignment: " << *fullyExtractedCurrentIntr << " (assigned: " << *fullyExtractedCurrentAssigned << ")" << std::endl;
+	ss << "Incrementally extracted partial assignment: " << *currentIntr << " (assigned: " << *currentAssigned << ")" << std::endl;
+	ss << "Changed atoms: " << *currentChanged;
 	DBGLOG(DBG, ss.str());
-	assert (currentIntr->getStorage() == cs.currentIntr->getStorage() && currentAssigned->getStorage() == cs.currentAssigned->getStorage());
+	assert (fullyExtractedCurrentIntr->getStorage() == currentIntr->getStorage() && fullyExtractedCurrentAssigned->getStorage() == currentAssigned->getStorage());
 
 	int propNr = 0;
 #endif
@@ -98,9 +153,9 @@ void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 	// call HEX propagators
 	BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators){
 		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator #" << (++propNr));
-		propagator->propagate(cs.currentIntr, cs.currentAssigned, cs.currentChanged);
+		propagator->propagate(currentIntr, currentAssigned, currentChanged);
 	}
-	cs.currentChanged->clear();
+	currentChanged->clear();
 }
 
 bool ClaspSolver::ExternalPropagator::addNewNogoodsToClasp(Clasp::Solver& s){
@@ -203,42 +258,9 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_class_general;
 }
 
-// ============================== ClaspSolver::AssignmentExtractor ==============================
+Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s, Clasp::Literal p, uint32& data){
 
-ClaspSolver::AssignmentExtractor::AssignmentExtractor(ClaspSolver& cs) : cs(cs){
-}
-
-void ClaspSolver::AssignmentExtractor::setAssignment(Clasp::Solver& solver, InterpretationPtr intr, InterpretationPtr assigned, InterpretationPtr changed){
-	this->intr = intr;
-	this->assigned = assigned;
-	this->changed = changed;
-
-	// add watches for all literals
-	for (Clasp::SymbolTable::const_iterator it = solver.symbolTable().begin(); it != solver.symbolTable().end(); ++it) {
-		// skip eliminated variables
-		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
-
-		DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
-		solver.addWatch(it->second.lit, this);
-		solver.addWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
-	}
-
-	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
-	this->intr->clear();
-	this->assigned->clear();
-	this->changed->clear();
-
-	DBGLOG(DBG, "Extracting full interpretation from clasp");
-	cs.extractClaspInterpretation(solver, this->intr, this->assigned, this->changed);
-}
-
-Clasp::Constraint* ClaspSolver::AssignmentExtractor::cloneAttach(Clasp::Solver& other){
-	assert(false && "AssignmentExtractor must not be copied");
-}
-
-Clasp::Constraint::PropResult ClaspSolver::AssignmentExtractor::propagate(Clasp::Solver& s, Clasp::Literal p, uint32& data){
-
-	DBGLOG(DBG, "AssignmentExtractor::propagate");
+	DBGLOG(DBG, "ExternalPropagator::propagate");
 	Clasp::Literal pneg(p.var(), !p.sign());
 
 	assert(s.isTrue(p) && s.isFalse(pneg));
@@ -249,9 +271,9 @@ Clasp::Constraint::PropResult ClaspSolver::AssignmentExtractor::propagate(Clasp:
 	if (cs.claspToHex.size() > p.index()){
 		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[p.index()]){
 			DBGLOG(DBG, "Assigning H:" << adr << " to true");
-			intr->setFact(adr);
-			assigned->setFact(adr);
-			changed->setFact(adr);
+			currentIntr->setFact(adr);
+			currentAssigned->setFact(adr);
+			currentChanged->setFact(adr);
 
 			// add the variable to the undo watch for the decision level on which it was assigned
 			while (assignmentsOnDecisionLevel.size() < level + 1){
@@ -271,9 +293,9 @@ Clasp::Constraint::PropResult ClaspSolver::AssignmentExtractor::propagate(Clasp:
 	if (cs.claspToHex.size() > pneg.index()){
 		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[pneg.index()]){
 			DBGLOG(DBG, "Assigning H:" << adr << " to false");
-			intr->clearFact(adr);
-			assigned->setFact(adr);
-			changed->setFact(adr);
+			currentIntr->clearFact(adr);
+			currentAssigned->setFact(adr);
+			currentChanged->setFact(adr);
 
 			// add the variable to the undo watch for the decision level on which it was assigned
 			while (assignmentsOnDecisionLevel.size() < level + 1){
@@ -283,26 +305,23 @@ Clasp::Constraint::PropResult ClaspSolver::AssignmentExtractor::propagate(Clasp:
 			if(level > 0) cs.claspctx.master()->addUndoWatch(level, this);
 		}
 	}
-	DBGLOG(DBG, "AssignmentExtractor::propagate finished");
+	DBGLOG(DBG, "ExternalPropagator::propagate finished");
 	return PropResult();
 }
 
-void ClaspSolver::AssignmentExtractor::undoLevel(Clasp::Solver& s){
+void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 
 	DBGLOG(DBG, "Backtracking to decision level " << s.decisionLevel());
 	for (int i = s.decisionLevel(); i < assignmentsOnDecisionLevel.size(); i++){
 		DBGLOG(DBG, "Undoing decision level " << i);
 		BOOST_FOREACH (IDAddress adr, assignmentsOnDecisionLevel[i]){
 			DBGLOG(DBG, "Unassigning H:" << adr);
-			intr->clearFact(adr);
-			assigned->clearFact(adr);
-			changed->setFact(adr);
+			currentIntr->clearFact(adr);
+			currentAssigned->clearFact(adr);
+			currentChanged->setFact(adr);
 		}
 	}
 	assignmentsOnDecisionLevel.erase(assignmentsOnDecisionLevel.begin() + s.decisionLevel(), assignmentsOnDecisionLevel.end());
-}
-
-void ClaspSolver::AssignmentExtractor::reason(Clasp::Solver& s, Clasp::Literal p, Clasp::LitVec& lits){
 }
 
 // ============================== ClaspSolver ==============================
@@ -317,10 +336,11 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 	return atoi(str.c_str());
 }
 
-void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, InterpretationPtr currentIntr, InterpretationPtr currentAssigned, InterpretationPtr currentChanged){
+void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, InterpretationPtr extractCurrentIntr, InterpretationPtr extractCurrentAssigned, InterpretationPtr extractCurrentChanged){
+
 	DBGLOG(DBG, "Extracting clasp interpretation");
-	if (!!currentIntr) currentIntr->clear();
-	if (!!currentAssigned) currentAssigned->clear();
+	if (!!extractCurrentIntr) extractCurrentIntr->clear();
+	if (!!extractCurrentAssigned) extractCurrentAssigned->clear();
 	for (Clasp::SymbolTable::const_iterator it = solver.symbolTable().begin(); it != solver.symbolTable().end(); ++it) {
 		// skip eliminated variables
 		if (claspctx.eliminated(it->second.lit.var())) continue;
@@ -329,17 +349,17 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << (it->second.lit.sign() ? "!" : "") << "/" << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
 			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
-				if (!!currentIntr) currentIntr->setFact(adr);
-				if (!!currentAssigned) currentAssigned->setFact(adr);
-				if (!!currentChanged) currentChanged->setFact(adr);
+				if (!!extractCurrentIntr) extractCurrentIntr->setFact(adr);
+				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
+				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
 			}
 		}
 		if (solver.isFalse(it->second.lit) && !it->second.name.empty()) {
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << (it->second.lit.sign() ? "!" : "") << "/" << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
 			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
-				if (!!currentAssigned) currentAssigned->setFact(adr);
-				if (!!currentChanged) currentChanged->setFact(adr);
+				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
+				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
 			}
 		}
 	}
@@ -783,7 +803,7 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
- : ctx(ctx), assignmentExtractor(*this), solve(0), ep(0), modelCount(0), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in ASP mode");
@@ -819,15 +839,13 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
 	enumerationStarted = false;
 
-	DBGLOG(DBG, "Initializing assignment extractor");
-	currentIntr = InterpretationPtr(new Interpretation(reg));
-	currentAssigned = InterpretationPtr(new Interpretation(reg));
-	currentChanged = InterpretationPtr(new Interpretation(reg));
-	assignmentExtractor.setAssignment(solve->solver(), currentIntr, currentAssigned, currentChanged);
+	DBGLOG(DBG, "Adding post propagator");
+	ep.reset(new ExternalPropagator(*this));
+	claspctx.master()->addPost(ep.get());
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
- : ctx(ctx), assignmentExtractor(*this), solve(0), ep(0), modelCount(0), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in SAT mode");
@@ -890,11 +908,9 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
 	enumerationStarted = false;
 
-	DBGLOG(DBG, "Initializing assignment extractor");
-	currentIntr = InterpretationPtr(new Interpretation(reg));
-	currentAssigned = InterpretationPtr(new Interpretation(reg));
-	currentChanged = InterpretationPtr(new Interpretation(reg));
-	assignmentExtractor.setAssignment(solve->solver(), currentIntr, currentAssigned, currentChanged);
+	DBGLOG(DBG, "Adding post propagator");
+	ep.reset(new ExternalPropagator(*this));
+	claspctx.master()->addPost(ep.get());
 }
 
 ClaspSolver::~ClaspSolver(){
@@ -927,24 +943,10 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 void ClaspSolver::addPropagator(PropagatorCallback* pb){
 	propagators.insert(pb);
-
-	// if this was the first propagator, then we also need to notify clasp about it
-	if (propagators.size() == 1){
-		DBGLOG(DBG, "Adding post propagator");
-		ep.reset(new ExternalPropagator(*this));
-		claspctx.master()->addPost(ep.get());
-	}
 }
 
 void ClaspSolver::removePropagator(PropagatorCallback* pb){
 	propagators.erase(pb);
-
-	// if this was the last propagator, then we also notify clasp about it
-	if (propagators.size() == 0){
-		DBGLOG(DBG, "Removing post propagator");
-		claspctx.master()->removePost(ep.get());
-		ep.reset();
-	}
 }
 
 void ClaspSolver::addNogood(Nogood ng){
