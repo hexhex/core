@@ -51,7 +51,7 @@ public:
 	virtual void removePropagator(PropagatorCallback* pb) = 0;
 	virtual InterpretationPtr getNextModel() = 0;
 
-	static Ptr getInstance(ProgramCtx& ctx, NogoodSet& ns);
+	static Ptr getInstance(ProgramCtx& ctx, NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 };
 
 typedef SATSolver::Ptr SATSolverPtr;

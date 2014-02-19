@@ -136,6 +136,7 @@ private:
 
 	// initialization/shutdown
 	uint32_t false_;	// 1 will be our constant "false"
+	void freezeVariables(InterpretationConstPtr frozen);
 	void sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
@@ -212,8 +213,8 @@ protected:
 
 public:
 	// constructors/destructors
-	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
-	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns);
+	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 	virtual ~ClaspSolver();
 
 	// search control

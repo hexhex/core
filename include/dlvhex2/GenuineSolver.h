@@ -85,8 +85,8 @@ public:
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, bool interleavedThreading = true, bool minCheck = true);
-	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, bool interleavedThreading = true, bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
 };
 
 typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;
@@ -118,7 +118,7 @@ public:
 	typedef boost::shared_ptr<GenuineSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true, bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
 };
 
 typedef GenuineSolver::Ptr GenuineSolverPtr;
