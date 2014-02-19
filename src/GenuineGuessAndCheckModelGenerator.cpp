@@ -269,12 +269,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
                                                                          factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
     //   incremental algorithms
     setHeuristics();
-
-
-Nogood ng;
-//ng.dbgload("+/0;-/2;+/6;+/7;+/9;+/10;+/11;+/12;+/13;+/14;-/16;+/21;+/23;+/25;+/26;+/27;-/29;+/34;+/36;+/41;+/44;+/46;+/47;+/59;+/60;");
-ng.dbgload("+/0;+/6;+/7;+/9;+/10;+/11;+/12;+/13;+/14;+/20;+/23;+/24;+/25;+/26;+/27;+/33;+/36;+/41;+/44;+/45;+/46;+/47;");
-//learnedEANogoods->addNogood(ng);
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
