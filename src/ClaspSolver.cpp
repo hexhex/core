@@ -68,12 +68,18 @@ DLVHEX_NAMESPACE_BEGIN
 // ============================== ExternalPropagator ==============================
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
+
+	lastPropagation = boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time());
+	double deferMS = cs.ctx.config.getOption("ClaspDeferMaxTMilliseconds");
+	skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000.0);
+
+	skipAmount = cs.ctx.config.getOption("ClaspDeferNPropagations");
+	skipCounter = 0;
 }
 
-bool ClaspSolver::ExternalPropagator::propToHEX(Clasp::Solver& s){
+void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 
-	assert(!s.hasConflict() && "tried to learn while assignment was conflicting");
-
+	DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
 #ifndef NDEBUG
 	// extract model and compare with the incrementally extracted one
 	InterpretationPtr currentIntr = InterpretationPtr(new Interpretation(cs.reg));
@@ -85,14 +91,21 @@ bool ClaspSolver::ExternalPropagator::propToHEX(Clasp::Solver& s){
 	ss << "Changed atoms: " << *cs.currentChanged;
 	DBGLOG(DBG, ss.str());
 	assert (currentIntr->getStorage() == cs.currentIntr->getStorage() && currentAssigned->getStorage() == cs.currentAssigned->getStorage());
+
+	int propNr = 0;
 #endif
 
 	// call HEX propagators
 	BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators){
-		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
+		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator #" << (++propNr));
 		propagator->propagate(cs.currentIntr, cs.currentAssigned, cs.currentChanged);
 	}
 	cs.currentChanged->clear();
+}
+
+bool ClaspSolver::ExternalPropagator::addNewNogoodsToClasp(Clasp::Solver& s){
+
+	assert (!s.hasConflict() && "tried to add new nogoods while solver is in conflict");
 
 	// add new clauses to clasp
 	DBGLOG(DBG, "ExternalPropagator: Adding new clauses to clasp (" << cs.nogoods.size() << " were prepared)");
@@ -132,8 +145,31 @@ bool ClaspSolver::ExternalPropagator::propToHEX(Clasp::Solver& s){
 bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp::PostPropagator* ctx){
 
 	DBGLOG(DBG, "ExternalPropagator::propagateFixpoint");
+
+	// check if we shall propagate
+	bool hexPropagate = false;
+	boost::posix_time::ptime now(boost::posix_time::microsec_clock::local_time());
+	if(now - lastPropagation > skipMaxDuration){
+		DBGLOG(DBG,"we shall propagate to HEX because skipMaxDuration=" << skipMaxDuration <<
+		           " < time of last propgation, now=" << now << ", lastPropagation=" << lastPropagation);
+		lastPropagation = now;
+		skipCounter = 0;
+		hexPropagate = true;
+	}else{
+		if(skipCounter >= skipAmount){
+			DBGLOG(DBG,"we shall propagate to HEX because skipCounter=" << skipCounter <<
+				   " >= skipAmount=" << skipAmount);
+			lastPropagation = now;
+			skipCounter = 0;
+			hexPropagate = true;
+		}
+	}
+
+	DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
+
 	for (;;){
-		if (propToHEX(s)){
+		if (hexPropagate) callHexPropagators(s);
+		if (addNewNogoodsToClasp(s)){
 			DBGLOG(DBG, "Propagation led to conflict");
 			assert(s.queueSize() == 0 || s.hasConflict());
 			return false;
@@ -154,7 +190,12 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 
 	DBGLOG(DBG, "ExternalPropagator::isModel");
-	if (propToHEX(s)) return false;
+
+	// here we must call the HEX propagators to make sure that the verification status of external atoms is correct
+	// after this method returns
+	DBGLOG(DBG, "Must propagate to HEX");
+	callHexPropagators(s);
+	if (addNewNogoodsToClasp(s)) return false;
 	return s.numFreeVars() == 0 && !s.hasConflict();
 }
 
@@ -499,7 +540,7 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 }
 
 void ClaspSolver::shutdownClasp(){
-	claspctx.master()->removePost(ep.get());
+	if (!!ep.get()) claspctx.master()->removePost(ep.get());
 	resetAndResizeClaspToHex(0);
 }
 
@@ -774,10 +815,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 	buildOptimizedSymbolTable();
 
-	DBGLOG(DBG, "Adding post propagator");
-	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
-
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
 	enumerationStarted = false;
@@ -849,10 +886,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 	DBGLOG(DBG, "SAT instance in ASP format:" << std::endl << ss.str());
 #endif
 
-	DBGLOG(DBG, "Adding post propagator");
-	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
-
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
 	enumerationStarted = false;
@@ -894,10 +927,24 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 void ClaspSolver::addPropagator(PropagatorCallback* pb){
 	propagators.insert(pb);
+
+	// if this was the first propagator, then we also need to notify clasp about it
+	if (propagators.size() == 1){
+		DBGLOG(DBG, "Adding post propagator");
+		ep.reset(new ExternalPropagator(*this));
+		claspctx.master()->addPost(ep.get());
+	}
 }
 
 void ClaspSolver::removePropagator(PropagatorCallback* pb){
 	propagators.erase(pb);
+
+	// if this was the last propagator, then we also notify clasp about it
+	if (propagators.size() == 0){
+		DBGLOG(DBG, "Removing post propagator");
+		claspctx.master()->removePost(ep.get());
+		ep.reset();
+	}
 }
 
 void ClaspSolver::addNogood(Nogood ng){

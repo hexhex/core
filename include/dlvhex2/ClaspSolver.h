@@ -87,10 +87,16 @@ private:
 	private:
 		ClaspSolver& cs;
 
+		// for deferred propagation to HEX
+		boost::posix_time::ptime lastPropagation;
+		boost::posix_time::time_duration skipMaxDuration;
+		int skipAmount;
+		int skipCounter;
 	public:
 		ExternalPropagator(ClaspSolver& cs);
 
-		bool propToHEX(Clasp::Solver& s);
+		void callHexPropagators(Clasp::Solver& s);
+		bool addNewNogoodsToClasp(Clasp::Solver& s);
 		virtual bool propagateFixpoint(Clasp::Solver& s, Clasp::PostPropagator* ctx);
 		virtual bool isModel(Clasp::Solver& s);
 	
@@ -190,6 +196,7 @@ protected:
 	std::auto_ptr<Clasp::Enumerator> modelEnumerator;
 	std::auto_ptr<ProgramOptions::ParsedValues> parsedValues;
 	std::auto_ptr<ExternalPropagator> ep;
+
 	AssignmentExtractor assignmentExtractor;
 
 	// control flow
