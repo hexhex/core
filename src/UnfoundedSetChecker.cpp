@@ -1932,6 +1932,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 	}
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "UnfoundedSetChkMgr::getUFS");
+	std::vector<IDAddress> ufs;
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
 		if (mg && (agp.hasECycles() || !flpdc_e)){
@@ -1942,12 +1943,11 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				);
 			}
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
-			std::vector<IDAddress> ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
+			ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
 				ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
 			}
-			return ufs;
 		}else{
 			DBGLOG(DBG, "Checking UFS without considering external atoms");
 			if (preparedUnfoundedSetCheckers.size() == 0){
@@ -1956,12 +1956,11 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				);
 			}
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
-			std::vector<IDAddress> ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
+			ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
 				ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
 			}
-			return ufs;
 		}
 	}else{
 		// search in each component for unfounded sets
@@ -1981,11 +1980,10 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 					);
 				}
 				UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(comp)->second;
-				std::vector<IDAddress> ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
+				ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
-					return ufs;
 				}
 			}else{
 				DBGLOG(DBG, "Checking UFS without considering external atoms");
@@ -1995,19 +1993,20 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 					);
 				}
 				UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(comp)->second;
-				std::vector<IDAddress> ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
+				ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
-					return ufs;
 				}
 			}
 		}
-
-		// no ufs found
-		DBGLOG(DBG, "No component contains a UFS");
-		return std::vector<IDAddress>();
 	}
+
+	// no ufs found
+	if (ufs.size() == 0){
+		DBGLOG(DBG, "No component contains a UFS");
+	}
+	return ufs;
 }
 
 Nogood UnfoundedSetCheckerManager::getLastUFSNogood() const{

@@ -188,7 +188,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
       << "                      eacomplete: Evaluate whenever all atoms relevant for the external atom are assigned" << std::endl
-      << "                      never (default): Only evaluate at the end" << std::endl
+      << "                      post: Only evaluate at the end but use custom heuristics if provided by plugins" << std::endl
+      << "                      never (default): Only evaluate at the end and ignore custom heuristics provided by plugins" << std::endl
       << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
       << "                      post (default): Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
@@ -1288,8 +1289,15 @@ void processOptionsPrePlugin(
 				{
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
 				}
+				else if (heur == "post")
+				{
+					// here we evaluate only after the model candidate has been completed
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+				}
 				else if (heur == "never")
 				{
+					// here we evaluate only after the model candidate has been completed
+					// differently from post, even the propagator is diables, thus also custom heuristics provided by external atoms cannot overwrite this behavior
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
 					pctx.config.setOption("NoPropagator", 1);
 				}

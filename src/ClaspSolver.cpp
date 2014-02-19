@@ -1054,7 +1054,6 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				outputProject(model);
 				modelCount++;
 
-
 #ifndef NDEBUG
 				if (!!model){
 					BOOST_FOREACH (Clasp::Literal lit, assumptions){

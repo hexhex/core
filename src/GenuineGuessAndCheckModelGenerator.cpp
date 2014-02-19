@@ -711,6 +711,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 
 void GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
+	DBGLOG(DBG, "GenuineGuessAndCheckModelGenerator::partialUFSCheck");
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c partialUFSchk");
 
 	// ufs check without nogood learning makes no sense if the interpretation is not complete
@@ -741,7 +742,7 @@ void GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
 			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second,
 			                                                    factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *assigned << ")");
+			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no " : "") << "UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *assigned << ")");
 
 			if (ufs.size() > 0){
 				Nogood ng = ufscm->getLastUFSNogood();
