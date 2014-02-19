@@ -90,14 +90,14 @@ bool ClaspSolver::ExternalPropagator::propToHEX(Clasp::Solver& s){
 	// call HEX propagators
 	BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators){
 		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
-		propagator->propagate(cs.currentIntr, InterpretationConstPtr(), InterpretationConstPtr()/*, cs.currentAssigned, cs.currentChanged*/);
+		propagator->propagate(cs.currentIntr, cs.currentAssigned, cs.currentChanged);
 	}
 	cs.currentChanged->clear();
 
 	// add new clauses to clasp
 	DBGLOG(DBG, "ExternalPropagator: Adding new clauses to clasp (" << cs.nogoods.size() << " were prepared)");
 	bool inconsistent = false;
-	Clasp::ClauseCreator cc(&s);
+	Clasp::ClauseCreator cc(cs.claspctx.master());
 	std::list<Nogood>::iterator ngIt = cs.nogoods.begin();
 	while (ngIt != cs.nogoods.end()){
 		const Nogood& ng = *ngIt;
@@ -109,8 +109,12 @@ bool ClaspSolver::ExternalPropagator::propToHEX(Clasp::Solver& s){
 			BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
 				cc.add(lit);
 			}
-			Clasp::ClauseCreator::Result res = cc.create(s, cc.lits(), Clasp::Constraint_t::learnt_other);
+
+			Clasp::ClauseInfo ci(Clasp::Constraint_t::learnt_other);
+			assert (!s.hasConflict() && (s.decisionLevel() == 0 || ci.learnt()));
+			Clasp::ClauseCreator::Result res = cc.create(s, cc.lits(), 0, ci);
 			DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
+
 			if (!res.ok()){
 				inconsistent = true;
 				break;
@@ -121,7 +125,6 @@ bool ClaspSolver::ExternalPropagator::propToHEX(Clasp::Solver& s){
 
 	// remove all processed nogoods
 	cs.nogoods.erase(cs.nogoods.begin(), ngIt);
-
 	assert(!inconsistent || s.hasConflict());
 	return inconsistent;
 }
@@ -131,7 +134,7 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
 	DBGLOG(DBG, "ExternalPropagator::propagateFixpoint");
 	for (;;){
 		if (propToHEX(s)){
-			DBGLOG(DBG, "Propagation led to conflict: " << s.queueSize() << ", " << s.hasConflict());
+			DBGLOG(DBG, "Propagation led to conflict");
 			assert(s.queueSize() == 0 || s.hasConflict());
 			return false;
 		}
@@ -172,7 +175,7 @@ void ClaspSolver::AssignmentExtractor::setAssignment(Clasp::Solver& solver, Inte
 	// add watches for all literals
 	for (Clasp::SymbolTable::const_iterator it = solver.symbolTable().begin(); it != solver.symbolTable().end(); ++it) {
 		// skip eliminated variables
-//		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
 
 		DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
 		solver.addWatch(it->second.lit, this);
@@ -279,7 +282,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 	if (!!currentAssigned) currentAssigned->clear();
 	for (Clasp::SymbolTable::const_iterator it = solver.symbolTable().begin(); it != solver.symbolTable().end(); ++it) {
 		// skip eliminated variables
-//		if (claspctx.eliminated(it->second.lit.var())) continue;
+		if (claspctx.eliminated(it->second.lit.var())) continue;
 
 		if (solver.isTrue(it->second.lit) && !it->second.name.empty()) {
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << (it->second.lit.sign() ? "!" : "") << "/" << it->second.lit.var() << "@" <<
@@ -386,6 +389,13 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	}
 
 	inconsistent = !asp.endProgram();
+	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+
+	DBGLOG(DBG, "Setting variables to frozen");
+	for (int i = 1; i <= claspctx.numVars(); i++){
+		claspctx.setFrozen(i, true);
+	}
+
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
 }
 
@@ -415,10 +425,10 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	}
 
 	inconsistent = !sat.endProgram();
-	DBGLOG(DBG, "SAT instance has " << sat.numVars() << " variables");
+	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Setting variables to frozen");
-	for (int i = 1; i <= sat.numVars(); i++){
+	for (int i = 1; i <= claspctx.numVars(); i++){
 		claspctx.setFrozen(i, true);
 	}
 
@@ -494,6 +504,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 
 		// mclit = mapped clasp literal
 		const Clasp::Literal mclit = mapHexToClasp(lit.address);
+		assert(!claspctx.eliminated(mclit.var()) && "Tried to map to eliminated variable");
 
 		// avoid duplicate literals
 		// if the literal was already added with the same sign, skip it
@@ -893,7 +904,8 @@ InterpretationPtr ClaspSolver::getNextModel(){
 
 	DBGLOG(DBG, "ClaspSolver::getNextModel");
 
-	while (true) {	// this loop is only left in step "ReturnModel"
+	// ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
+	while (nextSolveStep != ReturnModel) {
 		switch (nextSolveStep){
 			case Restart:
 				ENUMALGODBG("ini");
@@ -979,20 +991,6 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				nextSolveStep = ReturnModel;
 				break;
 
-			case ReturnModel:
-				ENUMALGODBG("ret");
-				DBGLOG(DBG, "Returning " << (!model ? "empty " :"") << "model");
-				if (!!model){
-//					if (problemType == SAT){
-						nextSolveStep = CommitSymmetricModel;
-//					}else{
-//						nextSolveStep = Update;
-//					}
-				}else{
-					nextSolveStep = ReturnModel;	// we stay in this state until restart
-				}
-				return model;
-
 			case CommitSymmetricModel:
 				ENUMALGODBG("cos");
 				DBGLOG(DBG, "Committing symmetric model");
@@ -1028,7 +1026,28 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				assert (false && "invalid state");
 		}
 	}
-	assert (false);
+
+	assert (nextSolveStep == ReturnModel);
+
+	assert (!(inconsistent && !!model) && "algorithm produced a model although instance is inconsistent");
+	// Note: !(!inconsistent && model) can *not* be asserted since an instance can be consistent but still
+	//       produce an empty model because if
+	//       (1) end of models; or
+	//       (2) because the instance is inconsistent wrt. the *current* assumptions
+	//           (variable "inconsistent" means that the instance is inconsistent wrt. *any* assumptions).
+
+	ENUMALGODBG("ret");
+	DBGLOG(DBG, "Returning " << (!model ? "empty " :"") << "model");
+	if (!!model){
+//		if (problemType == SAT){
+			nextSolveStep = CommitSymmetricModel;
+//		}else{
+//			nextSolveStep = Update;
+//		}
+	}else{
+		nextSolveStep = ReturnModel;	// we stay in this state until restart
+	}
+	return model;
 }
 
 int ClaspSolver::getModelCount(){
