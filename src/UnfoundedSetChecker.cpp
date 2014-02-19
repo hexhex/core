@@ -147,15 +147,6 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		supportSetVerification->getStorage() = (compatibleSetWithoutAux->getStorage() - ufsCandidate->getStorage());
 		BOOST_FOREACH (IDAddress adr, auxiliariesToVerify) if (ufsCandidate->getFact(adr)) supportSetVerification->setFact(adr);
 		BOOST_FOREACH (IDAddress adr, auxiliariesToVerify) auxToVerify->setFact(adr);
-/*
-		bm::bvector<>::enumerator en = ufsCandidate->getStorage().first();
-		bm::bvector<>::enumerator en_end = ufsCandidate->getStorage().end();
-		while (en < en_end){
-			ID id = reg->ogatoms.getIDByAddress(*en);
-			if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary()) supportSetVerification->setFact(*en);
-			en++;
-		}
-*/
 	}
 
 	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
@@ -981,7 +972,8 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 		constructUFSDetectionProblem(ufsDetectionProblem, compatibleSet, compatibleSetWithoutAux, skipProgram, ufsProgram);
 
 		// solve the ufs problem
-		solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
+		InterpretationPtr emptyInt(new Interpretation(reg)); // since we do not work with assumptions, any variable can be frozen (i.e., is eligible to optimization)
+		solver = SATSolver::getInstance(ctx, ufsDetectionProblem, emptyInt);
 	}
 	InterpretationConstPtr model;
 
@@ -1480,12 +1472,29 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 		constructUFSDetectionProblemRule(ufsDetectionProblem, ruleID);
 	}
 
+#if 0
+	// We need to freeze all variables which might be fixed by assumptions,
+	// or whichs truth values in the models are relevant.
+	// This includes all domains atoms and their shadows.
+	InterpretationPtr frozenInt(new Interpretation(reg));
+	bm::bvector<>::enumerator en = domain->getStorage().first();
+	bm::bvector<>::enumerator en_end = domain->getStorage().end();
+	while (en < en_end){
+		frozenInt->setFact(*en);
+		frozenInt->setFact(interpretationShadow[*en]);
+		en++;
+	}
+	// However, since leaned clauses can only constraint frozen variables,
+	// it seems to be better to freeze all.
+#endif
+
 	// finally, instantiate the solver for the constructed search problem
 	DBGLOG(DBG, "Unfounded Set Detection Problem: " << ufsDetectionProblem);
 	solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
 }
 
 void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
+
 
 	std::vector<ID> assumptions;
 

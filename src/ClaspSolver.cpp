@@ -527,7 +527,10 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 
 		// mclit = mapped clasp literal
 		const Clasp::Literal mclit = mapHexToClasp(lit.address);
-		assert(!claspctx.eliminated(mclit.var()) && "Tried to map to eliminated variable");
+		if (claspctx.eliminated(mclit.var())){
+			DBGLOG(DBG, "some literal was eliminated");
+			return TransformNogoodToClaspResult(clause, false, true);
+		}
 
 		// avoid duplicate literals
 		// if the literal was already added with the same sign, skip it
@@ -1064,11 +1067,10 @@ InterpretationPtr ClaspSolver::getNextModel(){
 	ENUMALGODBG("ret");
 	DBGLOG(DBG, "Returning " << (!model ? "empty " :"") << "model");
 	if (!!model){
-//		if (problemType == SAT){
-			nextSolveStep = CommitSymmetricModel;
-//		}else{
-//			nextSolveStep = Update;
-//		}
+		// committing symmetric models is only necessary if some variables are frozen
+		// but we still want to get all models
+		nextSolveStep = CommitSymmetricModel;
+//		nextSolveStep = Update;
 	}else{
 		nextSolveStep = ReturnModel;	// we stay in this state until restart
 	}
