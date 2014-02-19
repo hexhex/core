@@ -1984,6 +1984,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
+					break;
 				}
 			}else{
 				DBGLOG(DBG, "Checking UFS without considering external atoms");
@@ -1997,6 +1998,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
+					break;
 				}
 			}
 		}

@@ -183,7 +183,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        none (default): No learning" << std::endl
       << "                        reduct: Learning is based on the FLP-reduct" << std::endl
       << "                        ufs: Learning is based on the unfounded set" << std::endl
-      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,never]" << std::endl
+      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,post,never]" << std::endl
       << "                      Selects the heuristic for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
