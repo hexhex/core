@@ -109,7 +109,7 @@ private:
 		std::vector<std::vector<IDAddress> > assignmentsOnDecisionLevel;
 	public:
 		AssignmentExtractor(ClaspSolver& cs);
-		void setAssignment(InterpretationPtr intr, InterpretationPtr assigned, InterpretationPtr changed);
+		void setAssignment(Clasp::Solver& solver, InterpretationPtr intr, InterpretationPtr assigned, InterpretationPtr changed);
 		virtual Clasp::Constraint* cloneAttach(Clasp::Solver& other);
 		virtual Clasp::Constraint::PropResult propagate(Clasp::Solver& s, Clasp::Literal p, uint32& data);
 		virtual void undoLevel(Clasp::Solver& s);
@@ -129,7 +129,8 @@ private:
 	static IDAddress stringToIDAddress(std::string str);
 
 	// extracts the current interpretation from clasp into the given HEX assignment (parameters may be null-pointers)
-	void extractClaspInterpretation(InterpretationPtr currentIntr = InterpretationPtr(),
+	void extractClaspInterpretation(Clasp::Solver& solver,
+					InterpretationPtr currentIntr = InterpretationPtr(),
 	                                InterpretationPtr currentAssigned = InterpretationPtr(),
 	                                InterpretationPtr currentChanged = InterpretationPtr());
 
@@ -192,9 +193,18 @@ protected:
 
 	// control flow
 	Clasp::LitVec assumptions;
-	bool moreSymmetricModels, optContinue;	// for clasp internals
-	bool enumerationStarted;		// true if we are currently in an enumeration
-	bool restart;				// true if next call of getNextModel should start a new search
+	enum NextSolveStep{
+		Restart,
+		Solve,
+		CommitModel,
+		ExtractModel,
+		ReturnModel,
+		CommitSymmetricModel,
+		Update
+	};
+	NextSolveStep nextSolveStep;
+	InterpretationPtr model;		// only valid in state ReturnModel
+	bool enumerationStarted;
 	bool inconsistent;			// true if the instance is inconsistent (wrt. any assumptions)
 
 	// statistics
