@@ -2,7 +2,7 @@
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
  * Copyright (C) 2009, 2010 Peter Schüller
- * Copyright (C) 2011, 2012, 2013 Christoph Redl
+ * Copyright (C) 2011, 2012, 2013, 2014 Christoph Redl
  * 
  * This file is part of dlvhex.
  *
@@ -709,17 +709,34 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	}
 }
 
-bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+void GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c partialUFSchk");
 
-	if (!factory.ctx.config.getOption("UFSCheck")) return false;
-
 	// ufs check without nogood learning makes no sense if the interpretation is not complete
-	if (factory.ctx.config.getOption("UFSLearning")){
+	if (factory.ctx.config.getOption("UFSCheck") && factory.ctx.config.getOption("UFSLearning")){
 
 		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(annotatedGroundProgram.getGroundProgram(), verifiedAuxes, partialInterpretation, assigned, changed);
 
 		if (decision.first){
+#ifndef NDEBUG
+			// check if all replacement atoms in the non-skipped program for UFS checking are verified
+			BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
+				const Rule& rule = reg->rules.getByID(ruleID);
+				if (decision.second.count(ruleID) > 0) continue;	// check only non-skipped rules
+				if (rule.isEAGuessingRule()) continue;		// guessing rules are irrelevant for the UFS check
+
+				BOOST_FOREACH (ID h, rule.head){
+					assert (assigned->getFact(h.address) && "UFS checker heuristic tried to perform UFS check over program part with unassigned head atoms");
+				}
+				BOOST_FOREACH (ID b, rule.body){
+					assert (assigned->getFact(b.address) && "UFS checker heuristic tried to perform UFS check over program part with unassigned body atoms");
+					if (b.isExternalAuxiliary() && !b.isExternalInputAuxiliary()){
+						assert (verifiedAuxes->getFact(b.address) && "UFS checker heuristic tried to perform UFS check over program part with non-verified external atom replacements");
+					}
+				}
+			}
+#endif
 
 			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
 			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second,
@@ -730,20 +747,11 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 				Nogood ng = ufscm->getLastUFSNogood();
 				DBGLOG(DBG, "Adding UFS nogood: " << ng);
 				solver->addNogood(ng);
-
-				// check if nogood is violated
-				BOOST_FOREACH (ID l, ng){
-					if (!assigned->getFact(l.address) || l.isNaf() == partialInterpretation->getFact(l.address)) return false;
-				}
-
-				return true;
 			}
 		}else{
 			DBGLOG(DBG, "Heuristic decides not to do an UFS check");
 		}
 	}
-
-	return false;
 }
 
 IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
@@ -966,13 +974,17 @@ const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram()
 void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
 	// update external atom verification results
+	// (1) unverify external atoms if atoms, which are relevant to this external atom, have (potentially) changed
 	unverifyExternalAtoms(changed);
+	// (2) now verify external atoms (driven by a heuristic)
 	bool conflict = verifyExternalAtoms(partialAssignment, assigned, changed);
 
-	// UFS check requires a conflict-free interpretation
-	if (conflict) return;
-
-	partialUFSCheck(partialAssignment, assigned, changed);
+	// UFS check can in principle also applied to conflicting assignments
+	// since the heuristic knows which external atoms are correct and which ones not.
+	// Thus the check can be restricted to the non-conflicting part of the program.
+	// However, since there is already another reason for backtracking,
+	// it is probably not reasonable to do a UFS check (although, in principle, it could lead to further learned knowledge).
+	if (!conflict) partialUFSCheck(partialAssignment, assigned, changed);
 }
 
 DLVHEX_NAMESPACE_END

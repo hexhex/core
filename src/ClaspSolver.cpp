@@ -2,7 +2,7 @@
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
  * Copyright (C) 2009, 2010 Peter Schüller
- * Copyright (C) 2011, 2012, 2013 Christoph Redl
+ * Copyright (C) 2011, 2012, 2013, 2014 Christoph Redl
  * 
  * This file is part of dlvhex.
  *
@@ -23,11 +23,11 @@
  */
 
 /**
- * @file ClaspSolver.cpp
+ * @file   ClaspSolver.cpp
  * @author Christoph Redl
  * @author Peter Schueller <peterschueller@sabanciuniv.edu> (performance improvements, incremental model update)
  *
- * @brief Interface to genuine clasp 2.0.5-based Solver.
+ * @brief Interface to genuine clasp 3.0.0-based Solver.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -219,7 +219,7 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
 			hexPropagate = true;
 		}
 	}
-
+hexPropagate=true;
 	DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
 
 	for (;;){

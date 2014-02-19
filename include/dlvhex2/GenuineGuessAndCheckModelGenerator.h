@@ -2,7 +2,7 @@
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
  * Copyright (C) 2009, 2010 Peter Schüller
- * Copyright (C) 2011, 2012, 2013 Christoph Redl
+ * Copyright (C) 2011, 2012, 2013, 2014 Christoph Redl
  * 
  * This file is part of dlvhex.
  *
@@ -169,9 +169,8 @@ protected:
    * @param partialInterpretation The current assignment
    * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
    * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
-   * @return True if the current assignment contains an unfounded set which will be contained in any completion of the assignment, otherwise false.
    */
-  bool partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+  void partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
    * Finds a new atom in the scope of an external atom which shall be watched wrt. an interpretation.
