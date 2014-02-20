@@ -306,7 +306,7 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 	}
 
 	// create ufs check heuristics as selected
-	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(reg);
+	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(annotatedGroundProgram, reg);
 	verifiedAuxes = InterpretationPtr(new Interpretation(reg));
 }
 
@@ -345,6 +345,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		}
 
 		// remove edb and the guess (from here we don't need the guess anymore)
+		DBGLOG(DBG, "Got a model, removing replacement atoms");
 		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
 		modelCandidate->getStorage() -= factory.gnMask.mask()->getStorage();
 		modelCandidate->getStorage() -= mask->getStorage();
@@ -566,6 +567,8 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 	InterpretationConstPtr assigned,
 	InterpretationConstPtr changed){
 
+	DBGLOG(DBG, "updateEANogoods");
+
 	// generalize ground nogoods to nonground ones
 	if (factory.ctx.config.getOption("ExternalLearningGeneralize")){
 		int max = learnedEANogoods->getNogoodCount();
@@ -715,17 +718,17 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 		assert (!!assigned && !!changed);
 
 		DBGLOG(DBG, "Calling UFS check heuristic");
-		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(annotatedGroundProgram.getGroundProgram(), verifiedAuxes, partialInterpretation, assigned, changed);
+		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(verifiedAuxes, partialInterpretation, assigned, changed);
 
 		if (decision.first){
 
-			if (factory.ctx.config.getOption("UFSCheck")){
+			if (!factory.ctx.config.getOption("UFSCheck") && !factory.ctx.config.getOption("UFSCheckAssumptionBased")){
 				LOG(WARNING, "Partial unfounded set checks are only possible if FLP check method is set to unfounded set check; will skip the check");
 				return true;
 			}
 
 			// ufs check without nogood learning makes no sense if the interpretation is not complete
-			if (factory.ctx.config.getOption("UFSLearning")){
+			if (!factory.ctx.config.getOption("UFSLearning")){
 				LOG(WARNING, "Partial unfounded set checks is useless if unfounded set learning is not enabled; will perform the check anyway, but result does not have any effect");
 			}
 
@@ -780,8 +783,10 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 
 #ifndef NDEBUG
 			// the learned nogood must not talk about unassigned atoms
-			BOOST_FOREACH (ID lit, ng){
-				assert(assigned->getFact(lit.address));
+			if (!!assigned){
+				BOOST_FOREACH (ID lit, ng){
+					assert(assigned->getFact(lit.address));
+				}
 			}
 #endif
 			solver->addNogood(ng);
@@ -1019,10 +1024,11 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 
 	// UFS check can in principle also applied to conflicting assignments
 	// since the heuristic knows which external atoms are correct and which ones not.
-	// Thus the check can be restricted to the non-conflicting part of the program.
-	// However, since there is already another reason for backtracking,
-	// it is probably not reasonable to do a UFS check (although, in principle, it could lead to further learned knowledge).
+	// The check can be restricted to the non-conflicting part of the program.
+	// Although there is already another reason for backtracking,
+	// we still need to notify the heuristics such that it can update its internal information about assigned atoms.
 	if (!conflict) unfoundedSetCheck(partialAssignment, assigned, changed, true);
+	else ufsCheckHeuristics->notify(verifiedAuxes, partialAssignment, assigned, changed);
 }
 
 DLVHEX_NAMESPACE_END
