@@ -167,10 +167,12 @@ protected:
   /**
    * Makes an unfounded set check over a (possibly) partial interpretation if useful.
    * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
-   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
+   * @param assigned Currently assigned atoms (can be 0 if partial=false)
+   * @param changed The set of atoms with modified truth value since the last call (can be 0 if partial=false)
+   * @param partial True if the assignment is (potentially) partial; in this case the check is driven by a heuristic.
+   * @return bool True if the check is passed, i.e., if there is *no* unfounded set. False if the check is failed, i.e., there *is* an unfounded set.
    */
-  void partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+  bool unfoundedSetCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr(), bool partial = false);
 
   /**
    * Finds a new atom in the scope of an external atom which shall be watched wrt. an interpretation.

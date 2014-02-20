@@ -687,20 +687,9 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(),
-				                                                    factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+				bool result = unfoundedSetCheck(compatibleSet);
 				updateEANogoods(compatibleSet);
-				if (ufs.size() > 0){
-					DBGLOG(DBG, "Got a UFS");
-					if (factory.ctx.config.getOption("UFSLearning")){
-						DBGLOG(DBG, "Learn from UFS");
-						Nogood ufsng = ufscm->getLastUFSNogood();
-						solver->addNogood(ufsng);
-					}
-					return false;
-				}else{
-					return true;
-				}
+				return result;
 			}
 
 			// no check
@@ -710,17 +699,40 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	assert (false);
 }
 
-void GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed, bool partial){
 
-	DBGLOG(DBG, "GenuineGuessAndCheckModelGenerator::partialUFSCheck");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c partialUFSchk");
+	assert ( (!partial || (!!assigned && !!changed)) && "partial UFS checks require information about the assigned atoms");
 
-	// ufs check without nogood learning makes no sense if the interpretation is not complete
-	if (factory.ctx.config.getOption("UFSCheck") && factory.ctx.config.getOption("UFSLearning")){
+	DBGLOG(DBG, "GenuineGuessAndCheckModelGenerator::unfoundedSetCheck");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c unfoundedSetCheck");
 
+	DBGLOG(DBG, "unfoundedSetCheck was called to perform " << (partial ? "partial" : "full") << " UFS check");
+
+	bool performCheck = false;
+	std::set<ID> skipProgram;
+
+	if (partial){
+		assert (!!assigned && !!changed);
+
+		DBGLOG(DBG, "Calling UFS check heuristic");
 		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(annotatedGroundProgram.getGroundProgram(), verifiedAuxes, partialInterpretation, assigned, changed);
 
 		if (decision.first){
+
+			if (factory.ctx.config.getOption("UFSCheck")){
+				LOG(WARNING, "Partial unfounded set checks are only possible if FLP check method is set to unfounded set check; will skip the check");
+				return true;
+			}
+
+			// ufs check without nogood learning makes no sense if the interpretation is not complete
+			if (factory.ctx.config.getOption("UFSLearning")){
+				LOG(WARNING, "Partial unfounded set checks is useless if unfounded set learning is not enabled; will perform the check anyway, but result does not have any effect");
+			}
+
+			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
+			performCheck = true;
+			skipProgram = decision.second;
+
 #ifndef NDEBUG
 			// check if all replacement atoms in the non-skipped program for UFS checking are verified
 			BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
@@ -739,29 +751,44 @@ void GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 				}
 			}
 #endif
-
-			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
-			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second,
-			                                                    factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no " : "") << "UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *assigned << ")");
-
-			if (ufs.size() > 0){
-				Nogood ng = ufscm->getLastUFSNogood();
-				DBGLOG(DBG, "Adding UFS nogood: " << ng);
-
-#ifndef NDEBUG
-				// the learned nogood must not talk about unassigned atoms
-				BOOST_FOREACH (ID lit, ng){
-					assert(assigned->getFact(lit.address));
-				}
-#endif
-
-				solver->addNogood(ng);
-
-			}
 		}else{
 			DBGLOG(DBG, "Heuristic decides not to do an UFS check");
 		}
+	}else{
+
+
+
+		DBGLOG(DBG, "Since the method was called for a full check, it will be performed");
+		performCheck = true;
+	}
+
+	if (performCheck){
+		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, skipProgram,
+			                                            factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+		bool ufsFound = (ufs.size() > 0);
+#ifndef NDEBUG
+		std::stringstream ss;
+		ss << "UFS result: " << (ufsFound ? "" : "no ") << "UFS found (interpretation: " << *partialInterpretation;
+		if (!!assigned) ss << ", assigned: " << *assigned;
+		ss << ")";
+		DBGLOG(DBG, ss.str());
+#endif
+
+		if (ufsFound && factory.ctx.config.getOption("UFSLearning")){
+			Nogood ng = ufscm->getLastUFSNogood();
+			DBGLOG(DBG, "Adding UFS nogood: " << ng);
+
+#ifndef NDEBUG
+			// the learned nogood must not talk about unassigned atoms
+			BOOST_FOREACH (ID lit, ng){
+				assert(assigned->getFact(lit.address));
+			}
+#endif
+			solver->addNogood(ng);
+		}
+		return !ufsFound;
+	}else{
+		return true;
 	}
 }
 
@@ -854,7 +881,6 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	// Under these assumptions we cannot do any useful computation since we could only blindly evaluate any external atom,
 	// but this can also be done later (when we have a concrete compatible set).
 	if (!assigned || !changed) return false;
-
 
 	DBGLOG(DBG, "Verify External Atoms");
 
@@ -996,7 +1022,7 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 	// Thus the check can be restricted to the non-conflicting part of the program.
 	// However, since there is already another reason for backtracking,
 	// it is probably not reasonable to do a UFS check (although, in principle, it could lead to further learned knowledge).
-	if (!conflict) partialUFSCheck(partialAssignment, assigned, changed);
+	if (!conflict) unfoundedSetCheck(partialAssignment, assigned, changed, true);
 }
 
 DLVHEX_NAMESPACE_END
