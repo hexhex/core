@@ -22,6 +22,7 @@ if [[ $inputok -eq 0 ]]; then
 fi
 
 # set default values
+# and get location of benchmark scripts
 if [[ $# -eq 0 ]]; then
 	all=1
 elif [[ $1 == "all" ]]; then
@@ -29,8 +30,6 @@ elif [[ $1 == "all" ]]; then
 else
 	all=0
 fi
-
-# get location of benchmark scripts
 if [[ $all -eq 1 ]]; then
 	if [[ $# -ge 2 ]]; then
 		to=$2
@@ -44,20 +43,13 @@ if [[ $all -eq 1 ]]; then
 		bmscripts=$(dirname $runinstsdir)
 	fi
 else
+	instance=$2
+	to=$3
 	bmscripts=$4
 fi
 if ! [ -e $bmscripts ]; then
 	echo "Could not find benchmark scripts"
 	exit 1
-fi
-
-if [[ $all -eq 0 ]]; then
-	instance=$2
-	to=$3
-	bmscripts=$4
-fi
-if [[ $bmscripts == "" ]]; then
-	echo "Warning: Location of benchmark scripts not found; set variable DLVHEX_BENCHMARKSCRIPTS."
 fi
 
 # run instances
