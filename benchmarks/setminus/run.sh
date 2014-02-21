@@ -40,14 +40,16 @@ if [[ $all -eq 1 ]]; then
 		bmscripts=$3
 	else
 		runinstsdir=$(which runinsts.sh | head -n 1)
-		bmscripts=$(dirname $runinstsdir)
+		if [ -e "$runinstsdir" ]; then
+			bmscripts=$(dirname "$runinstsdir")
+		fi
 	fi
 else
 	instance=$2
 	to=$3
 	bmscripts=$4
 fi
-if ! [ -e $bmscripts ]; then
+if ! [ -e "$bmscripts" ]; then
 	echo "Could not find benchmark scripts"
 	exit 1
 fi
