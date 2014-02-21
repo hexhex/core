@@ -905,6 +905,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 					bool doEval;
 					{
 						DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
+						assert (!!eaEvalHeuristics[eaIndex]);
 						doEval = eaEvalHeuristics[eaIndex]->doEvaluate(eatom,
 						                                                annotatedGroundProgram.getEAMask(eaIndex)->mask(),
 						                                                annotatedGroundProgram.getProgramMask(),
@@ -1017,6 +1018,8 @@ const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram()
 
 void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
+	assert (!!partialAssignment && !!assigned && !!changed);
+
 	// update external atom verification results
 	// (1) unverify external atoms if atoms, which are relevant to this external atom, have (potentially) changed
 	unverifyExternalAtoms(changed);
@@ -1028,6 +1031,7 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 	// The check can be restricted to the non-conflicting part of the program.
 	// Although there is already another reason for backtracking,
 	// we still need to notify the heuristics such that it can update its internal information about assigned atoms.
+	assert (!!ufsCheckHeuristics);
 	if (!conflict) unfoundedSetCheck(partialAssignment, assigned, changed, true);
 	else ufsCheckHeuristics->notify(verifiedAuxes, partialAssignment, assigned, changed);
 }

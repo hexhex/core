@@ -77,34 +77,36 @@ UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(const AnnotatedGr
 	atomsInRule.resize(groundProgram.getGroundProgram().idb.size(), 0);
 	assignedAndVerifiedAtomsInRule.resize(groundProgram.getGroundProgram().idb.size(), 0);
 	int ruleNr = 0;
-	InterpretationPtr nodup(new Interpretation(reg));
+	InterpretationPtr nodupAtom(new Interpretation(reg));
+	InterpretationPtr nodupRule(new Interpretation(reg));
 
 #ifndef NDEBUG
 	std::stringstream programstring;
 #endif
 	BOOST_FOREACH (ID ruleID, groundProgram.getGroundProgram().idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
-		if (rule.isEAGuessingRule()){
+		if (rule.isEAGuessingRule() || nodupRule->getFact(ruleID.address)){
 			ruleNr++;
 			continue;
 		}else{
 			BOOST_FOREACH (ID h, rule.head){
-				if (!nodup->getFact(h.address)){
+				if (!nodupAtom->getFact(h.address)){
 					rulesOfAtom[h.address].insert(ruleNr);
-					nodup->setFact(h.address);
+					nodupAtom->setFact(h.address);
 				}
 			}
 			BOOST_FOREACH (ID b, rule.body){
-				if (!nodup->getFact(b.address)){
+				if (!nodupAtom->getFact(b.address)){
 					rulesOfAtom[b.address].insert(ruleNr);
-					nodup->setFact(b.address);
+					nodupAtom->setFact(b.address);
 				}
 			}
-			atomsInRule[ruleNr] = nodup->getStorage().count();
-			nodup->clear();
+			atomsInRule[ruleNr] = nodupAtom->getStorage().count();
+			nodupAtom->clear();
 
 			// at the beginning, skipProgram is the whole program
 			skipProgram.insert(ruleID);
+			nodupRule->setFact(ruleID.address);
 			ruleNr++;
 		}
 #ifndef NDEBUG
@@ -118,9 +120,9 @@ UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(const AnnotatedGr
 
 void UnfoundedSetCheckHeuristicsMax::notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
+	DBGLOG(DBG, "UnfoundedSetCheckHeuristicsMax::notify");
 	assert (!!verifiedAuxes && !!partialAssignment && !!partialAssignment && !!changed);
 
-	DBGLOG(DBG, "UnfoundedSetCheckHeuristicsMax::notify");
 	const std::vector<ID>& idb = groundProgram.getGroundProgram().idb;
 
 	// incrementally update the skipped program, i.e., the program part which was not yet fully assigned
