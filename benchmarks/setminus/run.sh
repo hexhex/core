@@ -8,10 +8,11 @@ elif [[ $1 != "all" ]] && [[ $1 != "single" ]]; then
 	inputok=0
 fi
 if [[ $inputok -eq 0 ]]; then
-	echo "This script expects 0, 1, 2, 4 or 5 parameters" >&2
+	echo "This script expects 0 to 5 parameters" >&2
 	echo "   \$1: (optional) \"all\" or \"single\", default is \"all\"" >&2
 	echo "   (a) If \$1=\"all\" then there are no further parameters" >&2
 	echo "       \$2: (optional) timeout, default is 300" >&2
+	echo "       \$3: (optional) directory with the benchmark scripts" >&2
 	echo "   (b) If \$1=\"single\" then" >&2
 	echo "       \$2: instance name" >&2
 	echo "       \$3: timeout in seconds" >&2
@@ -30,17 +31,26 @@ else
 fi
 
 # get location of benchmark scripts
-if [[ $DLVHEX_BENCHMARKSCRIPTS != "" ]]; then
-	bmscripts=$DLVHEX_BENCHMARKSCRIPTS
-
-	if [[ $# == 2 ]]; then
-		to=$2
-	elif [[ $# == 5 ]]; then
+if [[ $all -eq 1 ]]; then
+	if [[ $# -ge 2 ]]; then
 		to=$2
 	else
 		to=300
 	fi
+	if [[ $# -ge 3 ]]; then
+		bmscripts=$3
+	else
+		runinstsdir=$(which runinsts.sh | head -n 1)
+		bmscripts=$(dirname $runinstsdir)
+	fi
+else
+	bmscripts=$4
 fi
+if ! [ -e $bmscripts ]; then
+	echo "Could not find benchmark scripts"
+	exit 1
+fi
+
 if [[ $all -eq 0 ]]; then
 	instance=$2
 	to=$3
