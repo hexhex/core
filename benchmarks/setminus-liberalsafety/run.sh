@@ -86,7 +86,7 @@ else
 	done
 	echo $prog > prognd$instance.hex
 
-	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite CONF" "$confstr" "$inststr" "$to" "$bmscripts/gstimeoutputbuilder.sh"
+	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF" "$confstr" "$inststr" "$to" "$bmscripts/gstimeoutputbuilder.sh"
 	rm prog$instance.hex
 	rm prognd$instance.hex
 fi
