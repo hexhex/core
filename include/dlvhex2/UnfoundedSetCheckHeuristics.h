@@ -53,7 +53,18 @@ class UnfoundedSetCheckHeuristics{
 protected:
 	RegistryPtr reg;
 	const AnnotatedGroundProgram& groundProgram;
+
 public:
+	/**
+	 * Wrapper for the result of heuristics.
+	 */
+	class UnfoundedSetCheckHeuristicsResult : public std::pair<bool, const std::set<ID>&>{
+	public:
+		UnfoundedSetCheckHeuristicsResult(bool doUFSCheck, const std::set<ID>& skipProgram);
+		inline bool doUFSCheck() const { return first; }
+		inline const std::set<ID>& skipProgram() const { return second; }
+	};
+
 	UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 
 	/**
@@ -62,11 +73,11 @@ public:
 	* @param partialAssignment The current (partial) interpretation
 	* @param assigned The current set of assigned atoms; if 0, then the interpretation is complete
 	* @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
-	* @return std::pair<bool, std::vector<ID> >
+	* @return UnfoundedSetCheckHeuristicsResult
 	*         The first component is true if the heuristics suggests to do an UFS check, otherwise false.
 	*         If true, then the second component is the set of rules which shall be ignored in the UFS check. The assignment must be complete for all non-ignored rules.
 	*/
-	virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
+	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
 
 	/**
 	 * Notifies the heuristic about changes in the assignment, although the caller is not going to perform an UFS check at this point.
@@ -95,7 +106,7 @@ typedef boost::shared_ptr<UnfoundedSetCheckHeuristicsFactory> UnfoundedSetCheckH
 class UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
 public:
 	UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 class UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSetCheckHeuristicsFactory{
@@ -122,7 +133,7 @@ private:
 	std::set<ID> skipProgram;
 public:
 	UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
@@ -142,7 +153,7 @@ private:
 	InterpretationPtr accumulatedChangedAtoms;
 public:
 	UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 

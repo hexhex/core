@@ -38,6 +38,11 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// ============================== UnfoundedSetCheckHeuristicsResult ==============================
+
+UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult::UnfoundedSetCheckHeuristicsResult(bool doUFSCheck, const std::set<ID>& skipProgram) : std::pair<bool, const std::set<ID>&>(doUFSCheck, skipProgram){
+}
+
 // ============================== Base ==============================
 
 UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : groundProgram(groundProgram), reg(reg){
@@ -51,8 +56,9 @@ void UnfoundedSetCheckHeuristics::notify(InterpretationConstPtr verifiedAuxes, I
 UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristics(groundProgram, reg){
 }
 
-std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsPost::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-	return std::pair<bool, std::set<ID> >(false, std::set<ID>() );
+UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult UnfoundedSetCheckHeuristicsPost::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+	static std::set<ID> emptySkipProgram;
+	return UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult(false, emptySkipProgram);
 }
 
 UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPostFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg){
@@ -268,10 +274,10 @@ void UnfoundedSetCheckHeuristicsMax::notify(InterpretationConstPtr verifiedAuxes
 #endif
 }
 
-std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsMax::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult UnfoundedSetCheckHeuristicsMax::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
 	notify(verifiedAuxes, partialAssignment, assigned, changed);
-	return std::pair<bool, std::set<ID> >(true, skipProgram);
+	return UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult(true, skipProgram);
 }
 
 UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsMaxFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg){
@@ -284,16 +290,17 @@ UnfoundedSetCheckHeuristicsPeriodic::UnfoundedSetCheckHeuristicsPeriodic(const A
 	accumulatedChangedAtoms = InterpretationPtr(new Interpretation(reg));
 }
 
-std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
+	static std::set<ID> emptySkipProgram;
 	counter++;
 	accumulatedChangedAtoms->add(*changed);
 	if (counter >= 10){
 		counter = 0;
-		std::pair<bool, std::set<ID> > result = UnfoundedSetCheckHeuristicsMax::doUFSCheck(verifiedAuxes, partialAssignment, assigned, changed);
+		UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult result = UnfoundedSetCheckHeuristicsMax::doUFSCheck(verifiedAuxes, partialAssignment, assigned, changed);
 		accumulatedChangedAtoms->clear();
 		return result;
 	}else{
-		return std::pair<bool, std::set<ID> >(false, std::set<ID>() );
+		return UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult(false, emptySkipProgram);
 	}
 }
 

@@ -105,147 +105,185 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 
 	DBGLOG(DBG, "Checking if " << *ufsCandidate << " is an unfounded set");
 
-	// check for each EA auxiliary in the UFS, if the atom has indeed the assumed truth value
-	std::vector<IDAddress> auxiliariesToVerify;		// the auxiliaries which's new truth value needs to be checked
-	std::vector<std::set<ID> > auxiliaryDependsOnEA;	// stores for each auxiliary A the external atoms which are remain to be evaluated before the truth/falsity of A is certain
-	std::map<ID, std::vector<int> > eaToAuxIndex;		// stores for each external atom index the indices in the above vector which depend on this external atom
+	// build indices
+	UnfoundedSetVerificationStatus ufsVerStatus(agp, domain, ufsCandidate, compatibleSet, compatibleSetWithoutAux);
 
-	typedef std::pair<IDAddress, std::vector<ID> > Pair;
-	BOOST_FOREACH (Pair p, agp.getAuxToEA()){
-		IDAddress aux = p.first;
-		if (ufsCandidate->getFact(aux) != compatibleSet->getFact(aux)){
-			if (domain->getFact(aux) && reg->ogatoms.getIDByAddress(aux).isExternalAuxiliary()){
-				auxiliariesToVerify.push_back(aux);
-				std::set<ID> s;
-				s.insert(agp.getAuxToEA(aux).begin(), agp.getAuxToEA(aux).end());
-				auxiliaryDependsOnEA.push_back(s);
-				BOOST_FOREACH (ID eaID, agp.getAuxToEA(aux)){
-					eaToAuxIndex[eaID].push_back(auxiliaryDependsOnEA.size() - 1);
-				}
-			}
-		}
-	}
-
-	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(reg));
-
-	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
-	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
-
-	// construct: compatibleSetWithoutAux - ufsCandidate
-	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
-
-	// remove the UFS from the compatible set, but do not remove EA auxiliaries
-	// this does not hurt because EA auxiliaries can never be in the input to an external atom, but keeping them has the advantage that negative learning is more effective
-	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
-
-	InterpretationPtr supportSetVerification = InterpretationPtr(new Interpretation(reg));
-	InterpretationPtr auxToVerify = InterpretationPtr(new Interpretation(reg));
+	// For check using support sets
+	InterpretationPtr supportSetVerification;
+	InterpretationPtr auxToVerify;
 	if (ctx.config.getOption("SupportSets")){
-		DBGLOG(DBG, "Constructing interpretation for external atom evaluation from " << *ufsCandidate);
-
 		// take external atom values from the ufsCandidate and ordinary atoms from I \ U
+		DBGLOG(DBG, "Constructing interpretation for external atom evaluation from " << *ufsCandidate);
+		supportSetVerification = InterpretationPtr(new Interpretation(reg));
+		auxToVerify = InterpretationPtr(new Interpretation(reg));
 		supportSetVerification->getStorage() = (compatibleSetWithoutAux->getStorage() - ufsCandidate->getStorage());
-		BOOST_FOREACH (IDAddress adr, auxiliariesToVerify) if (ufsCandidate->getFact(adr)) supportSetVerification->setFact(adr);
-		BOOST_FOREACH (IDAddress adr, auxiliariesToVerify) auxToVerify->setFact(adr);
+		BOOST_FOREACH (IDAddress adr, ufsVerStatus.auxiliariesToVerify) if (ufsCandidate->getFact(adr)) supportSetVerification->setFact(adr);
+		BOOST_FOREACH (IDAddress adr, ufsVerStatus.auxiliariesToVerify) auxToVerify->setFact(adr);
 	}
 
 	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
-	DBGLOG(DBG, "Verifying external atoms");
+#ifndef NDEBUG
+	DBGLOG(DBG, "Verifying external atoms in UFS candidate");
 	int evalCnt = 0;
-	bool supSetAnswer = true;
+#endif
+
+	bool isUFS = true;
 	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		ID eaID = agp.getIndexedEAtom(eaIndex);
+
 		// we only evaluate external atoms which are relevant for some auxiliaries
-		if (eaToAuxIndex.find(eaID) == eaToAuxIndex.end()){
-			continue;
-		}
+		if (eaID.address >= ufsVerStatus.externalAtomAddressToAuxIndices.size() ||
+		    ufsVerStatus.externalAtomAddressToAuxIndices[eaID.address].size() == 0) continue;
 		const ExternalAtom& eatom = reg->eatoms.getByID(eaID);
 
-		if (ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) && agp.allowsForVerificationUsingCompleteSupportSets()){
+		if  (ctx.config.getOption("SupportSets") &&
+		    (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) &&
+		    agp.allowsForVerificationUsingCompleteSupportSets()){
 			DBGLOG(DBG, "Verifying " << eaID << " for UFS verification using complete support sets (" << *supportSetVerification << ")");
-			if (agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, supportSetVerification, auxToVerify)){
-				// ok
-			}else{
-				DBGLOG(DBG, "Candidate is not an unfounded set (" << *ufsCandidate << ")");
-#ifdef DOBOTHCHECKS
-				supSetAnswer = false;
-#else
-				return false;
+			if (!agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, supportSetVerification, auxToVerify)){
+				isUFS = false;
+				// if we should do both checks, then remember the result and continue with the explicit check,
+				// otherwise we already know the result
+#ifndef DOBOTHCHECKS
+				break;
 #endif
 			}
 		}
 #ifndef DOBOTHCHECKS
 		else
+#else
+		bool suppSetResult = isUFS;
 #endif
 		{
-			// evaluate
-			DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification, ngc=" << (!!ngc ? "true" : "false"));
-
-			if (!!ngc && !!solver){
-				// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
-				int oldNogoodCount = ngc->getNogoodCount();
-				mg->evaluateExternalAtom(ctx, eatom, eaInput, cb, ngc);
-				DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
-				for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
-
-					const Nogood& ng = ngc->getNogood(i);
-					if (ng.isGround()){
-						DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
-
-						std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-						BOOST_FOREACH (Nogood tng, transformed){
-							solver->addNogood(tng);
-						}
-					}
-				}
-			}else{
-				mg->evaluateExternalAtom(ctx, eatom, eaInput, cb);
-			}
-
 #ifndef NDEBUG
 			evalCnt++;
 #endif
-			// remove the external atom from the remaining lists
-			BOOST_FOREACH (int i, eaToAuxIndex[eaID]){
-				if ( !auxiliaryDependsOnEA[i].empty() ){
-					auxiliaryDependsOnEA[i].erase(eaID);
-					// if no external atoms remain to be verified, then the truth/falsity of the auxiliary is finally known
-					if ( auxiliaryDependsOnEA[i].empty() ){
-						// check if the auxiliary, which was assumed to be unfounded, is indeed _not_ in eaResult
-						if (eaResult->getFact(auxiliariesToVerify[i]) != ufsCandidate->getFact(auxiliariesToVerify[i])){
-							// wrong guess: the auxiliary is _not_ unfounded
-							DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is not justified --> Candidate is not an unfounded set");
-							DBGLOG(DBG, "Evaluated " << evalCnt << " of " << agp.getIndexedEAtoms().size() << " external atoms");
-							DBGLOG(DBG, "Candidate is not an unfounded set (" << *ufsCandidate << ")");
-
+			// update the indices
+			if (!verifyExternalAtomByEvaluation(eaID, ufsCandidate, compatibleSet, ufsVerStatus)){
 #ifdef DOBOTHCHECKS
-							if (ctx.config.getOption("SupportSets") && supSetAnswer == true){
-								std::string auxstr = RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(auxiliariesToVerify[i]));
-								DBGLOG(DBG, "Different validation values: " << auxstr << "=" << eaResult->getFact(auxiliariesToVerify[i]) << " in eaResult");
-								DBGLOG(DBG, "supportSetVerification=" << *supportSetVerification);
-								DBGLOG(DBG, "auxToVerify=" << *auxToVerify);
-								DBGLOG(DBG, "eaInput=" << *eaInput);
-								assert(false && "Support set approach gave false positive validation result");
-							}
+				// if we did already a support set-based check, assert that it also failed
+				assert((!ctx.config.getOption("SupportSets") || isUFS == suppSetResult) &&
+					"Explicit and support set approach for UFS checking gave different answers");
 #endif
-							return false;
-						}else{
-							DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is justified");
-						}
-					}
-				}
-	    		}
+				isUFS = false;
+				break;
+			}
+
 		}
 	}
-#ifdef DOBOTHCHECKS
-	DBGLOG(DBG, "supportSetVerification=" << *supportSetVerification);
-	DBGLOG(DBG, "auxToVerify=" << *auxToVerify);
-	DBGLOG(DBG, "eaInput=" << *eaInput);
-	assert((supSetAnswer == true) && "Support set approach gave false negative validation result");
-#endif
+
 	DBGLOG(DBG, "Evaluated " << agp.getIndexedEAtoms().size() << " of " << agp.getIndexedEAtoms().size() << " external atoms");
 
-	DBGLOG(DBG, "Candidate is an unfounded set (" << *ufsCandidate << ")");
+	DBGLOG(DBG, "Candidate is " << (isUFS ? "" : "not ") << "an unfounded set (" << *ufsCandidate << ")");
+	return isUFS;
+}
+
+UnfoundedSetChecker::UnfoundedSetVerificationStatus::UnfoundedSetVerificationStatus(
+	const AnnotatedGroundProgram& agp,
+	InterpretationConstPtr domain, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux
+){
+
+	assert (ufsCandidate->getRegistry() == compatibleSet->getRegistry() && compatibleSet->getRegistry() == compatibleSetWithoutAux->getRegistry());
+
+	// get all pairs of mappings of auxiliaries to external atoms
+	BOOST_FOREACH (AnnotatedGroundProgram::AuxToExternalAtoms auxToEA, agp.getAuxToEA()){
+
+		// Check if this auxiliary needs to be verified; this is only the case if its truth value has changes over compatibleSet.
+		// Note: If the truth value has not changed, then the guess could still be wrong.
+		//       But it has been proven in the optimization part of
+		//         "Efficient HEX-Program Evaluation based on Unfounded Sets" (Eiter, Fink, Krennwallner, Redl, Schüller, JAIR, 2014)
+		//       that in such cases this wrong guess is irrelevant for the unfounded set, i.e., even with a correct guess the interpretation would still be unfounded.
+		IDAddress aux = auxToEA.first;
+		if (ufsCandidate->getFact(aux) != compatibleSet->getFact(aux)){
+			if (domain->getFact(aux) && compatibleSet->getRegistry()->ogatoms.getIDByAddress(aux).isExternalAuxiliary()){
+				auxiliariesToVerify.push_back(aux);
+				auxIndexToRemainingExternalAtoms.push_back(std::set<ID>(agp.getAuxToEA(aux).begin(), agp.getAuxToEA(aux).end()));
+				BOOST_FOREACH (ID eaID, agp.getAuxToEA(aux)){
+					while (externalAtomAddressToAuxIndices.size() <= eaID.address) externalAtomAddressToAuxIndices.push_back(std::vector<int>());
+					externalAtomAddressToAuxIndices[eaID.address].push_back(auxIndexToRemainingExternalAtoms.size() - 1);
+				}
+			}
+		}
+	}
+
+	// For check using explicit evaluation of external atoms: prepare input to external atom evaluations
+	//     Construct: compatibleSetWithoutAux - ufsCandidate
+	//     Remove the UFS from the compatible set, but do not remove EA auxiliaries
+	//     This does not hurt because EA auxiliaries can never be in the input to an external atom,
+	//     but keeping them has the advantage that negative learning is more effective
+	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
+	eaInput = InterpretationPtr(new Interpretation(compatibleSet->getRegistry()));
+	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
+}
+
+// 1. evaluates an external atom and possibly learns during this step
+// 2. tries to verify its auxiliaries and returns the result of this trial
+// 3. updates the data structures used for unfounded set candidate verification
+bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
+	ID eaID,									// external atom
+	InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet,	// actual input to the check
+	UnfoundedSetVerificationStatus& ufsVerStatus					// indices
+){
+
+	// evaluate
+	DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification " << (!!ngc ? "with" : "without") << " learning");
+
+	const ExternalAtom& eatom = reg->eatoms.getByID(eaID);
+
+	// prepare answer interpretation
+	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
+	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
+
+	if (!!ngc && !!solver){
+		// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
+		int oldNogoodCount = ngc->getNogoodCount();
+		mg->evaluateExternalAtom(ctx, eatom, ufsVerStatus.eaInput, cb, ngc);
+		DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
+		for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
+
+			const Nogood& ng = ngc->getNogood(i);
+			if (ng.isGround()){
+				DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
+
+				std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
+				BOOST_FOREACH (Nogood tng, transformed){
+					solver->addNogood(tng);
+				}
+			}
+		}
+	}else{
+		mg->evaluateExternalAtom(ctx, eatom, ufsVerStatus.eaInput, cb);
+	}
+
+	// remove the external atom from the remaining lists of all auxiliaries which wait for the EA to be verified
+	DBGLOG(DBG, "Updating data structures");
+	assert (eaID.address < ufsVerStatus.externalAtomAddressToAuxIndices.size());
+	BOOST_FOREACH (int i, ufsVerStatus.externalAtomAddressToAuxIndices[eaID.address]){
+		assert (i >= 0 && i < ufsVerStatus.auxIndexToRemainingExternalAtoms.size() && i < ufsVerStatus.auxiliariesToVerify.size());
+		DBGLOG(DBG, "Updating auxiliary " << ufsVerStatus.auxiliariesToVerify[i]);
+		if (!ufsVerStatus.auxIndexToRemainingExternalAtoms[i].empty()){
+			ufsVerStatus.auxIndexToRemainingExternalAtoms[i].erase(eaID);
+
+			// if no external atoms remain to be verified, then the truth/falsity of the auxiliary is finally known
+			if (ufsVerStatus.auxIndexToRemainingExternalAtoms[i].empty()){
+				// check if the auxiliary, which was assumed to be unfounded, is indeed _not_ in eaResult
+				DBGLOG(DBG, "All relevant external atoms have been evaluated auxiliary, now checking if auxiliary " << ufsVerStatus.auxiliariesToVerify[i] << " is justified");
+				if (eaResult->getFact(ufsVerStatus.auxiliariesToVerify[i]) != ufsCandidate->getFact(ufsVerStatus.auxiliariesToVerify[i])){
+
+					// wrong guess: the auxiliary is _not_ unfounded
+#ifndef NDEBUG
+					DBGLOG(DBG, "Truth value of auxiliary " << ufsVerStatus.auxiliariesToVerify[i] << " is not justified --> Candidate is not an unfounded set");
+					DBGLOG(DBG, "Candidate is not an unfounded set (" << *ufsCandidate << ")");
+#endif
+
+					return false;
+				}else{
+					DBGLOG(DBG, "Truth value of auxiliary " << ufsVerStatus.auxiliariesToVerify[i] << " is justified");
+				}
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -470,7 +508,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblem(
 	NogoodSet& ufsDetectionProblem,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 	int auxatomcnt = 0;
@@ -483,7 +521,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 #ifndef NDEBUG
@@ -648,7 +686,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 	DBGLOG(DBG, "Constructing optimization part of UFS detection problem");
@@ -667,7 +705,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 	// ordinary atoms not in I must not be in the unfounded set
@@ -696,7 +734,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 	// if none of the input atoms to an external atom, which are true in I, are in the unfounded set, then the truth value of the external atom cannot change
@@ -751,7 +789,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 	// add the learned nogoods (in transformed form)
@@ -776,7 +814,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram){
 
 	// if there is no necessity to change the truth value of an external atom compared to compatibleSet, then do not do it
@@ -947,7 +985,7 @@ void EncodingBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 	// (it is useless to learn nogoods now, because they will be forgetten anyway when the next UFS search is setup)
 }
 
-std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
+std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
 
 	// remove external atom guessing rules and skipped rules from IDB
 	std::vector<ID> ufsProgram;
@@ -1693,7 +1731,7 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 	}
 }
 
-std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
+std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
 
 	DBGLOG(DBG, "Performing UFS Check wrt. " << *compatibleSet);
 
@@ -1932,7 +1970,7 @@ void UnfoundedSetCheckerManager::learnNogoodsFromMainSearch(bool reset){
 
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		InterpretationConstPtr interpretation,
-		std::set<ID> skipProgram,
+		const std::set<ID>& skipProgram,
 		SimpleNogoodContainerPtr ngc){
 
 	bool flpdc_head = ctx.config.getOption("FLPDecisionCriterionHead");
@@ -2028,6 +2066,11 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 #endif
 	}
 	return ufs;
+}
+
+std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(InterpretationConstPtr interpretation){
+	static std::set<ID> emptySkipProgram;
+	return getUnfoundedSet(interpretation, emptySkipProgram);
 }
 
 Nogood UnfoundedSetCheckerManager::getLastUFSNogood() const{

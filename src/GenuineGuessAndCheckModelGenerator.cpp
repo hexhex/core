@@ -712,15 +712,16 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 	DBGLOG(DBG, "unfoundedSetCheck was called to perform " << (partial ? "partial" : "full") << " UFS check");
 
 	bool performCheck = false;
-	std::set<ID> skipProgram;
+	static std::set<ID> emptySkipProgram;
+	const std::set<ID>* skipProgram = &emptySkipProgram;
 
 	if (partial){
 		assert (!!assigned && !!changed);
 
 		DBGLOG(DBG, "Calling UFS check heuristic");
-		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(verifiedAuxes, partialInterpretation, assigned, changed);
+		UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult decision = ufsCheckHeuristics->doUFSCheck(verifiedAuxes, partialInterpretation, assigned, changed);
 
-		if (decision.first){
+		if (decision.doUFSCheck()){
 
 			if (!factory.ctx.config.getOption("UFSCheck") && !factory.ctx.config.getOption("UFSCheckAssumptionBased")){
 				LOG(WARNING, "Partial unfounded set checks are only possible if FLP check method is set to unfounded set check; will skip the check");
@@ -734,13 +735,13 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 
 			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
 			performCheck = true;
-			skipProgram = decision.second;
+			skipProgram = &decision.skipProgram();
 
 #ifndef NDEBUG
 			// check if all replacement atoms in the non-skipped program for UFS checking are verified
 			BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
 				const Rule& rule = reg->rules.getByID(ruleID);
-				if (decision.second.count(ruleID) > 0) continue;	// check only non-skipped rules
+				if (decision.skipProgram().count(ruleID) > 0) continue;	// check only non-skipped rules
 				if (rule.isEAGuessingRule()) continue;		// guessing rules are irrelevant for the UFS check
 
 				BOOST_FOREACH (ID h, rule.head){
@@ -766,7 +767,7 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 	}
 
 	if (performCheck){
-		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, skipProgram,
+		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, *skipProgram,
 			                                            factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 		bool ufsFound = (ufs.size() > 0);
 #ifndef NDEBUG
