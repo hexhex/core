@@ -267,36 +267,34 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
       }
     }
     DBGLOG(DBG, "Watching " << outputAtoms->getStorage().count() << " output atoms: " << *outputAtoms);
-
-    bm::bvector<>::enumerator en = outputAtoms->getStorage().first();
-    bm::bvector<>::enumerator en_end = outputAtoms->getStorage().end();
-    while (en < en_end){
-      const IDAddress outputAtom = *en;
-      const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(outputAtom);
-      if (matchOutputAtom(oatom.tuple)){
-        DBGLOG(DBG, "Output atom " << oatom.text << " matches the external atom");
-        maski->setFact(outputAtom);
-      }else{
-        DBGLOG(DBG, "Output atom " << oatom.text << " does not match the external atom");
-      }
-      en++;
-    }
+    addOutputAtoms(outputAtoms);
 }
 
 void ExternalAtomMask::addOutputAtoms(InterpretationConstPtr intr){
-    bm::bvector<>::enumerator en = intr->getStorage().first();
-    bm::bvector<>::enumerator en_end = intr->getStorage().end();
-    while (en < en_end){
-      const IDAddress atom = *en;
-      const OrdinaryAtom& oatom = ctx->registry()->ogatoms.getByAddress(atom);
-      if (matchOutputAtom(oatom.tuple)){
-        DBGLOG(DBG, "Output atom " << oatom.text << " matches the external atom");
-        maski->setFact(atom);
-      }else{
-        DBGLOG(DBG, "Output atom " << oatom.text << " does not match the external atom");
-      }
-      en++;
-    }
+
+	assert(!!eatom);
+	RegistryPtr reg = ctx->registry();
+	ID posreplacement = reg->getAuxiliaryConstantSymbol('r', eatom->predicate);
+	ID negreplacement = reg->getAuxiliaryConstantSymbol('n', eatom->predicate);
+
+	bm::bvector<>::enumerator en = intr->getStorage().first();
+	bm::bvector<>::enumerator en_end = intr->getStorage().end();
+	while (en < en_end){
+		const IDAddress atom = *en;
+		ID id = reg->ogatoms.getIDByAddress(atom);
+		if (id.isExternalAuxiliary()){
+			const OrdinaryAtom& oatom = ctx->registry()->ogatoms.getByAddress(atom);
+			if (oatom.tuple[0] == posreplacement || oatom.tuple[0] == negreplacement){
+				if (matchOutputAtom(oatom.tuple)){
+					DBGLOG(DBG, "Output atom " << oatom.text << " matches the external atom");
+					maski->setFact(atom);
+				}else{
+					DBGLOG(DBG, "Output atom " << oatom.text << " does not match the external atom");
+				}
+				en++;
+			}
+		}
+	}
 }
 
 bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
