@@ -80,7 +80,6 @@
 #include "dlvhex2/ExistsPlugin.h"
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/FunctionPlugin.h"
-#include "dlvhex2/PhantomPlugin.h"
 
 #include <getopt.h>
 #include <signal.h>
@@ -255,9 +254,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
       << "                      attr   - Attribute dependency graph (once per program)" << std::endl
       << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
-// TODO: uncomment this line when implementation is finished
-//      << "     --repair=[ontology name]" << std::endl
-
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)" << std::endl
       << "     --constspace     Free partial models immediately after using them. This may cause some models" << std::endl
@@ -437,7 +433,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
-  pctx.config.setOption("Repair",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("DumpStats",0);
@@ -506,8 +501,6 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
-			PluginInterfacePtr phantomPlugin(new PhantomPlugin);
-			pctx.pluginContainer()->addInternalPlugin(phantomPlugin);
 		}
 
 		// before anything else we dump the logo
@@ -518,7 +511,7 @@ int main(int argc, char *argv[])
 		// (this cannot be outsourced due to the scope)
 		benchmark::BenchmarkController& ctr =
 			benchmark::BenchmarkController::Instance();
-		if( pctx.config.doVerbose(Configuration::PROFILING) )
+		if( pctx.config.doVerbose(dlvhex::Configuration::PROFILING) )
 		{
 			LOG(INFO,"initializing benchmarking output");
 			ctr.setOutput(&Logger::Instance().stream());
@@ -573,6 +566,18 @@ int main(int argc, char *argv[])
 		}
 		// use configured plugins to obtain plugin atoms
 		pctx.addPluginAtomsFromPluginContainer();
+
+		// check if this plugin provides a custom model generator
+		BOOST_FOREACH(PluginInterfacePtr plugin, pctx.pluginContainer()->getPlugins()){
+			if (plugin->providesCustomModelGeneratorFactory(pctx)){
+				if (pctx.customModelGeneratorProvider == 0){
+					LOG(DBG, "Plugin provides custom model generator factory");
+					pctx.customModelGeneratorProvider = plugin;
+				}else{
+					throw PluginError("Multiple plugins prove alternative model generator factories. Do not know which one to use. Please change command-line options.");
+				}
+			}
+		}
 
 		// now we check if we got input
 		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
@@ -751,7 +756,6 @@ void processOptionsPrePlugin(
 		{ "noflpcriterion", no_argument, 0, 35 },
 		{ "flpcriterion", optional_argument, 0, 42 },
 		{ "welljustified", optional_argument, 0, 25 },
-		{ "repair", required_argument, 0, 41 },
 		{ "eaevalheuristic", required_argument, 0, 26 },
                 { "eaevalheuristics", required_argument, 0, 26 }, // compatibility
 		{ "ufscheckheuristic", required_argument, 0, 27 },
@@ -1396,17 +1400,7 @@ void processOptionsPrePlugin(
 		case 40:
 		  pctx.config.setOption("ClaspForceSingleThreaded", 1);
 		  break;
-	
-		case 41:
-			{
-			#if !defined(HAVE_OWLCPP)
-			throw std::runtime_error("sorry, no support for ontologies compiled into this binary; reconfigure with --with-owlcpp");
-			#endif
-			  std::string ontologyName(optarg);
-			  pctx.config.setOption("Repair", 1);
-			  pctx.config.setStringOption("OntologyName", ontologyName);
-					break;
-			}
+
 		case 42:
 			if (optarg) {
 				std::string cycle(optarg);
@@ -1450,6 +1444,7 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("ExternalLearningUser", 1);
 			pctx.config.setOption("ExternalLearning", 1);
 			pctx.config.setOption("ForceGC", 1);
+			pctx.config.setOption("LiberalSafety", 1);
 			break;
 		case 49:
 			pctx.config.setOption("ForceGC", 1);
@@ -1459,13 +1454,6 @@ void processOptionsPrePlugin(
 	}
 
 	// global constraints
-	if (pctx.config.getOption("Repair")){
-		// repair answer set computation needs monolithic heuristic and liberal safety
-		if (heuristicChosen) throw GeneralError("Option --repair is incompatible with --heuristic. Repair answer set builder chooses the heuristic automatically.");
-		pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
-		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
-		pctx.config.setOption("LiberalSafety", 1);
-	}
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
 		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
 		pctx.config.setOption("FLPCheck", 1);

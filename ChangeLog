@@ -1,9 +1,12 @@
+2014-01-26  Christoph Redl <redl@kr.tuwien.ac.at>
+
 2014-01-07  Christoph Redl <redl@kr.tuwien.ac.at>
 
-	* include/ExtSourceProperties.h: Implement external atoms
-	with variable output arity
-	* include/HexGrammar.tcc: Likewise.
+	* include/dlvhex2/PluginInterface.h: Allow plugins to provide
+	custom model generators.
+	* include/dlvhex2/ProgramCtx.h: Likewise.
 	* src/PluginInterface.cpp: Likewise.
+	* src/ProgramCtx.cpp: Likewise.
 
 2013-12-21  Christoph Redl <redl@kr.tuwien.ac.at>
 

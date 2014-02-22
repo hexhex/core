@@ -41,7 +41,6 @@
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
-#include "dlvhex2/RepairModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -160,10 +159,10 @@ EvalGraphBuilder::createEvalUnit(
   {
    const ComponentGraph::ComponentInfo& ci = newUnitInfo;
 
-    if (ctx.config.getOption("Repair"))
+    if (!!ctx.customModelGeneratorProvider)
     {
-            uprops.mgf.reset(new RepairModelGeneratorFactory(
-                  ctx, ci, externalEvalConfig));
+            LOG(DBG,"configuring custom model generator factory for eval unit " << u);
+            uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
     }
     else
     {     

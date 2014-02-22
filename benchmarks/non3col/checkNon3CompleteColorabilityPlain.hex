@@ -16,8 +16,10 @@ coloring(N, C) : color(C) :- node(N).
 input(coloring, N, C) :- coloring(N, C).
 input(edge, X, Y) :- edge(X, Y).
 
-% check if the guessed coloring is invalid
-sat :- &testCautiousQuery["checkInvalidColoring.hex", input, invalid]().
+% check if the guessed complete coloring is invalid
+sat :- coloring(X, C), coloring(Y, C), edge(X, Y).
+pairOk(C1, C2) :- color(C1), color(C2), C1 != C2, coloring(X, C1), coloring(Y, C2), edge(X, Y).
+sat :- color(C1), color(C2), C1 != C2, not pairOk(C1, C2).
 
 % if yes, then saturate
 coloring(N, C) :- sat, node(N), color(C).

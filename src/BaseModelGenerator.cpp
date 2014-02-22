@@ -538,6 +538,73 @@ bool BaseModelGenerator::evaluateExternalAtomQuery(
   return true;
 }
 
+void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
+    const ExternalAtom& eatom,
+    NogoodContainerPtr nogoods) const{
+
+  LOG_SCOPE(PLUGIN,"lSS",false);
+  DBGLOG(DBG,"= learnSupportSetsForExternalAtom for " << eatom);
+
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidlss,"learn support sets for external atom");
+
+  RegistryPtr reg = ctx.registry();
+
+  // build input interpretation
+  // for each input tuple (multiple auxiliary inputs possible)
+  //   build query
+  //   call learn support sets
+
+  // if this is wrong, we might have mixed up registries between plugin and program
+  assert(!!eatom.pluginAtom && eatom.getExtSourceProperties().providesSupportSets() && eatom.predicate == eatom.pluginAtom->getPredicateID());
+
+  // update masks (inputMask and auxInputMask)
+  eatom.updatePredicateInputMask();
+
+  // prepare maximum interpretation
+  InterpretationPtr eatominp = InterpretationPtr(new Interpretation(reg));
+  eatominp->add(*eatom.getPredicateInputMask());
+
+  if( eatom.auxInputPredicate == ID_FAIL )
+  {
+	// only one input tuple, and that is the one stored in eatom.inputs
+
+	// prepare query
+	// XXX here we copy it, we should just reference it
+	PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), eatom.inputs, eatom.tuple, &eatom);
+	// XXX make this part of constructor
+	query.extinterpretation = eatominp;
+	eatom.pluginAtom->learnSupportSets(query, nogoods);
+  }
+  else
+  {
+	eatominp->add(*eatom.getAuxInputMask());
+
+	// auxiliary input predicate -> get input tuples (with cache)
+
+	// ensure we have a cache for external atom input tuples
+	if( !reg->eaInputTupleCache )
+		reg->eaInputTupleCache.reset(new EAInputTupleCache);
+	EAInputTupleCache& eaitc = *reg->eaInputTupleCache;
+
+	// for all input tuples
+	Interpretation::TrueBitIterator bit, bit_end;
+	boost::tie(bit, bit_end) = eatom.getAuxInputMask()->trueBits();
+
+	if( bit != bit_end )
+	{
+
+		for(;bit != bit_end; ++bit) {
+			const Tuple& inputtuple = eaitc.lookup(*bit);
+			// build query as reference to the storage in cache
+			// XXX here we copy, we could make it const ref in Query
+			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom);
+			query.extinterpretation = eatominp;
+			eatom.pluginAtom->learnSupportSets(query, nogoods);
+		}
+	}
+  }
+}
+
 // calls evaluateExternalAtom for each atom in eatoms
 
 bool BaseModelGenerator::evaluateExternalAtoms(ProgramCtx& ctx,

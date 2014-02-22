@@ -37,6 +37,7 @@ dlvhex2_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
 dlvhex2_LDADD = \
   libdlvhex2-base.la libdlvhex2-mlpsolver.la \
   libdlvhex2-aspsolver.la libdlvhex2-internalplugins.la \
+  $(EXTSOLVER_LIBADD) \
   $(BOOST_THREAD_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
@@ -83,7 +84,6 @@ libdlvhex2_base_la_SOURCES = \
     GuessAndCheckModelGenerator.cpp \
     GenuineGuessAndCheckModelGenerator.cpp \
     GenuineGuessAndCheckModelGeneratorAsync.cpp \
-    RepairModelGenerator.cpp \
     GenuineSolver.cpp \
     GringoGrounder.cpp \
     HexGrammar.cpp \
@@ -100,7 +100,6 @@ libdlvhex2_base_la_SOURCES = \
     MLPSyntaxChecker.cpp \
     Nogood.cpp \
     NogoodGrounder.cpp \
-    PhantomPlugin.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \
@@ -137,6 +136,7 @@ libdlvhex2_internalplugins_la_SOURCES = \
     QueryPlugin.cpp \
     StrongNegationPlugin.cpp \
     WeakConstraintPlugin.cpp
+
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,
@@ -212,7 +212,8 @@ libdlvhex2_internalplugins_la_SOURCES = \
 libdlvhex2_base_la_LDFLAGS = -version-info 10:0:0 -export-dynamic $(EXTSOLVER_LDFLAGS)
 libdlvhex2_mlpsolver_la_LDFLAGS = -version-info 2:0:1
 libdlvhex2_aspsolver_la_LDFLAGS = -version-info 5:0:0
-libdlvhex2_internalplugins_la_LDFLAGS = -version-info 4:0:1
+libdlvhex2_internalplugins_la_LDFLAGS = -version-info 4:0:1 -export-dynamic ##$(EXTSOLVER_LDFLAGS)
 
 libdlvhex2_base_la_LIBADD = $(EXTSOLVER_LIBADD) @LIBLTDL@ @LIBADD_DL@
+#libdlvhex2_internalplugins_la_LIBADD = $(EXTSOLVER_LIBADD)
 

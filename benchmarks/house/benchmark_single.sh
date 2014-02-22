@@ -7,7 +7,7 @@ export LD_LIBRARY_PATH=$2
 instance=$3
 to=$4
 
-confstr="pref.hex;pref.hex --supportsets;prefPlain.hex"
+confstr="houseGuess.hex;houseGuess.hex --supportsets;houseDirect.hex;houseGuess.hex -n=1;houseGuess.hex --supportsets -n=1;houseDirect.hex -n=1;houseGuess.hex -n=10;houseGuess.hex --supportsets -n=10;houseDirect.hex -n=10;houseGuess.hex -n=100;houseGuess.hex --supportsets -n=100;houseDirect.hex -n=100"
 confstr2=$(cat conf)
 if [ $? == 0 ]; then
         confstr=$confstr2
@@ -33,7 +33,7 @@ for c in "${confs[@]}"
 do
 	echo -ne -e " "
 	pushd .. > /dev/null 2>&1
-	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --plugindir=../../testsuite/ instances/$instance --verbose=8 2>$instance.$i.verbose.dat > /dev/null)
+	output=$(timeout $to time -o $instance.$i.time.dat -f %e dlvhex2 $c --heuristics=monolithic --plugindir=../../testsuite/ instances/$instance --verbose=8 2>$instance.$i.verbose.dat > /dev/null)
 	ret=$?
 	if [[ $ret == 0 ]]; then
 	        output=$(cat $instance.$i.time.dat)

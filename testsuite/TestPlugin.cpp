@@ -37,6 +37,14 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#if defined(HAVE_OWLCPP)
+#include "owlcpp/rdf/triple_store.hpp"
+#include "owlcpp/io/input.hpp"
+#include "owlcpp/io/catalog.hpp"
+#include "owlcpp/terms/node_tags_owl.hpp"
+#endif 
+
+
 #include "dlvhex2/ExternalLearningHelper.h"
 #include "dlvhex2/ComfortPluginInterface.h"
 #include "dlvhex2/Term.h"
@@ -45,6 +53,9 @@
 
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/program_options.hpp>
+#include <boost/range.hpp>
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <sstream>
@@ -1872,6 +1883,8 @@ public:
   }
 };
 
+
+
 class TestDLSimulatorAtom:
   public PluginAtom
 {
@@ -1925,6 +1938,9 @@ public:
   }
 };
 
+
+
+
 // Common base class for cautious and brave queries.
 // The only difference between answering cautious and brave queries
 // concerns the aggregation of the answer sets of the subprogram,
@@ -1934,7 +1950,6 @@ class TestASPQueryAtom:
 {
 private:
 	ProgramCtx& ctx;
-	bool learnedSupportSets;	// we need to learn them only once
 
 public:
   TestASPQueryAtom(ProgramCtx& ctx, std::string atomName):
@@ -1948,9 +1963,6 @@ public:
 		prop.variableOutputArity = true;					// the output arity of this external atom depends on the arity of the query predicate
 		prop.supportSets = true;									// we provide support sets
 		prop.completePositiveSupportSets = true;	// we even provide (positive) complete support sets
-
-		// optimization (see below)
-		learnedSupportSets = false;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
@@ -1958,7 +1970,19 @@ public:
 		assert(false);
 	}
 
+
+  virtual void learnSupportSets(const Query& query, NogoodContainerPtr nogoods)
+  {
+    Answer ans;
+    retrieveOrLearnSupportSets(query, ans, nogoods, true);
+  }
+
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+  {
+    retrieveOrLearnSupportSets(query, answer, nogoods, false);
+  }
+
+  virtual void retrieveOrLearnSupportSets(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool learnSupportSets)
   {
 		RegistryPtr reg = getRegistry();
 
@@ -1987,7 +2011,7 @@ public:
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
 
 		// learn support sets (only if --supportsets option is specified on the command line)
-		if (!learnedSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
+		if (learnSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
 			SimpleNogoodContainerPtr preparedNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 
 			// for all rules r of P
@@ -2044,8 +2068,8 @@ public:
 																		query,	// this parameter is always the same
 																		Tuple(hatom.tuple.begin() + 1, hatom.tuple.end()),	// hatom.tuple[0]=q and hatom.tuple[i] for i >= 1 stores the elements of X;
 																																												// here we need only the X and use hatom.tuple.begin() + 1 to eliminate the predicate q
-																		true /* technical detail, is set to true almost always */).address,
-																!id.isNaf(),																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
+																		!id.isNaf() /* technical detail, is set to true almost always */).address,
+																true,																								// sign of the literal e_{&testCautiousQuery["prog", p, q]}(X) in the nogood
 																id.isOrdinaryGroundAtom()															/* specify if this literal is ground or nonground (the same as the head atom) */ ));
 					}else{
 						isSupportSet = false;
@@ -2057,9 +2081,6 @@ public:
 					nogoods->addNogood(supportSet);
 				}
 			}
-
-			// learn support sets only once (just an optimization)
-			learnedSupportSets = true;
 		}
 
 		// create a mask for the query predicate, i.e., retrieve all atoms over the query predicate
@@ -2249,7 +2270,7 @@ public:
     TestSetUnionAtom():
 		// testSetUnion is the name of our external atom
     PluginAtom("testSetUnion", true) // monotonic
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    #warning TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning
   {
 		DBGLOG(DBG,"Constructor of SetUnion plugi is started!");
     addInputPredicate(); // the first set
@@ -2378,7 +2399,6 @@ public:
 	}
   }
 };
-
 
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {

@@ -199,7 +199,7 @@ void AnnotatedGroundProgram::initialize(){
 void AnnotatedGroundProgram::computeAtomDependencyGraph(){
 
 	// construct atom dependency graph
-	DBGLOG(DBG, "Contructing atom dependency graph");
+	DBGLOG(DBG, "Contructing atom dependency graph for " << groundProgram.idb.size() << " rules");
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -616,13 +616,13 @@ SimpleNogoodContainerPtr AnnotatedGroundProgram::getCompleteSupportSetsForVerifi
 	return supportSets;
 }
 
-bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation){
+bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify){
 
 	const ExternalAtom& eatom = reg->eatoms.getByID(indexedEatoms[eaIndex]);
 
 	bool supportSetPolarity = eatom.getExtSourceProperties().providesCompletePositiveSupportSets();
 
-	DBGLOG(DBG, "Verifying external atom " << indexedEatoms[eaIndex] << " using complete support sets");
+	DBGLOG(DBG, "Verifying external atom " << indexedEatoms[eaIndex] << " using " << supportSets->getNogoodCount() << " complete support sets");
 
 	// The external atom is verified wrt. interpretation I iff
 	//      (i) it provides complete positive (negative) support sets
@@ -645,7 +645,7 @@ bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaI
 			BOOST_FOREACH (ID id, ng){
 				// because nogoods eliminate unnecessary flags from IDs in order to store them in a uniform way,
 				// we need to lookup the atom here to get its attributes
-				IDKind kind = reg->lookupOrdinaryAtom(id).kind | (id.isNaf() ? ID::NAF_MASK : 0);
+				IDKind kind = reg->ogatoms.getIDByAddress(id.address).kind | (id.isNaf() ? ID::NAF_MASK : 0);
 				if ((kind & ID::PROPERTY_EXTERNALAUX) == ID::PROPERTY_EXTERNALAUX){
 					if (ea != ID_FAIL) throw GeneralError("Support set " + ng.getStringRepresentation(reg) + " is invalid becaues it contains multiple external atom replacement literals");
 					ea = ID(kind, id.address);
@@ -674,7 +674,7 @@ bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaI
 						implications->setFact(ea.address);
 					}else if(reg->isNegativeExternalAtomAuxiliaryAtom(ea) && !ea.isNaf()){
 #ifdef DEBUG
-						impl_ng.insert(ea);
+						impl_ng.insert(reg->swapExternalAtomAuxiliaryAtom(ea));
 #endif
 						implications->setFact(reg->swapExternalAtomAuxiliaryAtom(ea).address);
 					}else{
@@ -684,14 +684,14 @@ bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaI
 					// store all and only the positive replacement atoms which must be false
 					if (reg->isPositiveExternalAtomAuxiliaryAtom(ea) && !ea.isNaf()){
 #ifdef DEBUG
-						impl_ng.insert(ea);
+						impl_ng.insert(reg->swapExternalAtomAuxiliaryAtom(ea));
 #endif
-						implications->setFact(ea.address);
+						implications->setFact(reg->swapExternalAtomAuxiliaryAtom(ea).address);
 					}else if(reg->isNegativeExternalAtomAuxiliaryAtom(ea) && ea.isNaf()){
 #ifdef DEBUG
 						impl_ng.insert(ea);
 #endif
-						implications->setFact(reg->swapExternalAtomAuxiliaryAtom(ea).address);
+						implications->setFact(ea.address);
 					}else{
 						throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is an invalid negative support set");
 					}
@@ -699,43 +699,77 @@ bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaI
 			}
 		}
 	}
+
+	// if auxiliariesToVerify is not set, then verify all true atoms
+	if (!auxiliariesToVerify) auxiliariesToVerify = interpretation;
 #ifdef DEBUG
-	DBGLOG(DBG, "Implications: " << impl_ng.getStringRepresentation(reg));
+	DBGLOG(DBG, "Interpretation: " << *interpretation);
+	DBGLOG(DBG, "Implications: " << *implications);
+	DBGLOG(DBG, "Aux to verify: " << *auxiliariesToVerify);
+	std::stringstream eamss;
+	eamss << *getEAMask(eaIndex)->mask();
+	DBGLOG(DBG, "EA-Mask: " << eamss.str());
 #endif
 
 	bool verify = true;
 	bm::bvector<>::enumerator en = getEAMask(eaIndex)->mask()->getStorage().first();
 	bm::bvector<>::enumerator en_end = getEAMask(eaIndex)->mask()->getStorage().end();
 	while (en < en_end){
-		ID id = reg->ogatoms.getIDByAddress(*en);
-		if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary() && interpretation->getFact(*en)){
-#ifdef DEBUG
-			std::stringstream ss;
-			RawPrinter printer(ss, reg);
-			printer.print(id);
-			DBGLOG(DBG, "Verifying " << ss.str());
-#endif
-			if (reg->isPositiveExternalAtomAuxiliaryAtom(id)){
-				if (implications->getFact(id.address) != supportSetPolarity){
-					DBGLOG(DBG, "Failed because " << implications->getFact(id.address) << " != " << supportSetPolarity);
-					verify = false;
-					break;
-				}
-			}else if (reg->isNegativeExternalAtomAuxiliaryAtom(id)){
-				id = reg->swapExternalAtomAuxiliaryAtom(id);
+		if (auxiliariesToVerify->getFact(*en)){
+			ID id = reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary()){
 
-				if (implications->getFact(id.address) == supportSetPolarity){
-					DBGLOG(DBG, "Failed because " << implications->getFact(id.address) << " == " << supportSetPolarity);
-					verify = false;
-					break;
+				// determine the guessed truth value of the external atom
+				bool eaGuessedTruthValue;
+				ID posId, negId;
+				if (reg->isPositiveExternalAtomAuxiliaryAtom(id)){
+					eaGuessedTruthValue = interpretation->getFact(id.address);
+					posId = id;
+					negId = reg->swapExternalAtomAuxiliaryAtom(id);
+				}else{
+					eaGuessedTruthValue = !interpretation->getFact(id.address);
+					posId = reg->swapExternalAtomAuxiliaryAtom(id);
+					negId = id;
 				}
-			}else{
-				assert("ID is neither a positive nor a negative external atom replacement");
+
+#ifdef DEBUG
+				std::stringstream ss;
+				RawPrinter printer(ss, reg);
+				printer.print(posId);
+				DBGLOG(DBG, "Verifying auxiliary " << ss.str() << "=" << eaGuessedTruthValue);
+#endif
+
+				// check it against the support sets
+				if (eaGuessedTruthValue == true){
+					if ( supportSetPolarity == true && !implications->getFact(posId.address) ){
+						DBGLOG(DBG, "Failed because " << implications->getFact(id.address) << " == false");
+						verify = false;
+						break;
+					}
+					if ( supportSetPolarity == false && implications->getFact(negId.address) ){
+						DBGLOG(DBG, "Failed because " << implications->getFact(negId.address) << " == true");
+						verify = false;
+						break;
+					}
+				}else{
+					if ( supportSetPolarity == false && !implications->getFact(negId.address) ){
+						DBGLOG(DBG, "Failed because " << implications->getFact(id.address) << " == false");
+						verify = false;
+						break;
+					}
+					if ( supportSetPolarity == true && implications->getFact(posId.address) ){
+						DBGLOG(DBG, "Failed because " << implications->getFact(posId.address) << " == true");
+						verify = false;
+						break;
+					}
+				}
+				DBGLOG(DBG, "Verified auxiliary " << ss.str() << "=" << eaGuessedTruthValue << " in " << *interpretation << " wrt. implications " << *implications);
 			}
 		}
 		en++;
 	}
 
+	DBGLOG(DBG, "Verification done");
 	return verify;
 }
 

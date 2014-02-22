@@ -145,7 +145,7 @@ public:
 
 	// tries to verify an external atom which allows for verification using support sets and returns the result of this check
 	// (only supported if support sets have been defined)
-	bool verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation);
+	bool verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify);
 };
 
 DLVHEX_NAMESPACE_END

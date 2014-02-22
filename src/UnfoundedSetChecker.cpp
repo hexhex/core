@@ -95,6 +95,11 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate){
 
+	// in debug mode we might want to do both checks (traditional and support set based)
+#ifndef NDEBUG
+//	#define DOBOTHCHECKS
+#endif
+
 	// ordinary mode generates only real unfounded sets, hence there is no check required
 	assert(mode == WithExt);
 
@@ -121,19 +126,42 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		}
 	}
 
-	// construct: compatibleSetWithoutAux - ufsCandidate
-	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
 	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(reg));
-	// remove the UFS from the compatible set, but do not remove EA auxiliaries
-	// this does not hurt because EA auxiliaries can never be in the input to an external atom, but keeping them has the advantage that negative learning is more effective
-	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
 
 	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
 
+	// construct: compatibleSetWithoutAux - ufsCandidate
+	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
+
+	// remove the UFS from the compatible set, but do not remove EA auxiliaries
+	// this does not hurt because EA auxiliaries can never be in the input to an external atom, but keeping them has the advantage that negative learning is more effective
+	eaInput->getStorage() = (compatibleSet->getStorage() - (ufsCandidate->getStorage() & compatibleSetWithoutAux->getStorage()));
+
+	InterpretationPtr supportSetVerification = InterpretationPtr(new Interpretation(reg));
+	InterpretationPtr auxToVerify = InterpretationPtr(new Interpretation(reg));
+	if (ctx.config.getOption("SupportSets")){
+		DBGLOG(DBG, "Constructing interpretation for external atom evaluation from " << *ufsCandidate);
+
+		// take external atom values from the ufsCandidate and ordinary atoms from I \ U
+		supportSetVerification->getStorage() = (compatibleSetWithoutAux->getStorage() - ufsCandidate->getStorage());
+		BOOST_FOREACH (IDAddress adr, auxiliariesToVerify) if (ufsCandidate->getFact(adr)) supportSetVerification->setFact(adr);
+		BOOST_FOREACH (IDAddress adr, auxiliariesToVerify) auxToVerify->setFact(adr);
+/*
+		bm::bvector<>::enumerator en = ufsCandidate->getStorage().first();
+		bm::bvector<>::enumerator en_end = ufsCandidate->getStorage().end();
+		while (en < en_end){
+			ID id = reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary() && !id.isExternalInputAuxiliary()) supportSetVerification->setFact(*en);
+			en++;
+		}
+*/
+	}
+
 	// now evaluate one external atom after the other and check if the new truth value of the auxiliaries are justified
 	DBGLOG(DBG, "Verifying external atoms");
 	int evalCnt = 0;
+	bool supSetAnswer = true;
 	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		ID eaID = agp.getIndexedEAtom(eaIndex);
 		// we only evaluate external atoms which are relevant for some auxiliaries
@@ -143,14 +171,22 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 		const ExternalAtom& eatom = reg->eatoms.getByID(eaID);
 
 		if (ctx.config.getOption("SupportSets") && (eatom.getExtSourceProperties().providesCompletePositiveSupportSets() || eatom.getExtSourceProperties().providesCompleteNegativeSupportSets()) && agp.allowsForVerificationUsingCompleteSupportSets()){
-			DBGLOG(DBG, "Verifying " << eaID << " for UFS verification using complete support sets");
-
-			if (agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, ufsCandidate)){
-				// all atoms which belong to this external atom are verified
-				eaResult->add(*agp.getEAMask(eaIndex)->mask());
+			DBGLOG(DBG, "Verifying " << eaID << " for UFS verification using complete support sets (" << *supportSetVerification << ")");
+			if (agp.verifyExternalAtomsUsingCompleteSupportSets(eaIndex, supportSetVerification, auxToVerify)){
+				// ok
+			}else{
+				DBGLOG(DBG, "Candidate is not an unfounded set (" << *ufsCandidate << ")");
+#ifdef DOBOTHCHECKS
+				supSetAnswer = false;
+#else
+				return false;
+#endif
 			}
-		}else{
-
+		}
+#ifndef DOBOTHCHECKS
+		else
+#endif
+		{
 			// evaluate
 			DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification, ngc=" << (!!ngc ? "true" : "false"));
 
@@ -178,7 +214,6 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 #ifndef NDEBUG
 			evalCnt++;
 #endif
-
 			// remove the external atom from the remaining lists
 			BOOST_FOREACH (int i, eaToAuxIndex[eaID]){
 				if ( !auxiliaryDependsOnEA[i].empty() ){
@@ -190,6 +225,18 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 							// wrong guess: the auxiliary is _not_ unfounded
 							DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is not justified --> Candidate is not an unfounded set");
 							DBGLOG(DBG, "Evaluated " << evalCnt << " of " << agp.getIndexedEAtoms().size() << " external atoms");
+							DBGLOG(DBG, "Candidate is not an unfounded set (" << *ufsCandidate << ")");
+
+#ifdef DOBOTHCHECKS
+							if (ctx.config.getOption("SupportSets") && supSetAnswer == true){
+								std::string auxstr = RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(auxiliariesToVerify[i]));
+								DBGLOG(DBG, "Different validation values: " << auxstr << "=" << eaResult->getFact(auxiliariesToVerify[i]) << " in eaResult");
+								DBGLOG(DBG, "supportSetVerification=" << *supportSetVerification);
+								DBGLOG(DBG, "auxToVerify=" << *auxToVerify);
+								DBGLOG(DBG, "eaInput=" << *eaInput);
+								assert(false && "Support set approach gave false positive validation result");
+							}
+#endif
 							return false;
 						}else{
 							DBGLOG(DBG, "Truth value of auxiliary " << auxiliariesToVerify[i] << " is justified");
@@ -199,9 +246,15 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 	    		}
 		}
 	}
+#ifdef DOBOTHCHECKS
+	DBGLOG(DBG, "supportSetVerification=" << *supportSetVerification);
+	DBGLOG(DBG, "auxToVerify=" << *auxToVerify);
+	DBGLOG(DBG, "eaInput=" << *eaInput);
+	assert((supSetAnswer == true) && "Support set approach gave false negative validation result");
+#endif
 	DBGLOG(DBG, "Evaluated " << agp.getIndexedEAtoms().size() << " of " << agp.getIndexedEAtoms().size() << " external atoms");
 
-	DBGLOG(DBG, "Candidate is an unfounded set");
+	DBGLOG(DBG, "Candidate is an unfounded set (" << *ufsCandidate << ")");
 	return true;
 }
 

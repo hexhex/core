@@ -37,6 +37,8 @@
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/PluginInterface.h"
 
+#include "boost/lexical_cast.hpp"
+
 DLVHEX_NAMESPACE_BEGIN
 
 ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& prop2){
@@ -92,19 +94,35 @@ bool ExtSourceProperties::isAntimonotonic() const{
 	return true;
 }
 
-void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<ID> >& props){
+void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<std::string> >& props){
 
-	typedef std::vector<ID> Prop;
+	DBGLOG(DBG, "Interpreting external source properties");
+	typedef std::vector<std::string> Prop;
 	BOOST_FOREACH (Prop p, props){
-		std::string name = reg->terms.getByID(p[0]).getUnquotedString();
-		ID param1 = p.size() > 1 ? p[1] : ID_FAIL;
-		ID param2 = p.size() > 2 ? p[2] : ID_FAIL;
+		// parameter interpretation
+		ID param1 = ID_FAIL;
+		ID param2 = ID_FAIL;
+		if (p.size() > 1){
+			try{
+				param1 = ID::termFromInteger(boost::lexical_cast<int>(p[1]));
+			}catch(boost::bad_lexical_cast&){
+				param1 = reg->storeConstantTerm(p[1]);
+			}
+		}
+		if (p.size() > 2){
+			try{
+				param2 = ID::termFromInteger(boost::lexical_cast<int>(p[2]));
+			}catch(boost::bad_lexical_cast&){
+				param2 = reg->storeConstantTerm(p[2]);
+			}
+		}
 
+		// property interpretation
+		std::string name = p[0];
 		if (name == "functional"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"functional\" expects no parameters");
 			DBGLOG(DBG, "External Atom is functional");
 			functional = true;
-			break;
 		}else if (name == "monotonic"){
 			if (param2 != ID_FAIL) throw GeneralError("Property \"monotonic\" expects less than two parameters");
 			if (param1 == ID_FAIL){
@@ -124,7 +142,6 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 				}
 				if (!found) throw SyntaxError("Property refers to invalid input parameter");
 			}
-			break;
 		}else if (name == "antimonotonic"){
 			if (param2 != ID_FAIL) throw GeneralError("Property \"antimonotonic\" expects less than two parameters");
 			if (param1 == ID_FAIL){
@@ -144,22 +161,23 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 				}
 				if (!found) throw SyntaxError("Property refers to invalid input parameter");
 			}
+<<<<<<< HEAD
 			break;
 		}else if (name == "atomlevellinear" || name == "fullylinear"){
+=======
+		}else if (name == "atomlevellinear"){
+>>>>>>> 017e021d932f3c011911059bc878d60175cdce01
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"atomlevellinear\" expects no parameters");
 			DBGLOG(DBG, "External Atom is linear on atom level");
 			atomlevellinear = true;
-			break;
 		}else if (name == "tuplelevellinear"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"tuplelevellinear\" expects no parameters");
 			DBGLOG(DBG, "External Atom is linear on tuple level");
 			tuplelevellinear = true;
-			break;
 		}else if (name == "usesenvironment"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"usesenvironment\" expects no parameters");
 			DBGLOG(DBG, "External Atom uses environment");
 			usesEnvironment = true;
-			break;
 		}else if (name == "finitedomain"){
 			if (param2 != ID_FAIL) throw GeneralError("Property \"finitedomain\" expects less than two parameters");
 			if (param1 == ID_FAIL){
@@ -172,7 +190,6 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 				if (!param1.isIntegerTerm()) throw GeneralError("The parameter of property \"finitedomain\" must be an integer");
 				finiteOutputDomain.insert(param1.address);
 			}
-			break;
 		}else if (name == "relativefinitedomain"){
 			if (param1 == ID_FAIL || param2 == ID_FAIL) throw GeneralError("Property \"relativefinitedomain\" expects two parameters");
 			int wrt;
@@ -187,44 +204,36 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 			if (!found) throw SyntaxError("Property refers to invalid input parameter");
 			if (!param1.isIntegerTerm()) throw GeneralError("The first parameter of property \"relativefinitedomain\" must be an integer");
 			relativeFiniteOutputDomain.insert(std::pair<int, int>(param1.address, wrt));
-			break;
 		}else if (name == "finitefiber"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"finitefiber\" expects no parameters");
 			DBGLOG(DBG, "External Atom has a finite fiber");
 			finiteFiber = true;
-			break;
 		}else if (name == "wellorderingstrlen"){
 			if (param1 == ID_FAIL || param2 == ID_FAIL) throw GeneralError("Property \"wellordering\" expects two parameters");
 			DBGLOG(DBG, "External Atom has a wellordering using strlen");
 			wellorderingStrlen.insert(std::pair<int, int>(param1.address, param2.address));
-			break;
 		}else if (name == "wellordering"){
 			if (param1 == ID_FAIL || param2 == ID_FAIL) throw GeneralError("Property \"wellordering\" expects two parameters");
 			DBGLOG(DBG, "External Atom has a wellordering using natural");
 			wellorderingNatural.insert(std::pair<int, int>(param1.address, param2.address));
-			break;
 		}else if (name == "supportsets"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"supportsets\" expects no parameters");
 			DBGLOG(DBG, "External Atom provides support sets");
 			supportSets = true;
-			break;
 		}else if (name == "completepositivesupportsets"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"completepositivesupportsets\" expects no parameters");
 			DBGLOG(DBG, "External Atom provides complete positive support sets");
 			supportSets = true;
 			completePositiveSupportSets = true;
-			break;
 		}else if (name == "completenegativesupportsets"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"completepositivesupportsets\" expects no parameters");
 			DBGLOG(DBG, "External Atom provides complete negative support sets");
 			supportSets = true;
 			completeNegativeSupportSets = true;
-			break;
 		}else if (name == "variableoutputarity"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"variableoutputarity\" expects no parameters");
 			DBGLOG(DBG, "External Atom has a variable output arity");
 			variableOutputArity = true;
-			break;
 		}else{
 			throw SyntaxError("Property \"" + name + "\" unrecognized");
 		}

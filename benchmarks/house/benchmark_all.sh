@@ -8,7 +8,7 @@ fi
 
 requirements=$(cat req 2> /dev/null)
 cd instances
-for instance in *.graph
+for instance in *.hex
 do
 	echo "
 		Executable = ../benchmark_single.sh

@@ -72,6 +72,7 @@ public:
     Printer(out, registry) {}
   virtual void print(ID id);
   void printWithoutPrefix(ID id);
+  static std::string toString(RegistryPtr reg, ID id);
 };
 
 template<typename PrinterT>

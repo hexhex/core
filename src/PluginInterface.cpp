@@ -347,6 +347,10 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr
 	ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
 }
 
+void PluginAtom::learnSupportSets(const Query&, NogoodContainerPtr nogoods){
+	assert(prop.providesSupportSets() && "This external source does not provide support sets");
+}
+
 std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const ExtSourceProperties& prop){
 
 	std::vector<Query> atomicQueries;
