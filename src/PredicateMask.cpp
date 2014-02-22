@@ -291,9 +291,9 @@ void ExternalAtomMask::addOutputAtoms(InterpretationConstPtr intr){
 				}else{
 					DBGLOG(DBG, "Output atom " << oatom.text << " does not match the external atom");
 				}
-				en++;
 			}
 		}
+		en++;
 	}
 }
 
