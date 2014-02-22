@@ -10,7 +10,7 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "{1..20}" "$mydir/run.sh" "$mydir" "$to"
+	$bmscripts/runinsts.sh "{1..20}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
 	confstr="--extlearn --flpcheck=aufs prog$instance.hex;--extlearn --flpcheck=aufs --liberalsafety prognd$instance.hex"

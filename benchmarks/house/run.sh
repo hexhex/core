@@ -10,7 +10,7 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "instances/*.hex" "$mydir/run.sh" "$mydir" "$to"
+	$bmscripts/runinsts.sh "instances/*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
 	confstr="houseGuess.hex;houseGuess.hex --supportsets;houseDirect.hex;houseGuess.hex -n=1;houseGuess.hex --supportsets -n=1;houseDirect.hex -n=1;houseGuess.hex -n=10;houseGuess.hex --supportsets -n=10;houseDirect.hex -n=10;houseGuess.hex -n=100;houseGuess.hex --supportsets -n=100;houseDirect.hex -n=100"

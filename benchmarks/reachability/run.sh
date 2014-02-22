@@ -10,7 +10,7 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "instances/*.graph" "$mydir/run.sh" "$mydir" "$to"
+	$bmscripts/runinsts.sh "instances/*.graph" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
 	confstr="--extlearn --flpcheck=aufs --liberalsafety reachability.hex -n=1;--extlearn --flpcheck=aufs reachability_strongsafety.hex -n=1"
