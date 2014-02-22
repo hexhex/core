@@ -107,6 +107,7 @@ public:
   ~ExternalAtomMask();
 
   void setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb);
+  void addOutputAtoms(InterpretationConstPtr intr);     // allows for adding additional atoms to the mask, which are not in the IDB passed in setEatom
   void updateMask();
   const InterpretationConstPtr getAuxInputMask() const;
 };
