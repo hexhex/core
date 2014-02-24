@@ -558,6 +558,7 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
   ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()){
   gringo.disjShift = false;
+  groundProgram.mask = nongroundProgram.mask;
   doRun();
 }
 
