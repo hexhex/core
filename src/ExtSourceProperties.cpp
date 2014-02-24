@@ -161,7 +161,7 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 				}
 				if (!found) throw SyntaxError("Property refers to invalid input parameter");
 			}
-		}else if (name == "atomlevellinear"){
+		}else if (name == "atomlevellinear" || name == "fullylinear"){
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"atomlevellinear\" expects no parameters");
 			DBGLOG(DBG, "External Atom is linear on atom level");
 			atomlevellinear = true;

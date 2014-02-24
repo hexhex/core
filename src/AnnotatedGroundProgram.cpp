@@ -54,16 +54,16 @@ DLVHEX_NAMESPACE_BEGIN
 AnnotatedGroundProgram::AnnotatedGroundProgram() : ctx(0), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), haveGrounding(false){
 }
 
-AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms) :
+AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms, bool includeEDB) :
 	ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true){
 
-	initialize();
+	initialize(includeEDB);
 }
 
 AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms) :
 	ctx(&ctx), reg(ctx.registry()), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), indexedEatoms(indexedEatoms), haveGrounding(false){
 
-	initialize();
+	initialize(false);
 }
 
 const AnnotatedGroundProgram&
@@ -103,7 +103,7 @@ void AnnotatedGroundProgram::createProgramMask(){
 	}
 }
 
-void AnnotatedGroundProgram::createEAMasks(){
+void AnnotatedGroundProgram::createEAMasks(bool includeEDB){
 	eaMasks.resize(indexedEatoms.size());
 	int eaIndex = 0;
 	BOOST_FOREACH (ID eatom, indexedEatoms){
@@ -111,6 +111,7 @@ void AnnotatedGroundProgram::createEAMasks(){
 		eaMasks[eaIndex] = boost::shared_ptr<ExternalAtomMask>(new ExternalAtomMask);
 		ExternalAtomMask& eaMask = *eaMasks[eaIndex];
 		eaMask.setEAtom(*ctx, reg->eatoms.getByID(eatom), groundProgram.idb);
+		if (includeEDB) eaMasks[eaIndex]->addOutputAtoms(groundProgram.edb);
 		eaMask.updateMask();
 		eaIndex++;
 	}
@@ -143,17 +144,17 @@ void AnnotatedGroundProgram::mapAuxToEAtoms(){
 void AnnotatedGroundProgram::setIndexEAtoms(std::vector<ID> indexedEatoms){
 	this->indexedEatoms = indexedEatoms;
 
-	initialize();
+	initialize(false);
 }
 
-void AnnotatedGroundProgram::initialize(){
+void AnnotatedGroundProgram::initialize(bool includeEDB){
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnnotatedGroundProg init");
 
 	headCyclicRules = InterpretationPtr(new Interpretation(reg));
 
 	eaMasks.resize(0);
 	if (haveGrounding) createProgramMask();
-	createEAMasks();
+	createEAMasks(includeEDB);
 	mapAuxToEAtoms();
 	if (haveGrounding) computeAtomDependencyGraph();
 	if (haveGrounding) computeStronglyConnectedComponents();
