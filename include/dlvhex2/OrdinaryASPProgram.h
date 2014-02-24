@@ -61,6 +61,8 @@ struct OrdinaryASPProgram
   uint32_t maxint;
   Interpretation::ConstPtr mask;
 
+  OrdinaryASPProgram(RegistryPtr registry) : registry(registry), edb(new Interpretation(registry)) {}
+
   OrdinaryASPProgram(
       RegistryPtr registry,
       const std::vector<ID>& idb,
