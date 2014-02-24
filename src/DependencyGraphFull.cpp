@@ -404,7 +404,7 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
 		// make sure the meta information fits the external atom
 		// (only assert here, should be ensured by plugin loading or parsing)
 		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
-		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+		assert(pluginAtom->checkOutputArity(eatom.getExtSourceProperties(), eatom.tuple.size()));
 
 		for(unsigned at = 0; at != eatom.inputs.size(); ++at)
 		{
@@ -556,7 +556,7 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 				// make sure the meta information fits the external atom
 				// (only assert here, should be ensured by plugin loading or parsing)
 				assert(pluginAtom->checkInputArity(eatom.inputs.size()));
-				assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+				assert(pluginAtom->checkOutputArity(eatom.getExtSourceProperties(), eatom.tuple.size()));
 
 				// get node to this id (remember we store all literals as atoms!)
 				Node extnode = getNode(ID::atomFromLiteral(*itext));

@@ -256,7 +256,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     // make sure the meta information fits the external atom
     // (only assert here, should be ensured by plugin loading or parsing)
     assert(pluginAtom->checkInputArity(eatom.inputs.size()));
-    assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+    assert(pluginAtom->checkOutputArity(eatom.getExtSourceProperties(), eatom.tuple.size()));
 
     // create new node only if not already present
     // (see testcase extatom2.hex)
@@ -691,7 +691,7 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 		// make sure the meta information fits the external atom
 		// (only assert here, should be ensured by plugin loading or parsing)
 		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
-		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+		assert(pluginAtom->checkOutputArity(eatom.getExtSourceProperties(), eatom.tuple.size()));
 
     // find ID of all predicate input constant terms
 		for(unsigned at = 0; at != eatom.inputs.size(); ++at)

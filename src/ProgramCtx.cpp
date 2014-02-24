@@ -424,8 +424,7 @@ void ProgramCtx::associateExtAtomsWithPluginAtoms(
       eatom.pluginAtom = itpa->second.get();
       eatom.prop |= itpa->second->getExtSourceProperties();
       eatom.pluginAtom->setupProperties(eatom);
-
-      if (!eatom.pluginAtom->checkOutputArity(eatom.tuple.size())){
+      if (!eatom.pluginAtom->checkOutputArity(eatom.getExtSourceProperties(), eatom.tuple.size())){
 	std::stringstream ss;
 	ss << "External Atom " << RawPrinter::toString(_registry, *it) << " has a wrong output arity (should be " << eatom.pluginAtom->getOutputArity() << ")";
 	throw GeneralError(ss.str());
