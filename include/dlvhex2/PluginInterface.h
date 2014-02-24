@@ -930,9 +930,9 @@ public:
 
   /**
    * \brief Checks whether the output arity of the external atom is
-   * compatible with the specified arity.
+   * compatible with the specified arity (also under consideration of prop.hasVariableOutputArity()).
    */
-  bool checkOutputArity(unsigned arity) const;
+  bool checkOutputArity(const ExtSourceProperties& prop, unsigned arity) const;
 
   /**
    * The function is called once for each external atom.
