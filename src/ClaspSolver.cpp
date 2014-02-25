@@ -219,7 +219,6 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
 			hexPropagate = true;
 		}
 	}
-hexPropagate=true;
 	DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
 
 	for (;;){

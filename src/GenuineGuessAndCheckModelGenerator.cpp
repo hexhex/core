@@ -944,7 +944,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 		en++;
 	}
 
-	DBGLOG(DBG, "Vverify External Atoms finished " << (conflict ? "with" : "without") << " conflict");
+	DBGLOG(DBG, "Verify External Atoms finished " << (conflict ? "with" : "without") << " conflict");
 
 	return conflict;
 }
