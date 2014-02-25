@@ -556,7 +556,7 @@ public:
   {
     // get input
     assert(checkInputArity(q.input.size()));
-    assert(checkOutputArity(q.pattern.size()));
+    assert(checkOutputArity(getExtSourceProperties(), q.pattern.size()));
 
     ID idoutput = registry->ogatoms.getIDByTuple(q.input);
     // no ogatom -> cannot be in interpretation

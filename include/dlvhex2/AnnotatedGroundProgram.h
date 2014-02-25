@@ -99,16 +99,16 @@ class AnnotatedGroundProgram{
 
 	// initialization members
 	void createProgramMask();
-	void createEAMasks();
+	void createEAMasks(bool includeEDB);
 	void mapAuxToEAtoms();
-	void initialize();
+	void initialize(bool includeEDB);
 	void computeAtomDependencyGraph();
 	void computeStronglyConnectedComponents();
 	void computeHeadCycles();
 	void computeECycles();
 public:
 	AnnotatedGroundProgram();
-	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
+	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>(), bool includeEDB = false);
 	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
 	const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
