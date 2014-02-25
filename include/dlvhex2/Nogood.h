@@ -142,6 +142,7 @@ public:
 	void addAllResolvents(RegistryPtr reg, int maxSize = -1);
 
 	void forgetLeastFrequentlyAdded();
+	void defragment();
 
 	typedef boost::shared_ptr<SimpleNogoodContainer> Ptr;
 	typedef boost::shared_ptr<const SimpleNogoodContainer> ConstPtr;

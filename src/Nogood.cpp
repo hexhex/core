@@ -585,4 +585,8 @@ void SimpleNogoodContainer::forgetLeastFrequentlyAdded(){
 	DBGLOG(DBG, "Nogood count after forgetting " << ngg.getNogoodCount());
 }
 
+void SimpleNogoodContainer::defragment(){
+	ngg.defragment();
+}
+
 DLVHEX_NAMESPACE_END
