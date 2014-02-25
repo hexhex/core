@@ -60,6 +60,8 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
 	completePositiveSupportSets |= prop2.completePositiveSupportSets;
 	completeNegativeSupportSets |= prop2.completeNegativeSupportSets;
 	variableOutputArity |= prop2.variableOutputArity;
+	caresAboutAssigned |= prop2.caresAboutAssigned;
+	caresAboutChanged |= prop2.caresAboutChanged;
 }
 
 /**
@@ -229,6 +231,14 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"variableoutputarity\" expects no parameters");
 			DBGLOG(DBG, "External Atom has a variable output arity");
 			variableOutputArity = true;
+		}else if (name == "caresaboutassigned"){
+			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"caresaboutassigned\" expects no parameters");
+			DBGLOG(DBG, "External Atom cares about assigned atoms");
+			caresAboutAssigned = true;
+		}else if (name == "caresaboutchanged"){
+			if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"caresaboutchanged\" expects no parameters");
+			DBGLOG(DBG, "External Atom has a variable output arity");
+			caresAboutChanged = true;
 		}else{
 			throw SyntaxError("Property \"" + name + "\" unrecognized");
 		}

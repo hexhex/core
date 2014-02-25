@@ -106,6 +106,7 @@ protected:
   std::vector<bool> eaEvaluated;	// is true iff the external atom guess was checked against the semantics (i.e., it is either verified or falsified)
   std::vector<bool> eaVerified;		// if eaEvaluated is true, then: eaVerified is true iff the check verified the guess
   InterpretationPtr verifiedAuxes;	// the set of currently verified external atom auxiliaries
+  std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cummulative atoms which potentially changes since last evaluation
 
   // heuristics
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;

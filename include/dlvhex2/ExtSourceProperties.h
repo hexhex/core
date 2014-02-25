@@ -69,6 +69,8 @@ DLVHEX_NAMESPACE_BEGIN
 		COMPLETEPOSITIVESUPPORTSETS
 		COMPLETENEGATIVESUPPORTSETS
 		VARIABLEOUTPUTARITY
+		CARESABOUTASSIGNED
+		CARESABOUTCHANGED
 */
 
 // Stores properties of an external source on one of two levels:
@@ -97,6 +99,8 @@ struct ExtSourceProperties
 	bool completePositiveSupportSets;
 	bool completeNegativeSupportSets;
 	bool variableOutputArity;
+	bool caresAboutAssigned;
+	bool caresAboutChanged;
 
 	bool atomlevellinear;		// predicate input can be split into single atoms
 	bool tuplelevellinear;		// predicate input can be split such that only atoms with the same arguments must be grouped
@@ -115,6 +119,8 @@ struct ExtSourceProperties
 		completePositiveSupportSets = false;
 		completeNegativeSupportSets = false;
 		variableOutputArity = false;
+		caresAboutAssigned = false;
+		caresAboutChanged = false;
 	}
 
 	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
@@ -230,6 +236,18 @@ struct ExtSourceProperties
 	*/
 	bool hasVariableOutputArity() const
 	{ return variableOutputArity; }
+
+	/**
+	* @return caresAboutAssigned
+	*/
+	bool doesCareAboutAssigned() const
+	{ return caresAboutAssigned; }
+
+	/**
+	* @return caresAboutChanged
+	*/
+	bool doesCareAboutChanged() const
+	{ return caresAboutChanged; }
 
 	/**
 	* Parses external source properties given as vectors of terms and integrates them into the current instance of the class

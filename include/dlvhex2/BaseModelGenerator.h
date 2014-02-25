@@ -197,7 +197,9 @@ protected:
     const ExternalAtom& eatom,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
-    NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
+    NogoodContainerPtr nogoods = NogoodContainerPtr(),
+    InterpretationConstPtr assigned = InterpretationConstPtr(),
+    InterpretationConstPtr changed = InterpretationConstPtr()) const;
   virtual bool evaluateExternalAtomQuery(
     PluginAtom::Query& query,
     ExternalAnswerTupleCallback& cb,

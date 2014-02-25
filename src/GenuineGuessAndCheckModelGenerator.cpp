@@ -286,6 +286,7 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 
 		eaEvaluated.push_back(false);
 		eaVerified.push_back(false);
+		changedAtomsPerExternalAtom.push_back(eatom.getExtSourceProperties().doesCareAboutChanged() ? InterpretationPtr(new Interpretation(reg)) : InterpretationPtr());
 
 		// custom or default heuristics?
 		if (eatom.pluginAtom->providesCustomExternalAtomEvaluationHeuristicsFactory()){
@@ -900,8 +901,15 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 			// for all external atoms which watch this atom
 			BOOST_FOREACH (int eaIndex, verifyWatchList[*en]){
 				if (!eaEvaluated[eaIndex]){
-					// evaluate external atom if the heuristics decides so
 					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+
+					// update set of changed input atoms
+					if (eatom.getExtSourceProperties().doesCareAboutChanged()){
+						assert (!!changedAtomsPerExternalAtom[eaIndex]);
+						changedAtomsPerExternalAtom[eaIndex]->add(*changed);
+					}
+
+					// evaluate external atom if the heuristics decides so
 					bool doEval;
 					{
 						DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
@@ -920,6 +928,12 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 						// find a new yet unassigned atom to watch
 						IDAddress id = getWatchedLiteral(eaIndex, assigned, false);
 						if (id != ID::ALL_ONES) verifyWatchList[id].push_back(eaIndex);
+					}
+
+					// update set of changed input atoms
+					if (eatom.getExtSourceProperties().doesCareAboutChanged()){
+						assert (!!changedAtomsPerExternalAtom[eaIndex]);
+						changedAtomsPerExternalAtom[eaIndex]->clear();
 					}
 				}
 			}
@@ -972,7 +986,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
 	// evaluate the external atom and learn nogoods if external learning is used
 	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
 	evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb,
-	                     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+	                     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed);
 	updateEANogoods(partialInterpretation, assigned, changed);
 
 	// if the input to the external atom was complete, then remember the verification result;
