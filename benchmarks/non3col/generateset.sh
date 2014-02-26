@@ -10,7 +10,7 @@ do
 				bep=`printf "%03d" ${backedgeprop}`
 				ac=`printf "%03d" ${nodecount}`
 				in=`printf "%03d" ${inst}`
-				./generate.sh $nodecount $edgeprop $backedgeprop > "instances/graphinst_nodecount_${ac}_edgeprob_${ep}_backedgeprop_${bep}_inst_${in}.graph"
+				./generate.sh $nodecount $edgeprop $backedgeprop > "instances/graphinst_nodecount_${ac}_edgeprob_${ep}_backedgeprob_${bep}_inst_${in}.graph"
 			done
 		done
 	done
