@@ -84,7 +84,9 @@
 #include <getopt.h>
 #include <signal.h>
 #include <sys/types.h>
-//#include <pwd.h>
+#ifdef POSIX
+#include <pwd.h>
+#endif
 
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
