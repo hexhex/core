@@ -402,6 +402,7 @@ else
 fi
 
 AC_DEFINE([HAVE_MLP], [1], [Defined on POSIX systems.])
+AC_DEFINE([POSIX], [1], [Defined on POSIX systems.])
 
 #
 # libclingo (see README)
