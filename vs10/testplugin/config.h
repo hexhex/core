@@ -147,7 +147,7 @@
 /* #undef HAVE_LIBCLINGO */
 
 /* Define to 1 if you have a functional curl library. */
-//#define HAVE_LIBCURL 1
+#define HAVE_LIBCURL 1
 
 /* Define if you have the libdl library or equivalent. */
 #define HAVE_LIBDL 1
@@ -350,7 +350,8 @@
 
 // #define POSIX 1
 #define WIN32 1
-#define DLLEXPORT 1
+#define DLLIMPORT 1
+#define DLVHEXPLUGIN 1
 // #define HAVE_MLP 1
 // #define POSIX 1
 

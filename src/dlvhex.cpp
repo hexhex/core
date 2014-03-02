@@ -45,9 +45,6 @@
  * "Plugin Interface Module", which contains all necessary information.
  */
 
-int main(){ return 0; }
-
-#if 0
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
@@ -1516,10 +1513,12 @@ void processOptionsPrePlugin(
 			ptr->options.typFile = arg;
 			#endif
 		}
+#ifdef HAEV_LIBCURL
 		else if( arg.find("http://") == 0 )
 		{
 			pctx.inputProvider->addURLInput(arg);
 		}
+#endif
 		else
 		{
 			pctx.inputProvider->addFileInput(arg);
@@ -1567,4 +1566,3 @@ void configurePluginPath(std::string& userPlugindir)
 // Local Variables:
 // mode: C++
 // End:
-#endif

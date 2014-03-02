@@ -54,7 +54,9 @@ public:
 	void addStreamInput(std::istream& i, const std::string& contentname);
 	void addStringInput(const std::string& content, const std::string& contentname);
 	void addFileInput(const std::string& filename);
+#ifdef HAVE_CURL
 	void addURLInput(const std::string& url);
+#endif
 
 	bool hasContent() const;
 	const std::vector<std::string>& contentNames() const;

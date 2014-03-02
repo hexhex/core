@@ -204,7 +204,7 @@ class TestConcatAtom:
 public:
   TestConcatAtom():
     ComfortPluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputTuple();
     setOutputArity(1);
@@ -891,7 +891,7 @@ class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learni
 public:
   TestSetMinusNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     addInputPredicate();
@@ -1000,7 +1000,7 @@ public:
 // ***** Constructor of setminus plugin
   TestSetMinusNongroundNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNongroundNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     addInputPredicate();
@@ -1119,7 +1119,7 @@ public:
   TestSetMinusRuleBasedLearningAtom(ProgramCtx* ctx):
     ctx(ctx),
     PluginAtom("testSetMinusRuleBasedLearning", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     addInputPredicate();
@@ -1216,7 +1216,7 @@ class TestNonmonAtom:	// tests user-defined external learning
 public:
   TestNonmonAtom():
     PluginAtom("testNonmon", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     setOutputArity(1);
@@ -1270,7 +1270,7 @@ class TestNonmon2Atom:	// tests user-defined external learning
 public:
   TestNonmon2Atom():
     PluginAtom("testNonmon2", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     setOutputArity(1);
@@ -1321,7 +1321,7 @@ class TestIdAtom:	// tests user-defined external learning
 public:
   TestIdAtom():
     PluginAtom("id", false) // monotonic
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     setOutputArity(1);
@@ -1351,7 +1351,7 @@ class TestIdcAtom:	// tests user-defined external learning
 public:
   TestIdcAtom():
     PluginAtom("idc", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputConstant();
     setOutputArity(1);
@@ -1371,7 +1371,7 @@ class TestNegAtom:	// tests user-defined external learning
 public:
   TestNegAtom():
     PluginAtom("neg", false)
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputConstant();
     addInputPredicate();
@@ -1729,7 +1729,7 @@ class TestDisjAtom:
 public:
   TestDisjAtom():
     PluginAtom("testDisj", false)
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();	// interpretation i
     addInputPredicate();	// positive p
@@ -2233,7 +2233,7 @@ public:
 
 		typedef std::list<const char*>::iterator Iterator;
 		Iterator it;
-		#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+		WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 		it = pluginOptions.begin();
 		while( it != pluginOptions.end() )
 		{
@@ -2270,7 +2270,7 @@ public:
     TestSetUnionAtom():
 		// testSetUnion is the name of our external atom
     PluginAtom("testSetUnion", true) // monotonic
-    #warning TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
 		DBGLOG(DBG,"Constructor of SetUnion plugi is started!");
     addInputPredicate(); // the first set
@@ -2475,8 +2475,12 @@ IMPLEMENT_PLUGINABIVERSIONFUNCTION
 
 // return plain C type s.t. all compilers and linkers will like this code
 extern "C"
+DLVHEX_PLUGINEXPORT
 void * PLUGINIMPORTFUNCTION()
 {
+	std::pair<int*, int*> abc(0, 0);
+//	std::pair<int*, int*> s(0, 0);
+
 	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theTestPlugin);
 }
 

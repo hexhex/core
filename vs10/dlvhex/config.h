@@ -159,7 +159,7 @@
 /* #undef HAVE_LIBDLV */
 
 /* Defined if we have --with-libgringo. */
-//#define HAVE_LIBGRINGO 1
+#define HAVE_LIBGRINGO 1
 
 /* Define this if a modern libltdl is already installed */
 #define HAVE_LTDL 1

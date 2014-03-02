@@ -45,7 +45,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Nogood : public Set<ID>, public ostream_printable<Nogood>{
+class DLVHEX_EXPORT Nogood : public Set<ID>, public ostream_printable<Nogood>{
 private:
 	std::size_t hashValue;
 	bool ground;
@@ -84,7 +84,7 @@ public:
 #endif
 };
 
-class NogoodSet : private ostream_printable<NogoodSet>{
+class DLVHEX_EXPORT NogoodSet : private ostream_printable<NogoodSet>{
 private:
 	std::vector<Nogood> nogoods;
 	std::vector<int> addCount;
@@ -109,7 +109,7 @@ public:
 	std::string getStringRepresentation(RegistryPtr reg) const;
 };
 
-class NogoodContainer{
+class DLVHEX_EXPORT NogoodContainer{
 public:
 	virtual void addNogood(Nogood ng) = 0;
 
@@ -135,7 +135,7 @@ public:
 typedef NogoodContainer::Ptr NogoodContainerPtr;
 typedef NogoodContainer::ConstPtr NogoodContainerConstPtr;
 
-class SimpleNogoodContainer : public NogoodContainer{
+class DLVHEX_EXPORT SimpleNogoodContainer : public NogoodContainer{
 private:
 	boost::mutex mutex;	// exclusive access
 	NogoodSet ngg;

@@ -56,6 +56,12 @@
 	#endif
 #endif /* DLLEXPORT/IMPORT */
 
+#ifdef DLVHEXPLUGIN
+	#define DLVHEX_PLUGINEXPORT __declspec(dllexport)
+#else
+	#define DLVHEX_PLUGINEXPORT
+#endif
+
 #define WARNING(msg)
 
 #include <boost/cstdint.hpp>
