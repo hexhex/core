@@ -2478,9 +2478,6 @@ extern "C"
 DLVHEX_PLUGINEXPORT
 void * PLUGINIMPORTFUNCTION()
 {
-	std::pair<int*, int*> abc(0, 0);
-//	std::pair<int*, int*> s(0, 0);
-
 	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theTestPlugin);
 }
 
