@@ -64,7 +64,7 @@ DLVHEX_NAMESPACE_BEGIN
 // TODO (WIN32)
 #ifdef POSIX
 	#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
-	#define unsetenv(VAR, VAL, V) ::unsetenv(VAR, VAL, V)
+	#define unsetenv(VAR) ::unsetenv(VAR)
 #else
 	void setenv(const char* var, const char* val, int v){
 	}
