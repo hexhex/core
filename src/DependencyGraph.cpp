@@ -789,7 +789,8 @@ namespace
       const DependencyGraph::DependencyInfo& di, GraphT& dg)
   {
     bool breakSymmetry = false;
-    if( range1.begin() == range2.begin() &&
+    if( &range1 == &range2 &&
+		range1.begin() == range2.begin() &&
         range1.end() == range2.end() )
       breakSymmetry = true;
     for(typename RangeT::const_iterator it1 = range1.begin();

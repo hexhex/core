@@ -36,6 +36,9 @@
 #if !defined(_DLVHEX_PLATFORMDEFINITIONS_H)
 #define _DLVHEX_PLATFORMDEFINITIONS_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
 
 #define DLVHEX_NAMESPACE_BEGIN namespace dlvhex {
 #define DLVHEX_NAMESPACE_END   }
@@ -46,8 +49,14 @@
 #ifdef DLLEXPORT
 #define DLVHEX_EXPORT __declspec(dllexport)
 #else
-#define DLVHEX_EXPORT
+	#ifdef DLLIMPORT
+		#define DLVHEX_EXPORT __declspec(dllimport)
+	#else
+		#define DLVHEX_EXPORT
+	#endif
 #endif /* DLLEXPORT/IMPORT */
+
+#define WARNING(msg)
 
 #include <boost/cstdint.hpp>
 

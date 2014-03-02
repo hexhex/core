@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E77B6C98-75D8-4047-9C10-A3718B07B940}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>dlvhex</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)\..\include;$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libdlvhex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\AggregatePlugin.cpp" />
+    <ClCompile Include="..\..\src\dlvhex.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicASP.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicEasy.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicFromFile.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicGreedy.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicMonolithic.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicOldDlvhex.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicShared.cpp" />
+    <ClCompile Include="..\..\src\EvalHeuristicTrivial.cpp" />
+    <ClCompile Include="..\..\src\ExistsPlugin.cpp" />
+    <ClCompile Include="..\..\src\ExternalAtomEvaluationHeuristics.cpp" />
+    <ClCompile Include="..\..\src\FunctionPlugin.cpp" />
+    <ClCompile Include="..\..\src\HigherOrderPlugin.cpp" />
+    <ClCompile Include="..\..\src\ManualEvalHeuristicsPlugin.cpp" />
+    <ClCompile Include="..\..\src\QueryPlugin.cpp" />
+    <ClCompile Include="..\..\src\StrongNegationPlugin.cpp" />
+    <ClCompile Include="..\..\src\WeakConstraintPlugin.cpp" />
+    <ClCompile Include="..\getopt.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\dlvhex2\AggregatePlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicASP.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicEasy.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicFromFile.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicGreedy.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicMonolithic.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicOldDlvhex.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicShared.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicTrivial.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ExistsPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\FunctionPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\HigherOrderPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ManualEvalHeuristicsPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\QueryPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\StrongNegationPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\WeakConstraintPlugin.h" />
+    <ClInclude Include="..\getopt.h" />
+    <ClInclude Include="config.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

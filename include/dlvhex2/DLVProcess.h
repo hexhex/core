@@ -37,6 +37,8 @@
 #if !defined(_DLVHEX_DLVPROCESS_H)
 #define _DLVHEX_DLVPROCESS_H
 
+#ifdef POSIX
+
 #include "dlvhex2/Process.h"
 #include "dlvhex2/ProcessBuf.h"
 
@@ -117,6 +119,7 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_DLVPROCESS_H
 
+#endif
 
 // Local Variables:
 // mode: C++

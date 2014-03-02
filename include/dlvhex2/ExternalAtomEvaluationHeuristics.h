@@ -48,7 +48,7 @@ DLVHEX_NAMESPACE_BEGIN
 /**
  * Decides when to evaluate an external atom
  */
-class ExternalAtomEvaluationHeuristics{
+class DLVHEX_EXPORT ExternalAtomEvaluationHeuristics{
 protected:
 	RegistryPtr reg;
 public:

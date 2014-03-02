@@ -67,7 +67,7 @@ protected:
   ProgramCtx& ctx;
 
   ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
-  #warning TODO see comment above about ComponentInfo copy construction bug
+  WARNING("TODO see comment above about ComponentInfo copy construction bug")
 
   // outer external atoms
   std::vector<ID> outerEatoms;

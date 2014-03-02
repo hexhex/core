@@ -49,7 +49,7 @@ DLVHEX_NAMESPACE_BEGIN
  */
 // ============================== Base ==============================
 
-class UnfoundedSetCheckHeuristics{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristics{
 protected:
 	RegistryPtr reg;
 	const AnnotatedGroundProgram& groundProgram;
@@ -88,7 +88,7 @@ public:
 
 typedef boost::shared_ptr<UnfoundedSetCheckHeuristics> UnfoundedSetCheckHeuristicsPtr;
 
-class UnfoundedSetCheckHeuristicsFactory{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsFactory{
 public:
 	/**
 	* Creates a heuristic instance for a certain ground program
@@ -103,19 +103,19 @@ typedef boost::shared_ptr<UnfoundedSetCheckHeuristicsFactory> UnfoundedSetCheckH
 
 // ============================== Post ==============================
 
-class UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
 public:
 	UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
-class UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSetCheckHeuristicsFactory{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSetCheckHeuristicsFactory{
 	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 // ============================== Max ==============================
 
-class UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
 private:
 	// stores the atoms which were assigned and verified when the skipProgram was updated last time
 	InterpretationPtr previouslyAssignedAndVerifiedAtoms;
@@ -137,13 +137,13 @@ public:
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
-class UnfoundedSetCheckHeuristicsMaxFactory : public UnfoundedSetCheckHeuristicsFactory{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMaxFactory : public UnfoundedSetCheckHeuristicsFactory{
 	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 // ============================== Periodic ==============================
 
-class UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax{
 private:
 	int counter;
 
@@ -157,7 +157,7 @@ public:
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
-class UnfoundedSetCheckHeuristicsPeriodicFactory : public UnfoundedSetCheckHeuristicsFactory{
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodicFactory : public UnfoundedSetCheckHeuristicsFactory{
 	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 

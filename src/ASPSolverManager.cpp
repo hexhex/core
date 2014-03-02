@@ -162,7 +162,7 @@ ConcurrentQueueResults::~ConcurrentQueueResults()
   DBGLOG(DBG,"~ConcurrentQueueResults()" << this);
 }
 
-#warning in this case we could really just store structs and not pointers in the queue
+WARNING("in this case we could really just store structs and not pointers in the queue")
 void ConcurrentQueueResults::enqueueAnswerset(AnswerSetPtr answerset)
 {
   assert(!!queue);

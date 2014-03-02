@@ -98,7 +98,7 @@ bool AnswerSetPrinterCallback::operator()(
 
   std::ostream& o = std::cout;
 
-  #warning TODO think about more efficient printing
+  WARNING("TODO think about more efficient printing")
   o << '{';
   if( it != it_end )
   {

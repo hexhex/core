@@ -218,7 +218,7 @@ DLVLibSoftware::Delegate::getResults()
         }
 
 	// for each param in parms: find id and put into tuple
-#warning TODO create something like inline ID TermTable::getByStringOrRegister(const std::string& symbol, IDKind kind)
+WARNING("TODO create something like inline ID TermTable::getByStringOrRegister(const std::string& symbol, IDKind kind)")
 	Tuple ptuple;
 	ptuple.reserve(parms.size());
 	assert(pimpl->reg);
@@ -244,7 +244,7 @@ DLVLibSoftware::Delegate::getResults()
 	  OrdinaryAtom a(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 	  a.tuple.swap(ptuple);
 	  {
-	    #warning parsing efficiency problem see HexGrammarPTToASTConverter
+	    WARNING("parsing efficiency problem see HexGrammarPTToASTConverter")
 	    std::stringstream ss;
 	    RawPrinter printer(ss, pimpl->reg);
 	    Tuple::const_iterator it = ptuple.begin();
@@ -291,7 +291,7 @@ DLVLibSoftware::Delegate::getResults()
 #endif // HAVE_LIBDLV
 
 
-#warning TODO reactivate dlvdb
+WARNING("TODO reactivate dlvdb")
 
 #if 0
 #if defined(HAVE_DLVDB)

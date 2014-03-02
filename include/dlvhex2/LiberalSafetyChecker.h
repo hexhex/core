@@ -53,7 +53,7 @@ class LiberalSafetyChecker;
 /*
  * Base class for safety plugins which may integrate application-specific safety criteria
  */
-class LiberalSafetyPlugin{
+class DLVHEX_EXPORT LiberalSafetyPlugin{
 protected:
 	// reference to the safety checker which provides meta-information about the program
 	LiberalSafetyChecker& lsc;
@@ -74,7 +74,7 @@ typedef LiberalSafetyPlugin::Ptr LiberalSafetyPluginPtr;
 /*
  * Factory for safety plugins.
  */
-class LiberalSafetyPluginFactory{
+class DLVHEX_EXPORT LiberalSafetyPluginFactory{
 public:
 	virtual LiberalSafetyPluginPtr create(LiberalSafetyChecker& lsc) = 0;
 	typedef boost::shared_ptr<LiberalSafetyPluginFactory> Ptr;
@@ -82,7 +82,7 @@ public:
 typedef LiberalSafetyPluginFactory::Ptr LiberalSafetyPluginFactoryPtr;
 
 
-class LiberalSafetyChecker{
+class DLVHEX_EXPORT LiberalSafetyChecker{
 public:
 	struct Attribute : private ostream_printable<Attribute>{
 		enum Type{
@@ -212,8 +212,8 @@ public:
 	virtual void writeGraphViz(std::ostream& o, bool verbose) const;
 };
 
-std::size_t hash_value(const LiberalSafetyChecker::Attribute& at);
-std::size_t hash_value(const LiberalSafetyChecker::VariableLocation& vl);
+DLVHEX_EXPORT std::size_t hash_value(const LiberalSafetyChecker::Attribute& at);
+DLVHEX_EXPORT std::size_t hash_value(const LiberalSafetyChecker::VariableLocation& vl);
 
 typedef boost::shared_ptr<LiberalSafetyChecker> LiberalSafetyCheckerPtr;
 typedef boost::shared_ptr<const LiberalSafetyChecker> LiberalSafetyCheckerConstPtr;

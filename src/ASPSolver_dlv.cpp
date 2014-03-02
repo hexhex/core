@@ -186,7 +186,7 @@ public:
 
 void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc()
 {
-  #warning create multithreaded logger by using thread-local storage for logger indent
+  WARNING("create multithreaded logger by using thread-local storage for logger indent")
   DBGLOG(DBG,"[" << this << "]" " starting dlv answerSetProcessingThreadFunc");
   try
   {
@@ -283,7 +283,7 @@ DLVSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg
   DLVProcess& proc = results->proc;
   results->reg = reg;
   assert(results->reg);
-  #warning TODO set results->mask?
+  WARNING("TODO set results->mask?")
 
   try
   {

@@ -43,7 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning TODO what is the difference/intended usage of ExtSourceProperty vs ExtSourceProperties? (the names are not very intuitive)
+WARNING("TODO what is the difference/intended usage of ExtSourceProperty vs ExtSourceProperties? (the names are not very intuitive)")
 
 /**
  This struct is used to store sets of properties of an external atom.

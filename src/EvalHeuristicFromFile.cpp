@@ -184,7 +184,7 @@ struct sem
 void parseCommandFile(const std::string& fname, IdxCommandVector& commands)
 {
   std::string input;
-  #warning we should directly parse from stream
+  WARNING("we should directly parse from stream")
   {
     std::ifstream in(fname.c_str());
     std::ostringstream buf;

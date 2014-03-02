@@ -198,7 +198,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     }
 
     // augment input with edb
-    #warning perhaps we can pass multiple partially preprocessed input edb's to the external solver and save a lot of processing here
+    WARNING("perhaps we can pass multiple partially preprocessed input edb's to the external solver and save a lot of processing here")
     postprocInput->add(*factory.ctx.edb);
 
     // remember which facts we must remove
@@ -436,7 +436,7 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 						ID aux = ID_FAIL;
 						BOOST_FOREACH (ID id, ng2){
 							if (reg->ogatoms.getIDByAddress(id.address).isExternalAuxiliary()) aux = id;
-							assert(std::find(ng.begin(), ng.end(), id) != ng.end());
+							assert(ng.count(id) > 0);
 						}
 						assert(aux != ID_FAIL);
 #endif

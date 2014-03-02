@@ -45,7 +45,7 @@
 #include "dlvhex2/State.h"
 #include "dlvhex2/Printer.h"
 //#include "dlvhex2/DLVProcess.h"
-#include "dlvhex2/EvalHeuristicEasy.h"
+//#include "dlvhex2/EvalHeuristicEasy.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -169,7 +169,7 @@ void ProgramCtx::setupPluginContainer(
       &&
       "cannot change pluginContainer once pluginAtoms are used");
   _pluginContainer = pluginContainer;
-  #warning here we could reset the pointers in all ExternalAtoms if we unset the pluginContainer
+  WARNING("here we could reset the pointers in all ExternalAtoms if we unset the pluginContainer")
 }
 
 ASPSolverManager::SoftwareConfigurationPtr
@@ -259,8 +259,8 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
   if( !pc.evalHeuristic )
   {
-    DBGLOG(DBG, "Setting eval heuristics");
-    pc.evalHeuristic.reset(new EvalHeuristicEasy);
+	assert(false);
+	throw GeneralError("No evaluation heuristics found");
   }
 
 	DBGLOG(DBG, "Starting state pipeline " << (parse ? "with" : "without") << " parsing");

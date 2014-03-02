@@ -44,7 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning TODO use boost::iostream::chain or something similar to create real streaming/incremental input provider
+WARNING("TODO use boost::iostream::chain or something similar to create real streaming/incremental input provider")
 
 class InputProvider::Impl
 {

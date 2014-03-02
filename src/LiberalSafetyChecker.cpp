@@ -783,7 +783,7 @@ void LiberalSafetyChecker::createDependencyGraph(){
 	// find strongly connected components in the graph
 	DBGLOG(DBG, "Computing strongly connected components in attribute dependency graph");
 	std::vector<int> componentMap(num_vertices(ag));
-	int num = boost::strong_components(ag, &componentMap[0]);
+	int num = boost::strong_components(ag, boost::make_iterator_property_map(componentMap.begin(), get(boost::vertex_index, ag)));
 	depSCC = std::vector<std::vector<Attribute> >(num);
 	int nodeNr = 0;
 	BOOST_FOREACH (int componentOfNode, componentMap){

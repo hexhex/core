@@ -256,7 +256,7 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 	// find strongly connected components in the dependency graph
 	DBGLOG(DBG, "Computing strongly connected components");
 	std::vector<int> componentMap(depNodes.size());
-	int num = boost::strong_components(depGraph, &componentMap[0]);
+	int num = boost::strong_components(depGraph, boost::make_iterator_property_map(componentMap.begin(), get(boost::vertex_index, depGraph)));
 
 	// translate into real map
 	depSCC = std::vector<std::set<IDAddress> >(num);
@@ -506,7 +506,7 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
 	}
 	boost::graph_traits<Graph>::edge_iterator vi, vi_end;
 	std::vector<Graph::edge_descriptor> delEdges;
-	for (tie(vi, vi_end) = edges(depGraph2); vi != vi_end; vi++){
+	for (boost::tuples::tie(vi, vi_end) = edges(depGraph2); vi != vi_end; vi++){
 		if (std::find(skipnodes.begin(), skipnodes.end(), source(*vi, depGraph2)) != skipnodes.end() ||
 		    std::find(skipnodes.begin(), skipnodes.end(), target(*vi, depGraph2)) != skipnodes.end()){
 			delEdges.push_back(*vi);

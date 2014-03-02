@@ -45,6 +45,9 @@
  * "Plugin Interface Module", which contains all necessary information.
  */
 
+int main(){ return 0; }
+
+#if 0
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
@@ -84,7 +87,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <pwd.h>
+//#include <pwd.h>
 
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
@@ -328,7 +331,12 @@ namespace
 void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
+	// TODO (WIN32)
+#ifdef POSIX
   LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal!");
+#else
+  LOG(ERROR,"dlvhex2 got termination signal!");
+#endif
   if( exeCtx != NULL )
     exeCtx->terminationRequest = true;
 }
@@ -371,7 +379,9 @@ int main(int argc, char *argv[])
 				#else
 					#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
 					#else
-						#error no asp software configured! configure.ac should not allow this to happen!
+						#ifndef WIN32
+							#error no asp software configured! configure.ac should not allow this to happen!
+						#endif
 					#endif
 				#endif
 			#endif
@@ -455,7 +465,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
 
-	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
+	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
 	#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
 	pctx.config.setOption("GenuineSolver", 4);
@@ -636,7 +646,7 @@ int main(int argc, char *argv[])
 			pctx.optimizeEDBDependencyGraph();
 			if( pctx.terminationRequest ) return 1;
 			// everything in the following will be done using the dependency graph and EDB
-			#warning IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?
+			WARNING("IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?")
 				
 			// create graph of strongly connected components of dependency graph
 			pctx.createComponentGraph();
@@ -970,7 +980,7 @@ void processOptionsPrePlugin(
 						else if( solver == "dlvdb" )
 						{
 							#if defined(HAVE_DLVDB)
-							#warning reactivate dlvhdb
+							WARNING("reactivate dlvhdb")
 							//pctx.setASPSoftware(
 							//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
               pctx.config.setOption("GenuineSolver", 0);
@@ -1519,6 +1529,8 @@ void processOptionsPrePlugin(
 
 void configurePluginPath(std::string& userPlugindir)
 {
+// TODO (WIN32)
+#ifdef POSIX
 	bool reset = false;
 	if( !userPlugindir.empty() && userPlugindir[0] == '!' )
 	{
@@ -1547,6 +1559,7 @@ void configurePluginPath(std::string& userPlugindir)
 		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
 	}
 	userPlugindir = searchpath.str();
+#endif
 }
 
 /* vim: set noexpandtab sw=8 ts=8 tw=80: */
@@ -1554,3 +1567,4 @@ void configurePluginPath(std::string& userPlugindir)
 // Local Variables:
 // mode: C++
 // End:
+#endif

@@ -38,6 +38,12 @@
 #if !defined(_DLVHEX_PROCESSBUF_H)
 #define _DLVHEX_PROCESSBUF_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
+#ifdef POSIX
+
 #include "dlvhex2/PlatformDefinitions.h"
 
 #include <iostream>
@@ -104,6 +110,7 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_PROCESSBUF_H
 
+#endif
 
 // Local Variables:
 // mode: C++

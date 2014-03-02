@@ -401,6 +401,8 @@ else
   extsolver_found=true
 fi
 
+AC_DEFINE([HAVE_MLP], [1], [Defined on POSIX systems.])
+
 #
 # libclingo (see README)
 #

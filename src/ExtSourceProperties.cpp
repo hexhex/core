@@ -62,6 +62,7 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
 	variableOutputArity |= prop2.variableOutputArity;
 	caresAboutAssigned |= prop2.caresAboutAssigned;
 	caresAboutChanged |= prop2.caresAboutChanged;
+	return *this;
 }
 
 /**

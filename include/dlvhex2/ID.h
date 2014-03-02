@@ -40,7 +40,7 @@ DLVHEX_NAMESPACE_BEGIN
 typedef uint32_t IDKind;
 typedef uint32_t IDAddress;
 
-struct ID:
+struct DLVHEX_EXPORT ID:
   private ostream_printable<ID>
 {
 	IDKind kind;
@@ -197,7 +197,7 @@ struct ID:
 	std::ostream& print(std::ostream& o) const;
 };
 
-std::size_t hash_value(const ID& id);
+DLVHEX_EXPORT std::size_t hash_value(const ID& id);
 
 const ID ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
 

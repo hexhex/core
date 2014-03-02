@@ -407,7 +407,7 @@ public:
    * Needs to be implemented only if providesCustomModelGeneratorFactory return true;
    */
   virtual BaseModelGeneratorFactoryPtr getCustomModelGeneratorFactory(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci) const
-	{ assert(false && "This plugin does not provide a custom model generator factory"); }
+	{ assert(false && "This plugin does not provide a custom model generator factory"); return BaseModelGeneratorFactoryPtr(); }
 
   /**
    * \brief Provide parser modules
@@ -1066,7 +1066,7 @@ public:
    * Needs to be implemented only if providesCustomExternalAtomEvaluationHeuristicsFactory return true;
    */
   virtual ExternalAtomEvaluationHeuristicsFactoryPtr getCustomExternalAtomEvaluationHeuristicsFactory() const
-	{ assert(false && "This plugin atom does not provide a custom external atom evaluation heuristics factory"); }
+	{ assert(false && "This plugin atom does not provide a custom external atom evaluation heuristics factory"); return ExternalAtomEvaluationHeuristicsFactoryPtr(); }
 
   /**
    * @return general monotonicity

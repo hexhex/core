@@ -188,7 +188,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 		// now we have postprocessed input in postprocessedInput
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidwfsolve, "wellfounded solver loop");
 
-		#warning make wellfounded iteration limit configurable
+		WARNING("make wellfounded iteration limit configurable")
 		unsigned limit = 1000;
 		bool inconsistent = false;
 

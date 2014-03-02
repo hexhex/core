@@ -44,7 +44,7 @@
 #include <boost/scope_exit.hpp>
 #include <fstream>
 
-#include <unistd.h>
+//#include <unistd.h>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -74,7 +74,7 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
   // put whole input from stream into a string
   // (an alternative would be the boost::spirit::multi_pass iterator
   // but this can be done later when the parser is updated to Spirit V2)
-  #warning TODO incrementally read and parse this stream
+  WARNING("TODO incrementally read and parse this stream")
   std::ostringstream buf;
   buf << in->getAsStream().rdbuf();
   std::string input = buf.str();
@@ -154,8 +154,8 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
   }
 
   // workaround: making IDs in idb unique
-  #warning we should probably also do this for MLP, at the same time we should probably generalize MLP better
-  #warning we should use std::set<ID> for IDB
+  WARNING("we should probably also do this for MLP, at the same time we should probably generalize MLP better")
+  WARNING("we should use std::set<ID> for IDB")
   std::set<ID> uniqueidb(ctx.idb.begin(), ctx.idb.end());
   ctx.idb.clear();
   ctx.idb.insert(ctx.idb.end(), uniqueidb.begin(), uniqueidb.end());

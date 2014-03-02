@@ -155,7 +155,7 @@ struct SemanticActionBase
 };
 
 //! see top of this file
-class HexGrammarSemantics
+class DLVHEX_EXPORT HexGrammarSemantics
 {
 public:
   ProgramCtx& ctx;
@@ -211,7 +211,7 @@ public:
 
 //! basic HEX Grammar
 template<typename Iterator, typename Skipper>
-struct HexGrammarBase
+struct DLVHEX_EXPORT HexGrammarBase
 {
   HexGrammarSemantics& sem;
   HexGrammarBase(HexGrammarSemantics&);

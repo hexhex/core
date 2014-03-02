@@ -69,7 +69,7 @@ namespace CAUAlgorithms
       typename EvalGraphT::EvalUnit u)
     { AncestryPropertyMap apm; return findCAUs(caus, eg, u, apm); }
 
-  void logAPM(const AncestryPropertyMap& apm);
+  DLVHEX_EXPORT void logAPM(const AncestryPropertyMap& apm);
 
   //
   // "Join relevant" are those units where simple iteration over omodels is
@@ -101,7 +101,7 @@ namespace CAUAlgorithms
       const std::set<typename EvalGraphT::EvalUnit>& caus,
       const AncestryPropertyMap& apm);
 
-  void logJRPM(const JoinRelevancePropertyMap& jr);
+  DLVHEX_EXPORT void logJRPM(const JoinRelevancePropertyMap& jr);
 } // namespace CAUAlgorithms
 
 

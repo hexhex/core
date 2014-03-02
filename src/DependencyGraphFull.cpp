@@ -775,7 +775,7 @@ ID DependencyGraphFull::createAuxiliaryRule(
 
 void DependencyGraphFull::createAggregateDependencies()
 {
-#warning not implemented: aggregate dependencies
+WARNING("not implemented: aggregate dependencies")
 }
 
 // helper for making construction of component graph easier:

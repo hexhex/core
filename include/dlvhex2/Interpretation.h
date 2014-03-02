@@ -43,7 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Interpretation:
+class DLVHEX_EXPORT Interpretation:
   public InterpretationBase,
   public ostream_printable<Interpretation>
 {
@@ -124,7 +124,7 @@ public:
 typedef Interpretation::Ptr InterpretationPtr;
 typedef Interpretation::ConstPtr InterpretationConstPtr;
 
-std::size_t hash_value(const Interpretation& intr);
+DLVHEX_EXPORT std::size_t hash_value(const Interpretation& intr);
 
 // TODO perhaps we want to have something like this for (manual) joins
 // (see https://dlvhex.svn.sourceforge.net/svnroot/dlvhex/dlvhex/branches/dlvhex-depgraph-refactoring@1555) 

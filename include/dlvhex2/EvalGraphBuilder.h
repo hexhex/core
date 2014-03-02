@@ -60,7 +60,7 @@ class ProgramCtx;
  */
 //template<typename EvalGraphT>
 // TODO make this a template for EvalGraphT and ComponentGraphT, for faster prototyping we use fixed types for these graphs
-class EvalGraphBuilder
+class DLVHEX_EXPORT EvalGraphBuilder
 {
   //////////////////////////////////////////////////////////////////////////////
   // types

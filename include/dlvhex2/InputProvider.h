@@ -45,7 +45,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class InputProvider
+class DLVHEX_EXPORT InputProvider
 {
 public:
   InputProvider();

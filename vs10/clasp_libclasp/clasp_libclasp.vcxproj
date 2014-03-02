@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3F0BF306-BC5F-4A27-A58B-9C425F222496}</ProjectGuid>
+    <RootNamespace>clasp_libclasp</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>libclasp</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WITH_THREADS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\asp_preprocessor.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\cb_enumerator.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_facade.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_options.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_output.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clause.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\constraint.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\dependency_graph.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\enumerator.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\heuristics.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program_types.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\lookahead.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\minimize_constraint.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\model_enumerators.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parallel_solve.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parser.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\program_builder.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\satelite.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\shared_context.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_strategies.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_types.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solve_algorithms.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\timer.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\unfounded_check.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\weight_constraint.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\asp_preprocessor.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cb_enumerator.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\claspfwd.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\clasp_facade.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\clause.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_options.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_output.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\constraint.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\dependency_graph.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\enumerator.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\heuristics.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\literal.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\logic_program.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\logic_program_types.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\lookahead.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\minimize_constraint.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\model_enumerators.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\parallel_solve.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\parser.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\pod_vector.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\program_builder.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\satelite.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\shared_context.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\solver.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\solver_strategies.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\solver_types.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\solve_algorithms.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\unfounded_check.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\atomic.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\indexed_priority_queue.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\left_right_sequence.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\misc_types.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\multi_queue.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\mutex.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\platform.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\pod_vector.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\thread.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\timer.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\type_manip.h" />
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\weight_constraint.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_configs.inl" />
+    <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_options.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

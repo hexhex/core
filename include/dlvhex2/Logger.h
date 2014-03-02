@@ -31,6 +31,13 @@
 
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "dlvhex2/PlatformDefinitions.h"
+
 #include <boost/preprocessor/cat.hpp>
 #include <boost/optional.hpp>
 #include <boost/cstdint.hpp>
@@ -49,7 +56,7 @@
 #include <sstream>
 
 // singleton logger class
-class Logger
+class DLVHEX_EXPORT Logger
 {
 public:
   // levels are specified and can be activated via bitmasks

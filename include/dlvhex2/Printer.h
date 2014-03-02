@@ -44,7 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Printer
+class DLVHEX_EXPORT Printer
 {
 protected:
   std::ostream& out;
@@ -60,7 +60,7 @@ public:
   virtual void print(ID id) = 0;
 };
 
-class RawPrinter:
+class DLVHEX_EXPORT RawPrinter:
   public Printer
 {
 private: 
