@@ -1,1 +1,1 @@
-cp term.h ..\buildclaspgringo\gringo\libgringo\gringo\term.h
+copy term.h ..\buildclaspgringo\gringo\libgringo\gringo\term.h
