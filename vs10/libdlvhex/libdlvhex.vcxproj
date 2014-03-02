@@ -41,7 +41,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(ProjectDir);$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(ProjectDir);$(SolutionDir);$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
