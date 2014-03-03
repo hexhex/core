@@ -84,10 +84,9 @@ public:
   close(bool kill=false);
 
 private:
-  pid_t process;
-  int status;
 
 #ifdef POSIX
+  pid_t process;
   int outpipes[2];
   int inpipes[2];
 #endif
@@ -99,7 +98,8 @@ private:
 	HANDLE g_hChildStd_OUT_Rd;
 	HANDLE g_hChildStd_OUT_Wr;
 #endif
-
+	
+  int status;
   unsigned bufsize;
 
   std::streambuf::char_type* obuf;

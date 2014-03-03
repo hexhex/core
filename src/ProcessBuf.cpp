@@ -62,9 +62,6 @@ ProcessBuf::ProcessBuf()
 #ifdef POSIX
     process(-1),
 #endif
-#ifdef WIN32
-	process(0),
-#endif
     bufsize(256)
 {
 #ifdef POSIX
@@ -91,7 +88,12 @@ ProcessBuf::ProcessBuf()
 
 ProcessBuf::ProcessBuf(const ProcessBuf& sb)
   : std::streambuf(),
+#ifdef POSIX
     process(sb.process),
+#endif
+#ifdef WIN32
+	processInformation(sb.processInformation),
+#endif
     status(sb.status),
     bufsize(sb.bufsize)
 {
@@ -283,19 +285,12 @@ ProcessBuf::open(const std::vector<std::string>& av)
 		args << " " << av[i];
 	}
 	std::string argstr = args.str();
-	bool result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str() /*(LPSTR)cmdstr.c_str()*/, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
+	bool result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str() /*(LPSTR)cmdstr.c_str()*/, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
 	if (!result){
 		std::cout << GetLastError() << std::endl;
 	}
-	
-	/*
-	// Close writing end of output pipe and reading end of input type
-	CloseHandle(g_hChildStd_OUT_Wr);
-	CloseHandle(g_hChildStd_IN_Rd);
-	*/
 
-	process = processInformation.hProcess;
-	return process;
+	return processInformation.hProcess;
 #endif
 }
 
@@ -320,6 +315,16 @@ ProcessBuf::endoffile()
 	if (g_hChildStd_IN_Wr != 0){
 		CloseHandle(g_hChildStd_IN_Wr); // send EOF to stdin of child process
 		g_hChildStd_IN_Wr = 0;
+	}
+
+	// close handles to allow child process termination
+	if (g_hChildStd_IN_Rd != 0){
+		CloseHandle(g_hChildStd_IN_Rd);
+		g_hChildStd_IN_Rd = 0;
+	}
+	if (g_hChildStd_OUT_Wr != 0){
+		CloseHandle(g_hChildStd_OUT_Wr);
+		g_hChildStd_OUT_Wr = 0;
 	}
 #endif
 }
@@ -371,18 +376,33 @@ ProcessBuf::close(bool kill)
 #endif
 
 #ifdef WIN32
-  if (process == 0)
+  if (processInformation.hProcess == 0)
 	  return -1;
 
-	LOG(DBG,"ProcessBuf::close for process " << process << "(" << kill << ")");
-	CloseHandle(processInformation.hProcess); // send EOF to stdin of child process
-	CloseHandle(processInformation.hThread);
-	if (kill){
-		TerminateProcess(process, 1);
-	}else{
-		WaitForSingleObject(process, INFINITE);
+	LOG(DBG,"ProcessBuf::close for process " << processInformation.hProcess << "(" << kill << ")");
+	if (processInformation.hProcess != 0){
+		if (kill){
+			TerminateProcess(processInformation.hProcess, 1);
+		}else{
+			WaitForSingleObject(processInformation.hProcess, INFINITE);
+		}
+		CloseHandle(processInformation.hProcess); // send EOF to stdin of child process
+		processInformation.hProcess = 0;
+		if (processInformation.hThread != 0){
+			CloseHandle(processInformation.hThread);
+			processInformation.hThread = 0;
+		}
 	}
-	process = 0;
+
+	if (g_hChildStd_IN_Rd != 0){
+		CloseHandle(g_hChildStd_IN_Rd);
+		g_hChildStd_IN_Rd = 0;
+	}
+	if (g_hChildStd_OUT_Wr != 0){
+		CloseHandle(g_hChildStd_OUT_Wr);
+		g_hChildStd_OUT_Wr = 0;
+	}
+
   return 0;
 #endif
 }
@@ -409,7 +429,6 @@ ProcessBuf::overflow(std::streambuf::int_type c)
   
   return traits_type::not_eof(c);
 }
-
 
 std::streambuf::int_type
 ProcessBuf::underflow()
@@ -450,8 +469,6 @@ ProcessBuf::underflow()
 	return traits_type::to_int_type(*gptr());
 #endif
 }
-
-
 
 std::streambuf::int_type
 ProcessBuf::sync()
