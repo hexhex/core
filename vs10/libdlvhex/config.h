@@ -35,7 +35,7 @@
 #define DLVHEX_VERSION_MINOR 3
 
 /* Path of DLV executable */
-//#define DLVPATH "dlv"
+#define DLVPATH "dlv"
 
 /* Define to 1 if you have the `argz_add' function. */
 #define HAVE_ARGZ_ADD 1
@@ -123,7 +123,7 @@
 #define HAVE_DLFCN_H 1
 
 /* Defined if we found dlv. */
-//#define HAVE_DLV 1
+#define HAVE_DLV 1
 
 /* Defined if we found dlvdb. */
 /* #undef HAVE_DLVDB */

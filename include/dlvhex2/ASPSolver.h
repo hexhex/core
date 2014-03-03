@@ -50,13 +50,13 @@ namespace ASPSolver
 {
 
 // DLV softwares
-struct DLVSoftware:
+struct DLVHEX_EXPORT DLVSoftware:
   public ASPSolverManager::SoftwareBase
 {
   typedef ASPSolverManager::SoftwareConfiguration<DLVSoftware> Configuration;
 
   // specific options for DLV
-  struct Options:
+  struct DLVHEX_EXPORT Options:
     public ASPSolverManager::GenericOptions
   {
     Options();
@@ -69,7 +69,7 @@ struct DLVSoftware:
   };
 
   // the delegate for DLVSoftware
-  class Delegate:
+  class DLVHEX_EXPORT Delegate:
     public ASPSolverManager::DelegateInterface
   {
   public:
@@ -89,8 +89,9 @@ struct DLVSoftware:
   };
 };
 
+#ifdef HAVE_LIBDLV
 // "DLV as a shared library" softwares
-struct DLVLibSoftware:
+struct DLVHEX_EXPORT DLVLibSoftware:
   public DLVSoftware
 {
   typedef ASPSolverManager::SoftwareConfiguration<DLVLibSoftware> Configuration;
@@ -98,7 +99,7 @@ struct DLVLibSoftware:
   //typedef DLVSoftware::Options Options;
 
   // the delegate for DLVSoftware
-  class Delegate:
+  class DLVHEX_EXPORT Delegate:
     public ASPSolverManager::DelegateInterface
   {
   public:
@@ -115,15 +116,19 @@ struct DLVLibSoftware:
     boost::scoped_ptr<Impl> pimpl;
   };
 };
+#endif
+
+#if 0
+#ifdef HAVE_DLVDB
 
 // DLVDB software (inherits most from DLV)
-struct DLVDBSoftware:
+struct DLVHEX_EXPORT DLVDBSoftware:
   public DLVSoftware
 {
   typedef ASPSolverManager::SoftwareConfiguration<DLVDBSoftware> Configuration;
 
   // specific options
-  struct Options:
+  struct DLVHEX_EXPORT Options:
     public DLVSoftware::Options
   {
     Options();
@@ -135,7 +140,7 @@ struct DLVDBSoftware:
   };
 
   // inherit DLV delegate
-  class Delegate:
+  class DLVHEX_EXPORT Delegate:
     public DLVSoftware::Delegate
   {
   public:
@@ -151,15 +156,18 @@ struct DLVDBSoftware:
     Options options;
   };
 };
+#endif
+#endif
 
+#ifdef HAVE_LIBCLINGO
 // clingo=clasp+gringo software (very basic integration, involves parsing)
-struct ClingoSoftware:
+struct DLVHEX_EXPORT ClingoSoftware:
   public ASPSolverManager::SoftwareBase
 {
   typedef ASPSolverManager::SoftwareConfiguration<ClingoSoftware> Configuration;
 
   // specific options for clingo
-  struct Options:
+  struct DLVHEX_EXPORT Options:
     public ASPSolverManager::GenericOptions
   {
     Options();
@@ -169,7 +177,7 @@ struct ClingoSoftware:
   };
 
   // the delegate for ClingoSoftware
-  class Delegate:
+  class DLVHEX_EXPORT Delegate:
     public ASPSolverManager::DelegateInterface
   {
   public:
@@ -186,6 +194,7 @@ struct ClingoSoftware:
     boost::scoped_ptr<Impl> pimpl;
   };
 };
+#endif
 
 } // namespace ASPSolver
 

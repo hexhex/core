@@ -37,8 +37,6 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef POSIX
-
 #include "dlvhex2/DLVProcess.h"
 #include "dlvhex2/Logger.h"
 
@@ -182,8 +180,6 @@ DLVProcess::getInput()
 }
 
 DLVHEX_NAMESPACE_END
-
-#endif
 
 // vim:se ts=8:
 // Local Variables:

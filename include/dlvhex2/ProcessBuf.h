@@ -42,14 +42,18 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef POSIX
-
 #include "dlvhex2/PlatformDefinitions.h"
 
 #include <iostream>
 #include <streambuf>
 #include <vector>
 #include <string>
+
+#ifdef WIN32
+#include <windows.h>
+#undef ERROR
+typedef HANDLE pid_t;
+#endif
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -81,11 +85,20 @@ public:
 
 private:
   pid_t process;
-
   int status;
 
+#ifdef POSIX
   int outpipes[2];
   int inpipes[2];
+#endif
+
+#ifdef WIN32
+	PROCESS_INFORMATION processInformation;
+	HANDLE g_hChildStd_IN_Rd;
+	HANDLE g_hChildStd_IN_Wr;
+	HANDLE g_hChildStd_OUT_Rd;
+	HANDLE g_hChildStd_OUT_Wr;
+#endif
 
   unsigned bufsize;
 
@@ -109,8 +122,6 @@ protected:
 DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_PROCESSBUF_H
-
-#endif
 
 // Local Variables:
 // mode: C++

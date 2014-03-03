@@ -37,8 +37,6 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef POSIX
-
 #include "dlvhex2/ProcessBuf.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Printhelpers.h"
@@ -51,16 +49,25 @@
 #include <cstring>
 #include <cstdlib>
 #include <sys/types.h>
+
+#ifdef POSIX
 #include <sys/wait.h>
+#endif
 
 
 DLVHEX_NAMESPACE_BEGIN
 
 ProcessBuf::ProcessBuf()
   : std::streambuf(),
+#ifdef POSIX
     process(-1),
+#endif
+#ifdef WIN32
+	process(0),
+#endif
     bufsize(256)
 {
+#ifdef POSIX
   // ignore SIGPIPE
   struct sigaction sa;
   sa.sa_handler = SIG_IGN;
@@ -72,6 +79,11 @@ ProcessBuf::ProcessBuf()
       ::perror("sigaction");
       ::exit(1);
     }
+#endif
+
+#ifdef WIN32
+
+#endif
 
   initBuffers(); // don't call virtual methods in the ctor
 }
@@ -83,8 +95,10 @@ ProcessBuf::ProcessBuf(const ProcessBuf& sb)
     status(sb.status),
     bufsize(sb.bufsize)
 {
+#ifdef POSIX
   ::memcpy(inpipes, sb.inpipes, 2);
   ::memcpy(outpipes, sb.outpipes, 2);
+#endif
   initBuffers(); // don't call virtual methods in the ctor
 }
 
@@ -123,6 +137,7 @@ ProcessBuf::open(const std::vector<std::string>& av)
 {
   LOG(DBG,"ProcessBuf::open" << printvector(av));
 
+#ifdef POSIX
   // close before re-open it
   if (process != -1)
     {
@@ -230,11 +245,64 @@ ProcessBuf::open(const std::vector<std::string>& av)
     }
 
   return process;
+#endif
+
+#ifdef WIN32
+	SECURITY_ATTRIBUTES saAttr;
+    ZeroMemory(&saAttr, sizeof(saAttr));
+
+	// Set the bInheritHandle flag so pipe handles are inherited. 
+
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
+
+	// Create a pipe for the child process's STDOUT.
+	if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0)) return 0;
+
+	// Ensure the read handle to the pipe for STDOUT is not inherited.
+	if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0)) return 0;
+
+	// Create a pipe for the child process's STDIN. 
+	if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0)) return 0;
+
+	// Ensure the write handle to the pipe for STDIN is not inherited. 
+	if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0)) return 0;
+
+	STARTUPINFO startupInfo;
+    ZeroMemory(&processInformation, sizeof(processInformation));
+    ZeroMemory(&startupInfo, sizeof(startupInfo));
+    startupInfo.cb = sizeof(startupInfo);
+	startupInfo.hStdOutput = g_hChildStd_OUT_Wr;
+	startupInfo.hStdError = g_hChildStd_OUT_Wr;
+	startupInfo.hStdInput = g_hChildStd_IN_Rd;
+	startupInfo.dwFlags |= STARTF_USESTDHANDLES;
+	std::string cmdstr = "C:\\Program Files (x86)\\dlv\\dlv.exe"; //av[0];
+   	std::stringstream args;
+	for (unsigned int i = 1; i < av.size(); i++){
+		args << " " << av[i];
+	}
+	std::string argstr = args.str();
+	bool result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str() /*(LPSTR)cmdstr.c_str()*/, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
+	if (!result){
+		std::cout << GetLastError() << std::endl;
+	}
+	
+	/*
+	// Close writing end of output pipe and reading end of input type
+	CloseHandle(g_hChildStd_OUT_Wr);
+	CloseHandle(g_hChildStd_IN_Rd);
+	*/
+
+	process = processInformation.hProcess;
+	return process;
+#endif
 }
 
 void
 ProcessBuf::endoffile()
 {
+#ifdef POSIX
   // reset output buffer
   setp(obuf, obuf + bufsize);
 
@@ -243,6 +311,17 @@ ProcessBuf::endoffile()
       ::close(inpipes[1]); // send EOF to stdin of child process
       inpipes[1] = -1;
     }
+#endif
+
+#ifdef WIN32
+	// reset output buffer
+	setp(obuf, obuf + bufsize);
+
+	if (g_hChildStd_IN_Wr != 0){
+		CloseHandle(g_hChildStd_IN_Wr); // send EOF to stdin of child process
+		g_hChildStd_IN_Wr = 0;
+	}
+#endif
 }
 
 // wait for end of process
@@ -250,6 +329,7 @@ ProcessBuf::endoffile()
 int
 ProcessBuf::close(bool kill)
 {
+#ifdef POSIX
   if( process == -1 )
     return -1;
 
@@ -288,6 +368,23 @@ ProcessBuf::close(bool kill)
 
   // exit code of process
   return exitstatus;
+#endif
+
+#ifdef WIN32
+  if (process == 0)
+	  return -1;
+
+	LOG(DBG,"ProcessBuf::close for process " << process << "(" << kill << ")");
+	CloseHandle(processInformation.hProcess); // send EOF to stdin of child process
+	CloseHandle(processInformation.hThread);
+	if (kill){
+		TerminateProcess(process, 1);
+	}else{
+		WaitForSingleObject(process, INFINITE);
+	}
+	process = 0;
+  return 0;
+#endif
 }
 
 
@@ -317,6 +414,7 @@ ProcessBuf::overflow(std::streambuf::int_type c)
 std::streambuf::int_type
 ProcessBuf::underflow()
 {
+#ifdef POSIX
   if (gptr() >= egptr()) // empty ibuf -> get data
     {
       errno = 0;
@@ -339,6 +437,18 @@ ProcessBuf::underflow()
     }
 
   return traits_type::to_int_type(*gptr());
+#endif
+
+#ifdef WIN32
+	// try to receive at most bufsize bytes
+	DWORD dwRead;
+	bool bSuccess = (ReadFile(g_hChildStd_OUT_Rd, ibuf, bufsize, &dwRead, NULL) == TRUE);
+	if ( ! bSuccess || dwRead == 0 ){
+		return traits_type::eof();
+	}
+	setg(ibuf, ibuf, ibuf + dwRead); // set new input buffer boundaries
+	return traits_type::to_int_type(*gptr());
+#endif
 }
 
 
@@ -346,6 +456,7 @@ ProcessBuf::underflow()
 std::streambuf::int_type
 ProcessBuf::sync()
 {
+#ifdef POSIX
   // reset input buffer
   setg(ibuf, ibuf, ibuf);
 
@@ -387,12 +498,57 @@ ProcessBuf::sync()
     }
   
   return 0;
+#endif
+
+#ifdef WIN32
+  // reset input buffer
+  setg(ibuf, ibuf, ibuf);
+
+  const int len = pptr() - pbase();
+
+  if (len) // non-empty obuf -> send data
+	{
+		errno = 0;
+
+		// loops until whole obuf is sent
+		//
+		// Warning: when peer disconnects during the sending we receive
+		// a SIGPIPE and the default signal handler exits the program.
+		// Therefore we have to ignore SIGPIPE (in ctor) and reset the
+		// obuf followed by an error return value. See chapter 5.13 of
+		// W.R. Stevens: Unix Network Programming Vol.1.
+
+		DWORD bwritten = 0;
+		bool ret;
+
+		for (int written = 0; written < len; written += bwritten)
+		{
+			ret = (WriteFile(g_hChildStd_IN_Wr, pbase() + written, len - written, &bwritten, NULL) == TRUE);
+
+			if (!ret || bwritten == 0) break;
+		}
+
+		// reset output buffer right after sending to the stream
+		setp(obuf, obuf + bufsize);
+
+		if (bwritten == 0) // EOF
+		{
+			return -1;
+		}
+		else if (!ret) // failure
+		{
+			std::ostringstream oss;
+			oss << "Process prematurely closed pipe before I could write (errno = " << errno << ").";
+			throw std::ios_base::failure(oss.str());
+		}
+	}
+  
+  return 0;
+#endif
 }
 
 
 DLVHEX_NAMESPACE_END
-
-#endif
 
 // vim:se ts=8:
 // Local Variables:
