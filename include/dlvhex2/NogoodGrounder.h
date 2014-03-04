@@ -44,7 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class NogoodGrounder{
+class DLVHEX_EXPORT NogoodGrounder{
 protected:
 	RegistryPtr reg;
 	SimpleNogoodContainerPtr watched;
@@ -83,7 +83,7 @@ typedef NogoodGrounder::Ptr NogoodGrounderPtr;
 /**
  * Instantiates nonground nogoods immediately for all possible substitutions.
  */
-class ImmediateNogoodGrounder : public NogoodGrounder{
+class DLVHEX_EXPORT ImmediateNogoodGrounder : public NogoodGrounder{
 private:
 	int instantiatedNongroundNogoodsIndex;
 public:
@@ -96,7 +96,7 @@ public:
  * Instantiates nonground nogoods stepwise according to the current interpretation.
  * That is, a nogood is instantiated if one of its atoms unifies with the current partial interpretation.
  */
-class LazyNogoodGrounder : public NogoodGrounder{
+class DLVHEX_EXPORT LazyNogoodGrounder : public NogoodGrounder{
 private:
 	int watchedNogoodsCount;
 	std::vector<std::pair<ID, int> > watchedLiterals;

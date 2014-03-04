@@ -1,1 +1,0 @@
-copy term.h ..\buildclaspgringo\gringo\libgringo\gringo\term.h

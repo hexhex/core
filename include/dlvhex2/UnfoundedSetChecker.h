@@ -358,7 +358,7 @@ public:
 	std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram);
 };
 
-class UnfoundedSetCheckerManager{
+class DLVHEX_EXPORT UnfoundedSetCheckerManager{
 private:
 	ProgramCtx& ctx;
 

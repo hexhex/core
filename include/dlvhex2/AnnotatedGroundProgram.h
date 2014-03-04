@@ -57,7 +57,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class AnnotatedGroundProgram{
+class DLVHEX_EXPORT AnnotatedGroundProgram{
 
 	ProgramCtx* ctx;
 	RegistryPtr reg;

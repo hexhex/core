@@ -53,12 +53,12 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class PropagatorCallback{
+class DLVHEX_EXPORT PropagatorCallback{
 public:
 	virtual void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
 };
 
-class GenuineGrounder{
+class DLVHEX_EXPORT GenuineGrounder{
 public:
 	virtual const OrdinaryASPProgram& getGroundProgram() = 0;
 
@@ -72,7 +72,7 @@ typedef GenuineGrounder::Ptr GenuineGrounderPtr;
 typedef GenuineGrounder::ConstPtr GenuineGrounderConstPtr;
 
 
-class GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
+class DLVHEX_EXPORT GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
 public:
 	virtual std::string getStatistics() = 0;
 	virtual void setOptimum(std::vector<int>& optimum) = 0;
@@ -93,7 +93,7 @@ typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;
 typedef GenuineGroundSolver::ConstPtr GenuineGroundSolverConstPtr;
 
 
-class GenuineSolver : public GenuineGrounder, public GenuineGroundSolver{
+class DLVHEX_EXPORT GenuineSolver : public GenuineGrounder, public GenuineGroundSolver{
 private:
 	GenuineGrounderPtr grounder;
 	GenuineGroundSolverPtr solver;
