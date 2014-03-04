@@ -45,6 +45,12 @@
 #define DLVHEX_NAMESPACE_USE   using namespace dlvhex;
 #define DLVHEX_NAMESPACE       dlvhex:: 
 
+// by default we build for POSIX systems
+#ifndef WIN32
+#ifndef POSIX
+#define POSIX 1
+#endif
+#endif
 
 #ifdef DLLEXPORT
 #define DLVHEX_EXPORT __declspec(dllexport)

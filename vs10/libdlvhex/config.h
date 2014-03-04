@@ -35,7 +35,7 @@
 #define DLVHEX_VERSION_MINOR 3
 
 /* Path of DLV executable */
-#define DLVPATH "dlv"
+#define DLVPATH "dlv.exe"
 
 /* Define to 1 if you have the `argz_add' function. */
 #define HAVE_ARGZ_ADD 1
@@ -108,7 +108,7 @@
 /* #undef HAVE_DECL_CYGWIN_CONV_PATH */
 
 /* Define to 1 if you have the <dirent.h> header file. */
-#define HAVE_DIRENT_H 1
+//#define HAVE_DIRENT_H 1
 
 /* Define if you have the GNU dld library. */
 /* #undef HAVE_DLD */

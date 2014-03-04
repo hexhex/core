@@ -279,13 +279,35 @@ ProcessBuf::open(const std::vector<std::string>& av)
 	startupInfo.hStdError = g_hChildStd_OUT_Wr;
 	startupInfo.hStdInput = g_hChildStd_IN_Rd;
 	startupInfo.dwFlags |= STARTF_USESTDHANDLES;
-	std::string cmdstr = "C:\\Program Files (x86)\\dlv\\dlv.exe"; //av[0];
    	std::stringstream args;
 	for (unsigned int i = 1; i < av.size(); i++){
 		args << " " << av[i];
 	}
 	std::string argstr = args.str();
-	bool result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str() /*(LPSTR)cmdstr.c_str()*/, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
+
+	// get PATH variable
+	DWORD bufferSize = 65535; //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
+	std::string buff;
+	buff.resize(bufferSize);
+	bufferSize = GetEnvironmentVariable("PATH", &buff[0], bufferSize);
+	if (!bufferSize){
+		buff.resize(0);
+	}else{
+		buff.resize(bufferSize);
+	}
+	buff = buff + ";;";
+
+	// search for dlv in all directories listed in PATH
+	bool result = false;
+	while (!result && buff.find(";") != std::wstring::npos){
+		std::string path = buff.substr(0, buff.find(";"));
+		path += (path.size() > 0 ? "\\" : "") + av[0];
+		buff = buff.substr(buff.find(";") + 1);
+	
+		std::string cmdstr = path;
+		result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str(), NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
+	}
+	
 	if (!result){
 		std::cout << GetLastError() << std::endl;
 	}

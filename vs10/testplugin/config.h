@@ -22,20 +22,8 @@
 /* Turns on benchmarking timers and counters */
 #define DLVHEX_BENCHMARK /**/
 
-/* Version number of DLVHEX */
-#define DLVHEX_VERSION 2.3.0
-
-/* Major version number of DLVHEX */
-#define DLVHEX_VERSION_MAJOR 2
-
-/* Micro version number of DLVHEX */
-#define DLVHEX_VERSION_MICRO 0
-
-/* Minor version number of DLVHEX */
-#define DLVHEX_VERSION_MINOR 3
-
 /* Path of DLV executable */
-//#define DLVPATH "dlv"
+#define DLVPATH "dlv.exe"
 
 /* Define to 1 if you have the `argz_add' function. */
 #define HAVE_ARGZ_ADD 1
@@ -108,7 +96,7 @@
 /* #undef HAVE_DECL_CYGWIN_CONV_PATH */
 
 /* Define to 1 if you have the <dirent.h> header file. */
-#define HAVE_DIRENT_H 1
+//#define HAVE_DIRENT_H 1
 
 /* Define if you have the GNU dld library. */
 /* #undef HAVE_DLD */
@@ -123,7 +111,7 @@
 #define HAVE_DLFCN_H 1
 
 /* Defined if we found dlv. */
-//#define HAVE_DLV 1
+#define HAVE_DLV 1
 
 /* Defined if we found dlvdb. */
 /* #undef HAVE_DLVDB */
