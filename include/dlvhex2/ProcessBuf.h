@@ -89,16 +89,18 @@ private:
   pid_t process;
   int outpipes[2];
   int inpipes[2];
+#else
+	#ifdef WIN32
+		PROCESS_INFORMATION processInformation;
+		HANDLE g_hChildStd_IN_Rd;
+		HANDLE g_hChildStd_IN_Wr;
+		HANDLE g_hChildStd_OUT_Rd;
+		HANDLE g_hChildStd_OUT_Wr;
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 
-#ifdef WIN32
-	PROCESS_INFORMATION processInformation;
-	HANDLE g_hChildStd_IN_Rd;
-	HANDLE g_hChildStd_IN_Wr;
-	HANDLE g_hChildStd_OUT_Rd;
-	HANDLE g_hChildStd_OUT_Wr;
-#endif
-	
   int status;
   unsigned bufsize;
 

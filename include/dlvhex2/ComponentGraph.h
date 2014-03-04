@@ -277,7 +277,7 @@ protected:
   bool computeRecursiveAggregatesInComponent(ComponentInfo& ci);
 
 public:
-  static bool calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
+  static void calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

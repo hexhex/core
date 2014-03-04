@@ -771,7 +771,7 @@ bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci)
 	return false;
 }
 
-bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci)
+void ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci)
 {
 	DBGLOG(DBG, "calculateStratificationInfo");
 
@@ -834,8 +834,6 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 			}
 		}
 	}
-	// TODO (WIN32)
-	return true;
 }
 
 // Compute the dependency infos and component info

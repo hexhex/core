@@ -51,6 +51,9 @@
 #include <sys/types.h>
 //#include <dirent.h>
 //#include <pwd.h>
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 #include <boost/foreach.hpp>
 
@@ -61,15 +64,16 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// TODO (WIN32)
 #ifdef POSIX
 	#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
 	#define unsetenv(VAR) ::unsetenv(VAR)
 #else
 	void setenv(const char* var, const char* val, int v){
+		SetEnvironmentVariable(var, val);
 	}
 
 	void unsetenv(const char* var){
+		SetEnvironmentVariable(var, NULL);
 	}
 #endif
 

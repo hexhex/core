@@ -86,6 +86,13 @@
 #include <sys/types.h>
 #ifdef POSIX
 #include <pwd.h>
+#else
+	#ifdef WIN32
+		#include <Windows.h>
+		#undef ERROR	// there is a clash with a Windows definition
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 
 #include <boost/tokenizer.hpp>
@@ -132,12 +139,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   out << "   or: " << whoAmI 
       << " [OPTION] --" << std::endl
       << std::endl;
-  
+
   if (!full)
     {
       out << "Specify -h or --help for more detailed usage information." << std::endl
 	  << std::endl;
-      
+
       return;
     }
   
@@ -330,11 +337,10 @@ namespace
 void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
-	// TODO (WIN32)
 #ifdef POSIX
   LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal!");
 #else
-  LOG(ERROR,"dlvhex2 got termination signal!");
+  LOG(ERROR,"dlvhex2 with pid " << GetCurrentProcessId() << " got termination signal!");
 #endif
   if( exeCtx != NULL )
     exeCtx->terminationRequest = true;
@@ -1560,6 +1566,44 @@ void configurePluginPath(std::string& userPlugindir)
 		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
 	}
 	userPlugindir = searchpath.str();
+#else
+	#ifdef WIN32
+		bool reset = false;
+		if( !userPlugindir.empty() && userPlugindir[0] == '!' )
+		{
+			reset = true;
+			if( userPlugindir.size() > 2 && userPlugindir[1] == ';' )
+				userPlugindir.erase(0,2);
+			else
+				userPlugindir.erase(0,1);
+		}
+
+	  std::stringstream searchpath;
+
+		if( !userPlugindir.empty() )
+			searchpath << userPlugindir << ';';
+  
+		if( !reset )
+		{
+			// add LD_LIBRARY_PATH
+			const char *envld = ::getenv("LD_LIBRARY_PATH");
+			if( envld )
+			{
+				searchpath << envld << ";";
+			}
+
+	#ifdef USER_PLUGIN_DIR
+			const char* homedir = ::getenv("USERPROFILE");
+			if (!!homedir) searchpath << homedir << "/" USER_PLUGIN_DIR << ';';
+	#endif
+	#ifdef SYS_PLUGIN_DIR
+			searchpath << SYS_PLUGIN_DIR;
+	#endif
+		}
+		userPlugindir = searchpath.str();
+	#else
+	#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 }
 

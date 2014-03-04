@@ -353,6 +353,7 @@
 #define DLLEXPORT 1
 // #define HAVE_MLP 1
 // #define POSIX 1
+#define USER_PLUGIN_DIR "dlvhex/plugins"
 
 /* Version number of package */
 #define VERSION "2.3.0"

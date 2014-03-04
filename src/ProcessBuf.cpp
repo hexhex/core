@@ -78,10 +78,6 @@ ProcessBuf::ProcessBuf()
     }
 #endif
 
-#ifdef WIN32
-
-#endif
-
   initBuffers(); // don't call virtual methods in the ctor
 }
 
@@ -90,9 +86,12 @@ ProcessBuf::ProcessBuf(const ProcessBuf& sb)
   : std::streambuf(),
 #ifdef POSIX
     process(sb.process),
-#endif
-#ifdef WIN32
-	processInformation(sb.processInformation),
+#else
+	#ifdef WIN32
+		processInformation(sb.processInformation),
+	#else
+	  #error Either POSIX or WIN32 must be defined
+	#endif
 #endif
     status(sb.status),
     bufsize(sb.bufsize)
@@ -247,72 +246,69 @@ ProcessBuf::open(const std::vector<std::string>& av)
     }
 
   return process;
-#endif
+#else
+	#ifdef WIN32
+		SECURITY_ATTRIBUTES saAttr;
+		ZeroMemory(&saAttr, sizeof(saAttr));
 
-#ifdef WIN32
-	SECURITY_ATTRIBUTES saAttr;
-    ZeroMemory(&saAttr, sizeof(saAttr));
+		// Set the bInheritHandle flag so pipe handles are inherited. 
 
-	// Set the bInheritHandle flag so pipe handles are inherited. 
+		saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+		saAttr.bInheritHandle = TRUE; 
+		saAttr.lpSecurityDescriptor = NULL; 
 
-	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
-	saAttr.bInheritHandle = TRUE; 
-	saAttr.lpSecurityDescriptor = NULL; 
+		// Create a pipe for the child process's STDOUT.
+		if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0)) return 0;
 
-	// Create a pipe for the child process's STDOUT.
-	if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0)) return 0;
+		// Ensure the read handle to the pipe for STDOUT is not inherited.
+		if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0)) return 0;
 
-	// Ensure the read handle to the pipe for STDOUT is not inherited.
-	if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0)) return 0;
+		// Create a pipe for the child process's STDIN. 
+		if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0)) return 0;
 
-	// Create a pipe for the child process's STDIN. 
-	if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0)) return 0;
+		// Ensure the write handle to the pipe for STDIN is not inherited. 
+		if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0)) return 0;
 
-	// Ensure the write handle to the pipe for STDIN is not inherited. 
-	if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0)) return 0;
+		STARTUPINFO startupInfo;
+		ZeroMemory(&processInformation, sizeof(processInformation));
+		ZeroMemory(&startupInfo, sizeof(startupInfo));
+		startupInfo.cb = sizeof(startupInfo);
+		startupInfo.hStdOutput = g_hChildStd_OUT_Wr;
+		startupInfo.hStdError = g_hChildStd_OUT_Wr;
+		startupInfo.hStdInput = g_hChildStd_IN_Rd;
+		startupInfo.dwFlags |= STARTF_USESTDHANDLES;
+   		std::stringstream args;
+		for (unsigned int i = 1; i < av.size(); i++){
+			args << " " << av[i];
+		}
+		std::string argstr = args.str();
 
-	STARTUPINFO startupInfo;
-    ZeroMemory(&processInformation, sizeof(processInformation));
-    ZeroMemory(&startupInfo, sizeof(startupInfo));
-    startupInfo.cb = sizeof(startupInfo);
-	startupInfo.hStdOutput = g_hChildStd_OUT_Wr;
-	startupInfo.hStdError = g_hChildStd_OUT_Wr;
-	startupInfo.hStdInput = g_hChildStd_IN_Rd;
-	startupInfo.dwFlags |= STARTF_USESTDHANDLES;
-   	std::stringstream args;
-	for (unsigned int i = 1; i < av.size(); i++){
-		args << " " << av[i];
-	}
-	std::string argstr = args.str();
-
-	// get PATH variable
-	DWORD bufferSize = 65535; //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
-	std::string buff;
-	buff.resize(bufferSize);
-	bufferSize = GetEnvironmentVariable("PATH", &buff[0], bufferSize);
-	if (!bufferSize){
-		buff.resize(0);
-	}else{
+		// get PATH variable
+		DWORD bufferSize = 65535; //Limit according to http://msdn.microsoft.com/en-us/library/ms683188.aspx
+		std::string buff;
 		buff.resize(bufferSize);
-	}
-	buff = buff + ";;";
 
-	// search for dlv in all directories listed in PATH
-	bool result = false;
-	while (!result && buff.find(";") != std::wstring::npos){
-		std::string path = buff.substr(0, buff.find(";"));
-		path += (path.size() > 0 ? "\\" : "") + av[0];
-		buff = buff.substr(buff.find(";") + 1);
-	
-		std::string cmdstr = path;
-		result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str(), NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
-	}
-	
-	if (!result){
-		std::cout << GetLastError() << std::endl;
-	}
+		std::string paths = std::string(::getenv("PATH")) + ";;";
 
-	return processInformation.hProcess;
+		// search for dlv in all directories listed in PATH
+		bool result = false;
+		while (!result && paths.find(";") != std::wstring::npos){
+			std::string path = buff.substr(0, paths.find(";"));
+			path += (path.size() > 0 ? "\\" : "") + av[0];
+			paths = paths.substr(buff.find(";") + 1);
+	
+			std::string cmdstr = path;
+			result = (CreateProcess((LPCSTR)cmdstr.c_str(), (LPSTR)argstr.c_str(), NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &startupInfo, &processInformation) == TRUE);
+		}
+	
+		if (!result){
+			std::cout << GetLastError() << std::endl;
+		}
+
+		return processInformation.hProcess;
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 }
 
@@ -328,26 +324,28 @@ ProcessBuf::endoffile()
       ::close(inpipes[1]); // send EOF to stdin of child process
       inpipes[1] = -1;
     }
-#endif
+#else
+	#ifdef WIN32
+		// reset output buffer
+		setp(obuf, obuf + bufsize);
 
-#ifdef WIN32
-	// reset output buffer
-	setp(obuf, obuf + bufsize);
+		if (g_hChildStd_IN_Wr != 0){
+			CloseHandle(g_hChildStd_IN_Wr); // send EOF to stdin of child process
+			g_hChildStd_IN_Wr = 0;
+		}
 
-	if (g_hChildStd_IN_Wr != 0){
-		CloseHandle(g_hChildStd_IN_Wr); // send EOF to stdin of child process
-		g_hChildStd_IN_Wr = 0;
-	}
-
-	// close handles to allow child process termination
-	if (g_hChildStd_IN_Rd != 0){
-		CloseHandle(g_hChildStd_IN_Rd);
-		g_hChildStd_IN_Rd = 0;
-	}
-	if (g_hChildStd_OUT_Wr != 0){
-		CloseHandle(g_hChildStd_OUT_Wr);
-		g_hChildStd_OUT_Wr = 0;
-	}
+		// close handles to allow child process termination
+		if (g_hChildStd_IN_Rd != 0){
+			CloseHandle(g_hChildStd_IN_Rd);
+			g_hChildStd_IN_Rd = 0;
+		}
+		if (g_hChildStd_OUT_Wr != 0){
+			CloseHandle(g_hChildStd_OUT_Wr);
+			g_hChildStd_OUT_Wr = 0;
+		}
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 }
 
@@ -395,37 +393,39 @@ ProcessBuf::close(bool kill)
 
   // exit code of process
   return exitstatus;
-#endif
+#else
+	#ifdef WIN32
+	  if (processInformation.hProcess == 0)
+		  return -1;
 
-#ifdef WIN32
-  if (processInformation.hProcess == 0)
-	  return -1;
-
-	LOG(DBG,"ProcessBuf::close for process " << processInformation.hProcess << "(" << kill << ")");
-	if (processInformation.hProcess != 0){
-		if (kill){
-			TerminateProcess(processInformation.hProcess, 1);
-		}else{
-			WaitForSingleObject(processInformation.hProcess, INFINITE);
+		LOG(DBG,"ProcessBuf::close for process " << processInformation.hProcess << "(" << kill << ")");
+		if (processInformation.hProcess != 0){
+			if (kill){
+				TerminateProcess(processInformation.hProcess, 1);
+			}else{
+				WaitForSingleObject(processInformation.hProcess, INFINITE);
+			}
+			CloseHandle(processInformation.hProcess); // send EOF to stdin of child process
+			processInformation.hProcess = 0;
+			if (processInformation.hThread != 0){
+				CloseHandle(processInformation.hThread);
+				processInformation.hThread = 0;
+			}
 		}
-		CloseHandle(processInformation.hProcess); // send EOF to stdin of child process
-		processInformation.hProcess = 0;
-		if (processInformation.hThread != 0){
-			CloseHandle(processInformation.hThread);
-			processInformation.hThread = 0;
+
+		if (g_hChildStd_IN_Rd != 0){
+			CloseHandle(g_hChildStd_IN_Rd);
+			g_hChildStd_IN_Rd = 0;
 		}
-	}
+		if (g_hChildStd_OUT_Wr != 0){
+			CloseHandle(g_hChildStd_OUT_Wr);
+			g_hChildStd_OUT_Wr = 0;
+		}
 
-	if (g_hChildStd_IN_Rd != 0){
-		CloseHandle(g_hChildStd_IN_Rd);
-		g_hChildStd_IN_Rd = 0;
-	}
-	if (g_hChildStd_OUT_Wr != 0){
-		CloseHandle(g_hChildStd_OUT_Wr);
-		g_hChildStd_OUT_Wr = 0;
-	}
-
-  return 0;
+	  return 0;
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 }
 
@@ -478,17 +478,19 @@ ProcessBuf::underflow()
     }
 
   return traits_type::to_int_type(*gptr());
-#endif
-
-#ifdef WIN32
-	// try to receive at most bufsize bytes
-	DWORD dwRead;
-	bool bSuccess = (ReadFile(g_hChildStd_OUT_Rd, ibuf, bufsize, &dwRead, NULL) == TRUE);
-	if ( ! bSuccess || dwRead == 0 ){
-		return traits_type::eof();
-	}
-	setg(ibuf, ibuf, ibuf + dwRead); // set new input buffer boundaries
-	return traits_type::to_int_type(*gptr());
+#else
+	#ifdef WIN32
+		// try to receive at most bufsize bytes
+		DWORD dwRead;
+		bool bSuccess = (ReadFile(g_hChildStd_OUT_Rd, ibuf, bufsize, &dwRead, NULL) == TRUE);
+		if ( ! bSuccess || dwRead == 0 ){
+			return traits_type::eof();
+		}
+		setg(ibuf, ibuf, ibuf + dwRead); // set new input buffer boundaries
+		return traits_type::to_int_type(*gptr());
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 }
 
@@ -537,52 +539,54 @@ ProcessBuf::sync()
     }
   
   return 0;
-#endif
+#else
+	#ifdef WIN32
+	  // reset input buffer
+	  setg(ibuf, ibuf, ibuf);
 
-#ifdef WIN32
-  // reset input buffer
-  setg(ibuf, ibuf, ibuf);
+	  const int len = pptr() - pbase();
 
-  const int len = pptr() - pbase();
-
-  if (len) // non-empty obuf -> send data
-	{
-		errno = 0;
-
-		// loops until whole obuf is sent
-		//
-		// Warning: when peer disconnects during the sending we receive
-		// a SIGPIPE and the default signal handler exits the program.
-		// Therefore we have to ignore SIGPIPE (in ctor) and reset the
-		// obuf followed by an error return value. See chapter 5.13 of
-		// W.R. Stevens: Unix Network Programming Vol.1.
-
-		DWORD bwritten = 0;
-		bool ret;
-
-		for (int written = 0; written < len; written += bwritten)
+	  if (len) // non-empty obuf -> send data
 		{
-			ret = (WriteFile(g_hChildStd_IN_Wr, pbase() + written, len - written, &bwritten, NULL) == TRUE);
+			errno = 0;
 
-			if (!ret || bwritten == 0) break;
-		}
+			// loops until whole obuf is sent
+			//
+			// Warning: when peer disconnects during the sending we receive
+			// a SIGPIPE and the default signal handler exits the program.
+			// Therefore we have to ignore SIGPIPE (in ctor) and reset the
+			// obuf followed by an error return value. See chapter 5.13 of
+			// W.R. Stevens: Unix Network Programming Vol.1.
 
-		// reset output buffer right after sending to the stream
-		setp(obuf, obuf + bufsize);
+			DWORD bwritten = 0;
+			bool ret;
 
-		if (bwritten == 0) // EOF
-		{
-			return -1;
+			for (int written = 0; written < len; written += bwritten)
+			{
+				ret = (WriteFile(g_hChildStd_IN_Wr, pbase() + written, len - written, &bwritten, NULL) == TRUE);
+
+				if (!ret || bwritten == 0) break;
+			}
+
+			// reset output buffer right after sending to the stream
+			setp(obuf, obuf + bufsize);
+
+			if (bwritten == 0) // EOF
+			{
+				return -1;
+			}
+			else if (!ret) // failure
+			{
+				std::ostringstream oss;
+				oss << "Process prematurely closed pipe before I could write (errno = " << errno << ").";
+				throw std::ios_base::failure(oss.str());
+			}
 		}
-		else if (!ret) // failure
-		{
-			std::ostringstream oss;
-			oss << "Process prematurely closed pipe before I could write (errno = " << errno << ").";
-			throw std::ios_base::failure(oss.str());
-		}
-	}
   
-  return 0;
+	  return 0;
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
 #endif
 }
 
