@@ -128,7 +128,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, I
 #endif
 
 	bool isUFS = true;
-	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
+	for (uint32_t eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		ID eaID = agp.getIndexedEAtom(eaIndex);
 
 		// we only evaluate external atoms which are relevant for some auxiliaries
@@ -258,7 +258,7 @@ bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
 	// remove the external atom from the remaining lists of all auxiliaries which wait for the EA to be verified
 	DBGLOG(DBG, "Updating data structures");
 	assert (eaID.address < ufsVerStatus.externalAtomAddressToAuxIndices.size());
-	BOOST_FOREACH (int i, ufsVerStatus.externalAtomAddressToAuxIndices[eaID.address]){
+	BOOST_FOREACH (uint32_t i, ufsVerStatus.externalAtomAddressToAuxIndices[eaID.address]){
 		assert (i >= 0 && i < ufsVerStatus.auxIndexToRemainingExternalAtoms.size() && i < ufsVerStatus.auxiliariesToVerify.size());
 		DBGLOG(DBG, "Updating auxiliary " << ufsVerStatus.auxiliariesToVerify[i]);
 		if (!ufsVerStatus.auxIndexToRemainingExternalAtoms[i].empty()){
@@ -739,7 +739,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 
 	// if none of the input atoms to an external atom, which are true in I, are in the unfounded set, then the truth value of the external atom cannot change
 	DBGLOG(DBG, "O: Adding basic knowledge about external atom behavior");
-	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
+	for (uint32_t eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		const ExternalAtom& eatom = reg->eatoms.getByID(agp.getIndexedEAtom(eaIndex));
 
 		eatom.updatePredicateInputMask();
@@ -1345,7 +1345,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 	// for all ordinary atoms a
 	// define: a_{IandU} := a_I \wedge a
 	// define: a_{\overline{I}orU} := \neg a_I \or a
-	DBGLOG(DBG, "N: Define a_{IandU} :- a_I \wedge a   and   a_{\overline{I}orU} :- \neg a_I \vee a");
+	DBGLOG(DBG, "N: Define a_{IandU} :- a_I \\wedge a   and   a_{\\overline{I}orU} :- \\neg a_I \\vee a");
 	{
 		bm::bvector<>::enumerator en = domain->getStorage().first();
 		bm::bvector<>::enumerator en_end = domain->getStorage().end();
@@ -1451,7 +1451,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemBasicEABeha
 
 	// if none of the input atoms to an external atom, which are true in I, are in the unfounded set, then the truth value of the external atom cannot change
 	DBGLOG(DBG, "O: Adding basic knowledge about external atom behavior");
-	for (int eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
+	for (uint32_t eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex){
 		const ExternalAtom& eatom = reg->eatoms.getByID(agp.getIndexedEAtom(eaIndex));
 
 		eatom.updatePredicateInputMask();
@@ -1853,8 +1853,8 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 
 void UnfoundedSetCheckerManager::initializeUnfoundedSetCheckers(){
 
-	bool flpdc_head = ctx.config.getOption("FLPDecisionCriterionHead");
-	bool flpdc_e = ctx.config.getOption("FLPDecisionCriterionE");
+	bool flpdc_head = (ctx.config.getOption("FLPDecisionCriterionHead") != 0);
+	bool flpdc_e = (ctx.config.getOption("FLPDecisionCriterionE") != 0);
 
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		if (mg && (agp.hasECycles() || !flpdc_e)){
@@ -1973,8 +1973,8 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		const std::set<ID>& skipProgram,
 		SimpleNogoodContainerPtr ngc){
 
-	bool flpdc_head = ctx.config.getOption("FLPDecisionCriterionHead");
-	bool flpdc_e = ctx.config.getOption("FLPDecisionCriterionE");
+	bool flpdc_head = (ctx.config.getOption("FLPDecisionCriterionHead") != 0);
+	bool flpdc_e = (ctx.config.getOption("FLPDecisionCriterionE") != 0);
 
 	if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e)){
 		DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");

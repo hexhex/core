@@ -145,7 +145,7 @@ struct ExtSourceProperties
 	* @return antimonotonicity on parameter level
 	*/
 	bool isAntimonotonic(int parameterIndex) const
-	{ return antimonotonicInputPredicates.count(parameterIndex); }
+	{ return antimonotonicInputPredicates.count(parameterIndex) > 0; }
 
 	/**
 	* @return nonmonotonicity on parameter level

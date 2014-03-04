@@ -85,6 +85,9 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 		throw GeneralError("No support for gringo compiled into this binary");
 #endif // HAVE_LIBGRINGO
 		break;
+	default:
+		assert(false);
+		return GenuineGrounderPtr();
 	}
 }
 
@@ -110,6 +113,9 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 		throw GeneralError("No support for clasp compiled into this binary");
 #endif // HAVE_LIBCLASP
 		break;
+	default:
+		assert(false);
+		return GenuineGroundSolverPtr();
 	}
 }
 
@@ -136,6 +142,9 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 		throw GeneralError("No support for clasp compiled into this binary");
 #endif // HAVE_LIBCLASP
 		break;
+	default:
+		assert(false);
+		return GenuineGroundSolverPtr();
 	}
 }
 

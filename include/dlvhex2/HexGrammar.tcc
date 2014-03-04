@@ -948,7 +948,7 @@ struct sem<HexGrammarSemantics::maxint>
 {
   void operator()(
     HexGrammarSemantics& mgr,
-    unsigned int source,
+    uint32_t source,
     const boost::spirit::unused_type& )// target)
   {
     mgr.ctx.maxint = source;

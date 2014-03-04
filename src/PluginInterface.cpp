@@ -383,7 +383,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
 				const OrdinaryAtom& atom = query.interpretation->getRegistry()->ogatoms.getByAddress(*en);
 
 				Tuple t;
-				for (int i = 1; i < atom.tuple.size(); i++){
+				for (uint32_t i = 1; i < atom.tuple.size(); i++){
 					t.push_back(atom.tuple[i]);
 				}
 				tuples.insert(t);
@@ -418,7 +418,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
 #endif
 					Query qa = query;
 					qa.predicateInputMask = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
-					for (int parIndex = 0; parIndex < qa.input.size(); parIndex++){
+					for (uint32_t parIndex = 0; parIndex < qa.input.size(); parIndex++){
 						if (getInputType(parIndex) == PREDICATE){
 							// assemble input atom over this tuple and predicate parameter
 							OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
@@ -441,7 +441,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
 		}
 
 		// for all atomic queries, remove input facts which are not in the predicate input
-		for (int i = 0; i < atomicQueries.size(); ++i){
+		for (uint32_t i = 0; i < atomicQueries.size(); ++i){
 			Query& q = atomicQueries[i];
 			InterpretationPtr intr = InterpretationPtr(new Interpretation(q.interpretation->getRegistry()));
 			intr->add(*q.interpretation);
@@ -479,7 +479,7 @@ void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr
 
 	// rewrite atoms of form aux(p1,p2,p3,...) to aux(X1,X2,X3,...) and remember the variables used for the predicates
 	std::map<ID, ID> translation;
-	for (int par = 0; par < inputType.size(); ++par){
+	for (uint32_t par = 0; par < inputType.size(); ++par){
 		if (getInputType(par) == PREDICATE && prop.isIndependentOfPredicateParameterName(par)){
 			if (translation.find(pattern.tuple[par + 1]) == translation.end()){
 				std::stringstream var;
@@ -509,7 +509,7 @@ void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr
 		}else{
 			bool ground = true;
 			OrdinaryAtom t = l;
-			for (int i = 1; i <= inputType.size(); ++i){
+			for (uint32_t i = 1; i <= inputType.size(); ++i){
 				if (getInputType(i - 1) == PREDICATE){
 					if (translation.find(pattern.tuple[i]) != translation.end()){
 						t.tuple[i] = translation[pattern.tuple[i]];

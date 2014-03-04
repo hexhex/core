@@ -818,7 +818,7 @@ void ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 			if (bid.isExternalAtom() && !bid.isNaf()){
 				const ExternalAtom& eatom = reg->eatoms.getByID(bid);
 				bool stratified = true;
-				for (int p = 0; p < eatom.inputs.size() && stratified; ++p){
+				for (uint32_t p = 0; p < eatom.inputs.size() && stratified; ++p){
 					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.getExtSourceProperties().isNonmonotonic(p)){
 						// is this predicate defined in this component?
 						if (ci.predicatesInComponent.count(eatom.inputs[p]) > 0){

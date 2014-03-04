@@ -119,7 +119,7 @@ void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
 	}
 
 	// remove watches for all decision levels
-	for (int i = 0; i <= assignmentsOnDecisionLevel.size(); i++){
+	for (uint32_t i = 0; i <= assignmentsOnDecisionLevel.size(); i++){
 		if (cs.claspctx.master()->validLevel(i)){
 			DBGLOG(DBG, "Removing watch for decision level " << i);
 			cs.claspctx.master()->removeUndoWatch(i, this);
@@ -253,7 +253,7 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 	return s.numFreeVars() == 0 && !s.hasConflict();
 }
 
-uint32 ClaspSolver::ExternalPropagator::priority() const{
+uint32_t ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_class_general;
 }
 
@@ -264,7 +264,7 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 	assert(s.isTrue(p) && s.isFalse(pneg));
 
-	int level = s.level(p.var());
+	uint32_t level = s.level(p.var());
 
 	DBGLOG(DBG, "Clasp notified about literal C:" << p.index() << "/" << (p.sign() ? "!" : "") << p.var() << " becoming true on dl " << level);
 	if (cs.claspToHex.size() > p.index()){
@@ -311,7 +311,7 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 
 	DBGLOG(DBG, "Backtracking to decision level " << s.decisionLevel());
-	for (int i = s.decisionLevel(); i < assignmentsOnDecisionLevel.size(); i++){
+	for (uint32_t i = s.decisionLevel(); i < assignmentsOnDecisionLevel.size(); i++){
 		DBGLOG(DBG, "Undoing decision level " << i);
 		BOOST_FOREACH (IDAddress adr, assignmentsOnDecisionLevel[i]){
 			DBGLOG(DBG, "Unassigning H:" << adr);
@@ -391,7 +391,7 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen){
 #endif
 	}else{
 		DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
-		for (int i = 1; i <= claspctx.numVars(); i++){
+		for (uint32_t i = 1; i <= claspctx.numVars(); i++){
 			claspctx.setFrozen(i, true);
 		}
 	}
@@ -409,7 +409,7 @@ void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId
 		// add literal to head
 		asp.addHead(mapHexToClasp(h.address).var());
 	}
-	for (int i = 0; i < rule.body.size(); ++i){
+	for (uint32_t i = 0; i < rule.body.size(); ++i){
 		// add literal to body
 		asp.addToBody(mapHexToClasp(rule.body[i].address).var(), !rule.body[i].isNaf(), rule.bodyWeightVector[i].address);
 	}
@@ -694,7 +694,7 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSe
 	DBGLOG(DBG, "Building atom index");
 	DBGLOG(DBG, "symbol table has " << claspctx.symbolTable().size() << " entries");
 
-	bool inverselits = ctx.config.getOption("ClaspInverseLiterals");
+	bool inverselits = (ctx.config.getOption("ClaspInverseLiterals") != 0);
 
 	assert(hexToClasp.empty());
 	hexToClasp.reserve(reg->ogatoms.getSize());
@@ -884,7 +884,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng);		
 		bool first = true;
 		ss << ":- ";
-		for (int i = 0; i < ngClasp.clause.size(); ++i){
+		for (uint32_t i = 0; i < ngClasp.clause.size(); ++i){
 			Clasp::Literal lit = ngClasp.clause[i];
 			if (!first) ss << ", ";
 			first = false;

@@ -943,7 +943,7 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 	// fixpoint iteration
 	bool changed = true;
 	std::vector<bool> eaVerified;
-	for (int i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
+	for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
 	while (remainingRules.size() > 0 && changed){
 		changed = false;
 

@@ -1,6 +1,8 @@
 /* include/config.h.  Generated from config.h.in by configure.  */
 /* include/config.h.in.  Generated from configure.ac by autoheader.  */
 
+#pragma warning (disable: 4251)
+
 /* Activates assertions and debug logging */
 #define DEBUG /**/
 

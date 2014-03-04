@@ -131,7 +131,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	// check for nested terms in rule head
 	BOOST_FOREACH (ID a, rule.head){
 		OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
-		for (int i = 1; i < oa.tuple.size(); ++i){
+		for (uint32_t i = 1; i < oa.tuple.size(); ++i){
 			if (oa.tuple[i].isNestedTerm()){
 				throw GeneralError("Internal grounder cannot handle function symbols");
 			}
@@ -140,19 +140,19 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	BOOST_FOREACH (ID a, rule.body){
 		if (a.isOrdinaryAtom()){
 			OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
-			for (int i = 1; i < oa.tuple.size(); ++i){
+			for (uint32_t i = 1; i < oa.tuple.size(); ++i){
 				if (oa.tuple[i].isNestedTerm()){
 					throw GeneralError("Internal grounder cannot handle function symbols");
 				}
 			}
 		}else if (a.isExternalAtom()){
 			ExternalAtom ea = reg->eatoms.getByID(a);
-			for (int i = 0; i < ea.inputs.size(); ++i){
+			for (uint32_t i = 0; i < ea.inputs.size(); ++i){
 				if (ea.inputs[i].isNestedTerm()){
 					throw GeneralError("Internal grounder cannot handle function symbols");
 				}
 			}
-			for (int i = 0; i < ea.tuple.size(); ++i){
+			for (uint32_t i = 0; i < ea.tuple.size(); ++i){
 				if (ea.tuple[i].isNestedTerm()){
 					throw GeneralError("Internal grounder cannot handle function symbols");
 				}
@@ -177,7 +177,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 			// replace all anonamous variables by ordinary ones ("_N" with N>=0)
 			if (a.isOrdinaryAtom()){
 				OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
-				for (int i = 1; i < oa.tuple.size(); ++i){
+				for (uint32_t i = 1; i < oa.tuple.size(); ++i){
 					if (oa.tuple[i].isAnonymousVariable()){
 						std::stringstream newVar;
 						newVar << prefix.str() << varIndex++;
@@ -187,14 +187,14 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 				newrule.body.push_back(ID::literalFromAtom(reg->storeOrdinaryAtom(oa), a.isNaf()));
 			}else if (a.isExternalAtom()){
 				ExternalAtom ea = reg->eatoms.getByID(a);
-				for (int i = 0; i < ea.inputs.size(); ++i){
+				for (uint32_t i = 0; i < ea.inputs.size(); ++i){
 					if (ea.inputs[i].isAnonymousVariable()){
 						std::stringstream newVar;
 						newVar << prefix.str() << varIndex++;
 						ea.inputs[i] = reg->storeVariableTerm(newVar.str());
 					}
 				}
-				for (int i = 0; i < ea.tuple.size(); ++i){
+				for (uint32_t i = 0; i < ea.tuple.size(); ++i){
 					if (ea.tuple[i].isAnonymousVariable()){
 						std::stringstream newVar;
 						newVar << prefix.str() << varIndex++;
@@ -248,7 +248,7 @@ void InternalGrounder::computeStrata(){
 	// one node for each component
 	std::map<int, SCCDepGraph::vertex_descriptor> compToVertex;
 	std::map<SCCDepGraph::vertex_descriptor, int> vertexToComp;
-	for (unsigned int compNr = 0; compNr < depSCC.size(); ++compNr){
+	for (uint32_t compNr = 0; compNr < depSCC.size(); ++compNr){
 		compToVertex[compNr] = boost::add_vertex(compNr, compDependencies);
 		vertexToComp[compToVertex[compNr]] = compNr;
 	}
@@ -338,7 +338,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 
 	// ground all rules
 	DBGLOG(DBG, "Processing rules");
-	for (int ruleIndex = 0; ruleIndex < nonGroundRules.size(); ++ruleIndex){
+	for (uint32_t ruleIndex = 0; ruleIndex < nonGroundRules.size(); ++ruleIndex){
 		Substitution s;
 		groundRule(nonGroundRules[ruleIndex], s, groundRules, newDerivableAtoms);
 	}
@@ -395,7 +395,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 	Binder binders = getBinderOfRule(body);
 	std::set<ID> outputVars = getOutputVariables(ruleID);
 	std::vector<std::set<ID> > freeVars;
-	for (int i = 0; i < body.size(); ++i){
+	for (uint32_t i = 0; i < body.size(); ++i){
 		freeVars.push_back(getFreeVars(body, i));
 	}
 	std::set<ID> failureVars;
@@ -407,7 +407,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 	}else{
 		// start search at position 0 in the extension of all predicates
 		std::vector<int> searchPos;
-		for (int i = 0; i < body.size(); ++i) searchPos.push_back(0);
+		for (uint32_t i = 0; i < body.size(); ++i) searchPos.push_back(0);
 
 		// go through all (positive) body atoms
 		for (std::vector<ID>::const_iterator it = body.begin(); it != body.end(); ){
@@ -634,7 +634,7 @@ bool InternalGrounder::matchOrdinary(ID literalID, ID patternLiteralID, Substitu
 	if (!atom.unifiesWith(patternAtom)) return false;
 
 	// compute the unifying substitution
-	for (unsigned int termIndex = 0; termIndex < atom.tuple.size(); ++termIndex){
+	for (uint32_t termIndex = 0; termIndex < atom.tuple.size(); ++termIndex){
 		if (atom.tuple[termIndex].isVariableTerm()){
 			s[atom.tuple[termIndex]] = patternAtom.tuple[termIndex];
 		}
@@ -653,7 +653,7 @@ bool InternalGrounder::matchBuiltin(ID literalID, ID patternLiteralID, Substitut
 
 	// compute the unifying substitution
 	Substitution s2 = s;
-	for (unsigned int termIndex = 0; termIndex < atom.tuple.size(); ++termIndex){
+	for (uint32_t termIndex = 0; termIndex < atom.tuple.size(); ++termIndex){
 		if (atom.tuple[termIndex].isVariableTerm()){
 			if (s.find(atom.tuple[termIndex]) != s.end() && s[atom.tuple[termIndex]] != patternAtom.tuple[termIndex]) return false;
 			s[atom.tuple[termIndex]] = patternAtom.tuple[termIndex];
@@ -772,6 +772,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID literalID, Substitut
 			}
 	}
 	assert(false);
+	return 0;
 }
 
 int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitution& s, int startSearchIndex){
@@ -818,8 +819,8 @@ int InternalGrounder::matchNextFromExtensionBuiltinTernary(ID literalID, Substit
 	}else{
 		const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 
-		int x = startSearchIndex / (ctx.maxint + 1);
-		int y = startSearchIndex % (ctx.maxint + 1);
+		uint32_t x = startSearchIndex / (ctx.maxint + 1);
+		uint32_t y = startSearchIndex % (ctx.maxint + 1);
 
 		if (atom.tuple[1].isConstantTerm() || atom.tuple[2].isConstantTerm() || atom.tuple[3].isConstantTerm()) return -1;
 
@@ -839,6 +840,8 @@ int InternalGrounder::matchNextFromExtensionBuiltinTernary(ID literalID, Substit
 				return -1;
 			}
 		}
+
+		return -1;
 	}
 }
 
@@ -895,6 +898,9 @@ ID InternalGrounder::applySubstitutionToAtom(Substitution s, ID atomID){
 	if (atomID.isBuiltinAtom()){
 		return applySubstitutionToBuiltinAtom(s, atomID);
 	}
+	
+	assert(false && "unsupported atom type");
+	return ID_FAIL;
 }
 
 ID InternalGrounder::applySubstitutionToOrdinaryAtom(Substitution s, ID atomID){
@@ -905,7 +911,7 @@ ID InternalGrounder::applySubstitutionToOrdinaryAtom(Substitution s, ID atomID){
 	const OrdinaryAtom& onatom = reg->onatoms.getByID(atomID);
 	Tuple t = onatom.tuple;
 	bool isGround = true;
-	for (unsigned int termIndex = 0; termIndex < t.size(); ++termIndex){
+	for (uint32_t termIndex = 0; termIndex < t.size(); ++termIndex){
 		if (s.find(t[termIndex]) != s.end()){
 			t[termIndex] = s[t[termIndex]];
 		}
@@ -942,7 +948,7 @@ ID InternalGrounder::applySubstitutionToBuiltinAtom(Substitution s, ID atomID){
 	const BuiltinAtom& batom = reg->batoms.getByID(atomID);
 	Tuple t = batom.tuple;
 	bool isGround = true;
-	for (unsigned int termIndex = 1; termIndex < t.size(); ++termIndex){
+	for (uint32_t termIndex = 1; termIndex < t.size(); ++termIndex){
 		if (s.find(t[termIndex]) != s.end()){
 			t[termIndex] = s[t[termIndex]];
 		}
@@ -1318,7 +1324,7 @@ InternalGrounder::InternalGrounder(ProgramCtx& c, const OrdinaryASPProgram& p, O
 	computeGloballyNewAtom();
 
 	// now ground stratum by stratum
-	for (unsigned int stratumNr = 0; stratumNr < predicatesOfStratum.size(); ++stratumNr){
+	for (uint32_t stratumNr = 0; stratumNr < predicatesOfStratum.size(); ++stratumNr){
 		groundStratum(stratumNr);
 	}
 

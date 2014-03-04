@@ -75,7 +75,7 @@ std::vector<int>& AnswerSet::getWeightVector(){
 bool AnswerSet::betterThan(std::vector<int>& cwv){
 
 	// check if one of the vectors has cost values on higher levels
-	int i;
+	uint32_t i;
 	if (weightVector.size() < cwv.size()){
 		for (i = weightVector.size(); i < cwv.size(); ++i)
 			if (cwv[i] > 0) return true;
@@ -100,7 +100,7 @@ bool AnswerSet::betterThan(std::vector<int>& cwv){
 std::ostream& AnswerSet::printWeightVector(std::ostream& o) const{
   if (weightVector.size() > 0){
 	bool first = true;
-	for (int level = 0; level < weightVector.size(); ++level){
+	for (uint32_t level = 0; level < weightVector.size(); ++level){
 		if (weightVector[level] > 0){
 			o << (first ? " <" : ",");
 			o << "[" << weightVector[level] << ":" << level << "]";

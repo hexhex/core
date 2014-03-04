@@ -130,12 +130,12 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 			if (param2 != ID_FAIL) throw GeneralError("Property \"monotonic\" expects less than two parameters");
 			if (param1 == ID_FAIL){
 				DBGLOG(DBG, "External Atom is monotonic in all input parameters");
-				for (int i = 0; i < atom.inputs.size(); ++i){
+				for (uint32_t i = 0; i < atom.inputs.size(); ++i){
 					monotonicInputPredicates.insert(i);
 				}
 			}else{
 				bool found = false;
-				for (int i = 0; i < atom.inputs.size(); ++i){
+				for (uint32_t i = 0; i < atom.inputs.size(); ++i){
 					if (atom.inputs[i] == param1){
 						DBGLOG(DBG, "External Atom is monotonic in parameter " << i);
 						monotonicInputPredicates.insert(i);
@@ -149,12 +149,12 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 			if (param2 != ID_FAIL) throw GeneralError("Property \"antimonotonic\" expects less than two parameters");
 			if (param1 == ID_FAIL){
 				DBGLOG(DBG, "External Atom is antimonotonic in all input parameters");
-				for (int i = 0; i < atom.inputs.size(); ++i){
+				for (uint32_t i = 0; i < atom.inputs.size(); ++i){
 					antimonotonicInputPredicates.insert(i);
 				}
 			}else{
 				bool found = false;
-				for (int i = 0; i < atom.inputs.size(); ++i){
+				for (uint32_t i = 0; i < atom.inputs.size(); ++i){
 					if (atom.inputs[i] == param1){
 						DBGLOG(DBG, "External Atom is antimonotonic in parameter " << i);
 						antimonotonicInputPredicates.insert(i);
@@ -180,7 +180,7 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 			if (param2 != ID_FAIL) throw GeneralError("Property \"finitedomain\" expects less than two parameters");
 			if (param1 == ID_FAIL){
 				DBGLOG(DBG, "External Atom has a finite domain in all output positions");
-				for (int i = 0; i < atom.tuple.size(); ++i){
+				for (uint32_t i = 0; i < atom.tuple.size(); ++i){
 					finiteOutputDomain.insert(i);
 				}
 			}else{
@@ -192,7 +192,7 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
 			if (param1 == ID_FAIL || param2 == ID_FAIL) throw GeneralError("Property \"relativefinitedomain\" expects two parameters");
 			int wrt;
 			bool found = false;
-			for (int i = 0; i < atom.inputs.size(); ++i){
+			for (uint32_t i = 0; i < atom.inputs.size(); ++i){
 				if (atom.inputs[i] == param2){
 					wrt = i;
 					found = true;

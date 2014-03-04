@@ -178,7 +178,7 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a, RegistryPtr reg) const
     do{
       ss << "X";
     }while(vars1.count(reg->storeVariableTerm(ss.str())) > 0);
-    for (int t = 0; t < result1.size(); ++t){
+    for (uint32_t t = 0; t < result1.size(); ++t){
       result1[t] = reg->replaceVariablesInTerm(result1[t], v, reg->storeVariableTerm(ss.str()));
     }
     i++;
@@ -193,7 +193,7 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a, RegistryPtr reg) const
     do{
       ss << "Y";
     }while(vars2.count(reg->storeVariableTerm(ss.str())) > 0);
-    for (int t = 0; t < result2.size(); ++t){
+    for (uint32_t t = 0; t < result2.size(); ++t){
       result2[t] = reg->replaceVariablesInTerm(result2[t], v, reg->storeVariableTerm(ss.str()));
     }
     i++;
@@ -203,7 +203,7 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a, RegistryPtr reg) const
 #ifdef DEBUG_UNIFICATION
   DBGLOG(DBG, "Constructing difference set");
 #endif
-  for (int i = 0; i < result1.size(); ++i){
+  for (uint32_t i = 0; i < result1.size(); ++i){
     diff.push_back(Pair(result1[i], result2[i]));
   }
 
@@ -247,7 +247,7 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a, RegistryPtr reg) const
         }
 #endif
 
-        for (int i = 0; i < t1.arguments.size(); ++i){
+        for (uint32_t i = 0; i < t1.arguments.size(); ++i){
           diff.push_back(Pair(t1.arguments[0], t2.arguments[0]));
         }
         diff.erase(diff.begin() + nr);

@@ -111,7 +111,7 @@ private:
 		virtual void undoLevel(Clasp::Solver& s);
 //		virtual void reason(Clasp::Solver& s, Clasp::Literal p, Clasp::LitVec& lits);
 	
-		virtual uint32 priority() const;
+		virtual unsigned int priority() const;
 	};
 
 	// interface to clasp internals

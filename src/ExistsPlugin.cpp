@@ -319,7 +319,7 @@ void ExistsRewriter::rewrite(ProgramCtx& ctx)
 				newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
 
 				std::set<ID> existentialVariables;
-				for (int i = 2; i < existsAtom.tuple.size(); ++i){
+				for (uint32_t i = 2; i < existsAtom.tuple.size(); ++i){
 					existentialVariables.insert(existsAtom.tuple[i]);
 				}
 
@@ -439,7 +439,7 @@ public:
 				if (b.isExternalAtom() && ctxdata.existentialSimulationAtoms.count(b) > 0){
 					const ExternalAtom& eatom = lsc.reg->eatoms.getByID(b);
 
-					for (int i = 0; i < eatom.tuple.size(); ++i){
+					for (uint32_t i = 0; i < eatom.tuple.size(); ++i){
 						LiberalSafetyChecker::VariableLocation vl(ruleID, eatom.tuple[i]);
 						if (lsc.getBoundedVariables().count(vl) == 0){
 							DBGLOG(DBG, "Variable " << vl.first.address << "/" << vl.second.address << " is bounded because output element " << i << " of external atom " << b << " has a finite domain");

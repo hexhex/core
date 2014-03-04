@@ -281,7 +281,7 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 	defaultExternalAtomEvalHeuristics = factory.ctx.defaultExternalAtomEvaluationHeuristicsFactory->createHeuristics(reg);
 
 	// set external atom evaluation strategy according to selected heuristics
-	for (int i = 0; i < factory.innerEatoms.size(); ++i){
+	for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i){
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[i]);
 
 		eaEvaluated.push_back(false);
@@ -624,7 +624,7 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 	int ngCount;
 
 	compatible = true;
-	for (int eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
+	for (uint32_t eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == true){
 		}
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false){

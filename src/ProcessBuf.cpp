@@ -278,7 +278,7 @@ ProcessBuf::open(const std::vector<std::string>& av)
 		startupInfo.hStdInput = g_hChildStd_IN_Rd;
 		startupInfo.dwFlags |= STARTF_USESTDHANDLES;
    		std::stringstream args;
-		for (unsigned int i = 1; i < av.size(); i++){
+		for (uint32_t i = 1; i < av.size(); i++){
 			args << " " << av[i];
 		}
 		std::string argstr = args.str();

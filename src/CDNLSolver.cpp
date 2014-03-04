@@ -241,7 +241,7 @@ void CDNLSolver::clearFact(IDAddress litadr){
 
 void CDNLSolver::backtrack(int dl){
 
-	for (int i = dl + 1; i < factsOnDecisionLevel.size(); ++i){
+	for (uint32_t i = dl + 1; i < factsOnDecisionLevel.size(); ++i){
 		BOOST_FOREACH (IDAddress f, factsOnDecisionLevel[i]){
 			clearFact(f);
 		}
@@ -339,7 +339,7 @@ void CDNLSolver::initWatchingStructures(){
 	contradictoryNogoods.clear();
 
 	// each nogood watches (at most) two of its literals
-	for (unsigned int nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
+	for (uint32_t nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
 		updateWatchingStructuresAfterAddNogood(nogoodNr);
 	}
 }
