@@ -260,7 +260,7 @@ private:
 //inline
 std::ostream& BenchmarkController::printInSecs(std::ostream& out, const Duration& td, int width) const
 {
-  long in_secs = td.total_milliseconds();
+  long in_secs = (long)td.total_milliseconds();
 
   long secs = in_secs / 1000;
   long rest = in_secs % 1000;

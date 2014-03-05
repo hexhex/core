@@ -495,16 +495,16 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 		ValVec::const_iterator k = vals_.begin() + atom.second;
 		ValVec::const_iterator end = k + arity;
 		ss << "(";
-		symbolstarts.push_back(ss.tellp());
+		symbolstarts.push_back((unsigned)ss.tellp());
 		k->print(s_, ss);
 		for(++k; k != end; ++k)
 		{
 			ss << ",";
-			symbolstarts.push_back(ss.tellp());
+			symbolstarts.push_back((unsigned)ss.tellp());
 			k->print(s_, ss);
 		}
 		ss << ")";
-		symbolstarts.push_back(ss.tellp());
+		symbolstarts.push_back((unsigned)ss.tellp());
 	}
 	else
 	{

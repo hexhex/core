@@ -73,8 +73,8 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 
 	// initialize propagation deferring
 	lastPropagation = boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time());
-	double deferMS = cs.ctx.config.getOption("ClaspDeferMaxTMilliseconds");
-	skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000.0);
+	int deferMS = cs.ctx.config.getOption("ClaspDeferMaxTMilliseconds");
+	skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000);
 
 	skipAmount = cs.ctx.config.getOption("ClaspDeferNPropagations");
 	skipCounter = 0;

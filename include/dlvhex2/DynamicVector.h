@@ -54,7 +54,7 @@ public:
 	}
 
 	inline T& operator[](K index){
-		if (index >= this->size()){
+		if (index >= (K)this->size()){
 			this->resize(index + 1);
 		}
 		stored.set_bit(index);

@@ -621,7 +621,6 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 	// did we already verify during model construction or do we have to do the verification now?
 	bool compatible;
-	int ngCount;
 
 	compatible = true;
 	for (uint32_t eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){

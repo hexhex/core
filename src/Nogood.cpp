@@ -347,7 +347,7 @@ void NogoodSet::defragment(){
 			used--;
 		}
 		// let free point to the next free index in the range 0-(ngg.nogoods.size()-1)
-		while (free < nogoods.size() - 1 && freeIndices.count(free) == 0) free++;
+		while (free < (int)nogoods.size() - 1 && freeIndices.count(free) == 0) free++;
 		// move used to free
 		if (free < used){
 			nogoods[free] = nogoods[used];
@@ -367,7 +367,7 @@ void NogoodSet::defragment(){
 		typedef std::pair<size_t, Set<int> > Pair;
 		BOOST_FOREACH (Pair p, nogoodsWithHash){
 			BOOST_FOREACH (int i, p.second){
-				assert (i < nogoods.size());
+				assert (i < (int)nogoods.size());
 			}
 		}
 	}
@@ -516,7 +516,7 @@ void SimpleNogoodContainer::addAllResolvents(RegistryPtr reg, int maxSize){
 	// for all nogoods
 	std::vector<Nogood> addList;
 	int ng1i = 0;
-	while (ng1i < nogoodList.size()){
+	while (ng1i < (int)nogoodList.size()){
 		Nogood ng1 = nogoodList[ng1i];
 		DBGLOG(DBG, "Trying to resolve " << ng1.getStringRepresentation(reg));
 
@@ -581,7 +581,7 @@ void SimpleNogoodContainer::addAllResolvents(RegistryPtr reg, int maxSize){
 							DBGLOG(DBG, "Adding the resolvent");
 							addNogood(resolvent);
 							// if the nogood is not already present, then we also need to resolve it
-							if (getNogoodCount() > nogoodList.size() + addList.size()){
+							if (getNogoodCount() > (int)(nogoodList.size() + addList.size())){
 								DBGLOG(DBG, "Adding the resolvent " << resolvent.getStringRepresentation(reg) << " for further resolution because there were " << (getNogoodCount() - (nogoodList.size() + addList.size())) << " new nogoods");
 								addList.push_back(resolvent);
 							}

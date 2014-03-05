@@ -207,7 +207,7 @@ void UnfoundedSetCheckHeuristicsMax::notify(InterpretationConstPtr verifiedAuxes
 					}
 				}
 			}
-#ifndef NDEBU(G
+#ifndef NDEBUG
 			if (!previouslyAssignedAndVerifiedAtoms->getFact(*en)){
 				BOOST_FOREACH (int ruleNr, rulesOfAtom[*en]){
 					assert(idb[ruleNr].isRule());

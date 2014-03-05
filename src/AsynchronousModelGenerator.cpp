@@ -53,7 +53,7 @@ void AsynchronousModelGenerator::generateModels(){
 			// wait for space in the queue
 			boost::mutex::scoped_lock lock(modelsMutex);
 			if (terminationRequest) break;
-			while(models.size() >= maxModels){
+			while(models.size() >= (uint32_t)maxModels){
 				DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved");
 				waitForQueueSpaceCondition.wait(lock);
 			}

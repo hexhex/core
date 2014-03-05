@@ -51,6 +51,11 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+#ifdef _MSC_VER
+	// suppresses warning C4250: 'dlvhex::InternalGroundASPSolver' : inherits 'dlvhex::CDNLSolver::dlvhex::CDNLSolver::addNogood' via dominance
+	// (there is a compiler bug in MSVC; the call of addNogood is actually _not_ ambigious because the method is pure virtual in GenuineGroundSolver)
+	#pragma warning (disable: 4250)
+#endif
 class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver{
 private:
 	std::string bodyAtomPrefix;
@@ -158,6 +163,9 @@ public:
 	typedef boost::shared_ptr<InternalGroundASPSolver> Ptr;
 	typedef boost::shared_ptr<const InternalGroundASPSolver> ConstPtr;
 };
+#ifdef _MSC_VER
+	#pragma warning (default: 4250)
+#endif
 
 typedef InternalGroundASPSolver::Ptr InternalGroundASPSolverPtr;
 typedef InternalGroundASPSolver::ConstPtr InternalGroundASPSolverConstPtr;

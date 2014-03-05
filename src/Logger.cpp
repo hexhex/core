@@ -74,7 +74,7 @@ boost::mutex& Logger::Mutex()
 
 void Logger::setPrintLevels(Levels levels)
 {
-  if( levels & ERROR != ERROR )
+  if( (levels & ERROR) != ERROR )
     out << "Logger warning: deactivated ERROR level" << std::endl;
   printlevels = levels;
 }

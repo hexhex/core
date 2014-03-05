@@ -274,7 +274,7 @@ struct DLVHEX_EXPORT ComfortAtom:
 
   inline const ComfortTerm getArgument(int index) const
     { 
-      assert(index >= 0 && index < tuple.size());
+      assert(index >= 0 && index < (int)tuple.size());
       return tuple[index];
     }
 
@@ -292,7 +292,7 @@ struct DLVHEX_EXPORT ComfortAtom:
 
   inline void setArgument(int index, ComfortTerm arg)
     { 
-      assert(index >= 0 && index < tuple.size());
+      assert(index >= 0 && index < (int)tuple.size());
       tuple[index] = arg;
     }
 

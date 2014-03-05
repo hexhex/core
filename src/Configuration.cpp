@@ -89,7 +89,7 @@ Configuration::doVerbose(verboseAction_t va)
 	//
 	// bitwise and
 	//
-    return (this->getOption("Verbose") & verboseLevel[va]);
+    return (this->getOption("Verbose") & verboseLevel[va]) != 0;
 }
 
 

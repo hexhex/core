@@ -754,7 +754,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID literalID, Substitut
 	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 	switch (atom.tuple[0].address){
 		case ID::TERM_BUILTIN_INT:
-			if (startSearchIndex > ctx.maxint){
+			if (startSearchIndex > (int)ctx.maxint){
 				return -1;
 			}else{
 				if (atom.tuple[1].isVariableTerm()){
@@ -765,7 +765,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID literalID, Substitut
 				}else{
 					assert(atom.tuple[1].isIntegerTerm());
 
-					if (startSearchIndex <= atom.tuple[1].address){
+					if (startSearchIndex <= (int)atom.tuple[1].address){
 						return atom.tuple[1].address + 1;
 					}
 				}
@@ -814,7 +814,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitu
 
 int InternalGrounder::matchNextFromExtensionBuiltinTernary(ID literalID, Substitution& s, int startSearchIndex){
 
-	if (startSearchIndex > (ctx.maxint + 1) * (ctx.maxint + 1)){
+	if (startSearchIndex > (int)((ctx.maxint + 1) * (ctx.maxint + 1))){
 		return -1;
 	}else{
 		const BuiltinAtom& atom = reg->batoms.getByID(literalID);

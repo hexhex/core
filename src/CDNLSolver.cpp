@@ -116,7 +116,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	do{
 		bool foundImpliedLit = false;
 		count = 0;
-		impliedLit = ID_FAIL;
+		impliedLit = ID::ALL_ONES;
 		latestLit = ID_FAIL;
 		latestLitAssignmentOrderIndex = -1;
 		BOOST_FOREACH (ID lit, learnedNogood){
@@ -339,7 +339,7 @@ void CDNLSolver::initWatchingStructures(){
 	contradictoryNogoods.clear();
 
 	// each nogood watches (at most) two of its literals
-	for (uint32_t nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
+	for (int nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
 		updateWatchingStructuresAfterAddNogood(nogoodNr);
 	}
 }
