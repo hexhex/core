@@ -329,7 +329,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 					}
 				}
 				// compare other inputs
-				for (int i = 0; i < query.input.size(); i++){
+				for (uint32_t i = 0; i < query.input.size(); i++){
 					if (atom.tuple[aux + 1 + i] != query.input[i]){
 						paramMatch = false;
 						break;
@@ -339,7 +339,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 				if (paramMatch){
 					// check if this tuple is _not_ in the answer
 					Tuple t;
-					for (int i = aux + 1 + query.input.size(); i < atom.tuple.size(); i++){
+					for (uint32_t i = aux + 1 + query.input.size(); i < atom.tuple.size(); i++){
 						t.push_back(atom.tuple[i]);
 					}
 
@@ -403,7 +403,7 @@ void ExternalLearningHelper::learnFromRule(const PluginAtom::Query& query, ID ri
 		// prepare map for replacing body predicates:
 		// "in[i+1]" is replaced by the predicate passed as parameter number "i"
 		std::map<ID, ID> predReplacementMap;
-		for (int p = 0; p < query.input.size(); p++){
+		for (uint32_t p = 0; p < query.input.size(); p++){
 			std::stringstream inPredStr;
 			inPredStr << "in" << (p + 1);
 			Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
@@ -423,7 +423,7 @@ void ExternalLearningHelper::learnFromRule(const PluginAtom::Query& query, ID ri
 			// replace predicate name by parameter from query.input
 			OrdinaryAtom roatom = oatom;
 			bool found = false;
-			for (int inp = 0; inp < query.input.size(); inp++){
+			for (uint32_t inp = 0; inp < query.input.size(); inp++){
 				std::stringstream inPredStr;
 				inPredStr << "in" << (inp + 1);
 				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());

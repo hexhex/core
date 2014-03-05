@@ -117,7 +117,6 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_DLVPROCESS_H
 
-
 // Local Variables:
 // mode: C++
 // End:

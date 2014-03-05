@@ -228,7 +228,7 @@ std::ostream& Registry::print(std::ostream& o) //const
       o << "moduleTable:" << std::endl <<
       moduleTable <<
       "inputList:" << std::endl;
-      for (int i=0;i<inputList.size();i++)
+      for (uint32_t i=0;i<inputList.size();i++)
         {
           o << printvector(inputList.at(i)) << std::endl;
         }
@@ -432,7 +432,7 @@ ID Registry::replaceVariablesInTerm(const ID term, const ID var, const ID by){
   {
     Term t = terms.getByID(term);
 
-    for (int i = 1; i < t.arguments.size(); ++i){
+    for (uint32_t i = 1; i < t.arguments.size(); ++i){
       t.arguments[i] = replaceVariablesInTerm(t.arguments[i], var, by);
     }
 
@@ -442,6 +442,7 @@ ID Registry::replaceVariablesInTerm(const ID term, const ID var, const ID by){
     return tid;
   }
   assert (false);
+  return ID_FAIL;
 }
 
 // get the predicate of an ordinary or external atom
@@ -452,6 +453,7 @@ ID Registry::getPredicateOfAtom(ID atom){
 		return eatoms.getByID(atom).predicate;
 	}else{
 		assert(false);
+		return ID_FAIL;
 	}
 }
 
@@ -569,7 +571,7 @@ ID Registry::storeTerm(Term& term)
     {
       return ID::termFromInteger(boost::lexical_cast<uint32_t>(term.symbol));
     }
-    catch( const boost::bad_lexical_cast& e )
+    catch( const boost::bad_lexical_cast&)
     {
       throw FatalError("bad term to convert to integer: '" + term.symbol + "'");
     }

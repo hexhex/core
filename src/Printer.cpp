@@ -268,7 +268,7 @@ void RawPrinter::print(ID id)
 				{
 					out << " :- ";
 					out << r.bound.address << " ";
-					for (int i = 0; i < r.body.size(); ++i){
+					for (uint32_t i = 0; i < r.body.size(); ++i){
 						out << (i > 0 ? ", " : "");
 						print(r.body[i]);
 						out << "=" << r.bodyWeightVector[i].address;

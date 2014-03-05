@@ -92,6 +92,49 @@ protected:
 	*/
 	virtual std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet) = 0;
 
+private:
+
+	// defines data structures used for verification of UFS candidates
+	struct UnfoundedSetVerificationStatus{
+		// Input used for external atom evaluation
+		InterpretationPtr eaInput;
+
+		// The auxiliaries which's new truth value needs to be checked
+		// For each auxiliary A with address adr there is a unique index i s.t. auxiliariesToVerify[i]=adr
+		std::vector<IDAddress> auxiliariesToVerify;
+
+		// Stores for each auxiliary A with index i (see above) the external atoms auxiliaryDependsOnEA[i] which are remain to be evaluated before the truth/falsity of A is certain
+		// (Note: since it needs to store the external atoms which *remain to be verified*, we cannot use the features of AnnotatedGroundProgram)
+		std::vector<std::set<ID> > auxIndexToRemainingExternalAtoms;
+
+		// Stores for each external atom with address adr the indices eaToAuxIndex[adr] in the vector auxiliaryDependsOnEA which depend on this external atom
+		// (Note: since we need only certain auxiliaries, we cannot use the features of AnnotatedGroundProgram)
+		std::vector<std::vector<int> > externalAtomAddressToAuxIndices;
+
+		/**
+		 * Prepares data structures used for verification of an unfounded set candidate wrt. a compatible set.
+		 * @param agp The program over which the UFS check is done
+		 * @param domain Domain of this unfounded set check
+		 * @param ufsCandidate Representation of the UFS candidate
+		 * @param compatibleSet Compatible Set
+		 */
+		UnfoundedSetVerificationStatus(
+			const AnnotatedGroundProgram& agp,
+			InterpretationConstPtr domain, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux);
+	};
+
+	/**
+	 * Explicitly evaluates an external atom and verifies or falsifies the auxiliaries which depend on it.
+	 * @param ufsCandidate Representation of the UFS candidate
+	 * @param compatibleSet Compatible Set
+	 * @param ufsVerStatus Represents the current verification status (to be prepared by indexEatomsForUfsVerification)
+	 * @param bool True iff verification succeeded
+	 */
+	bool verifyExternalAtomByEvaluation(
+		ID eaID,
+		InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet,
+		UnfoundedSetVerificationStatus& ufsVerStatus);
+
 public:
 	/**
 	* \brief Initialization for UFS search considering external atoms as ordinary ones
@@ -139,7 +182,7 @@ public:
 	* @param skipProgram The set of rules which shall be ignored in the UFS check (because the assignment might be incomplete wrt. these rules)
 	* @return std::vector<IDAddress> An unfounded set (might be of size 0)
 	*/
-	virtual std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>()) = 0;
+	virtual std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram) = 0;
 
 	/**
 	 * Forces the unfounded set checker to learn nogoods from main search now
@@ -184,49 +227,49 @@ private:
 	NogoodSet& ufsDetectionProblem,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemNecessaryPart(
 	NogoodSet& ufsDetectionProblem,
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPart(
 	NogoodSet& ufsDetectionProblem,
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartRestrictToCompatibleSet(
 	NogoodSet& ufsDetectionProblem,
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartBasicEAKnowledge(
 	NogoodSet& ufsDetectionProblem,
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch(
 	NogoodSet& ufsDetectionProblem,
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartEAEnforement(
 	NogoodSet& ufsDetectionProblem,
 	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
-	std::set<ID>& skipProgram,
+	const std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
 
   std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet);
@@ -250,7 +293,7 @@ public:
 
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr compatibleSet,
-			std::set<ID> skipProgram = std::set<ID>());
+			const std::set<ID>& skipProgram);
 };
 
 class AssumptionBasedUnfoundedSetChecker : public UnfoundedSetChecker{
@@ -312,10 +355,10 @@ public:
 
 	void learnNogoodsFromMainSearch(bool reset);
 
-	std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>());
+	std::vector<IDAddress> getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram);
 };
 
-class UnfoundedSetCheckerManager{
+class DLVHEX_EXPORT UnfoundedSetCheckerManager{
 private:
 	ProgramCtx& ctx;
 
@@ -377,8 +420,11 @@ public:
 
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr interpretation,
-			std::set<ID> skipProgram = std::set<ID>(),
+			const std::set<ID>& skipProgram,
 			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
+
+	std::vector<IDAddress> getUnfoundedSet(
+			InterpretationConstPtr interpretation);
 
 	/**
 	 * Initializes the unfounded set checkers for all program components.

@@ -386,7 +386,9 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   const ExternalAtom& eatom,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb,
-  NogoodContainerPtr nogoods) const
+  NogoodContainerPtr nogoods,
+  InterpretationConstPtr assigned,
+  InterpretationConstPtr changed) const
 {
   LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
@@ -412,6 +414,12 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(ctx.registry(), eatom, inputi);
 
+  InterpretationConstPtr eatomassigned =
+    projectEAtomInputInterpretation(ctx.registry(), eatom, assigned);
+
+  InterpretationConstPtr eatomchanged =
+    projectEAtomInputInterpretation(ctx.registry(), eatom, changed);
+
   if( eatom.auxInputPredicate == ID_FAIL )
   {
 	// only one input tuple, and that is the one stored in eatom.inputs
@@ -424,7 +432,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 	}
 
 	// XXX here we copy it, we should just reference it
-	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, &eatom);
+	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, &eatom, InterpretationPtr(), eatomassigned, eatomchanged);
 	// XXX make this part of constructor
 	query.extinterpretation = inputi;
 	return evaluateExternalAtomQuery(query, cb, nogoods);
@@ -462,7 +470,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom);
+			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom, InterpretationPtr(), eatomassigned, eatomchanged);
 			query.extinterpretation = inputi;
 			if( ! evaluateExternalAtomQuery(query, cb, nogoods) )
 				return false;
@@ -1045,7 +1053,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 	InterpretationPtr oldherbrandBase = InterpretationPtr(new Interpretation(reg));
 	InterpretationPtr homomorphicAuxInput = InterpretationPtr(new Interpretation(reg));	// stores the aux input atoms which are homomorphic to some other aux input atom in the Herbrand base
 	herbrandBase->getStorage() |= edb->getStorage();
-	for (int freeze = 0; freeze <= ctx.config.getOption("LiberalSafetyNullFreezeCount"); freeze++){
+	for (uint32_t freeze = 0; freeze <= ctx.config.getOption("LiberalSafetyNullFreezeCount"); freeze++){
 		DBGLOG(DBG, "Freezing nulls");
 		homomorphicAuxInput->clear();
 		do
@@ -1119,7 +1127,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 				while (en < en_end){
 					const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
 
-					for (int i = 0; i < ea.inputs.size(); ++i){
+					for (uint32_t i = 0; i < ea.inputs.size(); ++i){
 						if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
 						    ea.getExtSourceProperties().isAntimonotonic(i) &&
 						    ogatom.tuple[0] == ea.inputs[i]){
@@ -1199,7 +1207,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 							domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
 							int io = 1;
 //							if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;
-							for (int i = io; i < ogatom.tuple.size(); ++i){
+							for (uint32_t i = io; i < ogatom.tuple.size(); ++i){
 								domatom.tuple.push_back(ogatom.tuple[i]);
 							}
 							domintr->setFact(reg->storeOrdinaryGAtom(domatom).address);

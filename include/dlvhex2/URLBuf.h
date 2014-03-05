@@ -39,6 +39,8 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 
+#ifdef HAVE_LIBCURL
+
 #include <iostream>
 #include <streambuf>
 #include <string>
@@ -100,6 +102,7 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_URLBUF_H
 
+#endif
 
 // Local Variables:
 // mode: C++

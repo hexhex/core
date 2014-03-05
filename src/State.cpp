@@ -220,7 +220,7 @@ void ConvertState::convert(ProgramCtx* ctx)
     ctx->inputProvider->addStringInput(out.str(), "converted" + inputName);
 	}
 
-#warning TODO realize dlt as a plugin
+WARNING("TODO realize dlt as a plugin")
 // 	  //
 // 	  // now call dlt if needed
 // 	  //
@@ -337,7 +337,7 @@ void ParseState::parse(ProgramCtx* ctx)
   assert(ctx->inputProvider.use_count() == 1);
   ctx->inputProvider.reset();
 
-	#warning namespaces were here!
+	WARNING("namespaces were here!")
 #if 0
 
 ///@brief predicate returns true iff argument is not alpha-numeric and
@@ -503,9 +503,13 @@ MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
 // MLPSyntaxChecker ..
 void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 {
+#ifdef HAVE_MLP
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
   MLPSyntaxChecker sC(*ctx);
   bool success = sC.verifySyntax();
+#else
+  bool success = true;
+#endif
   if (success)
     {
       StatePtr next(new MLPSolverState);
@@ -522,12 +526,14 @@ void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 MANDATORY_STATE_CONSTRUCTOR(MLPSolverState);
 void MLPSolverState::mlpSolver(ProgramCtx* ctx)
 {
+#ifdef HAVE_MLP
   MLPSolver m(*ctx);
   m.setNASReturned(ctx->config.getOption("NumberOfModels"));
   m.setPrintLevel(ctx->config.getOption("Verbose"));
   m.setForget(ctx->config.getOption("Forget"));
   m.setInstSplitting(ctx->config.getOption("Split"));
   m.solve();
+#endif
   StatePtr next(new PostProcessState);
   changeState(ctx, next);
 }
@@ -777,7 +783,7 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   egbuilder.reset();
 
   // setup final unit used to get full models
-  #warning TODO if we project answer sets, or do querying, we could reduce the number of units used here!
+  WARNING("TODO if we project answer sets, or do querying, we could reduce the number of units used here!")
   FinalEvalGraph::EvalUnit ufinal =
     evalgraph->addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
   LOG(DBG,"created virtual final unit ufinal = " << ufinal);
@@ -915,7 +921,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
         if( ctx->config.getOption("DumpIModelGraph") )
         {
           throw std::runtime_error("DumpIModelGraph  not implemented!");
-          #warning TODO individual eval/model graphviz output
+          WARNING("TODO individual eval/model graphviz output")
         }
         #ifndef NDEBUG
         DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
@@ -1035,7 +1041,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
     if( ctx->config.getOption("DumpModelGraph") )
     {
       throw std::runtime_error("DumpModelGraph  not implemented!");
-      #warning TODO overall eval/model graphviz output
+      WARNING("TODO overall eval/model graphviz output")
     }
 
     // call final callbacks
@@ -1124,7 +1130,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
   #endif
 
-  #warning TODO dlt was here
+  WARNING("TODO dlt was here")
   ///@todo quick hack for dlt
   //   if (optiondlt)
   //     {

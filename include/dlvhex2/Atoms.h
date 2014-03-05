@@ -47,7 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-struct Atom
+struct DLVHEX_EXPORT Atom
 {
   // the kind part of the ID of this atom
   IDKind kind;
@@ -78,7 +78,7 @@ protected:
 // we somehow mark the <foo'> as strongly negated helper s.t. output can correctly print results
 //
 // for the first implementation, we leave out strong negation alltogether (not parseable)
-struct OrdinaryAtom:
+struct DLVHEX_EXPORT OrdinaryAtom:
   public Atom,
   private ostream_printable<OrdinaryAtom>
 {
@@ -114,7 +114,7 @@ struct OrdinaryAtom:
 
 };
 
-struct BuiltinAtom:
+struct DLVHEX_EXPORT BuiltinAtom:
   public Atom,
   private ostream_printable<BuiltinAtom>
 {
@@ -130,7 +130,7 @@ struct BuiltinAtom:
     { return o << "BuiltinAtom(" << printvector(tuple) << ")"; }
 };
 
-struct AggregateAtom:
+struct DLVHEX_EXPORT AggregateAtom:
   public Atom,
   private ostream_printable<AggregateAtom>
 {
@@ -162,7 +162,7 @@ struct AggregateAtom:
 
 // this is one concrete atom in one rule
 // the general external atom functionality provided by the user is "PluginAtom"
-struct ExternalAtom:
+struct DLVHEX_EXPORT ExternalAtom:
   public Atom,
   private ostream_printable<ExternalAtom>
 {
@@ -214,7 +214,7 @@ struct ExternalAtom:
   // long as we don't use predicateInputMask in an index of the
   // multi_index_container"
   //
-  #warning inputMask seems to be duplicated in parts of ExternalAtomMask
+  WARNING("inputMask seems to be duplicated in parts of ExternalAtomMask")
   mutable boost::shared_ptr<PredicateMask> inputMask;
   // similarly we store a bitmask for all ogatoms with predicate auxInputPredicate
   mutable boost::shared_ptr<PredicateMask> auxInputMask;
@@ -290,7 +290,7 @@ public:
 };
 
 // module Atom structure
-struct ModuleAtom:
+struct DLVHEX_EXPORT ModuleAtom:
   public Atom,
   private ostream_printable<ModuleAtom>
   {

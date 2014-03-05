@@ -53,7 +53,7 @@ DLVHEX_NAMESPACE_BEGIN
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
-class ASPSolverManager
+class DLVHEX_EXPORT ASPSolverManager
 {
 public:
   //
@@ -61,7 +61,7 @@ public:
   //
 
   // generic options usable for every solver type
-  struct GenericOptions
+  struct DLVHEX_EXPORT GenericOptions
   {
     GenericOptions();
     virtual ~GenericOptions();
@@ -70,7 +70,7 @@ public:
     bool includeFacts;
   };
 
-  struct Results
+  struct DLVHEX_EXPORT Results
   {
     virtual ~Results() {}
     virtual AnswerSet::Ptr getNextAnswerSet() = 0;
@@ -78,7 +78,7 @@ public:
   typedef boost::shared_ptr<Results> ResultsPtr;
 
   // interface for delegates
-  class DelegateInterface
+  class DLVHEX_EXPORT DelegateInterface
   {
   public:
     virtual ~DelegateInterface() {}
@@ -89,7 +89,7 @@ public:
   typedef boost::shared_ptr<DelegateInterface> DelegatePtr;
 
   // generic solver software
-  struct SoftwareBase
+  struct DLVHEX_EXPORT SoftwareBase
   {
     typedef GenericOptions Options;
     typedef DelegateInterface Delegate;
@@ -106,7 +106,7 @@ public:
   //! Interface to a software configuration for solving
   //! this is passed to the ASPSolverManager::solve methods
   //! it creates a useable delegate for solving
-  struct SoftwareConfigurationBase
+  struct DLVHEX_EXPORT SoftwareConfigurationBase
   {
     //! this method creates as many delegates as required (therefore it is const)
     virtual DelegatePtr createDelegate() const = 0;
@@ -158,7 +158,7 @@ public:
 };
 
 // results that are not streamed but provided to be incrementally requested
-class PreparedResults:
+class DLVHEX_EXPORT PreparedResults:
   public ASPSolverManager::Results
 {
 public:
@@ -182,7 +182,7 @@ protected:
 };
 typedef boost::shared_ptr<PreparedResults> PreparedResultsPtr;
 
-struct AnswerSetQueueElement
+struct DLVHEX_EXPORT AnswerSetQueueElement
 {
   AnswerSetPtr answerset;
   std::string error;
@@ -196,7 +196,7 @@ typedef ConcurrentMessageQueueOwning<AnswerSetQueueElement> AnswerSetQueue;
 typedef boost::shared_ptr<AnswerSetQueue> AnswerSetQueuePtr;
 
 // results that are not streamed but provided to be incrementally requested
-class ConcurrentQueueResults:
+class DLVHEX_EXPORT ConcurrentQueueResults:
   public ASPSolverManager::Results
 {
 public:

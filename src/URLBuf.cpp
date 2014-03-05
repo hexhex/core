@@ -37,6 +37,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#ifdef HAVE_LIBCURL
+
 #include "dlvhex2/URLBuf.h"
 
 #include <sstream>
@@ -162,6 +164,8 @@ URLBuf::underflow()
 
 
 DLVHEX_NAMESPACE_END
+
+#endif
 
 // Local Variables:
 // mode: C++

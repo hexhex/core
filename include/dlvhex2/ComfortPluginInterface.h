@@ -77,7 +77,7 @@ DLVHEX_NAMESPACE_BEGIN
  *
  * You can stream instances of this class into std::ostream&.
  */
-struct ComfortTerm:
+struct DLVHEX_EXPORT ComfortTerm:
   public ostream_printable<ComfortTerm>
 {
   enum Type { STR, INT };
@@ -226,7 +226,7 @@ typedef std::vector<ComfortTerm> ComfortTuple;
  * undefined behavior with comfort interface, as strong negation is
  * implemented as a plugin with auxiliaries.
  */
-struct ComfortAtom:
+struct DLVHEX_EXPORT ComfortAtom:
   public ostream_printable<ComfortAtom>
 {
   /**
@@ -358,7 +358,7 @@ protected:
  */
 
 struct ComfortInterpretation;
-struct ComfortInterpretation:
+struct DLVHEX_EXPORT ComfortInterpretation:
   public std::set<ComfortAtom>,
   public ostream_printable<ComfortInterpretation>
 {
@@ -420,7 +420,7 @@ struct ComfortInterpretation:
  * This is similar to the interface in the dlvhex 1.X and does not require
  * knowledge of the dlvhex 2.X system of IDs and Registry.
  */
-class ComfortPluginAtom:
+class DLVHEX_EXPORT ComfortPluginAtom:
   public PluginAtom
 {
 public:

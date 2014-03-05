@@ -53,7 +53,7 @@ DLVHEX_NAMESPACE_BEGIN
 // a model generator factory provides model generators
 // for a certain types of interpretations
 //
-class BaseModelGeneratorFactory:
+class DLVHEX_EXPORT BaseModelGeneratorFactory:
   public ModelGeneratorFactoryBase<Interpretation>
 {
   // methods
@@ -77,7 +77,7 @@ protected:
 //
 // the base model generator
 //
-class BaseModelGenerator:
+class DLVHEX_EXPORT BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
   friend class UnfoundedSetCheckerOld;
@@ -197,7 +197,9 @@ protected:
     const ExternalAtom& eatom,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
-    NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
+    NogoodContainerPtr nogoods = NogoodContainerPtr(),
+    InterpretationConstPtr assigned = InterpretationConstPtr(),
+    InterpretationConstPtr changed = InterpretationConstPtr()) const;
   virtual bool evaluateExternalAtomQuery(
     PluginAtom::Query& query,
     ExternalAnswerTupleCallback& cb,

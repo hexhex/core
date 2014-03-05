@@ -49,7 +49,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 bool Nogood::VariableSorter::operator() (VarType p1, VarType p2){
 
-	for (int i = 0; i < p1.second.size(); i++){
+	for (uint32_t i = 0; i < p1.second.size(); i++){
 		if (p1.second[i] < p2.second[i]) return true;
 		if (p1.second[i] > p2.second[i]) return false;
 	}
@@ -171,7 +171,7 @@ void Nogood::applyVariableSubstitution(RegistryPtr reg, const std::map<ID, ID>& 
 	BOOST_FOREACH (ID lit, *this){
 		OrdinaryAtom oatom = reg->lookupOrdinaryAtom(lit);
 		bool changed = false;
-		for (int t = 1; t < oatom.tuple.size(); t++){
+		for (uint32_t t = 1; t < oatom.tuple.size(); t++){
 			if (subst.count(oatom.tuple[t]) > 0){
 				oatom.tuple[t] = subst.at(oatom.tuple[t]);
 				changed = true;
@@ -207,7 +207,7 @@ void Nogood::heuristicNormalization(RegistryPtr reg){
 	std::map<ID, std::vector<int> > vars;
 	BOOST_FOREACH (ID id, *this){
 		const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(id);
-		for (int i = 1; i < oatom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < oatom.tuple.size(); ++i){
 			if (oatom.tuple[i].isVariableTerm()){
 				std::vector<int>& pos = vars[oatom.tuple[i]];
 				while (pos.size() < i + 1) pos.push_back(0);
@@ -278,7 +278,7 @@ bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
 				}else{
 					OrdinaryAtom nat2 = reg->onatoms.getByID(natID2);
 					bool ground = true;
-					for (int i = 0; i < nat2.tuple.size(); ++i){
+					for (uint32_t i = 0; i < nat2.tuple.size(); ++i){
 						if (unifier.find(nat2.tuple[i]) != unifier.end()){
 							DBGLOG(DBG, "Substituting " << nat2.tuple[i] << " by " << unifier[nat2.tuple[i]]);
 							nat2.tuple[i] = unifier[nat2.tuple[i]];
@@ -300,6 +300,28 @@ bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
 	// no match
 	return false;
 }
+
+#ifndef NDEBUG
+
+std::string Nogood::dbgsave() const{
+	std::stringstream ss;
+	BOOST_FOREACH (ID id, *this){
+		ss << (id.isNaf() ? "-" : "+") << "/" << id.address << ";";
+	}
+	return ss.str();
+}
+
+void Nogood::dbgload(std::string str){
+
+	while (str.find_first_of("/") != std::string::npos){
+		std::string sign = str.substr(0, str.find_first_of("/"));
+		std::string adr = str.substr(str.find_first_of("/") + 1, str.find_first_of(";"));
+		str = str.substr(str.find_first_of(";") + 1);
+		insert(NogoodContainer::createLiteral(atoi(str.c_str()), sign[0] == '+'));
+	}
+}
+
+#endif
 
 // ---------- Class NogoodSet ----------
 
@@ -422,11 +444,11 @@ int NogoodSet::getNogoodCount() const{
 void NogoodSet::forgetLeastFrequentlyAdded(){
 
 	int mac = 0;
-	for (int i = 0; i < nogoods.size(); i++){
+	for (uint32_t i = 0; i < nogoods.size(); i++){
 		mac = mac > addCount[i] ? mac : addCount[i];
 	}
 	// delete those with an add count of less than 5% of the maximum add count
-	for (int i = 0; i < nogoods.size(); i++){
+	for (uint32_t i = 0; i < nogoods.size(); i++){
 		if (addCount[i] < mac * 0.05){
 			DBGLOG(DBG, "Forgetting nogood " << nogoods[i]);
 			removeNogood(i);
@@ -511,7 +533,7 @@ void SimpleNogoodContainer::addAllResolvents(RegistryPtr reg, int maxSize){
 		ng1.applyVariableSubstitution(reg, renaming);
 
 		// for all other nogoods
-		for (int ng2i = 0; ng2i < nogoodList.size(); ng2i++){
+		for (uint32_t ng2i = 0; ng2i < nogoodList.size(); ng2i++){
 			const Nogood& ng2 = nogoodList[ng2i];
 
 			// check if they unify
@@ -523,7 +545,7 @@ void SimpleNogoodContainer::addAllResolvents(RegistryPtr reg, int maxSize){
 						std::map<ID, ID> match;
 						const OrdinaryAtom& at1 = reg->lookupOrdinaryAtom(id1);
 						const OrdinaryAtom& at2 = reg->lookupOrdinaryAtom(id2);
-						for (int i = 1; i < at1.tuple.size(); i++) match[at1.tuple[i]] = at2.tuple[i];
+						for (uint32_t i = 1; i < at1.tuple.size(); i++) match[at1.tuple[i]] = at2.tuple[i];
 						Nogood ng1matched = ng1;
 						ng1matched.applyVariableSubstitution(reg, match);
 

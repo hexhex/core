@@ -53,12 +53,12 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class PropagatorCallback{
+class DLVHEX_EXPORT PropagatorCallback{
 public:
 	virtual void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
 };
 
-class GenuineGrounder{
+class DLVHEX_EXPORT GenuineGrounder{
 public:
 	virtual const OrdinaryASPProgram& getGroundProgram() = 0;
 
@@ -72,7 +72,7 @@ typedef GenuineGrounder::Ptr GenuineGrounderPtr;
 typedef GenuineGrounder::ConstPtr GenuineGrounderConstPtr;
 
 
-class GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
+class DLVHEX_EXPORT GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
 public:
 	virtual std::string getStatistics() = 0;
 	virtual void setOptimum(std::vector<int>& optimum) = 0;
@@ -85,15 +85,15 @@ public:
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, bool interleavedThreading = true, bool minCheck = true);
-	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, bool interleavedThreading = true, bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
 };
 
 typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;
 typedef GenuineGroundSolver::ConstPtr GenuineGroundSolverConstPtr;
 
 
-class GenuineSolver : public GenuineGrounder, public GenuineGroundSolver{
+class DLVHEX_EXPORT GenuineSolver : public GenuineGrounder, public GenuineGroundSolver{
 private:
 	GenuineGrounderPtr grounder;
 	GenuineGroundSolverPtr solver;
@@ -118,7 +118,7 @@ public:
 	typedef boost::shared_ptr<GenuineSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true, bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
 };
 
 typedef GenuineSolver::Ptr GenuineSolverPtr;

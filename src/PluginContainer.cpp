@@ -49,8 +49,11 @@
 #include <ltdl.h>
 
 #include <sys/types.h>
-#include <dirent.h>
-#include <pwd.h>
+//#include <dirent.h>
+//#include <pwd.h>
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 #include <boost/foreach.hpp>
 
@@ -60,6 +63,19 @@
 #include <set>
 
 DLVHEX_NAMESPACE_BEGIN
+
+#ifdef POSIX
+	#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
+	#define unsetenv(VAR) ::unsetenv(VAR)
+#else
+	void setenv(const char* var, const char* val, int v){
+		SetEnvironmentVariable(var, val);
+	}
+
+	void unsetenv(const char* var){
+		SetEnvironmentVariable(var, NULL);
+	}
+#endif
 
 struct PluginContainer::LoadedPlugin
 {
@@ -106,7 +122,7 @@ void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std:
   if( envld )
   {
     oldenv_ld = envld;
-    ::unsetenv("LD_LIBRARY_PATH");
+    unsetenv("LD_LIBRARY_PATH");
   }
 
   try
@@ -133,11 +149,11 @@ void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std:
   catch(...)
   {
     if( !oldenv_ld.empty() )
-      ::setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
+      setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
     throw;
   }
   if( !oldenv_ld.empty() )
-    ::setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
+    setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
 }
 
 void loadCandidates(
@@ -242,7 +258,7 @@ void selectLoadedPlugins(
       // warn
       LOG(WARNING,"already loaded a plugin with name " << pname << " (skipping)");
 
-      #warning TODO check if any pointer is used?
+      WARNING("TODO check if any pointer is used?")
       DBGLOG(DBG,"usage count on interface ptr is " << (*it)->plugin.use_count() << " (should be 1)");
 
       // unload lib
@@ -300,7 +316,7 @@ PluginContainer::~PluginContainer()
 
     LOG(DBG,"about to unload loaded plugin '" << pname << "'");
 
-    #warning TODO check if any pointer is used?
+    WARNING("TODO check if any pointer is used?")
     unsigned use = lp->plugin.use_count();
     if( use != 1 )
       LOG(WARNING,"usage count on PluginInterfacePtr is " << use << " (should be 1)");

@@ -27,6 +27,7 @@
  * \file   PluginInterface.h
  * \author Roman Schindlauer
  * \author Peter Schüller
+ * \author Christoph Redl
  *
  * \brief Interface that can/should be implemented by a plugin.
  */
@@ -189,6 +190,7 @@
 #include "dlvhex2/CDNLSolver.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/ExtSourceProperties.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -235,7 +237,7 @@
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
 #define IMPLEMENT_PLUGINABIVERSIONFUNCTION \
-  extern "C" int PLUGINABIVERSIONFUNCTION() { \
+  extern "C" DLVHEX_PLUGINEXPORT int PLUGINABIVERSIONFUNCTION() { \
     return DLVHEX_ABI_VERSION_MAJOR*10000+\
            DLVHEX_ABI_VERSION_MINOR*100+\
            DLVHEX_ABI_VERSION_MICRO; }
@@ -394,10 +396,9 @@ public:
   virtual std::vector<PluginConverterPtr> createConverters(ProgramCtx& ctx);
 
   /**
-   * \brief Returns if this plugin provides a custom model generator factory.
+   * \brief Returns if this plugin provides a custom evaluation heuristics for a certain external atom.
    *
-   * This method calls createConverter, you can override it to provide
-   * multiple converters.
+   * @param 
    */
   virtual bool providesCustomModelGeneratorFactory(ProgramCtx& ctx) const { return false; }
 
@@ -406,7 +407,7 @@ public:
    * Needs to be implemented only if providesCustomModelGeneratorFactory return true;
    */
   virtual BaseModelGeneratorFactoryPtr getCustomModelGeneratorFactory(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci) const
-	{ assert(false && "This plugin does not provide a custom model generator factory"); }
+	{ assert(false && "This plugin does not provide a custom model generator factory"); return BaseModelGeneratorFactoryPtr(); }
 
   /**
    * \brief Provide parser modules
@@ -687,6 +688,30 @@ public:
     InterpretationConstPtr interpretation;
 
     /**
+	 * \brief Bitset of ground atoms which are currently assigned.
+	 *
+	 * For the atoms in assigned, interpretation defines the truth value.
+	 * For unassigned atoms, the value in interpretation can be arbitrary.
+	 * Note: The assigned atoms just hint relevant atoms for effective learning.
+	 *       External atoms always have to compute the answer according
+	 *       to the *values in interpretation*, assuming that all atoms are assigned
+	 *       (those atoms which are not in interpretation are assigned to false).
+	 * The assigned atoms might be unknown (NULL-pointer).
+	 */
+    InterpretationConstPtr assigned;
+
+    /**
+	 * \brief Bitset of ground atoms which potentially changed since last query
+	 *        with the same input vector. Atoms not in this set stayed the same.
+	 *
+	 * The method is intended to provide information which might be used for
+	 * better learning and caching techniques in this external source.
+	 *
+	 * The assigned atoms might be unknown (NULL-pointer).
+	 */
+    InterpretationConstPtr changed;
+
+    /**
 	 * \brief Bitset of ground atoms representing current (partial) model.
 	 *
 	 * This model might be more complete than "interpretation", i.e., it
@@ -727,13 +752,17 @@ public:
           const Tuple& input,
           const Tuple& pattern,
           const ExternalAtom* ea = 0,
-          const InterpretationPtr predicateInputMask = InterpretationPtr()):
+          const InterpretationPtr predicateInputMask = InterpretationPtr(),
+          const InterpretationConstPtr assigned = InterpretationConstPtr(),
+          const InterpretationConstPtr changed = InterpretationConstPtr()):
       ctx(ctx),
       interpretation(interpretation),
       input(input),
       pattern(pattern),
       eatom(ea),
-      predicateInputMask(predicateInputMask)
+      predicateInputMask(predicateInputMask),
+      assigned(assigned),
+      changed(changed)
     {
     }
 /*
@@ -1025,6 +1054,19 @@ public:
    */
   const std::vector<InputType>& getInputTypes() const
     { return inputType; }
+
+  /**
+   * \brief Returns if this external atom provides a custom model generator factory.
+   *
+   */
+  virtual bool providesCustomExternalAtomEvaluationHeuristicsFactory() const { return false; }
+
+  /**
+   * \brief Must create a model generator factory for the component described by ci.
+   * Needs to be implemented only if providesCustomExternalAtomEvaluationHeuristicsFactory return true;
+   */
+  virtual ExternalAtomEvaluationHeuristicsFactoryPtr getCustomExternalAtomEvaluationHeuristicsFactory() const
+	{ assert(false && "This plugin atom does not provide a custom external atom evaluation heuristics factory"); return ExternalAtomEvaluationHeuristicsFactoryPtr(); }
 
   /**
    * @return general monotonicity

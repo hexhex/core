@@ -40,14 +40,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns){
+SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns, InterpretationConstPtr frozen){
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 3: case 4:	// internal grounder or Gringo + clasp
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine sat solver with clasp");
-		SATSolverPtr ptr = SATSolverPtr(new ClaspSolver(ctx, ns));
+		SATSolverPtr ptr = SATSolverPtr(new ClaspSolver(ctx, ns, frozen));
 		return ptr;
 		}
 #else
@@ -58,7 +58,7 @@ SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns){
 	default:	// translation solver
 		{
 		DBGLOG(DBG, "Instantiating genuine sat solver with internal solver");
-		SATSolverPtr ptr = SATSolverPtr(new CDNLSolver(ctx, ns));
+		SATSolverPtr ptr = SATSolverPtr(new CDNLSolver(ctx, ns));	// this solver does not implement optimizations, thus all variables are always frozen
 		return ptr;
 		}
 		break;

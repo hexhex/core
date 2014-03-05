@@ -1,0 +1,255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1AD356A4-2DF7-4900-AE98-63437350B1A5}</ProjectGuid>
+    <RootNamespace>libdlvhex</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <GenerateManifest>true</GenerateManifest>
+    <TargetName>libdlvhex2</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(ProjectDir);$(SolutionDir);$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;$(SolutionDir)\..\buildclaspgringo\gringo\libgringo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ltdl.lib;libclasp.lib;libprogram_opts.lib;libgringo.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(ProjectDir);$(SolutionDir);$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;$(SolutionDir)\..\buildclaspgringo\gringo\libgringo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ltdl.lib;libclasp.lib;libprogram_opts.lib;libgringo.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\AnnotatedGroundProgram.cpp" />
+    <ClCompile Include="..\..\src\AnswerSet.cpp" />
+    <ClCompile Include="..\..\src\AnswerSetPrinterCallback.cpp" />
+    <ClCompile Include="..\..\src\ASPSolver.cpp" />
+    <ClCompile Include="..\..\src\ASPSolverManager.cpp" />
+    <ClCompile Include="..\..\src\ASPSolver_dlv.cpp" />
+    <ClCompile Include="..\..\src\ASPSolver_libclingo.cpp" />
+    <ClCompile Include="..\..\src\AsynchronousModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\Atoms.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\..\include;$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\..\src\BaseModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\Benchmarking.cpp" />
+    <ClCompile Include="..\..\src\CAUAlgorithms.cpp" />
+    <ClCompile Include="..\..\src\CDNLSolver.cpp" />
+    <ClCompile Include="..\..\src\ClaspSolver.cpp" />
+    <ClCompile Include="..\..\src\ComfortPluginInterface.cpp" />
+    <ClCompile Include="..\..\src\ComponentGraph.cpp" />
+    <ClCompile Include="..\..\src\Configuration.cpp" />
+    <ClCompile Include="..\..\src\DependencyGraph.cpp" />
+    <ClCompile Include="..\..\src\DependencyGraphFull.cpp" />
+    <ClCompile Include="..\..\src\DLVProcess.cpp" />
+    <ClCompile Include="..\..\src\DLVresultParserDriver.cpp" />
+    <ClCompile Include="..\..\src\DumpingEvalGraphBuilder.cpp" />
+    <ClCompile Include="..\..\src\empty.cpp" />
+    <ClCompile Include="..\..\src\Error.cpp" />
+    <ClCompile Include="..\..\src\EvalGraphBuilder.cpp" />
+    <ClCompile Include="..\..\src\ExternalLearningHelper.cpp" />
+    <ClCompile Include="..\..\src\ExtSourceProperties.cpp" />
+    <ClCompile Include="..\..\src\FLPModelGeneratorBase.cpp" />
+    <ClCompile Include="..\..\src\GenuineGuessAndCheckModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\GenuinePlainModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\GenuineSolver.cpp" />
+    <ClCompile Include="..\..\src\GenuineWellfoundedModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\GraphvizHelpers.cpp" />
+    <ClCompile Include="..\..\src\GringoGrounder.cpp" />
+    <ClCompile Include="..\..\src\GuessAndCheckModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\HexGrammar.cpp" />
+    <ClCompile Include="..\..\src\HexParser.cpp" />
+    <ClCompile Include="..\..\src\ID.cpp" />
+    <ClCompile Include="..\..\src\InputProvider.cpp" />
+    <ClCompile Include="..\..\src\InternalGroundASPSolver.cpp" />
+    <ClCompile Include="..\..\src\InternalGroundDASPSolver.cpp" />
+    <ClCompile Include="..\..\src\InternalGrounder.cpp" />
+    <ClCompile Include="..\..\src\Interpretation.cpp" />
+    <ClCompile Include="..\..\src\LiberalSafetyChecker.cpp" />
+    <ClCompile Include="..\..\src\Logger.cpp" />
+    <ClCompile Include="..\..\src\MLPSolver.cpp" />
+    <ClCompile Include="..\..\src\MLPSyntaxChecker.cpp" />
+    <ClCompile Include="..\..\src\Nogood.cpp" />
+    <ClCompile Include="..\..\src\NogoodGrounder.cpp" />
+    <ClCompile Include="..\..\src\PlainAuxPrinter.cpp" />
+    <ClCompile Include="..\..\src\PlainModelGenerator.cpp" />
+    <ClCompile Include="..\..\src\PluginContainer.cpp" />
+    <ClCompile Include="..\..\src\PluginInterface.cpp" />
+    <ClCompile Include="..\..\src\PredicateMask.cpp" />
+    <ClCompile Include="..\..\src\Printer.cpp" />
+    <ClCompile Include="..\..\src\ProcessBuf.cpp" />
+    <ClCompile Include="..\..\src\ProgramCtx.cpp" />
+    <ClCompile Include="..\..\src\Registry.cpp" />
+    <ClCompile Include="..\..\src\RuleMLOutputBuilder.cpp" />
+    <ClCompile Include="..\..\src\SafetyChecker.cpp" />
+    <ClCompile Include="..\..\src\SATSolver.cpp" />
+    <ClCompile Include="..\..\src\State.cpp" />
+    <ClCompile Include="..\..\src\Term.cpp" />
+    <ClCompile Include="..\..\src\UnfoundedSetChecker.cpp" />
+    <ClCompile Include="..\..\src\UnfoundedSetCheckHeuristics.cpp" />
+    <ClCompile Include="..\..\src\URLBuf.cpp" />
+    <ClCompile Include="..\..\src\WellfoundedModelGenerator.cpp" />
+    <ClCompile Include="..\getopt.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\dlvhex2\AggregateAtomTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\AnnotatedGroundProgram.h" />
+    <ClInclude Include="..\..\include\dlvhex2\AnswerSet.h" />
+    <ClInclude Include="..\..\include\dlvhex2\AnswerSetPrinterCallback.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ASPSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ASPSolverManager.h" />
+    <ClInclude Include="..\..\include\dlvhex2\AsynchronousModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Atoms.h" />
+    <ClInclude Include="..\..\include\dlvhex2\BaseModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Benchmarking.h" />
+    <ClInclude Include="..\..\include\dlvhex2\BuiltinAtomTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\CAUAlgorithms.h" />
+    <ClInclude Include="..\..\include\dlvhex2\CDNLSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ClaspSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ComfortPluginInterface.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ComponentGraph.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ConcurrentMessageQueueOwning.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Configuration.h" />
+    <ClInclude Include="..\..\include\dlvhex2\DependencyGraph.h" />
+    <ClInclude Include="..\..\include\dlvhex2\DependencyGraphFull.h" />
+    <ClInclude Include="..\..\include\dlvhex2\DLVProcess.h" />
+    <ClInclude Include="..\..\include\dlvhex2\DLVresultParserDriver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\DumpingEvalGraphBuilder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\DynamicVector.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Error.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalGraph.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalGraphBuilder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicBase.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ExternalAtomEvaluationHeuristics.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ExternalAtomTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ExternalLearningHelper.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ExtSourceProperties.h" />
+    <ClInclude Include="..\..\include\dlvhex2\FinalEvalGraph.h" />
+    <ClInclude Include="..\..\include\dlvhex2\FLPModelGeneratorBase.h" />
+    <ClInclude Include="..\..\include\dlvhex2\fwd.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GenuineGuessAndCheckModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GenuinePlainModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GenuineSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GenuineWellfoundedModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GraphvizHelpers.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GringoGrounder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\GuessAndCheckModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\HexGrammar.h" />
+    <ClInclude Include="..\..\include\dlvhex2\HexParser.h" />
+    <ClInclude Include="..\..\include\dlvhex2\HexParserModule.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ID.h" />
+    <ClInclude Include="..\..\include\dlvhex2\InputProvider.h" />
+    <ClInclude Include="..\..\include\dlvhex2\InternalGroundASPSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\InternalGroundDASPSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\InternalGrounder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Interpretation.h" />
+    <ClInclude Include="..\..\include\dlvhex2\LiberalSafetyChecker.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Logger.h" />
+    <ClInclude Include="..\..\include\dlvhex2\MLPSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\MLPSyntaxChecker.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ModelBuilder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ModelGraph.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Module.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ModuleAtomTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ModuleTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Nogood.h" />
+    <ClInclude Include="..\..\include\dlvhex2\NogoodGrounder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\OfflineModelBuilder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\OnlineModelBuilder.h" />
+    <ClInclude Include="..\..\include\dlvhex2\OrdinaryASPProgram.h" />
+    <ClInclude Include="..\..\include\dlvhex2\OrdinaryASPSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\OrdinaryAtomTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PlainAuxPrinter.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PlainModelGenerator.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PlatformDefinitions.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PluginContainer.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PluginInterface.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Predicate.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PredicateMask.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PredicateTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Printer.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Printhelpers.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Process.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ProcessBuf.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ProgramCtx.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Registry.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Rule.h" />
+    <ClInclude Include="..\..\include\dlvhex2\RuleTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\SafetyChecker.h" />
+    <ClInclude Include="..\..\include\dlvhex2\SATSolver.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Set.h" />
+    <ClInclude Include="..\..\include\dlvhex2\State.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Table.h" />
+    <ClInclude Include="..\..\include\dlvhex2\Term.h" />
+    <ClInclude Include="..\..\include\dlvhex2\TermTable.h" />
+    <ClInclude Include="..\..\include\dlvhex2\UnfoundedSetChecker.h" />
+    <ClInclude Include="..\..\include\dlvhex2\UnfoundedSetCheckHeuristics.h" />
+    <ClInclude Include="..\..\include\dlvhex2\URLBuf.h" />
+    <ClInclude Include="..\..\include\dlvhex2\WellfoundedModelGenerator.h" />
+    <ClInclude Include="..\getopt.h" />
+    <ClInclude Include="config.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\include\dlvhex2\FLPModelGeneratorBase.tcc" />
+    <None Include="..\..\include\dlvhex2\HexGrammar.tcc" />
+    <None Include="..\..\include\dlvhex2\Makefile.am" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

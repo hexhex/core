@@ -65,14 +65,14 @@ DLVHEX_NAMESPACE_BEGIN
  * For each component, only one of these storages must hold an object, except for
  * inner eatoms which can only exist if there are inner rules.
  */
-class ComponentGraph
+class DLVHEX_EXPORT ComponentGraph
 {
   BOOST_CONCEPT_ASSERT((boost::Convertible<DependencyGraph::Node, unsigned int>));
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
-  struct ComponentInfo:
+  struct DLVHEX_EXPORT ComponentInfo:
     public ostream_printable<ComponentInfo>
   {
     #ifdef COMPGRAPH_SOURCESDEBUG
@@ -277,7 +277,7 @@ protected:
   bool computeRecursiveAggregatesInComponent(ComponentInfo& ci);
 
 public:
-  static bool calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
+  static void calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

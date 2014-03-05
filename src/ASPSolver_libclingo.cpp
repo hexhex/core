@@ -327,7 +327,7 @@ public:
     }
     catch(const ClaspTermination& e)
     {
-      #warning we should find another way (than throwing an exception) to abort model enumeration in clasp
+      WARNING("we should find another way (than throwing an exception) to abort model enumeration in clasp")
       DBGLOG(DBG,"got ClaspTermination exception");
     }
     catch(const std::exception& e)
@@ -401,12 +401,12 @@ typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
 
 void ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc()
 {
-  #warning create multithreaded logger by using thread-local storage for logger indent
+  WARNING("create multithreaded logger by using thread-local storage for logger indent")
   DBGLOG(DBG,"[" << this << "]" " starting libclingo answerSetProcessingThreadFunc");
   try
   {
     // output program to stream
-    #warning TODO handle program.maxint for clingo
+    WARNING("TODO handle program.maxint for clingo")
     std::string str;
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidprepare,"prepare clingo input");

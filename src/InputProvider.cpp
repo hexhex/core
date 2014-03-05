@@ -44,7 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning TODO use boost::iostream::chain or something similar to create real streaming/incremental input provider
+WARNING("TODO use boost::iostream::chain or something similar to create real streaming/incremental input provider")
 
 class InputProvider::Impl
 {
@@ -94,6 +94,7 @@ void InputProvider::addFileInput(const std::string& filename)
   pimpl->contentNames.push_back(filename);
 }
 
+#ifdef HAVE_CURL
 void InputProvider::addURLInput(const std::string& url)
 {
   assert(url.find("http://") == 0 && "currently only processing http:// URLs");
@@ -111,6 +112,7 @@ void InputProvider::addURLInput(const std::string& url)
 
   pimpl->contentNames.push_back(url);
 }
+#endif
 
 bool InputProvider::hasContent() const
 {

@@ -59,7 +59,7 @@ void Term::updateSymbolOfNestedTerm(Registry* reg){
 	ss << reg->terms.getByID(arguments[0]).symbol;
 	if (arguments.size() > 1){
 		ss << "(";
-		for (int i = 1; i < arguments.size(); ++i){
+		for (uint32_t i = 1; i < arguments.size(); ++i){
 			ss << (i > 1 ? "," : "");
 			if (arguments[i].isIntegerTerm()){
 				ss << arguments[i].address;

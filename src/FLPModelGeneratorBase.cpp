@@ -304,7 +304,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
       BOOST_FOREACH(ID lit, r.body)
       {
         assert(!lit.isExternalAtom() && "in xidb there must not be external atoms left");
-        #warning TODO factorize "get all (free) variables from entity"
+        WARNING("TODO factorize "get all (free) variables from entity"")
         // from ground literals we don't need variables
         if( lit.isOrdinaryGroundAtom() )
           continue;
@@ -549,7 +549,7 @@ Nogood FLPModelGeneratorBase::getFLPNogood(
 	return ng;
 }
 
-#warning TODO could we move shadow predicates and mappings and rules to factory?
+WARNING("TODO could we move shadow predicates and mappings and rules to factory?")
 void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 	RegistryPtr reg,
 	InterpretationConstPtr edb,
@@ -943,7 +943,7 @@ InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(Progr
 	// fixpoint iteration
 	bool changed = true;
 	std::vector<bool> eaVerified;
-	for (int i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
+	for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
 	while (remainingRules.size() > 0 && changed){
 		changed = false;
 

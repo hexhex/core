@@ -43,7 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class ExternalLearningHelper{
+class DLVHEX_EXPORT ExternalLearningHelper{
 public:
 
   /**

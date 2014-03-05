@@ -57,7 +57,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class AnnotatedGroundProgram{
+class DLVHEX_EXPORT AnnotatedGroundProgram{
 
 	ProgramCtx* ctx;
 	RegistryPtr reg;
@@ -127,6 +127,7 @@ public:
 	bool hasECycles(InterpretationConstPtr intr) const;
 
 	bool mapsAux(IDAddress ida) const;
+	typedef std::pair<IDAddress, std::vector<ID> > AuxToExternalAtoms;
 	const boost::unordered_map<IDAddress, std::vector<ID> >& getAuxToEA() const;
 	const std::vector<ID>& getAuxToEA(IDAddress ida) const;
 	boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex);

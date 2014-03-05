@@ -516,7 +516,7 @@ struct sem<HexGrammarSemantics::aggregateAtom>
         boost::fusion::at_c<2>(source).get());
     }
 
-    #warning TODO throw iterator in syntax error and display it nicely (like expectation failure)
+    WARNING("TODO throw iterator in syntax error and display it nicely (like expectation failure)")
     if( leftTerm == ID_FAIL && rightTerm == ID_FAIL )
       throw SyntaxError("aggregate needs at least one term + comparison operator");
 
@@ -877,7 +877,7 @@ struct sem<HexGrammarSemantics::addMLPModuleHeader>
 };
 
 
-#warning look at spirit mailing list 'optimizing parsing of large input'
+WARNING("look at spirit mailing list 'optimizing parsing of large input'")
 
 template<>
 struct sem<HexGrammarSemantics::add>
@@ -948,7 +948,7 @@ struct sem<HexGrammarSemantics::maxint>
 {
   void operator()(
     HexGrammarSemantics& mgr,
-    unsigned int source,
+    uint32_t source,
     const boost::spirit::unused_type& )// target)
   {
     mgr.ctx.maxint = source;
@@ -1217,7 +1217,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   #endif
 }
 
-#warning TODO more efficient than "rule = rule.copy() | *module" could be something else (see comments below)
+WARNING("TODO more efficient than "rule = rule.copy() | *module" could be something else (see comments below)")
 // this could be a separate list for each type and a | b | c | d alternatives (have to be coded for each number of arguments)
 // this could be something not yet existing, see spirit-general mailinglist Sat, Jul 9, 2011 Vol 62, Issue 6
 

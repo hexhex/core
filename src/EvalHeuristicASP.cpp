@@ -136,7 +136,7 @@ void EvalHeuristicASP::build(EvalGraphBuilder& builder)
 
 #ifdef HAVE_DLV
   // send it to DLV aspsolver
-  #warning we could use the general solver used in dlvhex, but this means we need encodings for all heuristics for all solvers
+  WARNING("we could use the general solver used in dlvhex, but this means we need encodings for all heuristics for all solvers")
   {
     ASPSolver::DLVSoftware::Configuration dlvconfig;
     ASPSolverManager mgr;
@@ -308,7 +308,7 @@ void buildEvalUnitsFromAnswerSet(
     cv.push_back(bc);
   }
 
-  #warning maybe we need to sort the build commands here, in topological order of units to be created
+  WARNING("maybe we need to sort the build commands here, in topological order of units to be created")
 
   executeBuildCommands(cv, builder);
 }

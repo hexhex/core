@@ -95,7 +95,7 @@ void AggregatePlugin::processOptions(
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
-	#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
 	while( it != pluginOptions.end() )
 	{
@@ -614,7 +614,7 @@ class AggAtom : public PluginAtom
 
 					// remember the remaining terms for this key
 					Tuple value;
-					for (int j = arity + 1; j < oatom.tuple.size(); ++j){
+					for (uint32_t j = arity + 1; j < oatom.tuple.size(); ++j){
 						value.push_back(oatom.tuple[j]);
 					}
 					tuples[key].push_back(value);
@@ -636,7 +636,7 @@ class AggAtom : public PluginAtom
 			typedef std::pair<Tuple, std::vector<Tuple> > Pair;
 			BOOST_FOREACH (Tuple key, keys){
 				bool def = false;
-				unsigned int functionValue = 0;
+				uint32_t functionValue = 0;
 				compute(tuples[key], &functionValue, &def);
 
 				// output

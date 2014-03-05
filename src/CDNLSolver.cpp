@@ -201,6 +201,7 @@ Nogood CDNLSolver::resolve(Nogood& ng1, Nogood& ng2, IDAddress litadr){
 
 
 void CDNLSolver::setFact(ID fact, int dl, int c = -1){
+
 	if (c > -1){
 		DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << nogoodset.getNogood(c));
 	}else{
@@ -240,7 +241,7 @@ void CDNLSolver::clearFact(IDAddress litadr){
 
 void CDNLSolver::backtrack(int dl){
 
-	for (int i = dl + 1; i < factsOnDecisionLevel.size(); ++i){
+	for (uint32_t i = dl + 1; i < factsOnDecisionLevel.size(); ++i){
 		BOOST_FOREACH (IDAddress f, factsOnDecisionLevel[i]){
 			clearFact(f);
 		}
@@ -253,6 +254,8 @@ void CDNLSolver::backtrack(int dl){
 }
 
 ID CDNLSolver::getGuess(){
+
+	assert (!complete());
 
 #ifndef NDEBUG
 	++cntGuesses;
@@ -277,6 +280,7 @@ ID CDNLSolver::getGuess(){
 	return ID_FAIL;
 	*/
 
+	DBGLOG(DBG, "Have " << allFacts.size() << " atoms; " << factWasSet->getStorage().count() << " are assigned");
 
 	// iterate over recent conflicts, beginning at the most recent conflict
 	for (std::vector<int>::reverse_iterator rit = recentConflicts.rbegin(); rit != recentConflicts.rend(); ++rit){
@@ -335,7 +339,7 @@ void CDNLSolver::initWatchingStructures(){
 	contradictoryNogoods.clear();
 
 	// each nogood watches (at most) two of its literals
-	for (unsigned int nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
+	for (uint32_t nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
 		updateWatchingStructuresAfterAddNogood(nogoodNr);
 	}
 }

@@ -35,11 +35,11 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#ifdef HAVE_MLP
+
 #include "dlvhex2/MLPSolver.h"
 
 DLVHEX_NAMESPACE_BEGIN
-
-
 
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
   printLevel = 0;
@@ -2291,6 +2291,8 @@ const Tuple& MLPSolver::getOgatomsInInst(int instIdx){
 }
 
 DLVHEX_NAMESPACE_END
+
+#endif
 
 // Local Variables:
 // mode: C++

@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdlvhex", "libdlvhex\libdlvhex.vcxproj", "{1AD356A4-2DF7-4900-AE98-63437350B1A5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3F0BF306-BC5F-4A27-A58B-9C425F222496} = {3F0BF306-BC5F-4A27-A58B-9C425F222496}
+		{76074315-CBCE-4CB8-B7D8-79C598DBAFCA} = {76074315-CBCE-4CB8-B7D8-79C598DBAFCA}
+		{550E258F-0202-4414-A32E-444D6B8965FD} = {550E258F-0202-4414-A32E-444D6B8965FD}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "clasp_libclasp", "clasp_libclasp\clasp_libclasp.vcxproj", "{3F0BF306-BC5F-4A27-A58B-9C425F222496}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "clasp_libprogram_opts", "clasp_libprogram_opts\clasp_libprogram_opts.vcxproj", "{76074315-CBCE-4CB8-B7D8-79C598DBAFCA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testplugin", "testplugin\testplugin.vcxproj", "{07A4C02C-D9B7-4BDC-9BB2-E34487B64A1C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1AD356A4-2DF7-4900-AE98-63437350B1A5} = {1AD356A4-2DF7-4900-AE98-63437350B1A5}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dlvhex", "dlvhex\dlvhex.vcxproj", "{E77B6C98-75D8-4047-9C10-A3718B07B940}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1AD356A4-2DF7-4900-AE98-63437350B1A5} = {1AD356A4-2DF7-4900-AE98-63437350B1A5}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gringo_libgringo", "gringo_libgringo\gringo_libgringo.vcxproj", "{550E258F-0202-4414-A32E-444D6B8965FD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1AD356A4-2DF7-4900-AE98-63437350B1A5}.Debug|Win32.ActiveCfg = Release|Win32
+		{1AD356A4-2DF7-4900-AE98-63437350B1A5}.Debug|Win32.Build.0 = Release|Win32
+		{1AD356A4-2DF7-4900-AE98-63437350B1A5}.Release|Win32.ActiveCfg = Release|Win32
+		{1AD356A4-2DF7-4900-AE98-63437350B1A5}.Release|Win32.Build.0 = Release|Win32
+		{3F0BF306-BC5F-4A27-A58B-9C425F222496}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3F0BF306-BC5F-4A27-A58B-9C425F222496}.Debug|Win32.Build.0 = Debug|Win32
+		{3F0BF306-BC5F-4A27-A58B-9C425F222496}.Release|Win32.ActiveCfg = Release|Win32
+		{3F0BF306-BC5F-4A27-A58B-9C425F222496}.Release|Win32.Build.0 = Release|Win32
+		{76074315-CBCE-4CB8-B7D8-79C598DBAFCA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{76074315-CBCE-4CB8-B7D8-79C598DBAFCA}.Debug|Win32.Build.0 = Debug|Win32
+		{76074315-CBCE-4CB8-B7D8-79C598DBAFCA}.Release|Win32.ActiveCfg = Release|Win32
+		{76074315-CBCE-4CB8-B7D8-79C598DBAFCA}.Release|Win32.Build.0 = Release|Win32
+		{07A4C02C-D9B7-4BDC-9BB2-E34487B64A1C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{07A4C02C-D9B7-4BDC-9BB2-E34487B64A1C}.Debug|Win32.Build.0 = Debug|Win32
+		{07A4C02C-D9B7-4BDC-9BB2-E34487B64A1C}.Release|Win32.ActiveCfg = Release|Win32
+		{07A4C02C-D9B7-4BDC-9BB2-E34487B64A1C}.Release|Win32.Build.0 = Release|Win32
+		{E77B6C98-75D8-4047-9C10-A3718B07B940}.Debug|Win32.ActiveCfg = Release|Win32
+		{E77B6C98-75D8-4047-9C10-A3718B07B940}.Debug|Win32.Build.0 = Release|Win32
+		{E77B6C98-75D8-4047-9C10-A3718B07B940}.Release|Win32.ActiveCfg = Release|Win32
+		{E77B6C98-75D8-4047-9C10-A3718B07B940}.Release|Win32.Build.0 = Release|Win32
+		{550E258F-0202-4414-A32E-444D6B8965FD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{550E258F-0202-4414-A32E-444D6B8965FD}.Debug|Win32.Build.0 = Debug|Win32
+		{550E258F-0202-4414-A32E-444D6B8965FD}.Release|Win32.ActiveCfg = Release|Win32
+		{550E258F-0202-4414-A32E-444D6B8965FD}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

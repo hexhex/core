@@ -37,6 +37,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#ifdef HAVE_MLP
+
 #include "dlvhex2/RuleMLOutputBuilder.h"
 #include "dlvhex2/ResultContainer.h"
 
@@ -125,6 +127,8 @@ RuleMLOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fa
 }
 
 DLVHEX_NAMESPACE_END
+
+#endif
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

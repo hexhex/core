@@ -256,7 +256,7 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 	// find strongly connected components in the dependency graph
 	DBGLOG(DBG, "Computing strongly connected components");
 	std::vector<int> componentMap(depNodes.size());
-	int num = boost::strong_components(depGraph, &componentMap[0]);
+	int num = boost::strong_components(depGraph, boost::make_iterator_property_map(componentMap.begin(), get(boost::vertex_index, depGraph)));
 
 	// translate into real map
 	depSCC = std::vector<std::set<IDAddress> >(num);
@@ -268,7 +268,7 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 		nodeNr++;
 	}
 #ifndef NDEBUG
-	for (int comp = 0; comp < depSCC.size(); ++comp){
+	for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
 		std::stringstream ss;
 		bool first = true;
 		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
@@ -289,7 +289,7 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 			rulesWithHeadAtom[h.address].push_back(ruleID);
 		}
 	}
-	for (int comp = 0; comp < depSCC.size(); ++comp){
+	for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
 		DBGLOG(DBG, "Partition " << comp);
 
 		OrdinaryASPProgram componentProgram(reg, std::vector<ID>(), groundProgram.edb);
@@ -327,7 +327,7 @@ void AnnotatedGroundProgram::computeHeadCycles(){
 	// check if the components contain head-cycles
 	DBGLOG(DBG, "Computing head-cycles of components");
 	headCyclesTotal = false;
-	for (int comp = 0; comp < depSCC.size(); ++comp){
+	for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
 		int hcf = true;
 		BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
 			const Rule& rule = reg->rules.getByID(ruleID);
@@ -363,7 +363,7 @@ void AnnotatedGroundProgram::computeECycles(){
 
 	if (ctx->config.getOption("LegacyECycleDetection")){
 	        eCyclesTotal = false;
-        	for (int comp = 0; comp < depSCC.size(); ++comp){
+        	for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
 
                		// check for each e-edge x -> y if there is a path from y to x
 	                // if yes, then y is a cyclic predicate input
@@ -411,7 +411,7 @@ void AnnotatedGroundProgram::computeECycles(){
 #endif
         	}
 	}else{
-		for (int comp = 0; comp < depSCC.size(); ++comp){
+		for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
 			eCycles.push_back(false);
 		}
 
@@ -424,7 +424,7 @@ void AnnotatedGroundProgram::computeECycles(){
 		}
 
 		eCyclesTotal = false;
-		for (int comp = 0; comp < depSCC.size(); ++comp){
+		for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
 			eCyclesTotal |= eCycles[comp];
 		}
 	}
@@ -445,22 +445,22 @@ int AnnotatedGroundProgram::getComponentCount() const{
 }
 
 const OrdinaryASPProgram& AnnotatedGroundProgram::getProgramOfComponent(int compNr) const{
-	assert(compNr >= 0 && compNr < depSCC.size());
+	assert((uint32_t)compNr >= 0 && (uint32_t)compNr < depSCC.size());
 	return programComponents[compNr].program;
 }
 
 InterpretationConstPtr AnnotatedGroundProgram::getAtomsOfComponent(int compNr) const{
-	assert(compNr >= 0 && compNr < depSCC.size());
+	assert((uint32_t)compNr >= 0 && (uint32_t)compNr < depSCC.size());
 	return programComponents[compNr].componentAtoms;
 }
 
 bool AnnotatedGroundProgram::hasHeadCycles(int compNr) const{
-	assert(compNr >= 0 && compNr < depSCC.size());
+	assert((uint32_t)compNr >= 0 && (uint32_t)compNr < depSCC.size());
 	return headCycles[compNr];
 }
 
 bool AnnotatedGroundProgram::hasECycles(int compNr) const{
-	assert(compNr >= 0 && compNr < depSCC.size());
+	assert((uint32_t)compNr >= 0 && (uint32_t)compNr < depSCC.size());
 	return eCycles[compNr];
 }
 
@@ -506,7 +506,7 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
 	}
 	boost::graph_traits<Graph>::edge_iterator vi, vi_end;
 	std::vector<Graph::edge_descriptor> delEdges;
-	for (tie(vi, vi_end) = edges(depGraph2); vi != vi_end; vi++){
+	for (boost::tuples::tie(vi, vi_end) = edges(depGraph2); vi != vi_end; vi++){
 		if (std::find(skipnodes.begin(), skipnodes.end(), source(*vi, depGraph2)) != skipnodes.end() ||
 		    std::find(skipnodes.begin(), skipnodes.end(), target(*vi, depGraph2)) != skipnodes.end()){
 			delEdges.push_back(*vi);
@@ -553,7 +553,7 @@ bool AnnotatedGroundProgram::hasHeadCycles() const{
 }
 
 bool AnnotatedGroundProgram::hasECycles(InterpretationConstPtr intr) const{
-	for (int i = 0; i < depSCC.size(); ++i){
+	for (uint32_t i = 0; i < depSCC.size(); ++i){
 		if (hasECycles(i, intr)) return true;
 	}
 	if (hasHeadCycles()){
@@ -580,7 +580,7 @@ const std::vector<ID>& AnnotatedGroundProgram::getAuxToEA(IDAddress ida) const{
 }
 
 boost::shared_ptr<ExternalAtomMask> AnnotatedGroundProgram::getEAMask(int eaIndex){
-	assert(eaIndex >= 0 && eaIndex < indexedEatoms.size());
+	assert((uint32_t)eaIndex >= 0 && (uint32_t)eaIndex < indexedEatoms.size());
 	eaMasks[eaIndex]->updateMask();
 	return eaMasks[eaIndex];
 }
@@ -595,7 +595,7 @@ const std::vector<ID>& AnnotatedGroundProgram::getIndexedEAtoms() const{
 }
 
 ID AnnotatedGroundProgram::getIndexedEAtom(int index) const{
-	assert(index >= 0 && index < indexedEatoms.size());
+	assert((uint32_t)index >= 0 && (uint32_t)index < indexedEatoms.size());
 	return indexedEatoms[index];
 }
 

@@ -46,6 +46,12 @@
 #if !defined(_DLVHEX_MLPSOLVER_H)
 #define _DLVHEX_MLPSOLVER_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_MLP
+
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Interpretation.h"
 #include "dlvhex2/Table.h"
@@ -278,9 +284,8 @@ class DLVHEX_EXPORT MLPSolver{
 
 };
 
-
-
-
 DLVHEX_NAMESPACE_END
 
 #endif /* _DLVHEX_MLPSOLVER_H */
+
+#endif

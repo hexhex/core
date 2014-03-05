@@ -94,7 +94,7 @@ void QueryPlugin::processOptions(
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
-	#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
 	while( it != pluginOptions.end() )
 	{
@@ -215,7 +215,7 @@ struct sem<QueryParserModuleSemantics::queryBody>
 
 		// safety of the query is implicitly checked by checking safety
 		// of the transformed rules
-		#warning we should check query safety explicitly to get better error messages
+		WARNING("we should check query safety explicitly to get better error messages")
   }
 };
 
@@ -425,7 +425,7 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 		// add auxiliary rule with variables
 		Rule varAuxRule(ID::MAINKIND_RULE |
 				ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
-		#warning TODO extatom flag in rule
+		WARNING("TODO extatom flag in rule")
 		varAuxRule.head.push_back(varAuxHeadId);
 		varAuxRule.body = ctxdata.query;
 		ID varAuxRuleId = reg->storeRule(varAuxRule);
@@ -531,7 +531,7 @@ WitnessPrinterCallback::WitnessPrinterCallback(
 {
 }
 
-#warning TODO perhaps derive from AnswerSetPrinterCallback?
+WARNING("TODO perhaps derive from AnswerSetPrinterCallback?")
 bool WitnessPrinterCallback::operator()(
 		AnswerSetPtr model)
 {
@@ -955,7 +955,7 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 					modelmsg, !ctxdata.allWitnesses));
 		FinalCallbackPtr fprinter(
 				new VerdictPrinterCallback(finalmsg, wprinter));
-		#warning here we could try to only remove the default answer set printer
+		WARNING("here we could try to only remove the default answer set printer")
 		ctx.modelCallbacks.clear();
 		ctx.modelCallbacks.push_back(wprinter);
 		ctx.finalCallbacks.push_back(fprinter);
@@ -967,7 +967,7 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 		case CtxData::BRAVE:
 			{
 				ModelCallbackPtr qsprinter(new QuerySubstitutionPrinterCallback(reg, ctxdata));
-				#warning here we could try to only remove the default answer set printer
+				WARNING("here we could try to only remove the default answer set printer")
 				ctx.modelCallbacks.clear();
 				ctx.modelCallbacks.push_back(qsprinter);
 			}
@@ -978,7 +978,7 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 				IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter(
 						new IntersectedQuerySubstitutionPrinterCallback(
 							reg, ctxdata, printPreliminaryModels));
-				#warning here we could try to only remove the default answer set printer
+				WARNING("here we could try to only remove the default answer set printer")
 				ctx.modelCallbacks.clear();
 				ctx.modelCallbacks.push_back(iqsprinter);
 				FinalCallbackPtr fprinter(

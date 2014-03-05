@@ -38,12 +38,22 @@
 #if !defined(_DLVHEX_PROCESSBUF_H)
 #define _DLVHEX_PROCESSBUF_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex2/PlatformDefinitions.h"
 
 #include <iostream>
 #include <streambuf>
 #include <vector>
 #include <string>
+
+#ifdef WIN32
+#include <windows.h>
+#undef ERROR
+typedef HANDLE pid_t;
+#endif
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -74,13 +84,24 @@ public:
   close(bool kill=false);
 
 private:
+
+#ifdef POSIX
   pid_t process;
-
-  int status;
-
   int outpipes[2];
   int inpipes[2];
+#else
+	#ifdef WIN32
+		PROCESS_INFORMATION processInformation;
+		HANDLE g_hChildStd_IN_Rd;
+		HANDLE g_hChildStd_IN_Wr;
+		HANDLE g_hChildStd_OUT_Rd;
+		HANDLE g_hChildStd_OUT_Wr;
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
+#endif
 
+  int status;
   unsigned bufsize;
 
   std::streambuf::char_type* obuf;
@@ -103,7 +124,6 @@ protected:
 DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_PROCESSBUF_H
-
 
 // Local Variables:
 // mode: C++

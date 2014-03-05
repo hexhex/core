@@ -102,7 +102,7 @@ public:
   // factory for model builders
   ModelBuilderFactory modelBuilderFactory;
   // factory for external atom evaluation heuristic and ufs check heuristic
-  ExternalAtomEvaluationHeuristicsFactoryPtr externalAtomEvaluationHeuristicsFactory;
+  ExternalAtomEvaluationHeuristicsFactoryPtr defaultExternalAtomEvaluationHeuristicsFactory;
   UnfoundedSetCheckHeuristicsFactoryPtr unfoundedSetCheckHeuristicsFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;

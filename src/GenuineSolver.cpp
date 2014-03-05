@@ -60,7 +60,6 @@
 #include <gringo/gringo_app.h>
 #endif
 
-
 #include "dlvhex2/GringoGrounder.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -86,10 +85,13 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 		throw GeneralError("No support for gringo compiled into this binary");
 #endif // HAVE_LIBGRINGO
 		break;
+	default:
+		assert(false);
+		return GenuineGrounderPtr();
 	}
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading, bool minCheck){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen, bool minCheck){
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
@@ -103,17 +105,21 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, p, interleavedThreading) : new ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules));
+		// clasp 3 is always disjunctive
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, frozen));
 		return ptr;
 		}
 #else
 		throw GeneralError("No support for clasp compiled into this binary");
 #endif // HAVE_LIBCLASP
 		break;
+	default:
+		assert(false);
+		return GenuineGroundSolverPtr();
 	}
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck){
   //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "grounding (GenuineGroundS.::getInst)");
 
 	switch (ctx.config.getOption("GenuineSolver")){
@@ -128,17 +134,21 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading) : new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), interleavedThreading, ClaspSolver::ChoiceRules));
+		// clasp 3 is always disjunctive
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen));
 		return ptr;
 		}
 #else
 		throw GeneralError("No support for clasp compiled into this binary");
 #endif // HAVE_LIBCLASP
 		break;
+	default:
+		assert(false);
+		return GenuineGroundSolverPtr();
 	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck){
 	const OrdinaryASPProgram* gprog;
 	GenuineGrounderPtr grounder;
 	{
@@ -148,7 +158,7 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 	}
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, interleavedThreading, minCheck);
+	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
 

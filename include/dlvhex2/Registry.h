@@ -74,7 +74,7 @@ public:
 /**
  * @brief Registry for entities used in programs as IDs (collection of symbol tables)
  */
-struct Registry:
+struct DLVHEX_EXPORT Registry:
   public ostream_printable<Registry>,
   public boost::enable_shared_from_this<Registry>
 {

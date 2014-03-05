@@ -266,7 +266,7 @@ struct handle_fact
     if( id == ID_FAIL )
     {
       {
-        #warning parsing efficiency problem see HexGrammarPTToASTConverter
+        WARNING("parsing efficiency problem see HexGrammarPTToASTConverter")
         std::stringstream ss;
         RawPrinter printer(ss, state.registry);
         Tuple::const_iterator it = atom.tuple.begin();

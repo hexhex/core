@@ -257,7 +257,7 @@ void InternalGroundASPSolver::computeStronglyConnectedComponents(){
 
 	// find strongly connected components in the dependency graph using boost
 	std::vector<int> componentMap(depNodes.size());
-	int num = boost::strong_components(depGraph, &componentMap[0]);
+	int num = boost::strong_components(depGraph, boost::make_iterator_property_map(componentMap.begin(), get(boost::vertex_index, depGraph)));
 
 	// translate into real map
 	depSCC = std::vector<Set<IDAddress> >(num);

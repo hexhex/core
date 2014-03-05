@@ -155,7 +155,7 @@ typedef unsigned Count;
 typedef boost::posix_time::ptime Time;
 typedef boost::posix_time::time_duration Duration;
 
-class BenchmarkController
+class DLVHEX_EXPORT BenchmarkController
 {
 public:
   struct Stat

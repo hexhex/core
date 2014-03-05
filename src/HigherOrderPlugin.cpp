@@ -87,7 +87,7 @@ void HigherOrderPlugin::processOptions(
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
-	#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
 	while( it != pluginOptions.end() )
 	{
@@ -479,7 +479,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 	}
 
 	// create rules to get predicate inputs for all recorded arities from auxiliary atoms
-	#warning we could pre-create variables where this line is and simply use them later (more efficient, more complicated)
+	WARNING("we could pre-create variables where this line is and simply use them later (more efficient, more complicated)")
 	BOOST_FOREACH(ID pred, ctxdata.predicateInputConstants)
 	{
 		// create for each arity

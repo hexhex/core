@@ -44,7 +44,7 @@ DLVHEX_NAMESPACE_BEGIN
 // Anonymous variables: are parsed as one variable "_".
 // Then they are processed into new distinct variables,
 // each with the anonymous bit set and with a new ID.
-struct Term:
+struct DLVHEX_EXPORT Term:
 private ostream_printable<Term>
 {
 	// the kind part of the ID of this symbol

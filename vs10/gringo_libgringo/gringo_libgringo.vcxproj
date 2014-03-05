@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\converter.r2c" />
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\converter_impl.y" />
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\parser.r2c" />
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\parser_impl.y" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\aggrlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\argterm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\avgaggrlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\compute.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\constterm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\context.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\converter.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\converter_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\display.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\domain.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\exceptions.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\external.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\func.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\functerm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\groundable.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\grounder.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\groundprogrambuilder.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\inclit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\index.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\instantiator.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\junctionaggrlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\litdep.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\lparseconverter.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\lparseoutput.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\lualit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\luaterm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\mathterm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\minmaxaggrlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\optimize.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseavg_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseconverter_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparsejunction_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseminmax_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseparity_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparserule_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparsesum_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\plainoutput_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\output\reifiedoutput_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\parityaggrlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\parser.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\parser_impl.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\plainoutput.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\poolterm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\predindex.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\predlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\predlitrep.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\rangelit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\rangeterm.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\reifiedoutput.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\rellit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\rule.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\statement.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\stats.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\stmdep.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\storage.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\streams.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\sumaggrlit.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\val.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\varcollector.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\varterm.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\aggrlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\argterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\avgaggrlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\clone_ptr.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\compute.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\constterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\context.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\converter.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\display.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\domain.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\exceptions.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\external.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\func.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\functerm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\gringo.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\groundable.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\grounder.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\groundprogrambuilder.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\inclit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\index.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\instantiator.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\junctionaggrlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\lexer_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\lit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\litdep.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\locateable.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\lparseconverter.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\lparseoutput.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\lualit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\luaterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\mathterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\minmaxaggrlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\optimize.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\output.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\parityaggrlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\parser.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\plainoutput.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\poolterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\predindex.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\predlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\predlitrep.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\prgvisitor.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\printer.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\rangelit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\rangeterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\reifiedoutput.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\rellit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\rule.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\statement.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\stats.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\stmdep.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\storage.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\streams.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\sumaggrlit.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\term.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\val.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\varcollector.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\gringo\varterm.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\converter_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\lua_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseavg_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparsejunction_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseminmax_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparseparity_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparserule_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\lparsesum_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\plainoutput_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\output\reifiedoutput_impl.h" />
+    <ClInclude Include="..\..\buildclaspgringo\gringo\libgringo\src\parser_impl.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{550E258F-0202-4414-A32E-444D6B8965FD}</ProjectGuid>
+    <RootNamespace>gringo_libgringo</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>libgringo</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>libgringo</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\buildclaspgringo\gringo\libgringo;$(SolutionDir)\..\buildclaspgringo\gringo\libgringo\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\buildclaspgringo\gringo\libgringo;$(SolutionDir)\..\buildclaspgringo\gringo\libgringo\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

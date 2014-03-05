@@ -30,7 +30,7 @@
  */
 
 #include "dlvhex2/ComfortPluginInterface.h"
-#warning TODO how to implement strong negation (StrongNegationPlugin) with ComfortPluginInterface?
+WARNING("TODO how to implement strong negation (StrongNegationPlugin) with ComfortPluginInterface?")
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -341,7 +341,7 @@ namespace
     if( ct.isConstant() )
     {
       Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, ct.strval);
-      #warning TODO check here(?) whether ct.strval has correct constant syntax
+      WARNING("TODO check here(?) whether ct.strval has correct constant syntax")
       return reg->storeTerm(t);
     }
     else if( ct.isInteger() )

@@ -418,8 +418,8 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
   //   external atom and all input variables of that atom are safe
   // * a variable is safe if it occurs on one side of an assignment aggregate
   // * a variable is safe if it occurs in the positive body of an aggregate atom
-  #warning the last line is a simplification
-  #warning see dlv documentation for better aggregate safety checking
+  WARNING("the last line is a simplification")
+  WARNING("see dlv documentation for better aggregate safety checking")
   //
   // algorithm (this algorithm does reordering for safety):
 	// 1) init empty target rule body, init empty safe variables list
@@ -670,7 +670,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 				}
 			}
 
-			#warning variables that do not occur in any other atom should be automatically strongly safe...?
+			WARNING("variables that do not occur in any other atom should be automatically strongly safe...?")
 			DBGLOG(DBG,"need to find component-external domain predicate "
 					"for variables {" << printManyToString<RawPrinter>(
 						Tuple(varsToCheck.begin(), varsToCheck.end()), ", ", reg) + "}");
@@ -699,8 +699,8 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 						continue;
 
 					// skip non-ordinary atoms
-					#warning can we use aggregates to limit the domain for strong safety?
-					#warning can we use builtin atoms to limit the domain for strong safety?
+					WARNING("can we use aggregates to limit the domain for strong safety?")
+					WARNING("can we use builtin atoms to limit the domain for strong safety?")
 					if( lid.isAggregateAtom() ||
 							lid.isBuiltinAtom() )
 						continue;

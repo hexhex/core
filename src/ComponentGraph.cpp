@@ -113,7 +113,7 @@ ComponentGraph::~ComponentGraph()
   DBGLOG(DBG, "Destructing component graph " << this);
 }
 
-#warning fixed point: eatoms only in positive cycles is misleading, we demand only positive cycles for all atoms! (no negative or disjunctive edge at all)
+WARNING("fixed point: eatoms only in positive cycles is misleading, we demand only positive cycles for all atoms! (no negative or disjunctive edge at all)")
 #if 0
 namespace
 {
@@ -149,7 +149,7 @@ namespace
       DBGLOG(DBG,"examining edge from " << from << " to " << to);
 
       const DependencyGraph::DependencyInfo& di = g[e];
-      #warning TODO review this decision criteria (not sure if "defensive" stuff is necessary)
+      WARNING("TODO review this decision criteria (not sure if "defensive" stuff is necessary)")
       bool negative =
         di.negativeRule |
         di.negativeExternal |
@@ -347,7 +347,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
   // resize property map
   scc.resize(dg.countNodes());
   // do it with boost
-  unsigned scccount = boost::strong_components(dg.getInternalGraph(), &scc[0]);
+  unsigned scccount = boost::strong_components(dg.getInternalGraph(), boost::make_iterator_property_map(scc.begin(), get(boost::vertex_index, dg.getInternalGraph())));
   LOG(ANALYZE,"boost::strong_components created " << scccount << " components");
 
   //
@@ -488,7 +488,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				   "components with outer eatoms may not contain anything else");
   }
 
-	#warning TODO if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles ... ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
+	WARNING("TODO if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles ... ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;")
 
   //
   // create dependencies between components (now that all of them exist)
@@ -637,8 +637,8 @@ bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
 						continue;
 
 					// skip non-ordinary atoms
-					#warning can we use aggregates to limit the domain for strong safety?
-					#warning can we use builtin atoms to limit the domain for strong safety?
+					WARNING("can we use aggregates to limit the domain for strong safety?")
+					WARNING("can we use builtin atoms to limit the domain for strong safety?")
 					if( lid.isAggregateAtom() ||
 							lid.isBuiltinAtom() )
 						continue;
@@ -771,7 +771,7 @@ bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci)
 	return false;
 }
 
-bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci)
+void ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci)
 {
 	DBGLOG(DBG, "calculateStratificationInfo");
 
@@ -818,7 +818,7 @@ bool ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
 			if (bid.isExternalAtom() && !bid.isNaf()){
 				const ExternalAtom& eatom = reg->eatoms.getByID(bid);
 				bool stratified = true;
-				for (int p = 0; p < eatom.inputs.size() && stratified; ++p){
+				for (uint32_t p = 0; p < eatom.inputs.size() && stratified; ++p){
 					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.getExtSourceProperties().isNonmonotonic(p)){
 						// is this predicate defined in this component?
 						if (ci.predicatesInComponent.count(eatom.inputs[p]) > 0){
@@ -963,7 +963,7 @@ void ComponentGraph::computeCollapsedComponentInfos(
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
 
-    #warning do we need to do more here? perhaps negative dependencies to this unit? recursive aggregates?
+    WARNING("do we need to do more here? perhaps negative dependencies to this unit? recursive aggregates?")
   }
 	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
@@ -1004,7 +1004,7 @@ void ComponentGraph::computeCollapsedComponentInfos(
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
     ci.componentIsMonotonic |= cio.componentIsMonotonic;
 
-    #warning check if fixedDomain is propagated correctly, it is missing in operator|= but this might be on purpose
+    WARNING("check if fixedDomain is propagated correctly, it is missing in operator|= but this might be on purpose")
 		// fixedDomain:
 		// pure external components shall have no influence on this property
 		// because domain restriction is always done in successor components
@@ -1033,7 +1033,7 @@ void ComponentGraph::computeCollapsedComponentInfos(
       // here, outer eatom becomes inner eatom
 			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
-    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
+    WARNING("if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
 	}
   ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
 	calculateStratificationInfo(reg, ci);

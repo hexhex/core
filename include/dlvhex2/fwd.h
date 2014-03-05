@@ -88,7 +88,7 @@ typedef boost::shared_ptr<Interpretation> InterpretationPtr;
 
 struct OrdinaryASPProgram;
 
-struct OrdinaryASPSolver;
+class OrdinaryASPSolver;
 typedef boost::shared_ptr<OrdinaryASPSolver> OrdinaryASPSolverPtr;
 
 struct OrdinaryAtom;

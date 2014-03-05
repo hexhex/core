@@ -46,7 +46,7 @@ DLVHEX_NAMESPACE_BEGIN
 // a model generator factory
 // that provides capability for true FLP reduct computation via rewriting, guessing, and checking
 //
-class FLPModelGeneratorFactoryBase:
+class DLVHEX_EXPORT FLPModelGeneratorFactoryBase:
   public BaseModelGeneratorFactory
 {
 public:
@@ -122,7 +122,7 @@ protected:
 //
 // the flp model generator base class (always refers to a factory which prepares the rewritten rules)
 //
-class FLPModelGeneratorBase:
+class DLVHEX_EXPORT FLPModelGeneratorBase:
   public BaseModelGenerator
 {
   // members

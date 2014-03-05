@@ -43,7 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class PredicateMask
+class DLVHEX_EXPORT PredicateMask
 {
 public:
   PredicateMask();
@@ -86,7 +86,7 @@ protected:
   boost::mutex updateMutex;
 };
 
-class ExternalAtomMask : public PredicateMask
+class DLVHEX_EXPORT ExternalAtomMask : public PredicateMask
 {
 private:
   const ProgramCtx* ctx;

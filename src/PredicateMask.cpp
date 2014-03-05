@@ -73,6 +73,7 @@ PredicateMask::operator=(const PredicateMask& other)
   // must not copy mutex!
   if( !!other.maski )
     LOG(WARNING,"assigned PredicateMask with non-NULL mask!");
+  return *this;
 }
 
 PredicateMask::~PredicateMask()

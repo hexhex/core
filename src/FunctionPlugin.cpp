@@ -91,7 +91,7 @@ void FunctionPlugin::processOptions(
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
-	#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
 	while( it != pluginOptions.end() )
 	{

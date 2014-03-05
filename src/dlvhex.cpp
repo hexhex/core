@@ -84,7 +84,16 @@
 #include <getopt.h>
 #include <signal.h>
 #include <sys/types.h>
+#ifdef POSIX
 #include <pwd.h>
+#else
+	#ifdef WIN32
+		#include <Windows.h>
+		#undef ERROR	// there is a clash with a Windows definition
+	#else
+		#error Either POSIX or WIN32 must be defined
+	#endif
+#endif
 
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
@@ -130,12 +139,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   out << "   or: " << whoAmI 
       << " [OPTION] --" << std::endl
       << std::endl;
-  
+
   if (!full)
     {
       out << "Specify -h or --help for more detailed usage information." << std::endl
 	  << std::endl;
-      
+
       return;
     }
   
@@ -183,12 +192,13 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        none (default): No learning" << std::endl
       << "                        reduct: Learning is based on the FLP-reduct" << std::endl
       << "                        ufs: Learning is based on the unfounded set" << std::endl
-      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,never]" << std::endl
+      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,post,never]" << std::endl
       << "                      Selects the heuristic for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
       << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
       << "                      eacomplete: Evaluate whenever all atoms relevant for the external atom are assigned" << std::endl
-      << "                      never (default): Only evaluate at the end" << std::endl
+      << "                      post: Only evaluate at the end but use custom heuristics if provided by plugins" << std::endl
+      << "                      never (default): Only evaluate at the end and ignore custom heuristics provided by plugins" << std::endl
       << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
       << "                      post (default): Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
@@ -203,7 +213,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --weaksafety     Skip strong safety check." << std::endl
       << "     --liberalsafety" << std::endl
       << "                      Uses more liberal safety conditions than strong safety" << std::endl
-      << "     --multithreading Parallelizes model candidate computation and external atom verification (experimental)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -328,7 +337,11 @@ namespace
 void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
+#ifdef POSIX
   LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal!");
+#else
+  LOG(ERROR,"dlvhex2 with pid " << GetCurrentProcessId() << " got termination signal!");
+#endif
   if( exeCtx != NULL )
     exeCtx->terminationRequest = true;
 }
@@ -371,7 +384,9 @@ int main(int argc, char *argv[])
 				#else
 					#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
 					#else
-						#error no asp software configured! configure.ac should not allow this to happen!
+						#ifndef WIN32
+							#error no asp software configured! configure.ac should not allow this to happen!
+						#endif
 					#endif
 				#endif
 			#endif
@@ -431,7 +446,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("LiberalSafety",0);
   pctx.config.setOption("LiberalSafetyNullFreezeCount",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
-  pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
@@ -456,7 +470,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
 
-	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
+	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
 	#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
 	pctx.config.setOption("GenuineSolver", 4);
@@ -637,7 +651,7 @@ int main(int argc, char *argv[])
 			pctx.optimizeEDBDependencyGraph();
 			if( pctx.terminationRequest ) return 1;
 			// everything in the following will be done using the dependency graph and EDB
-			#warning IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?
+			WARNING("IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?")
 				
 			// create graph of strongly connected components of dependency graph
 			pctx.createComponentGraph();
@@ -766,7 +780,6 @@ void processOptionsPrePlugin(
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
 		{ "liberalsafety", no_argument, 0, 33 },
-		{ "multithreading", no_argument, 0, 34 },
     { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
     { "noclaspincremental", no_argument, 0, 43 },
     { "claspsingletonloopnogoods", no_argument, 0, 44 },
@@ -784,7 +797,7 @@ void processOptionsPrePlugin(
 
   // default settings
   pctx.config.setOption("NoPropagator", 0);
-  pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+  pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
   bool specifiedModelQueueSize = false;
@@ -972,7 +985,7 @@ void processOptionsPrePlugin(
 						else if( solver == "dlvdb" )
 						{
 							#if defined(HAVE_DLVDB)
-							#warning reactivate dlvhdb
+							WARNING("reactivate dlvhdb")
 							//pctx.setASPSoftware(
 							//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
               pctx.config.setOption("GenuineSolver", 0);
@@ -1281,19 +1294,26 @@ void processOptionsPrePlugin(
 				std::string heur(optarg);
 				if (heur == "always")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
 				}
 				else if (heur == "inputcomplete")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
 				}
 				else if (heur == "eacomplete")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
+				}
+				else if (heur == "post")
+				{
+					// here we evaluate only after the model candidate has been completed
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
 				}
 				else if (heur == "never")
 				{
-					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+					// here we evaluate only after the model candidate has been completed
+					// differently from post, even the propagator is diables, thus also custom heuristics provided by external atoms cannot overwrite this behavior
+					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
 					pctx.config.setOption("NoPropagator", 1);
 				}
 				else
@@ -1361,8 +1381,6 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("LiberalSafety", 1);
 			pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
 			break;
-
-		case 34: pctx.config.setOption("MultiThreading", 1); break;
 
 		case 35:
 			pctx.config.setOption("FLPDecisionCriterionHead", 0);
@@ -1503,10 +1521,12 @@ void processOptionsPrePlugin(
 			ptr->options.typFile = arg;
 			#endif
 		}
+#ifdef HAEV_LIBCURL
 		else if( arg.find("http://") == 0 )
 		{
 			pctx.inputProvider->addURLInput(arg);
 		}
+#endif
 		else
 		{
 			pctx.inputProvider->addFileInput(arg);
@@ -1516,6 +1536,8 @@ void processOptionsPrePlugin(
 
 void configurePluginPath(std::string& userPlugindir)
 {
+// TODO (WIN32)
+#ifdef POSIX
 	bool reset = false;
 	if( !userPlugindir.empty() && userPlugindir[0] == '!' )
 	{
@@ -1544,6 +1566,45 @@ void configurePluginPath(std::string& userPlugindir)
 		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
 	}
 	userPlugindir = searchpath.str();
+#else
+	#ifdef WIN32
+		bool reset = false;
+		if( !userPlugindir.empty() && userPlugindir[0] == '!' )
+		{
+			reset = true;
+			if( userPlugindir.size() > 2 && userPlugindir[1] == ';' )
+				userPlugindir.erase(0,2);
+			else
+				userPlugindir.erase(0,1);
+		}
+
+	  std::stringstream searchpath;
+
+		if( !userPlugindir.empty() )
+			searchpath << userPlugindir << ';';
+  
+		if( !reset )
+		{
+			// add LD_LIBRARY_PATH
+			const char *envld = ::getenv("LD_LIBRARY_PATH");
+			if( envld )
+			{
+				searchpath << envld << ";";
+			}
+
+	#ifdef USER_PLUGIN_DIR
+			const char* homedir = ::getenv("USERPROFILE");
+			if (!!homedir) searchpath << homedir << "/" USER_PLUGIN_DIR << ';';
+	#endif
+	#ifdef SYS_PLUGIN_DIR
+			searchpath << SYS_PLUGIN_DIR;
+	#endif
+		}
+		userPlugindir = searchpath.str();
+	#else
+	#error Either POSIX or WIN32 must be defined
+	#endif
+#endif
 }
 
 /* vim: set noexpandtab sw=8 ts=8 tw=80: */

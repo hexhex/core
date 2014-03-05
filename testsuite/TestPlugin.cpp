@@ -204,7 +204,7 @@ class TestConcatAtom:
 public:
   TestConcatAtom():
     ComfortPluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputTuple();
     setOutputArity(1);
@@ -334,7 +334,7 @@ public:
   
   	if (input.size() > 0){
  		std::vector<std::string> res;
-	  	for (int i = 0; i < input.size(); ++i){
+	  	for (uint32_t i = 0; i < input.size(); ++i){
 	  		DBGLOG(DBG, "Choosing " << i);
 	  		std::vector<std::string> i2 = input;
   			i2.erase(i2.begin() + i);
@@ -365,7 +365,7 @@ public:
 	DBGLOG(DBG, "Computing elements in " << str);
 	std::vector<std::string> elements;
 	std::stringstream element;
-	for (int i = 0; i <= str.length(); i++){
+	for (uint32_t i = 0; i <= str.length(); i++){
 		if (str[i] == ';' || str[i] == '\0'){
 			DBGLOG(DBG, "Delimiter detected; element: " << element.str());
 			if (element.str().length() > 0) elements.push_back(element.str());
@@ -446,7 +446,7 @@ public:
 	const std::string& str = registry->terms.getByID(query.input[0]).getUnquotedString();
 	int len = 0;
 	if (str.length() > 0) len++;
-	for (int i = 0; i < str.length(); i++){
+	for (uint32_t i = 0; i < str.length(); i++){
 		if (str[i] == ';') len++;
 	}
 
@@ -480,7 +480,7 @@ public:
 
 	std::stringstream substr1, substr2;
 	int nr = 0;
-	for (int i = 0; i < str.length(); i++){
+	for (uint32_t i = 0; i < str.length(); i++){
 		if (str[i] == ';'){
 			nr++;
 			if (nr == cnt) continue;
@@ -520,7 +520,7 @@ public:
 
 	int len = 0;
 	if (str.length() > 0) len++;
-	for (int i = 0; i < str.length(); i++){
+	for (uint32_t i = 0; i < str.length(); i++){
 		if (str[i] == ';') len++;
 	}
 
@@ -528,7 +528,7 @@ public:
 
 	std::stringstream substr1, substr2;
 	int nr = 0;
-	for (int i = 0; i < str.length(); i++){
+	for (uint32_t i = 0; i < str.length(); i++){
 		if (str[i] == ';'){
 			nr++;
 			if (nr == cnt) continue;
@@ -567,8 +567,8 @@ public:
 	const std::string& str2 = registry->terms.getByID(query.input[2]).getUnquotedString();
 
 	std::stringstream element1, element2, merged;
-	int c1 = 0;
-	int c2 = 0;
+	uint32_t c1 = 0;
+	uint32_t c2 = 0;
 	
 	std::vector<std::string> list1, list2;
 	
@@ -891,7 +891,7 @@ class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learni
 public:
   TestSetMinusNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     addInputPredicate();
@@ -912,7 +912,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (atom.tuple[0] == query.input[0]){
@@ -944,7 +944,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (atom.tuple[0] == query.input[0]){
@@ -967,10 +967,10 @@ public:
 					// learn that presence of t in query.input[0] and absence in query.input[1] implies presence in output
 					OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 					at1.tuple.push_back(query.input[0]);
-					for (int i = 0; i < t.size(); ++i) at1.tuple.push_back(t[i]);
+					for (uint32_t i = 0; i < t.size(); ++i) at1.tuple.push_back(t[i]);
 					OrdinaryAtom at2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 					at2.tuple.push_back(query.input[1]);
-					for (int i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
+					for (uint32_t i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
 
 					Nogood nogood;
 					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
@@ -1000,7 +1000,7 @@ public:
 // ***** Constructor of setminus plugin
   TestSetMinusNongroundNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNongroundNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     addInputPredicate();
@@ -1023,7 +1023,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (atom.tuple[0] == query.input[0]){
@@ -1058,7 +1058,7 @@ public:
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		arity = atom.tuple.size() - 1;
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (atom.tuple[0] == query.input[0]){
@@ -1119,7 +1119,7 @@ public:
   TestSetMinusRuleBasedLearningAtom(ProgramCtx* ctx):
     ctx(ctx),
     PluginAtom("testSetMinusRuleBasedLearning", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     addInputPredicate();
@@ -1140,7 +1140,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (atom.tuple[0] == query.input[0]){
@@ -1172,7 +1172,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (atom.tuple[0] == query.input[0]){
@@ -1216,7 +1216,7 @@ class TestNonmonAtom:	// tests user-defined external learning
 public:
   TestNonmonAtom():
     PluginAtom("testNonmon", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     setOutputArity(1);
@@ -1235,7 +1235,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (tu.size() != 1) throw PluginError("TestNonmonAtom can only process input predicates with arity 1!");
@@ -1270,7 +1270,7 @@ class TestNonmon2Atom:	// tests user-defined external learning
 public:
   TestNonmon2Atom():
     PluginAtom("testNonmon2", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     setOutputArity(1);
@@ -1287,7 +1287,7 @@ public:
 
 		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		Tuple tu;
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 			tu.push_back(atom.tuple[i]);
 		}
 		if (tu.size() != 1) throw PluginError("TestNonmon2Atom can only process input predicates with arity 1!");
@@ -1321,7 +1321,7 @@ class TestIdAtom:	// tests user-defined external learning
 public:
   TestIdAtom():
     PluginAtom("id", false) // monotonic
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();
     setOutputArity(1);
@@ -1351,7 +1351,7 @@ class TestIdcAtom:	// tests user-defined external learning
 public:
   TestIdcAtom():
     PluginAtom("idc", false) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputConstant();
     setOutputArity(1);
@@ -1371,7 +1371,7 @@ class TestNegAtom:	// tests user-defined external learning
 public:
   TestNegAtom():
     PluginAtom("neg", false)
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputConstant();
     addInputPredicate();
@@ -1729,7 +1729,7 @@ class TestDisjAtom:
 public:
   TestDisjAtom():
     PluginAtom("testDisj", false)
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputPredicate();	// interpretation i
     addInputPredicate();	// positive p
@@ -1927,7 +1927,7 @@ public:
 				en++;
 			}
 
-			for (int i = 0; i <= query.input[1].address; ++i){
+			for (uint32_t i = 0; i <= query.input[1].address; ++i){
 				if (i % 2 == 0 || inc){
 					Tuple t;
 					t.push_back(ID::termFromInteger(i));
@@ -2233,7 +2233,7 @@ public:
 
 		typedef std::list<const char*>::iterator Iterator;
 		Iterator it;
-		#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+		WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 		it = pluginOptions.begin();
 		while( it != pluginOptions.end() )
 		{
@@ -2270,7 +2270,7 @@ public:
     TestSetUnionAtom():
 		// testSetUnion is the name of our external atom
     PluginAtom("testSetUnion", true) // monotonic
-    #warning TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    WARNING("TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
 		DBGLOG(DBG,"Constructor of SetUnion plugi is started!");
     addInputPredicate(); // the first set
@@ -2300,7 +2300,7 @@ public:
 		Tuple tu;
 	// Iterate over the input elements of the current atom (for p(x,y), we go through x and y)
 	// We start with 1 because the position 0 is the predicate itself 
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 	// Get element number i from the input list
 			tu.push_back(atom.tuple[i]);
 		}
@@ -2349,7 +2349,7 @@ public:
 		Tuple tu;
 	// Iterate over the input elements of the current atom (for p(x,y), we go through x and y)
 	// We start with 1 because the position 0 is the predicate itself 
-		for (int i = 1; i < atom.tuple.size(); ++i){
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
 	// Get element number i from the input list
 			tu.push_back(atom.tuple[i]);
 		}
@@ -2475,6 +2475,7 @@ IMPLEMENT_PLUGINABIVERSIONFUNCTION
 
 // return plain C type s.t. all compilers and linkers will like this code
 extern "C"
+DLVHEX_PLUGINEXPORT
 void * PLUGINIMPORTFUNCTION()
 {
 	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theTestPlugin);
