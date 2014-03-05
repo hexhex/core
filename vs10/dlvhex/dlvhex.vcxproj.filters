@@ -128,5 +128,8 @@
     <ClInclude Include="..\..\include\dlvhex2\ManualEvalHeuristicsPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\dlvhex2\ExternalAtomEvaluationHeuristics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

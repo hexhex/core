@@ -40,6 +40,7 @@ pkginclude_HEADERS = \
   EvalHeuristicOldDlvhex.h \
   EvalHeuristicShared.h \
   EvalHeuristicTrivial.h \
+  ExternalAtomEvaluationHeuristicsInterface.h \
   ExternalAtomEvaluationHeuristics.h \
   ExternalAtomTable.h \
   ExternalLearningHelper.h \

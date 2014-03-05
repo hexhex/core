@@ -169,7 +169,7 @@ std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunctio
 		case ID::TERM_BUILTIN_AGGTIMES: return "times";
 		case ID::TERM_BUILTIN_AGGAVG: return "avg";
 //		case ID::TERM_BUILTIN_AGGANY: return "any";
-		default: assert(false);
+		default: assert(false); return "";
 	}
 }
 

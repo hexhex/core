@@ -26,7 +26,7 @@
  * @file   ExternalAtomEvaluationHeuristics.h
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
- * @brief  Base class and concrete classes with heuristics for external
+ * @brief  Concrete classes with heuristics for external
  *         atom evaluations in genuine G&C model generators.
  */
 
@@ -34,6 +34,7 @@
 #define EXTERNALATOMEVALUATIONHEURISTICS_H
 
 #include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristicsInterface.h"
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Registry.h"
@@ -42,40 +43,6 @@
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
-
-// ============================== Base ==============================
-
-/**
- * Decides when to evaluate an external atom
- */
-class DLVHEX_EXPORT ExternalAtomEvaluationHeuristics{
-protected:
-	RegistryPtr reg;
-public:
-	ExternalAtomEvaluationHeuristics(RegistryPtr reg);
-	virtual ~ExternalAtomEvaluationHeuristics(){}
-	/**
-	* Decides if the reasoner shall evaluate a given external atom at this point.
-	* @param eatom The external atom in question
-	* @param eatomMask Mask with all atoms relevant for this external atom
-	* @param programMask All atoms in the program
-	* @param partialAssignment The current (partial) interpretation
-	* @param assigned The current set of assigned atoms; if 0, then the interpretation is complete
-	* @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
-	* @return bool True if the heuristics suggests to evaluate the external atom, otherwise false
-	*/
-	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
-};
-
-typedef boost::shared_ptr<ExternalAtomEvaluationHeuristics> ExternalAtomEvaluationHeuristicsPtr;
-
-class ExternalAtomEvaluationHeuristicsFactory{
-public:
-	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg) = 0;
-	virtual ~ExternalAtomEvaluationHeuristicsFactory(){}
-};
-
-typedef boost::shared_ptr<ExternalAtomEvaluationHeuristicsFactory> ExternalAtomEvaluationHeuristicsFactoryPtr;
 
 // ============================== Always ==============================
 

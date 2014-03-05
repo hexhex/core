@@ -45,7 +45,7 @@
 #include "dlvhex2/FinalEvalGraph.h"
 #include "dlvhex2/EvalHeuristicBase.h"
 #include "dlvhex2/EvalGraphBuilder.h"
-#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristicsInterface.h"
 #include "dlvhex2/UnfoundedSetCheckHeuristics.h"
 #include "dlvhex2/ModelBuilder.h"
 #include "dlvhex2/Registry.h"

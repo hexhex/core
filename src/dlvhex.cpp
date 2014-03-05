@@ -824,7 +824,7 @@ void processOptionsPrePlugin(
 				{
 					level = boost::lexical_cast<int>(optarg);
 				}
-				catch(const boost::bad_lexical_cast& e)
+				catch(const boost::bad_lexical_cast&)
 				{
 					LOG(ERROR,"could not parse verbosity level '" << optarg << "' - using default=" << level << "!");
 				}
@@ -936,7 +936,7 @@ void processOptionsPrePlugin(
 					else
 						models = boost::lexical_cast<unsigned>(optarg);
 				}
-				catch(const boost::bad_lexical_cast& e)
+				catch(const boost::bad_lexical_cast&)
 				{
 					LOG(ERROR,"could not parse model count '" << optarg << "' - using default=" << models << "!");
 				}
@@ -1365,7 +1365,7 @@ void processOptionsPrePlugin(
 					else
 						queuesize = boost::lexical_cast<unsigned>(optarg);
 				}
-				catch(const boost::bad_lexical_cast& e)
+				catch(const boost::bad_lexical_cast&)
 				{
 					LOG(ERROR,"could not parse size of model queue '" << optarg << "' - using default=" << queuesize << "!");
 				}

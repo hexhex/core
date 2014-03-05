@@ -55,6 +55,8 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)\..\include;$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4290</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,6 +75,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)\..\include;$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4290</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -115,6 +118,7 @@
     <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicShared.h" />
     <ClInclude Include="..\..\include\dlvhex2\EvalHeuristicTrivial.h" />
     <ClInclude Include="..\..\include\dlvhex2\ExistsPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\ExternalAtomEvaluationHeuristics.h" />
     <ClInclude Include="..\..\include\dlvhex2\FunctionPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\HigherOrderPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\ManualEvalHeuristicsPlugin.h" />

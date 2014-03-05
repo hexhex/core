@@ -26,7 +26,7 @@
  * @file ExternalAtomEvaluationHeuristics.cpp
  * @author Christoph Redl
  *
- * @brief  Base class and concrete classes with heuristics for external
+ * @brief  Concrete classes with heuristics for external
  *         atom evaluations in genuine G&C model generators.
  */
 
@@ -36,11 +36,6 @@
 #include <bm/bmalgo.h>
 
 DLVHEX_NAMESPACE_BEGIN
-
-// ============================== Base ==============================
-
-ExternalAtomEvaluationHeuristics::ExternalAtomEvaluationHeuristics(RegistryPtr reg) : reg(reg){
-}
 
 // ============================== Always ==============================
 

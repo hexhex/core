@@ -190,7 +190,7 @@
 #include "dlvhex2/CDNLSolver.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/ExtSourceProperties.h"
-#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristicsInterface.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>

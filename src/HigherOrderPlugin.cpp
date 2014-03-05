@@ -667,7 +667,7 @@ void HigherOrderPlugin::setupProgramCtx(ProgramCtx& ctx)
 	// create auxiliary printer using mask
 	AuxPrinterPtr hoPrinter(new HOAuxPrinter(
 				reg, ctxdata.myAuxiliaryPredicateMask, ctxdata.predicateInputConstants,
-				ctx.config.getOption("NoFacts"), ctx.edb));
+				ctx.config.getOption("NoFacts") != 0, ctx.edb));
 	reg->registerUserAuxPrinter(hoPrinter);
 }
 
