@@ -178,6 +178,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>libgringo</TargetName>
+    <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>libgringo</TargetName>
@@ -194,6 +195,10 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuildStep>
+      <Command>copy $(SolutionDir)\term.h $(SolutionDir)\..\buildclaspgringo\gringo\libgringo\gringo\term.h</Command>
+      <Outputs>$(SolutionDir)\..\buildclaspgringo\gringo\libgringo\gringo\term.h</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
