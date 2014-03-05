@@ -71,7 +71,7 @@
 #ifdef _MSC_VER
 	#define WARNING(msg) 
 #else
-	#define WARNING(msg) #warning msg
+	#define WARNING(msg) 
 #endif
 
 // on Windows we need to export the relevant part of the STL instantiation
