@@ -64,8 +64,11 @@ public:
 	virtual ~Term() { }
 };
 
-inline Term* new_clone(const Term& a)
+namespace boost
 {
-	return a.clone();
+	template <>
+	inline Term* new_clone(const Term& a)
+	{
+		return a.clone();
+	}
 }
-
