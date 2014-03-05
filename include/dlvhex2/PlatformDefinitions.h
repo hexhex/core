@@ -53,7 +53,7 @@
 #endif
 
 #ifdef DLLEXPORT
-#define DLVHEX_EXPORT __declspec(dllexport)
+	#define DLVHEX_EXPORT __declspec(dllexport)
 #else
 	#ifdef DLLIMPORT
 		#define DLVHEX_EXPORT __declspec(dllimport)
@@ -68,7 +68,18 @@
 	#define DLVHEX_PLUGINEXPORT
 #endif
 
-#define WARNING(msg)
+#ifdef _MSC_VER
+	#define WARNING(msg) 
+#else
+	#define WARNING(msg) #warning msg
+#endif
+
+// on Windows we need to export the relevant part of the STL instantiation
+#ifdef WIN32
+	#include <stdexcept>
+	class DLVHEX_EXPORT std::runtime_error;
+#endif
+
 
 #include <boost/cstdint.hpp>
 

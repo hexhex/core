@@ -35,6 +35,10 @@
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Printhelpers.h"
@@ -47,10 +51,15 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class InterpretationBase:
+class DLVHEX_EXPORT InterpretationBase:
   public ostream_printable<InterpretationBase>
 
 {
+#ifdef _MSC_VER
+// TODO: if DLVHEX_EXPORT is defined then ostream_printable::operator<< has no access to the print method in this class if it is declared as private;
+//       is this a Visual C bug?
+public:
+#endif
   // debug
   std::ostream& print(std::ostream& o) const
   { return o << "InterpretationBase::print() not overloaded"; }
