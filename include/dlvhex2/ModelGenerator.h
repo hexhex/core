@@ -55,11 +55,7 @@ class DLVHEX_EXPORT InterpretationBase:
   public ostream_printable<InterpretationBase>
 
 {
-#ifdef _MSC_VER
-// TODO: if DLVHEX_EXPORT is defined then ostream_printable::operator<< has no access to the print method in this class if it is declared as private;
-//       is this a Visual C bug?
 public:
-#endif
   // debug
   std::ostream& print(std::ostream& o) const
   { return o << "InterpretationBase::print() not overloaded"; }
