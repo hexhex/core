@@ -9,7 +9,7 @@ if [ ! -e $dir ]; then
 	i=0
 	tmpscript=$(mktemp)
 	mkdir $dir
-	cp scripts/gitstatistics.sh $dir/tmpscript
+	cp scripts/gitstatistics.sh $dir/$tmpscript
 	chmod a+x $dir/tmpscript
 
 	git log | egrep "^commit|Date:" | sed 's/commit //' | while read line
