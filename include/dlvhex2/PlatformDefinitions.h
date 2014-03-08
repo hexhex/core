@@ -69,9 +69,9 @@
 #endif
 
 #ifdef _MSC_VER
-	#define WARNING(msg) 
+	#define WARNING(msg) __pragma (message(msg))
 #else
-	#define WARNING(msg) 
+	#define WARNING(msg) _Pragma(warning(msg))
 #endif
 
 // on Windows we need to export the relevant part of the STL instantiation
