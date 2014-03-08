@@ -204,8 +204,8 @@ class TestConcatAtom:
 public:
   TestConcatAtom():
     ComfortPluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputTuple();
     setOutputArity(1);
   }
@@ -891,8 +891,8 @@ class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learni
 public:
   TestSetMinusNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
     addInputPredicate();
     setOutputArity(1);
@@ -990,18 +990,16 @@ public:
   }
 };
 
-// ***** Impementation of setminus plugin (example)
 class TestSetMinusNongroundNogoodBasedLearningAtom:	// tests user-defined external learning
   public PluginAtom
 {
 
 public:
 
-// ***** Constructor of setminus plugin
   TestSetMinusNongroundNogoodBasedLearningAtom():
     PluginAtom("testSetMinusNongroundNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
     addInputPredicate();
     prop.monotonicInputPredicates.insert(0);
@@ -1119,8 +1117,8 @@ public:
   TestSetMinusRuleBasedLearningAtom(ProgramCtx* ctx):
     ctx(ctx),
     PluginAtom("testSetMinusRuleBasedLearning", false) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
     addInputPredicate();
     setOutputArity(1);
@@ -1216,8 +1214,8 @@ class TestNonmonAtom:	// tests user-defined external learning
 public:
   TestNonmonAtom():
     PluginAtom("testNonmon", false) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
     setOutputArity(1);
 
@@ -1270,8 +1268,8 @@ class TestNonmon2Atom:	// tests user-defined external learning
 public:
   TestNonmon2Atom():
     PluginAtom("testNonmon2", false) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
     setOutputArity(1);
   }
@@ -1321,8 +1319,8 @@ class TestIdAtom:	// tests user-defined external learning
 public:
   TestIdAtom():
     PluginAtom("id", false) // monotonic
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
     setOutputArity(1);
   }
@@ -1351,9 +1349,9 @@ class TestIdcAtom:	// tests user-defined external learning
 public:
   TestIdcAtom():
     PluginAtom("idc", false) // monotonic, and no predicate inputs anyway
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
     addInputConstant();
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     setOutputArity(1);
   }
 
@@ -1371,8 +1369,8 @@ class TestNegAtom:	// tests user-defined external learning
 public:
   TestNegAtom():
     PluginAtom("neg", false)
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputConstant();
     addInputPredicate();
     setOutputArity(1);
@@ -2257,21 +2255,17 @@ public:
 		}
 	}
 
-
-// ***** Impementation of SetUnion plugin (example)
 class TestSetUnionAtom:	// tests user-defined external learning
   public PluginAtom
 {
 
 public:
 
-// ***** Constructor of setunion plugin
-
     TestSetUnionAtom():
 		// testSetUnion is the name of our external atom
     PluginAtom("testSetUnion", true) // monotonic
-    WARNING("TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only constant inputs, is it always monotonic? if yes, automate this, at least create a warning")
 		DBGLOG(DBG,"Constructor of SetUnion plugi is started!");
     addInputPredicate(); // the first set
     addInputPredicate(); // the second set
