@@ -1727,8 +1727,8 @@ class TestDisjAtom:
 public:
   TestDisjAtom():
     PluginAtom("testDisj", false)
-    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
   {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();	// interpretation i
     addInputPredicate();	// positive p
     addInputPredicate();	// negative n
