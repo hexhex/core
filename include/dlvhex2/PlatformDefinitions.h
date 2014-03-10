@@ -69,9 +69,11 @@
 #endif
 
 #ifdef _MSC_VER
-	#define WARNING(msg) 
+	#define WARNING(msg) __pragma (message(msg))
 #else
-	#define WARNING(msg) 
+	// GCC does not expand macros in #warning pragmas, thus we use messages
+	#define _WARNING(x) _Pragma (#x)
+	#define WARNING(msg) _WARNING(message (#msg))
 #endif
 
 // on Windows we need to export the relevant part of the STL instantiation
