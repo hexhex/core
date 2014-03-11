@@ -477,6 +477,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
 	pctx.config.setOption(CFG_HT_MODELS, 0);
+	pctx.config.setOption(CFG_SEQ_MODELS, 0);
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -708,7 +709,7 @@ int main(int argc, char *argv[])
 	}
   catch(const GeneralError &ge)
 	{
-pctx.modelBuilder.reset();
+pctx.evalcontext.reset();
 		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
 		return 1;
 	}
@@ -804,8 +805,8 @@ void processOptionsPrePlugin(
 		{ "lazyufscheckerinitialization", no_argument, 0, 47 },
 		{ "supportsets", no_argument, 0, 48 },
 		{ "forcegc", no_argument, 0, 49 },
-		{ "ht-models", no_argument, 0, 41 },
-		{ "seq-models", no_argument, 0, 42 },
+		{ "ht-models", no_argument, 0, 50 },
+		{ "seq-models", optional_argument, 0, 51 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1429,10 +1430,6 @@ void processOptionsPrePlugin(
 			case '?':
 				config.pluginOptions.push_back(argv[optind - 1]);
 				break;
-		case 40:
-		  pctx.config.setOption("ClaspForceSingleThreaded", 1);
-		  break;
-
 		case 42:
 			if (optarg) {
 				std::string cycle(optarg);
@@ -1485,12 +1482,16 @@ void processOptionsPrePlugin(
 	case 40:
 	  pctx.config.setOption("ClaspForceSingleThreaded", 1);
 	  break;
-	case 41:
+	case 50:
 		pctx.config.setOption(CFG_HT_MODELS, 1);
 		break;
-	case 42:
+	case 51:
 		pctx.config.setOption(CFG_HT_MODELS, 1);
-		pctx.config.setOption(CFG_SEQ_MODELS, 1);
+		if (optarg && strcmp(optarg, "as") == 0) {
+			pctx.config.setOption(CFG_SEQ_MODELS, SEQModels_AnswerSets);
+		} else {
+			pctx.config.setOption(CFG_SEQ_MODELS, SEQModels_All);
+		}
 		break;
 		}
 	}
