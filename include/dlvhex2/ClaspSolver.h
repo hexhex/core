@@ -81,6 +81,10 @@ DLVHEX_NAMESPACE_BEGIN
 class PropagatorCallback;
 
 class ClaspSolver : public GenuineGroundSolver, public SATSolver{
+public:
+	// problem type
+	enum ProblemType { ASP, SAT };	
+	
 private:
 	// propagator for external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{
@@ -148,6 +152,7 @@ private:
 
 	// management of the symbol table
 	void buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p);
+	void buildInitialSymbolTable(Clasp::SatBuilder& sat, const OrdinaryASPProgram& p);
 	void buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSet& ns);
 	void buildOptimizedSymbolTable();
 	Clasp::Literal noLiteral;
@@ -173,7 +178,6 @@ protected:
 	std::list<Nogood> nogoods;
 
 	// instance information
-	enum ProblemType { ASP, SAT };
 	ProblemType problemType;
 
 	// interface to clasp internals
@@ -207,8 +211,11 @@ protected:
 
 public:
 	// constructors/destructors
-	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
-	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
+	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, 
+			InterpretationConstPtr frozen = InterpretationConstPtr(), 
+			ProblemType type = ASP);
+	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, 
+			InterpretationConstPtr frozen = InterpretationConstPtr());
 	virtual ~ClaspSolver();
 
 	// search control

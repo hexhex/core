@@ -456,34 +456,68 @@ void ClaspSolver::sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
 void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
-	Clasp::Asp::LogicProgram asp;
-	asp.start(claspctx, config.asp);
-	asp.setNonHcfConfiguration(config.testerConfig());
+	if (problemType == ASP) {
+		Clasp::Asp::LogicProgram asp;
+		asp.start(claspctx, config.asp);
+		asp.setNonHcfConfiguration(config.testerConfig());
 
-	false_ = asp.newAtom();
-	asp.setCompute(false_, false);
+		false_ = asp.newAtom();
+		asp.setCompute(false_, false);
 
-	buildInitialSymbolTable(asp, p.getGroundProgram());
+		buildInitialSymbolTable(asp, p.getGroundProgram());
 
-	// transfer edb
-	DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
-	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
-	while (en < en_end){
-		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(mapHexToClasp(*en).var()).endRule();
-		en++;
+		// transfer edb
+		DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
+		bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+		bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+		while (en < en_end){
+			// add fact
+			asp.startRule(Clasp::Asp::BASICRULE).addHead(mapHexToClasp(*en).var()).endRule();
+			en++;
+		}
+
+		// transfer idb
+		DBGLOG(DBG, "Sending IDB to clasp");
+		BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
+			sendRuleToClasp(asp, ruleId);
+		}
+
+		inconsistent = !asp.endProgram();
+	} else {
+		Clasp::SatBuilder sat;
+		sat.startProgram(claspctx);
+		buildInitialSymbolTable(sat, p.getGroundProgram());
+		
+		// transfer edb
+		DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
+		bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+		bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+		while (en < en_end){
+			// add fact
+			Clasp::LitVec clause;
+			clause.push_back(Clasp::Literal(mapHexToClasp(*en).var(), false));
+			sat.addClause(clause);
+			en++;
+		}
+
+		// transfer idb
+		DBGLOG(DBG, "Sending IDB to clasp");
+		BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
+			const Rule& rule = reg->rules.getByID(ruleId);
+			Clasp::LitVec clause;
+			BOOST_FOREACH (ID lit, rule.head){
+				clause.push_back(Clasp::Literal(mapHexToClasp(lit.address).var(), false));
+			}
+			BOOST_FOREACH (ID lit, rule.body){
+				clause.push_back(Clasp::Literal(mapHexToClasp(lit.address).var(), !lit.isNaf()));
+			}
+			sat.addClause(clause);
+		}
+
+		inconsistent = !sat.endProgram();
 	}
 
-	// transfer idb
-	DBGLOG(DBG, "Sending IDB to clasp");
-	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
-		sendRuleToClasp(asp, ruleId);
-	}
-
-	inconsistent = !asp.endProgram();
 	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
-
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
 }
 
@@ -686,6 +720,103 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const O
 	}
 }
 
+void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const OrdinaryASPProgram& p){
+
+	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab SAT program");
+	#endif
+
+	DBGLOG(DBG, "Building atom index");
+
+	assert(hexToClasp.empty());
+	hexToClasp.reserve(reg->ogatoms.getSize());
+    
+	unsigned largestidx = 0;
+	unsigned varCnt = 0;
+	claspctx.symbolTable().startInit();
+    
+	// edb
+	bm::bvector<>::enumerator en = p.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
+	while (en < en_end){
+		if (!isMappedToClaspLiteral(*en)){
+			uint32_t c = claspctx.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
+            
+			// create positive literal -> false
+			Clasp::Literal clit(c, false);
+			storeHexToClasp(*en, clit);
+            
+			if (clit.index() > largestidx) {
+				largestidx = clit.index();
+			}
+            
+			std::string str = idAddressToString(*en);
+			claspctx.symbolTable().addUnique(c, str.c_str()).lit = clit;
+			varCnt++;
+		}
+		en++;
+	}
+	BOOST_FOREACH (ID ruleId, p.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID h, rule.head){
+			if (!isMappedToClaspLiteral(h.address)) {
+				uint32_t c = claspctx.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
+                
+				// create positive literal -> false
+				Clasp::Literal clit(c, false);
+				storeHexToClasp(h.address, clit);
+                
+				if (clit.index() > largestidx) {
+					largestidx = clit.index();
+				}
+                
+				std::string str = idAddressToString(h.address);
+				claspctx.symbolTable().addUnique(c, str.c_str()).lit = clit;
+				varCnt++;
+			}
+		}
+		BOOST_FOREACH (ID b, rule.body) {
+			if (!isMappedToClaspLiteral(b.address)) {
+				uint32_t c = claspctx.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
+                
+				// create positive literal -> false
+				Clasp::Literal clit(c, false);
+				storeHexToClasp(b.address, clit);
+                
+				if (clit.index() > largestidx) {
+					largestidx = clit.index();
+				}
+                
+				std::string str = idAddressToString(b.address);
+				claspctx.symbolTable().addUnique(c, str.c_str()).lit = clit;
+				varCnt++;
+			}
+		}
+	}
+	// resize
+	// (+1 because largest index must also be covered +1 because negative literal may also be there)
+	resetAndResizeClaspToHex(largestidx+1+1);
+	// build back mapping
+	for(std::vector<Clasp::Literal>::const_iterator it = hexToClasp.begin(); it != hexToClasp.end(); ++it) {
+		const Clasp::Literal clit = *it;
+		if( clit == noLiteral )
+			continue;
+		const IDAddress hexlitaddress = it - hexToClasp.begin();
+		AddressVector* &c2h = claspToHex[clit.index()];
+		if( !c2h )
+			c2h = new AddressVector;
+		c2h->push_back(hexlitaddress);
+	}
+    
+	claspctx.symbolTable().endInit();
+
+	DBGLOG(DBG, "SAT instance has " << varCnt << " variables, symbol table has " << claspctx.symbolTable().size() << " entries");
+	sat.prepareProblem(varCnt);
+}
+
 void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSet& ns){
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab ns");
@@ -801,14 +932,15 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 	}
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen, ProblemType type)
+ : ctx(ctx), solve(0), ep(0), modelCount(0), problemType(type), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
-	DBGLOG(DBG, "Configure clasp in ASP mode");
-	problemType = ASP;
+	DBGLOG(DBG, "Configure clasp in " << (problemType == ASP) ? "ASP" : "SAT" << " mode");
 	config.reset();
-	interpretClaspCommandline(Clasp::Problem_t::ASP);
+	Clasp::Problem_t::Type ptype = (problemType == ASP) ? 
+		Clasp::Problem_t::ASP : Clasp::Problem_t::SAT;
+	interpretClaspCommandline(ptype);
 	nextSolveStep = Restart;
 
 	claspctx.requestStepVar();
