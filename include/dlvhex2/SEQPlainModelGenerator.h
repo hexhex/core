@@ -39,43 +39,43 @@ DLVHEX_NAMESPACE_BEGIN
 class SEQPlainModelGeneratorFactory;
 
 class SEQPlainModelGenerator:
-  public HTPlainModelGenerator
+	public HTPlainModelGenerator
 {
 protected:
-  typedef bm::bvector<> BVec;
-  typedef std::pair<BVec, InterpretationPtr> Pair;
-  typedef std::vector<Pair> MVec;
+	typedef bm::bvector<> BVec;
+	typedef std::pair<BVec, InterpretationPtr> Pair;
+	typedef std::vector<Pair> MVec;
 
 protected:
-  MVec models;
-  MVec::iterator modeliterator;
+	MVec models;
+	MVec::iterator modeliterator;
 
 private:
-  void generateModels();
-  void incorporateModels(MVec& hminimal);
+	void generateModels();
+	void incorporateModels(MVec& hminimal);
 
 public:
-  SEQPlainModelGenerator(Factory& factory, InterprConstPtr input);
-  virtual ~SEQPlainModelGenerator();
+	SEQPlainModelGenerator(Factory& factory, InterprConstPtr input);
+	virtual ~SEQPlainModelGenerator();
 
-  virtual InterprPtr generateNextModel();
+	virtual InterprPtr generateNextModel();
 };
 
 class SEQPlainModelGeneratorFactory:
-  public HTPlainModelGeneratorFactory
+	public HTPlainModelGeneratorFactory
 {
-  friend class SEQPlainModelGenerator;
+	friend class SEQPlainModelGenerator;
 
 public:
-  SEQPlainModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  virtual ~SEQPlainModelGeneratorFactory() {}
+	SEQPlainModelGeneratorFactory(
+			ProgramCtx& ctx, const ComponentInfo& ci,
+			ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+	virtual ~SEQPlainModelGeneratorFactory() {}
 
-  virtual ModelGeneratorPtr createModelGenerator(InterprConstPtr input)
-  {
-    return ModelGeneratorPtr(new SEQPlainModelGenerator(*this, input));
-  }
+	virtual ModelGeneratorPtr createModelGenerator(InterprConstPtr input)
+	{
+		return ModelGeneratorPtr(new SEQPlainModelGenerator(*this, input));
+	}
 };
 
 inline bool bm_subseteq(const bm::bvector<>& v1, const bm::bvector<>& v2);

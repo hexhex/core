@@ -44,56 +44,56 @@ DLVHEX_NAMESPACE_BEGIN
 class HTPlainModelGeneratorFactory;
 
 class HTPlainModelGenerator:
-  public ModelGeneratorBase<HTInterpretation>
+	public ModelGeneratorBase<HTInterpretation>
 {
 public:
-  typedef HTPlainModelGeneratorFactory Factory;
+	typedef HTPlainModelGeneratorFactory Factory;
 protected:
-  // corresponding factory
-  Factory& factory;
-  // program context
-  ProgramCtx& ctx;
-  // common registry
-  RegistryPtr reg;
-  // genuine solver
-  SATSolverPtr solver;
-  // UFS checker manager
-  UnfoundedSetCheckerManagerPtr ufscm;
-  // indicates if a new (classical) model should be generated
-  bool nextmodel;
-  // current (classical) model
-  InterpretationPtr model;
+	// corresponding factory
+	Factory& factory;
+	// program context
+	ProgramCtx& ctx;
+	// common registry
+	RegistryPtr reg;
+	// genuine solver
+	SATSolverPtr solver;
+	// UFS checker manager
+	UnfoundedSetCheckerManagerPtr ufscm;
+	// indicates if a new (classical) model should be generated
+	bool nextmodel;
+	// current (classical) model
+	InterpretationPtr model;
 
 public:
-  HTPlainModelGenerator(Factory& factory, InterprConstPtr input);
-  virtual ~HTPlainModelGenerator();
+	HTPlainModelGenerator(Factory& factory, InterprConstPtr input);
+	virtual ~HTPlainModelGenerator();
 
-  virtual InterprPtr generateNextModel();
+	virtual InterprPtr generateNextModel();
 };
 
 class HTPlainModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<HTInterpretation>
+	public ModelGeneratorFactoryBase<HTInterpretation>
 {
-  friend class HTPlainModelGenerator;
+	friend class HTPlainModelGenerator;
 public:
-  typedef ModelGeneratorFactoryBase<HTInterpretation> Base;
-  typedef ComponentGraph::ComponentInfo ComponentInfo;
+	typedef ModelGeneratorFactoryBase<HTInterpretation> Base;
+	typedef ComponentGraph::ComponentInfo ComponentInfo;
 protected:
-  ProgramCtx ctx;
-  // rewritten idb (containing replacements for eatoms)
-  // (x stands for transformed)
-  std::vector<ID> xidb;
+	ProgramCtx ctx;
+	// rewritten idb (containing replacements for eatoms)
+	// (x stands for transformed)
+	std::vector<ID> xidb;
 
 public:
-  HTPlainModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  virtual ~HTPlainModelGeneratorFactory() {}
+	HTPlainModelGeneratorFactory(
+		ProgramCtx& ctx, const ComponentInfo& ci,
+		ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+	virtual ~HTPlainModelGeneratorFactory() {}
 
-  virtual ModelGeneratorPtr createModelGenerator(InterprConstPtr input)
-  {
-    return ModelGeneratorPtr(new HTPlainModelGenerator(*this, input));
-  }
+	virtual ModelGeneratorPtr createModelGenerator(InterprConstPtr input)
+	{
+		return ModelGeneratorPtr(new HTPlainModelGenerator(*this, input));
+	}
 };
 
 DLVHEX_NAMESPACE_END
