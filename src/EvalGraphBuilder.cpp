@@ -40,7 +40,6 @@
 #include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
-#include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
 #include "dlvhex2/HTPlainModelGenerator.h"
 #include "dlvhex2/SEQPlainModelGenerator.h"
 #include "dlvhex2/Logger.h"
@@ -125,43 +124,51 @@ void EvalGraphBuilder<FinalEvalGraph>::setFactory(EvalUnit& u, const ComponentIn
 {
   // configure unit
   EvalUnitProperties& uprops = eg.propsOf(u);
-  if( ci.innerEatoms.empty() && !ctx.config.getOption("ForceGC") )
+  if (!!ctx.customModelGeneratorProvider)
   {
-    // no inner external atoms -> plain model generator factory
-    LOG(DBG,"configuring plain model generator factory for eval unit " << u);
-    if (ctx.config.getOption("GenuineSolver") > 0){
-      uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
-            ctx, ci, externalEvalConfig));
-    }else{
-      uprops.mgf.reset(new PlainModelGeneratorFactory(
-            ctx, ci, externalEvalConfig));
-    }
+    LOG(DBG,"configuring custom model generator factory for eval unit " << u);
+    uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
   }
   else
   {
-    if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
+    if( ci.innerEatoms.empty() && !ctx.config.getOption("ForceGC") )
     {
-      // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
-      // -> wellfounded/fixpoint model generator factory
-      LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
+      // no inner external atoms -> plain model generator factory
+      LOG(DBG,"configuring plain model generator factory for eval unit " << u);
       if (ctx.config.getOption("GenuineSolver") > 0){
-        uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+        uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
               ctx, ci, externalEvalConfig));
       }else{
-        uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+      uprops.mgf.reset(new PlainModelGeneratorFactory(
               ctx, ci, externalEvalConfig));
       }
     }
     else
     {
-      // everything else -> guess and check model generator factory
-      LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-      if (ctx.config.getOption("GenuineSolver") > 0){
-        uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
-      }else{
-        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
+      if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
+      {
+        // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
+        // -> wellfounded/fixpoint model generator factory
+        LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
+        if (ctx.config.getOption("GenuineSolver") > 0){
+          uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }else{
+          uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }
+      }
+      else
+      {
+        // everything else -> guess and check model generator factory
+        LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
+        if (ctx.config.getOption("GenuineSolver") > 0){
+          uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }else{
+          uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }
       }
     }
   }
@@ -220,20 +227,7 @@ EvalGraphBuilder<EvalGraphT>::createEvalUnit(
   EvalUnitProperties& uprops = eg.propsOf(u);
 
   // configure model generator factory, depending on type of component
-  {
-   const ComponentGraph::ComponentInfo& ci = newUnitInfo;
-
-    if (!!ctx.customModelGeneratorProvider)
-    {
-      LOG(DBG,"configuring custom model generator factory for eval unit " << u);
-      uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
-    }
-    else
-    {     
-      // set model generator factory
-      setFactory(u, newUnitInfo);
-    }
-  }
+  setFactory(u, newUnitInfo);
 
   // create dependencies
   unsigned joinOrder = 0; // TODO define join order in a more intelligent way?
