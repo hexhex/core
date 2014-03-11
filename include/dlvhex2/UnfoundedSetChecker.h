@@ -437,6 +437,9 @@ public:
 			const std::set<ID>& skipProgram,
 			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
+	std::vector<IDAddress> getUnfoundedSet(
+			InterpretationConstPtr interpretation);
+	
 	void initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram = std::set<ID>());
 	std::vector<IDAddress> getNextUnfoundedSet();
 
