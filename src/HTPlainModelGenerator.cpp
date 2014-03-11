@@ -88,8 +88,9 @@ HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr i
 
 	OrdinaryASPProgram program(reg, factory.xidb, newint, factory.ctx.maxint);
 
-	solver = GenuineSolver::getInstance(factory.ctx, program, true, true, true);
-	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(factory.ctx, AnnotatedGroundProgram(factory.ctx, program), true));
+	solver = SATSolver::getInstance(factory.ctx, program);
+	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(
+				factory.ctx, AnnotatedGroundProgram(factory.ctx, program), true));
 }
 
 HTPlainModelGenerator::~HTPlainModelGenerator()
@@ -98,7 +99,7 @@ HTPlainModelGenerator::~HTPlainModelGenerator()
 
 HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 {
-	if (solver == GenuineSolverPtr()) {
+	if (solver == SATSolverPtr()) {
 		return HTInterpretationPtr();
 	}
 	if (nextmodel) {
