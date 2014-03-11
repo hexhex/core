@@ -223,10 +223,7 @@ EvalGraphBuilder<EvalGraphT>::createEvalUnit(
 		assert(success); // component must not already exist here
 	}
 
-  // configure unit
-  EvalUnitProperties& uprops = eg.propsOf(u);
-
-  // configure model generator factory, depending on type of component
+  // set model generator factory
   setFactory(u, newUnitInfo);
 
   // create dependencies

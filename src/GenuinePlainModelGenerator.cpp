@@ -170,7 +170,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
-	solver = GenuineSolver::getInstance(factory.ctx, program);
+	solver = GenuineSolver::getInstance(factory.ctx, program, true, true);
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
