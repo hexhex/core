@@ -34,29 +34,12 @@ if test -e gringo; then
 	fi
 else
 	echo "unpacking gringo"
-	tar xzf ${TOP_SRCDIR}/gringo-3.0.4-source.tar.gz #--transform 's/gringo-3.0.4-source/gringo/'
-	mv gringo-3.0.4-source gringo
-
-	echo "patching gringo"
-	patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
+	tar xzf ${TOP_SRCDIR}/gringo-4.3.0-source.tar.gz #--transform 's/gringo-3.0.4-source/gringo/'
+	mv gringo-4.3.0-source gringo
+	patch $TOP_SRCDIR/buildclaspgringo/gringo/SConstruct <$TOP_SRCDIR/buildclaspgringo/SConstruct.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
-	patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.diff ||
+	patch $TOP_SRCDIR/buildclaspgringo/gringo/app/gringo/main.cc <$TOP_SRCDIR/buildclaspgringo/main.cc.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
-	patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
-		{ echo "gringo patching failed!"; exit -1; }
-	patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl-builtsource.diff ||
-		{ echo "gringo patching failed!"; exit -1; }
-	patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
-		{ echo "gringo patching failed!"; exit -1; }
-
-# Edit: it seems that this patch is also necessary with gcc if boost version >= 1.49
-#	echo "using clang: ${USING_CLANG}"
-#	if test "xyes" == "x${USING_CLANG}"; then
-#		echo "patching gringo (for clang)"
-		patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-clang.patch ||
-			{ echo "gringo patching failed!"; exit -1; }
-#	fi
-
 	mkdir -p gringo/build/release
 fi
 
@@ -67,14 +50,9 @@ make -C clasp/build/release VERBOSE=1 ||
 
 echo "making gringo"
 (
-  cd gringo/build/release
+  cd gringo
   CXX=$CXX \
-  BOOST_ROOT=$BOOST_ROOT cmake ../../ -DCMAKE_CXX_FLAGS="-Wall -fPIC" -DCMAKE_BUILD_TYPE=release -DWITH_LUA=none ||
+  BOOST_ROOT=$BOOST_ROOT scons --build-dir=release gringo ||
     { echo "gringo cmake failed!"; exit -1; }
-  make gringo-app clingo-app VERBOSE=1 ||
-    { echo "gringo make failed!"; exit -1; }
 )
-
-# now it should also be possible to do the following:
-#./configure --with-libclasp=`pwd`/clasp/ --with-libgringo=`pwd`/gringo/
 

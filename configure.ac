@@ -227,6 +227,7 @@ esac
 # setup CXXFLAGS and CPPFLAGS
 CXXFLAGS="$CXXFLAGS $debuginfo $optlevel $prof"
 CPPFLAGS="$CPPFLAGS $defines"
+AX_CXX_COMPILE_STDCXX_11(,[mandatory])
 
 # third-party solvers
 EXTSOLVER_LIBS=
@@ -520,7 +521,7 @@ if test "x${with_libgringo_support}" != xfalse; then
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
 	# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
   extsolver_found=true
 fi

@@ -1,0 +1,4 @@
+74c74
+<     env['CXXFLAGS']   = ['-std=c++11', '-O3', '-Wall']
+---
+>     env['CXXFLAGS']   = ['-std=c++11', '-O3', '-Wall', '-fPIC']
