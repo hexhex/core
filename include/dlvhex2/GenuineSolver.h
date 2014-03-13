@@ -37,6 +37,7 @@
 #define _DLVHEX_GENUINESOLVER_HPP
 
 
+#include "dlvhex2/fwd.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/Error.h"
@@ -85,8 +86,12 @@ public:
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
-	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, 
+			InterpretationConstPtr frozen = InterpretationConstPtr(), 
+			bool minCheck = true, ProblemType type = ASP);
+	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, 
+			InterpretationConstPtr frozen = InterpretationConstPtr(), 
+			bool minCheck = true, ProblemType type = ASP);
 };
 
 typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;
@@ -118,7 +123,9 @@ public:
 	typedef boost::shared_ptr<GenuineSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr(), bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, 
+			InterpretationConstPtr frozen = InterpretationConstPtr(), 
+			bool minCheck = true, ProblemType type = ASP);
 };
 
 typedef GenuineSolver::Ptr GenuineSolverPtr;

@@ -65,25 +65,5 @@ SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns, Interpretati
 	}
 }
 
-SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen){
-
-	switch (ctx.config.getOption("GenuineSolver")){
-	case 3: case 4:	// internal grounder or Gringo + clasp
-#ifdef HAVE_LIBCLASP
-		{
-		DBGLOG(DBG, "Instantiating genuine sat solver with clasp");
-		SATSolverPtr ptr = SATSolverPtr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen, ClaspSolver::SAT));
-		return ptr;
-		}
-#else
-		throw GeneralError("No support for clasp compiled into this binary");
-#endif // HAVE_LIBCLINGO
-		break;
-	case 1: case 2:	// internal grounder or Gringo + internal solver
-	default:	// translation solver
-		throw GeneralError("No support for internal solver");
-	}
-}
-
 DLVHEX_NAMESPACE_END
 

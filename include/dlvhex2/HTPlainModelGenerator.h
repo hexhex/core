@@ -56,7 +56,7 @@ protected:
 	// common registry
 	RegistryPtr reg;
 	// genuine solver
-	SATSolverPtr solver;
+	GenuineSolverPtr solver;
 	// UFS checker manager
 	UnfoundedSetCheckerManagerPtr ufscm;
 	// indicates if a new (classical) model should be generated

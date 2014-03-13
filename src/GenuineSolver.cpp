@@ -91,7 +91,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 	}
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen, bool minCheck){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen, bool minCheck, ProblemType type){
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
@@ -106,7 +106,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
 		// clasp 3 is always disjunctive
-		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, frozen));
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, frozen, type));
 		return ptr;
 		}
 #else
@@ -119,7 +119,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 	}
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck, ProblemType type){
   //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "grounding (GenuineGroundS.::getInst)");
 
 	switch (ctx.config.getOption("GenuineSolver")){
@@ -135,7 +135,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
 		// clasp 3 is always disjunctive
-		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen));
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen, type));
 		return ptr;
 		}
 #else
@@ -148,7 +148,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck){
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck, ProblemType type){
 	const OrdinaryASPProgram* gprog;
 	GenuineGrounderPtr grounder;
 	{
@@ -158,7 +158,7 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 	}
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
+	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck, type);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
 

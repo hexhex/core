@@ -133,6 +133,9 @@ struct Rule;
 class State;
 typedef boost::shared_ptr<State> StatePtr;
 
+// solver problem type
+enum ProblemType { ASP, SAT };	
+	
 DLVHEX_NAMESPACE_END
 
 #endif // FWD_HPP_INCLUDED_14012011

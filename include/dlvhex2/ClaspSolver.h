@@ -47,7 +47,6 @@
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Set.h"
 #include "dlvhex2/SATSolver.h"
-#include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <vector>
@@ -81,10 +80,6 @@ DLVHEX_NAMESPACE_BEGIN
 class PropagatorCallback;
 
 class ClaspSolver : public GenuineGroundSolver, public SATSolver{
-public:
-	// problem type
-	enum ProblemType { ASP, SAT };	
-	
 private:
 	// propagator for external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{

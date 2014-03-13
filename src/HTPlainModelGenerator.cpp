@@ -38,6 +38,9 @@ DLVHEX_NAMESPACE_BEGIN
 HTPlainModelGeneratorFactory::HTPlainModelGeneratorFactory(ProgramCtx& ctx, const ComponentInfo& ci, ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
 	ctx(ctx)
 {
+	// this model generator cannot handle external sources
+	assert(ci.innerEatoms.empty());
+	assert(ci.outerEatoms.empty());
 	// transform original innerRules and innerConstraints
 	// to xidb with only auxiliaries
 	RuleConverter converter(ctx);
@@ -66,38 +69,16 @@ HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr i
 		newint.reset(new Interpretation(reg));
 	} else {
 		// TODO: handle input
-		// copy construction
-		// newint.reset(new Interpretation(*input));
 	}
 	// augment input with edb
 	newint->add(*factory.ctx.edb);
 
-#if 0
-	// manage outer external atoms
-	if( !factory.eatoms.empty() ) {
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-
-		// augment input with result of external atom evaluation
-		// use newint as input and as output interpretation
-		IntegrateExternalAnswerIntoInterpretationCB cb(newint);
-		evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
-		DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
-		                          "outer eatom computations");
-		DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
-	}
-#endif
-
 	OrdinaryASPProgram program(reg, factory.xidb, newint, factory.ctx.maxint);
-  	AnnotatedGroundProgram groundprogram;
-	GenuineGrounderPtr grounder;
-	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-		grounder = GenuineGrounder::getInstance(factory.ctx, program);
-		groundprogram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram());
-	}
-	solver = SATSolver::getInstance(factory.ctx, groundprogram.getGroundProgram());
+	solver = GenuineSolver::getInstance(factory.ctx, program, 
+			InterpretationPtr(), true, SAT);
+	AnnotatedGroundProgram agp(ctx, solver->getGroundProgram());
 	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(
-				factory.ctx, groundprogram, true));
+				factory.ctx, agp, true));
 }
 
 HTPlainModelGenerator::~HTPlainModelGenerator()
@@ -106,7 +87,7 @@ HTPlainModelGenerator::~HTPlainModelGenerator()
 
 HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 {
-	if (solver == SATSolverPtr()) {
+	if (solver == GenuineSolverPtr()) {
 		return HTInterpretationPtr();
 	}
 	if (nextmodel) {
