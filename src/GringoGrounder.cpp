@@ -48,7 +48,7 @@
 
 using dlvhex::ID;
 
-#undef DEBUG_GRINGOPARSER
+#define DEBUG_GRINGOPARSER
 
 #ifdef DEBUG_GRINGOPARSER
 # define GPDBGLOG(a,b) DBGLOG(a,b)
@@ -278,34 +278,9 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred)
+	: Gringo::Output::PlainLparseOutputter(emptyStream), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred) : ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred){
 	// Note: We do NOT use shifting but ground disjunctive rules as they are.
 	//       Shifting is instead done in ClaspSolver (as clasp does not support disjunctions)
 	//       This allows for using also other solver-backends which support disjunctive programs.
@@ -560,7 +535,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 	}
 
 	indexToGroundAtomID[atomUid] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
+	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternal(unsigned atomUid, Gringo::Output::ExternalType e){
@@ -637,7 +612,8 @@ int GringoGrounder::doRun()
 		std::vector<std::pair<Gringo::Value, Gringo::Output::ExternalType>> freeze;
 		GringoOptions opts;
 		Gringo::Output::OutputPredicates outPreds;
-		Gringo::Output::OutputBase out(std::move(outPreds), std::cout, opts.lpRewrite);
+		GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred);
+		Gringo::Output::OutputBase out(std::move(outPreds), outputter);
 		Gringo::Scripts scripts;
 		Gringo::Defines defs;
 		Gringo::Input::Program prg;

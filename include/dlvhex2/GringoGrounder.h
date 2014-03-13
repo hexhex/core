@@ -81,7 +81,7 @@ private:
 		virtual void print(ID id);
 	};
 
-	class GroundHexProgramBuilder : public Gringo::Output::LparseOutputter{
+	class GroundHexProgramBuilder : public Gringo::Output::PlainLparseOutputter{
 	private:
 		typedef std::vector<unsigned> WeightVec;
 
@@ -115,6 +115,8 @@ private:
 
 		std::map<int, ID> indexToGroundAtomID;
 		std::list<LParseRule> rules;
+
+		std::stringstream emptystream;
 	public:
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
 		void finishRules();
