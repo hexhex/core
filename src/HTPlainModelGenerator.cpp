@@ -31,6 +31,7 @@
 
 #include "dlvhex2/HTPlainModelGenerator.h"
 #include "dlvhex2/Converter.h"
+#include "dlvhex2/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -87,10 +88,16 @@ HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr i
 #endif
 
 	OrdinaryASPProgram program(reg, factory.xidb, newint, factory.ctx.maxint);
-
-	solver = SATSolver::getInstance(factory.ctx, program);
+  	AnnotatedGroundProgram groundprogram;
+	GenuineGrounderPtr grounder;
+	{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+		grounder = GenuineGrounder::getInstance(factory.ctx, program);
+		groundprogram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram());
+	}
+	solver = SATSolver::getInstance(factory.ctx, groundprogram.getGroundProgram());
 	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(
-				factory.ctx, AnnotatedGroundProgram(factory.ctx, program), true));
+				factory.ctx, groundprogram, true));
 }
 
 HTPlainModelGenerator::~HTPlainModelGenerator()
@@ -107,6 +114,7 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 		if (!model) {
 			return HTInterpretationPtr();
 		}
+		DBGLOG(DBG, "[HTPlain] new model: " << *model);
 		nextmodel = false;
 		ufscm->initialize(model);
 	}
@@ -114,7 +122,7 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 	if (ufs.size() == 0) {
 		nextmodel = true;
 	}
-	DBGLOG(DBG, "generateNextModel: [ufs size] " << ufs.size());
+	DBGLOG(DBG, "[HTPlain] ufs size: " << ufs.size());
 	HTInterpretation::Storage here = model->getStorage();
 	BOOST_FOREACH(IDAddress id, ufs) {
 		here.clear_bit(id);

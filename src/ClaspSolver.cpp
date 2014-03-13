@@ -936,7 +936,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
  : ctx(ctx), solve(0), ep(0), modelCount(0), problemType(type), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
-	DBGLOG(DBG, "Configure clasp in " << (problemType == ASP) ? "ASP" : "SAT" << " mode");
+	DBGLOG(DBG, "Configure clasp in " << ((problemType == ASP) ? "ASP" : "SAT") << " mode");
 	config.reset();
 	Clasp::Problem_t::Type ptype = (problemType == ASP) ? 
 		Clasp::Problem_t::ASP : Clasp::Problem_t::SAT;
