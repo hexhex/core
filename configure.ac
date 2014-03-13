@@ -227,7 +227,6 @@ esac
 # setup CXXFLAGS and CPPFLAGS
 CXXFLAGS="$CXXFLAGS $debuginfo $optlevel $prof"
 CPPFLAGS="$CPPFLAGS $defines"
-AX_CXX_COMPILE_STDCXX_11(,[mandatory])
 
 # third-party solvers
 EXTSOLVER_LIBS=
@@ -512,6 +511,14 @@ fi
 # conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
 if test "x${with_libgringo_support}" != xfalse; then
+
+  # Gringo 4 needs the following:
+  AX_CXX_COMPILE_STDCXX_11(,[mandatory])
+  AC_PROG_LEX
+  AC_PROG_YACC
+#  AC_PROG_RE2C
+#  AC_PROG_SCONS
+
 	# #define in config.h <- config.h.in
 	AC_DEFINE([HAVE_LIBGRINGO], [1], [Defined if we have --with-libgringo.])
   GRINGO_TRUNK_DIR=$with_libgringo_support
