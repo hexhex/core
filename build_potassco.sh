@@ -34,12 +34,16 @@ if test -e gringo; then
 	fi
 else
 	echo "unpacking gringo"
-	tar xzf ${TOP_SRCDIR}/gringo-4.3.0-source.tar.gz #--transform 's/gringo-3.0.4-source/gringo/'
+	tar xzf ${TOP_SRCDIR}/gringo-4.3.0-source.tar.gz
 	mv gringo-4.3.0-source gringo
-	patch $TOP_SRCDIR/buildclaspgringo/gringo/SConstruct <$TOP_SRCDIR/buildclaspgringo/SConstruct.patch ||
+	pushd $TOP_SRCDIR/buildclaspgringo
+	patch gringo/SConstruct <SConstruct.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
-	patch $TOP_SRCDIR/buildclaspgringo/gringo/app/gringo/main.cc <$TOP_SRCDIR/buildclaspgringo/main.cc.patch ||
+	popd
+	pushd $TOP_SRCDIR/buildclaspgringo
+	patch gringo/app/gringo/main.cc <main.cc.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
+	popd
 	mkdir -p gringo/build/release
 fi
 
