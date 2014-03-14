@@ -26,7 +26,7 @@
  * @file ClaspSolver.cpp
  * @author Christoph Redl
  *
- * @brief Interface to genuine gringo 3.0.4-based grounder.
+ * @brief Interface to genuine gringo 4.3.0-based grounder.
  */
 
 #ifdef HAVE_CONFIG_H
