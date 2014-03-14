@@ -244,7 +244,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	}
 	solver = GenuineGroundSolver::getInstance(
 		factory.ctx, annotatedGroundProgram,
-		// this parameter is ignored since upgrade to clasp 3.0 (but still passed for backward compatibility)
 		InterpretationConstPtr(),
 		// do the UFS check for disjunctions only if we don't do
 		// a minimality check in this class;
