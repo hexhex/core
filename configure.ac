@@ -46,7 +46,7 @@ CXXFLAGS="$CXXFLAGS $save_CFLAGS"
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
 
-   AC_MSG_CHECKING([for g++ >= 4.3 or clang++ >= 2.9])
+   AC_MSG_CHECKING([for g++ >= 4.8 or clang++ >= 3.1])
    AC_LANG_PUSH([C++])
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
@@ -253,7 +253,7 @@ PKG_PROG_PKG_CONFIG
 AC_CACHE_SAVE
 
 # checking for boost libs
-BOOST_REQUIRE([1.43.0])
+BOOST_REQUIRE([1.55.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
