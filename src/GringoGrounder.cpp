@@ -43,6 +43,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
 #include <algorithm>
 #include <utility>
 
@@ -140,7 +141,7 @@ void GringoGrounder::Printer::printRule(ID id){
 					BuiltinAtom bi2 = bi;
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
-          bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
+					bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
 					if (!first) out << ", ";
 					first = false;
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
@@ -168,7 +169,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
 	ID lowerbound, upperbound;
-  // 1. l <= #agg{...} <= u
+	// 1. l <= #agg{...} <= u
 	if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
 	    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
 		lowerbound = aatom.tuple[0];
@@ -188,7 +189,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		}
 	// 2. v = #agg{...}
 	}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) &&
-	   	 aatom.tuple[4] == ID_FAIL){
+	   	aatom.tuple[4] == ID_FAIL){
 		lowerbound = aatom.tuple[0];
 		upperbound = aatom.tuple[0];
 		// gringo expects a domain predicate: use #int
@@ -200,7 +201,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		}
 	// 3. l <= #agg{...}
 	}else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
-	   	 aatom.tuple[4] == ID_FAIL){
+	   	aatom.tuple[4] == ID_FAIL){
 		lowerbound = aatom.tuple[0];
 		// gringo expects a domain predicate: use #int
 		if (lowerbound.isVariableTerm()){
@@ -211,7 +212,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		}
 	// 4. #agg{...} <= u
 	}else if (aatom.tuple[0] == ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
-	   	 aatom.tuple[4] != ID_FAIL){
+	   	aatom.tuple[4] != ID_FAIL){
 		upperbound = aatom.tuple[4];
 		// gringo expects a domain predicate: use #int
 		if (upperbound.isVariableTerm()){
@@ -226,33 +227,14 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
 
 	if (id.isLiteral() && id.isNaf()) out << "not ";
-  if( lowerbound != ID_FAIL )
-    print(lowerbound);
-  print(aatom.tuple[2]);
-	const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
-	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
-		out << "{";
-		print(aatom.literals[0]);
-		out << "}";
-	}else{
-		out << "[";
-		print(aatom.literals[0]);
-		out << "=";
-		print(oatom.tuple[oatom.tuple.size() - 1]);
-
-		// make the value variable safe
-		if (oatom.tuple[oatom.tuple.size() - 1].isVariableTerm()){
-			out << ":";
-			print(intPred);
-			out << "(";
-			print(oatom.tuple[oatom.tuple.size() - 1]);
-			out << ")";
-		}
-
-		out << "]";
-	}
-  if( upperbound != ID_FAIL )
-    print(upperbound);
+	if(lowerbound != ID_FAIL) print(lowerbound);
+	print(aatom.tuple[2]);
+	out << "{";
+	printmany(aatom.variables, ",");
+	out << ":";
+	printmany(aatom.literals, ",");
+	out << "}";
+	if(upperbound != ID_FAIL) print(upperbound);
 }
 
 void GringoGrounder::Printer::printInt(ID id){
@@ -325,22 +307,22 @@ void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
 		indexToGroundAtomID[symbol] = aid;
 
 		// remove dummy atoms from models
-//		mask->setFact(aid.address);
+		mask->setFact(aid.address);
 	}
 }
 
 void GringoGrounder::GroundHexProgramBuilder::finishRules(){
+}
+
+void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 
 	const int false_ = 1;	// Gringo index 1 is constant "false"
 
-	DBGLOG(DBG, "Constructing symbol table");
-	finishRules();
-
-	DBGLOG(DBG, "Transforming rules to DLVHEX");
+	DBGLOG(DBG, "Transforming " << rules.size() << " rules to DLVHEX");
 	InterpretationPtr edb = InterpretationPtr(new Interpretation(ctx.registry()));
 	groundProgram.edb = edb;
 	groundProgram.idb.clear();
-  groundProgram.idb.reserve(rules.size());
+	groundProgram.idb.reserve(rules.size());
 	BOOST_FOREACH (const LParseRule& lpr, rules){
 		Rule r(ID::MAINKIND_RULE);
 		switch (lpr.type){
@@ -432,23 +414,21 @@ void GringoGrounder::GroundHexProgramBuilder::finishRules(){
 	}
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printBasicRule(int head, const LitVec &body){
+void GringoGrounder::GroundHexProgramBuilder::printBasicRule(unsigned head, const LitVec &body){
 	rules.push_back(LParseRule(head, body));
 }
-
-/*
-void GringoGrounder::GroundHexProgramBuilder::printConstraintRule(int head, int bound, const LitVec &body){
-	WeightVec weights;
-	BOOST_FOREACH (uint32_t body, b) weights.push_back(1);
-	rules.push_back(LParseRule(head, body, weights, bound));
-}
-*/
 
 void GringoGrounder::GroundHexProgramBuilder::printChoiceRule(const AtomVec &head, const LitVec &body){
 	rules.push_back(LParseRule(head, body));
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printWeightRule(int head, int bound, const LitWeightVec &body){
+void GringoGrounder::GroundHexProgramBuilder::printCardinalityRule(unsigned head, unsigned lower, const LitVec &body){
+	WeightVec weights;
+	weights.resize(body.size(), 1);
+	rules.push_back(LParseRule(head, body, weights, lower));
+}
+
+void GringoGrounder::GroundHexProgramBuilder::printWeightRule(unsigned head, unsigned bound, const LitWeightVec &body){
 	LitVec vec;
 	WeightVec weights;
 	typedef std::pair<int, unsigned> WeightedLit;
@@ -457,9 +437,6 @@ void GringoGrounder::GroundHexProgramBuilder::printWeightRule(int head, int boun
 		weights.push_back(wl.second);
 	}
 	rules.push_back(LParseRule(head, vec, weights, bound));
-}
-
-void GringoGrounder::GroundHexProgramBuilder::printCardinalityRule(int head, unsigned lower, const LitVec &body){
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printMinimizeRule(const LitWeightVec &body){
@@ -471,7 +448,9 @@ void GringoGrounder::GroundHexProgramBuilder::printDisjunctiveRule(const AtomVec
 
 void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Gringo::Value v){
 
-	std::string str = *v.name();
+	std::stringstream ss;
+	v.print(ss);
+	std::string str = ss.str();
 
 	OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, str);
 
@@ -487,12 +466,12 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 			int predlen;
 			if ((predlen = str.find("(")) == std::string::npos){
 				// propositional atom
-				pred = str.substr(0, predlen);
-				args = str.substr(predlen + 1, str.length() - predlen - 2);
+				pred = str;
+				args = "";
 			}else{
 				// has arguments
-				pred = str.length();
-				args = "";
+				pred = str.substr(0, predlen);
+				args = str.substr(predlen + 1, str.length() - predlen - 2);
 			}
 
 			// store predicate
@@ -551,20 +530,6 @@ GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
   doRun();
 }
 
-struct GringoOptions {
-	ProgramOptions::StringSeq   defines;
-    Gringo::Output::LparseDebug lparseDebug     = Gringo::Output::LparseDebug::NONE;
-    bool                        verbose         = false;
-    bool                        text            = false;
-    bool                        lpRewrite       = false;
-    bool                        wNoRedef        = false;
-    bool                        wNoCycle        = false;
-    bool                        wNoTermUndef    = false;
-    bool                        wNoAtomUndef    = false;
-    bool                        wNoNonMonotone  = false;
-    bool                        wNoFileIncluded = false;
-};
-
 const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
 	return groundProgram;
 }
@@ -573,21 +538,16 @@ int GringoGrounder::doRun()
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgroundertime, "Grounder time");
 
-	// redirect std::cerr output to temporary string because gringo spams std:cerr with lots of useless warnings
-	std::stringstream errstr;
-	std::streambuf* origcerr = NULL;
-	if( !Logger::Instance().shallPrint(Logger::DBG) )
-	{
-		// only do this if we are not debugging
-		// (this origcerr procedure kills all logging in the following)
-		origcerr = std::cerr.rdbuf(errstr.rdbuf());
-	}
-
 	try{
 		// we need a unique integer and a unique anonymous predicate
-		// note: without nested hex programs we could make the initialization static because the names only need to be unique wrt. the program
-		intPred = ctx.registry()->getNewConstantTerm("int");
-		anonymousPred = ctx.registry()->getNewConstantTerm("anonymous");
+		static bool first = true;
+		static unsigned int prevAtoms = 0;
+		if (first || prevAtoms < ctx.registry()->ogatoms.getSize()){
+			prevAtoms = ctx.registry()->ogatoms.getSize();
+			intPred = ctx.registry()->getNewConstantTerm("int");
+			anonymousPred = ctx.registry()->getNewConstantTerm("anonymous");
+		}
+		first = false;
 
 		std::stringstream* programStream = new std::stringstream();
 		Printer printer(*programStream, ctx.registry(), intPred);
@@ -600,7 +560,7 @@ int GringoGrounder::doRun()
 			*programStream << "\n";
 		}
 
-		// define integer predicate
+		// define integer predicateMessagePrinter
 		printer.printmany(nongroundProgram.idb, "\n");
 		*programStream << std::endl;
 		printer.print(intPred);
@@ -608,9 +568,16 @@ int GringoGrounder::doRun()
 
 		LOG(DBG, "Sending the following input to Gringo: {{" << programStream->str() << "}}");
 
-		// grounding
+		// don't spam stderr with warnings (note: Gringo prints to stderr, not to cerr!)
+		Gringo::message_printer()->disable(Gringo::W_DEFINE_REDEFINTION);
+		Gringo::message_printer()->disable(Gringo::W_DEFINE_CYCLIC);
+		Gringo::message_printer()->disable(Gringo::W_TERM_UNDEFINED);
+		Gringo::message_printer()->disable(Gringo::W_ATOM_UNDEFINED);
+		Gringo::message_printer()->disable(Gringo::W_NONMONOTONE_AGGREGATE);
+		Gringo::message_printer()->disable(Gringo::W_FILE_INCLUDED);
+
+		// prepare
 		std::vector<std::pair<Gringo::Value, Gringo::Output::ExternalType>> freeze;
-		GringoOptions opts;
 		Gringo::Output::OutputPredicates outPreds;
 		GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred);
 		Gringo::Output::OutputBase out(std::move(outPreds), outputter);
@@ -622,43 +589,33 @@ int GringoGrounder::doRun()
 		Gringo::Ground::Parameters params;
 		Gringo::Input::ProgramVec parts;
 
+		// grounding
 		parser.pushStream("dlvhex", std::unique_ptr<std::stringstream>(programStream));
 		parser.parse();
 		prg.rewrite(defs);
 		prg.check();
-
-		// restore cerr output
-		if( origcerr != NULL )
-		{
-			std::cerr.rdbuf(origcerr);
-			if( errstr.str().size() > 0 )
-			{
-				LOG(INFO, "Gringo Output was {" << errstr.str() << "}");
-			}
-		}
+		params.add("base", {});
+		Gringo::Ground::Program gPrg(prg.toGround(out.domains));
+		gPrg.ground(params, scripts, out, false);
+		out.finish();
+		outputter.transformRules();
 
 		// print ground program
-		if( Logger::Instance().shallPrint(Logger::DBG) )
-		{	
-			std::stringstream groungprogString;
-			RawPrinter rp(groungprogString, ctx.registry());
-			if( groundProgram.edb != 0 )
-			{
-				// print edb interpretation as facts
-				groundProgram.edb->printAsFacts(groungprogString);
-				groungprogString << "\n";
-			}
-			rp.printmany(groundProgram.idb, "\n");
-			groungprogString << std::endl;
-			LOG(DBG, "Got the following ground program from Gringo: {" << groungprogString.str() << "}");
+		std::stringstream groungprogString;
+		RawPrinter rp(groungprogString, ctx.registry());
+		if( groundProgram.edb != 0 )
+		{
+			// print edb interpretation as facts
+			groundProgram.edb->printAsFacts(groungprogString);
+			groungprogString << "\n";
 		}
+		rp.printmany(groundProgram.idb, "\n");
+		groungprogString << std::endl;
+		LOG(DBG, "Got the following ground program from Gringo: {" << groungprogString.str() << "}");
 
 		return EXIT_SUCCESS;
 	}catch(...){
-		// restore cerr output
-		if( origcerr != NULL )
-			std::cerr.rdbuf(origcerr);
-
+		DBGLOG(DBG, "Gringo terminated with error");
 		throw;
 	}
 }

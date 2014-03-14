@@ -119,12 +119,13 @@ private:
 		std::stringstream emptystream;
 	public:
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
-		void finishRules();
+		void transformRules();
 
-		void printBasicRule(int head, const LitVec &body);
+		void finishRules();
+		void printBasicRule(unsigned head, const LitVec &body);
 		void printChoiceRule(const AtomVec &head, const LitVec &body);
-		void printCardinalityRule(int head, unsigned lower, const LitVec &body);
-		void printWeightRule(int head, int bound, const LitWeightVec &body);
+		void printCardinalityRule(unsigned head, unsigned lower, const LitVec &body);
+		void printWeightRule(unsigned head, unsigned bound, const LitWeightVec &body);
 		void printMinimizeRule(const LitWeightVec &body);
 		void printDisjunctiveRule(const AtomVec &head, const LitVec &body);
 
