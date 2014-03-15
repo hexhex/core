@@ -36,23 +36,27 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+typedef bm::bvector<> BVec;
+typedef std::pair<BVec, InterpretationPtr> ModelGap;
+
 class SEQPlainModelGeneratorFactory;
 
 class SEQPlainModelGenerator:
 	public HTPlainModelGenerator
 {
 protected:
-	typedef bm::bvector<> BVec;
-	typedef std::pair<BVec, InterpretationPtr> Pair;
-	typedef std::vector<Pair> MVec;
+	typedef std::vector<ModelGap> MVec;
 
 protected:
-	MVec models;
-	MVec::iterator modeliterator;
+	bool onlyanswersets;
+	MVec seqmodels;
+	MVec::iterator seqmodelsit;
+	MVec hminimal;
+	MVec::iterator hminimalit;
 
 private:
-	void generateModels();
-	void incorporateModels(MVec& hminimal);
+	InterpretationPtr nextAnswerSet();
+	boost::optional<ModelGap&> nextHMinimal();
 
 public:
 	SEQPlainModelGenerator(Factory& factory, InterprConstPtr input);

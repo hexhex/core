@@ -51,7 +51,6 @@ public:
 	typedef boost::shared_ptr<const HTInterpretation> ConstPtr;
 	typedef bm::bvector<> Storage;
 protected:
-	// TODO: naming convention???
 	// registry
 	RegistryPtr registry_;
 	// storage
@@ -76,6 +75,11 @@ public:
 	virtual std::ostream& print(std::ostream& o) const {}
 
 	HTInterpretation() {}
+	HTInterpretation(const Storage& there, const Storage& gap = Storage()):
+		there_(there),
+		here_(there - gap)
+	{
+	}
 	HTInterpretation(RegistryPtr reg):
 		registry_(reg)
 	{

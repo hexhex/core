@@ -40,7 +40,8 @@ SEQPlainModelGeneratorFactory::SEQPlainModelGeneratorFactory(ProgramCtx& ctx, co
 }
 
 SEQPlainModelGenerator::SEQPlainModelGenerator(Factory& factory, InterprConstPtr input):
-	HTPlainModelGenerator(factory, input)
+	HTPlainModelGenerator(factory, input),
+	onlyanswersets(false)
 {
 }
 
@@ -48,86 +49,114 @@ SEQPlainModelGenerator::~SEQPlainModelGenerator()
 {
 }
 
-void SEQPlainModelGenerator::generateModels()
+InterpretationPtr SEQPlainModelGenerator::nextAnswerSet()
 {
-	bool onlyanswersets = (ctx.config.getOption(CFG_SEQ_MODELS) == SEQModels_AnswerSets);
 	InterpretationPtr model = solver->getNextModel();
 	while (model) {
 		ufscm->initialize(model);
-		MVec tmpmodels;
-		if (onlyanswersets) {
-			std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
-			if (ufs.size() == 0) {
-				models.push_back(Pair(BVec(), model));
-			}
-		} else {
+		std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
+		if (ufs.size() == 0) {
+			return model;
+		}
+		model = solver->getNextModel();
+	}
+	return InterpretationPtr();
+}
+
+boost::optional<ModelGap&> SEQPlainModelGenerator::nextHMinimal()
+{
+	if (hminimal.size() == 0 || hminimalit == hminimal.end()) {
+		DBGLOG(DBG, "[SEQPlain] compute hminimal HT models");
+		hminimal.clear();
+		InterpretationPtr model = solver->getNextModel();
+		if (model) {
+			ufscm->initialize(model);
+			bool foundufs = false;
 			bool nextufs = true;
 			while (nextufs) {
 				std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
 				if (ufs.size() == 0) {
 					nextufs = false;
+					if (!foundufs) {
+						DBGLOG(DBG, "[SEQPlain] found answer set during hminimal search");
+						// model with gap 0 exists, 
+						// hence from now on we only compute answer sets
+						onlyanswersets = true;
+						ModelGap gap(BVec(), model);
+						return boost::optional<ModelGap&>(gap);
+					}
 				}
+				foundufs = true;
 				BVec bufs;
 				BOOST_FOREACH (IDAddress id, ufs) {
 					if (!reg->ogatoms.getIDByAddress(id).isAuxiliary()) {
 						bufs.set(id);
 					}
 				}
-				bool insert = tmpmodels.size() == 0;
-				MVec::iterator it = tmpmodels.begin();
-				while (it != tmpmodels.end()) {
+				bool insert = hminimal.size() == 0;
+				MVec::iterator it = hminimal.begin();
+				while (it != hminimal.end()) {
 					if (bm_subset((*it).first, bufs)) {
-						it = tmpmodels.erase(it);
+						it = hminimal.erase(it);
 						insert = true;
 					} else {
 						++it;
 					}
 				}
 				if (insert) {
-					tmpmodels.push_back(Pair(bufs, model));
+					hminimal.push_back(ModelGap(bufs, model));
 				}
 			}
-			incorporateModels(tmpmodels);
-		}
-		model = solver->getNextModel();
-	}
-	modeliterator = models.begin();
-}
-
-void SEQPlainModelGenerator::incorporateModels(MVec& hminimal)
-{
-	BOOST_FOREACH (Pair p, hminimal) {
-		bool insert = models.size() == 0;
-		MVec::iterator it = models.begin();
-		while (it != models.end()) {
-			if (bm_subset(p.first, (*it).first)) {
-				it = models.erase(it);
-				insert = true;
-			} else if ((*it).first == p.first) {
-				insert = true;
-				++it;
-			} else {
-				++it;
-			}
-		}
-		if (insert) {
-			models.push_back(p);
+			DBGLOG(DBG, "[SEQPlain] found " << hminimal.size() << " hminimal HT models");
+			hminimalit = hminimal.begin();
+		} else {
+			return boost::optional<ModelGap&>();
 		}
 	}
+	DBGLOG(DBG, "[SEQPlain] return cached hminimal HT model");
+	return boost::optional<ModelGap&>(*(hminimalit++));
 }
 
 SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
 {
-	if (models.size() == 0) {
-		generateModels();
+	onlyanswersets |= (ctx.config.getOption(CFG_SEQ_MODELS) == SEQModels_AnswerSets);
+	if (onlyanswersets) {
+		InterpretationPtr model = nextAnswerSet();
+		if (model) {
+			DBGLOG(DBG, "[SEQPlain] got the following answer set: " << *model);
+			return InterprPtr(new HTInterpretation(model->getStorage()));
+		}
+		return HTInterpretationPtr();
+	} else if (seqmodels.size() == 0) {
+		boost::optional<ModelGap&> p;
+		while (p = nextHMinimal()) {
+			if (onlyanswersets) {
+				// a HT model with gap 0 was found in nextHMinimal()
+				seqmodels.clear();
+				return InterprPtr(new HTInterpretation((*p).second->getStorage()));
+			}
+			bool insert = seqmodels.size() == 0;
+			MVec::iterator it = seqmodels.begin();
+			while (it != seqmodels.end()) {
+				if (bm_subset((*p).first, (*it).first)) {
+					it = seqmodels.erase(it);
+					insert = true;
+				} else if ((*it).first == (*p).first) {
+					insert = true;
+					++it;
+				} else {
+					++it;
+				}
+			}
+			if (insert) {
+				seqmodels.push_back(*p);
+			}
+		}
+		seqmodelsit = seqmodels.begin();
 	}
-	if (modeliterator != models.end()) {
-		Pair& p = (*modeliterator);
-		InterprPtr htmodel(new HTInterpretation());
-		htmodel->there() = p.second->getStorage();
-		htmodel->here() = htmodel->there() - p.first;
-		++modeliterator;
-		return htmodel;
+	if (seqmodelsit != seqmodels.end()) {
+		ModelGap& p = *(seqmodelsit++);
+		return InterprPtr(new HTInterpretation(p.second->getStorage(), p.first));
 	}
 	return HTInterpretationPtr();
 }
