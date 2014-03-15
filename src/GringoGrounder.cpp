@@ -577,7 +577,8 @@ int GringoGrounder::doRun()
 		Gringo::message_printer()->disable(Gringo::W_FILE_INCLUDED);
 
 		// prepare
-		std::vector<std::pair<Gringo::Value, Gringo::Output::ExternalType>> freeze;
+		std::vector<std::pair<Gringo::Value, Gringo::Output::ExternalType> > freeze;
+//freeze.push_back(std::pair<Gringo::Value, Gringo::Output::ExternalType>(Gringo::Value("a", false), Gringo::Output::ExternalType::E_TRUE));
 		Gringo::Output::OutputPredicates outPreds;
 		GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred);
 		Gringo::Output::OutputBase out(std::move(outPreds), outputter);
@@ -595,6 +596,16 @@ int GringoGrounder::doRun()
 		prg.rewrite(defs);
 		prg.check();
 		params.add("base", {});
+
+/*
+for (auto &ext : freeze) {
+    Gringo::PredicateDomain::element_type *atm = out.find2(ext.first);
+    if (atm->second.hasUid()) {
+        out.external(*atm, ext.second);
+    }
+}
+*/
+
 		Gringo::Ground::Program gPrg(prg.toGround(out.domains));
 		gPrg.ground(params, scripts, out, false);
 		out.finish();
