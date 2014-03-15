@@ -1258,21 +1258,23 @@ void EvaluateState::evaluateHTModels(ProgramCtx* ctx)
   EvalContextPtr evalctx = boost::reinterpret_pointer_cast<EvalContext<HTEvalGraph> >(ctx->evalcontext);
   assert(evalctx && "need evalcontext");
   
+  LOG(INFO,"creating model builder");
+  {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
+    ModelBuilderConfig<HTEvalGraph> cfg(*evalctx->evalgraph);
+    cfg.redundancyElimination = true;
+    cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
+    evalctx->modelbuilder = ModelBuilderPtr(evalctx->mbfactory(cfg));
+  }
+  ModelBuilder<HTEvalGraph>& mb = *evalctx->modelbuilder;
+  
   bool gotmodel;
-    LOG(INFO,"creating model builder");
-    {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
-	  ModelBuilderConfig<HTEvalGraph> cfg(*evalctx->evalgraph);
-	  cfg.redundancyElimination = true;
-	  cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
-      evalctx->modelbuilder = ModelBuilderPtr(evalctx->mbfactory(cfg));
-    }
-    ModelBuilder<HTEvalGraph>& mb = *evalctx->modelbuilder;
+  bool abort;
+  unsigned mcount = 0;
+  unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
   do {
     gotmodel = false;
-    DBGLOG(DBG, "before mb.getNextIModel");
     OptionalModel om = mb.getNextIModel(evalctx->ufinal);
-    DBGLOG(DBG, "after mb.getNextIModel");
     if (om) {
       Model m = om.get();
       HTInterpretationConstPtr interpr = mb.getModelGraph().propsOf(m).interpretation;
@@ -1286,14 +1288,18 @@ void EvaluateState::evaluateHTModels(ProgramCtx* ctx)
       model->interpretation->here() = interpr->here();
       model->interpretation->there() = interpr->there();
       BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks) {
-        // TODO: react to abort
         bool aborthere = !(*mcb)(model);
-        //abort |= aborthere;
-        //if( aborthere )
-        // LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+        abort |= aborthere;
+        if (aborthere)
+          LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
       }
+      mcount++;
     }
-  } while (gotmodel);
+    if (mcountLimit != 0 && mcount >= mcountLimit) {
+      LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+      break;
+    }
+  } while (gotmodel && !abort);
 
   StatePtr next(new PostProcessState);
   changeState(ctx, next);
