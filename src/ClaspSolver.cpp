@@ -522,6 +522,12 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
 		if (!ngClasp.tautological){
 			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
+/*
+			// Incremental SAT:
+
+			sat.endProgram();
+			sat.updateProgram();
+*/
 			sat.addClause(ngClasp.clause);
 		}else{
 			DBGLOG(DBG, "Skipping tautological nogood");
