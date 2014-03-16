@@ -332,6 +332,11 @@ std::string ClaspSolver::idAddressToString(IDAddress adr){
 }
 
 IDAddress ClaspSolver::stringToIDAddress(std::string str){
+#ifndef NDEBUG
+	if (str.find(":") != std::string::npos){
+		str = str.substr(0, str.find(":"));
+	}
+#endif
 	return atoi(str.c_str());
 }
 
@@ -432,7 +437,7 @@ void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID rule
 	}
 	BOOST_FOREACH (ID b, rule.body){
 		// add literal to body
-		asp.addToBody(mapHexToClasp(b.address).var(), !b.isNaf());
+		asp.addToBody(mapHexToClasp(b.address).var(), mapHexToClasp(b.address).sign() ^ !b.isNaf());
 	}
 	asp.endRule();
 }
@@ -460,10 +465,16 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	asp.start(claspctx, config.asp);
 	asp.setNonHcfConfiguration(config.testerConfig());
 
-	false_ = asp.newAtom();
-	asp.setCompute(false_, false);
+/*	
+	// Add the code in block comments to define the program incrementally
+	// Note: If the program is to be defined incrementally, then endProgram() and update() must be called before each extension, even for the first one
 
-	buildInitialSymbolTable(asp, p.getGroundProgram());
+	asp.endProgram();
+	asp.update();
+*/
+
+	false_ = nextVar++;
+	asp.setCompute(false_, false);
 
 	// transfer edb
 	DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
@@ -478,6 +489,11 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
+/*
+		inconsistent |= asp.endProgram();
+		asp.update();
+*/
+
 		sendRuleToClasp(asp, ruleId);
 	}
 
@@ -502,7 +518,7 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
-		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng);
+		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
 		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
 		if (!ngClasp.tautological){
 			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
@@ -563,7 +579,7 @@ void ClaspSolver::shutdownClasp(){
 	resetAndResizeClaspToHex(0);
 }
 
-ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const Nogood& ng) const{
+ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const Nogood& ng, bool extendDomainIfNecessary) {
 
 #ifndef NDEBUG
 	DBGLOG(DBG, "Translating nogood " << ng.getStringRepresentation(reg) << " to clasp");
@@ -580,7 +596,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 	BOOST_FOREACH (ID lit, ng){
 
 		// only nogoods are relevant where all variables occur in this clasp instance
-		if (!isMappedToClaspLiteral(lit.address)){
+		if (!isMappedToClaspLiteral(lit.address) && !extendDomainIfNecessary){
 			DBGLOG(DBG, "some literal was not properly mapped to clasp");
 			return TransformNogoodToClaspResult(Clasp::LitVec(), false, true);
 		}
@@ -647,7 +663,7 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const O
 			uint32_t c = *en + 2;
 			DBGLOG(DBG, "Clasp index of atom H:" << *en << " is " << c);
 
-		       	// create positive literal -> false
+			// create positive literal -> false
 			storeHexToClasp(*en, Clasp::Literal(c, false));
 
 			std::string str = idAddressToString(*en);
@@ -664,7 +680,7 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const O
 				uint32_t c = h.address + 2;
 				DBGLOG(DBG, "Clasp index of atom H:" << h.address << " is C:" << c);
 
-			       	// create positive literal -> false
+				// create positive literal -> false
 				storeHexToClasp(h.address, Clasp::Literal(c, false));
 
 				std::string str = idAddressToString(h.address);
@@ -676,7 +692,7 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const O
 				uint32_t c = b.address + 2;
 				DBGLOG(DBG, "Clasp index of atom H:" << b.address << " is C:" << c);
 
-			       	// create positive literal -> false
+				// create positive literal -> false
 				storeHexToClasp(b.address, Clasp::Literal(c, false));
 
 				std::string str = idAddressToString(b.address);
@@ -774,6 +790,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 
 	LOG(DBG, "Symbol table of optimized program:");
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+		std::string ss(it->second.name.c_str());
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		storeHexToClasp(hexAdr, it->second.lit);
 		DBGLOG(DBG, "H:" << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
@@ -786,11 +803,24 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
 }
 
-void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit){
+Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr) {
+	if (!isMappedToClaspLiteral(addr)){
+		uint32_t c = nextVar++;
+		storeHexToClasp(addr, Clasp::Literal(c, false));
+		std::string str = idAddressToString(addr);
+#ifndef NDEBUG
+		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+#endif
+		claspctx.symbolTable().addUnique(c, str.c_str());
+	}
+	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
+	return hexToClasp[addr];
+}
 
-	if( addr >= hexToClasp.size() )
+void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit){
+	if(addr >= hexToClasp.size())
 		hexToClasp.resize(addr + 1, noLiteral);
-       	hexToClasp[addr] = lit;
+	hexToClasp[addr] = lit;
 }
 
 void ClaspSolver::outputProject(InterpretationPtr intr){
@@ -802,7 +832,7 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in ASP mode");
@@ -844,7 +874,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in SAT mode");
