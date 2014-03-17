@@ -38,6 +38,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 typedef bm::bvector<> BVec;
 typedef std::pair<BVec, InterpretationPtr> ModelGap;
+typedef boost::shared_ptr<ModelGap> ModelGapPtr;
 
 class SEQPlainModelGeneratorFactory;
 
@@ -45,7 +46,7 @@ class SEQPlainModelGenerator:
 	public HTPlainModelGenerator
 {
 protected:
-	typedef std::vector<ModelGap> MVec;
+	typedef std::vector<ModelGapPtr> MVec;
 
 protected:
 	bool onlyanswersets;
@@ -56,7 +57,7 @@ protected:
 
 private:
 	InterpretationPtr nextAnswerSet();
-	boost::optional<ModelGap&> nextHMinimal();
+	ModelGapPtr nextHMinimal();
 
 public:
 	SEQPlainModelGenerator(Factory& factory, InterprConstPtr input);

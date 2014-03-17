@@ -63,7 +63,7 @@ InterpretationPtr SEQPlainModelGenerator::nextAnswerSet()
 	return InterpretationPtr();
 }
 
-boost::optional<ModelGap&> SEQPlainModelGenerator::nextHMinimal()
+ModelGapPtr SEQPlainModelGenerator::nextHMinimal()
 {
 	if (hminimal.size() == 0 || hminimalit == hminimal.end()) {
 		DBGLOG(DBG, "[SEQPlain] compute hminimal HT models");
@@ -82,8 +82,7 @@ boost::optional<ModelGap&> SEQPlainModelGenerator::nextHMinimal()
 						// model with gap 0 exists, 
 						// hence from now on we only compute answer sets
 						onlyanswersets = true;
-						ModelGap gap(BVec(), model);
-						return boost::optional<ModelGap&>(gap);
+						return ModelGapPtr(new ModelGap(BVec(), model));
 					}
 				}
 				foundufs = true;
@@ -96,25 +95,28 @@ boost::optional<ModelGap&> SEQPlainModelGenerator::nextHMinimal()
 				bool insert = hminimal.size() == 0;
 				MVec::iterator it = hminimal.begin();
 				while (it != hminimal.end()) {
-					if (bm_subset((*it).first, bufs)) {
+					if (bm_subset((*it)->first, bufs)) {
 						it = hminimal.erase(it);
 						insert = true;
+					} else if (bm_subset(bufs, (*it)->first)) {
+						insert = false;
+						break;
 					} else {
 						++it;
 					}
 				}
 				if (insert) {
-					hminimal.push_back(ModelGap(bufs, model));
+					hminimal.push_back(ModelGapPtr(new ModelGap(bufs, model)));
 				}
 			}
 			DBGLOG(DBG, "[SEQPlain] found " << hminimal.size() << " hminimal HT models");
 			hminimalit = hminimal.begin();
 		} else {
-			return boost::optional<ModelGap&>();
+			return ModelGapPtr();
 		}
 	}
 	DBGLOG(DBG, "[SEQPlain] return cached hminimal HT model");
-	return boost::optional<ModelGap&>(*(hminimalit++));
+	return (*(hminimalit++));
 }
 
 SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
@@ -128,20 +130,24 @@ SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
 		}
 		return HTInterpretationPtr();
 	} else if (seqmodels.size() == 0) {
-		boost::optional<ModelGap&> p;
+		ModelGapPtr p;
 		while (p = nextHMinimal()) {
 			if (onlyanswersets) {
-				// a HT model with gap 0 was found in nextHMinimal()
+				// an HT model with gap 0 was found in nextHMinimal()
 				seqmodels.clear();
-				return InterprPtr(new HTInterpretation((*p).second->getStorage()));
+				DBGLOG(DBG, "[SEQPlain] got the following answer set during h-minimal search: " << *model);
+				return InterprPtr(new HTInterpretation(p->second->getStorage()));
 			}
 			bool insert = seqmodels.size() == 0;
 			MVec::iterator it = seqmodels.begin();
 			while (it != seqmodels.end()) {
-				if (bm_subset((*p).first, (*it).first)) {
+				if (bm_subset(p->first, (*it)->first)) {
 					it = seqmodels.erase(it);
 					insert = true;
-				} else if ((*it).first == (*p).first) {
+				} else if (bm_subset((*it)->first, p->first)) {
+					insert = false;
+					break;
+				} else if ((*it)->first == p->first) {
 					insert = true;
 					++it;
 				} else {
@@ -149,14 +155,14 @@ SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
 				}
 			}
 			if (insert) {
-				seqmodels.push_back(*p);
+				seqmodels.push_back(p);
 			}
 		}
 		seqmodelsit = seqmodels.begin();
 	}
 	if (seqmodelsit != seqmodels.end()) {
-		ModelGap& p = *(seqmodelsit++);
-		return InterprPtr(new HTInterpretation(p.second->getStorage(), p.first));
+		ModelGapPtr p = *(seqmodelsit++);
+		return InterprPtr(new HTInterpretation(p->second->getStorage(), p->first));
 	}
 	return HTInterpretationPtr();
 }
