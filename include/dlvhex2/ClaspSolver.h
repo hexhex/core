@@ -149,15 +149,15 @@ private:
 	TransformNogoodToClaspResult nogoodToClaspClause(const Nogood& ng, bool extendDomainIfNecessary = false);
 
 	// management of the symbol table
-	void buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p);
-	void buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSet& ns);
-	void buildOptimizedSymbolTable();
+	void prepareProblem(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p);
+	void prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns);
+	void updateSymbolTable();
 	Clasp::Literal noLiteral;
 	std::vector<Clasp::Literal> hexToClasp;
 	typedef std::vector<IDAddress> AddressVector;
 	std::vector<AddressVector*> claspToHex;
 	inline bool isMappedToClaspLiteral(IDAddress addr) const { return addr < hexToClasp.size() && hexToClasp[addr] != noLiteral; }
-	Clasp::Literal mapHexToClasp(IDAddress addr);
+	Clasp::Literal mapHexToClasp(IDAddress addr, bool registerVar = false, bool inverseLits = false);
 	void storeHexToClasp(IDAddress addr, Clasp::Literal lit);
 	void resetAndResizeClaspToHex(unsigned size);
 

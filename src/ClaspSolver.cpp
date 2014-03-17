@@ -511,10 +511,13 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
 
+	//claspctx.startAddConstraints();
+	//Clasp::ClauseCreator cc(claspctx.master());
 	Clasp::SatBuilder sat;
 	sat.startProgram(claspctx);
 
-	buildInitialSymbolTable(sat, ns);
+	prepareProblem(sat, ns);
+	updateSymbolTable();
 
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
@@ -529,6 +532,12 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 			sat.updateProgram();
 */
 			sat.addClause(ngClasp.clause);
+			//cc.start();
+			//BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
+			//	cc.add(lit);
+			//}
+			//Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
+			//Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
 		}else{
 			DBGLOG(DBG, "Skipping tautological nogood");
 		}
@@ -653,10 +662,12 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 	return TransformNogoodToClaspResult(clause, taut, false);
 }
 
-void ClaspSolver::buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p){
+void ClaspSolver::prepareProblem(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p){
+
+	assert(false && "Deprecated. Due to use of Clasp::LogicProgram for initialization, this method does not need to be called anymore");
 
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab P pb");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::prepareProblem P pb");
 	#endif
 
 	DBGLOG(DBG, "Building atom index");
@@ -708,9 +719,9 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const O
 	}
 }
 
-void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSet& ns){
+void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::buildInitSymTab ns");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::prepareProblem ns");
 	#endif
 
 	DBGLOG(DBG, "Building atom index");
@@ -721,47 +732,24 @@ void ClaspSolver::buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSe
 	assert(hexToClasp.empty());
 	hexToClasp.reserve(reg->ogatoms.getSize());
 
-	claspctx.symbolTable().startInit();
-
 	// build symbol table and hexToClasp
+	claspctx.symbolTable().startInit();
 	unsigned largestIdx = 0;
 	unsigned varCnt = 0;
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
-			if (!isMappedToClaspLiteral(lit.address)) {
-				uint32_t c = claspctx.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
-				varCnt++;
-				std::string str = idAddressToString(lit.address);
-				DBGLOG(DBG, "Clasp index of atom H:" << lit.address << " is " << c);
-				Clasp::Literal clasplit(c, inverselits); // create positive literal -> false
-				storeHexToClasp(lit.address, clasplit);
-				if (clasplit.index() > largestIdx) largestIdx = clasplit.index();
-				claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-			}
+			Clasp::Literal clasplit = mapHexToClasp(lit.address, true, inverselits);
+			if (clasplit.index() > largestIdx) largestIdx = clasplit.index();
 		}
 	}
-
-	// resize
-       	// (+1 because largest index must also be covered +1 because negative literal may also be there)
-	resetAndResizeClaspToHex(largestIdx + 1 + 1);
-
-	// build back mapping
-	for(std::vector<Clasp::Literal>::const_iterator it = hexToClasp.begin();
-	    it != hexToClasp.end(); ++it)
-	{
-		const Clasp::Literal clit = *it;
-		if( clit == noLiteral )
-			continue;
-		const IDAddress hexlitaddress = it - hexToClasp.begin();
-		AddressVector* &c2h = claspToHex[clit.index()];
-		c2h->push_back(hexlitaddress);
-	}
-
 	claspctx.symbolTable().endInit();
 
-	DBGLOG(DBG, "SAT instance has " << varCnt << " variables, symbol table has " << claspctx.symbolTable().size() << " entries");
-	sat.prepareProblem(varCnt);
+	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables, symbol table has " << claspctx.symbolTable().size() << " entries");
+	sat.prepareProblem(claspctx.numVars());
+
+	updateSymbolTable();
+	return;
 }
 
 void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
@@ -776,10 +764,10 @@ void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 		claspToHex[u] = new AddressVector;
 }
 
-void ClaspSolver::buildOptimizedSymbolTable(){
+void ClaspSolver::updateSymbolTable(){
 
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::backmapClaspLiterals");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::updateSymbolTable");
 	#endif
 
 	hexToClasp.clear();
@@ -788,9 +776,9 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	// go through clasp symbol table
 	const Clasp::SymbolTable& symTab = claspctx.symbolTable();
 
-       	// each variable can be a positive or negative literal, literals are (var << 1 | sign)
+	// each variable can be a positive or negative literal, literals are (var << 1 | sign)
 	// build empty set of NULL-pointers to vectors
-       	// (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
+	// (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
 	DBGLOG(DBG, "Problem has " << claspctx.numVars() << " variables");
 	resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1);
 
@@ -809,15 +797,16 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
 }
 
-Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr) {
+Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
 	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = nextVar++;
-		storeHexToClasp(addr, Clasp::Literal(c, false));
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::VarType::atom_var) : nextVar++);
+		Clasp::Literal clasplit(c, inverseLits);
+		storeHexToClasp(addr, clasplit);
 		std::string str = idAddressToString(addr);
 #ifndef NDEBUG
 		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
 #endif
-		claspctx.symbolTable().addUnique(c, str.c_str());
+		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
 	}
 	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
 	return hexToClasp[addr];
@@ -868,7 +857,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 		return;
 	}
 
-	buildOptimizedSymbolTable();
+	updateSymbolTable();
 
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
@@ -910,7 +899,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 		return;
 	}
 
-	buildOptimizedSymbolTable();
+	updateSymbolTable();
 
 #ifndef NDEBUG
 	std::stringstream ss;
