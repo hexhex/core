@@ -799,7 +799,7 @@ void ClaspSolver::updateSymbolTable(){
 
 Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
 	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::VarType::atom_var) : nextVar++);
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
 		Clasp::Literal clasplit(c, inverseLits);
 		storeHexToClasp(addr, clasplit);
 		std::string str = idAddressToString(addr);
