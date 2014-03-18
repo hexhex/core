@@ -66,4 +66,6 @@ enum EvalHeuristic
 	Eval_FromHEXSourcecode,
 };
 
+#define CFG_NO_GROUND			"no_ground"
+
 #endif

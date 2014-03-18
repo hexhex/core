@@ -230,6 +230,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        as  - print semi-equilibrium models which are answer sets too" << std::endl
 //      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
 //      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+      << "     --noground       Just evaluate the program, don't ground it (only useful" << std::endl
+      << "                      if program is already ground)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
@@ -478,6 +480,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ForceGC", 0);
 	pctx.config.setOption(CFG_HT_MODELS, 0);
 	pctx.config.setOption(CFG_SEQ_MODELS, 0);
+	pctx.config.setOption(CFG_NO_GROUND, 0);
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -807,6 +810,7 @@ void processOptionsPrePlugin(
 		{ "forcegc", no_argument, 0, 49 },
 		{ "ht-models", no_argument, 0, 50 },
 		{ "seq-models", optional_argument, 0, 51 },
+		{ "noground", no_argument, 0, 52 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1492,6 +1496,9 @@ void processOptionsPrePlugin(
 		} else {
 			pctx.config.setOption(CFG_SEQ_MODELS, SEQModels_All);
 		}
+		break;
+	case 52:
+		pctx.config.setOption(CFG_NO_GROUND, 1);
 		break;
 		}
 	}

@@ -37,6 +37,7 @@
 #  include "config.h"
 #endif
 
+#include "dlvhex2/config_values.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Benchmarking.h"
@@ -151,15 +152,18 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck, ProblemType type){
 	const OrdinaryASPProgram* gprog;
 	GenuineGrounderPtr grounder;
-	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-		grounder = GenuineGrounder::getInstance(ctx, p);
-		gprog = &grounder->getGroundProgram();
+	if (ctx.config.getOption(CFG_NO_GROUND)) {
+		gprog = &p;
+	} else {
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+			grounder = GenuineGrounder::getInstance(ctx, p);
+			gprog = &grounder->getGroundProgram();
+		}
 	}
-
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
 	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck, type);
-	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
+	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, *gprog));
 }
 
 std::string GenuineSolver::getStatistics(){
