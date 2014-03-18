@@ -92,12 +92,11 @@ ModelGapPtr SEQPlainModelGenerator::nextHMinimal()
 						bufs.set(id);
 					}
 				}
-				bool insert = hminimal.size() == 0;
+				bool insert = true;
 				MVec::iterator it = hminimal.begin();
 				while (it != hminimal.end()) {
 					if (bm_subset((*it)->first, bufs)) {
 						it = hminimal.erase(it);
-						insert = true;
 					} else if (bm_subset(bufs, (*it)->first)) {
 						insert = false;
 						break;
@@ -135,21 +134,17 @@ SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
 			if (onlyanswersets) {
 				// an HT model with gap 0 was found in nextHMinimal()
 				seqmodels.clear();
-				DBGLOG(DBG, "[SEQPlain] got the following answer set during h-minimal search: " << *model);
+				DBGLOG(DBG, "[SEQPlain] got the following answer set during h-minimal search: " << *(p->second));
 				return InterprPtr(new HTInterpretation(p->second->getStorage()));
 			}
-			bool insert = seqmodels.size() == 0;
+			bool insert = true;
 			MVec::iterator it = seqmodels.begin();
 			while (it != seqmodels.end()) {
 				if (bm_subset(p->first, (*it)->first)) {
 					it = seqmodels.erase(it);
-					insert = true;
 				} else if (bm_subset((*it)->first, p->first)) {
 					insert = false;
 					break;
-				} else if ((*it)->first == p->first) {
-					insert = true;
-					++it;
 				} else {
 					++it;
 				}
