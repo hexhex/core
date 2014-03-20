@@ -131,5 +131,8 @@
     <ClInclude Include="..\..\include\dlvhex2\ExternalAtomEvaluationHeuristics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
