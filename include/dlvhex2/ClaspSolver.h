@@ -134,6 +134,8 @@ private:
 
 	// initialization/shutdown
 	uint32_t false_;	// 1 will be our constant "false"
+	uint32_t nextVar;
+	void registerVar(IDAddress adr);	// ensures that a HEX variable is registered in clasp
 	void freezeVariables(InterpretationConstPtr frozen);
 	void sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
@@ -144,18 +146,18 @@ private:
 	void shutdownClasp();
 
 	// learning
-	TransformNogoodToClaspResult nogoodToClaspClause(const Nogood& ng) const;
+	TransformNogoodToClaspResult nogoodToClaspClause(const Nogood& ng, bool extendDomainIfNecessary = false);
 
 	// management of the symbol table
-	void buildInitialSymbolTable(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p);
-	void buildInitialSymbolTable(Clasp::SatBuilder& sat, const NogoodSet& ns);
-	void buildOptimizedSymbolTable();
+	void prepareProblem(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p);
+	void prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns);
+	void updateSymbolTable();
 	Clasp::Literal noLiteral;
 	std::vector<Clasp::Literal> hexToClasp;
 	typedef std::vector<IDAddress> AddressVector;
 	std::vector<AddressVector*> claspToHex;
 	inline bool isMappedToClaspLiteral(IDAddress addr) const { return addr < hexToClasp.size() && hexToClasp[addr] != noLiteral; }
-	inline Clasp::Literal mapHexToClasp(IDAddress addr) const { assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral); return hexToClasp[addr]; }
+	Clasp::Literal mapHexToClasp(IDAddress addr, bool registerVar = false, bool inverseLits = false);
 	void storeHexToClasp(IDAddress addr, Clasp::Literal lit);
 	void resetAndResizeClaspToHex(unsigned size);
 

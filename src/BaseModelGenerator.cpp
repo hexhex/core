@@ -1203,7 +1203,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 						const ExternalAtom ea = reg->eatoms.getByID(eaid);
 						if (ea.predicate == reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
 
-							OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+							OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
 							domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
 							int io = 1;
 //							if (ea.auxInputPredicate != ID_FAIL && ctx.config.getOption("IncludeAuxInputInAuxiliaries")) io = 2;

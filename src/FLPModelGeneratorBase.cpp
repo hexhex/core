@@ -304,7 +304,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
       BOOST_FOREACH(ID lit, r.body)
       {
         assert(!lit.isExternalAtom() && "in xidb there must not be external atoms left");
-        WARNING("TODO factorize "get all (free) variables from entity"")
+        WARNING("TODO factorize get all (free) variables from entity")
         // from ground literals we don't need variables
         if( lit.isOrdinaryGroundAtom() )
           continue;
