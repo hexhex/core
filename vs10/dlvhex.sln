@@ -24,6 +24,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dlvhex", "dlvhex\dlvhex.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gringo_libgringo", "gringo_libgringo\gringo_libgringo.vcxproj", "{550E258F-0202-4414-A32E-444D6B8965FD}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "setup", "setup\setup.vdproj", "{1A16C208-2A24-4E05-84F2-4E930CA4ED44}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -54,6 +56,8 @@ Global
 		{550E258F-0202-4414-A32E-444D6B8965FD}.Debug|Win32.Build.0 = Debug|Win32
 		{550E258F-0202-4414-A32E-444D6B8965FD}.Release|Win32.ActiveCfg = Release|Win32
 		{550E258F-0202-4414-A32E-444D6B8965FD}.Release|Win32.Build.0 = Release|Win32
+		{1A16C208-2A24-4E05-84F2-4E930CA4ED44}.Debug|Win32.ActiveCfg = Debug
+		{1A16C208-2A24-4E05-84F2-4E930CA4ED44}.Release|Win32.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
