@@ -342,6 +342,9 @@
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{E1BACEA7-63FD-41A0-8CFF-5B32DEE6E23F}</td><td>USERPROFILE</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT1</td><td>{4A47F1FE-9DA0-49B2-9B6F-200474B4BEBA}</td><td>DLVHEX21</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT2</td><td>{3FA9EECA-0F3A-4CE6-B477-96B6ADAE0B7D}</td><td>PLUGINS</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISX_DEFAULTCOMPONENT3</td><td>{50D517E4-617C-4C4E-AC72-C6FF5E038D0E}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISX_DEFAULTCOMPONENT4</td><td>{4165F86A-BE4F-4E9D-A175-EBCBFDA3AF65}</td><td>INCLUDE</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISX_DEFAULTCOMPONENT5</td><td>{D9FC6488-C5F5-4FFB-A7B0-4D3555615FC6}</td><td>DLVHEX22</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>dlvhex.Prim_re_Ausgabe</td><td>{EBEF5F7B-A443-43EE-8AEE-3881439001ED}</td><td>INSTALLDIR</td><td>2</td><td/><td>dlvhex.prim_re_ausgabe</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>libdlvhex.Prim_re_Ausgabe</td><td>{3A8FD409-966D-41B4-92F5-94C2F9808CCE}</td><td>INSTALLDIR</td><td>2</td><td/><td>libdlvhex.prim_re_ausgabe</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>testplugin.Prim_re_Ausgabe</td><td>{81A13C4D-DF27-4BE2-88C5-3C0C9396A124}</td><td>INSTALLDIR</td><td>2</td><td/><td>testplugin.prim_re_ausgabe</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
@@ -1054,6 +1057,7 @@
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
 		<row><td>DLVHEX21</td><td>ISX_DEFAULTCOMPONENT1</td></row>
+		<row><td>INCLUDE</td><td>ISX_DEFAULTCOMPONENT4</td></row>
 		<row><td>PLUGINS</td><td>ISX_DEFAULTCOMPONENT2</td></row>
 		<row><td>USERPROFILE</td><td>ISX_DEFAULTCOMPONENT</td></row>
 	</table>
@@ -1143,10 +1147,12 @@
 		<row><td>DATABASEDIR</td><td>ISYourDataBaseDir</td><td>.</td><td/><td>0</td><td/></row>
 		<row><td>DLVHEX2</td><td>TU_WIEN</td><td>dlvhex2</td><td/><td>0</td><td/></row>
 		<row><td>DLVHEX21</td><td>USERPROFILE</td><td>dlvhex2</td><td/><td>0</td><td/></row>
+		<row><td>DLVHEX22</td><td>INCLUDE</td><td>dlvhex2</td><td/><td>0</td><td/></row>
 		<row><td>DesktopFolder</td><td>TARGETDIR</td><td>.:Desktop</td><td/><td>3</td><td/></row>
 		<row><td>FavoritesFolder</td><td>TARGETDIR</td><td>.:FAVORI~1|Favorites</td><td/><td>0</td><td/></row>
 		<row><td>FontsFolder</td><td>TARGETDIR</td><td>.:Fonts</td><td/><td>0</td><td/></row>
 		<row><td>GlobalAssemblyCache</td><td>TARGETDIR</td><td>.:Global~1|GlobalAssemblyCache</td><td/><td>0</td><td/></row>
+		<row><td>INCLUDE</td><td>INSTALLDIR</td><td>include</td><td/><td>0</td><td/></row>
 		<row><td>INSTALLDIR</td><td>DLVHEX2</td><td>.</td><td/><td>0</td><td/></row>
 		<row><td>ISCommonFilesFolder</td><td>CommonFilesFolder</td><td>Instal~1|InstallShield</td><td/><td>0</td><td/></row>
 		<row><td>ISMyCompanyDir</td><td>ProgramFilesFolder</td><td>MYCOMP~1|My Company Name</td><td/><td>0</td><td/></row>
@@ -1871,6 +1877,9 @@
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT1</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT2</td></row>
+		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT3</td></row>
+		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT4</td></row>
+		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT5</td></row>
 		<row><td>AlwaysInstall</td><td>dlvhex.Prim_re_Ausgabe</td></row>
 		<row><td>AlwaysInstall</td><td>libdlvhex.Prim_re_Ausgabe</td></row>
 		<row><td>AlwaysInstall</td><td>testplugin.Prim_re_Ausgabe</td></row>
@@ -1888,9 +1897,125 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
+		<row><td>aggregateatomtable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>AGGREG~1.H|AggregateAtomTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\AggregateAtomTable.h</td><td>1</td><td/></row>
+		<row><td>aggregateplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>AGGREG~1.H|AggregatePlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\AggregatePlugin.h</td><td>1</td><td/></row>
+		<row><td>annotatedgroundprogram.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ANNOTA~1.H|AnnotatedGroundProgram.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\AnnotatedGroundProgram.h</td><td>1</td><td/></row>
+		<row><td>answerset.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ANSWER~1.H|AnswerSet.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\AnswerSet.h</td><td>1</td><td/></row>
+		<row><td>answersetprintercallback.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ANSWER~1.H|AnswerSetPrinterCallback.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\AnswerSetPrinterCallback.h</td><td>1</td><td/></row>
+		<row><td>aspsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ASPSOL~1.H|ASPSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ASPSolver.h</td><td>1</td><td/></row>
+		<row><td>aspsolvermanager.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ASPSOL~1.H|ASPSolverManager.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ASPSolverManager.h</td><td>1</td><td/></row>
+		<row><td>asynchronousmodelgenerator.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ASYNCH~1.H|AsynchronousModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\AsynchronousModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>atoms.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Atoms.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Atoms.h</td><td>1</td><td/></row>
+		<row><td>basemodelgenerator.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>BASEMO~1.H|BaseModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\BaseModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>benchmarking.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>BENCHM~1.H|Benchmarking.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Benchmarking.h</td><td>1</td><td/></row>
+		<row><td>builtinatomtable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>BUILTI~1.H|BuiltinAtomTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\BuiltinAtomTable.h</td><td>1</td><td/></row>
+		<row><td>caualgorithms.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>CAUALG~1.H|CAUAlgorithms.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\CAUAlgorithms.h</td><td>1</td><td/></row>
+		<row><td>cdnlsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>CDNLSO~1.H|CDNLSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\CDNLSolver.h</td><td>1</td><td/></row>
+		<row><td>claspsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>CLASPS~1.H|ClaspSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ClaspSolver.h</td><td>1</td><td/></row>
+		<row><td>comfortplugininterface.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>COMFOR~1.H|ComfortPluginInterface.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ComfortPluginInterface.h</td><td>1</td><td/></row>
+		<row><td>componentgraph.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>COMPON~1.H|ComponentGraph.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ComponentGraph.h</td><td>1</td><td/></row>
+		<row><td>concurrentmessagequeueowning</td><td>ISX_DEFAULTCOMPONENT5</td><td>CONCUR~1.H|ConcurrentMessageQueueOwning.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ConcurrentMessageQueueOwning.h</td><td>1</td><td/></row>
+		<row><td>configuration.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>CONFIG~1.H|Configuration.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Configuration.h</td><td>1</td><td/></row>
+		<row><td>dependencygraph.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>DEPEND~1.H|DependencyGraph.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\DependencyGraph.h</td><td>1</td><td/></row>
+		<row><td>dependencygraphfull.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>DEPEND~1.H|DependencyGraphFull.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\DependencyGraphFull.h</td><td>1</td><td/></row>
 		<row><td>dlvhex.prim_re_ausgabe</td><td>dlvhex.Prim_re_Ausgabe</td><td>dlvhex.Primäre Ausgabe</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;dlvhex&gt;|Built</td><td>3</td><td/></row>
+		<row><td>dlvprocess.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>DLVPRO~1.H|DLVProcess.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\DLVProcess.h</td><td>1</td><td/></row>
+		<row><td>dlvresultparserdriver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>DLVRES~1.H|DLVresultParserDriver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\DLVresultParserDriver.h</td><td>1</td><td/></row>
+		<row><td>dumpingevalgraphbuilder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>DUMPIN~1.H|DumpingEvalGraphBuilder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\DumpingEvalGraphBuilder.h</td><td>1</td><td/></row>
+		<row><td>dynamicvector.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>DYNAMI~1.H|DynamicVector.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\DynamicVector.h</td><td>1</td><td/></row>
+		<row><td>error.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Error.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Error.h</td><td>1</td><td/></row>
+		<row><td>evalgraph.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALGR~1.H|EvalGraph.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalGraph.h</td><td>1</td><td/></row>
+		<row><td>evalgraphbuilder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALGR~1.H|EvalGraphBuilder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalGraphBuilder.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicasp.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicASP.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicASP.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicbase.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicBase.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicBase.h</td><td>1</td><td/></row>
+		<row><td>evalheuristiceasy.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicEasy.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicEasy.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicfromfile.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicFromFile.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicFromFile.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicgreedy.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicGreedy.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicGreedy.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicmonolithic.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicMonolithic.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicMonolithic.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicolddlvhex.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicOldDlvhex.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicOldDlvhex.h</td><td>1</td><td/></row>
+		<row><td>evalheuristicshared.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicShared.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicShared.h</td><td>1</td><td/></row>
+		<row><td>evalheuristictrivial.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EVALHE~1.H|EvalHeuristicTrivial.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\EvalHeuristicTrivial.h</td><td>1</td><td/></row>
+		<row><td>existsplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EXISTS~1.H|ExistsPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ExistsPlugin.h</td><td>1</td><td/></row>
+		<row><td>externalatomevaluationheuris</td><td>ISX_DEFAULTCOMPONENT5</td><td>EXTERN~1.H|ExternalAtomEvaluationHeuristics.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ExternalAtomEvaluationHeuristics.h</td><td>1</td><td/></row>
+		<row><td>externalatomevaluationheuris1</td><td>ISX_DEFAULTCOMPONENT5</td><td>EXTERN~1.H|ExternalAtomEvaluationHeuristicsInterface.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ExternalAtomEvaluationHeuristicsInterface.h</td><td>1</td><td/></row>
+		<row><td>externalatomtable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EXTERN~1.H|ExternalAtomTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ExternalAtomTable.h</td><td>1</td><td/></row>
+		<row><td>externallearninghelper.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EXTERN~1.H|ExternalLearningHelper.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ExternalLearningHelper.h</td><td>1</td><td/></row>
+		<row><td>extsourceproperties.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>EXTSOU~1.H|ExtSourceProperties.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ExtSourceProperties.h</td><td>1</td><td/></row>
+		<row><td>finalevalgraph.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>FINALE~1.H|FinalEvalGraph.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\FinalEvalGraph.h</td><td>1</td><td/></row>
+		<row><td>flpmodelgeneratorbase.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>FLPMOD~1.H|FLPModelGeneratorBase.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\FLPModelGeneratorBase.h</td><td>1</td><td/></row>
+		<row><td>flpmodelgeneratorbase.tcc</td><td>ISX_DEFAULTCOMPONENT5</td><td>FLPMOD~1.TCC|FLPModelGeneratorBase.tcc</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\FLPModelGeneratorBase.tcc</td><td>1</td><td/></row>
+		<row><td>functionplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>FUNCTI~1.H|FunctionPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\FunctionPlugin.h</td><td>1</td><td/></row>
+		<row><td>fwd.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>fwd.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\fwd.h</td><td>1</td><td/></row>
+		<row><td>genuineguessandcheckmodelgen</td><td>ISX_DEFAULTCOMPONENT5</td><td>GENUIN~1.H|GenuineGuessAndCheckModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GenuineGuessAndCheckModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>genuineplainmodelgenerator.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>GENUIN~1.H|GenuinePlainModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GenuinePlainModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>genuinesolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>GENUIN~1.H|GenuineSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GenuineSolver.h</td><td>1</td><td/></row>
+		<row><td>genuinewellfoundedmodelgener</td><td>ISX_DEFAULTCOMPONENT5</td><td>GENUIN~1.H|GenuineWellfoundedModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GenuineWellfoundedModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>graphvizhelpers.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>GRAPHV~1.H|GraphvizHelpers.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GraphvizHelpers.h</td><td>1</td><td/></row>
+		<row><td>gringogrounder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>GRINGO~1.H|GringoGrounder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GringoGrounder.h</td><td>1</td><td/></row>
+		<row><td>guessandcheckmodelgenerator.</td><td>ISX_DEFAULTCOMPONENT5</td><td>GUESSA~1.H|GuessAndCheckModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\GuessAndCheckModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>hexgrammar.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>HEXGRA~1.H|HexGrammar.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\HexGrammar.h</td><td>1</td><td/></row>
+		<row><td>hexgrammar.tcc</td><td>ISX_DEFAULTCOMPONENT5</td><td>HEXGRA~1.TCC|HexGrammar.tcc</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\HexGrammar.tcc</td><td>1</td><td/></row>
+		<row><td>hexparser.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>HEXPAR~1.H|HexParser.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\HexParser.h</td><td>1</td><td/></row>
+		<row><td>hexparsermodule.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>HEXPAR~1.H|HexParserModule.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\HexParserModule.h</td><td>1</td><td/></row>
+		<row><td>higherorderplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>HIGHER~1.H|HigherOrderPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\HigherOrderPlugin.h</td><td>1</td><td/></row>
+		<row><td>id.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ID.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ID.h</td><td>1</td><td/></row>
+		<row><td>inputprovider.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>INPUTP~1.H|InputProvider.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\InputProvider.h</td><td>1</td><td/></row>
+		<row><td>internalgroundaspsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>INTERN~1.H|InternalGroundASPSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\InternalGroundASPSolver.h</td><td>1</td><td/></row>
+		<row><td>internalgrounddaspsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>INTERN~1.H|InternalGroundDASPSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\InternalGroundDASPSolver.h</td><td>1</td><td/></row>
+		<row><td>internalgrounder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>INTERN~1.H|InternalGrounder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\InternalGrounder.h</td><td>1</td><td/></row>
+		<row><td>interpretation.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>INTERP~1.H|Interpretation.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Interpretation.h</td><td>1</td><td/></row>
 		<row><td>libdlvhex.prim_re_ausgabe</td><td>libdlvhex.Prim_re_Ausgabe</td><td>libdlvhex.Primäre Ausgabe</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;libdlvhex&gt;|Built</td><td>3</td><td/></row>
+		<row><td>libdlvhex2.lib</td><td>ISX_DEFAULTCOMPONENT3</td><td>LIBDLV~1.LIB|libdlvhex2.lib</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\vs12\Release\libdlvhex2.lib</td><td>1</td><td/></row>
+		<row><td>liberalsafetychecker.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>LIBERA~1.H|LiberalSafetyChecker.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\LiberalSafetyChecker.h</td><td>1</td><td/></row>
+		<row><td>logger.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Logger.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Logger.h</td><td>1</td><td/></row>
+		<row><td>makefile.am</td><td>ISX_DEFAULTCOMPONENT5</td><td>Makefile.am</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Makefile.am</td><td>1</td><td/></row>
+		<row><td>manualevalheuristicsplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MANUAL~1.H|ManualEvalHeuristicsPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ManualEvalHeuristicsPlugin.h</td><td>1</td><td/></row>
+		<row><td>mlpsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MLPSOL~1.H|MLPSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\MLPSolver.h</td><td>1</td><td/></row>
+		<row><td>mlpsyntaxchecker.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MLPSYN~1.H|MLPSyntaxChecker.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\MLPSyntaxChecker.h</td><td>1</td><td/></row>
+		<row><td>modelbuilder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MODELB~1.H|ModelBuilder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ModelBuilder.h</td><td>1</td><td/></row>
+		<row><td>modelgenerator.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MODELG~1.H|ModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>modelgraph.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MODELG~1.H|ModelGraph.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ModelGraph.h</td><td>1</td><td/></row>
+		<row><td>module.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Module.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Module.h</td><td>1</td><td/></row>
+		<row><td>moduleatomtable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MODULE~1.H|ModuleAtomTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ModuleAtomTable.h</td><td>1</td><td/></row>
+		<row><td>moduletable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>MODULE~1.H|ModuleTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ModuleTable.h</td><td>1</td><td/></row>
+		<row><td>nogood.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Nogood.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Nogood.h</td><td>1</td><td/></row>
+		<row><td>nogoodgrounder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>NOGOOD~1.H|NogoodGrounder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\NogoodGrounder.h</td><td>1</td><td/></row>
+		<row><td>offlinemodelbuilder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>OFFLIN~1.H|OfflineModelBuilder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\OfflineModelBuilder.h</td><td>1</td><td/></row>
+		<row><td>onlinemodelbuilder.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ONLINE~1.H|OnlineModelBuilder.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\OnlineModelBuilder.h</td><td>1</td><td/></row>
+		<row><td>ordinaryaspprogram.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ORDINA~1.H|OrdinaryASPProgram.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\OrdinaryASPProgram.h</td><td>1</td><td/></row>
+		<row><td>ordinaryaspsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ORDINA~1.H|OrdinaryASPSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\OrdinaryASPSolver.h</td><td>1</td><td/></row>
+		<row><td>ordinaryatomtable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>ORDINA~1.H|OrdinaryAtomTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\OrdinaryAtomTable.h</td><td>1</td><td/></row>
+		<row><td>plainauxprinter.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PLAINA~1.H|PlainAuxPrinter.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PlainAuxPrinter.h</td><td>1</td><td/></row>
+		<row><td>plainmodelgenerator.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PLAINM~1.H|PlainModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PlainModelGenerator.h</td><td>1</td><td/></row>
+		<row><td>platformdefinitions.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PLATFO~1.H|PlatformDefinitions.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PlatformDefinitions.h</td><td>1</td><td/></row>
+		<row><td>plugincontainer.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PLUGIN~1.H|PluginContainer.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PluginContainer.h</td><td>1</td><td/></row>
+		<row><td>plugininterface.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PLUGIN~1.H|PluginInterface.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PluginInterface.h</td><td>1</td><td/></row>
+		<row><td>predicate.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PREDIC~1.H|Predicate.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Predicate.h</td><td>1</td><td/></row>
+		<row><td>predicatemask.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PREDIC~1.H|PredicateMask.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PredicateMask.h</td><td>1</td><td/></row>
+		<row><td>predicatetable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PREDIC~1.H|PredicateTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\PredicateTable.h</td><td>1</td><td/></row>
+		<row><td>printer.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Printer.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Printer.h</td><td>1</td><td/></row>
+		<row><td>printhelpers.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PRINTH~1.H|Printhelpers.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Printhelpers.h</td><td>1</td><td/></row>
+		<row><td>process.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Process.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Process.h</td><td>1</td><td/></row>
+		<row><td>processbuf.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PROCES~1.H|ProcessBuf.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ProcessBuf.h</td><td>1</td><td/></row>
+		<row><td>programctx.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>PROGRA~1.H|ProgramCtx.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\ProgramCtx.h</td><td>1</td><td/></row>
+		<row><td>queryplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>QUERYP~1.H|QueryPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\QueryPlugin.h</td><td>1</td><td/></row>
+		<row><td>registry.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Registry.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Registry.h</td><td>1</td><td/></row>
+		<row><td>rule.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Rule.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Rule.h</td><td>1</td><td/></row>
+		<row><td>ruletable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>RULETA~1.H|RuleTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\RuleTable.h</td><td>1</td><td/></row>
+		<row><td>safetychecker.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>SAFETY~1.H|SafetyChecker.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\SafetyChecker.h</td><td>1</td><td/></row>
+		<row><td>satsolver.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>SATSOL~1.H|SATSolver.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\SATSolver.h</td><td>1</td><td/></row>
+		<row><td>set.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Set.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Set.h</td><td>1</td><td/></row>
+		<row><td>state.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>State.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\State.h</td><td>1</td><td/></row>
+		<row><td>strongnegationplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>STRONG~1.H|StrongNegationPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\StrongNegationPlugin.h</td><td>1</td><td/></row>
+		<row><td>table.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Table.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Table.h</td><td>1</td><td/></row>
+		<row><td>term.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>Term.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\Term.h</td><td>1</td><td/></row>
+		<row><td>termtable.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>TERMTA~1.H|TermTable.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\TermTable.h</td><td>1</td><td/></row>
 		<row><td>testplugin.prim_re_ausgabe</td><td>testplugin.Prim_re_Ausgabe</td><td>testplugin.Primäre Ausgabe</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;testplugin&gt;|Built</td><td>3</td><td/></row>
+		<row><td>unfoundedsetchecker.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>UNFOUN~1.H|UnfoundedSetChecker.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\UnfoundedSetChecker.h</td><td>1</td><td/></row>
+		<row><td>unfoundedsetcheckheuristics.</td><td>ISX_DEFAULTCOMPONENT5</td><td>UNFOUN~1.H|UnfoundedSetCheckHeuristics.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\UnfoundedSetCheckHeuristics.h</td><td>1</td><td/></row>
+		<row><td>urlbuf.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>URLBuf.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\URLBuf.h</td><td>1</td><td/></row>
+		<row><td>weakconstraintplugin.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>WEAKCO~1.H|WeakConstraintPlugin.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\WeakConstraintPlugin.h</td><td>1</td><td/></row>
+		<row><td>wellfoundedmodelgenerator.h</td><td>ISX_DEFAULTCOMPONENT5</td><td>WELLFO~1.H|WellfoundedModelGenerator.h</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Uni\KBS\dlvhex\core_gringo4\core\include\dlvhex2\WellfoundedModelGenerator.h</td><td>1</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2037,6 +2162,9 @@
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_A0D6F408_EB7A_4EC1_A0C4_66453649F91A_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT1</td><td/><td/><td>_C0A986FD_7751_4ADF_A8C8_68EF45648105_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT2</td><td/><td/><td>_E7BCAFA0_D277_4EC9_95D9_69B8DE3D11A4_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISX_DEFAULTCOMPONENT3</td><td/><td/><td>_34AC34B8_BF8C_4739_880B_0BAC33EC1182_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISX_DEFAULTCOMPONENT4</td><td/><td/><td>_E161DBB4_43AD_4A03_93B6_23C9D0DD3169_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISX_DEFAULTCOMPONENT5</td><td/><td/><td>_E9BE19FC_EC04_4901_A3E4_F013BAE0324F_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>dlvhex.Prim_re_Ausgabe</td><td/><td/><td>_FA161A5C_ECF0_4AF7_AC02_9DBF8FBD442F_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>libdlvhex.Prim_re_Ausgabe</td><td/><td/><td>_443B4DA9_4628_46B9_A09B_FA516D3F3790_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>testplugin.Prim_re_Ausgabe</td><td/><td/><td>_E5DB52B2_F40F_4EA5_9183_C6DC7B3B1423_FILTER</td><td/><td/><td/><td/></row>
@@ -4002,7 +4130,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{AB629F39-9E63-4A63-B895-CAD3406A289B}</td></row>
 		<row><td>ISUSSignature</td><td>{862FC8E1-C472-46BF-9360-422D6B71968C}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewISToday,viewShortcuts,viewAppFiles</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
