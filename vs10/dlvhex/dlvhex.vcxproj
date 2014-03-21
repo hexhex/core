@@ -128,6 +128,7 @@
     <ClInclude Include="..\..\include\dlvhex2\WeakConstraintPlugin.h" />
     <ClInclude Include="..\getopt.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

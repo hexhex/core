@@ -39,8 +39,8 @@ EXTRA_DIST = \
     bm3.7.0 \
     COPYING.LESSER \
     COPYING.clasp.gringo \
-    clasp-2.1.3-source.tar.gz \
-    gringo-3.0.4-source.tar.gz \
+    clasp-3.0.1-source.tar.gz \
+    gringo-4.3.0-source.tar.gz \
     build_potassco.sh \
     dlvhex2.pc.in \
     doxygen.am \
