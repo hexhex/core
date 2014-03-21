@@ -92,6 +92,8 @@ EXTRA_DIST = \
     nonmon_noloop.hex \
     nonmon_inc.hex \
     nonmon_guess.hex \
+    non3col.hex \
+    non3col2.hex \
     notstronglysafe1.hex \
     notwellfounded1.hex \
     notwellfounded2.hex \
@@ -226,6 +228,8 @@ EXTRA_DIST = \
     tests/nonmon_noloop.out \
     tests/nonmon_inc.out \
     tests/nonmon_guess.out \
+    tests/non3col.out \
+    tests/non3col2.out \
     tests/notstronglysafe1.stderr \
     tests/notwellfounded1_nofacts.out \
     tests/notwellfounded1_withfacts.out \
