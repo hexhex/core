@@ -554,7 +554,7 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 	DBGLOG(DBG, "Interpreting clasp command-line");
 
 	std::string claspconfigstr = ctx.config.getStringOption("ClaspConfiguration");
-	if( claspconfigstr == "none" ) return; // do not do anything
+	if( claspconfigstr == "none" ) claspconfigstr = "";
 	if( claspconfigstr == "frumpy"
 	 || claspconfigstr == "jumpy"
 	 || claspconfigstr == "handy"
