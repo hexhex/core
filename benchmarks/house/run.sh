@@ -16,7 +16,5 @@ else
 	confstr="houseGuess.hex;houseGuess.hex --supportsets;houseDirect.hex;houseGuess.hex -n=1;houseGuess.hex --supportsets -n=1;houseDirect.hex -n=1;houseGuess.hex -n=10;houseGuess.hex --supportsets -n=10;houseDirect.hex -n=10;houseGuess.hex -n=100;houseGuess.hex --supportsets -n=100;houseDirect.hex -n=100"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to"
-	rm prog$instance.hex
-	rm prognd$instance.hex
 fi
 
