@@ -16,7 +16,5 @@ else
 	confstr="--extlearn --flpcheck=aufs --liberalsafety mergesort.hex -n=1;--extlearn --flpcheck=aufs mergesort_strongsafety.hex -n=1"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
-	rm prog$instance.hex
-	rm prognd$instance.hex
 fi
 
