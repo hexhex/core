@@ -1521,6 +1521,10 @@ void processOptionsPrePlugin(
 	if (defiaux){
 		pctx.config.setOption("IncludeAuxInputInAuxiliaries", iaux);
 	}
+	if (pctx.config.getOption(CFG_HT_MODELS)){
+		pctx.config.setOption("UFSCheckMonolithic", 1);
+		pctx.config.setOption("UFSCheckAssumptionBased", 1);
+	}
 
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);

@@ -986,53 +986,50 @@ void EncodingBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 	// (it is useless to learn nogoods now, because they will be forgetten anyway when the next UFS search is setup)
 }
 
-void EncodingBasedUnfoundedSetChecker::initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
+std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
 
-	// TODO: consider benchmarks in initialize/getNextUnfoundedSet
-
-	UnfoundedSetChecker::compatibleSet = compatibleSet;
-
-	// remove external atom guessing rules and skipped rules from IDB
-	std::vector<ID> ufsProgram;
-	BOOST_FOREACH (ID ruleId, groundProgram.idb){
-		const Rule& rule = reg->rules.getByID(ruleId);
-		if (rule.isEAGuessingRule() ||								// EA-guessing rule
-		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){	// ignored part of the program
-			// skip it
-		}else{
-			ufsProgram.push_back(ruleId);
+	if (UnfoundedSetChecker::compatibleSet != compatibleSet || UnfoundedSetChecker::skipProgram != skipProgram){
+		// remove external atom guessing rules and skipped rules from IDB
+		std::vector<ID> ufsProgram;
+		BOOST_FOREACH (ID ruleId, groundProgram.idb){
+			const Rule& rule = reg->rules.getByID(ruleId);
+			if (rule.isEAGuessingRule() ||								// EA-guessing rule
+			    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){	// ignored part of the program
+				// skip it
+			}else{
+				ufsProgram.push_back(ruleId);
+			}
 		}
-	}
 
-	// we need the the compatible set with and without auxiliaries
-	compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
+		UnfoundedSetChecker::skipProgram = skipProgram;
+		UnfoundedSetChecker::compatibleSet = compatibleSet;
+		// we need the the compatible set with and without auxiliaries
+		UnfoundedSetChecker::compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
 
 #ifndef NDEBUG
-	std::stringstream programstring;
-	RawPrinter printer(programstring, reg);
-	if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
-	programstring << "IDB:" << std::endl;
-	BOOST_FOREACH (ID ruleId, ufsProgram){
-		printer.print(ruleId);
-		programstring << std::endl;
-	}
-	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *compatibleSetWithoutAux << " (" << *compatibleSet << ")");
+		std::stringstream programstring;
+		RawPrinter printer(programstring, reg);
+		if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
+		programstring << "IDB:" << std::endl;
+		BOOST_FOREACH (ID ruleId, ufsProgram){
+			printer.print(ruleId);
+			programstring << std::endl;
+		}
+		DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *compatibleSetWithoutAux << " (" << *compatibleSet << ")");
 #endif
 
-	// construct the UFS detection problem
-	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
-		NogoodSet ufsDetectionProblem;
-		constructUFSDetectionProblem(ufsDetectionProblem, compatibleSet, compatibleSetWithoutAux, skipProgram, ufsProgram);
+		// construct the UFS detection problem
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcudp, "Construct UFS Detection Problem");
+			NogoodSet ufsDetectionProblem;
+			constructUFSDetectionProblem(ufsDetectionProblem, compatibleSet, compatibleSetWithoutAux, skipProgram, ufsProgram);
 
-		// solve the ufs problem
-		solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
+			// solve the ufs problem
+			solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
+		}
 	}
-}
-
-std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getNextUnfoundedSet(){
-
 	InterpretationConstPtr model;
+
 	int mCnt = 0;
 
 #ifdef DLVHEX_BENCHMARK
@@ -1737,23 +1734,22 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset){
 	}
 }
 
-void AssumptionBasedUnfoundedSetChecker::initialize(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
-
-	UnfoundedSetChecker::compatibleSet = compatibleSet;
-
-	// learn from main search
-	learnNogoodsFromMainSearch(true);
-
-	// load assumptions
-	setAssumptions(compatibleSet, skipProgram);
-
-	// we need the compatible set also without external atom replacement atoms
-	compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
-}
-
-std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getNextUnfoundedSet(){
+std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
 
 	DBGLOG(DBG, "Performing UFS Check wrt. " << *compatibleSet);
+
+	if (UnfoundedSetChecker::compatibleSet != compatibleSet || UnfoundedSetChecker::skipProgram != skipProgram){
+		// learn from main search
+		learnNogoodsFromMainSearch(true);
+
+		// load assumptions
+		setAssumptions(compatibleSet, skipProgram);
+
+		UnfoundedSetChecker::skipProgram = skipProgram;
+		UnfoundedSetChecker::compatibleSet = compatibleSet;
+		// we need the compatible set also without external atom replacement atoms
+		UnfoundedSetChecker::compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
+	}
 	int mCnt = 0;
 
 #ifdef DLVHEX_BENCHMARK
@@ -1947,7 +1943,7 @@ UnfoundedSetCheckerPtr UnfoundedSetCheckerManager::instantiateUnfoundedSetChecke
 		InterpretationConstPtr componentAtoms,
 		SimpleNogoodContainerPtr ngc){
 
-	if (ctx.config.getOption("UFSCheckAssumptionBased") && false){
+	if (ctx.config.getOption("UFSCheckAssumptionBased")){
 		return UnfoundedSetCheckerPtr(new AssumptionBasedUnfoundedSetChecker(ctx, groundProgram, componentAtoms, ngc));
 	}else{
 		return UnfoundedSetCheckerPtr(new EncodingBasedUnfoundedSetChecker(ctx, groundProgram, componentAtoms, ngc));
@@ -1978,24 +1974,6 @@ void UnfoundedSetCheckerManager::learnNogoodsFromMainSearch(bool reset){
 	}
 }
 
-void UnfoundedSetCheckerManager::initialize(
-		InterpretationConstPtr interpretation,
-		std::set<ID> skipProgram){
-
-	if (preparedUnfoundedSetCheckers.size() == 0) {
-		preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
-			(0, instantiateUnfoundedSetChecker(*mg, ctx, agp.getGroundProgram(), agp, InterpretationConstPtr()))
-		);
-	}
-	UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
-	ufsc->initialize(interpretation, skipProgram);
-}
-
-std::vector<IDAddress> UnfoundedSetCheckerManager::getNextUnfoundedSet(){
-
-	return preparedUnfoundedSetCheckers.find(0)->second->getNextUnfoundedSet();
-}
-
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		InterpretationConstPtr interpretation,
 		const std::set<ID>& skipProgram,
@@ -2003,8 +1981,9 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 
 	bool flpdc_head = (ctx.config.getOption("FLPDecisionCriterionHead") != 0);
 	bool flpdc_e = (ctx.config.getOption("FLPDecisionCriterionE") != 0);
+	bool htmodels = (ctx.config.getOption(CFG_HT_MODELS) != 0);
 
-	if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e)){
+	if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e) && !htmodels){
 		DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");
 		return std::vector<IDAddress>();
 	}
@@ -2021,8 +2000,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				);
 			}
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
-			ufsc->initialize(interpretation, skipProgram);
-			std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
+			ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
 				ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
@@ -2035,8 +2013,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 				);
 			}
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;
-			ufsc->initialize(interpretation, skipProgram);
-			std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
+			ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
 				ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
@@ -2046,7 +2023,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-			if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp) && flpdc_e)){
+			if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp) && flpdc_e) && !htmodels){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
 				continue;
 			}
@@ -2060,8 +2037,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 					);
 				}
 				UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(comp)->second;
-				ufsc->initialize(interpretation, skipProgram);
-				std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
+				ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);
@@ -2075,8 +2051,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 					);
 				}
 				UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(comp)->second;
-				ufsc->initialize(interpretation, skipProgram);
-				std::vector<IDAddress> ufs = ufsc->getNextUnfoundedSet();
+				ufs = ufsc->getUnfoundedSet(interpretation, skipProgram);
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
 					ufsnogood = ufsc->getUFSNogood(ufs, interpretation);

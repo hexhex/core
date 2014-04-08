@@ -78,7 +78,7 @@ HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr i
 			InterpretationPtr(), true, SAT);
 	AnnotatedGroundProgram agp(ctx, solver->getGroundProgram());
 	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(
-				factory.ctx, agp, true));
+				factory.ctx, agp));
 }
 
 HTPlainModelGenerator::~HTPlainModelGenerator()
@@ -97,9 +97,8 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 		}
 		DBGLOG(DBG, "[HTPlain] new model: " << *model);
 		nextmodel = false;
-		ufscm->initialize(model);
 	}
-	std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
+	std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(model);
 	if (ufs.size() == 0) {
 		nextmodel = true;
 	}
@@ -108,7 +107,7 @@ HTPlainModelGenerator::InterprPtr HTPlainModelGenerator::generateNextModel()
 	BOOST_FOREACH(IDAddress id, ufs) {
 		here.clear_bit(id);
 	}
-	InterprPtr htmodel(new HTInterpretation());
+	InterprPtr htmodel(new HTInterpretation(reg));
 	htmodel->there() = model->getStorage();
 	htmodel->here() = here;
 	return htmodel;

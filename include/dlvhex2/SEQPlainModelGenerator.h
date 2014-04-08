@@ -54,6 +54,8 @@ protected:
 	MVec::iterator seqmodelsit;
 	MVec hminimal;
 	MVec::iterator hminimalit;
+	// answer set solver instance
+	GenuineGroundSolverPtr assolver;
 
 private:
 	InterpretationPtr nextAnswerSet();

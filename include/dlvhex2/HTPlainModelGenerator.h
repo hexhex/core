@@ -79,7 +79,7 @@ public:
 	typedef ModelGeneratorFactoryBase<HTInterpretation> Base;
 	typedef ComponentGraph::ComponentInfo ComponentInfo;
 protected:
-	ProgramCtx ctx;
+	ProgramCtx& ctx;
 	// rewritten idb (containing replacements for eatoms)
 	// (x stands for transformed)
 	std::vector<ID> xidb;

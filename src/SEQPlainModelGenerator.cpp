@@ -31,6 +31,12 @@
 
 #include "dlvhex2/SEQPlainModelGenerator.h"
 #include "dlvhex2/config_values.h"
+#include "dlvhex2/Benchmarking.h"
+
+#include "dlvhex2/ClaspSolver.h"
+
+#define BM_MODEL_COUNT		"[SEQ] classical model"
+#define BM_HMINIMAL_COUNT	"[SEQ] hminimal model"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -51,16 +57,24 @@ SEQPlainModelGenerator::~SEQPlainModelGenerator()
 
 InterpretationPtr SEQPlainModelGenerator::nextAnswerSet()
 {
-	InterpretationPtr model = solver->getNextModel();
-	while (model) {
-		ufscm->initialize(model);
-		std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
+	if (assolver == GenuineSolverPtr()) {
+		const OrdinaryASPProgram& p = solver->getGroundProgram();
+		assolver = GenuineGroundSolver::getInstance(ctx, p);
+	}
+	return assolver->getNextModel();
+#if 0
+		InterpretationPtr model = solver->getNextModel();
+	while (model && !ctx.terminationRequest) {
+		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidmcount, BM_MODEL_COUNT, 1);
+		//ufscm->initialize(model);
+		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(model);
 		if (ufs.size() == 0) {
 			return model;
 		}
 		model = solver->getNextModel();
 	}
 	return InterpretationPtr();
+#endif
 }
 
 ModelGapPtr SEQPlainModelGenerator::nextHMinimal()
@@ -70,11 +84,11 @@ ModelGapPtr SEQPlainModelGenerator::nextHMinimal()
 		hminimal.clear();
 		InterpretationPtr model = solver->getNextModel();
 		if (model) {
-			ufscm->initialize(model);
+			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidmcount, BM_MODEL_COUNT, 1);
 			bool foundufs = false;
 			bool nextufs = true;
-			while (nextufs) {
-				std::vector<IDAddress> ufs = ufscm->getNextUnfoundedSet();
+			while (nextufs && !ctx.terminationRequest) {
+				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(model);
 				if (ufs.size() == 0) {
 					nextufs = false;
 					if (!foundufs) {
@@ -125,18 +139,27 @@ SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
 		InterpretationPtr model = nextAnswerSet();
 		if (model) {
 			DBGLOG(DBG, "[SEQPlain] got the following answer set: " << *model);
-			return InterprPtr(new HTInterpretation(model->getStorage()));
+			return InterprPtr(new HTInterpretation(reg, model->getStorage()));
 		}
 		return HTInterpretationPtr();
 	} else if (seqmodels.size() == 0) {
 		ModelGapPtr p;
-		while (p = nextHMinimal()) {
+		while ((p = nextHMinimal()) && !ctx.terminationRequest) {
 			if (onlyanswersets) {
 				// an HT model with gap 0 was found in nextHMinimal()
 				seqmodels.clear();
+				InterpretationPtr model = nextAnswerSet();
+				if (model) {
+					DBGLOG(DBG, "[SEQPlain] got the following answer set: " << *model);
+					return InterprPtr(new HTInterpretation(reg, model->getStorage()));
+				}
+				return HTInterpretationPtr();
+			#if 0
 				DBGLOG(DBG, "[SEQPlain] got the following answer set during h-minimal search: " << *(p->second));
 				return InterprPtr(new HTInterpretation(p->second->getStorage()));
+			#endif
 			}
+			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidhminimal, BM_HMINIMAL_COUNT, 1);
 			bool insert = true;
 			MVec::iterator it = seqmodels.begin();
 			while (it != seqmodels.end()) {
@@ -157,7 +180,7 @@ SEQPlainModelGenerator::InterprPtr SEQPlainModelGenerator::generateNextModel()
 	}
 	if (seqmodelsit != seqmodels.end()) {
 		ModelGapPtr p = *(seqmodelsit++);
-		return InterprPtr(new HTInterpretation(p->second->getStorage(), p->first));
+		return InterprPtr(new HTInterpretation(reg, p->second->getStorage(), p->first));
 	}
 	return HTInterpretationPtr();
 }
