@@ -1284,9 +1284,8 @@ void EvaluateState::evaluateHTModels(ProgramCtx* ctx)
         interpr.reset(new HTInterpretation(ctx->registry()));
       }
       gotmodel = true;
-      HTModelPtr model(new HTModel(ctx->registry()));
-      model->interpretation->here() = interpr->here();
-      model->interpretation->there() = interpr->there();
+      HTInterpretationPtr copy = HTInterpretationPtr(new HTInterpretation(*interpr));
+      HTModelPtr model(new HTModel(copy));
       BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks) {
         bool aborthere = !(*mcb)(model);
         abort |= aborthere;

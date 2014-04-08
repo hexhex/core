@@ -56,6 +56,8 @@ protected:
 	// storage
 	Storage here_;
 	Storage there_;
+	// flags
+	bool isanswerset_;
 public:
 	RegistryPtr registry()
 	{	return registry_;	}
@@ -67,21 +69,40 @@ public:
 	{	return there_;	}
 	Storage& there()
 	{	return there_;	}
-	void add(const HTInterpretation& other)
+	bool isAnswerSet() const
+	{	return isanswerset_;	}
+	void add(const HTInterpretation& o)
 	{
-		here_ |= other.here_;
-		there_ |= other.there_;
+		here_ |= o.here_;
+		there_ |= o.there_;
 	}
 	virtual std::ostream& print(std::ostream& o) const {}
 
-	HTInterpretation() {}
-	HTInterpretation(const Storage& there, const Storage& gap = Storage()):
-		there_(there),
-		here_(there - gap)
+	HTInterpretation():
+		isanswerset_(false)
 	{
 	}
+	HTInterpretation(RegistryPtr reg, const Storage& there, const Storage& gap = Storage()):
+		registry_(reg),
+		there_(there)
+	{
+		if (gap == Storage()) {
+			isanswerset_ = true;
+		} else {
+			isanswerset_ = false;
+			here_ = there - gap;
+		}
+	}
 	HTInterpretation(RegistryPtr reg):
-		registry_(reg)
+		registry_(reg),
+		isanswerset_(false)
+	{
+	}
+	HTInterpretation(const HTInterpretation& o):
+		registry_(o.registry_),
+		here_(o.here_),
+		there_(o.there_),
+		isanswerset_(o.isanswerset_)
 	{
 	}
 };

@@ -171,27 +171,33 @@ bool AnswerSetPrinterCallback::operator()(
   std::ostream& o = std::cout;
 
   #warning TODO think about more efficient printing
-  o << "({";
-  if( h_it != h_it_end )
-  {
-    bool gotOutput =
-      reg->printAtomForUser(o, *h_it);
-    h_it++;
-    for(; h_it != h_it_end; ++h_it)
+  bool isanswerset = model->interpretation->isAnswerSet();
+
+  if (!isanswerset) {
+    o << "({";
+    if( h_it != h_it_end )
     {
-      if( gotOutput )
+      bool gotOutput =
+        reg->printAtomForUser(o, *h_it);
+      h_it++;
+      for(; h_it != h_it_end; ++h_it)
       {
-        gotOutput |=
-          reg->printAtomForUser(o, *h_it, ",");
-      }
-      else
-      {
-        gotOutput |=
-          reg->printAtomForUser(o, *h_it);
+        if( gotOutput )
+        {
+          gotOutput |=
+            reg->printAtomForUser(o, *h_it, ",");
+        }
+        else
+        {
+          gotOutput |=
+            reg->printAtomForUser(o, *h_it);
+        }
       }
     }
+    o << "},{";
+  } else {
+    o << "{";
   }
-  o << "},{";
   if( t_it != t_it_end )
   {
     bool gotOutput =
@@ -211,7 +217,11 @@ bool AnswerSetPrinterCallback::operator()(
       }
     }
   }
-  o << "})";
+  if (!isanswerset) {
+    o << "})";
+  } else {
+    o << "}";
+  }
   o << std::endl;
 
   // never abort
