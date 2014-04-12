@@ -60,6 +60,12 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+enum ExitCode {
+  ZERO         = 0,
+  CONSISTENT   = 10,
+  INCONSISTENT = 20
+};
+
 typedef std::map<std::string, PluginAtomPtr>
 	PluginAtomMap;
 
@@ -123,6 +129,9 @@ public:
   // if the vector is empty, then there was no solution so far
   std::vector<int> currentOptimum;
   bool onlyBestModels;	// if true, only optimal models will be output, otherwise optimal ones may be preceded by suboptimal ones
+
+  // store exit code
+  ExitCode exitcode;
 
   // used by plugins to store specific plugin data in ProgramCtx
   // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx

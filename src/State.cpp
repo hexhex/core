@@ -1121,6 +1121,7 @@ void EvaluateState::evaluateAnswerSets(ProgramCtx* ctx)
     }
 
     LOG(INFO,"got " << mcount << " models");
+    ctx->exitcode = (mcount == 0) ? INCONSISTENT : CONSISTENT;
     if( abort )
     {
       LOG(INFO,"model building was aborted by callback");
@@ -1299,6 +1300,8 @@ void EvaluateState::evaluateHTModels(ProgramCtx* ctx)
       break;
     }
   } while (gotmodel && !abort);
+
+  ctx->exitcode = (mcount == 0) ? INCONSISTENT : CONSISTENT;
 
   StatePtr next(new PostProcessState);
   changeState(ctx, next);

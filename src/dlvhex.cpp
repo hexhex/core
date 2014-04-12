@@ -723,7 +723,7 @@ pctx.evalcontext.reset();
 	}
 
 	// regular exit
-	return 0;
+	return pctx.exitcode;
 }
 
 void configurePluginPath(std::string& userPlugindir);
