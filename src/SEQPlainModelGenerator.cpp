@@ -49,6 +49,9 @@ SEQPlainModelGenerator::SEQPlainModelGenerator(Factory& factory, InterprConstPtr
 	HTPlainModelGenerator(factory, input),
 	onlyanswersets(false)
 {
+	if (ctx.config.getOption(CFG_SEQ_MODELS) == SEQModels_AnswerSets) {
+		assolver = solver->getGenuineGroundSolver();
+	}
 }
 
 SEQPlainModelGenerator::~SEQPlainModelGenerator()

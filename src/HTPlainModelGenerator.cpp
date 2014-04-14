@@ -29,6 +29,7 @@
  * @brief
  */
 
+#include "dlvhex2/config_values.h"
 #include "dlvhex2/HTPlainModelGenerator.h"
 #include "dlvhex2/Converter.h"
 #include "dlvhex2/Benchmarking.h"
@@ -73,9 +74,10 @@ HTPlainModelGenerator::HTPlainModelGenerator(Factory& factory, InterprConstPtr i
 	// augment input with edb
 	newint->add(*factory.ctx.edb);
 
+	bool sat = ctx.config.getOption(CFG_SEQ_MODELS) == SEQModels_All;
 	OrdinaryASPProgram program(reg, factory.xidb, newint, factory.ctx.maxint);
 	solver = GenuineSolver::getInstance(factory.ctx, program, 
-			InterpretationPtr(), true, SAT);
+			InterpretationPtr(), true, sat ? SAT : ASP);
 	AnnotatedGroundProgram agp(ctx, solver->getGroundProgram());
 	ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(
 				factory.ctx, agp));
