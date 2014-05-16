@@ -921,17 +921,17 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 						// evaluate it
 						DBGLOG(DBG, "Heuristic decides to evaluate external atom " << factory.innerEatoms[eaIndex]);
 						conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, assigned, changed));
+
+						// update set of changed input atoms
+						if (eatom.getExtSourceProperties().doesCareAboutChanged()){
+							assert (!!changedAtomsPerExternalAtom[eaIndex]);
+							changedAtomsPerExternalAtom[eaIndex]->clear();
+						}
 					}
 					if (!eaEvaluated[eaIndex]){
 						// find a new yet unassigned atom to watch
 						IDAddress id = getWatchedLiteral(eaIndex, assigned, false);
 						if (id != ID::ALL_ONES) verifyWatchList[id].push_back(eaIndex);
-					}
-
-					// update set of changed input atoms
-					if (eatom.getExtSourceProperties().doesCareAboutChanged()){
-						assert (!!changedAtomsPerExternalAtom[eaIndex]);
-						changedAtomsPerExternalAtom[eaIndex]->clear();
 					}
 				}
 			}

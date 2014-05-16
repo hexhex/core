@@ -707,7 +707,7 @@ public:
 	 * The method is intended to provide information which might be used for
 	 * better learning and caching techniques in this external source.
 	 *
-	 * The assigned atoms might be unknown (NULL-pointer).
+	 * The changed atoms might be unknown (NULL-pointer).
 	 */
     InterpretationConstPtr changed;
 
