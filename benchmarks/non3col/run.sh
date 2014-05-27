@@ -16,7 +16,5 @@ else
 	confstr="checkNon3Colorability.hex;checkNon3Colorability.hex --supportsets;checkNon3ColorabilityPlain.hex;checkNon3CompleteColorability.hex;checkNon3CompleteColorability.hex --supportsets;checkNon3CompleteColorabilityPlain.hex"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to"
-	rm prog$instance.hex
-	rm prognd$instance.hex
 fi
 

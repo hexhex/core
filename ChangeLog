@@ -1,3 +1,9 @@
+2014-04-07  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* bootstrap-extra.sh: Upgrade to Clasp 3.0.3.
+	* build-potassco.sh: Likewise.
+	* checkout-build-potassco.sh: Likewise.
+
 2014-03-14  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/ClaspSolver.h: Upgrade to Clasp 3.0.1.
@@ -15,8 +21,6 @@
 	* include/dlvhex2/GenuineGuessAndCheckModelGenerator.h:
 	Simplify implementation.
 	* src/GenuineGuessAndCheckModelGenerator.cpp: Likewise.
-
-2014-01-26  Christoph Redl <redl@kr.tuwien.ac.at>
 
 2014-01-07  Christoph Redl <redl@kr.tuwien.ac.at>
 
