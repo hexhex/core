@@ -32,7 +32,7 @@ This file provides some hints how to install and run dlvhex.
 
     This uses gringo and clasp as genuine grounder resp. solver for hex.
 
-    If something fails, see the following information.
+    If something fails, see the followg information.
 
     You can also use the script checkout_build_potassco.sh in this package
     to prepare gringo and clasp libraries to be used by dlvhex.
