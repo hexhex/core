@@ -1,0 +1,40 @@
+Index: libgringo/gringo/predlit.h
+===================================================================
+--- libgringo/gringo/predlit.h	(revision 6172)
++++ libgringo/gringo/predlit.h	(working copy)
+@@ -35,6 +35,7 @@
+ 	typedef boost::unordered_set<PredSig, PredCmp, PredCmp> PredSet;
+ public:
+ 	PredLitSet();
++	PredLitSet(PredLitSet const &other);
+ 	bool insert(PredLit *pred, size_t pos, Val &val);
+ 	void clear();
+ private:
+Index: libgringo/src/predlit.cpp
+===================================================================
+--- libgringo/src/predlit.cpp	(revision 6172)
++++ libgringo/src/predlit.cpp	(working copy)
+@@ -53,6 +53,12 @@
+ {
+ }
+ 
++PredLitSet::PredLitSet(PredLitSet const &other)
++	: set_(0, PredCmp(vals_), PredCmp(vals_))
++{
++    assert(other.vals_.empty());
++}
++
+ bool PredLitSet::insert(PredLit *pred, size_t pos, Val &val)
+ {
+ 	ValRng rng = pred->vals(pos);
+@@ -133,6 +139,10 @@
+ void PredLit::push()
+ {
+ 	top_ = vals_.size();
++    for (size_t i = vals_.size() - terms_.size(), end = vals_.size(); i != end; ++i)
++    {
++        vals_.push_back(vals_[i]);
++    }
+ }
+ 
+ bool PredLit::testUnique(PredLitSet &set, Val val)
