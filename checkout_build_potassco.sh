@@ -34,31 +34,13 @@ if test -e gringo; then
 	fi
 else
 	echo "checking out gringo";
-  svn co $POTASSCO_REPOROOT/tags/gringo-3.0.4 gringo
+  svn co $POTASSCO_REPOROOT/tags/gringo-4.3.0 gringo
   mkdir -p gringo/build/release
-  echo "patching gringo"
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
-    { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-cond.diff ||
-    { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p1 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl.diff ||
-    { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-domain-fwd-decl-builtsource.diff ||
-    { echo "gringo patching failed!"; exit -1; }
-  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-patch-unpool-pred.diff ||
-    { echo "gringo patching failed!"; exit -1; }
-  #echo "patching gringo (for clang)"
-  #patch -d gringo -p0 <gringo/patches/patch-clang.diff ||
-  #  { echo "gringo patching failed!"; exit -1; }
 fi
 
 echo "making gringo"
 pushd gringo/build/release
   cmake ../../ -DCMAKE_CXX_FLAGS=-Wall -DCMAKE_BUILD_TYPE=release -DWITH_LUA=none ||
     { echo "gringo cmake failed!"; exit -1; }
-  make gringo-app clingo-app VERBOSE=1 ||
-    { echo "gringo make failed!"; exit -1; }
 popd
-
-#./configure --with-libclasp=`pwd`/clasp/ --with-libgringo=`pwd`/gringo/
 

@@ -26,7 +26,7 @@
  * @file   GringoGrounder.hpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
- * @brief  Interface to genuine gringo 3.0.4-based grounder.
+ * @brief  Interface to genuine gringo 4.3.0-based grounder.
  */
 
 #ifdef HAVE_LIBGRINGO
@@ -42,51 +42,21 @@
 #include <vector>
 #include <map>
 #include <sstream>
+#include <string>
 
-#include "gringo/lparseoutput.h"
-#include "gringo/streams.h"
+#include "gringo/input/nongroundparser.hh"
+#include "gringo/input/programbuilder.hh"
+#include "gringo/input/program.hh"
+#include "gringo/ground/program.hh"
+#include "gringo/output/output.hh"
+#include "gringo/logger.hh"
+#include "gringo/scripts.hh"
+#include "gringo/version.hh"
+#include "gringo/control.hh"
+#include "program_opts/application.h"
+#include "program_opts/typed_value.h"
 
 DLVHEX_NAMESPACE_BEGIN
-
-namespace detail
-{
-  // gringo config substitute (so that we only need one kind of libprogram_opts
-  class GringoOptions
-  {
-  public:
-    enum IExpand { IEXPAND_ALL, IEXPAND_DEPTH };
-
-  public:
-    GringoOptions();
-
-    // AppOptions interface
-    //void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
-    //bool validateOptions(ProgramOptions::OptionValues& values, Messages&);
-    //void addDefaults(std::string& def);
-    //TermExpansionPtr termExpansion(IncConfig &config) const;
-
-    /** The constant assignments in the format "constant=term" */
-    std::vector<std::string> consts;
-    /** Whether to print smodels output */
-    bool smodelsOut;
-    /** Whether to print in lparse format */
-    bool textOut;
-    bool metaOut;
-    /** True iff some output was requested*/
-    bool groundOnly;
-    int ifixed;
-    bool ibase;
-    bool groundInput;
-    /** whether disjunctions will get shifted */
-    bool disjShift;
-    /** filename for optional dependency graph dump */
-    std::string depGraph;
-    bool compat;
-    /** whether statistics will be printed to stderr */
-    bool stats;
-    IExpand iexpand;
-  };
-}
 
 /**
  * Gringo command line application.
@@ -98,8 +68,6 @@ private:
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
 	ID intPred, anonymousPred;
-
-	detail::GringoOptions gringo;
 
 	class Printer : public RawPrinter{
 	public:
@@ -113,9 +81,10 @@ private:
 		virtual void print(ID id);
 	};
 
-
-	class GroundHexProgramBuilder : public LparseConverter{
+	class GroundHexProgramBuilder : public Gringo::Output::PlainLparseOutputter{
 	private:
+		typedef std::vector<unsigned> WeightVec;
+
 		std::stringstream emptyStream;
 		uint32_t symbols_;
 		bool hasExternal_;
@@ -129,14 +98,15 @@ private:
 			enum Type{ Regular, Weight };
 			Type type;
 
-			AtomVec head, pos, neg;
-			WeightVec wpos, wneg;
+			AtomVec head;
+			LitVec body;
+			WeightVec weights;
 			int bound;
-			LParseRule(const AtomVec& h, const AtomVec& p, const AtomVec& n) : head(h), pos(p), neg(n), bound(0), type(Regular){}
-			LParseRule(int h, const AtomVec& p, const AtomVec& n) : pos(p), neg(n), bound(0), type(Regular){
+			LParseRule(const AtomVec& h, const LitVec& v) : head(h), body(v), bound(0), type(Regular){}
+			LParseRule(int h, const LitVec& v) : body(v), bound(0), type(Regular){
 				head.push_back(h);
 			}
-			LParseRule(int h, const AtomVec& p, const AtomVec& n, const WeightVec& wp, const WeightVec& wn, int bound) : pos(p), neg(n), wpos(wp), wneg(wn), bound(bound), type(Weight){
+			LParseRule(int h, const LitVec& v, const WeightVec& w, int bound) : body(v), weights(w), bound(bound), type(Weight){
 				head.push_back(h);
 			}
 		};
@@ -145,21 +115,22 @@ private:
 
 		std::map<int, ID> indexToGroundAtomID;
 		std::list<LParseRule> rules;
+
+		std::stringstream emptystream;
 	public:
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
-		void doFinalize();
+		void transformRules();
 
-		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
-		void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
-		void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
-		void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
-		void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
-		void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
-		void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
-		void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
-		void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
-//		void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-//		void printExternalTableEntry(const Symbol &symbol);
+		void finishRules();
+		void printBasicRule(unsigned head, const LitVec &body);
+		void printChoiceRule(const AtomVec &head, const LitVec &body);
+		void printCardinalityRule(unsigned head, unsigned lower, const LitVec &body);
+		void printWeightRule(unsigned head, unsigned bound, const LitWeightVec &body);
+		void printMinimizeRule(const LitWeightVec &body);
+		void printDisjunctiveRule(const AtomVec &head, const LitVec &body);
+
+		void printSymbol(unsigned atomUid, Gringo::Value v);
+		void printExternal(unsigned atomUid, Gringo::Output::ExternalType e);
 		void forgetStep(int) { }
 		uint32_t symbol();
 	};
@@ -169,12 +140,7 @@ public:
 	const OrdinaryASPProgram& getGroundProgram();
 
 protected:
-	Output *output();
-	/** returns a stream of constants provided through the command-line.
-	  * \returns input stream containing the constant definitions in ASP
-	  */
-	Streams::StreamPtr constStream() const;
-	int  doRun();
+	int doRun();
 };
 
 DLVHEX_NAMESPACE_END

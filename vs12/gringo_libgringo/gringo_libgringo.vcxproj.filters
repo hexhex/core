@@ -31,6 +31,12 @@
     <Filter Include="Source Files\output">
       <UniqueIdentifier>{619426a1-3d3e-443b-861b-fef127471ab2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\input\nongroundgrammar">
+      <UniqueIdentifier>{faa7a32a-ce90-43af-890e-9129fde98ce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\input\nongroundgrammar">
+      <UniqueIdentifier>{54c310c0-2c51-4f38-99db-659a429fec6c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\buildclaspgringo\gringo\libgringo\gringo\base.hh">
@@ -183,6 +189,15 @@
     <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundlexer.xh">
       <Filter>Source Files\input</Filter>
     </None>
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundlexer.hh">
+      <Filter>Header Files\input</Filter>
+    </None>
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\grammar.hh">
+      <Filter>Header Files\input\nongroundgrammar</Filter>
+    </None>
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\stack.hh">
+      <Filter>Header Files\input\nongroundgrammar</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\ground\literals.cc">
@@ -244,6 +259,9 @@
     </ClCompile>
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\python.cc">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\grammar.cc">
+      <Filter>Source Files\input\nongroundgrammar</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -4,6 +4,16 @@
 	* build-potassco.sh: Likewise.
 	* checkout-build-potassco.sh: Likewise.
 
+2014-03-14  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/ClaspSolver.h: Upgrade to Clasp 3.0.1.
+	* src/ClaspSolver.cpp: Likewise.
+
+2014-03-13  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/GringoGrounder.h: Upgrade to Gringo 4.3.0.
+	* src/GringoGrounder.cpp: Likewise.
+
 2014-02-15  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* include/dlvhex2/ClaspSolver.h: Upgrade to Clasp 3.0.

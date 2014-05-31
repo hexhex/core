@@ -46,7 +46,7 @@ CXXFLAGS="$CXXFLAGS $save_CFLAGS"
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
 
-   AC_MSG_CHECKING([for g++ >= 4.3 or clang++ >= 2.9])
+   AC_MSG_CHECKING([for g++ >= 4.8 or clang++ >= 3.1])
    AC_LANG_PUSH([C++])
    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
@@ -253,7 +253,7 @@ PKG_PROG_PKG_CONFIG
 AC_CACHE_SAVE
 
 # checking for boost libs
-BOOST_REQUIRE([1.43.0])
+BOOST_REQUIRE([1.55.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
@@ -511,6 +511,14 @@ fi
 # conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
 if test "x${with_libgringo_support}" != xfalse; then
+
+  # Gringo 4 needs the following:
+  AX_CXX_COMPILE_STDCXX_11(,[mandatory])
+  AC_PROG_LEX
+  AC_PROG_YACC
+#  AC_PROG_RE2C
+#  AC_PROG_SCONS
+
 	# #define in config.h <- config.h.in
 	AC_DEFINE([HAVE_LIBGRINGO], [1], [Defined if we have --with-libgringo.])
   GRINGO_TRUNK_DIR=$with_libgringo_support
@@ -520,7 +528,7 @@ if test "x${with_libgringo_support}" != xfalse; then
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
 	# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
   extsolver_found=true
 fi

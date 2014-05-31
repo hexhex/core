@@ -60,6 +60,9 @@
     <None Include="..\..\buildclaspgringo\gringo\libgringo\gringo\value.hh" />
     <None Include="..\..\buildclaspgringo\gringo\libgringo\gringo\version.hh" />
     <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar.yy" />
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\grammar.hh" />
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\stack.hh" />
+    <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundlexer.hh" />
     <None Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundlexer.xh" />
   </ItemGroup>
   <ItemGroup>
@@ -71,6 +74,7 @@
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\aggregates.cc" />
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\literal.cc" />
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\literals.cc" />
+    <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\grammar.cc" />
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\nongroundparser.cc" />
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\program.cc" />
     <ClCompile Include="..\..\buildclaspgringo\gringo\libgringo\src\input\programbuilder.cc" />
@@ -93,12 +97,14 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -141,8 +147,11 @@
       </Message>
     </CustomBuildStep>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>copy $(SolutionDir)\gringoparser\input\nongroundlexer.hh $(SolutionDir)\..\buildclaspgringo\gringo\libgringo\src\input\
+
+mkdir $(SolutionDir)\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar
+copy $(SolutionDir)\gringoparser\input\nongroundgrammar\* $(SolutionDir)\..\buildclaspgringo\gringo\libgringo\src\input\nongroundgrammar\
+</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>

@@ -25,10 +25,10 @@ if [ ! -e $CLASPFNAME ]; then
   wget http://downloads.sourceforge.net/project/potassco/clasp/3.0.3/$CLASPFNAME
 fi
 
-GRINGOFNAME=gringo-3.0.4-source.tar.gz
+GRINGOFNAME=gringo-4.3.0-source.tar.gz
 if [ ! -e $GRINGOFNAME ]; then
   echo "downloading $GRINGOFNAME"
-  wget http://downloads.sourceforge.net/project/potassco/gringo/3.0.4/$GRINGOFNAME
+  wget http://downloads.sourceforge.net/project/potassco/gringo/4.3.0/$GRINGOFNAME
 fi
 
 if [ ! -e $CLASPFNAME ] || [ ! -e $GRINGOFNAME ]; then
