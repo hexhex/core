@@ -2,10 +2,10 @@
 POTASSCO_REPOROOT=https://potassco.svn.sourceforge.net/svnroot/potassco/
 TOP_SRCDIR=.
 
-CLASPFNAME=clasp-3.0.3-source.tar.gz
+CLASPFNAME=clasp-3.0.5-source.tar.gz
 if [ ! -e $CLASPFNAME ]; then
   echo "downloading $CLASPFNAME"
-  wget http://downloads.sourceforge.net/project/potassco/clasp/3.0.3/$CLASPFNAME
+  wget http://downloads.sourceforge.net/project/potassco/clasp/3.0.5/$CLASPFNAME
 fi
 
 GRINGOFNAME=gringo-3.0.4-source.tar.gz
@@ -24,8 +24,8 @@ if test -e clasp; then
 	fi
 else
 	echo "unpacking clasp"
-	tar xzf ${TOP_SRCDIR}/clasp-3.0.3-source.tar.gz #--transform 's/clasp-2.1.1/clasp/'
-	mv clasp-3.0.3 clasp
+	tar xzf ${TOP_SRCDIR}/clasp-3.0.5-source.tar.gz #--transform 's/clasp-2.1.1/clasp/'
+	mv clasp-3.0.5 clasp
 
 	echo "configuring clasp"
 	mkdir -p clasp/build/fpic

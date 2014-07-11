@@ -12,7 +12,7 @@ if test -e clasp; then
 	fi
 else
 	echo "checking out clasp"
-  svn co $POTASSCO_REPOROOT/tags/clasp-3.0.3 clasp
+  svn co $POTASSCO_REPOROOT/tags/clasp-3.0.5 clasp
 	mkdir -p clasp/build/release
 	echo "configuring clasp"
 	pushd clasp

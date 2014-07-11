@@ -19,10 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-CLASPFNAME=clasp-3.0.3-source.tar.gz
+CLASPFNAME=clasp-3.0.5-source.tar.gz
 if [ ! -e $CLASPFNAME ]; then
   echo "downloading $CLASPFNAME"
-  wget http://downloads.sourceforge.net/project/potassco/clasp/3.0.3/$CLASPFNAME
+  wget http://downloads.sourceforge.net/project/potassco/clasp/3.0.5/$CLASPFNAME
 fi
 
 GRINGOFNAME=gringo-4.3.0-source.tar.gz
