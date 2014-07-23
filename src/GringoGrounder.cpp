@@ -262,7 +262,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred)
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, bool incAdd)
 	: Gringo::Output::PlainLparseOutputter(emptyStream), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred){
 
 	// Note: We do NOT use shifting but ground disjunctive rules as they are.
@@ -276,6 +276,7 @@ GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx
 		mask->add(*groundProgram.mask);
 	}
 	groundProgram.mask = mask;
+	this->incAdd = incAdd;
 }
 
 void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
@@ -322,9 +323,12 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 
 	DBGLOG(DBG, "Transforming " << rules.size() << " rules to DLVHEX");
 	InterpretationPtr edb = InterpretationPtr(new Interpretation(ctx.registry()));
+	if (incAdd) edb->add(*groundProgram.edb);
 	groundProgram.edb = edb;
-	groundProgram.idb.clear();
-	groundProgram.idb.reserve(rules.size());
+	if (!incAdd){
+		groundProgram.idb.clear();
+		groundProgram.idb.reserve(rules.size());
+	}
 	BOOST_FOREACH (const LParseRule& lpr, rules){
 		Rule r(ID::MAINKIND_RULE);
 		switch (lpr.type){
@@ -593,7 +597,8 @@ int GringoGrounder::doRun()
 		// *programStream << "#external a.";
 
 		// grounding
-		parser.pushStream("dlvhex", std::unique_ptr<std::stringstream>(programStream));
+parser.pushStream("s1", std::unique_ptr<std::stringstream>(new std::stringstream("a | b.")));
+//		parser.pushStream("dlvhex", std::unique_ptr<std::stringstream>(programStream));
 		parser.parse();
 		prg.rewrite(defs);
 		prg.check();
@@ -604,18 +609,52 @@ int GringoGrounder::doRun()
 		out.finish();
 		outputter.transformRules();
 
-		// print ground program
-		std::stringstream groungprogString;
-		RawPrinter rp(groungprogString, ctx.registry());
-		if( groundProgram.edb != 0 )
-		{
-			// print edb interpretation as facts
-			groundProgram.edb->printAsFacts(groungprogString);
-			groungprogString << "\n";
-		}
-		rp.printmany(groundProgram.idb, "\n");
-		groungprogString << std::endl;
-		LOG(DBG, "Got the following ground program from Gringo: {" << groungprogString.str() << "}");
+#if 0
+// adding new modules incrementally can be done by repeating the above code as follows:
+// (previously defined atoms need to be defined as external in order to prevent them from being optimized away)
+{
+	Gringo::Output::OutputPredicates outPreds;
+	GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred, true);
+	Gringo::Output::OutputBase out(std::move(outPreds), outputter);
+	Gringo::Scripts scripts;
+	Gringo::Defines defs;
+	Gringo::Input::Program prg;
+	Gringo::Input::NongroundProgramBuilder pb(scripts, prg, out, defs);
+	Gringo::Input::NonGroundParser parser(pb);
+	Gringo::Ground::Parameters params;
+	Gringo::Input::ProgramVec parts;
+	// declare atoms as external:
+	// *programStream << "#external a.";
+
+	// grounding
+	parser.pushStream("s2", std::unique_ptr<std::stringstream>(new std::stringstream("#external b. c | d :- b.")));
+	//		parser.pushStream("dlvhex", std::unique_ptr<std::stringstream>(programStream));
+	parser.parse();
+	prg.rewrite(defs);
+	prg.check();
+	params.add("base", {});
+
+	Gringo::Ground::Program gPrg(prg.toGround(out.domains));
+	gPrg.ground(params, scripts, out, false);
+	out.finish();
+	outputter.transformRules();
+}
+#endif
+
+#ifdef DEBUG
+	// print ground program
+	std::stringstream groungprogString;
+	RawPrinter rp(groungprogString, ctx.registry());
+	if( groundProgram.edb != 0 )
+	{
+		// print edb interpretation as facts
+		groundProgram.edb->printAsFacts(groungprogString);
+		groungprogString << "\n";
+	}
+	rp.printmany(groundProgram.idb, "\n");
+	groungprogString << std::endl;
+	LOG(DBG, "Got the following ground program from Gringo: {" << groungprogString.str() << "}");
+#endif
 
 		return EXIT_SUCCESS;
 	}catch(...){

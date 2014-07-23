@@ -99,6 +99,7 @@ private:
 		InterpretationPtr mask;
 		ID intPred;
 		ID anonymousPred;
+		bool incAdd; // if true, then the ground program will not be reset before adding new rules
 
 		struct LParseRule{
 			enum Type{ Regular, Weight };
@@ -124,7 +125,7 @@ private:
 
 		std::stringstream emptystream;
 	public:
-		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
+		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, bool incAdd = false);
 		void transformRules();
 
 		void finishRules();
