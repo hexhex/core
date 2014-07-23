@@ -597,8 +597,8 @@ int GringoGrounder::doRun()
 		// *programStream << "#external a.";
 
 		// grounding
-parser.pushStream("s1", std::unique_ptr<std::stringstream>(new std::stringstream("a | b.")));
-//		parser.pushStream("dlvhex", std::unique_ptr<std::stringstream>(programStream));
+//parser.pushStream("s1", std::unique_ptr<std::stringstream>(new std::stringstream("a | b.")));
+		parser.pushStream("dlvhex", std::unique_ptr<std::stringstream>(programStream));
 		parser.parse();
 		prg.rewrite(defs);
 		prg.check();
