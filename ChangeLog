@@ -1,3 +1,10 @@
+2014-07-26  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* src/GringoGrounder.cpp: Support incremental programs
+	* include/dlvhex2/GringoGrounder.h: Likewise.
+	* src/ClaspSolver.h: Likewise.
+	* include/dlvhex2/ClaspSolver.h: Likewise.
+
 2014-04-07  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* bootstrap-extra.sh: Upgrade to Clasp 3.0.3.
