@@ -242,6 +242,21 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
 		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 	}
+
+
+/*
+// Incremental test:
+//   (program: a v aa. b :- a. c v cc :- a, b. d :- c.)
+{
+program.idb.clear();
+program.idb.push_back(factory.idb[2]);
+program.idb.push_back(factory.idb[3]);
+InterpretationPtr fr(new Interpretation(reg));
+grounder = GenuineGrounder::getInstance(factory.ctx, program, fr);
+annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+}
+*/
+
 	solver = GenuineGroundSolver::getInstance(
 		factory.ctx, annotatedGroundProgram,
 		InterpretationConstPtr(),
@@ -250,6 +265,30 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		// this will not find unfounded sets due to external sources,
 		// but at least unfounded sets due to disjunctions
 		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+
+
+/*
+// Incremental test:
+{
+InterpretationPtr mc = solver->getNextModel();
+while (!!mc){
+std::cout << "It 1: " << *mc << std::endl;
+mc = solver->getNextModel();
+}
+
+program.edb = InterpretationPtr(new Interpretation(reg));
+program.idb.clear();
+program.idb.push_back(factory.idb[0]);
+program.idb.push_back(factory.idb[1]);
+InterpretationPtr fr(new Interpretation(reg));
+fr->setFact(0);
+fr->setFact(2);
+grounder = GenuineGrounder::getInstance(factory.ctx, program, fr);
+AnnotatedGroundProgram annotatedGroundProgram2 = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+solver->addProgram(annotatedGroundProgram2);
+}
+*/
+
     }
 
     // external learning related initialization

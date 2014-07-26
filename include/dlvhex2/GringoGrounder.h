@@ -73,6 +73,7 @@ private:
 	ProgramCtx& ctx;
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
+	InterpretationConstPtr frozen;
 	ID intPred, anonymousPred;
 
 	class Printer : public RawPrinter{
@@ -143,7 +144,7 @@ private:
 	};
 
 public:
-	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p);
+	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen);
 	const OrdinaryASPProgram& getGroundProgram();
 
 protected:
@@ -294,7 +295,7 @@ private:
 	};
 
 public:
-	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p);
+	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p/*, InterpretationConstPtr frozen*/);
 	const OrdinaryASPProgram& getGroundProgram();
 
 protected:

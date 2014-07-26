@@ -530,8 +530,8 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
 }
 
-GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
-  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()){
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
+  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen){
   groundProgram.mask = nongroundProgram.mask;
   doRun();
 }
@@ -572,8 +572,6 @@ int GringoGrounder::doRun()
 		printer.print(intPred);
 		*programStream << "(0.." << ctx.maxint << ").";
 
-		LOG(DBG, "Sending the following input to Gringo: {{" << programStream->str() << "}}");
-
 		// don't spam stderr with warnings (note: Gringo prints to stderr, not to cerr!)
 		Gringo::message_printer()->disable(Gringo::W_DEFINE_REDEFINTION);
 		Gringo::message_printer()->disable(Gringo::W_DEFINE_CYCLIC);
@@ -593,8 +591,20 @@ int GringoGrounder::doRun()
 		Gringo::Input::NonGroundParser parser(pb);
 		Gringo::Ground::Parameters params;
 		Gringo::Input::ProgramVec parts;
-		// declare atoms as external:
-		// *programStream << "#external a.";
+
+		if (!!frozen){
+			bm::bvector<>::enumerator en = frozen->getStorage().first();
+			bm::bvector<>::enumerator en_end = frozen->getStorage().end();
+			// declare frozen atoms as external
+			while (en < en_end){
+				*programStream << "#external ";
+				printer.print(ctx.registry()->ogatoms.getIDByAddress(*en));
+				*programStream << ".";
+				en++;
+			}
+		}
+
+		LOG(DBG, "Sending the following input to Gringo: {{" << programStream->str() << "}}");
 
 		// grounding
 //parser.pushStream("s1", std::unique_ptr<std::stringstream>(new std::stringstream("a | b.")));
@@ -1191,8 +1201,8 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
 }
 
-GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
-  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()){
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
+  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen){
   gringo.disjShift = false;
   groundProgram.mask = nongroundProgram.mask;
   doRun();

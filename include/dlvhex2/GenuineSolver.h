@@ -65,7 +65,7 @@ public:
 	typedef boost::shared_ptr<GenuineGrounder> Ptr;
 	typedef boost::shared_ptr<const GenuineGrounder> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr());
 };
 
 typedef GenuineGrounder::Ptr GenuineGrounderPtr;
@@ -81,6 +81,7 @@ public:
 	virtual void restartWithAssumptions(const std::vector<ID>& assumptions) = 0;
 	virtual void addPropagator(PropagatorCallback* pb) = 0;
 	virtual void removePropagator(PropagatorCallback* pb) = 0;
+	virtual void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
@@ -111,6 +112,7 @@ public:
 	void restartWithAssumptions(const std::vector<ID>& assumptions);
 	void addPropagator(PropagatorCallback* pb);
 	void removePropagator(PropagatorCallback* pb);
+	void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr());
 
 	inline GenuineGrounderPtr getGenuineGrounder(){ return grounder; }
 	inline GenuineGroundSolverPtr getGenuineGroundSolver(){ return solver; }

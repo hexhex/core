@@ -154,11 +154,13 @@ private:
 	void updateSymbolTable();
 	Clasp::Literal noLiteral;
 	std::vector<Clasp::Literal> hexToClasp;
+	std::vector<Clasp::Literal> nonoptimizedHexToClasp;	// stores mapping before optimization (necessary for incremental program definitions)
 	typedef std::vector<IDAddress> AddressVector;
 	std::vector<AddressVector*> claspToHex;
 	inline bool isMappedToClaspLiteral(IDAddress addr) const { return addr < hexToClasp.size() && hexToClasp[addr] != noLiteral; }
 	Clasp::Literal mapHexToClasp(IDAddress addr, bool registerVar = false, bool inverseLits = false);
-	void storeHexToClasp(IDAddress addr, Clasp::Literal lit);
+	Clasp::Literal nonoptimizedMapHexToClasp(IDAddress addr, bool registerVar = false, bool inverseLits = false);
+	void storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized = false);
 	void resetAndResizeClaspToHex(unsigned size);
 
 	// output filtering (works on given interpretation and modifies it)
@@ -179,6 +181,7 @@ protected:
 	ProblemType problemType;
 
 	// interface to clasp internals
+	Clasp::Asp::LogicProgram asp;
 	ProgramOptions::ParsedOptions parsedOptions;
 	Clasp::Cli::ClaspCliConfig config;
 	Clasp::SharedContext claspctx;
@@ -208,10 +211,11 @@ protected:
 	int modelCount;
 
 public:
-	// constructors/destructors
+	// constructors/destructors and initialization
 	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 	virtual ~ClaspSolver();
+	virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
 
 	// search control
 	void restartWithAssumptions(const std::vector<ID>& assumptions);

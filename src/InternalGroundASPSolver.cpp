@@ -858,6 +858,10 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
 	setEDB();
 }
 
+void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
+	throw GeneralError("Internal grounder does not support incremental extension of the program");
+}
+
 void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	// reset

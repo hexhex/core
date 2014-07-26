@@ -64,11 +64,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p){
+GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen){
 
 	switch(ctx.config.getOption("GenuineSolver")){
 	case 1: case 3:	// internal grounder + internal solver or clasp
 		{
+		if (!!frozen){
+			throw GeneralError("Internal grounder does not support frozen atoms");
+		}
 		DBGLOG(DBG, "Instantiating genuine grounder with internal grounder");
 		GenuineGrounderPtr ptr(new InternalGrounder(ctx, p));
 		return ptr;
@@ -78,7 +81,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 #ifdef HAVE_LIBGRINGO
 		{
 		DBGLOG(DBG, "Instantiating genuine grounder with gringo");
-		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p));
+		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
 		return ptr;
 		}
 #else
@@ -197,6 +200,10 @@ void GenuineSolver::addPropagator(PropagatorCallback* pb){
 
 void GenuineSolver::removePropagator(PropagatorCallback* pb){
 	solver->removePropagator(pb);
+}
+
+void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen){
+	solver->addProgram(program, frozen);
 }
 
 DLVHEX_NAMESPACE_END

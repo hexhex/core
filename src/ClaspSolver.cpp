@@ -350,7 +350,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 		if (claspctx.eliminated(it->second.lit.var())) continue;
 
 		if (solver.isTrue(it->second.lit) && !it->second.name.empty()) {
-			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << (it->second.lit.sign() ? "!" : "") << "/" << it->second.lit.var() << "@" <<
+			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
 			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
 				if (!!extractCurrentIntr) extractCurrentIntr->setFact(adr);
@@ -359,8 +359,8 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 			}
 		}
 		if (solver.isFalse(it->second.lit) && !it->second.name.empty()) {
-			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << (it->second.lit.sign() ? "!" : "") << "/" << it->second.lit.var() << "@" <<
-			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
+			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
+			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is false");
 			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
 				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
 				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
@@ -412,11 +412,13 @@ void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId
 	assert(rule.head.size() != 0);
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		asp.addHead(mapHexToClasp(h.address).var());
+		DBGLOG(DBG, "Adding to head: " << nonoptimizedMapHexToClasp(h.address).var());
+		asp.addHead(nonoptimizedMapHexToClasp(h.address).var());
 	}
 	for (uint32_t i = 0; i < rule.body.size(); ++i){
 		// add literal to body
-		asp.addToBody(mapHexToClasp(rule.body[i].address).var(), !rule.body[i].isNaf(), rule.bodyWeightVector[i].address);
+		DBGLOG(DBG, "Adding to body: " << (!(nonoptimizedMapHexToClasp(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << nonoptimizedMapHexToClasp(rule.body[i].address).var());
+		asp.addToBody(nonoptimizedMapHexToClasp(rule.body[i].address).var(), !(nonoptimizedMapHexToClasp(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
 	}
 	asp.endRule();
 }
@@ -433,11 +435,13 @@ void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID rule
 	}
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		asp.addHead(mapHexToClasp(h.address).var());
+		DBGLOG(DBG, "Adding to head: " << nonoptimizedMapHexToClasp(h.address).var());
+		asp.addHead(nonoptimizedMapHexToClasp(h.address).var());
 	}
 	BOOST_FOREACH (ID b, rule.body){
 		// add literal to body
-		asp.addToBody(mapHexToClasp(b.address).var(), mapHexToClasp(b.address).sign() ^ !b.isNaf());
+		DBGLOG(DBG, "Adding to body: " << (!(nonoptimizedMapHexToClasp(b.address).sign() ^ b.isNaf()) ? "" : "!") << nonoptimizedMapHexToClasp(b.address).var());
+		asp.addToBody(nonoptimizedMapHexToClasp(b.address).var(), !(nonoptimizedMapHexToClasp(b.address).sign() ^ b.isNaf()));
 	}
 	asp.endRule();
 }
@@ -461,17 +465,13 @@ void ClaspSolver::sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
 void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
-	Clasp::Asp::LogicProgram asp;
 	asp.start(claspctx, config.asp);
 	asp.setNonHcfConfiguration(config.testerConfig());
 
-/*	
-	// Add the code in block comments to define the program incrementally
+	// The following two lines allow for defining the program incrementally
 	// Note: If the program is to be defined incrementally, then endProgram() and update() must be called before each extension, even for the first one
-
-	asp.endProgram();
-	asp.update();
-*/
+	inconsistent |= asp.endProgram();
+	asp.updateProgram();
 
 	false_ = nextVar++;
 	asp.setCompute(false_, false);
@@ -482,16 +482,44 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(mapHexToClasp(*en).var()).endRule();
+		asp.startRule(Clasp::Asp::BASICRULE).addHead(nonoptimizedMapHexToClasp(*en).var()).endRule();
 		en++;
 	}
 
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
+
 /*
-		inconsistent |= asp.endProgram();
-		asp.update();
+//Incremental Solving:
+
+inconsistent = !asp.endProgram();
+
+DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
+
+if (inconsistent){
+	DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+	inconsistent = true;
+	return;
+}
+
+DBGLOG(DBG, "Prepare new model enumerator");
+modelEnumerator.reset(config.enumerate.createEnumerator());
+modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
+
+DBGLOG(DBG, "Finalizing reinitialization");
+if (!claspctx.endInit()){
+	DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+	inconsistent = true;
+	return;
+}
+
+DBGLOG(DBG, "Resetting solver object");
+solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+enumerationStarted = false;
+
+asp.update();
 */
 
 		sendRuleToClasp(asp, ruleId);
@@ -801,7 +829,7 @@ Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr, bool registerVar, bool
 	if (!isMappedToClaspLiteral(addr)){
 		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
 		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit);
+		storeHexToClasp(addr, clasplit, true);
 		std::string str = idAddressToString(addr);
 #ifndef NDEBUG
 		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
@@ -812,10 +840,34 @@ Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr, bool registerVar, bool
 	return hexToClasp[addr];
 }
 
-void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit){
-	if(addr >= hexToClasp.size())
+Clasp::Literal ClaspSolver::nonoptimizedMapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
+	if (!isMappedToClaspLiteral(addr)){
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+		Clasp::Literal clasplit(c, inverseLits);
+		storeHexToClasp(addr, clasplit, true);
+		std::string str = idAddressToString(addr);
+#ifndef NDEBUG
+		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+#endif
+		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+	}
+	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
+	return nonoptimizedHexToClasp[addr];
+}
+
+void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized){
+
+	if(addr >= hexToClasp.size()){
 		hexToClasp.resize(addr + 1, noLiteral);
+	}
 	hexToClasp[addr] = lit;
+
+	if (alsoStoreNonoptimized){
+		if(addr >= nonoptimizedHexToClasp.size()){
+			nonoptimizedHexToClasp.resize(addr + 1, noLiteral);
+		}
+		nonoptimizedHexToClasp[addr] = lit;
+	}
 }
 
 void ClaspSolver::outputProject(InterpretationPtr intr){
@@ -940,6 +992,74 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 ClaspSolver::~ClaspSolver(){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::~ClaspSolver");
 	shutdownClasp();
+}
+
+void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
+
+	DBGLOG(DBG, "Adding program component incrementally");
+	nextSolveStep = Restart;
+
+	// Update program
+	inconsistent |= asp.endProgram();
+	asp.updateProgram();
+
+	// transfer added edb
+	DBGLOG(DBG, "Sending added EDB to clasp: " << *p.getGroundProgram().edb);
+	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+	while (en < en_end){
+		// add fact
+		asp.startRule(Clasp::Asp::BASICRULE).addHead(mapHexToClasp(*en).var()).endRule();
+		en++;
+	}
+
+	// transfer added idb
+	DBGLOG(DBG, "Sending added IDB to clasp");
+	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
+		sendRuleToClasp(asp, ruleId);
+	}
+
+	// finalize update
+	inconsistent = !asp.endProgram();
+	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+	DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
+	freezeVariables(frozen);
+
+	// update projection
+	if (!!p.getGroundProgram().mask){
+		InterpretationPtr pm = InterpretationPtr(new Interpretation(reg));
+		if (!!projectionMask) pm->add(*projectionMask);
+		pm->add(*p.getGroundProgram().mask);
+		projectionMask = pm;
+	}
+
+	if (inconsistent){
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		inconsistent = true;
+		return;
+	}
+
+	DBGLOG(DBG, "Prepare new model enumerator");
+	modelEnumerator.reset(config.enumerate.createEnumerator());
+	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
+
+	DBGLOG(DBG, "Finalizing reinitialization");
+	if (!claspctx.endInit()){
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		inconsistent = true;
+		return;
+	}
+
+	updateSymbolTable();
+
+	DBGLOG(DBG, "Resetting solver object");
+	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+	nextSolveStep = Restart;
+
+	DBGLOG(DBG, "Resetting post propagator");
+	if (!!ep.get()) claspctx.master()->removePost(ep.get());
+	ep.reset(new ExternalPropagator(*this));
+	claspctx.master()->addPost(ep.get());
 }
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
