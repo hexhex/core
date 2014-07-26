@@ -780,7 +780,7 @@ void ClaspSolver::updateSymbolTable(){
 	// build empty set of NULL-pointers to vectors
 	// (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
 	DBGLOG(DBG, "Problem has " << claspctx.numVars() << " variables");
-	resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1);
+	resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1 + 1);	// the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
 
 	LOG(DBG, "Symbol table of optimized program:");
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
