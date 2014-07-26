@@ -236,7 +236,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
 	// append gidb to xidb
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
-
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
@@ -286,6 +285,8 @@ fr->setFact(2);
 grounder = GenuineGrounder::getInstance(factory.ctx, program, fr);
 AnnotatedGroundProgram annotatedGroundProgram2 = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 solver->addProgram(annotatedGroundProgram2);
+
+annotatedGroundProgram.addProgram(annotatedGroundProgram2);
 }
 */
 

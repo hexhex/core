@@ -111,6 +111,10 @@ public:
 	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>(), bool includeEDB = false);
 	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
+	// Incremental extension
+	// Note: program "other" MUST NOT cyclically depend on the current program (this condition is not checked but violation harms validity of the state of this object!)
+	void addProgram(const AnnotatedGroundProgram& other);
+
 	const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
 
 	void setIndexEAtoms(std::vector<ID> indexedEatoms);

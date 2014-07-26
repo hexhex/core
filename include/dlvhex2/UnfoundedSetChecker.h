@@ -364,6 +364,7 @@ private:
 
 	BaseModelGenerator* mg;
 	AnnotatedGroundProgram agp;
+	int lastAGPComponentCount;	// used in order to detect extensions of the agp
 	Nogood ufsnogood;
 	SimpleNogoodContainerPtr ngc;
 	

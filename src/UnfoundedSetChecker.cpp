@@ -1835,7 +1835,7 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		const AnnotatedGroundProgram& agp,
 		bool choiceRuleCompatible,
 		SimpleNogoodContainerPtr ngc) :
-			mg(&mg), ctx(ctx), agp(agp), ngc(ngc){
+			mg(&mg), ctx(ctx), agp(agp), lastAGPComponentCount(0), ngc(ngc){
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
 	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
@@ -1845,7 +1845,7 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		ProgramCtx& ctx,
 		const AnnotatedGroundProgram& agp,
 		bool choiceRuleCompatible) :
-			ctx(ctx), mg(0), agp(agp){
+			ctx(ctx), mg(0), agp(agp), lastAGPComponentCount(0){
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
 	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
@@ -1984,6 +1984,12 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "UnfoundedSetChkMgr::getUFS");
 	std::vector<IDAddress> ufs;
 	if (ctx.config.getOption("UFSCheckMonolithic")){
+		if (preparedUnfoundedSetCheckers.size() > 0 && agp.getComponentCount() > lastAGPComponentCount){
+			DBGLOG(DBG, "Resetting UFS checker because new program components were discovered");
+			preparedUnfoundedSetCheckers.clear();
+		}
+		lastAGPComponentCount = agp.getComponentCount();
+
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
 		if (mg && (agp.hasECycles() || !flpdc_e)){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");

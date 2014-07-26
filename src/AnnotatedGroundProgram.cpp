@@ -66,6 +66,61 @@ AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> 
 	initialize(false);
 }
 
+// Incremental extension
+// Note: program "other" MUST NOT cyclically depend on the current program (this condition is not checked but violation harms validity of the state of this object!)
+void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
+
+	DBGLOG(DBG, "Adding program to AnnotatedGroundProgram");
+	if (haveGrounding && other.haveGrounding){
+		std::vector<ID> newGroundIdb = groundProgram.idb;
+		newGroundIdb.insert(newGroundIdb.end(), other.groundProgram.idb.begin(), other.groundProgram.idb.end());
+
+		InterpretationPtr newGroundEdb(new Interpretation(reg));
+		newGroundEdb->add(*groundProgram.edb);
+		newGroundEdb->add(*other.groundProgram.edb);
+
+		InterpretationPtr newGroundMask(new Interpretation(reg));
+		newGroundMask->add(*groundProgram.mask);
+		newGroundMask->add(*other.groundProgram.mask);
+
+		groundProgram = OrdinaryASPProgram(groundProgram.registry, newGroundIdb, newGroundEdb, groundProgram.maxint, newGroundMask);
+		haveGrounding = true;
+	}else{
+		haveGrounding = false;
+	}
+
+	indexedEatoms.insert(indexedEatoms.end(), other.indexedEatoms.begin(), other.indexedEatoms.end());
+	eaMasks.insert(eaMasks.end(), other.eaMasks.begin(), other.eaMasks.end());
+	typedef const boost::unordered_map<IDAddress, std::vector<ID> >::value_type AuxToEAPair;
+	BOOST_FOREACH (AuxToEAPair pair, other.auxToEA){
+		auxToEA[pair.first].insert(auxToEA[pair.first].end(), pair.second.begin(), pair.second.end());
+	}
+	if (!!other.supportSets){
+		if (!supportSets) supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+		for (int i = 0; i < other.supportSets->getNogoodCount(); ++i){
+			supportSets->addNogood(other.supportSets->getNogood(i));
+		}
+	}
+	programMask->add(*other.programMask);
+	depSCC.insert(depSCC.end(), other.depSCC.begin(), other.depSCC.end());
+	typedef const boost::unordered_map<IDAddress, int>::value_type ComponentOfAtomPair;
+	BOOST_FOREACH (ComponentOfAtomPair pair, other.componentOfAtom){
+		componentOfAtom[pair.first] = pair.second;
+	}
+	headCycles.insert(headCycles.end(), other.headCycles.begin(), other.headCycles.end());
+
+	InterpretationPtr newHeadCyclicRules(new Interpretation(reg));
+	newHeadCyclicRules->add(*headCyclicRules);
+	newHeadCyclicRules->add(*other.headCyclicRules);
+	headCyclicRules = newHeadCyclicRules;
+
+	programComponents.insert(programComponents.end(), other.programComponents.begin(), other.programComponents.end());
+	eaMasks.insert(eaMasks.end(), other.eaMasks.begin(), other.eaMasks.end());
+	headCyclesTotal |= other.headCyclesTotal;
+	eCyclesTotal |= other.eCyclesTotal;
+	programMask->add(*other.programMask);
+}
+
 const AnnotatedGroundProgram&
 AnnotatedGroundProgram::operator=(
     const AnnotatedGroundProgram& other)
@@ -97,7 +152,7 @@ void AnnotatedGroundProgram::createProgramMask(){
 	programMask = InterpretationPtr(new Interpretation(reg));
 	programMask->add(*groundProgram.edb);
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
-	const Rule& rule = reg->rules.getByID(ruleID);
+		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID h, rule.head) programMask->setFact(h.address);
 		BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
 	}
