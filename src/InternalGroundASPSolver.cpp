@@ -780,7 +780,7 @@ ID InternalGroundASPSolver::createNewAtom(ID predID){
 ID InternalGroundASPSolver::createNewBodyAtom(){
 	std::stringstream bodyPred;
 	bodyPred << bodyAtomPrefix << bodyAtomNumber;
-	DBGLOG(DBG, "Creating body atom " << bodyPred);
+	DBGLOG(DBG, "Creating body atom " << bodyPred.str());
 	bodyAtomNumber++;
 	ID bodyAtom = createNewAtom(reg->getNewConstantTerm("body"));
 	allFacts.insert(bodyAtom.address);
