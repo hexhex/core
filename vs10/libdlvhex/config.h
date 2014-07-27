@@ -144,6 +144,7 @@
 
 /* Defined if we have --with-libclasp. */
 #define HAVE_LIBCLASP 1
+#define GRINGO3	// MSVC does not support Gringo 4
 
 /* Defined if we have --with-libclingo. */
 /* #undef HAVE_LIBCLINGO */
