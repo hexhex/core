@@ -177,7 +177,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     InterpretationConstPtr input):
   FLPModelGeneratorBase(factory, input),
   factory(factory),
-  reg(factory.reg)
+  reg(factory.reg),
+  incrementalConstraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");
     DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
@@ -221,9 +222,14 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")){
-      InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
-      postprocInput->add(*domPredictaesExtension);
+	if (!factory.ctx.config.getOption("IncrementalGrounding")){
+		InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
+		postprocInput->add(*domPredictaesExtension);
+	}else{
+		newDomainAtoms = InterpretationPtr(new Interpretation(reg));
+	}
     }
+    domainExpanded = false;
 
     // assign to const member -> this value must stay the same from here on!
     postprocessedInput = postprocInput;
@@ -365,9 +371,24 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 		if( !modelCandidate )
 		{
-			LOG(DBG,"unsatisfiable -> returning no model");
-			return InterpretationPtr();
+			if (domainExpanded){
+				incrementalProgramExpansion();
+				domainExpanded = false;
+				continue;
+			}else{
+				LOG(DBG,"unsatisfiable -> returning no model");
+				return InterpretationPtr();
+			}
 		}
+
+		// check if new values were introduced which were not respected in the grounding
+		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			if (incrementalDomainExpansion(modelCandidate)){
+				domainExpanded = true;
+				continue;	// if the domain needed to be expanded, then this is NOT an answer set!
+			}
+		}
+
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 		LOG_SCOPE(DBG,"gM", false);
 		LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
@@ -692,7 +713,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	// which semantics?
 	if (factory.ctx.config.getOption("WellJustified")){
 		// well-justified FLP: fixpoint iteration
-		InterpretationPtr fixpoint = welljustifiedSemanticsGetFixpoint(factory.ctx, compatibleSet, grounder->getGroundProgram());
+		InterpretationPtr fixpoint = welljustifiedSemanticsGetFixpoint(factory.ctx, compatibleSet, annotatedGroundProgram.getGroundProgram());
 		InterpretationPtr reference = InterpretationPtr(new Interpretation(*compatibleSet));
 		factory.gpMask.updateMask();
 		factory.gnMask.updateMask();
@@ -741,6 +762,92 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	assert (false);
 }
 
+bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(InterpretationConstPtr model){
+
+	InterpretationPtr trueReplacementAtoms = InterpretationPtr(new Interpretation(reg));
+	IntegrateExternalAnswerIntoInterpretationCB icb(trueReplacementAtoms);
+
+	bool domainExpanded = false;
+	BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
+		const ExternalAtom& eatom = reg->eatoms.getByID(eaid);
+
+		DBGLOG(DBG, "Evaluating external Atom " << eaid << " under " << *model << " for (possible) domain expansion");
+		trueReplacementAtoms->clear();
+		evaluateExternalAtom(factory.ctx, eatom, model, icb,
+				     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+		updateEANogoods();
+
+		DBGLOG(DBG, "Checking if domain needs to be expanded");
+		bm::bvector<>::enumerator en = trueReplacementAtoms->getStorage().first();
+		bm::bvector<>::enumerator en_end = trueReplacementAtoms->getStorage().end();
+		while (en < en_end){
+			ID id = reg->ogatoms.getIDByAddress(*en);
+			if (id.isExternalAuxiliary()){
+				DBGLOG(DBG, "Converting atom with address " << *en);
+				const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+				OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+				domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
+				for (uint32_t i = 1; i < ogatom.tuple.size(); ++i){
+					domatom.tuple.push_back(ogatom.tuple[i]);
+				}
+				if (!postprocessedInput->getFact(reg->storeOrdinaryGAtom(domatom).address)){
+					DBGLOG(DBG, "Expanding domain of external atoms");
+					incrementalConstraint.body.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
+
+					for (int i = 0; i < factory.innerEatoms.size(); ++i){
+						if (factory.innerEatoms[i] == eaid){
+							eaVerified[i] = eaEvaluated[i] = false;
+						}
+					}
+
+					newDomainAtoms->setFact(reg->storeOrdinaryGAtom(domatom).address);
+					domainExpanded = true;
+				}
+			}
+
+			en++;
+		}
+	}
+	return domainExpanded;
+}
+
+void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
+
+	if (!domainExpanded) return;
+	assert(incrementalConstraint.body.size() > 0);
+
+	LOG(DBG,"unsatisfiable but domain was expanded -> regrounding");
+	newDomainAtoms->add(*postprocessedInput);
+	postprocessedInput = newDomainAtoms;
+	newDomainAtoms = InterpretationPtr(new Interpretation(reg));
+	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
+	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
+	grounder = GenuineGrounder::getInstance(factory.ctx, program);
+
+	// take all rules which do not define already previously defined atoms
+	OrdinaryASPProgram gpAddition = grounder->getGroundProgram();
+	gpAddition.edb = InterpretationPtr(new Interpretation(reg));
+	gpAddition.idb.clear();
+	gpAddition.idb.push_back(reg->storeRule(incrementalConstraint));
+	incrementalConstraint.body.clear();
+	bool skip;
+	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		skip = false;
+		BOOST_FOREACH (ID headID, rule.head){
+			if (annotatedGroundProgram.getProgramMask()->getFact(headID.address)){
+				skip = true;
+				break;
+			}
+		}
+		if (!skip) gpAddition.idb.push_back(ruleID);
+	}
+
+	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms);
+	annotatedGroundProgram.addProgram(expansion);
+	solver->addProgram(expansion);
+}
+
 bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed, bool partial){
 
 	assert ( (!partial || (!!assigned && !!changed)) && "partial UFS checks require information about the assigned atoms");
@@ -778,7 +885,7 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 
 #ifndef NDEBUG
 			// check if all replacement atoms in the non-skipped program for UFS checking are verified
-			BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
+			BOOST_FOREACH (ID ruleID, annotatedGroundProgram.getGroundProgram().idb){
 				const Rule& rule = reg->rules.getByID(ruleID);
 				if (decision.skipProgram().count(ruleID) > 0) continue;	// check only non-skipped rules
 				if (rule.isEAGuessingRule()) continue;		// guessing rules are irrelevant for the UFS check
@@ -1012,6 +1119,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
 	// prepare EA evaluation
 	InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
 	VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
+
 	InterpretationConstPtr evalIntr = partialInterpretation;
 	if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")){
 		// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
@@ -1065,7 +1173,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomBySupportSets(int eaI
 }
 
 const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram(){
-	return grounder->getGroundProgram();
+	return annotatedGroundProgram.getGroundProgram();
 }
 
 void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){

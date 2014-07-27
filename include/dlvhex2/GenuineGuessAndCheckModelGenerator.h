@@ -108,6 +108,11 @@ protected:
   InterpretationPtr verifiedAuxes;	// the set of currently verified external atom auxiliaries
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
 
+  // incremental solving
+  InterpretationPtr newDomainAtoms;
+  bool domainExpanded;
+  Rule incrementalConstraint;
+
   // heuristics
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;
   std::vector<ExternalAtomEvaluationHeuristicsPtr> eaEvalHeuristics;	// stores for each external atom its evaluation heuristics
@@ -164,6 +169,18 @@ protected:
    *   of previously recorded verfication results are used to compute the return value.
    */
   bool isModel(InterpretationConstPtr compatibleSet);
+
+  /**
+   * Checks if the domain of external atoms needs to be expanded wrt. a given model.
+   * If this is the case, then the domain predicates are extended accordingly.
+   * \return True if the domain needs to be expanded and false otherwise.
+   */
+  bool incrementalDomainExpansion(InterpretationConstPtr model);
+
+  /**
+   * Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).
+   */
+  void incrementalProgramExpansion();
 
   /**
    * Makes an unfounded set check over a (possibly) partial interpretation if useful.
@@ -255,7 +272,6 @@ protected:
    * @param changed The set of atoms with modified truth value since the last call
    */
   void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
-
 
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);

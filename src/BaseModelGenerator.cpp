@@ -108,6 +108,21 @@ BaseModelGenerator::ExternalAnswerTupleCallback::
 {
 }
 
+BaseModelGenerator::ExternalAnswerTupleMultiCallback::~ExternalAnswerTupleMultiCallback(){
+}
+
+bool BaseModelGenerator::ExternalAnswerTupleMultiCallback::eatom(const ExternalAtom& eatom){
+	BOOST_FOREACH (ExternalAnswerTupleCallback* cb, callbacks) cb->eatom(eatom);
+}
+
+bool BaseModelGenerator::ExternalAnswerTupleMultiCallback::input(const Tuple& input){
+	BOOST_FOREACH (ExternalAnswerTupleCallback* cb, callbacks) cb->input(input);
+}
+
+bool BaseModelGenerator::ExternalAnswerTupleMultiCallback::output(const Tuple& output){
+	BOOST_FOREACH (ExternalAnswerTupleCallback* cb, callbacks) cb->output(output);
+}
+
 BaseModelGenerator::
 IntegrateExternalAnswerIntoInterpretationCB::
 IntegrateExternalAnswerIntoInterpretationCB(

@@ -55,7 +55,7 @@ AnnotatedGroundProgram::AnnotatedGroundProgram() : ctx(0), groundProgram(Ordinar
 }
 
 AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms, bool includeEDB) :
-	ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true){
+	ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true), includeEDB(includeEDB){
 
 	initialize(includeEDB);
 }
@@ -119,6 +119,8 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 	headCyclesTotal |= other.headCyclesTotal;
 	eCyclesTotal |= other.eCyclesTotal;
 	programMask->add(*other.programMask);
+
+	createEAMasks(includeEDB);
 }
 
 const AnnotatedGroundProgram&

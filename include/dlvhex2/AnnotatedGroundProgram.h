@@ -76,6 +76,9 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 	// index of all atoms in the program
 	InterpretationPtr programMask;
 
+	// settings
+	bool includeEDB;
+
 	// program decomposition and meta information
 	struct ProgramComponent{
 		InterpretationConstPtr componentAtoms;

@@ -113,6 +113,19 @@ public:
     virtual bool output(const Tuple& output) = 0;
   };
 
+  // callback function object for handling external atom answer tuples
+  // by multiple callbacks
+  struct ExternalAnswerTupleMultiCallback:
+    public ExternalAnswerTupleCallback
+  {
+    std::vector<ExternalAnswerTupleCallback*> callbacks;
+
+    virtual ~ExternalAnswerTupleMultiCallback();
+    virtual bool eatom(const ExternalAtom& eatom);
+    virtual bool input(const Tuple& input);
+    virtual bool output(const Tuple& output);
+  };
+
   // callback for checking whether external computations
   // reflect guesses of external atom truth values
   struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:

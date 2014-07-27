@@ -1,3 +1,11 @@
+2014-07-27  Christoph Redl <redl@kr.tuwien.ac.at>
+
+	* src/GenuineGuessAndCheckModelGenerator.cpp: Use incremental
+	solving for dealing with value invention (works only for simple
+	cases so far).
+	* include/dlvhex2/GenuineGuessAndCheckModelGenerator.h:
+	Likewise.
+
 2014-07-26  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* src/GringoGrounder.cpp: Support incremental programs
