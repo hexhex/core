@@ -81,7 +81,11 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 #ifdef HAVE_LIBGRINGO
 		{
 		DBGLOG(DBG, "Instantiating genuine grounder with gringo");
+#ifndef GRINGO3	// GRINGO4
 		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
+#else	// GRINGO3
+		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p));
+#endif
 		return ptr;
 		}
 #else

@@ -1201,8 +1201,8 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
 }
 
-GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
-  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen){
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
+  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()){
   gringo.disjShift = false;
   groundProgram.mask = nongroundProgram.mask;
   doRun();
