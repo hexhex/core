@@ -144,6 +144,7 @@
 
 /* Defined if we have --with-libclasp. */
 #define HAVE_LIBCLASP 1
+#define GRINGO3 1	// msvc does not support the c++0x syntax used in gringo 4
 
 /* Defined if we have --with-libclingo. */
 /* #undef HAVE_LIBCLINGO */
