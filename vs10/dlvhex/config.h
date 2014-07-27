@@ -162,7 +162,6 @@
 
 /* Defined if we have --with-libgringo. */
 #define HAVE_LIBGRINGO 1
-#define GRINGO3 1	// msvc does not support the c++0x syntax used in gringo 4
 
 /* Define this if a modern libltdl is already installed */
 #define HAVE_LTDL 1
