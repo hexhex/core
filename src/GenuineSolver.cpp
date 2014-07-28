@@ -84,6 +84,9 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 #ifndef GRINGO3	// GRINGO4
 		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
 #else	// GRINGO3
+		if (!!frozen){
+			throw GeneralError("Gringo 4 does not support frozen atoms");
+		}
 		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p));
 #endif
 		return ptr;
