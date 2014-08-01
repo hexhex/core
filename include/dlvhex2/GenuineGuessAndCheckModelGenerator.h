@@ -110,8 +110,10 @@ protected:
 
   // incremental solving
   InterpretationPtr newDomainAtoms;
+  InterpretationPtr previousNewDomainAtoms;
   bool domainExpanded;
   Rule incrementalConstraint;
+  ComponentGraphPtr subcompgraph; // component-internal (sub-)component graph
 
   // heuristics
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;

@@ -222,12 +222,29 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")){
-	if (!factory.ctx.config.getOption("IncrementalGrounding")){
-		InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
-		postprocInput->add(*domPredictaesExtension);
-	}else{
-		newDomainAtoms = InterpretationPtr(new Interpretation(reg));
-	}
+		if (!factory.ctx.config.getOption("IncrementalGrounding")){
+			InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
+			postprocInput->add(*domPredictaesExtension);
+		}else{
+			newDomainAtoms = InterpretationPtr(new Interpretation(reg));
+			previousNewDomainAtoms = InterpretationPtr(new Interpretation(reg));
+
+			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
+			std::vector<dlvhex::ID> auxRules;
+			subdepgraph->createDependencies(factory.deidb, auxRules);
+			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));
+			if (factory.ctx.config.getOption("DumpCompGraph")){
+					std::string fnamev = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphVerbose.dot";
+					LOG(INFO,"dumping verbose component graph to " << fnamev);
+					std::ofstream filev(fnamev.c_str());
+					subcompgraph->writeGraphViz(filev, true);
+					
+					std::string fnamet = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphTerse.dot";
+					LOG(INFO,"dumping terse component graph to " << fnamet);
+					std::ofstream filet(fnamet.c_str());
+					subcompgraph->writeGraphViz(filet, false);
+			 }
+		}
     }
     domainExpanded = false;
 
@@ -383,10 +400,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 		// check if new values were introduced which were not respected in the grounding
 		if (factory.ctx.config.getOption("IncrementalGrounding")){
-			if (incrementalDomainExpansion(modelCandidate)){
-				domainExpanded = true;
-				continue;	// if the domain needed to be expanded, then this is NOT an answer set!
-			}
+			domainExpanded |= incrementalDomainExpansion(modelCandidate);
+			if (domainExpanded) continue; // if the domain needed to be expanded, then this is NOT an answer set!
 		}
 
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
@@ -764,6 +779,46 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 
 bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(InterpretationConstPtr model){
 
+	// expand component-wise iteratively
+	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp){
+		const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
+		
+		std::vector<ID> compIDB;
+		compIDB.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+		compIDB.insert(compIDB.end(), ci.innerRules.begin(), ci.innerRules.end());
+		compIDB.insert(compIDB.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
+		newDomainAtoms->getStorage() |= computeExtensionOfDomainPredicates(ci, factory.ctx, model, compIDB, factory.deidbInnerEatoms)->getStorage();
+	}
+	
+	if (newDomainAtoms->getStorage().count() > previousNewDomainAtoms->getStorage().count()){
+		DBGLOG(DBG, "Expanded domain of external atoms (" << newDomainAtoms->getStorage().count() << " > " << previousNewDomainAtoms->getStorage().count() << ")");
+
+		// at least one of the new domain atoms must be relevant (i.e., the respective external atom replacement is true) for future answer sets
+		// (otherwise the answer set would already have been found before expansion)
+		bm::bvector<>::enumerator en = newDomainAtoms->getStorage().first();
+		bm::bvector<>::enumerator en_end = newDomainAtoms->getStorage().end();
+		while (en < en_end){
+			if (!previousNewDomainAtoms->getFact(*en)){
+				OrdinaryAtom replatom = reg->ogatoms.getByAddress(*en);
+				// translate domain predicate to positive external atom replacement
+				replatom.tuple[0] = reg->getAuxiliaryConstantSymbol('r', reg->eatoms.getByID(reg->getIDByAuxiliaryConstantSymbol(replatom.tuple[0])).predicate);
+				incrementalConstraint.body.push_back(ID::nafLiteralFromAtom(reg->storeOrdinaryAtom(replatom)));
+			}
+			en++;
+		}
+
+		assert (incrementalConstraint.body.size() > 0);
+		previousNewDomainAtoms = newDomainAtoms;
+		return true;
+	}else{
+		DBGLOG(DBG, "Did not expand domain of external atoms");
+		return false;
+	}
+
+
+#if 0
+	// monolithic single-shot expansion (works only for simple cases)
 	InterpretationPtr trueReplacementAtoms = InterpretationPtr(new Interpretation(reg));
 	IntegrateExternalAnswerIntoInterpretationCB icb(trueReplacementAtoms);
 
@@ -809,6 +864,7 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 		}
 	}
 	return domainExpanded;
+#endif
 }
 
 void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
@@ -819,7 +875,7 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	LOG(DBG,"unsatisfiable but domain was expanded -> regrounding");
 	newDomainAtoms->add(*postprocessedInput);
 	postprocessedInput = newDomainAtoms;
-	newDomainAtoms = InterpretationPtr(new Interpretation(reg));
+	newDomainAtoms = InterpretationPtr(new Interpretation(reg));	
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 	grounder = GenuineGrounder::getInstance(factory.ctx, program);

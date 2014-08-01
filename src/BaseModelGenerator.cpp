@@ -821,7 +821,7 @@ void BaseModelGeneratorFactory::convertRuleBody(
         // really create new aggregate atom
         convaatom.kind |= ID::PROPERTY_AUX;
         ID newaatomid = reg->aatoms.storeAndGetID(convaatom);
-        convbody.push_back(newaatomid);
+        convbody.push_back(ID::posLiteralFromAtom(newaatomid));
       }
       else
       {
@@ -1008,15 +1008,15 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
             ID chosenDomainAtomID = reg->storeOrdinaryNAtom(chosenDomainAtom);
             ID notChosenDomainAtomID = reg->storeOrdinaryNAtom(notChosenDomainAtom);
 
-            ruleDom.body.push_back(domainAtomID);
-            ruleExpl.body.push_back(chosenDomainAtomID);
+            ruleDom.body.push_back(ID::posLiteralFromAtom(domainAtomID));
+            ruleExpl.body.push_back(ID::posLiteralFromAtom(chosenDomainAtomID));
 
             // create a rule p(X) v n(X) :- d(X) for each domain atom d
             // this nondeterminisim is necessary to make the grounding exhaustive; otherwise the grounder may optimize the grounding too much and we are not aware of relevant atoms
             Rule choosingRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
             choosingRule.head.push_back(chosenDomainAtomID);
             choosingRule.head.push_back(notChosenDomainAtomID);
-            choosingRule.body.push_back(domainAtomID);
+            choosingRule.body.push_back(ID::posLiteralFromAtom(domainAtomID));
             ID choosingRuleID = reg->storeRule(choosingRule);
             deidb.push_back(choosingRuleID);
             {
