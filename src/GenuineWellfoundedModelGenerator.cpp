@@ -78,7 +78,7 @@ GenuineWellfoundedModelGeneratorFactory::GenuineWellfoundedModelGeneratorFactory
   if (ctx.config.getOption("LiberalSafety")){
     // add domain predicates for all external atoms which are necessary to establish liberal domain-expansion safety
     // and extract the domain-exploration program from the IDB
-    addDomainPredicatesAndCreateDomainExplorationProgram(ci, ctx, idb, deidb, deidbInnerEatoms);
+    addDomainPredicatesAndCreateDomainExplorationProgram(ci, ctx, idb, deidb, deidbInnerEatoms, outerEatoms);
   }
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries

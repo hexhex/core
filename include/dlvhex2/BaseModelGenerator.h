@@ -71,7 +71,7 @@ protected:
   // will create additional "auxiliary" aggregate atoms in registry)
   virtual void convertRuleBody(ProgramCtx& ctx, const Tuple& body, Tuple& convbody);
 
-  void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms);
+  void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, const std::vector<ID>& outerEatoms);
 };
 
 //
