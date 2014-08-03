@@ -236,9 +236,16 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			newDomainAtoms = InterpretationPtr(new Interpretation(reg));
 			previousNewDomainAtoms = InterpretationPtr(new Interpretation(reg));
 
+			DBGLOG(DBG, "Creating subcomponent graph");
 			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
+			std::vector<dlvhex::ID> idbWithoutAuxRules;
+			BOOST_FOREACH (ID ruleID, factory.idb){
+				const Rule& rule = reg->rules.getByID(ruleID);
+				if (rule.head.size() > 0 && rule.head[0].isAuxiliary()) continue;
+				else idbWithoutAuxRules.push_back(ruleID);
+			}
 			std::vector<dlvhex::ID> auxRules;
-			subdepgraph->createDependencies(factory.idb, auxRules);
+			subdepgraph->createDependencies(idbWithoutAuxRules, auxRules);
 
 			// get domain predicates for all components
 			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));

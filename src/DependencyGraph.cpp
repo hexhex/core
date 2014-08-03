@@ -635,7 +635,7 @@ ID DependencyGraph::createAuxiliaryRuleHead(
   }
   head.text = ss.str();
 
-	ID idhead = registry->onatoms.storeAndGetID(head);
+	ID idhead = registry->storeOrdinaryAtom(head); // onatoms.storeAndGetID(head);
 	return idhead;
 }
 
