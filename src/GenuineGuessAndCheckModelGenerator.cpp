@@ -48,6 +48,13 @@
 #include <bm/bmalgo.h>
 
 #include <boost/foreach.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/graph/breadth_first_search.hpp>
+#include <boost/graph/visitors.hpp>
+#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/properties.hpp>
+#include <boost/scoped_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -231,8 +238,55 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
 			std::vector<dlvhex::ID> auxRules;
-			subdepgraph->createDependencies(factory.deidb, auxRules);
+			subdepgraph->createDependencies(factory.idb, auxRules);
+
+			// get domain predicates for all components
 			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));
+			std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+			int nr = 0;
+			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+				const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
+				PredicateMaskPtr pm(new PredicateMask());
+				pm->setRegistry(reg);
+				BOOST_FOREACH (ID ruleID, ci.innerRules){
+					const Rule& rule = reg->rules.getByID(ruleID);
+					BOOST_FOREACH (ID b, rule.body){
+						if (b.isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(reg->lookupOrdinaryAtom(b).tuple[0]) == 'd'){
+							pm->addPredicate(reg->lookupOrdinaryAtom(b).tuple[0]);
+						}
+					}
+				}				
+				domainMaskPerComponent.push_back(pm);
+				
+				xidbPerComponent.push_back(std::vector<ID>());
+				xidbPerComponent[nr].reserve(ci.innerRules.size() + ci.innerConstraints.size());
+				std::back_insert_iterator<std::vector<ID> > inserter(xidbPerComponent[nr]);
+				
+				std::transform(ci.innerRules.begin(), ci.innerRules.end(), inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, &factory, factory.ctx, _1));
+				std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(), inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, &factory, factory.ctx, _1));
+
+#ifndef NDEBUG
+				{
+				std::stringstream ss;
+				RawPrinter rp(ss, reg);
+				ss << "idb of subcomponent " << nr << std::endl;
+				BOOST_FOREACH (ID ruleID, ci.innerRules){
+					rp.print(ruleID);
+					ss << std::endl;
+				}
+				BOOST_FOREACH (ID ruleID, ci.innerConstraints){
+					rp.print(ruleID);
+				}
+				ss << "xidb of subcomponent " << nr << std::endl;
+				BOOST_FOREACH (ID ruleID, xidbPerComponent[nr]){
+					rp.print(ruleID);
+					ss << std::endl;
+				}
+				DBGLOG(DBG, ss.str());
+				}
+#endif
+			}
+
 			if (factory.ctx.config.getOption("DumpCompGraph")){
 					std::string fnamev = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphVerbose.dot";
 					LOG(INFO,"dumping verbose component graph to " << fnamev);
@@ -781,14 +835,15 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 
 	// expand component-wise iteratively
 	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
-	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp){
+	int nr = 0;
+	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
 		const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
 		
-		std::vector<ID> compIDB;
-		compIDB.reserve(ci.innerRules.size() + ci.innerConstraints.size());
-		compIDB.insert(compIDB.end(), ci.innerRules.begin(), ci.innerRules.end());
-		compIDB.insert(compIDB.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-		newDomainAtoms->getStorage() |= computeExtensionOfDomainPredicates(ci, factory.ctx, model, compIDB, factory.deidbInnerEatoms)->getStorage();
+//		std::vector<ID> compIDB;
+//		compIDB.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+//		compIDB.insert(compIDB.end(), ci.innerRules.begin(), ci.innerRules.end());
+//		compIDB.insert(compIDB.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
+		newDomainAtoms->getStorage() |= computeExtensionOfDomainPredicates(ci, factory.ctx, model, xidbPerComponent[nr], factory.deidbInnerEatoms)->getStorage();
 	}
 	
 	if (newDomainAtoms->getStorage().count() > previousNewDomainAtoms->getStorage().count()){
@@ -867,6 +922,54 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 #endif
 }
 
+namespace
+{
+	// collect all components on the way
+	struct DFSVisitor:
+	  public boost::default_dfs_visitor
+	{
+	  const ComponentGraph& cg;
+	  ComponentGraph::ComponentSet& comps;
+	  DFSVisitor(const ComponentGraph& cg, ComponentGraph::ComponentSet& comps): boost::default_dfs_visitor(), cg(cg), comps(comps) {}
+	  DFSVisitor(const DFSVisitor& other): boost::default_dfs_visitor(), cg(other.cg), comps(other.comps) {}
+	  template<typename GraphT>
+	  void discover_vertex(ComponentGraph::Component comp, const GraphT&)
+	  {
+	    comps.insert(comp);
+	  }
+	};
+
+	void transitivePredecessorComponents(const ComponentGraph& compgraph, ComponentGraph::Component from, ComponentGraph::ComponentSet& preds)
+	{
+	  // we need a hash map, as component graph is no graph with vecS-storage
+	  //
+	  typedef boost::unordered_map<ComponentGraph::Component, boost::default_color_type> CompColorHashMap;
+	  typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+	  CompColorHashMap ccWhiteHashMap;
+	  // fill white hash map
+	  ComponentGraph::ComponentIterator cit, cit_end;
+	  for(boost::tie(cit, cit_end) = compgraph.getComponents();
+	      cit != cit_end; ++cit)
+	  {
+	    //boost::put(ccWhiteHashMap, *cit, boost::white_color);
+	    ccWhiteHashMap[*cit] = boost::white_color;
+	  }
+	  CompColorHashMap ccHashMap(ccWhiteHashMap);
+	
+	  //
+	  // do DFS
+	  //
+	  DFSVisitor dfs_vis(compgraph, preds);
+	  //LOG("doing dfs visit for root " << *itr);
+	  boost::depth_first_visit(
+	      compgraph.getInternalGraph(),
+	      from, 
+	      dfs_vis,
+	      CompColorMap(ccHashMap));
+	  DBGLOG(DBG,"predecessors of " << from << " are " << printrange(preds));
+	}
+}
+
 void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 
 	if (!domainExpanded) return;
@@ -875,10 +978,46 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	LOG(DBG,"unsatisfiable but domain was expanded -> regrounding");
 	newDomainAtoms->add(*postprocessedInput);
 	postprocessedInput = newDomainAtoms;
-	newDomainAtoms = InterpretationPtr(new Interpretation(reg));	
-	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
-	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
-	grounder = GenuineGrounder::getInstance(factory.ctx, program);
+
+	// ground only components which make use of newly added domain atoms
+	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+	int nr = 0;
+	ComponentGraph::ComponentSet componentsToGround;
+	std::vector<int> componentIndicesToGround;
+	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+		domainMaskPerComponent[nr]->updateMask();
+		if ((domainMaskPerComponent[nr]->mask()->getStorage() & newDomainAtoms->getStorage()).count() > 0){
+			DBGLOG(DBG, "Grounding component " << nr);
+			componentsToGround.insert(*comp);
+			componentIndicesToGround.push_back(nr);
+		}
+	}
+	// also ground components which depend on such components
+	nr = 0;
+	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+		ComponentGraph::ComponentSet preds;
+		transitivePredecessorComponents(*subcompgraph, *comp, preds);
+		for (ComponentGraph::ComponentSet::iterator pcomp = preds.begin(); pcomp != preds.end(); ++pcomp){
+			if (componentsToGround.find(*pcomp) != componentsToGround.end()){
+				DBGLOG(DBG, "Grounding depending component " << nr);
+				componentIndicesToGround.push_back(nr);
+				break;
+			}
+		}
+	}
+
+	OrdinaryASPProgram program(reg, factory.gidb, postprocessedInput, factory.ctx.maxint);
+	std::back_insert_iterator<std::vector<ID> > inserter(program.idb);
+	BOOST_FOREACH (int nr, componentIndicesToGround){
+		program.idb.insert(program.idb.end(), xidbPerComponent[nr].begin(), xidbPerComponent[nr].end());
+	}
+#if 0
+// full grounding
+program.idb.insert(program.idb.end(), factory.xidb.begin(), factory.xidb.end());
+#endif
+	DBGLOG(DBG, "Grounding with frozen atoms " << *annotatedGroundProgram.getProgramMask());
+	grounder = GenuineGrounder::getInstance(factory.ctx, program, annotatedGroundProgram.getProgramMask());
+	newDomainAtoms = InterpretationPtr(new Interpretation(reg));
 
 	// take all rules which do not define already previously defined atoms
 	OrdinaryASPProgram gpAddition = grounder->getGroundProgram();

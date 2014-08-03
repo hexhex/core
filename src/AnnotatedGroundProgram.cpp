@@ -101,7 +101,6 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 			supportSets->addNogood(other.supportSets->getNogood(i));
 		}
 	}
-	programMask->add(*other.programMask);
 	depSCC.insert(depSCC.end(), other.depSCC.begin(), other.depSCC.end());
 	typedef const boost::unordered_map<IDAddress, int>::value_type ComponentOfAtomPair;
 	BOOST_FOREACH (ComponentOfAtomPair pair, other.componentOfAtom){
@@ -118,7 +117,7 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 	eaMasks.insert(eaMasks.end(), other.eaMasks.begin(), other.eaMasks.end());
 	headCyclesTotal |= other.headCyclesTotal;
 	eCyclesTotal |= other.eCyclesTotal;
-	programMask->add(*other.programMask);
+	if (!!programMask  && !! other.programMask) programMask->add(*other.programMask);
 
 	createEAMasks(includeEDB);
 }

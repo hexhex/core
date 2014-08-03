@@ -114,6 +114,8 @@ protected:
   bool domainExpanded;
   Rule incrementalConstraint;
   ComponentGraphPtr subcompgraph; // component-internal (sub-)component graph
+  std::vector<PredicateMaskPtr> domainMaskPerComponent;
+  std::vector<std::vector<ID> > xidbPerComponent;
 
   // heuristics
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;
