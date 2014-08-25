@@ -50,6 +50,7 @@
 #include "dlvhex2/Term.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Printer.h"
 
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
@@ -302,11 +303,9 @@ public:
 
     bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
     bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+    RawPrinter printer(s, registry);
     while (en < en_end){
-      const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en);
-      BOOST_FOREACH (ID t, oatom.tuple){
-      	s << registry->terms.getByID(t).symbol;
-      }
+      printer.print(registry->ogatoms.getIDByAddress(*en));
       en++;
     }
 
