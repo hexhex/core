@@ -1068,7 +1068,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
   idb = idbWithDomainPredicates;
 }
 
-InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms){
+InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool exhaustive){
 
 	RegistryPtr reg = ctx.registry();
 
@@ -1191,38 +1191,51 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 					en++;
 				}
 
-				DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
-				bool allOnes;
-				do
-				{
+				if (exhaustive){
+					DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
+					bool allOnes;
+					do
+					{
+						// set nonmonotonic input
+						allOnes = true;
+						typedef std::pair<IDAddress, bool> Pair;
+						BOOST_FOREACH (Pair p, nonmonotonicinput){
+							if (p.second) input->setFact(p.first);
+							else{
+								input->clearFact(p.first);
+								allOnes = false;
+							}
+						}
+
+						// evalute external atom
+						DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
+						evaluateExternalAtom(ctx, ea, input, cb);
+
+						// enumerate next assignment to nonmonotonic input atoms
+						if (!allOnes){
+							std::vector<IDAddress> clear;
+							BOOST_FOREACH (Pair p, nonmonotonicinput){
+								if (p.second) clear.push_back(p.first);
+								else{
+									nonmonotonicinput[p.first] = true;
+									break;
+								}
+							}
+							BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
+						}
+					}while(!allOnes);
+				}else{
 					// set nonmonotonic input
-					allOnes = true;
 					typedef std::pair<IDAddress, bool> Pair;
 					BOOST_FOREACH (Pair p, nonmonotonicinput){
-						if (p.second) input->setFact(p.first);
-						else{
-							input->clearFact(p.first);
-							allOnes = false;
-						}
+						if (edb->getFact(p.second)) input->setFact(p.first);
+						else input->clearFact(p.first);
 					}
 
 					// evalute external atom
 					DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
 					evaluateExternalAtom(ctx, ea, input, cb);
-
-					// enumerate next assignment to nonmonotonic input atoms
-					if (!allOnes){
-						std::vector<IDAddress> clear;
-						BOOST_FOREACH (Pair p, nonmonotonicinput){
-							if (p.second) clear.push_back(p.first);
-							else{
-								nonmonotonicinput[p.first] = true;
-								break;
-							}
-						}
-						BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
-					}
-				}while(!allOnes);
+				}
 				DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
 			}
 

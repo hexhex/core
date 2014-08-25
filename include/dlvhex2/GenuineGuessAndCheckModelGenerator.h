@@ -109,9 +109,9 @@ protected:
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
 
   // incremental solving
-  InterpretationPtr newDomainAtoms;
-  InterpretationPtr previousNewDomainAtoms;
-  bool domainExpanded;
+  InterpretationPtr domainAtomsAddedInCurrentIncrementalStep;
+  InterpretationPtr domainAtomsInGrounding;
+  bool domainExpandedInCurrentIncrementalStep;
   Rule incrementalConstraint;
   ComponentGraphPtr subcompgraph; // component-internal (sub-)component graph
   std::vector<PredicateMaskPtr> domainMaskPerComponent;
