@@ -548,11 +548,11 @@ int GringoGrounder::doRun()
 		// we need a unique integer and a unique anonymous predicate
 		static bool first = true;
 		static unsigned int prevAtoms = 0;
-		if (first || prevAtoms < ctx.registry()->ogatoms.getSize()){
+//		if (first || prevAtoms < ctx.registry()->ogatoms.getSize()){
 			prevAtoms = ctx.registry()->ogatoms.getSize();
 			intPred = ctx.registry()->getNewConstantTerm("int");
 			anonymousPred = ctx.registry()->getNewConstantTerm("anonymous");
-		}
+//		}
 		first = false;
 
 		std::stringstream* programStream = new std::stringstream();
