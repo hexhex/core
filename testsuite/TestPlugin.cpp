@@ -301,11 +301,11 @@ public:
   {
     std::stringstream s;
 
+		RawPrinter printer(s, registry);
     bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
     bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-    RawPrinter printer(s, registry);
     while (en < en_end){
-      printer.print(registry->ogatoms.getIDByAddress(*en));
+			printer.print(registry->ogatoms.getIDByAddress(*en));
       en++;
     }
 
