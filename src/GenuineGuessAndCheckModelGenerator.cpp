@@ -305,6 +305,11 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 					std::ofstream filet(fnamet.c_str());
 					subcompgraph->writeGraphViz(filet, false);
 			 }
+
+			DBGLOG(DBG, "Expanding domain over empty model");
+			incrementalDomainExpansion(InterpretationPtr(new Interpretation(reg)));
+			postprocInput->add(*domainAtomsAddedInCurrentIncrementalStep);
+			domainAtomsAddedInCurrentIncrementalStep->clear();
 		}
     }
     domainExpandedInCurrentIncrementalStep = false;
@@ -326,20 +331,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 	}
 
-
-/*
-// Incremental test:
-//   (program: a v aa. b :- a. c v cc :- a, b. d :- c.)
-{
-program.idb.clear();
-program.idb.push_back(factory.idb[2]);
-program.idb.push_back(factory.idb[3]);
-InterpretationPtr fr(new Interpretation(reg));
-grounder = GenuineGrounder::getInstance(factory.ctx, program, fr);
-annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
-}
-*/
-
 	solver = GenuineGroundSolver::getInstance(
 		factory.ctx, annotatedGroundProgram,
 		InterpretationConstPtr(),
@@ -348,32 +339,6 @@ annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGround
 		// this will not find unfounded sets due to external sources,
 		// but at least unfounded sets due to disjunctions
 		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
-
-
-/*
-// Incremental test:
-{
-InterpretationPtr mc = solver->getNextModel();
-while (!!mc){
-std::cout << "It 1: " << *mc << std::endl;
-mc = solver->getNextModel();
-}
-
-program.edb = InterpretationPtr(new Interpretation(reg));
-program.idb.clear();
-program.idb.push_back(factory.idb[0]);
-program.idb.push_back(factory.idb[1]);
-InterpretationPtr fr(new Interpretation(reg));
-fr->setFact(0);
-fr->setFact(2);
-grounder = GenuineGrounder::getInstance(factory.ctx, program, fr);
-AnnotatedGroundProgram annotatedGroundProgram2 = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
-solver->addProgram(annotatedGroundProgram2);
-
-annotatedGroundProgram.addProgram(annotatedGroundProgram2);
-}
-*/
-
     }
 
     // external learning related initialization
@@ -450,7 +415,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		if( !modelCandidate )
 		{
 			if (domainExpandedInCurrentIncrementalStep){
-//std::cout << "Extended grounding, domain atoms added in incremental step: " << domainAtomsAddedInCurrentIncrementalStep->getStorage().count() << ", new domain atoms: " << domainAtomsInGrounding->getStorage().count() << std::endl;
+				DBGLOG(DBG, "Expanding program and restarting search");
 				incrementalProgramExpansion();
 				domainExpandedInCurrentIncrementalStep = false;
 				continue;
@@ -462,11 +427,10 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 		// check if new values were introduced which were not respected in the grounding
 		if (factory.ctx.config.getOption("IncrementalGrounding")){
-//std::cout << "Sending candidate to possible domain expansion: " << *modelCandidate << std::endl;
 			DBGLOG(DBG, "Sending candidate to possible domain expansion: " << *modelCandidate);
 			bool domainExpandedInCurrentIncrementalStepDueToCurrentCandidate = incrementalDomainExpansion(modelCandidate);
+			DBGLOG(DBG, "Expanding domain over current model");
 			domainExpandedInCurrentIncrementalStep |= domainExpandedInCurrentIncrementalStepDueToCurrentCandidate;
-//std::cout << "expanded: " << domainExpandedInCurrentIncrementalStepDueToCurrentCandidate << std::endl;
 			if (domainExpandedInCurrentIncrementalStepDueToCurrentCandidate) continue; // if the domain needed to be expanded, then this is NOT an answer set!
 		}
 
@@ -596,107 +560,6 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets(){
 
                 DLVHEX_BENCHMARK_REGISTER(sidgroundsupportsets, "final ground supportsets");
                 DLVHEX_BENCHMARK_COUNT(sidgroundsupportsets, supportSets->getNogoodCount());
-
-
-
-
-
-
-
-
-
-
-#if 0
-		// possible optimization:
-
-		// generate rules for this support set
-		int sscnt = 0;
-		typedef std::pair<ID, Nogood> SupportSetPair;
-		std::map<ID, Nogood> supportsetsForEA;
-		OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
-		program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
-
-
-		for (int i = 0; i < supportSets->getNogoodCount(); ++i){
-			Nogood& supportset = supportSets->getNogood(i);
-
-			// find the external atom replacement in this support set
-			ID ea = ID_FAIL;
-			BOOST_FOREACH (ID id, supportset){
-				ID bId = reg->ogatoms.getIDByAddress(id.address);
-				if ((bId.kind & ID::PROPERTY_EXTERNALAUX) == ID::PROPERTY_EXTERNALAUX){
-					if (ea != ID_FAIL) throw GeneralError("Support set " + supportset.getStringRepresentation(reg) + " is invalid becaues it contains multiple external atom replacement literals");
-					ea = bId;
-				}
-			}
-			if (ea == ID_FAIL) throw GeneralError("Support set " + supportset.getStringRepresentation(reg) + " is invalid becaues it contains no external atom replacement literal");
-
-			// create a new support set for this external atom if not already present
-			if (supportsetsForEA.find(ea) == supportsetsForEA.end()){
-				OrdinaryAtom repl = reg->ogatoms.getByID(ea);
-				repl.tuple[0] = reg->getAuxiliaryConstantSymbol('r', reg->getIDByAuxiliaryConstantSymbol(repl.tuple[0]));
-				supportsetsForEA[ea].insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(repl)));
-			}
-
-			Rule ssviolation(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-			BOOST_FOREACH (ID id, supportset){
-				ID bId = ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(id.address));
-				if (bId != ea){
-
-					if (id.isNaf()) bId.kind |= ID::NAF_MASK;
-					ssviolation.body.push_back(bId);
-
-					Rule derive(ID::MAINKIND_RULE);
-					OrdinaryAtom hatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-					hatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', ID(0, sscnt++)));	// new atom
-					ID sup = reg->storeOrdinaryAtom(hatom);
-					derive.head.push_back(sup);
-					ID negBId = bId;
-					negBId.kind ^= ID::NAF_MASK;
-					derive.body.push_back(negBId);
-					ID deriveID = reg->storeRule(derive);
-					DBGLOG(DBG, "Generating rule " << RawPrinter::toString(reg, deriveID) << " for support set " << supportset.getStringRepresentation(reg));
-					program.idb.push_back(deriveID);
-					supportsetsForEA[ea].insert(NogoodContainer::createLiteral(sup));
-				}
-			}
-			ID ssviolationID = reg->storeRule(ssviolation);
-			DBGLOG(DBG, "Generating constraint " << RawPrinter::toString(reg, ssviolationID) << " for support set " << supportset.getStringRepresentation(reg));
-			program.idb.push_back(ssviolationID);
-		}
-
-		BOOST_FOREACH (SupportSetPair ssp, supportsetsForEA){
-			Rule completeness(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-			BOOST_FOREACH (ID id, ssp.second) completeness.body.push_back(ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(id.address)));
-			ID completenessID = reg->storeRule(completeness);
-			DBGLOG(DBG, "Generating completeness rule " << RawPrinter::toString(reg, completenessID));
-			program.idb.push_back(completenessID);
-		}
-
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-		grounder = GenuineGrounder::getInstance(factory.ctx, program);
-		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
-
-		solver = GenuineGroundSolver::getInstance(
-			factory.ctx, annotatedGroundProgram,
-			// no interleaved threading because guess and check MG will likely not profit from it
-			false,
-			// do the UFS check for disjunctions only if we don't do
-			// a minimality check in this class;
-			// this will not find unfounded sets due to external sources,
-			// but at least unfounded sets due to disjunctions
-			!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
-		nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
-
-		if( factory.ctx.config.getOption("NoPropagator") == 0 )
-		  solver->addPropagator(this);
-#endif
-
-
-
-
-
-
 
 		// add them to the annotated ground program to make use of them for verification
 		DBGLOG(DBG, "Adding " << supportSets->getNogoodCount() << " support sets to annotated ground program");
@@ -851,12 +714,7 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 	InterpretationConstPtr domainAtomsFromCurrentEA;
 	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
 		const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
-		
-//		std::vector<ID> compIDB;
-//		compIDB.reserve(ci.innerRules.size() + ci.innerConstraints.size());
-//		compIDB.insert(compIDB.end(), ci.innerRules.begin(), ci.innerRules.end());
-//		compIDB.insert(compIDB.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
-		domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, model, xidbPerComponent[nr], factory.deidbInnerEatoms, false);
+		domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, model, xidbPerComponent[nr], factory.deidbInnerEatoms);
 	}
 //std::cout << "NDAC: " << domainAtomsFromCurrentEA->getStorage().count() << "; PDAC: " << domainAtomsInGrounding->getStorage().count() << std::endl;
 	if (domainAtomsFromCurrentEA->getStorage().count() > domainAtomsInGrounding->getStorage().count()){
@@ -883,56 +741,6 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 		DBGLOG(DBG, "Did not expand domain of external atoms");
 		return false;
 	}
-
-
-#if 0
-	// monolithic single-shot expansion (works only for simple cases)
-	InterpretationPtr trueReplacementAtoms = InterpretationPtr(new Interpretation(reg));
-	IntegrateExternalAnswerIntoInterpretationCB icb(trueReplacementAtoms);
-
-	bool domainExpandedInCurrentIncrementalStep = false;
-	BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
-		const ExternalAtom& eatom = reg->eatoms.getByID(eaid);
-
-		DBGLOG(DBG, "Evaluating external Atom " << eaid << " under " << *model << " for (possible) domain expansion");
-		trueReplacementAtoms->clear();
-		evaluateExternalAtom(factory.ctx, eatom, model, icb,
-				     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
-		updateEANogoods();
-
-		DBGLOG(DBG, "Checking if domain needs to be expanded");
-		bm::bvector<>::enumerator en = trueReplacementAtoms->getStorage().first();
-		bm::bvector<>::enumerator en_end = trueReplacementAtoms->getStorage().end();
-		while (en < en_end){
-			ID id = reg->ogatoms.getIDByAddress(*en);
-			if (id.isExternalAuxiliary()){
-				DBGLOG(DBG, "Converting atom with address " << *en);
-				const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
-				OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-				domatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', eaid));
-				for (uint32_t i = 1; i < ogatom.tuple.size(); ++i){
-					domatom.tuple.push_back(ogatom.tuple[i]);
-				}
-				if (!postprocessedInput->getFact(reg->storeOrdinaryGAtom(domatom).address)){
-					DBGLOG(DBG, "Expanding domain of external atoms");
-					incrementalConstraint.body.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
-
-					for (int i = 0; i < factory.innerEatoms.size(); ++i){
-						if (factory.innerEatoms[i] == eaid){
-							eaVerified[i] = eaEvaluated[i] = false;
-						}
-					}
-
-					domainAtomsAddedInCurrentIncrementalStep->setFact(reg->storeOrdinaryGAtom(domatom).address);
-					domainExpandedInCurrentIncrementalStep = true;
-				}
-			}
-
-			en++;
-		}
-	}
-	return domainExpandedInCurrentIncrementalStep;
-#endif
 }
 
 namespace
@@ -1045,6 +853,7 @@ program.idb.insert(program.idb.end(), factory.xidb.begin(), factory.xidb.end());
 		skip = false;
 		BOOST_FOREACH (ID headID, rule.head){
 			if (annotatedGroundProgram.getProgramMask()->getFact(headID.address)){
+				assert (false && "incremental solving violates modularity condition");
 				skip = true;
 				break;
 			}

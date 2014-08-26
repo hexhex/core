@@ -252,7 +252,7 @@ protected:
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, InterpretationPtr inputs) const;
 
-  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool exhaustive = true);
+  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms);
 };
 
 DLVHEX_NAMESPACE_END
