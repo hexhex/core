@@ -58,11 +58,10 @@ public:
 	{
 		public:
 
-		PyObject *pModule;
 		std::vector<std::string> pythonScripts;
 
 		CtxData();
-		virtual ~CtxData();
+		virtual ~CtxData() {}
 	};
 
 public:

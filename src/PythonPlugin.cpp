@@ -71,10 +71,6 @@ PythonPlugin::~PythonPlugin()
 {
 }
 
-PythonPlugin::CtxData::~CtxData(){
-	if (!!pModule) Py_DECREF(pModule);
-}
-
 // output help message for this plugin
 void PythonPlugin::printUsage(std::ostream& o) const
 {
@@ -161,11 +157,12 @@ namespace{
 class PythonAtom : public PluginAtom
 {
 	private:
+		PyObject *pModule;
 		PyObject *pFunc;
 
 	public:
-		PythonAtom(ProgramCtx& ctx, std::string functionName)
-			: PluginAtom(functionName.c_str(), false)
+		PythonAtom(ProgramCtx& ctx, PyObject *pModule, std::string functionName)
+			: PluginAtom(functionName.c_str(), false), pModule(pModule)
 		{
 			addInputPredicate();
 			addInputPredicate();
@@ -173,8 +170,7 @@ class PythonAtom : public PluginAtom
 
 			setOutputArity(1);
 
-			PythonPlugin::CtxData& ctxdata = ctx.getPluginData<PythonPlugin>();
-			pFunc = PyObject_GetAttrString(ctxdata.pModule, functionName.c_str());
+			pFunc = PyObject_GetAttrString(pModule, functionName.c_str());
 		}
 
 		virtual ~PythonAtom(){
@@ -208,20 +204,20 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 
 	BOOST_FOREACH (std::string script, ctxdata.pythonScripts){
 
-		PyObject *pName, *pDict, *pFunc;
+		PyObject *pModule, *pName, *pDict, *pFunc;
 		PyObject *pArgs, *pValue;
 
 		Py_Initialize();
 
 		DBGLOG(DBG, "PythonPlugin: Loading script \"" << script << "\"");
 		pName = PyString_FromString(script.c_str());
-		ctxdata.pModule = PyImport_Import(pName);
+		pModule = PyImport_Import(pName);
 
 		Py_DECREF(pName);
 
-		if (ctxdata.pModule != NULL) {
+		if (pModule != NULL) {
 			DBGLOG(DBG, "PythonPlugin: Loading atoms from script \"" << script << "\"");
-			pFunc = PyObject_GetAttrString(ctxdata.pModule, "register");
+			pFunc = PyObject_GetAttrString(pModule, "register");
 
 			/* pFunc is a new reference */
 			if (pFunc && PyCallable_Check(pFunc)) {
@@ -236,7 +232,7 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 				Py_DECREF(pArgs);
 				if (pValue != NULL) {
 					// return smart pointer with deleter (i.e., delete code compiled into this plugin)
-					ret.push_back(PluginAtomPtr(new PythonAtom(ctx, PyString_AsString(pValue)), PluginPtrDeleter<PluginAtom>()));
+					ret.push_back(PluginAtomPtr(new PythonAtom(ctx, pModule, PyString_AsString(pValue)), PluginPtrDeleter<PluginAtom>()));
 
 					std::cout << PyString_AsString(pValue) << std::endl;
 					Py_DECREF(pValue);
