@@ -80,6 +80,9 @@
 #include "dlvhex2/ExistsPlugin.h"
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/FunctionPlugin.h"
+#ifdef HAVE_PYTHON
+#include "dlvhex2/PythonPlugin.h"
+#endif
 
 #include <getopt.h>
 #include <signal.h>
@@ -517,6 +520,10 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
+#ifdef HAVE_PYTHON
+			PluginInterfacePtr pythonPlugin(new PythonPlugin);
+			pctx.pluginContainer()->addInternalPlugin(pythonPlugin);
+#endif
 		}
 
 		// before anything else we dump the logo

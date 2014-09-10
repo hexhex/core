@@ -1,3 +1,7 @@
+2014-09-10  Christoph Redl <redl@kr.tuwien.ac.at>
+	* src/PythonPlugin.cpp: Prepare Python-interface for plugins.
+	* include/dlvhex2/PythonPlugin.h: Likewise.
+
 2014-07-27  Christoph Redl <redl@kr.tuwien.ac.at>
 
 	* src/GenuineGuessAndCheckModelGenerator.cpp: Use incremental

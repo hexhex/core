@@ -274,6 +274,34 @@ if test "x$enable_debug" = "xtrue"; then
 fi
 AC_CACHE_SAVE
 
+# python
+AX_PYTHON
+#AM_PATH_PYTHON(,, [:])
+if test "x$PYTHON_INCLUDE_DIR" != "x"; then
+  AM_CONDITIONAL([HAVE_PYTHON],[true])
+  CPPFLAGS="$CPPFLAGS -I$PYTHON_INCLUDE_DIR"
+  LDFLAGS="$LDFLAGS -l$PYTHON_LIB"
+
+#  AC_ARG_VAR([PYTHON_INCLUDE], [Include flags for python, bypassing python-config])
+#  AC_ARG_VAR([PYTHON_CONFIG], [Path to python-config])
+#  AS_IF([test -z "$PYTHON_INCLUDE"], [
+#    AS_IF([test -z "$PYTHON_CONFIG"], [
+#      AC_PATH_PROGS([PYTHON_CONFIG],
+#                    [python$PYTHON_VERSION-config python-config],
+#                    [no],
+#                    [`dirname $PYTHON`])
+#      AS_IF([test "$PYTHON_CONFIG" = no], [AC_MSG_ERROR([cannot find python-config for $PYTHON.])])
+#    ])
+#    AC_MSG_CHECKING([python include flags])
+#    PYTHON_INCLUDE=`$PYTHON_CONFIG --includes`
+#    AC_MSG_RESULT([$PYTHON_INCLUDE])
+#  ])
+
+  AC_DEFINE([HAVE_PYTHON], [1], [Defined if we found Python.])
+else
+  AM_CONDITIONAL([HAVE_PYTHON],[false])
+fi
+
 # save --with-boost result (which contains BOOST_ROOT if it was used) for nested clasp/gringo build
 
 NESTED_BOOSTROOT=""

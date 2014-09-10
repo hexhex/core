@@ -100,6 +100,7 @@ pkginclude_HEADERS = \
   ProcessBuf.h \
   Process.h \
   ProgramCtx.h \
+  PythonPlugin.h \
   QueryPlugin.h \
   Registry.h \
   Rule.h \

@@ -103,6 +103,7 @@ libdlvhex2_base_la_SOURCES = \
     PluginInterface.cpp \
     Printer.cpp \
     ProgramCtx.cpp \
+    PythonPlugin.cpp \
     Registry.cpp \
     SafetyChecker.cpp \
     SATSolver.cpp \
@@ -132,6 +133,7 @@ libdlvhex2_internalplugins_la_SOURCES = \
     ExistsPlugin.cpp \
     HigherOrderPlugin.cpp \
     ManualEvalHeuristicsPlugin.cpp \
+    PythonPlugin.cpp \
     QueryPlugin.cpp \
     StrongNegationPlugin.cpp \
     WeakConstraintPlugin.cpp
