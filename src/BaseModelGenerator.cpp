@@ -441,6 +441,8 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   InterpretationConstPtr eatomchanged =
     projectEAtomInputInterpretation(ctx.registry(), eatom, changed);
 
+  InterpretationPtr pim = InterpretationPtr(new Interpretation(ctx.registry()));
+  pim->add(*eatom.getPredicateInputMask());
   if( eatom.auxInputPredicate == ID_FAIL )
   {
 	// only one input tuple, and that is the one stored in eatom.inputs
@@ -453,7 +455,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 	}
 
 	// XXX here we copy it, we should just reference it
-	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, &eatom, InterpretationPtr(), eatomassigned, eatomchanged);
+	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, &eatom, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
 	// XXX make this part of constructor
 	query.extinterpretation = inputi;
 	return evaluateExternalAtomQuery(query, cb, nogoods);
@@ -491,7 +493,7 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom, InterpretationPtr(), eatomassigned, eatomchanged);
+			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
 			query.extinterpretation = inputi;
 			if( ! evaluateExternalAtomQuery(query, cb, nogoods) )
 				return false;

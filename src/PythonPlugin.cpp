@@ -92,10 +92,10 @@ PythonPlugin::~PythonPlugin()
 void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --pluginscript=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
+	o << "     --pythonmodule=[MODULE]    Add Python module \"MODULE\" (file \"MODULE.py\") as new plugin." << std::endl;
 }
 
-// accepted options: --pluginscript=[PATH]
+// accepted options: --pythonmodule=[PATH]
 //
 // processes options for this plugin, and removes recognized options from pluginOptions
 // (do not free the pointers, the const char* directly come from argv)
@@ -113,9 +113,9 @@ void PythonPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( boost::starts_with(str, "--pluginscript=") )
+		if( boost::starts_with(str, "--pythonmodule=") )
 		{
-			ctxdata.pythonScripts.push_back(str.substr(std::string("--pluginscript=").length()));
+			ctxdata.pythonScripts.push_back(str.substr(std::string("--pythonmodule=").length()));
 			processed = true;
 		}
 
@@ -189,13 +189,7 @@ inline ID longToID(long l){
 	return id;
 }
 
-static PyObject* emb_numargs(PyObject *self, PyObject *args) {
-	if(!PyArg_ParseTuple(args, ":numargs"))
-		return NULL;
-	return Py_BuildValue("i", 10);
-}
-
-static PyObject* emb_getAttributes(PyObject *self, PyObject *args) {
+static PyObject* emb_getTuple(PyObject *self, PyObject *args) {
 
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getAttributes: Expect exactly one parameter");
 	ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
@@ -205,6 +199,24 @@ static PyObject* emb_getAttributes(PyObject *self, PyObject *args) {
 	PyObject *pyAt = PyTuple_New(ogatom.tuple.size());
 	for (int i = 0; i < ogatom.tuple.size(); ++i){
 		PyTuple_SetItem(pyAt, i, PyInt_FromLong(IDToLong(ogatom.tuple[i])));
+	}
+
+	return pyAt;
+}
+
+static PyObject* emb_getTupleValues(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getAttributeValues: Expect exactly one parameter");
+	ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	if (!atID.isAtom() && !atID.isLiteral()) throw PluginError("dlvhex.getAttributeValues: Parameter must an atom or literal ID");
+	const OrdinaryAtom& ogatom = emb_ctx->registry()->lookupOrdinaryAtom(atID);
+
+	PyObject *pyAt = PyTuple_New(ogatom.tuple.size());
+	for (int i = 0; i < ogatom.tuple.size(); ++i){
+		std::stringstream ss;
+		RawPrinter printer(ss, emb_ctx->registry());
+		printer.print(ogatom.tuple[i]);
+		PyTuple_SetItem(pyAt, i, PyString_FromString(ss.str().c_str()));
 	}
 
 	return pyAt;
@@ -302,9 +314,57 @@ static PyObject* emb_output(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", 0);
 }
 
+static PyObject* emb_outputValues(PyObject *self, PyObject *args) {
+
+	Tuple outputTuple;
+	for (int i = 0; i < PyTuple_Size(args); ++i){
+		// try to store as integer
+		int intv = PyInt_AsLong(PyTuple_GetItem(args, i));
+		if (!PyErr_Occurred()){
+			outputTuple.push_back(ID::termFromInteger(intv));
+		}else{
+			// store as string
+			outputTuple.push_back(emb_ctx->registry()->storeConstantTerm(PyString_AsString(PyTuple_GetItem(args, i))));
+		}
+	}
+	emb_answer->get().push_back(outputTuple);
+
+	return Py_BuildValue("i", 0);
+}
+
+static PyObject* emb_getInputAtoms(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 0) throw PluginError("dlvhex.getInputAtoms: Expect no parameter");
+	bm::bvector<>::enumerator en = emb_query->predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = emb_query->predicateInputMask->getStorage().end();
+	long i = 0;
+	PyObject *pyIntr = PyTuple_New(emb_query->predicateInputMask->getStorage().count());
+	while (en < en_end){
+		PyTuple_SetItem(pyIntr, i, PyInt_FromLong(IDToLong(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en))));
+		i++;
+		en++;
+	}
+
+	return pyIntr;
+}
+
+static PyObject* emb_isAssigned(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.isAssigned: Expect exactly one parameter");
+	if (!!emb_query->assigned || emb_query->assigned->getFact(longToID(PyInt_AsLong(PyTuple_GetItem(args, 0))).address)) return Py_BuildValue("i", 1);
+	else return Py_BuildValue("i", 0);
+}
+
+static PyObject* emb_isTrue(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.isTrue: Expect exactly one parameter");
+	if (emb_query->interpretation->getFact(longToID(PyInt_AsLong(PyTuple_GetItem(args, 0))).address)) return Py_BuildValue("i", 1);
+	else return Py_BuildValue("i", 0);
+}
+
 PyMethodDef EmbMethods[] = {
-	{"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
-	{"getAttributes", emb_getAttributes, METH_VARARGS, "Return the attributes of a dlvhex atom."},
+	{"getTuple", emb_getTuple, METH_VARARGS, "Return the IDs of the elements of a dlvhex atom."},
+	{"getTupleValues", emb_getTupleValues, METH_VARARGS, "Return the values of the elements of a dlvhex atom."},
 	{"getValue", emb_getValue, METH_VARARGS, "Return the value of an atom or term ID)."},
 	{"storeString", emb_storeString, METH_VARARGS, "Stores a string as dlvhex object."},
 	{"storeInteger", emb_storeInteger, METH_VARARGS, "Stores an integer as dlvhex object."},
@@ -312,7 +372,11 @@ PyMethodDef EmbMethods[] = {
 	{"negate", emb_negate, METH_VARARGS, "Negates an atom ID."},
 	{"learn", emb_learn, METH_VARARGS, "Learns a nogood."},
 	{"getOutputAtom", emb_output, METH_VARARGS, "Constructs an output atom from term IDs (for learning purposes)."},
-	{"output", emb_output, METH_VARARGS, "Adds a ground atom to the external source output."},
+	{"output", emb_output, METH_VARARGS, "Adds a ground atom represented by an ID to the external source output."},
+	{"outputValues", emb_outputValues, METH_VARARGS, "Adds a ground atom to the external source output."},
+	{"getInputAtoms", emb_getInputAtoms, METH_VARARGS, "Returns a tuple of all input atoms to this external atom."},
+	{"isAssigned", emb_isAssigned, METH_VARARGS, "Checks if an input atom is assigned."},
+	{"isTrue", emb_isTrue, METH_VARARGS, "Checks if an input atom is assigned to true."},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -368,10 +432,9 @@ class PythonAtom : public PluginAtom
 				en++;
 			}
 			int vdim[] = { i };
-			pArgs = PyTuple_New(1 + query.input.size());
-			PyTuple_SetItem(pArgs, 0, pyIntr);
-			for (int i = 1; i <= query.input.size(); ++i){
-				PyTuple_SetItem(pArgs, i, PyInt_FromLong(IDToLong(query.input[i - 1])));
+			pArgs = PyTuple_New(query.input.size());
+			for (int i = 0; i < query.input.size(); ++i){
+				PyTuple_SetItem(pArgs, i, PyInt_FromLong(IDToLong(query.input[i])));
 			}
 
 			emb_query = &query;
@@ -390,6 +453,7 @@ class PythonAtom : public PluginAtom
 }
 
 std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
+
 	std::vector<PluginAtomPtr> ret;
 
 	emb_ctx = &ctx;
