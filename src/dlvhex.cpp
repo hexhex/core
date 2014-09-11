@@ -42,7 +42,7 @@
  *
  * You will look into the documentation of dlvhex most likely to implement a
  * plugin. In this case, please continue with the \ref pluginframework
- * "Plugin Interface Module", which contains all necessary information.
+ * "Plugin Interface Module (for C++)" or the \ref pythonpluginframework "Python Plugin Interface Module", which contains all necessary information.
  */
 
 #ifdef HAVE_CONFIG_H

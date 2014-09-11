@@ -116,14 +116,14 @@
  * We wanted to keep the interface between dlvhex and the plugins as lean as
  * possible.
  * Necessary tasks are:
- * - Write a new Python script which contains a \code register \endcode function and imports the package \em dlvhex
+ * - Write a new Python script which contains a \em register function and imports the package \em dlvhex
  * - Write another function for each external atom, and export this function using the \em register function
  *
  * The \em register function has the following form:
  * \code
  * def register():
  *   return ( ("concat", "c", "c", 1), ("isbn", "p", 1), () )
- * \encode
+ * \endcode
  * It returns a tuple with one \em entry for each external atom. Each \em entry is
  * again a tuple of arity 2 or greater: the first element is the external predicate name,
  * the last element is the output arity, and in between there is a list of input parameter types ("c" for constant, "p" for predicate, "t" for tuple).
@@ -132,10 +132,10 @@
  * \code
  * def concat(a, b):
  *   dlvhex.outputValues(dlvhex.getValue(a), dlvhex.getValue(b))
- * \encode
+ * \endcode
  * Here, \em a and \em b are the input parameters (of type constant).
  * The function just takes the values of these parameters and outputs their string concatenation.
- * Note that akin to the C++ API, terms and atoms are represented by IDs and the retrieval of the value behind
+ * Note that akin to the \ref pluginframework "C++ API", terms and atoms are represented by IDs and the retrieval of the value behind
  *
  * usually requires the use of the \em getValue method; some methods combine this with other functionalities (see method list below).
  *
