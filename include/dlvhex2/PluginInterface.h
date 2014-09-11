@@ -178,7 +178,6 @@
  * We also provide a dlvhex.m4 script for easier configuration of DLVHEX plugins,
  * see for its usage the dlvhex-stringplugin or the dlvhex-scriptplugin.
  */
-
 #if !defined(_DLVHEX_PLUGININTERFACE_H)
 #define _DLVHEX_PLUGININTERFACE_H
 
