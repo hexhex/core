@@ -55,7 +55,24 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
 DLVHEX_NAMESPACE_BEGIN
+
+#ifdef POSIX
+	#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
+	#define unsetenv(VAR) ::unsetenv(VAR)
+#else
+	void setenv(const char* var, const char* val, int v){
+		SetEnvironmentVariable(var, val);
+	}
+
+	void unsetenv(const char* var){
+		SetEnvironmentVariable(var, NULL);
+	}
+#endif
 
 PythonPlugin::CtxData::CtxData()
 {
@@ -154,43 +171,219 @@ void PythonPlugin::setupProgramCtx(ProgramCtx& ctx)
 
 namespace{
 
+ProgramCtx* emb_ctx;
+const PluginAtom::Query* emb_query;
+PluginAtom::Answer* emb_answer;
+NogoodContainerPtr emb_nogoods;
+
+inline long IDToLong(ID id){
+	long l = ((long)id.kind << 32 ) | ((long)id.address);
+	DBGLOG(DBG, "Stored ID " << id << " as " << l);
+	return l;
+}
+
+inline ID longToID(long l){
+	ID id;
+	id.kind = (l >> 32) & 0xFFFFFFFF;
+	id.address = l & 0xFFFFFFFF;
+	return id;
+}
+
+static PyObject* emb_numargs(PyObject *self, PyObject *args) {
+	if(!PyArg_ParseTuple(args, ":numargs"))
+		return NULL;
+	return Py_BuildValue("i", 10);
+}
+
+static PyObject* emb_getAttributes(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getAttributes: Expect exactly one parameter");
+	ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	if (!atID.isAtom() && !atID.isLiteral()) throw PluginError("dlvhex.getAttributes: Parameter must an atom or literal ID");
+	const OrdinaryAtom& ogatom = emb_ctx->registry()->lookupOrdinaryAtom(atID);
+
+	PyObject *pyAt = PyTuple_New(ogatom.tuple.size());
+	for (int i = 0; i < ogatom.tuple.size(); ++i){
+		PyTuple_SetItem(pyAt, i, PyInt_FromLong(IDToLong(ogatom.tuple[i])));
+	}
+
+	return pyAt;
+}
+
+static PyObject* emb_getValue(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getValue: Expect exactly one parameter");
+	ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	if (id.isTerm() && id.isIntegerTerm()){
+		return Py_BuildValue("i", id.address);
+	}else{
+		std::stringstream ss;
+		RawPrinter printer(ss, emb_ctx->registry());
+		printer.print(id);
+		std::string str = ss.str();
+
+		return Py_BuildValue("s", str.c_str());
+	}
+}
+
+static PyObject* emb_storeInteger(PyObject *self, PyObject *args) {
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.storeInteger: Expect exactly one parameter");
+	ID id = ID::termFromInteger(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	return Py_BuildValue("l", IDToLong(id));
+}
+
+static PyObject* emb_storeString(PyObject *self, PyObject *args) {
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.storeString: Expect exactly one parameter");
+	ID id = emb_ctx->registry()->storeConstantTerm(PyString_AsString(PyTuple_GetItem(args, 0)));
+	return Py_BuildValue("l", IDToLong(id));
+}
+
+static PyObject* emb_storeAtom(PyObject *self, PyObject *args) {
+
+	DBGLOG(DBG, "Storing atom of size " << PyTuple_Size(args));
+	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+	for (int i = 0; i < PyTuple_Size(args); ++i){
+		atom.tuple.push_back(longToID(PyInt_AsLong(PyTuple_GetItem(args, i))));
+	}
+
+	ID id = emb_ctx->registry()->storeOrdinaryGAtom(atom);
+	return Py_BuildValue("l", IDToLong(id));
+}
+
+static PyObject* emb_negate(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.negate: Expect exactly one parameter");
+	ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	if (!id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
+	id.kind ^= ID::NAF_MASK;
+	return Py_BuildValue("l", IDToLong(id));
+}
+
+static PyObject* emb_learn(PyObject *self, PyObject *args) {
+
+	if (!!emb_nogoods){
+		Nogood ng;
+		for (int i = 0; i < PyTuple_Size(args); ++i){
+			ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
+			if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.learn: Parameters must be positive or negated atom IDs");
+			ng.insert(NogoodContainer::createLiteral(id));
+		}
+		emb_nogoods->addNogood(ng);
+
+		return Py_BuildValue("i", 1);
+	}else{
+		return Py_BuildValue("i", 0);
+	}
+}
+
+static PyObject* emb_getOutputAtom(PyObject *self, PyObject *args) {
+
+	Tuple outputTuple;
+	for (int i = 0; i < PyTuple_Size(args); ++i){
+		ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
+		if (!id.isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
+		outputTuple.push_back(id);
+	}
+	ID id = ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, true);
+
+	return Py_BuildValue("l", IDToLong(id));
+}
+
+static PyObject* emb_output(PyObject *self, PyObject *args) {
+
+	Tuple outputTuple;
+	for (int i = 0; i < PyTuple_Size(args); ++i){
+		ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
+		if (!id.isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
+		outputTuple.push_back(id);
+	}
+	emb_answer->get().push_back(outputTuple);
+
+	return Py_BuildValue("i", 0);
+}
+
+PyMethodDef EmbMethods[] = {
+	{"numargs", emb_numargs, METH_VARARGS, "Return the number of arguments received by the process."},
+	{"getAttributes", emb_getAttributes, METH_VARARGS, "Return the attributes of a dlvhex atom."},
+	{"getValue", emb_getValue, METH_VARARGS, "Return the value of an atom or term ID)."},
+	{"storeString", emb_storeString, METH_VARARGS, "Stores a string as dlvhex object."},
+	{"storeInteger", emb_storeInteger, METH_VARARGS, "Stores an integer as dlvhex object."},
+	{"storeAtom", emb_storeAtom, METH_VARARGS, "Transforms a sequence of terms into a dlvhex atom."},
+	{"negate", emb_negate, METH_VARARGS, "Negates an atom ID."},
+	{"learn", emb_learn, METH_VARARGS, "Learns a nogood."},
+	{"getOutputAtom", emb_output, METH_VARARGS, "Constructs an output atom from term IDs (for learning purposes)."},
+	{"output", emb_output, METH_VARARGS, "Adds a ground atom to the external source output."},
+	{NULL, NULL, 0, NULL}
+};
+
 class PythonAtom : public PluginAtom
 {
 	private:
-		PyObject *pModule;
-		PyObject *pFunc;
+		PyObject *pName, *pModule, *pFunc;
 
 	public:
-		PythonAtom(ProgramCtx& ctx, PyObject *pModule, std::string functionName)
+		PythonAtom(ProgramCtx& ctx, std::string module, std::string functionName, std::vector<InputType> inputParameters, int outputArity)
 			: PluginAtom(functionName.c_str(), false), pModule(pModule)
 		{
-			addInputPredicate();
-			addInputPredicate();
-			addInputConstant();
+			BOOST_FOREACH (InputType type, inputParameters){
+				switch (type){
+					case CONSTANT: addInputConstant(); break;
+					case PREDICATE: addInputPredicate(); break;
+					case TUPLE: addInputTuple(); break;
+				}
+			}		
+			setOutputArity(outputArity);
 
-			setOutputArity(1);
-
+			pName = PyString_FromString(module.c_str());
+			pModule = PyImport_Import(pName);
 			pFunc = PyObject_GetAttrString(pModule, functionName.c_str());
+
+			Py_InitModule("dlvhex", EmbMethods);
 		}
 
 		virtual ~PythonAtom(){
 			Py_XDECREF(pFunc);
+			Py_DECREF(pModule);
 		}
 
 		virtual void
 		retrieve(const Query& query, Answer& answer) throw (PluginError)
 		{
-			PyObject *pArgs, *pValue;
+			assert (false);
+		}
+
+		virtual void
+		retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods) throw (PluginError)
+		{
+			PyObject *pArgs, *pValue, *pyIntr;
+
+			// pass interpretation as first argument to Python method
+			bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+			long i = 0;
+			pyIntr = PyTuple_New(query.interpretation->getStorage().count());
+			while (en < en_end){
+				PyTuple_SetItem(pyIntr, i, PyInt_FromLong(IDToLong(query.interpretation->getRegistry()->ogatoms.getIDByAddress(*en))));
+				i++;
+				en++;
+			}
+			int vdim[] = { i };
+			pArgs = PyTuple_New(1 + query.input.size());
+			PyTuple_SetItem(pArgs, 0, pyIntr);
+			for (int i = 1; i <= query.input.size(); ++i){
+				PyTuple_SetItem(pArgs, i, PyInt_FromLong(IDToLong(query.input[i - 1])));
+			}
+
+			emb_query = &query;
+			emb_answer = &answer;
+			emb_nogoods = nogoods;
+
+			// call Python method
 			PyObject_CallObject(pFunc, pArgs);
 
-/*
-			Py_SetProgramName("python_plugin");
-			Py_Initialize();
-			PyRun_SimpleString("from time import time,ctime\n"
-				     "print 'Today is',ctime(time())\n");
-			Py_Finalize();
-*/
-
+			emb_query = NULL;
+			emb_answer = NULL;
+			emb_nogoods.reset();
 		}
 };
 
@@ -199,20 +392,31 @@ class PythonAtom : public PluginAtom
 std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 	std::vector<PluginAtomPtr> ret;
 
+	emb_ctx = &ctx;
+
 	// we have to do the program rewriting already here because it creates some side information that we need
 	PythonPlugin::CtxData& ctxdata = ctx.getPluginData<PythonPlugin>();
 
+	// include plugin dirs in the Python path
+	std::string oldenv_ld;
+	const char *envld = ::getenv("PYTHONPATH");
+	if (envld) {
+		oldenv_ld = envld;
+		unsetenv("PATHONPATH");
+	}
+	setenv("PYTHONPATH", (ctx.config.getStringOption("PluginDirs") + ":" + oldenv_ld).c_str(), 1);
+
+	// load Python plugins
 	BOOST_FOREACH (std::string script, ctxdata.pythonScripts){
 
 		PyObject *pModule, *pName, *pDict, *pFunc;
 		PyObject *pArgs, *pValue;
 
 		Py_Initialize();
-
+		Py_InitModule("dlvhex", EmbMethods);
 		DBGLOG(DBG, "PythonPlugin: Loading script \"" << script << "\"");
 		pName = PyString_FromString(script.c_str());
 		pModule = PyImport_Import(pName);
-
 		Py_DECREF(pName);
 
 		if (pModule != NULL) {
@@ -222,19 +426,34 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 			/* pFunc is a new reference */
 			if (pFunc && PyCallable_Check(pFunc)) {
 				pArgs = PyTuple_New(0);
-/*
-				for (int i = 0; i < 2; ++i) {
-					pValue = PyInt_FromLong(2);
-					PyTuple_SetItem(pArgs, i, pValue);
-				}
-*/
 				pValue = PyObject_CallObject(pFunc, pArgs);
 				Py_DECREF(pArgs);
 				if (pValue != NULL) {
-					// return smart pointer with deleter (i.e., delete code compiled into this plugin)
-					ret.push_back(PluginAtomPtr(new PythonAtom(ctx, pModule, PyString_AsString(pValue)), PluginPtrDeleter<PluginAtom>()));
+					int atomCount = PyTuple_Size(pValue);
+					DBGLOG(DBG, "Found " << atomCount << " external atoms");
+					for (int i = 0; i < atomCount; ++i){
+						PyObject *atom = PyTuple_GetItem(pValue, i);
+						if ((PyTuple_Size(atom) == 0) || (i == atomCount - 1)){
+							if ((PyTuple_Size(atom) == 0) && (i == atomCount - 1)) break;
+							else throw PluginError("Empty tuple must occur at the end of the atom list");
+						}
+						if (PyTuple_Size(atom) < 2) throw PluginError("Python plugin, register method: External atoms must specify at least 1. a name and 2. the output arity");
+						std::string atomName = PyString_AsString(PyTuple_GetItem(atom, 0));
+						DBGLOG(DBG, "Loading external atom " << atomName);
 
-					std::cout << PyString_AsString(pValue) << std::endl;
+						std::vector<PluginAtom::InputType> inputParameters;
+						int outputArity = PyInt_AsLong(PyTuple_GetItem(atom, PyTuple_Size(atom) - 1));
+						for (int p = 1; p < PyTuple_Size(atom) - 1; ++p){
+							if (std::string(PyString_AsString(PyTuple_GetItem(atom, p))) == std::string("c")) inputParameters.push_back(PluginAtom::CONSTANT);
+							else if (std::string(PyString_AsString(PyTuple_GetItem(atom, p))) == std::string("p")) inputParameters.push_back(PluginAtom::PREDICATE);
+							else if (std::string(PyString_AsString(PyTuple_GetItem(atom, p))) == std::string("t")) inputParameters.push_back(PluginAtom::TUPLE);
+							else throw PluginError("Unknown parameter type: \"" + std::string(PyString_AsString(PyTuple_GetItem(atom, p))) + "\"");
+						}
+
+						// return smart pointer with deleter (i.e., delete code compiled into this plugin)
+						ret.push_back(PluginAtomPtr(new PythonAtom(ctx, script, atomName, inputParameters, outputArity), PluginPtrDeleter<PluginAtom>()));
+					}
+
 					Py_DECREF(pValue);
 				}else{
 					Py_DECREF(pFunc);
@@ -244,8 +463,9 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 				if (PyErr_Occurred()) PyErr_Print();
 			}
 			Py_XDECREF(pFunc);
+			Py_DECREF(pModule);
 		}else{
-		        PyErr_Print();
+		        throw GeneralError("Cannot find script \"" + script + "\". Make sure that environment variable PYTHONPATH is set appropriately.");
 		}
 	}
 

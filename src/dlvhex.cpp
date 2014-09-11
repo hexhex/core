@@ -474,6 +474,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
 	pctx.config.setOption("IncrementalGrounding", 0);
+	pctx.config.setStringOption("PluginDirs", "");
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -862,6 +863,7 @@ void processOptionsPrePlugin(
 			
 		case 'p':
 			config.optionPlugindir = std::string(optarg);
+			pctx.config.setStringOption("PluginDirs", std::string(optarg));
 			break;
 
 		case 'a':
