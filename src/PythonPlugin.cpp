@@ -371,7 +371,7 @@ PyMethodDef EmbMethods[] = {
 	{"storeAtom", emb_storeAtom, METH_VARARGS, "Transforms a sequence of terms into a dlvhex atom."},
 	{"negate", emb_negate, METH_VARARGS, "Negates an atom ID."},
 	{"learn", emb_learn, METH_VARARGS, "Learns a nogood."},
-	{"getOutputAtom", emb_output, METH_VARARGS, "Constructs an output atom from term IDs (for learning purposes)."},
+	{"getOutputAtom", emb_getOutputAtom, METH_VARARGS, "Constructs an output atom from term IDs (for learning purposes)."},
 	{"output", emb_output, METH_VARARGS, "Adds a ground atom represented by an ID to the external source output."},
 	{"outputValues", emb_outputValues, METH_VARARGS, "Adds a ground atom to the external source output."},
 	{"getInputAtoms", emb_getInputAtoms, METH_VARARGS, "Returns a tuple of all input atoms to this external atom."},

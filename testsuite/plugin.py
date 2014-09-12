@@ -12,6 +12,7 @@ def test(pred):
 def comfortTest(p, a, b):
 	ia = dlvhex.getInputAtoms()
 	print "Input atoms: ", ia, dlvhex.isTrue(ia[0])
+	print "Output: ", dlvhex.getTupleValues(dlvhex.getOutputAtom(dlvhex.storeString("bla"), dlvhex.storeString("bla")))
 
 	print dlvhex.getTupleValues(intr[0])
 	dlvhex.outputValues("bla", "x")
