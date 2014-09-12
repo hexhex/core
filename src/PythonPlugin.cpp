@@ -36,6 +36,7 @@
 #ifdef HAVE_PYTHON
 
 #include <Python.h>
+#include <structmember.h>
 
 //#define BOOST_SPIRIT_DEBUG
 
@@ -171,11 +172,6 @@ void PythonPlugin::setupProgramCtx(ProgramCtx& ctx)
 
 namespace{
 
-ProgramCtx* emb_ctx;
-const PluginAtom::Query* emb_query;
-PluginAtom::Answer* emb_answer;
-NogoodContainerPtr emb_nogoods;
-
 inline long IDToLong(ID id){
 	long l = ((long)id.kind << 32 ) | ((long)id.address);
 	DBGLOG(DBG, "Stored ID " << id << " as " << l);
@@ -189,10 +185,161 @@ inline ID longToID(long l){
 	return id;
 }
 
+}
+
+namespace PythonAPI{
+
+ProgramCtx* emb_ctx;
+const PluginAtom::Query* emb_query;
+PluginAtom::Answer* emb_answer;
+NogoodContainerPtr emb_nogoods;
+
+#if 0
+typedef struct {
+	PyObject_HEAD
+	/* Type-specific fields go here. */
+	PyObject *kind;
+	PyObject *address;
+} ID;
+
+static void ID_dealloc(ID* self){
+
+	Py_XDECREF(self->kind);
+	Py_XDECREF(self->address);
+	self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject *ID_new(PyTypeObject *type, PyObject *args, PyObject *kwds){
+
+	ID *self;
+	self = (ID *)type->tp_alloc(type, 0);
+	if (self != NULL) {
+		self->kind = PyInt_FromLong(0);
+		if (self->kind == NULL) {
+			Py_DECREF(self);
+			return NULL;
+		}
+
+		self->address = PyInt_FromLong(0);
+		if (self->address == NULL) {
+			Py_DECREF(self);
+			return NULL;
+		}
+	}
+
+	return (PyObject *)self;
+}
+
+static int ID_init(ID *self, PyObject *args, PyObject *kwds){
+
+	PyObject *kind = NULL, *address = NULL, *tmp;
+	static char *kwlist[] = {"kind", "address", NULL};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, &kind, &address)) return -1; 
+	if (kind) {
+		tmp = self->kind;
+		Py_INCREF(kind);
+		self->kind = kind;
+		Py_XDECREF(tmp);
+	}
+	if (address) {
+		tmp = self->address;
+		Py_INCREF(address);
+		self->address = address;
+		Py_XDECREF(tmp);
+	}
+
+	return 0;
+}
+
+
+static PyMemberDef ID_members[] = {
+	{"kind", T_INT, offsetof(ID, kind), 0, "kind of ID"},
+	{"address", T_INT, offsetof(ID, address), 0, "address of ID"},
+	{NULL}  /* Sentinel */
+};
+
+static PyObject *ID_getValue(ID* self){
+
+	static PyObject *format = NULL;
+	PyObject *args, *result;
+
+	if (format == NULL) {
+		format = PyString_FromString("%s %s");
+		if (format == NULL) return NULL;
+	}
+
+	if (self->kind == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "kind");
+		return NULL;
+	}
+
+	if (self->address == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "address");
+		return NULL;
+	}
+
+	args = Py_BuildValue("OO", self->kind, self->address);
+	if (args == NULL) return NULL;
+
+	result = PyString_Format(format, args);
+	Py_DECREF(args);
+
+	return result;
+}
+
+static PyMethodDef ID_methods[] = {
+	{"getValue", (PyCFunction)ID_getValue, METH_NOARGS, "Return the value of the ID"},
+	{NULL}
+};
+
+static PyTypeObject IDType = {
+	PyObject_HEAD_INIT(NULL)
+	0,                         /*ob_size*/
+	"ID.ID",                   /*tp_name*/
+	sizeof(ID),                /*tp_basicsize*/
+	0,                         /*tp_itemsize*/
+	(destructor)ID_dealloc,    /*tp_dealloc*/
+	0,                         /*tp_print*/
+	0,                         /*tp_getattr*/
+	0,                         /*tp_setattr*/
+	0,                         /*tp_compare*/
+	0,                         /*tp_repr*/
+	0,                         /*tp_as_number*/
+	0,                         /*tp_as_sequence*/
+	0,                         /*tp_as_mapping*/
+	0,                         /*tp_hash */
+	0,                         /*tp_call*/
+	0,                         /*tp_str*/
+	0,                         /*tp_getattro*/
+	0,                         /*tp_setattro*/
+	0,                         /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+	"ID objects",              /* tp_doc */
+	0,		           /* tp_traverse */
+	0,		           /* tp_clear */
+	0,		           /* tp_richcompare */
+	0,		           /* tp_weaklistoffset */
+	0,		           /* tp_iter */
+	0,		           /* tp_iternext */
+	ID_methods,                /* tp_methods */
+	ID_members,                /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	(initproc)ID_init,         /* tp_init */
+	0,                         /* tp_alloc */
+	ID_new,                    /* tp_new */
+	};
+#endif
+
 static PyObject* emb_getTuple(PyObject *self, PyObject *args) {
 
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getAttributes: Expect exactly one parameter");
-	ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	dlvhex::ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
 	if (!atID.isAtom() && !atID.isLiteral()) throw PluginError("dlvhex.getAttributes: Parameter must an atom or literal ID");
 	const OrdinaryAtom& ogatom = emb_ctx->registry()->lookupOrdinaryAtom(atID);
 
@@ -207,7 +354,7 @@ static PyObject* emb_getTuple(PyObject *self, PyObject *args) {
 static PyObject* emb_getTupleValues(PyObject *self, PyObject *args) {
 
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getAttributeValues: Expect exactly one parameter");
-	ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	dlvhex::ID atID = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
 	if (!atID.isAtom() && !atID.isLiteral()) throw PluginError("dlvhex.getAttributeValues: Parameter must an atom or literal ID");
 	const OrdinaryAtom& ogatom = emb_ctx->registry()->lookupOrdinaryAtom(atID);
 
@@ -225,7 +372,7 @@ static PyObject* emb_getTupleValues(PyObject *self, PyObject *args) {
 static PyObject* emb_getValue(PyObject *self, PyObject *args) {
 
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getValue: Expect exactly one parameter");
-	ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	dlvhex::ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
 	if (id.isTerm() && id.isIntegerTerm()){
 		return Py_BuildValue("i", id.address);
 	}else{
@@ -240,34 +387,34 @@ static PyObject* emb_getValue(PyObject *self, PyObject *args) {
 
 static PyObject* emb_storeInteger(PyObject *self, PyObject *args) {
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.storeInteger: Expect exactly one parameter");
-	ID id = ID::termFromInteger(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	dlvhex::ID id = dlvhex::ID::termFromInteger(PyInt_AsLong(PyTuple_GetItem(args, 0)));
 	return Py_BuildValue("l", IDToLong(id));
 }
 
 static PyObject* emb_storeString(PyObject *self, PyObject *args) {
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.storeString: Expect exactly one parameter");
-	ID id = emb_ctx->registry()->storeConstantTerm(PyString_AsString(PyTuple_GetItem(args, 0)));
+	dlvhex::ID id = emb_ctx->registry()->storeConstantTerm(PyString_AsString(PyTuple_GetItem(args, 0)));
 	return Py_BuildValue("l", IDToLong(id));
 }
 
 static PyObject* emb_storeAtom(PyObject *self, PyObject *args) {
 
 	DBGLOG(DBG, "Storing atom of size " << PyTuple_Size(args));
-	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+	OrdinaryAtom atom(dlvhex::ID::MAINKIND_ATOM | dlvhex::ID::SUBKIND_ATOM_ORDINARYG);
 	for (int i = 0; i < PyTuple_Size(args); ++i){
 		atom.tuple.push_back(longToID(PyInt_AsLong(PyTuple_GetItem(args, i))));
 	}
 
-	ID id = emb_ctx->registry()->storeOrdinaryGAtom(atom);
+	dlvhex::ID id = emb_ctx->registry()->storeOrdinaryGAtom(atom);
 	return Py_BuildValue("l", IDToLong(id));
 }
 
 static PyObject* emb_negate(PyObject *self, PyObject *args) {
 
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.negate: Expect exactly one parameter");
-	ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
+	dlvhex::ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, 0)));
 	if (!id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
-	id.kind ^= ID::NAF_MASK;
+	id.kind ^= dlvhex::ID::NAF_MASK;
 	return Py_BuildValue("l", IDToLong(id));
 }
 
@@ -276,7 +423,7 @@ static PyObject* emb_learn(PyObject *self, PyObject *args) {
 	if (!!emb_nogoods){
 		Nogood ng;
 		for (int i = 0; i < PyTuple_Size(args); ++i){
-			ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
+			dlvhex::ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
 			if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.learn: Parameters must be positive or negated atom IDs");
 			ng.insert(NogoodContainer::createLiteral(id));
 		}
@@ -292,11 +439,11 @@ static PyObject* emb_getOutputAtom(PyObject *self, PyObject *args) {
 
 	Tuple outputTuple;
 	for (int i = 0; i < PyTuple_Size(args); ++i){
-		ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
+		dlvhex::ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
 		if (!id.isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
 		outputTuple.push_back(id);
 	}
-	ID id = ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, true);
+	dlvhex::ID id = ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, true);
 
 	return Py_BuildValue("l", IDToLong(id));
 }
@@ -305,7 +452,7 @@ static PyObject* emb_output(PyObject *self, PyObject *args) {
 
 	Tuple outputTuple;
 	for (int i = 0; i < PyTuple_Size(args); ++i){
-		ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
+		dlvhex::ID id = longToID(PyInt_AsLong(PyTuple_GetItem(args, i)));
 		if (!id.isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
 		outputTuple.push_back(id);
 	}
@@ -321,7 +468,7 @@ static PyObject* emb_outputValues(PyObject *self, PyObject *args) {
 		// try to store as integer
 		int intv = PyInt_AsLong(PyTuple_GetItem(args, i));
 		if (!PyErr_Occurred()){
-			outputTuple.push_back(ID::termFromInteger(intv));
+			outputTuple.push_back(dlvhex::ID::termFromInteger(intv));
 		}else{
 			// store as string
 			outputTuple.push_back(emb_ctx->registry()->storeConstantTerm(PyString_AsString(PyTuple_GetItem(args, i))));
@@ -398,6 +545,8 @@ PyMethodDef EmbMethods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
+}
+
 class PythonAtom : public PluginAtom
 {
 	private:
@@ -419,8 +568,9 @@ class PythonAtom : public PluginAtom
 			pName = PyString_FromString(module.c_str());
 			pModule = PyImport_Import(pName);
 			pFunc = PyObject_GetAttrString(pModule, functionName.c_str());
+			if (!pFunc) throw PluginError("Python method \"" + functionName + "\" could not be loaded");
 
-			Py_InitModule("dlvhex", EmbMethods);
+			PyObject *m = Py_InitModule("dlvhex", PythonAPI::EmbMethods);
 		}
 
 		virtual ~PythonAtom(){
@@ -455,26 +605,29 @@ class PythonAtom : public PluginAtom
 				PyTuple_SetItem(pArgs, i, PyInt_FromLong(IDToLong(query.input[i])));
 			}
 
-			emb_query = &query;
-			emb_answer = &answer;
-			emb_nogoods = nogoods;
+			PythonAPI::emb_query = &query;
+			PythonAPI::emb_answer = &answer;
+			PythonAPI::emb_nogoods = nogoods;
 
 			// call Python method
-			PyObject_CallObject(pFunc, pArgs);
+			PyObject *res = PyObject_CallObject(pFunc, pArgs);
 
-			emb_query = NULL;
-			emb_answer = NULL;
-			emb_nogoods.reset();
+			PythonAPI::emb_query = NULL;
+			PythonAPI::emb_answer = NULL;
+			PythonAPI::emb_nogoods.reset();
+
+			if (!res){
+				PyErr_Print();
+				throw PluginError("Python script failed");
+			}
 		}
 };
-
-}
 
 std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 
 	std::vector<PluginAtomPtr> ret;
 
-	emb_ctx = &ctx;
+	PythonAPI::emb_ctx = &ctx;
 
 	// we have to do the program rewriting already here because it creates some side information that we need
 	PythonPlugin::CtxData& ctxdata = ctx.getPluginData<PythonPlugin>();
@@ -495,7 +648,7 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 		PyObject *pArgs, *pValue;
 
 		Py_Initialize();
-		Py_InitModule("dlvhex", EmbMethods);
+		PyObject *m = Py_InitModule("dlvhex", PythonAPI::EmbMethods);
 		DBGLOG(DBG, "PythonPlugin: Loading script \"" << script << "\"");
 		pName = PyString_FromString(script.c_str());
 		pModule = PyImport_Import(pName);

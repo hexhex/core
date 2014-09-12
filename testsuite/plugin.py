@@ -1,5 +1,17 @@
 import dlvhex
 
+#class ID:
+#	val = 0
+#	def __init__(self, v):
+#		self.val = v
+#		return
+#	def __str__(self):
+#		return dlvhex.getValue(self.val)
+#	def __int__(self):
+#		return self.val
+#	def __invert__(self):
+#		return dlvhex.getTupleValues(self.val)
+
 def multiply(a, b):
 	dlvhex.output(dlvhex.storeInteger(dlvhex.getValue(a) * dlvhex.getValue(b)))
 
@@ -10,13 +22,15 @@ def test(pred):
 	dlvhex.output(dlvhex.storeInteger(1))
 
 def comfortTest(p, a, b):
-
 	ia = dlvhex.getInputAtoms()
+#	print "a"
+#	x = ID(a)
+#	print x
+#	print "b"
 	print "Input atom count: ", dlvhex.getInputAtomCount()
 	print "Input atoms: ", ia, dlvhex.isTrue(ia[0])
 	print "Output: ", dlvhex.getTupleValues(dlvhex.getOutputAtom(dlvhex.storeString("bla"), dlvhex.storeString("bla")))
 
-	print dlvhex.getTupleValues(intr[0])
 	dlvhex.outputValues("bla", "x")
 
 def register():

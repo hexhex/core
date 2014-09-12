@@ -1,5 +1,5 @@
 p(test, xyz) v p(x,y).
 p(bla).
 p(foo).
-res(X, Y) :- &comfortTest[p, 3,2](X, Y).
+res(X, Y) :- &comfortTest[p, t, 2](X, Y).
 %res(X) :- &test[p](X).
