@@ -152,6 +152,7 @@
  * \em output: Adds a ground atom represented by an ID to the external source output.
  * \em outputValues: Adds a ground atom to the external source output.
  * \em getInputAtoms: Returns a tuple of all input atoms to this external atom.
+ * \em getInputAtomCount: Checks if an input atom is assigned.
  * \em isAssigned: Checks if an input atom is assigned.
  * \em isTrue: Checks if an input atom is assigned to true.
  *

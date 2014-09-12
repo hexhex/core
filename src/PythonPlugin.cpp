@@ -348,6 +348,22 @@ static PyObject* emb_getInputAtoms(PyObject *self, PyObject *args) {
 	return pyIntr;
 }
 
+static PyObject* emb_getInputAtom(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.getInputAtom: Expect exactly one parameter");
+	long index = PyInt_AsLong(PyTuple_GetItem(args, 0));
+	if (index < 0 || index >= emb_query->predicateInputMask->getStorage().count()) throw PluginError("dlvhex.getInputAtom: index out of bounds");
+	bm::bvector<>::enumerator en = emb_query->predicateInputMask->getStorage().first();
+	for (int i = 0; i < index; i++, en++);
+	return Py_BuildValue("l", IDToLong(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en)));
+}
+
+static PyObject* emb_getInputAtomCount(PyObject *self, PyObject *args) {
+
+	if (PyTuple_Size(args) != 0) throw PluginError("dlvhex.getInputAtomCount: Expect no parameter");
+	return Py_BuildValue("l", emb_query->predicateInputMask->getStorage().count());
+}
+
 static PyObject* emb_isAssigned(PyObject *self, PyObject *args) {
 
 	if (PyTuple_Size(args) != 1) throw PluginError("dlvhex.isAssigned: Expect exactly one parameter");
@@ -375,6 +391,8 @@ PyMethodDef EmbMethods[] = {
 	{"output", emb_output, METH_VARARGS, "Adds a ground atom represented by an ID to the external source output."},
 	{"outputValues", emb_outputValues, METH_VARARGS, "Adds a ground atom to the external source output."},
 	{"getInputAtoms", emb_getInputAtoms, METH_VARARGS, "Returns a tuple of all input atoms to this external atom."},
+//	{"getInputAtom", emb_getInputAtom, METH_VARARGS, "Returns the ID of an input atom with a given index."},
+	{"getInputAtomCount", emb_getInputAtomCount, METH_VARARGS, "Returns the number of total input atoms (not the number of true input atoms!)."},
 	{"isAssigned", emb_isAssigned, METH_VARARGS, "Checks if an input atom is assigned."},
 	{"isTrue", emb_isTrue, METH_VARARGS, "Checks if an input atom is assigned to true."},
 	{NULL, NULL, 0, NULL}
