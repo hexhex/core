@@ -512,18 +512,23 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 
 	// load Python plugins
 	DBGLOG(DBG, "Initialize Python plugin");
-	Py_Initialize();
+#if PY_MAJOR_VERSION <= 2
+		Py_Initialize();
+		initdlvhex();
+		PythonAPI::main = boost::python::import("__main__");
+		PythonAPI::dict = PythonAPI::main.attr("__dict__");
+#else
+		if (PyImport_AppendInittab("dlvhex", PyInit_dlvhex) == -1){
+			throw PluginError("Could not register dlvhex module in Python");
+		}
+		Py_Initialize();
+		PythonAPI::main = boost::python::import("__main__");
+		PythonAPI::dict = PythonAPI::main.attr("__dict__");
+#endif
+
 	BOOST_FOREACH (std::string script, ctxdata.pythonScripts){
 		DBGLOG(DBG, "Loading file \"" + script + "\"");
 		try{
-			Py_Initialize();
-#if PY_MAJOR_VERSION <= 2
-			initdlvhex();
-#else
-			PyInit_dlvhex();
-#endif
-			PythonAPI::main = boost::python::import("__main__");
-			PythonAPI::dict = PythonAPI::main.attr("__dict__");
 			boost::python::exec_file(script.c_str(), PythonAPI::dict, PythonAPI::dict);
 			PythonAPI::emb_pluginAtoms = &pluginAtoms;
 			PythonAPI::main.attr("register")();
