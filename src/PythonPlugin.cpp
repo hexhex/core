@@ -95,10 +95,10 @@ PythonPlugin::~PythonPlugin()
 void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --pythonmodule=[MODULE]    Add Python module \"MODULE\" (file \"MODULE.py\") as new plugin." << std::endl;
+	o << "     --pythonplugin=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
 }
 
-// accepted options: --pythonmodule=[PATH]
+// accepted options: --pythonplugin=[PATH]
 //
 // processes options for this plugin, and removes recognized options from pluginOptions
 // (do not free the pointers, the const char* directly come from argv)
@@ -116,9 +116,9 @@ void PythonPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( boost::starts_with(str, "--pythonmodule=") )
+		if( boost::starts_with(str, "--pythonplugin=") )
 		{
-			ctxdata.pythonScripts.push_back(str.substr(std::string("--pythonmodule=").length()));
+			ctxdata.pythonScripts.push_back(str.substr(std::string("--pythonplugin=").length()));
 			processed = true;
 		}
 
