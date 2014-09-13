@@ -21,131 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program_types.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\lookahead.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\minimize_constraint.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\model_enumerators.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parallel_solve.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\program_builder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\satelite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\shared_context.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solve_algorithms.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_strategies.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_types.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\timer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\unfounded_check.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\weight_constraint.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\asp_preprocessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\cb_enumerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_facade.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_options.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_output.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clause.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\constraint.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\dependency_graph.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\enumerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\heuristics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_options.h">
-      <Filter>Header Files\cli</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_output.h">
-      <Filter>Header Files\cli</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\misc_types.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\multi_queue.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\mutex.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\platform.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\pod_vector.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\thread.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\timer.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\type_manip.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\atomic.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\indexed_priority_queue.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\left_right_sequence.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\dependency_graph.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\enumerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -224,12 +99,137 @@
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\constraint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\dependency_graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\indexed_priority_queue.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\left_right_sequence.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\misc_types.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\multi_queue.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\mutex.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\platform.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\pod_vector.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\thread.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\timer.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\type_manip.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\atomic.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_options.h">
+      <Filter>Header Files\cli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_output.h">
+      <Filter>Header Files\cli</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_configs.inl">
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clause.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\constraint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\dependency_graph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\enumerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\heuristics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\lookahead.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\minimize_constraint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\model_enumerators.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parallel_solve.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\program_builder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\satelite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\shared_context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solve_algorithms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_strategies.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\unfounded_check.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\weight_constraint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\asp_preprocessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\cb_enumerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_facade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_options.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_options.inl">
       <Filter>Header Files\cli</Filter>
     </None>
-    <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_options.inl">
+    <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_configs.inl">
       <Filter>Header Files\cli</Filter>
     </None>
   </ItemGroup>

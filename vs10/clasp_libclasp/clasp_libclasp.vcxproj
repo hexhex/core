@@ -71,35 +71,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\asp_preprocessor.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\cb_enumerator.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_facade.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_options.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_output.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clause.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\constraint.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\dependency_graph.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\enumerator.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\heuristics.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program_types.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\lookahead.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\minimize_constraint.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\model_enumerators.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parallel_solve.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parser.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\program_builder.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\satelite.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\shared_context.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_strategies.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_types.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solve_algorithms.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\timer.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\unfounded_check.cpp" />
-    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\weight_constraint.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\asp_preprocessor.h" />
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cb_enumerator.h" />
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\claspfwd.h" />
@@ -140,6 +111,35 @@
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\timer.h" />
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\util\type_manip.h" />
     <ClInclude Include="..\..\buildclaspgringo\clasp\libclasp\clasp\weight_constraint.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\asp_preprocessor.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\cb_enumerator.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_facade.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_options.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clasp_output.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\clause.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\constraint.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\dependency_graph.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\enumerator.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\heuristics.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\logic_program_types.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\lookahead.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\minimize_constraint.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\model_enumerators.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parallel_solve.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\parser.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\program_builder.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\satelite.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\shared_context.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_strategies.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solver_types.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\solve_algorithms.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\timer.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\unfounded_check.cpp" />
+    <ClCompile Include="..\..\buildclaspgringo\clasp\libclasp\src\weight_constraint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\buildclaspgringo\clasp\libclasp\clasp\cli\clasp_cli_configs.inl" />
