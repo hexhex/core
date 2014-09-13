@@ -125,6 +125,27 @@ struct ExtSourceProperties
 
 	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
 
+	// setter
+	inline void addMonotonicInputPredicate(int index) { monotonicInputPredicates.insert(index); }
+	inline void addAntimonotonicInputPredicate(int index) { antimonotonicInputPredicates.insert(index); }
+	inline void addPredicateParameterNameIndependence(int index) { predicateParameterNameIndependence.insert(index); }
+	inline void addFiniteOutputDomain(int index) { finiteOutputDomain.insert(index); }
+	inline void addRelativeFiniteOutputDomain(int index1, int index2) { relativeFiniteOutputDomain.insert(std::pair<int, int>(index1, index2)); }
+	inline void setFunctional(bool value) { functional = value; }
+	inline void setFunctionalStart(int value) { functionalStart = value; }
+	inline void setSupportSets(bool value) { supportSets = value; }
+	inline void setCompletePositiveSupportSets(bool value) { completePositiveSupportSets = value; }
+	inline void setCompleteNegativeSupportSets(bool value) { completeNegativeSupportSets = value; }
+	inline void setVariableOutputArity(bool value) { variableOutputArity = value; }
+	inline void setCaresAboutAssigned(bool value) { caresAboutAssigned = value; }
+	inline void setCaresAboutChanged(bool value) { caresAboutChanged = value; }
+	inline void setAtomlevellinear(bool value) { atomlevellinear = value; }
+	inline void setTuplelevellinear(bool value) { tuplelevellinear = value; }
+	inline void setUsesEnvironment(bool value) { usesEnvironment = value; }
+	inline void setFiniteFiber(bool value) { finiteFiber = value; }
+	inline void addWellorderingStrlen(int index1, int index2) { wellorderingStrlen.insert(std::pair<int, int>(index1, index2)); }
+	inline void addWellorderingNatural(int index1, int index2) { wellorderingNatural.insert(std::pair<int, int>(index1, index2)); }
+
 	/**
 	* @return overall monotonicity
 	*/

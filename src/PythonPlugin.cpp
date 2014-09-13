@@ -35,12 +35,7 @@
 
 #ifdef HAVE_PYTHON
 
-//#include <Python.h>
-//#include <structmember.h>
-
 #include <boost/python.hpp>
-
-//#define BOOST_SPIRIT_DEBUG
 
 #include "dlvhex2/PythonPlugin.h"
 #include "dlvhex2/PlatformDefinitions.h"
@@ -202,7 +197,7 @@ namespace PythonAPI{
 class PythonAtom : public PluginAtom
 {
 	public:
-		PythonAtom(ProgramCtx& ctx, std::string module, std::string functionName, std::vector<InputType> inputParameters, int outputArity)
+		PythonAtom(ProgramCtx& ctx, std::string module, std::string functionName, std::vector<InputType> inputParameters, int outputArity, dlvhex::ExtSourceProperties prop)
 			: PluginAtom(functionName.c_str(), false)
 		{
 			BOOST_FOREACH (InputType type, inputParameters){
@@ -213,6 +208,9 @@ class PythonAtom : public PluginAtom
 				}
 			}		
 			setOutputArity(outputArity);
+
+			// update properties
+			this->prop = prop;
 		}
 
 		virtual void
@@ -229,9 +227,25 @@ class PythonAtom : public PluginAtom
 				PythonAPI::emb_answer = &answer;
 				PythonAPI::emb_nogoods = nogoods;
 
-				boost::python::tuple t;
-				BOOST_FOREACH (ID inp, query.input) t += boost::python::make_tuple(inp);
-				PythonAPI::main.attr(getPredicate().c_str())(t);
+				const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
+
+				std::vector<Query> atomicQueries = splitQuery(query, prop);
+				DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
+				BOOST_FOREACH (Query atomicQuery, atomicQueries){
+					Answer atomicAnswer;
+
+					boost::python::tuple t;
+					BOOST_FOREACH (ID inp, query.input) t += boost::python::make_tuple(inp);
+					PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
+
+					ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, answer, prop, nogoods);
+					ExternalLearningHelper::learnFromFunctionality(atomicQuery, answer, prop, otuples, nogoods);
+
+					// overall answer is the union of the atomic answers
+					answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
+				}
+
+				ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
 
 				PythonAPI::emb_query = NULL;
 				PythonAPI::emb_answer = NULL;
@@ -244,19 +258,24 @@ class PythonAtom : public PluginAtom
 
 namespace PythonAPI{
 
-void addAtom(std::string name, boost::python::tuple args, int outputArity){
+void addAtomWithProperties(std::string name, boost::python::tuple args, int outputArity, dlvhex::ExtSourceProperties prop){
 	if (!emb_pluginAtoms) throw PluginError("Cannot create external atoms at this point");
 	std::vector<PluginAtom::InputType> inputParameters;
 	for (int p = 0; p < boost::python::len(args); ++p){
-		std::string arg = boost::python::extract<std::string>(args[p]);
-		if (arg == std::string("c")) inputParameters.push_back(PluginAtom::CONSTANT);
-		else if (arg == std::string("p")) inputParameters.push_back(PluginAtom::PREDICATE);
-		else if (arg == std::string("t")) inputParameters.push_back(PluginAtom::TUPLE);
-		else throw PluginError("Unknown parameter type: \"" + arg+ "\"");
+		int arg = boost::python::extract<int>(args[p]);
+		if (arg == PluginAtom::CONSTANT || arg == PluginAtom::PREDICATE || arg == PluginAtom::TUPLE) inputParameters.push_back((PluginAtom::InputType)arg);
+		else throw PluginError("dlvhex.addAtom: Unknown external atom parameter type");
 	}
+	std::stringstream passargs;
+	for (int i = 0; i < boost::python::len(args); ++i) passargs << (i > 0 ? ", " : "") << "input[" << i << "]";
+	boost::python::exec(("def " + name + "_caller(input):\n " + name + "(" + passargs.str() + ")").c_str(), dict, dict);
 
 	// return smart pointer with deleter (i.e., delete code compiled into this plugin)
-	emb_pluginAtoms->push_back(dlvhex::PluginAtomPtr(new PythonAtom(*emb_ctx, "unknown", name, inputParameters, outputArity), PluginPtrDeleter<PluginAtom>()));
+	emb_pluginAtoms->push_back(dlvhex::PluginAtomPtr(new PythonAtom(*emb_ctx, "unknown", name, inputParameters, outputArity, prop), PluginPtrDeleter<PluginAtom>()));
+}
+
+void addAtom(std::string name, boost::python::tuple args, int outputArity){
+	addAtomWithProperties(name, args, outputArity, dlvhex::ExtSourceProperties());
 }
 
 boost::python::tuple getTuple(ID id) {
@@ -267,6 +286,10 @@ boost::python::tuple getTuple(ID id) {
 	return t;
 }
 
+boost::python::tuple ID_tuple(ID* this_){
+	return getTuple(*this_);
+}
+
 std::string getValue(ID id){
 	std::stringstream ss;
 	RawPrinter printer(ss, emb_ctx->registry());
@@ -275,9 +298,17 @@ std::string getValue(ID id){
 	return ss.str();
 }
 
+std::string ID_value(ID* this_){
+	return getValue(*this_);
+}
+
 int getIntValue(ID id){
 	if (!id.isTerm() || !id.isIntegerTerm()) throw PluginError("dlvhex.getIntValue: given value does not represent an integer");
 	return id.address;
+}
+
+int ID_intvalue(ID* this_){
+	return getIntValue(*this_);
 }
 
 boost::python::tuple getTupleValues(ID id) {
@@ -286,6 +317,10 @@ boost::python::tuple getTupleValues(ID id) {
 	boost::python::tuple t;
 	BOOST_FOREACH (ID term, ogatom.tuple) t += boost::python::make_tuple(getValue(term));
 	return t;
+}
+
+boost::python::tuple ID_tuplevalues(ID* this_){
+	return getTupleValues(*this_);
 }
 
 ID storeInteger(int i){
@@ -299,16 +334,37 @@ ID storeString(std::string str){
 ID storeAtom(boost::python::tuple args) {
 	OrdinaryAtom atom(dlvhex::ID::MAINKIND_ATOM | dlvhex::ID::SUBKIND_ATOM_ORDINARYG);
 	for (int i = 0; i < boost::python::len(args); ++i){
-		atom.tuple.push_back(boost::python::extract<ID>(args[i]));
+		boost::python::extract<int> get_int(args[i]);
+		if (get_int.check()){
+			// store as int
+			atom.tuple.push_back(dlvhex::ID::termFromInteger(get_int()));
+		}else{
+			boost::python::extract<std::string> get_string(args[i]);
+			if (get_string.check()){
+				// store as string
+				atom.tuple.push_back(emb_ctx->registry()->storeConstantTerm(boost::python::extract<std::string>(args[i])));
+			}else{
+				boost::python::extract<ID> get_ID(args[i]);
+				if (get_ID.check()){
+					if (!get_ID().isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
+					atom.tuple.push_back(get_ID());
+				}else{
+					PluginError("dlvhex.output: unknown parameter type");
+				}
+			}
+		}
 	}
-
 	return emb_ctx->registry()->storeOrdinaryGAtom(atom);
 }
 
 ID negate(ID id) {
-	if (!id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
+	if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
 	id.kind ^= dlvhex::ID::NAF_MASK;
 	return id;
+}
+
+ID ID_negate(ID* this_){
+	return negate(*this_);
 }
 
 bool learn(boost::python::tuple args) {
@@ -328,13 +384,29 @@ bool learn(boost::python::tuple args) {
 	}
 }
 
-ID getOutputAtom(boost::python::tuple args) {
+ID storeOutputAtom(boost::python::tuple args) {
 
 	Tuple outputTuple;
 	for (int i = 0; i < boost::python::len(args); ++i){
-		dlvhex::ID id = boost::python::extract<ID>(args[i]);
-		if (!id.isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
-		outputTuple.push_back(id);
+		boost::python::extract<int> get_int(args[i]);
+		if (get_int.check()){
+			// store as int
+			outputTuple.push_back(dlvhex::ID::termFromInteger(get_int()));
+		}else{
+			boost::python::extract<std::string> get_string(args[i]);
+			if (get_string.check()){
+				// store as string
+				outputTuple.push_back(emb_ctx->registry()->storeConstantTerm(boost::python::extract<std::string>(args[i])));
+			}else{
+				boost::python::extract<ID> get_ID(args[i]);
+				if (get_ID.check()){
+					if (!get_ID().isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
+					outputTuple.push_back(get_ID());
+				}else{
+					PluginError("dlvhex.output: unknown parameter type");
+				}
+			}
+		}
 	}
 	return ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, true);
 }
@@ -343,23 +415,25 @@ void output(boost::python::tuple args) {
 
 	Tuple outputTuple;
 	for (int i = 0; i < boost::python::len(args); ++i){
-		dlvhex::ID id = boost::python::extract<ID>(args[i]);
-		if (!id.isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
-		outputTuple.push_back(id);
-	}
-	emb_answer->get().push_back(outputTuple);
-}
 
-void outputValues(boost::python::tuple args) {
-
-	Tuple outputTuple;
-	for (int i = 0; i < boost::python::len(args); ++i){
 		boost::python::extract<int> get_int(args[i]);
 		if (get_int.check()){
+			// store as int
 			outputTuple.push_back(dlvhex::ID::termFromInteger(get_int()));
 		}else{
-			// store as string
-			outputTuple.push_back(emb_ctx->registry()->storeConstantTerm(boost::python::extract<std::string>(args[i])));
+			boost::python::extract<std::string> get_string(args[i]);
+			if (get_string.check()){
+				// store as string
+				outputTuple.push_back(emb_ctx->registry()->storeConstantTerm(boost::python::extract<std::string>(args[i])));
+			}else{
+				boost::python::extract<ID> get_ID(args[i]);
+				if (get_ID.check()){
+					if (!get_ID().isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
+					outputTuple.push_back(get_ID());
+				}else{
+					PluginError("dlvhex.output: unknown parameter type");
+				}
+			}
 		}
 	}
 	emb_answer->get().push_back(outputTuple);
@@ -396,6 +470,7 @@ bool isTrue(ID id) {
 };
 
 BOOST_PYTHON_MODULE(dlvhex) {
+	boost::python::def("addAtom", PythonAPI::addAtomWithProperties);
 	boost::python::def("addAtom", PythonAPI::addAtom);
 	boost::python::def("getValue", PythonAPI::getValue);
 	boost::python::def("getIntValue", PythonAPI::getIntValue);
@@ -406,14 +481,42 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeAtom", PythonAPI::storeAtom);
 	boost::python::def("negate", PythonAPI::negate);
 	boost::python::def("learn", PythonAPI::learn);
-	boost::python::def("getOutputAtom", PythonAPI::getOutputAtom);
+	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtom);
 	boost::python::def("output", PythonAPI::output);
-	boost::python::def("outputValues", PythonAPI::outputValues);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
 	boost::python::def("getInputAtomCount", PythonAPI::getInputAtomCount);
 	boost::python::def("isAssigned", PythonAPI::isAssigned);
 	boost::python::def("isTrue", PythonAPI::isTrue);
-	boost::python::class_<dlvhex::ID>("ID");
+	boost::python::class_<dlvhex::ID>("ID")
+		.def("value", &PythonAPI::ID_value)
+		.def("intvalue", &PythonAPI::ID_intvalue)
+		.def("tuple", &PythonAPI::ID_tuple)
+		.def("tuplevalues", &PythonAPI::ID_tuplevalues)
+		.def("negate", &PythonAPI::ID_negate);
+	boost::python::class_<dlvhex::ExtSourceProperties>("ExtSourceProperties")
+		.def("addMonotonicInputPredicate", &dlvhex::ExtSourceProperties::addMonotonicInputPredicate)
+		.def("addAntimonotonicInputPredicate", &dlvhex::ExtSourceProperties::addAntimonotonicInputPredicate)
+		.def("addPredicateParameterNameIndependence", &dlvhex::ExtSourceProperties::addPredicateParameterNameIndependence)
+		.def("addFiniteOutputDomain", &dlvhex::ExtSourceProperties::addFiniteOutputDomain)
+		.def("addRelativeFiniteOutputDomain", &dlvhex::ExtSourceProperties::addRelativeFiniteOutputDomain)
+		.def("setFunctional", &dlvhex::ExtSourceProperties::setFunctional)
+		.def("setFunctionalStart", &dlvhex::ExtSourceProperties::setFunctionalStart)
+		.def("setSupportSets", &dlvhex::ExtSourceProperties::setSupportSets)
+		.def("setCompletePositiveSupportSets", &dlvhex::ExtSourceProperties::setCompletePositiveSupportSets)
+		.def("setCompleteNegativeSupportSets", &dlvhex::ExtSourceProperties::setCompleteNegativeSupportSets)
+		.def("setVariableOutputArity", &dlvhex::ExtSourceProperties::setVariableOutputArity)
+		.def("setCaresAboutAssigned", &dlvhex::ExtSourceProperties::setCaresAboutAssigned)
+		.def("setCaresAboutChanged", &dlvhex::ExtSourceProperties::setCaresAboutChanged)
+		.def("setAtomlevellinear", &dlvhex::ExtSourceProperties::setAtomlevellinear)
+		.def("setTuplelevellinear", &dlvhex::ExtSourceProperties::setTuplelevellinear)
+		.def("setUsesEnvironment", &dlvhex::ExtSourceProperties::setUsesEnvironment)
+		.def("setFiniteFiber", &dlvhex::ExtSourceProperties::setFiniteFiber)
+		.def("addWellorderingStrlen", &dlvhex::ExtSourceProperties::addWellorderingStrlen)
+		.def("addWellorderingNatural", &dlvhex::ExtSourceProperties::addWellorderingNatural);
+
+	boost::python::scope().attr("CONSTANT") = (int)PluginAtom::CONSTANT;
+	boost::python::scope().attr("PREDICATE") = (int)PluginAtom::PREDICATE;
+	boost::python::scope().attr("TUPLE") = (int)PluginAtom::TUPLE;
 }
 
 std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
