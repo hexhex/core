@@ -39,6 +39,7 @@ dlvhex2_LDADD = \
   libdlvhex2-aspsolver.la libdlvhex2-internalplugins.la \
   $(EXTSOLVER_LIBADD) \
   $(BOOST_THREAD_LIBS) \
+  $(BOOST_PYTHON_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 

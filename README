@@ -178,6 +178,9 @@ This file provides some hints how to install and run dlvhex.
    sudo port install cmake wget automake gcc48 pkgconfig
    sudo port select --set gcc mp-gcc48
 
+   In order to support Python-implemented plugins, pass the option
+     --enable-python
+
 ** Documentation
    Run `make doxygen-doc' to create the html documentation (a
    subdirectory `doc' will be created). By default, only the html-docs

@@ -122,18 +122,18 @@
  * The \em register function has the following form:
  * \code
  * def register():
- *   return ( ("concat", "c", "c", 1), ("isbn", "p", 1), () )
+ *   dlvhex.addAtom ("concat", ("c", "c"), 1) )
  * \endcode
- * It returns a tuple with one \em entry for each external atom. Each \em entry is
- * again a tuple of arity 2 or greater: the first element is the external predicate name,
- * the last element is the output arity, and in between there is a list of input parameter types ("c" for constant, "p" for predicate, "t" for tuple).
+ * It adds one \em entry for each external atom. Each \em entry is
+ * again a tuple of arity 3: the first element is the external predicate name,
+ * the third element is the output arity, and the second is another tuple of input parameter types ("c" for constant, "p" for predicate, "t" for tuple).
  *
- * Each external predicate name (e.g. \em concat) needs to be implemented in form of another Python function.
+ * Each external predicate name (e.g. \em concat) needs to be implemented in form of another Python function with exactly one (tuple) input parameter.
  * \code
- * def concat(a, b):
- *   dlvhex.outputValues(dlvhex.getValue(a), dlvhex.getValue(b))
+ * def concat(input):
+ *   dlvhex.outputValues(dlvhex.getValue(input[0]), dlvhex.getValue(input[1]))
  * \endcode
- * Here, \em a and \em b are the input parameters (of type constant).
+ * Here, \em input[0] and \em input[1] are the input parameters (of type constant).
  * The function just takes the values of these parameters and outputs their string concatenation.
  * Note that akin to the \ref pluginframework "C++ API", terms and atoms are represented by IDs and the retrieval of the value behind
  *
@@ -174,7 +174,7 @@
 
 #ifdef HAVE_PYTHON
 
-#include <Python.h>
+//#include <Python.h>
 
 DLVHEX_NAMESPACE_BEGIN
 
