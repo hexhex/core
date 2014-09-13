@@ -9,8 +9,8 @@ if test -e clasp; then
 	fi
 else
 	echo "unpacking clasp"
-	tar xzf ${TOP_SRCDIR}/clasp-3.0.5-source.tar.gz #--transform 's/clasp-2.1.1/clasp/'
-	mv clasp-3.0.5 clasp
+	tar xzf ${TOP_SRCDIR}/clasp-3.1.0-source.tar.gz #--transform 's/clasp-2.1.1/clasp/'
+	mv clasp-3.1.0 clasp
 
 	echo "configuring clasp"
 	mkdir -p clasp/build/fpic
@@ -34,8 +34,8 @@ if test -e gringo; then
 	fi
 else
 	echo "unpacking gringo"
-	tar xzf ${TOP_SRCDIR}/gringo-4.3.0-source.tar.gz
-	mv gringo-4.3.0-source gringo
+	tar xzf ${TOP_SRCDIR}/gringo-4.4.0-source.tar.gz
+	mv gringo-4.4.0-source gringo
 	pushd $TOP_SRCDIR/buildclaspgringo
 	patch gringo/SConstruct <SConstruct.patch ||
 		{ echo "gringo patching failed!"; exit -1; }

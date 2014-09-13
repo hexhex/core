@@ -138,7 +138,7 @@ private:
 		void printDisjunctiveRule(const AtomVec &head, const LitVec &body);
 
 		void printSymbol(unsigned atomUid, Gringo::Value v);
-		void printExternal(unsigned atomUid, Gringo::Output::ExternalType e);
+		void printExternal(unsigned atomUid, Gringo::TruthValue e);
 		void forgetStep(int) { }
 		uint32_t symbol();
 	};

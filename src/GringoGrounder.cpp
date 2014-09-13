@@ -523,7 +523,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printExternal(unsigned atomUid, Gringo::Output::ExternalType e){
+void GringoGrounder::GroundHexProgramBuilder::printExternal(unsigned atomUid, Gringo::TruthValue e){
 }
 
 uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){

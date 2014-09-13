@@ -505,8 +505,8 @@ if (inconsistent){
 }
 
 DBGLOG(DBG, "Prepare new model enumerator");
-modelEnumerator.reset(config.enumerate.createEnumerator());
-modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
+modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
 DBGLOG(DBG, "Finalizing reinitialization");
 if (!claspctx.endInit()){
@@ -607,7 +607,7 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 
 		DBGLOG(DBG, "Applying options");
 		config.finalize(parsedOptions, type, true);
-		config.enumerate.numModels = 0;
+		config.solve.numModels = 0;
 		claspctx.setConfiguration(&config, false);
 
 		DBGLOG(DBG, "Finished option parsing");
@@ -761,7 +761,7 @@ void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
 	hexToClasp.reserve(reg->ogatoms.getSize());
 
 	// build symbol table and hexToClasp
-	claspctx.symbolTable().startInit();
+	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
 	unsigned largestIdx = 0;
 	unsigned varCnt = 0;
 	for (int i = 0; i < ns.getNogoodCount(); i++){
@@ -899,8 +899,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 	}
 
 	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.reset(config.enumerate.createEnumerator());
-	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
+	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+	modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
 	DBGLOG(DBG, "Finalizing initialization");
 	if (!claspctx.endInit()){
@@ -941,8 +941,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 	}
 
 	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.reset(config.enumerate.createEnumerator());
-	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
+	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+	modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
 	DBGLOG(DBG, "Finalizing initialization");
 	if (!claspctx.endInit()){
@@ -1040,8 +1040,8 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	}
 
 	DBGLOG(DBG, "Prepare new model enumerator");
-	modelEnumerator.reset(config.enumerate.createEnumerator());
-	modelEnumerator->init(claspctx, 0, config.enumerate.numModels);
+	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+	modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
 	DBGLOG(DBG, "Finalizing reinitialization");
 	if (!claspctx.endInit()){
