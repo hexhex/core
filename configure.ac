@@ -279,6 +279,7 @@ AC_ARG_ENABLE([python],
   AS_HELP_STRING([--enable-python],
                  [support python-implemented plugins]))
 
+AM_CONDITIONAL([HAVE_PYTHON],[false])
 AS_IF([test "x$enable_python" = "xyes"], [
   BOOST_PYTHON
   AX_PYTHON

@@ -108,6 +108,7 @@ TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/libdlvhex2-internalplugins.la \
   $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LDFLAGS) \
   $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) $(EXTSOLVER_LIBADD) \
+  $(BOOST_PYTHON_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 # the following line is just to make sure TestPlugin.cpp will be built separately
 # for libdlvhextest_la and for TestTestPluginStatic (seems like a automake/libtool bug)
@@ -115,7 +116,7 @@ TestTestPluginStatic_CPPFLAGS = $(AM_CXXFLAGS)
 
 # libdlvhexbase does not depend on libaspsolver and does not depend on libmlpsolver
 # libaspsolver does not depend on libmlpsolver
-LDADD_BASE = $(top_builddir)/src/libdlvhex2-base.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+LDADD_BASE = $(top_builddir)/src/libdlvhex2-base.la $(BOOST_THREAD_LDFLAGS) $(BOOST_PYTHON_LIBS) $(BOOST_THREAD_LIBS) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 LDADD_ASPSOLVER = $(top_builddir)/src/libdlvhex2-aspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
 LDADD_MLP_ASPSOLVER = $(top_builddir)/src/libdlvhex2-mlpsolver.la $(LDADD_ASPSOLVER)
 
@@ -152,7 +153,7 @@ TestTables_SOURCES = \
 	TestTables.cpp \
 	$(top_srcdir)/src/Logger.cpp \
 	$(top_srcdir)/src/ID.cpp
-TestTables_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestTables_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(BOOST_PYTHON_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestModelGraph_SOURCES = \
 	TestModelGraph.cpp \
@@ -160,7 +161,7 @@ TestModelGraph_SOURCES = \
 	fixtureE2M2.cpp \
 	fixtureE2.cpp \
 	$(top_srcdir)/src/Logger.cpp
-TestModelGraph_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestModelGraph_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(BOOST_PYTHON_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestEvalGraph_SOURCES = \
 	TestEvalGraph.cpp \
@@ -169,7 +170,7 @@ TestEvalGraph_SOURCES = \
 	fixtureEx1.cpp \
 	$(top_srcdir)/src/Logger.cpp \
 	$(top_srcdir)/src/CAUAlgorithms.cpp
-TestEvalGraph_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestEvalGraph_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(BOOST_PYTHON_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestOnlineModelBuilder_SOURCES = \
 	TestOnlineModelBuilder.cpp \
@@ -178,7 +179,7 @@ TestOnlineModelBuilder_SOURCES = \
 	fixtureE2.cpp \
 	fixtureEx1.cpp \
 	$(top_srcdir)/src/Logger.cpp
-TestOnlineModelBuilder_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestOnlineModelBuilder_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(BOOST_PYTHON_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestOfflineModelBuilder_SOURCES = \
 	TestOfflineModelBuilder.cpp \
@@ -188,7 +189,7 @@ TestOfflineModelBuilder_SOURCES = \
 	fixtureEx1.cpp \
 	$(top_srcdir)/src/Logger.cpp \
 	$(top_srcdir)/src/CAUAlgorithms.cpp
-TestOfflineModelBuilder_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestOfflineModelBuilder_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(BOOST_PYTHON_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestDLVProcess_SOURCES = \
 	TestDLVProcess.cpp
