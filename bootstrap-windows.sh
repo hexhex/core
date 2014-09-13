@@ -25,7 +25,7 @@ if test -e clasp; then
 else
 	echo "unpacking clasp"
 	tar xzf ${TOP_SRCDIR}/clasp-3.1.0-source.tar.gz #--transform 's/clasp-2.1.1/clasp/'
-	mv clasp-3.0.5 clasp
+	mv clasp-3.1.0 clasp
 
 	echo "configuring clasp"
 	mkdir -p clasp/build/fpic
