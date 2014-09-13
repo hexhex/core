@@ -156,8 +156,8 @@
  * \em isAssigned: Checks if an input atom is assigned.
  * \em isTrue: Checks if an input atom is assigned to true.
  *
- * In order to load a Python-implemented plugin, make sure that the according Python file \em myPlugin.py is in the plugin
- * search path of \em dlvhex and pass the additional option \code --pythonmodule=myPlugin \endcode (without filename extension .py!).
+ * In order to load a Python-implemented plugin stored in file PATH,
+ * pass the additional option \code --pythonplugin=PATH \endcode to dlvhex.
  */
 #ifndef PYTHON_PLUGIN__HPP_INCLUDED
 #define PYTHON_PLUGIN__HPP_INCLUDED
