@@ -63,7 +63,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libdlvhex2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdlvhex2.lib;python34.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,7 +84,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libdlvhex2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libdlvhex2.lib;python34.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -103,6 +103,7 @@
     <ClCompile Include="..\..\src\FunctionPlugin.cpp" />
     <ClCompile Include="..\..\src\HigherOrderPlugin.cpp" />
     <ClCompile Include="..\..\src\ManualEvalHeuristicsPlugin.cpp" />
+    <ClCompile Include="..\..\src\PythonPlugin.cpp" />
     <ClCompile Include="..\..\src\QueryPlugin.cpp" />
     <ClCompile Include="..\..\src\StrongNegationPlugin.cpp" />
     <ClCompile Include="..\..\src\WeakConstraintPlugin.cpp" />
@@ -123,6 +124,7 @@
     <ClInclude Include="..\..\include\dlvhex2\FunctionPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\HigherOrderPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\ManualEvalHeuristicsPlugin.h" />
+    <ClInclude Include="..\..\include\dlvhex2\PythonPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\QueryPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\StrongNegationPlugin.h" />
     <ClInclude Include="..\..\include\dlvhex2\WeakConstraintPlugin.h" />

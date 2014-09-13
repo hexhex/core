@@ -53,24 +53,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 
-#ifdef WIN32
-#include <Windows.h>
-#endif
-
 DLVHEX_NAMESPACE_BEGIN
-
-#ifdef POSIX
-	#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
-	#define unsetenv(VAR) ::unsetenv(VAR)
-#else
-	void setenv(const char* var, const char* val, int v){
-		SetEnvironmentVariable(var, val);
-	}
-
-	void unsetenv(const char* var){
-		SetEnvironmentVariable(var, NULL);
-	}
-#endif
 
 PythonPlugin::CtxData::CtxData()
 {
@@ -534,7 +517,11 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 		DBGLOG(DBG, "Loading file \"" + script + "\"");
 		try{
 			Py_Initialize();
+#if PY_MAJOR_VERSION <= 2
 			initdlvhex();
+#else
+			PyInit_dlvhex();
+#endif
 			PythonAPI::main = boost::python::import("__main__");
 			PythonAPI::dict = PythonAPI::main.attr("__dict__");
 			boost::python::exec_file(script.c_str(), PythonAPI::dict, PythonAPI::dict);

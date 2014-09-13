@@ -132,6 +132,9 @@ This file provides some hints how to install and run dlvhex.
 
     $ ./configure --with-boost=/path/to/boost-prefix
 
+	Under Windows, configure the boost libraries as follows:
+	> b2.exe --toolset=msvc-10.0 --build-type=complete --with-python link=static
+	
 *** libcurl
     libcurl is a multi-protocol file transfer library. dlvhex uses it
     to retrieve programs specified by http-scheme URLs. This library

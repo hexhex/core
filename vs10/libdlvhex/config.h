@@ -39,6 +39,9 @@
 /* Path of DLV executable */
 #define DLVPATH "dlv.exe"
 
+/* Define to 1 if we compile with Python support. */
+#define HAVE_PYTHON 1
+
 /* Define to 1 if you have the `argz_add' function. */
 #define HAVE_ARGZ_ADD 1
 
@@ -140,7 +143,7 @@
 #define HAVE_ERROR_T 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+/* #define HAVE_INTTYPES_H 1 */
 
 /* Defined if we have --with-libclasp. */
 #define HAVE_LIBCLASP 1
@@ -227,7 +230,7 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
+/* #define HAVE_UNISTD_H 1 */
 
 /* This value is set to 1 to indicate that the system argz facility works */
 #define HAVE_WORKING_ARGZ 1

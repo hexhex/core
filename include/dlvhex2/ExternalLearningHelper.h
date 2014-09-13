@@ -67,7 +67,7 @@ public:
   };
   typedef boost::shared_ptr<InputNogoodProvider> InputNogoodProviderConstPtr;
 
-  class DefaultInputNogoodProvider : public InputNogoodProvider{
+  class DLVHEX_EXPORT DefaultInputNogoodProvider : public InputNogoodProvider{
     bool negateMonotonicity;
   public:
     DefaultInputNogoodProvider(bool negateMonotonicity);

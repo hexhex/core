@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\src\ManualEvalHeuristicsPlugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\PythonPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
@@ -132,6 +135,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\dlvhex2\PythonPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
