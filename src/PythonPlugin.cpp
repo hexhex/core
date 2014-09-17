@@ -40,6 +40,7 @@
 #include "dlvhex2/PythonPlugin.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/State.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Printhelpers.h"
@@ -471,19 +472,24 @@ ID storeRule(boost::python::tuple head, boost::python::tuple pbody, boost::pytho
 	return emb_ctx->registry()->storeRule(rule);
 }
 
-boost::python::tuple evaluateSubprogram(boost::python::tuple facts, boost::python::tuple rules) {
+boost::python::tuple evaluateSubprogram(boost::python::tuple tup) {
+
+	boost::python::extract<boost::python::tuple> facts(tup[0]);
+	boost::python::extract<boost::python::tuple> rules(tup[1]);
+
+	if (!facts.check() || !rules.check()) throw PluginError("dlvhex.evaluateSubprogram: Input must be a pair of facts and rules");
 
 	InterpretationPtr edb(new Interpretation(emb_ctx->registry()));
-	for (int i = 0; i < boost::python::len(facts); ++i){
-		boost::python::extract<ID> get_ID(facts[i]);
+	for (int i = 0; i < boost::python::len(facts()); ++i){
+		boost::python::extract<ID> get_ID(facts()[i]);
 		if (!get_ID.check() || !get_ID().isAtom() || !get_ID().isOrdinaryGroundAtom()){
 			throw PluginError("dlvhex.evaluateSubprogram: Facts must be a tuple of ground atom IDs");
 		}
 		edb->setFact(get_ID().address);
 	}
 	std::vector<ID> idb;
-	for (int i = 0; i < boost::python::len(rules); ++i){
-		boost::python::extract<ID> get_ID(rules[i]);
+	for (int i = 0; i < boost::python::len(rules()); ++i){
+		boost::python::extract<ID> get_ID(rules()[i]);
 		if (!get_ID.check() || !get_ID().isRule()){
 			throw PluginError("dlvhex.evaluateSubprogram: Facts must be a tuple of ground atom IDs");
 		}
@@ -502,6 +508,58 @@ boost::python::tuple evaluateSubprogram(boost::python::tuple facts, boost::pytho
 		pythonResult += boost::python::make_tuple(pythonAS);
 	}
 	return pythonResult;
+}
+
+boost::python::tuple loadSubprogram(std::string filename) {
+
+	ProgramCtx pc = *emb_ctx;
+	pc.idb.clear();
+	pc.edb = InterpretationPtr(new Interpretation(emb_ctx->registry()));
+	pc.currentOptimum.clear();
+	pc.config.setOption("NumberOfModels",0);
+	InputProviderPtr ip(new InputProvider());
+	ip->addFileInput(filename);
+	pc.inputProvider = ip;
+	ip.reset();
+
+	DBGLOG(DBG, "Resetting context");
+	pc.config.setOption("NestedHEX", 1);
+	pc.state.reset();
+	pc.modelBuilder.reset();
+	pc.parser.reset();
+	pc.evalgraph.reset();
+	pc.compgraph.reset();
+	pc.depgraph.reset();
+
+	pc.config.setOption("DumpDepGraph",0);
+	pc.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
+	pc.config.setOption("DumpCompGraph",0);
+	pc.config.setOption("DumpEvalGraph",0);
+	pc.config.setOption("DumpModelGraph",0);
+	pc.config.setOption("DumpIModelGraph",0);
+	pc.config.setOption("DumpAttrGraph",0);
+
+	if( !pc.evalHeuristic ) {
+		assert(false);
+		throw GeneralError("No evaluation heuristics found");
+	}
+
+	pc.changeState(StatePtr(new ConvertState()));
+	pc.convert();
+	pc.parse();
+
+	bm::bvector<>::enumerator en = pc.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = pc.edb->getStorage().end();
+	boost::python::tuple pyedb, pyidb;
+	while (en < en_end){
+		pyedb += boost::python::make_tuple(emb_ctx->registry()->ogatoms.getIDByAddress(*en));
+		en++;
+	}
+	BOOST_FOREACH (ID ruleID, pc.idb) {
+		pyidb += boost::python::make_tuple(ruleID);
+	}
+
+	return boost::python::make_tuple(pyedb, pyidb);
 }
 
 ID negate(ID id) {
@@ -665,6 +723,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeExternalAtom", PythonAPI::storeExternalAtom);
 	boost::python::def("storeRule", PythonAPI::storeRule);
 	boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
+	boost::python::def("loadSubprogram", PythonAPI::loadSubprogram);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
 		.def("intValue", &PythonAPI::ID_intValue)

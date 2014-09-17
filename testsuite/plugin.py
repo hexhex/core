@@ -8,6 +8,7 @@ def test(a, b, c):
 
 def fibonacci(val):
 	dlvhex.output((fibonacci_comp(val.intValue()), ))
+	testSubprogram()
 	
 def fibonacci_comp(val):
 	if val <= 2:
@@ -47,8 +48,6 @@ def testSetMinus(p, q):
 	for x in outputatoms:
 		dlvhex.learn((x.negate(), ) + premisse)
 
-	testSubprogram()
-
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -60,8 +59,17 @@ def testSubprogram():
 	b = dlvhex.storeExternalAtom("concat", ("a", "b"), ("X", ))
 	f = dlvhex.storeAtom(("p", "a"))
 	r = dlvhex.storeRule((h1, h2, ), (b, ), ());
-	a = dlvhex.evaluateSubprogram((f, ), (r, ))
-	print dlvhex.getValue(a)
+	a = dlvhex.evaluateSubprogram(((f, ), (r, )))
+
+	prog = dlvhex.loadSubprogram("examples/3col.hex")
+	print "Evaluating the program:"
+	print dlvhex.getValue(prog[1])
+	print "Facts:"
+	print dlvhex.getValue(prog[0])
+
+	ans = dlvhex.evaluateSubprogram(prog)
+	for x in ans:
+		print "Answer set:", dlvhex.getValue(x)
 
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)
