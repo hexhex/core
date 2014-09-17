@@ -15,4 +15,6 @@ dom(f).
 s(X) :- dom(X), &testSetMinus[dom, n](X). %<monotonic dom, antimonotonic n>.
 n(X) :- dom(X), &testSetMinus[dom, s](X). %<monotonic dom, antimonotonic s>.
 
+cc(X) :- &concat[a,b,c,d](X).
+
 date(T) :- &date[](T).

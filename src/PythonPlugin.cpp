@@ -218,7 +218,14 @@ class PythonAtom : public PluginAtom
 					Answer atomicAnswer;
 
 					boost::python::tuple t;
-					BOOST_FOREACH (ID inp, query.input) t += boost::python::make_tuple(inp);
+					for (int i = 0; i < getInputArity(); ++i){
+						if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
+						else {
+							boost::python::tuple tupleparameters;
+							for (int var = i; var < query.input.size(); ++var) tupleparameters += boost::python::make_tuple(query.input[var]);
+							t += boost::python::make_tuple(tupleparameters);
+						}
+					}
 					PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
 
 					ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, answer, prop, nogoods);

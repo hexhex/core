@@ -15,6 +15,12 @@ def fibonacci_comp(val):
 	else:
 		return fibonacci_comp(val - 1) + fibonacci_comp(val - 2)
 
+def concat(tup):
+	res = ""
+	for x in tup:
+		res = res + x.value()
+	dlvhex.output((res, ))
+
 def testSetMinus(p, q):
 
 	premisse = ()
@@ -50,6 +56,7 @@ def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)
 	dlvhex.addAtom("test", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT), 2)
 	dlvhex.addAtom("fibonacci", (dlvhex.CONSTANT, ), 1)
+	dlvhex.addAtom("concat", (dlvhex.TUPLE, ), 1)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.addMonotonicInputPredicate(0)

@@ -129,12 +129,21 @@
  * the third element is the output arity, and the second is another tuple of input parameter types (dlvhex.CONSTANT, dlvhex.PREDICATE, dlvhex.TUPLE).
  *
  * Each external predicate name (e.g. \em concat) needs to be implemented in form of another Python function with an appropriate number of input parameters.
+ * Example:
  * \code
  * def concat(a, b):
  *   dlvhex.outputValues(dlvhex.getValue(a), dlvhex.getValue(b))
  * \endcode
- * Here, \em a and \em b are the input parameters (of type constant).
  * The function just takes the values of these parameters and outputs their string concatenation.
+ * Here, \em a and \em b are the input parameters (of type constant). If an external atom specifies an input parameter of type TUPLE,
+ * the elements will be passed as a Python tuple.
+ * Example:
+ * def concat(tup):
+ *   ret = ""
+ *   for x in tup:
+ *     ret = reg + x
+ *   dlvhex.outputValues((ret, ))
+ * \endcode
  * Note that akin to the \ref pluginframework "C++ API", terms and atoms are represented by IDs and the retrieval of the value behind
  *
  * usually requires the use of the \em getValue method; some methods combine this with other functionalities (see method list below).
@@ -180,7 +189,7 @@
  * 
  * Moreover, for an ID object \em id, there are the following shortcuts:
  *   <em>id.value()</em> for <em>dlvhex.getValue(id)</em>
- *   <em>id.intvalue()</em> for <em>dlvhex.getIntValue(id)</em>
+ *   <em>id.intValue()</em> for <em>dlvhex.getIntValue(id)</em>
  *   <em>id.tuple()</em> for <em>dlvhex.getTuple(id)</em>
  *   <em>id.tupleValues()</em> for <em>dlvhex.getTupleValues(id)</em>
  *   <em>id.negate()</em> for <em>dlvhex.negate(id)</em>
