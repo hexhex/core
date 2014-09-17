@@ -801,8 +801,12 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 }
 
 void PythonPlugin::runPythonMain(std::string filename){
-	boost::python::exec_file(filename.c_str(), PythonAPI::dict, PythonAPI::dict);
-	PythonAPI::main.attr("main")();
+	try{
+		boost::python::exec_file(filename.c_str(), PythonAPI::dict, PythonAPI::dict);
+		PythonAPI::main.attr("main")();
+	}catch(boost::python::error_already_set& e){
+		PyErr_Print();
+	}
 }
 
 DLVHEX_NAMESPACE_END
