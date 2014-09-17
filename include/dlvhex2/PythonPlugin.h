@@ -129,6 +129,7 @@
  * the third element is the output arity, and the second is another tuple of input parameter types (dlvhex.CONSTANT, dlvhex.PREDICATE, dlvhex.TUPLE).
  *
  * Each external predicate name (e.g. \em concat) needs to be implemented in form of another Python function with an appropriate number of input parameters.
+ *
  * Example:
  * \code
  * def concat(a, b):
@@ -137,6 +138,7 @@
  * The function just takes the values of these parameters and outputs their string concatenation.
  * Here, \em a and \em b are the input parameters (of type constant). If an external atom specifies an input parameter of type TUPLE,
  * the elements will be passed as a Python tuple.
+ *
  * Example:
  * def concat(tup):
  *   ret = ""
@@ -149,59 +151,65 @@
  * usually requires the use of the \em getValue method; some methods combine this with other functionalities (see method list below).
  *
  * In more detail, the \em dlvhex Python module provides the following methods:
- *   <em>tuple getTuple(aID)</em>: Return the IDs of the elements of a dlvhex atom identified by ID \em aID.
- *   <em>tuple getTupleValues(aID)</em>: Return the values of the elements of a dlvhex atom identified by ID \em aID.
- *   <em>string getValue(id)</em>: Return the value of an atom or term ID \em id.
- *   <em>int getIntValue(id)</em>: Return the value of an integer term ID \em id as integer.
- *   <em>string getValue(tup)</em>: Print the tuple \em tup recursively, i.e., the elements of the tuple can be further tuples or IDs. IDs \em id are printed by calling <em>dlvhex.getValue(id)</em>, they are delimited by <em>,</em> and the output is enclosed in curly braces.
- *   <em>dlvhex.ID storeString(str)</em>: Stores a string \em str as dlvhex object and returns its ID.
- *   <em>dlvhex.ID storeInteger(int)</em>: Stores an integer \em int as dlvhex object and returns its ID.
- *   <em>dlvhex.ID storeAtom(args)</em>: Transforms a sequence of terms or values \em args into a dlvhex atom.
- *   <em>dlvhex.ID negate(aID)</em>: Negates an atom ID \em aID.
- *   <em>bool learn(tup)</em>: Learns a nogood as a tuple of atom IDs or their negations \em tup; returns if learning was enabled.
- *   <em>ID storeOutputAtom(args)</em>: Constructs an output atom from IDs or values \em args (for learning purposes) and returns its ID.
- *   <em>void output(args)</em>: Adds a tuple of IDs or values \em args to the external source output.
- *   <em>tuple getInputAtoms()</em>: Returns a tuple of all input atoms to this external atom.
- *   <em>int getInputAtomCount()</em>: Returns the number of input atoms.
- *   <em>bool isInputAtom(id)</em>: Checks if atom \em id belongs to the input of the current external atom.
- *   <em>bool isAssigned(id)</em>: Checks if an input atom identified by ID \em id is assigned.
- *   <em>bool isTrue(id)</em>: Checks if an input atom identified by ID \em id is assigned to true.
- *   <em>bool isFalse(id)</em>: Checks if an input atom identified by ID \em id is assigned to false.
- *   <em>void addAtom(name, args, ar, [prop])</em>: Add external atom \em name with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).
- *   <em>void storeExternalAtom(pred, input, output)</em>: Stores an external atom with predicate \em pred, input parameters \em input and output parameters \em output (can be terms or their IDs) and returns its ID.
- *   <em>void storeRule(head, pbody, nbody)</em>: Stores a rule with head atoms \em head, positive body atoms \em pbody and negative body atoms \em nbody; all parameters need to be a tuples of IDs.
- *   <em>tuple evaluateSubprogram(facts, rules)</em>: Evaluates the subprogram consisting of facts \em facts (tuple of IDs of ground atoms) and rules \em rules (tuple of rule IDs) and returns the number of answer sets; the result is a tuple of answer sets, where each answer set is again a tuple of the ground atom IDs which are true in the respective answer set.
+ * <ul>
+ *   <li><em>tuple getTuple(aID)</em>: Return the IDs of the elements of a dlvhex atom identified by ID \em aID.</li>
+ *   <li><em>tuple getTupleValues(aID)</em>: Return the values of the elements of a dlvhex atom identified by ID \em aID.</li>
+ *   <li><em>string getValue(id)</em>: Return the value of an atom or term ID \em id.</li>
+ *   <li><em>int getIntValue(id)</em>: Return the value of an integer term ID \em id as integer.</li>
+ *   <li><em>string getValue(tup)</em>: Print the tuple \em tup recursively, i.e., the elements of the tuple can be further tuples or IDs. IDs \em id are printed by calling <em>dlvhex.getValue(id)</em>, they are delimited by <em>,</em> and the output is enclosed in curly braces.</li>
+ *   <li><em>dlvhex.ID storeString(str)</em>: Stores a string \em str as dlvhex object and returns its ID.</li>
+ *   <li><em>dlvhex.ID storeInteger(int)</em>: Stores an integer \em int as dlvhex object and returns its ID.</li>
+ *   <li><em>dlvhex.ID storeAtom(args)</em>: Transforms a sequence of terms or values \em args into a dlvhex atom.</li>
+ *   <li><em>dlvhex.ID negate(aID)</em>: Negates an atom ID \em aID.</li>
+ *   <li><em>bool learn(tup)</em>: Learns a nogood as a tuple of atom IDs or their negations \em tup; returns if learning was enabled.</li>
+ *   <li><em>ID storeOutputAtom(args)</em>: Constructs an output atom from IDs or values \em args (for learning purposes) and returns its ID.</li>
+ *   <li><em>void output(args)</em>: Adds a tuple of IDs or values \em args to the external source output.</li>
+ *   <li><em>tuple getInputAtoms()</em>: Returns a tuple of all input atoms to this external atom.</li>
+ *   <li><em>int getInputAtomCount()</em>: Returns the number of input atoms.</li>
+ *   <li><em>bool isInputAtom(id)</em>: Checks if atom \em id belongs to the input of the current external atom.</li>
+ *   <li><em>bool isAssigned(id)</em>: Checks if an input atom identified by ID \em id is assigned.</li>
+ *   <li><em>bool isTrue(id)</em>: Checks if an input atom identified by ID \em id is assigned to true.</li>
+ *   <li><em>bool isFalse(id)</em>: Checks if an input atom identified by ID \em id is assigned to false.</li>
+ *   <li><em>void addAtom(name, args, ar, [prop])</em>: Add external atom \em name with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).</li>
+ *   <li><em>void storeExternalAtom(pred, input, output)</em>: Stores an external atom with predicate \em pred, input parameters \em input and output parameters \em output (can be terms or their IDs) and returns its ID.</li>
+ *   <li><em>void storeRule(head, pbody, nbody)</em>: Stores a rule with head atoms \em head, positive body atoms \em pbody and negative body atoms \em nbody; all parameters need to be a tuples of IDs.</li>
+ *   <li><em>tuple evaluateSubprogram(facts, rules)</em>: Evaluates the subprogram consisting of facts \em facts (tuple of IDs of ground atoms) and rules \em rules (tuple of rule IDs) and returns the number of answer sets; the result is a tuple of answer sets, where each answer set is again a tuple of the ground atom IDs which are true in the respective answer set.</li>
+ * </ul>
  *
  * External source properties \em prop are of type <em>dlvhex.ExtSourceProperties</em> and can be configured using the following methods:
- *   <em>void prop.addMonotonicInputPredicate(index)</em>: Declare argument \em index as monotonic predicate parameter.
- *   <em>void prop.addAntimonotonicInputPredicate(index)</em>: Declare argument \em index as antimonotonic predicate parameter.
- *   <em>void prop.addPredicateParameterNameIndependence(index)</em>: Declare argument \em index as independent of the predicate name (only its extension is relevant).
- *   <em>void prop.addFiniteOutputDomain(index)</em>: Declare that output argument \em index has a finite domain.
- *   <em>void prop.addRelativeFiniteOutputDomain(index1, index2)</em>: Declare that output argument \em index2 has a finite domain wrt. input argument \em index1.
- *   <em>void prop.setFunctional(value)</em>: Declare the source as functional.
- *   <em>void prop.setFunctionalStart(index)</em>: Declare the source as functional beginning at term index + 1.
- *   <em>void prop.setSupportSets(value)</em>: Declare that the source provides support sets.
- *   <em>void prop.setCompletePositiveSupportSets(value)</em>: Declare that the source provides complete positive support sets.
- *   <em>void prop.setCompleteNegativeSupportSets(value)</em>: Declare that the source provides complete negative support sets.
- *   <em>void prop.setVariableOutputArity(value)</em>: Declare that the source has a variable output arity.
- *   <em>void prop.setCaresAboutAssigned(value)</em>: Declare that the sources wants to know the assigned values.
- *   <em>void prop.setCaresAboutChanged(value)</em>: Declare that the sources wants to know the values which potentially changed since the previous call.
- *   <em>void prop.setAtomlevellinear(value)</em>: Declare the source as linear on the atom level.
- *   <em>void prop.setUsesEnvironment(value)</em>: Declare the source as linear on the tuple level.
- *   <em>void prop.setFiniteFiber(value)</em>: Declare that the source has a finite fiber.
- *   <em>void prop.addWellorderingStrlen(index1, index2)</em>: Declare that output argument \em index1 has a string length wellordering wrt. input argument \em index2.
- *   <em>void prop.addWellorderingNatural(index1, index2)</em>: Declare that output argument \em index1 has a natural wellordering wrt. input argument \em index2.
+ * <ul>
+ *   <li><em>void prop.addMonotonicInputPredicate(index)</em>: Declare argument \em index as monotonic predicate parameter.</li>
+ *   <li><em>void prop.addAntimonotonicInputPredicate(index)</em>: Declare argument \em index as antimonotonic predicate parameter.</li>
+ *   <li><em>void prop.addPredicateParameterNameIndependence(index)</em>: Declare argument \em index as independent of the predicate name (only its extension is relevant).</li>
+ *   <li><em>void prop.addFiniteOutputDomain(index)</em>: Declare that output argument \em index has a finite domain.</li>
+ *   <li><em>void prop.addRelativeFiniteOutputDomain(index1, index2)</em>: Declare that output argument \em index2 has a finite domain wrt. input argument \em index1.</li>
+ *   <li><em>void prop.setFunctional(value)</em>: Declare the source as functional.</li>
+ *   <li><em>void prop.setFunctionalStart(index)</em>: Declare the source as functional beginning at term index + 1.</li>
+ *   <li><em>void prop.setSupportSets(value)</em>: Declare that the source provides support sets.</li>
+ *   <li><em>void prop.setCompletePositiveSupportSets(value)</em>: Declare that the source provides complete positive support sets.</li>
+ *   <li><em>void prop.setCompleteNegativeSupportSets(value)</em>: Declare that the source provides complete negative support sets.</li>
+ *   <li><em>void prop.setVariableOutputArity(value)</em>: Declare that the source has a variable output arity.</li>
+ *   <li><em>void prop.setCaresAboutAssigned(value)</em>: Declare that the sources wants to know the assigned values.</li>
+ *   <li><em>void prop.setCaresAboutChanged(value)</em>: Declare that the sources wants to know the values which potentially changed since the previous call.</li>
+ *   <li><em>void prop.setAtomlevellinear(value)</em>: Declare the source as linear on the atom level.</li>
+ *   <li><em>void prop.setUsesEnvironment(value)</em>: Declare the source as linear on the tuple level.</li>
+ *   <li><em>void prop.setFiniteFiber(value)</em>: Declare that the source has a finite fiber.</li>
+ *   <li><em>void prop.addWellorderingStrlen(index1, index2)</em>: Declare that output argument \em index1 has a string length wellordering wrt. input argument \em index2.</li>
+ *   <li><em>void prop.addWellorderingNatural(index1, index2)</em>: Declare that output argument \em index1 has a natural wellordering wrt. input argument \em index2.</li>
+ * </ul>
  * 
  * Moreover, for an ID object \em id, there are the following shortcuts:
- *   <em>id.value()</em> for <em>dlvhex.getValue(id)</em>
- *   <em>id.intValue()</em> for <em>dlvhex.getIntValue(id)</em>
- *   <em>id.tuple()</em> for <em>dlvhex.getTuple(id)</em>
- *   <em>id.tupleValues()</em> for <em>dlvhex.getTupleValues(id)</em>
- *   <em>id.negate()</em> for <em>dlvhex.negate(id)</em>
- *   <em>id.isInputAtom()</em> for <em>dlvhex.isInputAtom(id)</em>
- *   <em>id.isAssigned()</em> for <em>dlvhex.isAssigned(id)</em>
- *   <em>id.isTrue()</em> for <em>dlvhex.isTrue(id)</em>
- *   <em>id.isFalse()</em> for <em>dlvhex.isFalse(id)</em>
+ * <ul>
+ *   <li><em>id.value()</em> for <em>dlvhex.getValue(id)</em></li>
+ *   <li><em>id.intValue()</em> for <em>dlvhex.getIntValue(id)</em></li>
+ *   <li><em>id.tuple()</em> for <em>dlvhex.getTuple(id)</em></li>
+ *   <li><em>id.tupleValues()</em> for <em>dlvhex.getTupleValues(id)</em></li>
+ *   <li><em>id.negate()</em> for <em>dlvhex.negate(id)</em></li>
+ *   <li><em>id.isInputAtom()</em> for <em>dlvhex.isInputAtom(id)</em></li>
+ *   <li><em>id.isAssigned()</em> for <em>dlvhex.isAssigned(id)</em></li>
+ *   <li><em>id.isTrue()</em> for <em>dlvhex.isTrue(id)</em></li>
+ *   <li><em>id.isFalse()</em> for <em>dlvhex.isFalse(id)</em></li>
+ * </ul>
  * 
  * In order to load a Python-implemented plugin stored in file PATH,
  * pass the additional option \code --pythonplugin=PATH \endcode to dlvhex.
