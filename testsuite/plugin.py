@@ -47,10 +47,21 @@ def testSetMinus(p, q):
 	for x in outputatoms:
 		dlvhex.learn((x.negate(), ) + premisse)
 
+	testSubprogram()
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
 	dlvhex.output((t, ))
+
+def testSubprogram():
+	h1 = dlvhex.storeAtom(("q", "X"))
+	h2 = dlvhex.storeAtom(("r", "X"))
+	b = dlvhex.storeExternalAtom("concat", ("a", "b"), ("X", ))
+	f = dlvhex.storeAtom(("p", "a"))
+	r = dlvhex.storeRule((h1, h2, ), (b, ), ());
+	a = dlvhex.evaluateSubprogram((f, ), (r, ))
+	print dlvhex.printTuple(a)
 
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)

@@ -152,6 +152,7 @@
  *   <em>tuple getTuple(aID)</em>: Return the IDs of the elements of a dlvhex atom identified by ID \em aID.
  *   <em>tuple getTupleValues(aID)</em>: Return the values of the elements of a dlvhex atom identified by ID \em aID.
  *   <em>string getValue(id)</em>: Return the value of an atom or term ID \em id.
+ *   <em>string printTuple(tup)</em>: Print the tuple \em tup recursively, i.e., the elements of the tuple can be further tuples or IDs. IDs \em id are printed by calling <em>dlvhex.getValue(id)</em>, they are delimited by <em>,</em> and the output is enclosed in curly braces.
  *   <em>dlvhex.ID storeString(str)</em>: Stores a string \em str as dlvhex object and returns its ID.
  *   <em>dlvhex.ID storeInteger(int)</em>: Stores an integer \em int as dlvhex object and returns its ID.
  *   <em>dlvhex.ID storeAtom(args)</em>: Transforms a sequence of terms or values \em args into a dlvhex atom.
@@ -165,7 +166,10 @@
  *   <em>bool isAssigned(id)</em>: Checks if an input atom identified by ID \em id is assigned.
  *   <em>bool isTrue(id)</em>: Checks if an input atom identified by ID \em id is assigned to true.
  *   <em>bool isFalse(id)</em>: Checks if an input atom identified by ID \em id is assigned to false.
- *   <em>void addAtom(name, args, ar, [prop])</em>: Add external atom "name" with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).
+ *   <em>void addAtom(name, args, ar, [prop])</em>: Add external atom \em name with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).
+ *   <em>void storeExternalAtom(pred, input, output)</em>: Stores an external atom with predicate \em pred, input parameters \em input and output parameters \em output (can be terms or their IDs) and returns its ID.
+ *   <em>void storeRule(head, pbody, nbody)</em>: Stores a rule with head atoms \em head, positive body atoms \em pbody and negative body atoms \em nbody; all parameters need to be a tuples of IDs.
+ *   <em>tuple evaluateSubprogram(facts, rules)</em>: Evaluates the subprogram consisting of facts \em facts (tuple of IDs of ground atoms) and rules \em rules (tuple of rule IDs) and returns the number of answer sets; the result is a tuple of answer sets, where each answer set is again a tuple of the ground atom IDs which are true in the respective answer set.
  *
  * External source properties \em prop are of type <em>dlvhex.ExtSourceProperties</em> and can be configured using the following methods:
  *   <em>void prop.addMonotonicInputPredicate(index)</em>: Declare argument \em index as monotonic predicate parameter.

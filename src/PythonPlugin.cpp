@@ -297,6 +297,28 @@ int getIntValue(ID id){
 	return id.address;
 }
 
+std::string printTuple(boost::python::tuple tup){
+
+	std::stringstream ret;
+	ret << "{";
+	std::string delim = " ";
+	for (int i = 0; i < boost::python::len(tup); ++i){
+		boost::python::extract<boost::python::tuple> get_tuple(tup[i]);
+		if (get_tuple.check()){
+			ret << delim << printTuple(get_tuple());
+		}else{
+			boost::python::extract<dlvhex::ID> get_ID(tup[i]);
+			if (!get_ID.check()){
+				throw PluginError("dlvhex.printTuple: parameter must be an ID or a tuple");
+			}
+			ret << delim << getValue(get_ID());
+		}
+		delim = ", ";
+	}
+	ret << " }";
+	return ret.str();
+}
+
 int ID_intValue(ID* this_){
 	return getIntValue(*this_);
 }
@@ -322,7 +344,8 @@ ID storeString(std::string str){
 }
 
 ID storeAtom(boost::python::tuple args) {
-	OrdinaryAtom atom(dlvhex::ID::MAINKIND_ATOM | dlvhex::ID::SUBKIND_ATOM_ORDINARYG);
+	OrdinaryAtom atom(dlvhex::ID::MAINKIND_ATOM);
+	bool nonground = false;
 	for (int i = 0; i < boost::python::len(args); ++i){
 		boost::python::extract<int> get_int(args[i]);
 		if (get_int.check()){
@@ -332,7 +355,13 @@ ID storeAtom(boost::python::tuple args) {
 			boost::python::extract<std::string> get_string(args[i]);
 			if (get_string.check()){
 				// store as string
-				atom.tuple.push_back(emb_ctx->registry()->storeConstantTerm(boost::python::extract<std::string>(args[i])));
+				std::string str = boost::python::extract<std::string>(args[i]);
+				if (str[0] == '_' || (str[0] >= 'A' && str[0] <= 'Z')){
+					atom.tuple.push_back(emb_ctx->registry()->storeVariableTerm(str));
+					nonground = true;
+				}else{
+					atom.tuple.push_back(emb_ctx->registry()->storeConstantTerm(str));
+				}
 			}else{
 				boost::python::extract<ID> get_ID(args[i]);
 				if (get_ID.check()){
@@ -344,7 +373,135 @@ ID storeAtom(boost::python::tuple args) {
 			}
 		}
 	}
-	return emb_ctx->registry()->storeOrdinaryGAtom(atom);
+	if (nonground){
+		atom.kind |= dlvhex::ID::SUBKIND_ATOM_ORDINARYN;
+		return emb_ctx->registry()->storeOrdinaryNAtom(atom);
+	}else{
+		atom.kind |= dlvhex::ID::SUBKIND_ATOM_ORDINARYG;
+		return emb_ctx->registry()->storeOrdinaryGAtom(atom);
+	}
+}
+
+ID storeExternalAtom(std::string pred, boost::python::tuple iargs, boost::python::tuple oargs) {
+	ExternalAtom eatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+	eatom.predicate = emb_ctx->registry()->storeConstantTerm(pred);
+	for (int i = 0; i < boost::python::len(iargs); ++i){
+		boost::python::extract<int> get_int(iargs[i]);
+		if (get_int.check()){
+			// store as int
+			eatom.inputs.push_back(dlvhex::ID::termFromInteger(get_int()));
+		}else{
+			boost::python::extract<std::string> get_string(iargs[i]);
+			if (get_string.check()){
+				// store as string
+				std::string str = boost::python::extract<std::string>(iargs[i]);
+				if (str[0] == '_' || (str[0] >= 'A' && str[0] <= 'Z')){
+					eatom.inputs.push_back(emb_ctx->registry()->storeVariableTerm(str));
+				}else{
+					eatom.inputs.push_back(emb_ctx->registry()->storeConstantTerm(str));
+				}
+			}else{
+				boost::python::extract<ID> get_ID(iargs[i]);
+				if (get_ID.check()){
+					if (!get_ID().isTerm()) throw PluginError("dlvhex.storeExternalAtom: Parameters must be term IDs");
+					eatom.inputs.push_back(get_ID());
+				}else{
+					PluginError("dlvhex.storeExternalAtom: unknown parameter type");
+				}
+			}
+		}
+	}
+	for (int i = 0; i < boost::python::len(oargs); ++i){
+		boost::python::extract<int> get_int(oargs[i]);
+		if (get_int.check()){
+			// store as int
+			eatom.tuple.push_back(dlvhex::ID::termFromInteger(get_int()));
+		}else{
+			boost::python::extract<std::string> get_string(oargs[i]);
+			if (get_string.check()){
+				// store as string
+				std::string str = boost::python::extract<std::string>(oargs[i]);
+				if (str[0] == '_' || (str[0] >= 'A' && str[0] <= 'Z')){
+					eatom.tuple.push_back(emb_ctx->registry()->storeVariableTerm(str));
+				}else{
+					eatom.tuple.push_back(emb_ctx->registry()->storeConstantTerm(str));
+				}
+			}else{
+				boost::python::extract<ID> get_ID(oargs[i]);
+				if (get_ID.check()){
+					if (!get_ID().isTerm()) throw PluginError("dlvhex.storeExternalAtom: Parameters must be term IDs");
+					eatom.tuple.push_back(get_ID());
+				}else{
+					PluginError("dlvhex.storeExternalAtom: unknown parameter type");
+				}
+			}
+		}
+	}
+	return emb_ctx->registry()->eatoms.storeAndGetID(eatom);
+}
+
+ID storeRule(boost::python::tuple head, boost::python::tuple pbody, boost::python::tuple nbody) {
+
+	Rule rule(ID::MAINKIND_RULE);
+	if (boost::python::len(head) == 0) rule.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+	for (int i = 0; i < boost::python::len(head); ++i){
+		boost::python::extract<ID> get_ID(head[i]);
+		if (!get_ID.check()){
+			throw PluginError("dlvhex.storeRule: Parameters must be term IDs");
+		}
+		rule.head.push_back(get_ID());
+		if (i > 0) rule.kind |= ID::PROPERTY_RULE_DISJ;
+	}
+	for (int i = 0; i < boost::python::len(pbody); ++i){
+		boost::python::extract<ID> get_ID(pbody[i]);
+		if (!get_ID.check()){
+			throw PluginError("dlvhex.storeRule: Parameters must be term IDs");
+		}
+		rule.body.push_back(ID::posLiteralFromAtom(get_ID()));
+		if (get_ID().isExternalAtom()) rule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+	}
+	for (int i = 0; i < boost::python::len(nbody); ++i){
+		boost::python::extract<ID> get_ID(nbody[i]);
+		if (!get_ID.check()){
+			throw PluginError("dlvhex.storeRule: Parameters must be term IDs");
+		}
+		rule.body.push_back(ID::nafLiteralFromAtom(get_ID()));
+		if (get_ID().isExternalAtom()) rule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+	}
+	return emb_ctx->registry()->storeRule(rule);
+}
+
+boost::python::tuple evaluateSubprogram(boost::python::tuple facts, boost::python::tuple rules) {
+
+	InterpretationPtr edb(new Interpretation(emb_ctx->registry()));
+	for (int i = 0; i < boost::python::len(facts); ++i){
+		boost::python::extract<ID> get_ID(facts[i]);
+		if (!get_ID.check() || !get_ID().isAtom() || !get_ID().isOrdinaryGroundAtom()){
+			throw PluginError("dlvhex.evaluateSubprogram: Facts must be a tuple of ground atom IDs");
+		}
+		edb->setFact(get_ID().address);
+	}
+	std::vector<ID> idb;
+	for (int i = 0; i < boost::python::len(rules); ++i){
+		boost::python::extract<ID> get_ID(rules[i]);
+		if (!get_ID.check() || !get_ID().isRule()){
+			throw PluginError("dlvhex.evaluateSubprogram: Facts must be a tuple of ground atom IDs");
+		}
+		idb.push_back(get_ID());
+	}
+	std::vector<InterpretationPtr> answersets = emb_ctx->evaluateSubprogram(edb, idb);
+	boost::python::tuple pythonResult;
+	BOOST_FOREACH (InterpretationConstPtr answerset, answersets){
+		boost::python::tuple pythonAS;
+		bm::bvector<>::enumerator en = answerset->getStorage().first();
+		bm::bvector<>::enumerator en_end = answerset->getStorage().end();
+		while (en < en_end){
+			pythonAS += boost::python::make_tuple(emb_ctx->registry()->ogatoms.getIDByAddress(*en));
+			en++;
+		}
+		pythonResult += boost::python::make_tuple(pythonAS);
+	}
+	return pythonResult;
 }
 
 ID negate(ID id) {
@@ -489,6 +646,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("addAtom", PythonAPI::addAtom);
 	boost::python::def("getValue", PythonAPI::getValue);
 	boost::python::def("getIntValue", PythonAPI::getIntValue);
+	boost::python::def("printTuple", PythonAPI::printTuple);
 	boost::python::def("getTuple", PythonAPI::getTuple);
 	boost::python::def("getTupleValues", PythonAPI::getTupleValues);
 	boost::python::def("storeInteger", PythonAPI::storeInteger);
@@ -504,6 +662,9 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("isAssigned", PythonAPI::isAssigned);
 	boost::python::def("isTrue", PythonAPI::isTrue);
 	boost::python::def("isFalse", PythonAPI::isFalse);
+	boost::python::def("storeExternalAtom", PythonAPI::storeExternalAtom);
+	boost::python::def("storeRule", PythonAPI::storeRule);
+	boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
 		.def("intValue", &PythonAPI::ID_intValue)

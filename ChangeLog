@@ -1,3 +1,7 @@
+2014-09-17  Christoph Redl <redl@kr.tuwien.ac.at>
+	* src/PythonPlugin.cpp: Add support for subprogram evaluation.
+	* include/dlvhex2/PythonPlugin.h: Likewise.
+
 2014-09-13  Christoph Redl <redl@kr.tuwien.ac.at>
 	* build_potassco.sh: Upgrade to clasp 3.1.0 and gringo 4.4.0.
 	* checkout_build_potassco.sh: Likewise.
