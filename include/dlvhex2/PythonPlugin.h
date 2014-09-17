@@ -152,8 +152,10 @@
  *   <em>void output(args)</em>: Adds a tuple of IDs or values \em args to the external source output.
  *   <em>tuple getInputAtoms()</em>: Returns a tuple of all input atoms to this external atom.
  *   <em>int getInputAtomCount()</em>: Returns the number of input atoms.
+ *   <em>bool isInputAtom(id)</em>: Checks if atom \em id belongs to the input of the current external atom.
  *   <em>bool isAssigned(id)</em>: Checks if an input atom identified by ID \em id is assigned.
  *   <em>bool isTrue(id)</em>: Checks if an input atom identified by ID \em id is assigned to true.
+ *   <em>bool isFalse(id)</em>: Checks if an input atom identified by ID \em id is assigned to false.
  *   <em>void addAtom(name, args, ar, [prop])</em>: Add external atom "name" with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).
  *
  * External source properties \em prop are of type <em>dlvhex.ExtSourceProperties</em> and can be configured using the following methods:
@@ -180,8 +182,12 @@
  *   <em>id.value()</em> for <em>dlvhex.getValue(id)</em>
  *   <em>id.intvalue()</em> for <em>dlvhex.getIntValue(id)</em>
  *   <em>id.tuple()</em> for <em>dlvhex.getTuple(id)</em>
- *   <em>id.tuplevalues()</em> for <em>dlvhex.getTupleValues(id)</em>
+ *   <em>id.tupleValues()</em> for <em>dlvhex.getTupleValues(id)</em>
  *   <em>id.negate()</em> for <em>dlvhex.negate(id)</em>
+ *   <em>id.isInputAtom()</em> for <em>dlvhex.isInputAtom(id)</em>
+ *   <em>id.isAssigned()</em> for <em>dlvhex.isAssigned(id)</em>
+ *   <em>id.isTrue()</em> for <em>dlvhex.isTrue(id)</em>
+ *   <em>id.isFalse()</em> for <em>dlvhex.isFalse(id)</em>
  * 
  * In order to load a Python-implemented plugin stored in file PATH,
  * pass the additional option \code --pythonplugin=PATH \endcode to dlvhex.

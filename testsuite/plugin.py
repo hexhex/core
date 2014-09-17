@@ -1,13 +1,13 @@
 import dlvhex
 
 def multiply(a, b):
-	dlvhex.output((a.intvalue() * b.intvalue(), ));
+	dlvhex.output((a.intValue() * b.intValue(), ));
 
 def test(a, b, c):
 	dlvhex.output((a, a))
 
 def fibonacci(val):
-	dlvhex.output((fibonacci_comp(val.intvalue()), ))
+	dlvhex.output((fibonacci_comp(val.intValue()), ))
 	
 def fibonacci_comp(val):
 	if val <= 2:

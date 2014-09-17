@@ -290,7 +290,7 @@ int getIntValue(ID id){
 	return id.address;
 }
 
-int ID_intvalue(ID* this_){
+int ID_intValue(ID* this_){
 	return getIntValue(*this_);
 }
 
@@ -302,7 +302,7 @@ boost::python::tuple getTupleValues(ID id) {
 	return t;
 }
 
-boost::python::tuple ID_tuplevalues(ID* this_){
+boost::python::tuple ID_tupleValues(ID* this_){
 	return getTupleValues(*this_);
 }
 
@@ -440,14 +440,39 @@ int getInputAtomCount() {
 	return emb_query->predicateInputMask->getStorage().count();
 }
 
+bool isInputAtom(ID id) {
+	return emb_query->predicateInputMask->getFact(id.address);
+}
+
+bool ID_isInputAtom(ID* this_){
+	return isInputAtom(*this_);
+}
+
 bool isAssigned(ID id) {
 	if (!!emb_query->assigned || emb_query->assigned->getFact(id.address)) return true;
 	else return false;
 }
 
+bool ID_isAssigned(ID* this_){
+	return isAssigned(*this_);
+}
+
 bool isTrue(ID id) {
-	if (emb_query->interpretation->getFact(id.address)) return true;
+	if (isAssigned(id) && emb_query->interpretation->getFact(id.address)) return true;
 	else return false;
+}
+
+bool ID_isTrue(ID* this_){
+	return isTrue(*this_);
+}
+
+bool isFalse(ID id) {
+	if (isAssigned(id) && emb_query->interpretation->getFact(id.address)) return true;
+	else return false;
+}
+
+bool ID_isFalse(ID* this_){
+	return isFalse(*this_);
 }
 
 };
@@ -468,14 +493,20 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("output", PythonAPI::output);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
 	boost::python::def("getInputAtomCount", PythonAPI::getInputAtomCount);
+	boost::python::def("isInputAtom", PythonAPI::isInputAtom);
 	boost::python::def("isAssigned", PythonAPI::isAssigned);
 	boost::python::def("isTrue", PythonAPI::isTrue);
+	boost::python::def("isFalse", PythonAPI::isFalse);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
-		.def("intvalue", &PythonAPI::ID_intvalue)
+		.def("intValue", &PythonAPI::ID_intValue)
 		.def("tuple", &PythonAPI::ID_tuple)
-		.def("tuplevalues", &PythonAPI::ID_tuplevalues)
-		.def("negate", &PythonAPI::ID_negate);
+		.def("tupleValues", &PythonAPI::ID_tupleValues)
+		.def("negate", &PythonAPI::ID_negate)
+		.def("isInputAtom", &PythonAPI::ID_isInputAtom)
+		.def("isAssigned", &PythonAPI::ID_isAssigned)
+		.def("isTrue", &PythonAPI::ID_isTrue)
+		.def("isFalse", &PythonAPI::ID_isFalse);
 	boost::python::class_<dlvhex::ExtSourceProperties>("ExtSourceProperties")
 		.def("addMonotonicInputPredicate", &dlvhex::ExtSourceProperties::addMonotonicInputPredicate)
 		.def("addAntimonotonicInputPredicate", &dlvhex::ExtSourceProperties::addAntimonotonicInputPredicate)
