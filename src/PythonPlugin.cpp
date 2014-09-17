@@ -297,7 +297,7 @@ int getIntValue(ID id){
 	return id.address;
 }
 
-std::string printTuple(boost::python::tuple tup){
+std::string getValueOfTuple(boost::python::tuple tup){
 
 	std::stringstream ret;
 	ret << "{";
@@ -305,11 +305,11 @@ std::string printTuple(boost::python::tuple tup){
 	for (int i = 0; i < boost::python::len(tup); ++i){
 		boost::python::extract<boost::python::tuple> get_tuple(tup[i]);
 		if (get_tuple.check()){
-			ret << delim << printTuple(get_tuple());
+			ret << delim << getValueOfTuple(get_tuple());
 		}else{
 			boost::python::extract<dlvhex::ID> get_ID(tup[i]);
 			if (!get_ID.check()){
-				throw PluginError("dlvhex.printTuple: parameter must be an ID or a tuple");
+				throw PluginError("dlvhex.getValue: parameter must be an ID or a tuple");
 			}
 			ret << delim << getValue(get_ID());
 		}
@@ -645,8 +645,8 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("addAtom", PythonAPI::addAtomWithProperties);
 	boost::python::def("addAtom", PythonAPI::addAtom);
 	boost::python::def("getValue", PythonAPI::getValue);
+	boost::python::def("getValue", PythonAPI::getValueOfTuple);
 	boost::python::def("getIntValue", PythonAPI::getIntValue);
-	boost::python::def("printTuple", PythonAPI::printTuple);
 	boost::python::def("getTuple", PythonAPI::getTuple);
 	boost::python::def("getTupleValues", PythonAPI::getTupleValues);
 	boost::python::def("storeInteger", PythonAPI::storeInteger);

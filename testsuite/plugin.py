@@ -61,7 +61,7 @@ def testSubprogram():
 	f = dlvhex.storeAtom(("p", "a"))
 	r = dlvhex.storeRule((h1, h2, ), (b, ), ());
 	a = dlvhex.evaluateSubprogram((f, ), (r, ))
-	print dlvhex.printTuple(a)
+	print dlvhex.getValue(a)
 
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)

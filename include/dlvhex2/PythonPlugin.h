@@ -152,7 +152,8 @@
  *   <em>tuple getTuple(aID)</em>: Return the IDs of the elements of a dlvhex atom identified by ID \em aID.
  *   <em>tuple getTupleValues(aID)</em>: Return the values of the elements of a dlvhex atom identified by ID \em aID.
  *   <em>string getValue(id)</em>: Return the value of an atom or term ID \em id.
- *   <em>string printTuple(tup)</em>: Print the tuple \em tup recursively, i.e., the elements of the tuple can be further tuples or IDs. IDs \em id are printed by calling <em>dlvhex.getValue(id)</em>, they are delimited by <em>,</em> and the output is enclosed in curly braces.
+ *   <em>int getIntValue(id)</em>: Return the value of an integer term ID \em id as integer.
+ *   <em>string getValue(tup)</em>: Print the tuple \em tup recursively, i.e., the elements of the tuple can be further tuples or IDs. IDs \em id are printed by calling <em>dlvhex.getValue(id)</em>, they are delimited by <em>,</em> and the output is enclosed in curly braces.
  *   <em>dlvhex.ID storeString(str)</em>: Stores a string \em str as dlvhex object and returns its ID.
  *   <em>dlvhex.ID storeInteger(int)</em>: Stores an integer \em int as dlvhex object and returns its ID.
  *   <em>dlvhex.ID storeAtom(args)</em>: Transforms a sequence of terms or values \em args into a dlvhex atom.
