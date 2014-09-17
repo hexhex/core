@@ -478,7 +478,9 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ForceGC", 0);
 	pctx.config.setOption("IncrementalGrounding", 0);
 	pctx.config.setStringOption("PluginDirs", "");
+#ifdef HAVE_PYTHON
 	pctx.config.setOption("HavePythonMain", 0);
+#endif
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -1499,10 +1501,12 @@ void processOptionsPrePlugin(
 		case 50:
 			pctx.config.setOption("IncrementalGrounding", 1);
 			break;
+#ifdef HAVE_PYTHON
 		case 51:
 			pctx.config.setStringOption("PythonMain", std::string(optarg));
 			pctx.config.setOption("HavePythonMain", 1);
 			break;
+#endif
 		}
 	}
 
