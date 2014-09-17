@@ -271,6 +271,8 @@ public:
 
 	virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
 
+	void runPythonMain(std::string filename);
+
 	// no atoms!
 };
 

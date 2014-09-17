@@ -228,6 +228,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 //      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
+#ifdef HAVE_PYTHON
+      << "     --pythonmain=PATH Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl
+#endif
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
       << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
@@ -475,6 +478,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ForceGC", 0);
 	pctx.config.setOption("IncrementalGrounding", 0);
 	pctx.config.setStringOption("PluginDirs", "");
+	pctx.config.setOption("HavePythonMain", 0);
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -503,6 +507,10 @@ int main(int argc, char *argv[])
 		// TODO use boost::program_options
 		processOptionsPrePlugin(argc, argv, config, pctx);
 
+#ifdef HAVE_PYTHON
+		PythonPlugin* pythonPlugin = new PythonPlugin();
+#endif
+
 		// initialize internal plugins
 		{
 			PluginInterfacePtr manualEvalHeuristicsPlugin(new ManualEvalHeuristicsPlugin);
@@ -522,8 +530,8 @@ int main(int argc, char *argv[])
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 #ifdef HAVE_PYTHON
-			PluginInterfacePtr pythonPlugin(new PythonPlugin);
-			pctx.pluginContainer()->addInternalPlugin(pythonPlugin);
+			PluginInterfacePtr _pythonPlugin(pythonPlugin);
+			pctx.pluginContainer()->addInternalPlugin(_pythonPlugin);
 #endif
 		}
 
@@ -602,6 +610,13 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+
+#ifdef HAVE_PYTHON
+		if (pctx.config.getOption("HavePythonMain")){
+			pythonPlugin->runPythonMain(pctx.config.getStringOption("PythonMain"));
+			return 1;
+		}
+#endif
 
 		// now we check if we got input
 		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
@@ -803,6 +818,7 @@ void processOptionsPrePlugin(
 		{ "supportsets", no_argument, 0, 48 },
 		{ "forcegc", no_argument, 0, 49 },
 		{ "incremental", no_argument, 0, 50 },
+		{ "pythonmain", required_argument, 0, 51 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1482,6 +1498,10 @@ void processOptionsPrePlugin(
 			break;
 		case 50:
 			pctx.config.setOption("IncrementalGrounding", 1);
+			break;
+		case 51:
+			pctx.config.setStringOption("PythonMain", std::string(optarg));
+			pctx.config.setOption("HavePythonMain", 1);
 			break;
 		}
 	}

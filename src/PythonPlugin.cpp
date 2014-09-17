@@ -800,6 +800,11 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 	return pluginAtoms;
 }
 
+void PythonPlugin::runPythonMain(std::string filename){
+	boost::python::exec_file(filename.c_str(), PythonAPI::dict, PythonAPI::dict);
+	PythonAPI::main.attr("main")();
+}
+
 DLVHEX_NAMESPACE_END
 
 #endif

@@ -8,7 +8,6 @@ def test(a, b, c):
 
 def fibonacci(val):
 	dlvhex.output((fibonacci_comp(val.intValue()), ))
-	testSubprogram()
 	
 def fibonacci_comp(val):
 	if val <= 2:
@@ -53,7 +52,7 @@ def date():
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
 	dlvhex.output((t, ))
 
-def testSubprogram():
+def main():
 	h1 = dlvhex.storeAtom(("q", "X"))
 	h2 = dlvhex.storeAtom(("r", "X"))
 	b = dlvhex.storeExternalAtom("concat", ("a", "b"), ("X", ))
