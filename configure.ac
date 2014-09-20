@@ -281,12 +281,12 @@ AC_ARG_ENABLE([python],
 
 AM_CONDITIONAL([HAVE_PYTHON],[false])
 AS_IF([test "x$enable_python" = "xyes"], [
-  BOOST_PYTHON
   AX_PYTHON
   if test "x$PYTHON_INCLUDE_DIR" != "x"; then
     AM_CONDITIONAL([HAVE_PYTHON],[true])
     CPPFLAGS="$CPPFLAGS -I$PYTHON_INCLUDE_DIR"
     LDFLAGS="$LDFLAGS -l$PYTHON_LIB"
+    BOOST_PYTHON
     AC_DEFINE([HAVE_PYTHON], [1], [Defined if we found Python.])
   else
     AC_MSG_ERROR("No Python headers found")
