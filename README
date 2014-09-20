@@ -184,6 +184,10 @@ This file provides some hints how to install and run dlvhex.
    In order to support Python-implemented plugins, pass the option
      --enable-python
 
+   If you installed the Python development files from source, make sure that you
+   configured with
+     --enable-unicode=ucs4
+
 ** Documentation
    Run `make doxygen-doc' to create the html documentation (a
    subdirectory `doc' will be created). By default, only the html-docs
