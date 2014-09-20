@@ -285,7 +285,7 @@ AS_IF([test "x$enable_python" = "xyes"], [
   if test "x$PYTHON_INCLUDE_DIR" != "x"; then
     AM_CONDITIONAL([HAVE_PYTHON],[true])
     CPPFLAGS="$CPPFLAGS -I$PYTHON_INCLUDE_DIR"
-    LDFLAGS="$LDFLAGS -l$PYTHON_LIB"
+    LIBS="$LIBS -l$PYTHON_LIB"
     BOOST_PYTHON
     AC_DEFINE([HAVE_PYTHON], [1], [Defined if we found Python.])
   else
