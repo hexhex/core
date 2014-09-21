@@ -61,14 +61,14 @@ def main():
 	a = dlvhex.evaluateSubprogram(((f, ), (r, )))
 
 	prog = dlvhex.loadSubprogram("examples/3col.hex")
-	print "Evaluating the program:"
-	print dlvhex.getValue(prog[1])
-	print "Facts:"
-	print dlvhex.getValue(prog[0])
+	print("Evaluating the program:")
+	print(dlvhex.getValue(prog[1]))
+	print("Facts:")
+	print(dlvhex.getValue(prog[0]))
 
 	ans = dlvhex.evaluateSubprogram(prog)
 	for x in ans:
-		print "Answer set:", dlvhex.getValue(x)
+		print("Answer set:", dlvhex.getValue(x))
 
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)
