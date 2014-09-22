@@ -207,10 +207,12 @@ class PythonAtom : public PluginAtom
 		retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods) throw (PluginError)
 		{
 			try{
+				DBGLOG(DBG, "Preparing Python for query");
 				PythonAPI::emb_query = &query;
 				PythonAPI::emb_answer = &answer;
 				PythonAPI::emb_nogoods = nogoods;
 
+				DBGLOG(DBG, "Retrieving external source properties");
 				const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
 
 				std::vector<Query> atomicQueries = splitQuery(query, prop);
@@ -219,6 +221,7 @@ class PythonAtom : public PluginAtom
 					Answer atomicAnswer;
 
 					boost::python::tuple t;
+					DBGLOG(DBG, "Constructing input tuple");
 					for (int i = 0; i < getInputArity(); ++i){
 						if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
 						else {
@@ -227,17 +230,23 @@ class PythonAtom : public PluginAtom
 							t += boost::python::make_tuple(tupleparameters);
 						}
 					}
+
+					DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
 					PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
 
+					DBGLOG(DBG, "Calling learning helper functions");
 					ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, answer, prop, nogoods);
 					ExternalLearningHelper::learnFromFunctionality(atomicQuery, answer, prop, otuples, nogoods);
 
 					// overall answer is the union of the atomic answers
+					DBGLOG(DBG, "Constructing answer");
 					answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
 				}
 
+				DBGLOG(DBG, "Calling negative learning helper functions");
 				ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
 
+				DBGLOG(DBG, "Resetting Python");
 				PythonAPI::emb_query = NULL;
 				PythonAPI::emb_answer = NULL;
 				PythonAPI::emb_nogoods.reset();
@@ -258,6 +267,7 @@ void addAtomWithProperties(std::string name, boost::python::tuple args, int outp
 		else throw PluginError("dlvhex.addAtom: Unknown external atom parameter type");
 	}
 	std::stringstream passargs;
+	DBGLOG(DBG, "Defining helper function " << name << "_caller(input)");
 	for (int i = 0; i < boost::python::len(args); ++i) passargs << (i > 0 ? ", " : "") << "input[" << i << "]";
 	boost::python::exec(("def " + name + "_caller(input):\n " + name + "(" + passargs.str() + ")").c_str(), dict, dict);
 

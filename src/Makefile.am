@@ -39,7 +39,6 @@ dlvhex2_LDADD = \
   libdlvhex2-aspsolver.la libdlvhex2-internalplugins.la \
   $(EXTSOLVER_LIBADD) \
   $(BOOST_THREAD_LIBS) \
-  $(BOOST_PYTHON_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 
@@ -217,5 +216,5 @@ libdlvhex2_aspsolver_la_LDFLAGS = -version-info 5:0:0
 libdlvhex2_internalplugins_la_LDFLAGS = -version-info 4:0:1 -export-dynamic ##$(EXTSOLVER_LDFLAGS)
 
 libdlvhex2_base_la_LIBADD = $(EXTSOLVER_LIBADD) @LIBLTDL@ @LIBADD_DL@
-#libdlvhex2_internalplugins_la_LIBADD = $(EXTSOLVER_LIBADD)
+libdlvhex2_internalplugins_la_LIBADD = $(PYTHON_LIBADD)
 
