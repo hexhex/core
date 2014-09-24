@@ -1,5 +1,13 @@
 dlvhex NEWS -- history of user-visible changes.
 
+* Version 2.4.0 (September 2014)
+
+** A new interface which support plugins to be implemented in Python.
+** An alternative algortithm for external source compatibility checking based on support sets.
+** A plugin interface for customized model generators.
+** Numerous bugfixes and optimizations.
+** The solver backend was upgraded to gringo 4.4.0 clasp 3.1.0.
+
 * Version 2.3.0 (December 2013)
 
 ** Various performance improvements and bugfixes.
