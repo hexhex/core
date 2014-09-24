@@ -36,14 +36,10 @@ else
 	echo "unpacking gringo"
 	tar xzf ${TOP_SRCDIR}/gringo-4.4.0-source.tar.gz
 	mv gringo-4.4.0-source gringo
-	pushd $TOP_SRCDIR/buildclaspgringo
-	patch gringo/SConstruct <SConstruct.patch ||
+	patch gringo/SConstruct <$TOP_SRCDIR/buildclaspgringo/SConstruct.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
-	popd
-	pushd $TOP_SRCDIR/buildclaspgringo
-	patch gringo/app/gringo/main.cc <main.cc.patch ||
+	patch gringo/app/gringo/main.cc <$TOP_SRCDIR/buildclaspgringo/main.cc.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
-	popd
 	mkdir -p gringo/build/release
 fi
 

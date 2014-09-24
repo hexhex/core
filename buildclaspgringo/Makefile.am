@@ -13,5 +13,5 @@ all-local:
 	fi
 
 
-EXTRA_DIST = gringo-clang.patch gringo.patch gringo-patch-cond.diff gringo-patch-domain-fwd-decl.diff gringo-patch-domain-fwd-decl-builtsource.diff gringo-patch-unpool-pred.diff
+EXTRA_DIST = main.cc.patch SConstruct.patch #gringo-clang.patch gringo.patch gringo-patch-cond.diff gringo-patch-domain-fwd-decl.diff gringo-patch-domain-fwd-decl-builtsource.diff gringo-patch-unpool-pred.diff
 
