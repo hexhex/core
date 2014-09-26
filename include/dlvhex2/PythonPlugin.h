@@ -157,6 +157,7 @@
  *   <li><em>string getValue(id)</em>: Return the value of an atom or term ID \em id.</li>
  *   <li><em>int getIntValue(id)</em>: Return the value of an integer term ID \em id as integer.</li>
  *   <li><em>string getValue(tup)</em>: Print the tuple \em tup recursively, i.e., the elements of the tuple can be further tuples or IDs. IDs \em id are printed by calling <em>dlvhex.getValue(id)</em>, they are delimited by <em>,</em> and the output is enclosed in curly braces.</li>
+ *   <li><em>tuple getExtension(id)</em>: Returns all tuples \em tup in the extension of the predicate represented by \em id (wrt. the input interpretation).</li>
  *   <li><em>dlvhex.ID storeString(str)</em>: Stores a string \em str as dlvhex object and returns its ID.</li>
  *   <li><em>dlvhex.ID storeInteger(int)</em>: Stores an integer \em int as dlvhex object and returns its ID.</li>
  *   <li><em>dlvhex.ID storeAtom(args)</em>: Transforms a sequence of terms or values \em args into a dlvhex atom.</li>
@@ -164,8 +165,10 @@
  *   <li><em>bool learn(tup)</em>: Learns a nogood as a tuple of atom IDs or their negations \em tup; returns if learning was enabled.</li>
  *   <li><em>ID storeOutputAtom(args)</em>: Constructs an output atom from IDs or values \em args (for learning purposes) and returns its ID.</li>
  *   <li><em>void output(args)</em>: Adds a tuple of IDs or values \em args to the external source output.</li>
- *   <li><em>tuple getInputAtoms()</em>: Returns a tuple of all input atoms to this external atom.</li>
- *   <li><em>int getInputAtomCount()</em>: Returns the number of input atoms.</li>
+ *   <li><em>tuple getInputAtoms([pred])</em>: Returns a tuple of \em all input atoms (\em not only true ones!) to this external atom; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
+ *   <li><em>tuple getTrueInputAtoms([pred])</em>: Returns a tuple of all input atoms to this external atom <em>which are currently true</em>; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
+ *   <li><em>int getInputAtomCount()</em>: Returns the number of \em input atoms (\em not only true ones!).</li>
+ *   <li><em>int getTrueInputAtomCount()</em>: Returns the number of input atoms <em>which are currently true</em>.</li>
  *   <li><em>bool isInputAtom(id)</em>: Checks if atom \em id belongs to the input of the current external atom.</li>
  *   <li><em>bool isAssigned(id)</em>: Checks if an input atom identified by ID \em id is assigned.</li>
  *   <li><em>bool isTrue(id)</em>: Checks if an input atom identified by ID \em id is assigned to true.</li>
@@ -202,6 +205,7 @@
  * Moreover, for an ID object \em id, there are the following shortcuts:
  * <ul>
  *   <li><em>id.value()</em> for <em>dlvhex.getValue(id)</em></li>
+ *   <li><em>id.extension()</em> for <em>dlvhex.getExtension(id)</em></li>
  *   <li><em>id.intValue()</em> for <em>dlvhex.getIntValue(id)</em></li>
  *   <li><em>id.tuple()</em> for <em>dlvhex.getTuple(id)</em></li>
  *   <li><em>id.tupleValues()</em> for <em>dlvhex.getTupleValues(id)</em></li>

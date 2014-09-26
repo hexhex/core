@@ -303,6 +303,29 @@ std::string ID_value(ID* this_){
 	return getValue(*this_);
 }
 
+boost::python::tuple getExtension(ID id){
+
+	bm::bvector<>::enumerator en = emb_query->interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = emb_query->interpretation->getStorage().end();
+	boost::python::tuple t;
+	while (en < en_end){
+		const OrdinaryAtom& atom = emb_query->interpretation->getRegistry()->ogatoms.getByAddress(*en);
+		if (atom.tuple[0] == id){
+			boost::python::tuple currentTup;
+			for (int i = 1; i < atom.tuple.size(); ++i){
+				currentTup += boost::python::make_tuple(atom.tuple[i]);
+			}
+			t += boost::python::make_tuple(currentTup);
+		}
+		en++;
+	}
+	return t;
+}
+
+boost::python::tuple ID_extension(ID* this_){
+	return getExtension(*this_);
+}
+
 int getIntValue(ID id){
 	if (!id.isTerm() || !id.isIntegerTerm()) throw PluginError("dlvhex.getIntValue: given value does not represent an integer");
 	return id.address;
@@ -668,8 +691,54 @@ boost::python::tuple getInputAtoms() {
 	return t;
 }
 
+boost::python::tuple getInputAtomsOfPredicate(ID pred) {
+
+	bm::bvector<>::enumerator en = emb_query->predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = emb_query->predicateInputMask->getStorage().end();
+	boost::python::tuple t;
+	while (en < en_end){
+		if (emb_query->interpretation->getRegistry()->ogatoms.getByAddress(*en).tuple[0] == pred){
+			t += boost::python::make_tuple(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en));
+		}
+		en++;
+	}
+	return t;
+}
+
+boost::python::tuple getTrueInputAtoms() {
+
+	bm::bvector<>::enumerator en = emb_query->interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = emb_query->interpretation->getStorage().end();
+	long i = 0;
+	boost::python::tuple t;
+	while (en < en_end){
+		t += boost::python::make_tuple(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en));
+		i++;
+		en++;
+	}
+	return t;
+}
+
+boost::python::tuple getTrueInputAtomsOfPredicate(ID pred) {
+
+	bm::bvector<>::enumerator en = emb_query->interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = emb_query->interpretation->getStorage().end();
+	boost::python::tuple t;
+	while (en < en_end){
+		if (emb_query->interpretation->getRegistry()->ogatoms.getByAddress(*en).tuple[0] == pred){
+			t += boost::python::make_tuple(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en));
+		}
+		en++;
+	}
+	return t;
+}
+
 int getInputAtomCount() {
 	return emb_query->predicateInputMask->getStorage().count();
+}
+
+int getTrueInputAtomCount() {
+	return emb_query->interpretation->getStorage().count();
 }
 
 bool isInputAtom(ID id) {
@@ -714,6 +783,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("addAtom", PythonAPI::addAtom);
 	boost::python::def("getValue", PythonAPI::getValue);
 	boost::python::def("getValue", PythonAPI::getValueOfTuple);
+	boost::python::def("getExtension", PythonAPI::getExtension);
 	boost::python::def("getIntValue", PythonAPI::getIntValue);
 	boost::python::def("getTuple", PythonAPI::getTuple);
 	boost::python::def("getTupleValues", PythonAPI::getTupleValues);
@@ -725,7 +795,11 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtom);
 	boost::python::def("output", PythonAPI::output);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
+	boost::python::def("getInputAtoms", PythonAPI::getInputAtomsOfPredicate);
+	boost::python::def("getTrueInputAtoms", PythonAPI::getTrueInputAtoms);
+	boost::python::def("getTrueInputAtoms", PythonAPI::getTrueInputAtomsOfPredicate);
 	boost::python::def("getInputAtomCount", PythonAPI::getInputAtomCount);
+	boost::python::def("getTrueInputAtomCount", PythonAPI::getTrueInputAtomCount);
 	boost::python::def("isInputAtom", PythonAPI::isInputAtom);
 	boost::python::def("isAssigned", PythonAPI::isAssigned);
 	boost::python::def("isTrue", PythonAPI::isTrue);
@@ -736,6 +810,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("loadSubprogram", PythonAPI::loadSubprogram);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
+		.def("extension", &PythonAPI::ID_extension)
 		.def("intValue", &PythonAPI::ID_intValue)
 		.def("tuple", &PythonAPI::ID_tuple)
 		.def("tupleValues", &PythonAPI::ID_tupleValues)
@@ -743,7 +818,8 @@ BOOST_PYTHON_MODULE(dlvhex) {
 		.def("isInputAtom", &PythonAPI::ID_isInputAtom)
 		.def("isAssigned", &PythonAPI::ID_isAssigned)
 		.def("isTrue", &PythonAPI::ID_isTrue)
-		.def("isFalse", &PythonAPI::ID_isFalse);
+		.def("isFalse", &PythonAPI::ID_isFalse)
+		.def(boost::python::self == dlvhex::ID());
 	boost::python::class_<dlvhex::ExtSourceProperties>("ExtSourceProperties")
 		.def("addMonotonicInputPredicate", &dlvhex::ExtSourceProperties::addMonotonicInputPredicate)
 		.def("addAntimonotonicInputPredicate", &dlvhex::ExtSourceProperties::addAntimonotonicInputPredicate)

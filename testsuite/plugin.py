@@ -47,6 +47,15 @@ def testSetMinus(p, q):
 	for x in outputatoms:
 		dlvhex.learn((x.negate(), ) + premisse)
 
+def testSetMinus2(p, q):
+	for x in p.extension():
+		if not x in q.extension():
+			dlvhex.learn((	dlvhex.storeAtom((p, ) + x),
+					dlvhex.storeAtom((q, ) + x).negate(),
+					dlvhex.storeOutputAtom(x).negate()
+					))
+			dlvhex.output(x)
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -80,5 +89,6 @@ def register():
 	prop.addMonotonicInputPredicate(0)
 	prop.addAntimonotonicInputPredicate(1)
 	dlvhex.addAtom("testSetMinus", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
+	dlvhex.addAtom("testSetMinus2", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
 
 	dlvhex.addAtom("date", (), 1)
