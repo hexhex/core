@@ -8,7 +8,7 @@
 /* #undef DLVDBPATH */
 
 /* Version number of DLVHEX_ABI */
-#define DLVHEX_ABI_VERSION 7.3.0
+#define DLVHEX_ABI_VERSION 7.4.0
 
 /* Major version number of DLVHEX_ABI */
 #define DLVHEX_ABI_VERSION_MAJOR 7
@@ -17,7 +17,7 @@
 #define DLVHEX_ABI_VERSION_MICRO 0
 
 /* Minor version number of DLVHEX_ABI */
-#define DLVHEX_ABI_VERSION_MINOR 3
+#define DLVHEX_ABI_VERSION_MINOR 4
 
 /* Turns on benchmarking timers and counters */
 #define DLVHEX_BENCHMARK /**/
@@ -322,7 +322,7 @@
 #define PACKAGE_NAME "dlvhex"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "dlvhex 2.3.0"
+#define PACKAGE_STRING "dlvhex 2.4.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "dlvhex"
@@ -331,7 +331,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.3.0"
+#define PACKAGE_VERSION "2.4.0"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -344,7 +344,7 @@
 // #define POSIX 1
 
 /* Version number of package */
-#define VERSION "2.3.0"
+#define VERSION "2.4.0"
 
 /* Define so that glibc/gnulib argp.h does not typedef error_t. */
 /* #undef __error_t_defined */
