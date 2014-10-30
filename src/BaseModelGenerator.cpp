@@ -595,13 +595,15 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
   InterpretationPtr eatominp = InterpretationPtr(new Interpretation(reg));
   eatominp->add(*eatom.getPredicateInputMask());
 
+  InterpretationPtr pim = InterpretationPtr(new Interpretation(ctx.registry()));
+  pim->add(*eatom.getPredicateInputMask());
   if( eatom.auxInputPredicate == ID_FAIL )
   {
 	// only one input tuple, and that is the one stored in eatom.inputs
 
 	// prepare query
 	// XXX here we copy it, we should just reference it
-	PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), eatom.inputs, eatom.tuple, &eatom);
+	PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), eatom.inputs, eatom.tuple, &eatom, pim);
 	// XXX make this part of constructor
 	query.extinterpretation = eatominp;
 	eatom.pluginAtom->learnSupportSets(query, nogoods);
@@ -628,7 +630,7 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom);
+			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom, pim);
 			query.extinterpretation = eatominp;
 			eatom.pluginAtom->learnSupportSets(query, nogoods);
 		}
