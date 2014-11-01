@@ -292,7 +292,7 @@ printVersion()
 
   std::cout << "Homepage: http://www.kr.tuwien.ac.at/research/systems/dlvhex/" << std::endl
 	    << "Support: dlvhex-devel@lists.sourceforge.net" << std::endl
-	    << "Bug reports: http://sourceforge.net/apps/trac/dlvhex/" << std::endl;
+	    << "Bug reports: http://github.com/hexhex/core/issues/" << std::endl;
 
   exit(0);
 }
