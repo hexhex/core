@@ -75,6 +75,7 @@ void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --pythonplugin=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
+	o << "     --pythonmain=PATH        Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl;
 }
 
 // accepted options: --pythonplugin=[PATH]
