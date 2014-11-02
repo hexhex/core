@@ -11,7 +11,7 @@ def fibonacci(val):
 	
 def fibonacci_comp(val):
 	if val <= 2:
-		return val
+		return 1
 	else:
 		return fibonacci_comp(val - 1) + fibonacci_comp(val - 2)
 
