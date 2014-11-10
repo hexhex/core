@@ -541,12 +541,12 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 			if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
 			if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
 			if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-			ogatom.tuple.push_back(id);
 
 			// use the nested term's arguments as the atom's arguments
 #ifndef NAIVE
 			ogatom.tuple = dummyTerm.arguments;
 #else
+			ogatom.tuple.push_back(id);
 			// store arguments
 			while (args.length() > 0){
 				int arglen = args.find(",");
