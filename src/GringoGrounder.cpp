@@ -496,11 +496,11 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 	v.print(ss);
 	std::string str = ss.str();
 
-	OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, str);
-
 	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(str);
 	if( dlvhexId == ID_FAIL )
 	{
+    OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, str);
+
 		// parse groundatom, register and store
 		GPDBGLOG(DBG,"parsing gringo ground atom '" << ogatom.text << "'");
 		{
