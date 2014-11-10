@@ -283,7 +283,7 @@ printVersion()
 {
   std::cout << PACKAGE_TARNAME << " " << VERSION << std::endl;
 
-  std::cout << "Copyright (C) 2011 Roman Schindlauer, Thomas Krennwallner, Peter Schüller" << std::endl
+  std::cout << "Copyright (C) 2011 Roman Schindlauer, Thomas Krennwallner, Peter Schüller, Christoph Redl" << std::endl
 	    << "License LGPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/lgpl.html>" << std::endl
 	    << "This is free software: you are free to change and redistribute it." << std::endl
 	    << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
@@ -292,7 +292,7 @@ printVersion()
 
   std::cout << "Homepage: http://www.kr.tuwien.ac.at/research/systems/dlvhex/" << std::endl
 	    << "Support: dlvhex-devel@lists.sourceforge.net" << std::endl
-	    << "Bug reports: http://sourceforge.net/apps/trac/dlvhex/" << std::endl;
+	    << "Bug reports: http://github.com/hexhex/core/issues/" << std::endl;
 
   exit(0);
 }

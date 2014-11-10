@@ -140,6 +140,7 @@
  * the elements will be passed as a Python tuple.
  *
  * Example:
+ * \code
  * def concat(tup):
  *   ret = ""
  *   for x in tup:
