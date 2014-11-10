@@ -130,7 +130,7 @@ void Term::analyzeTerm(RegistryPtr reg){
 	// convert tuple of strings to terms
 	arguments.clear();
 	if (primitive){
-		arguments.push_back(ID_FAIL);
+		// no arguments
 		if (islower(symbol[0]) || symbol[0] == '\"') kind |= ID::SUBKIND_TERM_CONSTANT;
 		if (isupper(symbol[0])) kind |= ID::SUBKIND_TERM_VARIABLE;
 	}else{
