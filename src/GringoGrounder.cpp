@@ -509,7 +509,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 #define NAIVE	// TODO: remove to switch to the new algorithm
 
 #ifndef NAIVE
-			Term dummyTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, ogatom.text);
+			Term dummyTerm(ID::MAINKIND_TERM, ogatom.text);
 			dummyTerm.analyzeTerm(ctx.registry());
 #else
 			// create ogatom.tuple
