@@ -528,8 +528,20 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 #endif
 
 #ifndef NAIVE
-			// extract the predicate (corresponds to the first subterm)
-			ID id = dummyTerm.arguments[0];
+			// extract the predicate
+      ID id;
+      if (dummyTerm.arguments.empty()) {
+        // the predicate is exactly this term which is a constant
+        // we need to get its ID and probably register it
+        id = ctx.registry()->storeTerm(dummyTerm);
+        ogatom.tuple.push_back(id);
+      } else {
+        // this term is hierarchical
+        // we can just use the tuple of the hierarchical dummy term
+        // then the predicate is the first argument
+        ogatom.tuple = dummyTerm.arguments;
+        id = ogatom.tuple[0];
+      }
 #else
 			Term term(ID::MAINKIND_TERM, pred);
 			term.analyzeTerm(ctx.registry());
@@ -542,10 +554,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 			if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
 			if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
 
-			// use the nested term's arguments as the atom's arguments
-#ifndef NAIVE
-			ogatom.tuple = dummyTerm.arguments;
-#else
+#ifdef NAIVE
 			ogatom.tuple.push_back(id);
 			// store arguments
 			while (args.length() > 0){
