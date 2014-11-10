@@ -452,44 +452,6 @@ void GringoGrounder::GroundHexProgramBuilder::printDisjunctiveRule(const AtomVec
 	rules.push_back(LParseRule(head, body));
 }
 
-#if 0
-namespace{
-// returns the index of the end of the 	argument (index of first ','),
-// where quoted strings and function terms are interpreted
-int findArgEnd(const std::string& str){
-	bool quoted = false;
-	bool escape = false;
-	int nested = 0;
-	for (int i = 0; i < str.length(); ++i){
-		switch (str[i]) {
-			case '\\':
-				assert (!quoted && "Found \\ outside of string constant");
-				escape = true;
-				break;
-			case '\"':
-				if (!escape) quoted = !quoted;
-				escape = false;
-				break;
-			case ',':
-				if (!quoted && nested == 0) return i;
-				break;
-			case '(':
-				if (!quoted) nested++;
-				break;
-			case ')':
-				if (!quoted) nested--;
-				break;
-			default:
-				escape = false;
-				break;
-		}
-	}
-	// not found
-	return std::string::npos;
-}
-}
-#endif
-
 void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Gringo::Value v){
 
 	std::stringstream ss;
@@ -509,19 +471,19 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 			dummyTerm.analyzeTerm(ctx.registry());
 
 			// extract the predicate
-      ID id;
-      if (dummyTerm.arguments.empty()) {
-        // the predicate is exactly this term which is a constant
-        // we need to get its ID and probably register it
-        id = ctx.registry()->storeTerm(dummyTerm);
-        ogatom.tuple.push_back(id);
-      } else {
-        // this term is hierarchical
-        // we can just use the tuple of the hierarchical dummy term
-        // then the predicate is the first argument
-        ogatom.tuple = dummyTerm.arguments;
-        id = ogatom.tuple[0];
-      }
+			ID id;
+			if (dummyTerm.arguments.empty()) {
+				// the predicate is exactly this term which is a constant
+				// we need to get its ID and probably register it
+				id = ctx.registry()->storeTerm(dummyTerm);
+				ogatom.tuple.push_back(id);
+			} else {
+				// this term is hierarchical
+				// we can just use the tuple of the hierarchical dummy term
+				// then the predicate is the first argument
+				ogatom.tuple = dummyTerm.arguments;
+				id = ogatom.tuple[0];
+			}
 
 			assert(id != ID_FAIL);
 			assert(!id.isVariableTerm());
