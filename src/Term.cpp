@@ -95,7 +95,7 @@ void Term::analyzeTerm(RegistryPtr reg){
 		if (symbol[pos] == ')' && !quoted){
 			nestedcount--;
 		}
-		if (symbol[pos] == ',' && !quoted && nestedcount == 0){
+		if (symbol[pos] == ',' && !quoted && nestedcount == 1){
 			tuple.push_back(symbol.substr(start, pos - start));
 			start = pos + 1;
 		}

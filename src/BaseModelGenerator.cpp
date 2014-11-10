@@ -630,7 +630,7 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom, pim);
+			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom);
 			query.extinterpretation = eatominp;
 			eatom.pluginAtom->learnSupportSets(query, nogoods);
 		}

@@ -452,6 +452,44 @@ void GringoGrounder::GroundHexProgramBuilder::printDisjunctiveRule(const AtomVec
 	rules.push_back(LParseRule(head, body));
 }
 
+#if 0
+namespace{
+// returns the index of the end of the 	argument (index of first ','),
+// where quoted strings and function terms are interpreted
+int findArgEnd(const std::string& str){
+	bool quoted = false;
+	bool escape = false;
+	int nested = 0;
+	for (int i = 0; i < str.length(); ++i){
+		switch (str[i]) {
+			case '\\':
+				assert (!quoted && "Found \\ outside of string constant");
+				escape = true;
+				break;
+			case '\"':
+				if (!escape) quoted = !quoted;
+				escape = false;
+				break;
+			case ',':
+				if (!quoted && nested == 0) return i;
+				break;
+			case '(':
+				if (!quoted) nested++;
+				break;
+			case ')':
+				if (!quoted) nested--;
+				break;
+			default:
+				escape = false;
+				break;
+		}
+	}
+	// not found
+	return std::string::npos;
+}
+}
+#endif
+
 void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Gringo::Value v){
 
 	std::stringstream ss;
@@ -466,6 +504,14 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 		// parse groundatom, register and store
 		GPDBGLOG(DBG,"parsing gringo ground atom '" << ogatom.text << "'");
 		{
+			// parse atom as nested term
+
+#define NAIVE	// TODO: remove to switch to the new algorithm
+
+#ifndef NAIVE
+			Term dummyTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, ogatom.text);
+			dummyTerm.analyzeTerm(ctx.registry());
+#else
 			// create ogatom.tuple
 			std::string pred;
 			std::string args;
@@ -479,12 +525,17 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 				pred = str.substr(0, predlen);
 				args = str.substr(predlen + 1, str.length() - predlen - 2);
 			}
+#endif
 
-			// store predicate
+#ifndef NAIVE
+			// extract the predicate (corresponds to the first subterm)
+			ID id = dummyTerm.arguments[0];
+#else
 			Term term(ID::MAINKIND_TERM, pred);
 			term.analyzeTerm(ctx.registry());
 			GPDBGLOG(DBG,"got token '" << term.symbol << "'");
 			ID id = ctx.registry()->storeTerm(term);
+#endif
 			assert(id != ID_FAIL);
 			assert(!id.isVariableTerm());
 			if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
@@ -492,10 +543,14 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 			if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
 			ogatom.tuple.push_back(id);
 
+			// use the nested term's arguments as the atom's arguments
+#ifndef NAIVE
+			ogatom.tuple = dummyTerm.arguments;
+#else
 			// store arguments
 			while (args.length() > 0){
 				int arglen = args.find(",");
-				int nextargstart = args.find(",");
+				int nextargstart = arglen;
 				if (arglen == std::string::npos) arglen = args.length();
 				if (nextargstart != std::string::npos) nextargstart++;
 				else nextargstart = args.length();
@@ -515,12 +570,14 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 
 				args = args.substr(nextargstart);
 			}
+#endif
 		}
+		assert (ogatom.tuple.size() > 0 && "Cannot store empty atom");
 		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
 	}
 
 	indexToGroundAtomID[atomUid] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
+	GPDBGLOG(DBG, "Got atom " << ogatom.text << " (arity " << (ogatom.tuple.size() - 1) << ") with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternal(unsigned atomUid, Gringo::TruthValue e){
@@ -1191,7 +1248,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	}
 
 	indexToGroundAtomID[atom.first] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
+	GPDBGLOG(DBG, "Got atom " << ogatom.text << " (arity " << (ogatom.tuple.size() - 1) << ") with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
