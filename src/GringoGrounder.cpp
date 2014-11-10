@@ -574,10 +574,15 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 		}
 		assert (ogatom.tuple.size() > 0 && "Cannot store empty atom");
 		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+
+    GPDBGLOG(DBG, "Registered atom " << str << " (arity " << (ogatom.tuple.size() - 1) << ") with tuple " << printvector(ogatom.tuple) << " and Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 	}
+  else
+  {
+    GPDBGLOG(DBG, "Found atom " << str << " with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
+  }
 
 	indexToGroundAtomID[atomUid] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << ogatom.text << " (arity " << (ogatom.tuple.size() - 1) << ") with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternal(unsigned atomUid, Gringo::TruthValue e){
