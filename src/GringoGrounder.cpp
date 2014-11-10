@@ -23,10 +23,10 @@
  */
 
 /**
- * @file ClaspSolver.cpp
+ * @file GringoGrounder.cpp
  * @author Christoph Redl
  *
- * @brief Interface to genuine gringo 4.3.0-based grounder.
+ * @brief Interface to genuine gringo 4.4.0-based grounder.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -505,29 +505,9 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 		GPDBGLOG(DBG,"parsing gringo ground atom '" << ogatom.text << "'");
 		{
 			// parse atom as nested term
-
-#define NAIVE	// TODO: remove to switch to the new algorithm
-
-#ifndef NAIVE
 			Term dummyTerm(ID::MAINKIND_TERM, ogatom.text);
 			dummyTerm.analyzeTerm(ctx.registry());
-#else
-			// create ogatom.tuple
-			std::string pred;
-			std::string args;
-			int predlen;
-			if ((predlen = str.find("(")) == std::string::npos){
-				// propositional atom
-				pred = str;
-				args = "";
-			}else{
-				// has arguments
-				pred = str.substr(0, predlen);
-				args = str.substr(predlen + 1, str.length() - predlen - 2);
-			}
-#endif
 
-#ifndef NAIVE
 			// extract the predicate
       ID id;
       if (dummyTerm.arguments.empty()) {
@@ -542,44 +522,12 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
         ogatom.tuple = dummyTerm.arguments;
         id = ogatom.tuple[0];
       }
-#else
-			Term term(ID::MAINKIND_TERM, pred);
-			term.analyzeTerm(ctx.registry());
-			GPDBGLOG(DBG,"got token '" << term.symbol << "'");
-			ID id = ctx.registry()->storeTerm(term);
-#endif
+
 			assert(id != ID_FAIL);
 			assert(!id.isVariableTerm());
 			if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
 			if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
 			if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-
-#ifdef NAIVE
-			ogatom.tuple.push_back(id);
-			// store arguments
-			while (args.length() > 0){
-				int arglen = args.find(",");
-				int nextargstart = arglen;
-				if (arglen == std::string::npos) arglen = args.length();
-				if (nextargstart != std::string::npos) nextargstart++;
-				else nextargstart = args.length();
-
-				Term term(ID::MAINKIND_TERM, args.substr(0, arglen));
-				term.analyzeTerm(ctx.registry());
-				GPDBGLOG(DBG,"got token '" << term.symbol << "'");
-
-				// the following takes care of int vs const/string
-				ID id = ctx.registry()->storeTerm(term);
-				assert(id != ID_FAIL);
-				assert(!id.isVariableTerm());
-				if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-				if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
-				if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-				ogatom.tuple.push_back(id);
-
-				args = args.substr(nextargstart);
-			}
-#endif
 		}
 		assert (ogatom.tuple.size() > 0 && "Cannot store empty atom");
 		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
