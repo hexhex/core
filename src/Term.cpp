@@ -143,8 +143,7 @@ void Term::analyzeTerm(RegistryPtr reg){
 			}else{
 				t.kind |= ID::SUBKIND_TERM_NESTED;
 			}
-			ID tid = reg->terms.getIDByString(t.symbol);
-			if (tid == ID_FAIL) tid = reg->terms.storeAndGetID(t);
+			ID tid = reg->storeTerm(t);
 			arguments.push_back(tid);
 		}
 		kind |= ID::SUBKIND_TERM_NESTED;
