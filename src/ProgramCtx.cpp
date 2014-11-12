@@ -283,7 +283,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.safetyCheck();
 	if( pc.terminationRequest ) throw GeneralError("Safety check for subprogram failed");
 	pc.liberalSafetyCheck();
-	if( pc.terminationRequest ) throw GeneralError("Liveral safety check for subprogram failed");
+	if( pc.terminationRequest ) throw GeneralError("Liberal safety check for subprogram failed");
 	pc.createDependencyGraph();
 	if( pc.terminationRequest ) throw GeneralError("Create dependency graph for subprogram failed");
 	pc.optimizeEDBDependencyGraph();
