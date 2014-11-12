@@ -279,7 +279,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
 	DBGLOG(DBG, "Associate PluginAtom instances with ExternalAtom instances");
 	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
-
 	pc.safetyCheck();
 	if( pc.terminationRequest ) throw GeneralError("Safety check for subprogram failed");
 	pc.liberalSafetyCheck();
@@ -290,6 +289,11 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	if( pc.terminationRequest ) throw GeneralError("Optimize EDB dependency graph for subprogram failed");
 	pc.createComponentGraph();
 	if( pc.terminationRequest ) throw GeneralError("Create component graph for subprogram failed");
+	// use SCCs to do strong safety check
+	if( !pc.config.getOption("SkipStrongSafetyCheck") ) {
+		pc.strongSafetyCheck();
+		if( pc.terminationRequest ) GeneralError("Strong safety check for subprogram failed");
+	}
 	pc.createEvalGraph();
 	if( pc.terminationRequest ) throw GeneralError("Create evaluation graph for subprogram failed");
 	pc.setupProgramCtx();
