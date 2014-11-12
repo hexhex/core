@@ -272,19 +272,28 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
 	if (parse){
 		pc.convert();
+		if( pc.terminationRequest ) throw GeneralError("Conversion of subprogram failed");
 		pc.parse();
+		if( pc.terminationRequest ) throw GeneralError("Parsing of subprogram failed");
 	}
 
 	DBGLOG(DBG, "Associate PluginAtom instances with ExternalAtom instances");
 	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
 
 	pc.safetyCheck();
+	if( pc.terminationRequest ) throw GeneralError("Safety check for subprogram failed");
 	pc.liberalSafetyCheck();
+	if( pc.terminationRequest ) throw GeneralError("Liveral safety check for subprogram failed");
 	pc.createDependencyGraph();
+	if( pc.terminationRequest ) throw GeneralError("Create dependency graph for subprogram failed");
 	pc.optimizeEDBDependencyGraph();
+	if( pc.terminationRequest ) throw GeneralError("Optimize EDB dependency graph for subprogram failed");
 	pc.createComponentGraph();
+	if( pc.terminationRequest ) throw GeneralError("Create component graph for subprogram failed");
 	pc.createEvalGraph();
+	if( pc.terminationRequest ) throw GeneralError("Create evaluation graph for subprogram failed");
 	pc.setupProgramCtx();
+	if( pc.terminationRequest ) throw GeneralError("Setup ProgramCtx for subprogram failed");
 
 	DBGLOG(DBG, "Setting AnswerSetCallback");
 	pc.modelCallbacks.clear();
