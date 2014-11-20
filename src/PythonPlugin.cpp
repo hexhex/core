@@ -581,6 +581,10 @@ boost::python::tuple loadSubprogram(std::string filename) {
 	pc.changeState(StatePtr(new ConvertState()));
 	pc.convert();
 	pc.parse();
+	if( pc.maxint > emb_ctx->maxint ) {
+		DBGLOG(DBG, "updating maxint of emb_ctx from " << emb_ctx->maxint << " to " << pc.maxint);
+		emb_ctx->maxint = pc.maxint;
+	}
 
 	bm::bvector<>::enumerator en = pc.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = pc.edb->getStorage().end();

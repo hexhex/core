@@ -970,7 +970,10 @@ HexGrammarBase(HexGrammarSemantics& sem):
   cident
     = qi::lexeme[ ascii::lower >> *(ascii::alnum | qi::char_('_')) ];
   string
-    = qi::lexeme[ qi::char_('"') >> *(qi::char_ - (qi::char_('"') | qi::eol)) >> qi::char_('"') ];
+    = qi::lexeme[ qi::char_('"') >>
+       *( qi::string("\\\"")
+          | qi::as_string[qi::char_ - (qi::char_('"') | qi::eol)]
+        ) >> qi::char_('"') ];
   variable
     = qi::string("_") // this can be qi::char_('_') in boost 1.44 ... boost 1.46
     | qi::lexeme[ ascii::upper >> *(ascii::alnum | qi::char_('_')) ];

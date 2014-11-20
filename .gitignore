@@ -1,8 +1,13 @@
 testsuite/*.dot
+testsuite/*.trs
+testsuite/*.log
+*.swp
 *.o
 *.la
 *.lo
 Makefile.in
+Makefile
+libtool
 *~
 .deps
 .libs

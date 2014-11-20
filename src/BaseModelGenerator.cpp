@@ -298,7 +298,7 @@ output(const Tuple& output)
 }
 
 
-BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX), falsified(ID_FAIL){
+BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX), falsified(ID_FAIL){
 
 	reg = eatom.pluginAtom->getRegistry();
 
@@ -630,7 +630,7 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom, pim);
+			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom);
 			query.extinterpretation = eatominp;
 			eatom.pluginAtom->learnSupportSets(query, nogoods);
 		}
@@ -935,7 +935,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
   RegistryPtr reg = ctx.registry();
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidadpacdep,"addDomainPredicatesAndCreateDomainExplorationProgram");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidadpacdep,"addDomainPredsAndCrDomExplProg");
 
   std::vector<ID> idbWithDomainPredicates;
   deidb.reserve(idb.size());
@@ -1076,7 +1076,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 
 	RegistryPtr reg = ctx.registry();
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPredicates");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPreds");
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 
 	InterpretationPtr domintr = InterpretationPtr(new Interpretation(reg));

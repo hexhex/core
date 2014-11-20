@@ -496,15 +496,22 @@ ID Registry::storeOrdinaryAtom(OrdinaryAtom& oatom)
   return ((oatom.kind & ID::SUBKIND_MASK) == ID::SUBKIND_ATOM_ORDINARYG) ? storeOrdinaryAtomHelper(this, oatom, ogatoms) : storeOrdinaryAtomHelper(this, oatom, onatoms);
 }
 
+//namespace{
+//   void Deleter( Registry* ptr)
+//   {}
+//}
+
 // ground version
 ID Registry::storeOrdinaryGAtom(OrdinaryAtom& ogatom)
 {
+//for (int i = 0; i < ogatom.tuple.size(); ++i) std::cerr << "Storing " << i << "/" << ogatom.tuple[i] << ":" << printToString<RawPrinter>(ogatom.tuple[i], RegistryPtr(this,Deleter)) << std::endl;
   return storeOrdinaryAtomHelper(this, ogatom, ogatoms);
 }
 
 // nonground version
 ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
 {
+//for (int i = 0; i < onatom.tuple.size(); ++i) std::cerr << "Storing " << i << "/" << onatom.tuple[i] << ":" << printToString<RawPrinter>(onatom.tuple[i], RegistryPtr(this,Deleter)) << std::endl;
   return storeOrdinaryAtomHelper(this, onatom, onatoms);
 }
 
