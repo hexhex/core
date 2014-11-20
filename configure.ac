@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([dlvhex],[2.4.0],[dlvhex-devel@lists.sourceforge.net])
+AC_INIT([dlvhex2],[2.4.0],[dlvhex-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([-Wall gnu check-news 1.10])
 
 AC_CONFIG_SRCDIR([src/dlvhex.cpp])

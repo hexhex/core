@@ -176,7 +176,7 @@
  *   <li><em>bool isFalse(id)</em>: Checks if an input atom identified by ID \em id is assigned to false.</li>
  *   <li><em>void addAtom(name, args, ar, [prop])</em>: Add external atom \em name with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).</li>
  *   <li><em>void storeExternalAtom(pred, input, output)</em>: Stores an external atom with predicate \em pred, input parameters \em input and output parameters \em output (can be terms or their IDs) and returns its ID.</li>
- *   <li><em>void storeRule(head, pbody, nbody)</em>: Stores a rule with head atoms \em head, positive body atoms \em pbody and negative body atoms \em nbody; all parameters need to be a tuples of IDs.</li>
+ *   <li><em>ID storeRule(head, pbody, nbody)</em>: Stores a rule with head atoms \em head, positive body atoms \em pbody and negative body atoms \em nbody and returns its ID; all parameters need to be a tuples of IDs.</li>
  *   <li><em>tuple evaluateSubprogram(tup)</em>: Evaluates the subprogram specified by a tuple <em>facts, rules</em> consisting of facts \em facts (tuple of IDs of ground atoms) and rules \em rules (tuple of rule IDs) and returns the number of answer sets; the result is a tuple of answer sets, where each answer set is again a tuple of the ground atom IDs which are true in the respective answer set.</li>
  *   <li><em>tuple loadSubprogram(filename)</em>: Loads the program stored in file \em filename and returns a pair <em>(edb, idb)</em> consisting of a tuple \em edb of facts (ground atom IDs) and a tuple \em idb of rule IDs.</li>
  * </ul>
