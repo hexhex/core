@@ -250,6 +250,7 @@ public:
 		public:
 
 		std::vector<std::string> pythonScripts;
+		std::vector<std::string> commandlineArguments;
 
 		CtxData();
 		virtual ~CtxData() {}

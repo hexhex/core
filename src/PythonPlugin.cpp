@@ -54,6 +54,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <cstring>
+
 DLVHEX_NAMESPACE_BEGIN
 
 PythonPlugin::CtxData::CtxData()
@@ -76,6 +78,7 @@ void PythonPlugin::printUsage(std::ostream& o) const
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --pythonplugin=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
 	o << "     --pythonmain=PATH        Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl;
+	o << "     --pythonarg=ARG          Passes arguments to Python (sys.argv) (can be used multiple times)" << std::endl;
 }
 
 // accepted options: --pythonplugin=[PATH]
@@ -92,6 +95,7 @@ void PythonPlugin::processOptions(
 	Iterator it;
 	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
+
 	while( it != pluginOptions.end() )
 	{
 		bool processed = false;
@@ -99,6 +103,11 @@ void PythonPlugin::processOptions(
 		if( boost::starts_with(str, "--pythonplugin=") )
 		{
 			ctxdata.pythonScripts.push_back(str.substr(std::string("--pythonplugin=").length()));
+			processed = true;
+		}
+		else if( boost::starts_with(str, "--pythonarg=") )
+		{
+			ctxdata.commandlineArguments.push_back(str.substr(std::string("--pythonarg=").length()));
 			processed = true;
 		}
 
@@ -861,8 +870,35 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 
 	// load Python plugins
 	DBGLOG(DBG, "Initialize Python plugin");
+
+
+	// prepare sys.argv for Python
+	char** pargv;
+	int iargv;
+	{
+		std::vector<char*> argv;
+		// first argument = script or empty (should exist!)
+		if( !ctxdata.pythonScripts.empty() )
+		{
+			argv.push_back(strdup(ctxdata.pythonScripts[0].c_str()));
+		}
+		else argv.push_back(strdup(""));
+		// other arguments = as obtained from commandline
+		BOOST_FOREACH (std::string& arg, ctxdata.commandlineArguments){
+			LOG(DBG,"Handling Python Commandline Argument '" << arg << "'");
+			argv.push_back(strdup(arg.c_str()));
+		}
+		// terminator
+		argv.push_back(NULL);
+		// now prepare char** which we will give to python (also to free it)
+		iargv = argv.size();
+		pargv = new char*[iargv];
+		for(unsigned i = 0; i < iargv; ++i) pargv[i] = argv[i];
+	}
+
 #if PY_MAJOR_VERSION <= 2
 		Py_Initialize();
+		PySys_SetArgvEx(iargv-1, pargv, 0);
 		initdlvhex();
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
@@ -871,6 +907,7 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 			throw PluginError("Could not register dlvhex module in Python");
 		}
 		Py_Initialize();
+		PySys_SetArgvEx(iargv-1, pargv, 0);
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
 #endif
