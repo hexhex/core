@@ -382,13 +382,15 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 		bm::bvector<>::enumerator en = frozen->getStorage().first();
 		bm::bvector<>::enumerator en_end = frozen->getStorage().end();
 		while (en < en_end){
+			if (isMappedToClaspLiteral(*en)){
 #ifndef NDEBUG
-			if (alreadyFrozen.count(hexToClasp[*en].var()) == 0){
-				cntFrozen++;
-				alreadyFrozen.insert(hexToClasp[*en].var());
-			}
+				if (alreadyFrozen.count(hexToClasp[*en].var()) == 0){
+					cntFrozen++;
+					alreadyFrozen.insert(hexToClasp[*en].var());
+				}
 #endif
-			claspctx.setFrozen(hexToClasp[*en].var(), true);
+				claspctx.setFrozen(hexToClasp[*en].var(), true);
+			}
 			en++;
 		}
 #ifndef NDEBUG
