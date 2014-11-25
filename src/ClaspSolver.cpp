@@ -936,7 +936,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 
 	claspctx.requestStepVar();
 	sendNogoodSetToClasp(ns);
-	freezeVariables(frozen, true /* freeze variables by default */);
+	freezeVariables(frozen, false /* do not freeze variables by default */);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
