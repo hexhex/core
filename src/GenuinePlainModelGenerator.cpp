@@ -166,9 +166,28 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	// store in model generator and store as const
 	postprocessedInput = newint;
 
+#if 1
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
+#else
+	// Input: a :- fr. b v b2. fr :- b.
+	// Expected result: { { a, fr, b }, { b2 } }
+	OrdinaryASPProgram program(reg, std::vector<ID>(), postprocessedInput, factory.ctx.maxint, mask);
+
+	InterpretationPtr frozen(new Interpretation(reg));
+	frozen->setFact(0);
+	frozen->setFact(1);
+	frozen->setFact(2);
+	std::vector<ID> idb1; idb1.push_back(factory.xidb[0]); idb1.push_back(factory.xidb[1]);
+	OrdinaryASPProgram p1(reg, idb1, postprocessedInput, factory.ctx.maxint, mask);
+
+	std::vector<ID> idb2; idb2.push_back(factory.xidb[2]);
+	OrdinaryASPProgram p2(reg, idb2, postprocessedInput, factory.ctx.maxint, mask);
+
+	solver = GenuineSolver::getInstance(factory.ctx, p1, frozen);
+	solver->addProgram(AnnotatedGroundProgram(factory.ctx, p2), frozen);
+#endif
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
