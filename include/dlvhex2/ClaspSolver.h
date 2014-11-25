@@ -140,8 +140,8 @@ private:
 	void sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
-	void sendProgramToClasp(const AnnotatedGroundProgram& p);
-	void sendNogoodSetToClasp(const NogoodSet& ns);
+	void sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen);
+	void sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen);
 	void interpretClaspCommandline(Clasp::Problem_t::Type type);
 	void shutdownClasp();
 
@@ -182,6 +182,7 @@ protected:
 
 	// interface to clasp internals
 	Clasp::Asp::LogicProgram asp;
+	Clasp::SatBuilder sat;
 	ProgramOptions::ParsedOptions parsedOptions;
 	Clasp::Cli::ClaspCliConfig config;
 	Clasp::SharedContext claspctx;

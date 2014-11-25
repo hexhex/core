@@ -166,11 +166,11 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	// store in model generator and store as const
 	postprocessedInput = newint;
 
-#if 1
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
-#else
+
+#if 0
 	// Input: a :- fr. b v b2. fr :- b.
 	// Expected result: { { a, fr, b }, { b2 } }
 	OrdinaryASPProgram program(reg, std::vector<ID>(), postprocessedInput, factory.ctx.maxint, mask);

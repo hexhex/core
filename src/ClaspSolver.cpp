@@ -389,7 +389,13 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 					alreadyFrozen.insert(hexToClasp[*en].var());
 				}
 #endif
-				claspctx.setFrozen(hexToClasp[*en].var(), true);
+				if (problemType == ASP){
+					asp.freeze(hexToClasp[*en].var(), Clasp::value_false);
+				}else{
+					//sat.freeze(hexToClasp[*en].var(), Clasp::value_false);
+					claspctx.setFrozen(hexToClasp[*en].var(), true);
+				}
+//				claspctx.setFrozen(hexToClasp[*en].var(), true);
 			}
 			en++;
 		}
@@ -402,7 +408,13 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 		if (freezeByDefault){
 			DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
 			for (uint32_t i = 1; i <= claspctx.numVars(); i++){
-				claspctx.setFrozen(i, true);
+				if (problemType == ASP){
+					asp.freeze(i, Clasp::value_false);
+				}else{
+					//sat.freeze(i, Clasp::value_false);
+					claspctx.setFrozen(i, true);
+				}
+//				claspctx.setFrozen(i, true);
 			}
 		}
 	}
@@ -468,7 +480,7 @@ void ClaspSolver::sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
 	}
 }
 
-void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
+void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
 	asp.start(claspctx, config.asp);
@@ -531,13 +543,15 @@ asp.update();
 		sendRuleToClasp(asp, ruleId);
 	}
 
+	freezeVariables(frozen, false /* do not freeze variables by default */);
+
 	inconsistent = !asp.endProgram();
 	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
 }
 
-void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
+void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen){
 
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
@@ -547,7 +561,6 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	//claspctx.startAddConstraints();
 	//Clasp::ClauseCreator cc(claspctx.master());
-	Clasp::SatBuilder sat;
 	sat.startProgram(claspctx);
 
 	prepareProblem(sat, ns);
@@ -581,6 +594,8 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+
+	freezeVariables(frozen, true /* freeze variables by default */);
 }
 
 void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
@@ -895,8 +910,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 	nextSolveStep = Restart;
 
 	claspctx.requestStepVar();
-	sendProgramToClasp(p);
-	freezeVariables(frozen, false /* do not freeze variables by default */);
+	sendProgramToClasp(p, frozen);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
@@ -937,8 +951,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 	nextSolveStep = Restart;
 
 	claspctx.requestStepVar();
-	sendNogoodSetToClasp(ns);
-	freezeVariables(frozen, true /* freeze variables by default */);
+	sendNogoodSetToClasp(ns, frozen);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
@@ -1026,10 +1039,10 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	}
 
 	// finalize update
+	freezeVariables(frozen, false /* do not freeze variables by default */);
 	inconsistent = !asp.endProgram();
 	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 	DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
-	freezeVariables(frozen, false /* do not freeze variables by default */);
 
 	// update projection
 	if (!!p.getGroundProgram().mask){
