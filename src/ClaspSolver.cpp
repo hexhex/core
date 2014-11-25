@@ -370,7 +370,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 }
 
 // freezes all variables in "frozen"; if the pointer is 0, then all variables are frozen
-void ClaspSolver::freezeVariables(InterpretationConstPtr frozen){
+void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDefault){
 
 	if (!!frozen){
 		DBGLOG(DBG, "Setting selected variables to frozen");
@@ -395,9 +395,13 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen){
 		DBGLOG(DBG, "Setting " << cntFrozen << " out of " << claspctx.numVars() << " variables to frozen");
 #endif
 	}else{
-		DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
-		for (uint32_t i = 1; i <= claspctx.numVars(); i++){
-			claspctx.setFrozen(i, true);
+		DBGLOG(DBG, "Setting no variables to frozen");
+
+		if (freezeByDefault){
+			DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
+			for (uint32_t i = 1; i <= claspctx.numVars(); i++){
+				claspctx.setFrozen(i, true);
+			}
 		}
 	}
 }
@@ -890,7 +894,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 	claspctx.requestStepVar();
 	sendProgramToClasp(p);
-	freezeVariables(frozen);
+	freezeVariables(frozen, false /* do not freeze variables by default */);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
@@ -932,7 +936,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 
 	claspctx.requestStepVar();
 	sendNogoodSetToClasp(ns);
-	freezeVariables(frozen);
+	freezeVariables(frozen, true /* freeze variables by default */);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
@@ -1023,7 +1027,7 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	inconsistent = !asp.endProgram();
 	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 	DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
-	freezeVariables(frozen);
+	freezeVariables(frozen, false /* do not freeze variables by default */);
 
 	// update projection
 	if (!!p.getGroundProgram().mask){

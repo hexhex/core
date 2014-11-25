@@ -136,7 +136,7 @@ private:
 	uint32_t false_;	// 1 will be our constant "false"
 	uint32_t nextVar;
 	void registerVar(IDAddress adr);	// ensures that a HEX variable is registered in clasp
-	void freezeVariables(InterpretationConstPtr frozen);
+	void freezeVariables(InterpretationConstPtr frozen, bool freezeByDefault);
 	void sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
 	void sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId);
