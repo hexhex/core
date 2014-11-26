@@ -109,13 +109,13 @@ protected:
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
 
   // incremental solving
-  InterpretationPtr domainAtomsAddedInCurrentIncrementalStep;
-  InterpretationPtr domainAtomsInGrounding;
   bool domainExpandedInCurrentIncrementalStep;
-  Rule incrementalConstraint;
-  ComponentGraphPtr subcompgraph; // component-internal (sub-)component graph
-  std::vector<PredicateMaskPtr> domainMaskPerComponent;
-  std::vector<std::vector<ID> > xidbPerComponent;
+  InterpretationPtr inputWithDomainAtoms;
+  InterpretationPtr previousInnerEatomOutputs;
+  PredicateMaskPtr innerEatomOutputs;
+  InterpretationPtr currentRules;
+  InterpretationPtr frozenHookAtoms;
+  std::map<ID, ID> hookAtoms;
 
   // heuristics
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;

@@ -166,6 +166,10 @@ public:
   ID getAuxiliaryConstantSymbol(char type, ID id);
   ID getAuxiliaryVariableSymbol(char type, ID id);
 
+  // replaces the predicate of atom id by its auxiliary predicate using getAuxiliaryConstantSymbol
+  // and returns the ID of the new (ground or nonground) atom
+  ID getAuxiliaryAtom(char type, ID id);
+
   // maps an auxiliary constant or variable symbol back to the ID behind
   ID getIDByAuxiliaryConstantSymbol(ID auxConstantID) const;
   ID getIDByAuxiliaryVariableSymbol(ID auxConstantID) const;

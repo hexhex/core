@@ -496,11 +496,6 @@ ID Registry::storeOrdinaryAtom(OrdinaryAtom& oatom)
   return ((oatom.kind & ID::SUBKIND_MASK) == ID::SUBKIND_ATOM_ORDINARYG) ? storeOrdinaryAtomHelper(this, oatom, ogatoms) : storeOrdinaryAtomHelper(this, oatom, onatoms);
 }
 
-//namespace{
-//   void Deleter( Registry* ptr)
-//   {}
-//}
-
 // ground version
 ID Registry::storeOrdinaryGAtom(OrdinaryAtom& ogatom)
 {
@@ -726,6 +721,20 @@ ID Registry::getAuxiliaryVariableSymbol(char type, ID id)
   // return
   DBGLOG(DBG,"returning id " << av.id << " for aux var symbol " << av.symbol);
   return av.id;
+}
+
+namespace{
+   void EmptyDeleter(Registry* ptr)
+   {}
+}
+
+ID Registry::getAuxiliaryAtom(char type, ID id)
+{
+	OrdinaryAtom oatom = lookupOrdinaryAtom(id);
+	oatom.tuple[0] = getAuxiliaryConstantSymbol(type, oatom.tuple[0]);
+	oatom.kind |= ID::PROPERTY_AUX;
+	ID newAtomID = storeOrdinaryAtom(oatom);
+	DBGLOG(DBG, "Created auxiliary atom " << printToString<RawPrinter>(newAtomID, RegistryPtr(this,EmptyDeleter)) << " for atom " << printToString<RawPrinter>(id, RegistryPtr(this,EmptyDeleter)));
 }
 
 // maps an auxiliary constant symbol back to the ID behind

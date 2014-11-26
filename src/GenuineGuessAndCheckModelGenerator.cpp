@@ -184,8 +184,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     InterpretationConstPtr input):
   FLPModelGeneratorBase(factory, input),
   factory(factory),
-  reg(factory.reg),
-  incrementalConstraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT)
+  reg(factory.reg)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");
     DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
@@ -233,86 +232,24 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
 			postprocInput->add(*domPredictaesExtension);
 		}else{
-			domainAtomsAddedInCurrentIncrementalStep = InterpretationPtr(new Interpretation(reg));
-			domainAtomsInGrounding = InterpretationPtr(new Interpretation(reg));
-
-			DBGLOG(DBG, "Creating subcomponent graph");
-			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
-			std::vector<dlvhex::ID> idbWithoutAuxRules;
-			BOOST_FOREACH (ID ruleID, factory.idb){
-				const Rule& rule = reg->rules.getByID(ruleID);
-				if (rule.head.size() > 0 && rule.head[0].isAuxiliary()) continue;
-				else idbWithoutAuxRules.push_back(ruleID);
-			}
-			std::vector<dlvhex::ID> auxRules;
-			subdepgraph->createDependencies(idbWithoutAuxRules, auxRules);
-
-			// get domain predicates for all components
-			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));
-			std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
-			int nr = 0;
-			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
-				const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
-				PredicateMaskPtr pm(new PredicateMask());
-				pm->setRegistry(reg);
-				BOOST_FOREACH (ID ruleID, ci.innerRules){
-					const Rule& rule = reg->rules.getByID(ruleID);
-					BOOST_FOREACH (ID b, rule.body){
-						if (b.isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(reg->lookupOrdinaryAtom(b).tuple[0]) == 'd'){
-							pm->addPredicate(reg->lookupOrdinaryAtom(b).tuple[0]);
-						}
-					}
-				}				
-				domainMaskPerComponent.push_back(pm);
-				
-				xidbPerComponent.push_back(std::vector<ID>());
-				xidbPerComponent[nr].reserve(ci.innerRules.size() + ci.innerConstraints.size());
-				std::back_insert_iterator<std::vector<ID> > inserter(xidbPerComponent[nr]);
-				
-				std::transform(ci.innerRules.begin(), ci.innerRules.end(), inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, &factory, factory.ctx, _1));
-				std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(), inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, &factory, factory.ctx, _1));
-
-#ifndef NDEBUG
-				{
-				std::stringstream ss;
-				RawPrinter rp(ss, reg);
-				ss << "idb of subcomponent " << nr << std::endl;
-				BOOST_FOREACH (ID ruleID, ci.innerRules){
-					rp.print(ruleID);
-					ss << std::endl;
-				}
-				BOOST_FOREACH (ID ruleID, ci.innerConstraints){
-					rp.print(ruleID);
-				}
-				ss << "xidb of subcomponent " << nr << std::endl;
-				BOOST_FOREACH (ID ruleID, xidbPerComponent[nr]){
-					rp.print(ruleID);
-					ss << std::endl;
-				}
-				DBGLOG(DBG, ss.str());
-				}
-#endif
+			// collect replacement atoms of inner external atoms and build a mask
+			innerEatomOutputs.reset(new PredicateMask());
+			previousInnerEatomOutputs.reset(new Interpretation(factory.reg));
+			BOOST_FOREACH (ID eaID, factory.deidbInnerEatoms){
+				innerEatomOutputs->addPredicate(factory.reg->getAuxiliaryConstantSymbol('r', factory.reg->eatoms.getByID(eaID).predicate));
 			}
 
-			if (factory.ctx.config.getOption("DumpCompGraph")){
-					std::string fnamev = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphVerbose.dot";
-					LOG(INFO,"dumping verbose component graph to " << fnamev);
-					std::ofstream filev(fnamev.c_str());
-					subcompgraph->writeGraphViz(filev, true);
-					
-					std::string fnamet = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphTerse.dot";
-					LOG(INFO,"dumping terse component graph to " << fnamet);
-					std::ofstream filet(fnamet.c_str());
-					subcompgraph->writeGraphViz(filet, false);
-			 }
+			// store input enhanced with domain atoms
+			inputWithDomainAtoms.reset(new Interpretation(factory.reg));
+			inputWithDomainAtoms->add(*postprocInput);
 
-			DBGLOG(DBG, "Expanding domain over empty model");
-			incrementalDomainExpansion(InterpretationPtr(new Interpretation(reg)));
-			postprocInput->add(*domainAtomsAddedInCurrentIncrementalStep);
-			domainAtomsAddedInCurrentIncrementalStep->clear();
+			// keep a set of rules currently in the grounding
+			currentRules.reset(new Interpretation(factory.reg));
+
+			// keep a set of hook atoms which need to be frozen
+			frozenHookAtoms.reset(new Interpretation(factory.reg));
 		}
     }
-    domainExpandedInCurrentIncrementalStep = false;
 
     // assign to const member -> this value must stay the same from here on!
     postprocessedInput = postprocInput;
@@ -708,39 +645,26 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 
 bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(InterpretationConstPtr model){
 
-	// expand component-wise iteratively
-	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
-	int nr = 0;
-	InterpretationConstPtr domainAtomsFromCurrentEA;
-	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
-		const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
-		domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, model, xidbPerComponent[nr], factory.deidbInnerEatoms);
-	}
-//std::cout << "NDAC: " << domainAtomsFromCurrentEA->getStorage().count() << "; PDAC: " << domainAtomsInGrounding->getStorage().count() << std::endl;
-	if (domainAtomsFromCurrentEA->getStorage().count() > domainAtomsInGrounding->getStorage().count()){
-		DBGLOG(DBG, "Expanded domain of external atoms (" << domainAtomsFromCurrentEA->getStorage().count() << " > " << domainAtomsInGrounding->getStorage().count() << ")");
-
-		// at least one of the new domain atoms must be relevant (i.e., the respective external atom replacement is true) for future answer sets
-		// (otherwise the answer set would already have been found before expansion)
-		bm::bvector<>::enumerator en = domainAtomsFromCurrentEA->getStorage().first();
-		bm::bvector<>::enumerator en_end = domainAtomsFromCurrentEA->getStorage().end();
-		while (en < en_end){
-			if (!domainAtomsInGrounding->getFact(*en)){
-				OrdinaryAtom replatom = reg->ogatoms.getByAddress(*en);
-				// translate domain predicate to positive external atom replacement
-				replatom.tuple[0] = reg->getAuxiliaryConstantSymbol('r', reg->eatoms.getByID(reg->getIDByAuxiliaryConstantSymbol(replatom.tuple[0])).predicate);
-				incrementalConstraint.body.push_back(ID::nafLiteralFromAtom(reg->storeOrdinaryAtom(replatom)));
+	// check if an external atom introduced new values
+	innerEatomOutputs->updateMask();
+	assert (innerEatomOutputs->mask()->getStorage().count() >= previousInnerEatomOutputs->getStorage().count() && "external output atom decreased");
+	if (innerEatomOutputs->mask()->getStorage().count() > previousInnerEatomOutputs->getStorage().count()){
+		// create domain atoms for the new values
+		bm::bvector<>::enumerator en = innerEatomOutputs->mask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = innerEatomOutputs->mask()->getStorage().end();
+		if (en < en_end){
+			if (!previousInnerEatomOutputs->getFact(*en)) {
+				OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+				domainAtom.tuple = factory.reg->ogatoms.getByAddress(*en).tuple;
+				domainAtom.tuple[0] = factory.reg->getAuxiliaryConstantSymbol('d', factory.reg->getIDByAuxiliaryConstantSymbol(factory.reg->ogatoms.getIDByAddress(*en)));
+				inputWithDomainAtoms->setFact(factory.reg->storeOrdinaryAtom(domainAtom).address);
+				previousInnerEatomOutputs->setFact(*en);
 			}
 			en++;
 		}
-
-		assert (incrementalConstraint.body.size() > 0);
-		domainAtomsAddedInCurrentIncrementalStep->getStorage() |= domainAtomsFromCurrentEA->getStorage();
-		return true;
-	}else{
-		DBGLOG(DBG, "Did not expand domain of external atoms");
-		return false;
+		domainExpandedInCurrentIncrementalStep = true;
 	}
+
 }
 
 namespace
@@ -794,76 +718,75 @@ namespace
 void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 
 	if (!domainExpandedInCurrentIncrementalStep) return;
-	assert(incrementalConstraint.body.size() > 0);
 
-	LOG(DBG,"unsatisfiable but domain was expanded -> regrounding");
-	domainAtomsAddedInCurrentIncrementalStep->add(*postprocessedInput);
-	postprocessedInput = domainAtomsAddedInCurrentIncrementalStep;
+	LOG(DBG,"domain was expanded -> regrounding");
+	OrdinaryASPProgram program(reg, factory.gidb, inputWithDomainAtoms, factory.ctx.maxint);
 
-	// ground only components which make use of newly added domain atoms
-	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
-	int nr = 0;
-	ComponentGraph::ComponentSet componentsToGround;
-	std::vector<int> componentIndicesToGround;
-	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
-		domainMaskPerComponent[nr]->updateMask();
-		if ((domainMaskPerComponent[nr]->mask()->getStorage() & domainAtomsAddedInCurrentIncrementalStep->getStorage()).count() > 0){
-			DBGLOG(DBG, "Grounding component " << nr);
-			componentsToGround.insert(*comp);
-			componentIndicesToGround.push_back(nr);
-		}
-	}
-	// also ground components which depend on such components
-	nr = 0;
-	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
-		ComponentGraph::ComponentSet preds;
-		transitivePredecessorComponents(*subcompgraph, *comp, preds);
-		for (ComponentGraph::ComponentSet::iterator pcomp = preds.begin(); pcomp != preds.end(); ++pcomp){
-			if (componentsToGround.find(*pcomp) != componentsToGround.end()){
-				DBGLOG(DBG, "Grounding depending component " << nr);
-				componentIndicesToGround.push_back(nr);
-				break;
-			}
-		}
-	}
-
-	OrdinaryASPProgram program(reg, factory.gidb, postprocessedInput, factory.ctx.maxint);
-	std::back_insert_iterator<std::vector<ID> > inserter(program.idb);
-	BOOST_FOREACH (int nr, componentIndicesToGround){
-		program.idb.insert(program.idb.end(), xidbPerComponent[nr].begin(), xidbPerComponent[nr].end());
-	}
-#if 0
-// full grounding
-program.idb.insert(program.idb.end(), factory.xidb.begin(), factory.xidb.end());
-#endif
 	DBGLOG(DBG, "Grounding with frozen atoms " << *annotatedGroundProgram.getProgramMask());
 	grounder = GenuineGrounder::getInstance(factory.ctx, program, annotatedGroundProgram.getProgramMask());
-	domainAtomsInGrounding->getStorage() |= domainAtomsAddedInCurrentIncrementalStep->getStorage();
-	domainAtomsAddedInCurrentIncrementalStep = InterpretationPtr(new Interpretation(reg));
 
-	// take all rules which do not define already previously defined atoms
+	// add all new rules
+	// if they redefine a previously defined atom, use the hook atom instead
+	std::map<ID, ID> redefinedHookAtoms;
 	OrdinaryASPProgram gpAddition = grounder->getGroundProgram();
 	gpAddition.edb = InterpretationPtr(new Interpretation(reg));
 	gpAddition.idb.clear();
-	gpAddition.idb.push_back(reg->storeRule(incrementalConstraint));
-	incrementalConstraint.body.clear();
-	bool skip;
+	Rule newRule(0);	// newRule.kind == 0 iff the rule does not redefine a previously defined atom
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
+		// no need to add a rule if it is already present
+		if (currentRules->getFact(ruleID.address)) continue;
+
+		// check if a previously defined atom is redefined
 		const Rule& rule = reg->rules.getByID(ruleID);
-		skip = false;
+		int hID = 0;
 		BOOST_FOREACH (ID headID, rule.head){
-			if (annotatedGroundProgram.getProgramMask()->getFact(headID.address)){
-				assert (false && "incremental solving violates modularity condition");
-				skip = true;
-				break;
+			if (hookAtoms.find(headID) != hookAtoms.end()){
+				// yes: replace by hook atom and prepare another hook atom
+				if (newRule.kind == 0) newRule = rule;
+				newRule.head[hID] = hookAtoms[headID];
+				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', hookAtoms[headID]);
+			}else{
+				// the atom was not previously defined: prepare a hook atom for future extensions
+				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', headID);
 			}
+			hID++;
 		}
-		if (!skip) gpAddition.idb.push_back(ruleID);
+
+		// add the new rule either in unmodified form or with hook atoms
+		if (newRule.kind == 0){
+			ID newRuleID = factory.reg->storeRule(newRule);
+			gpAddition.idb.push_back(newRuleID);
+			currentRules->setFact(newRuleID.address);
+			newRule = Rule(0);
+		}else{
+			gpAddition.idb.push_back(ruleID);
+			currentRules->setFact(ruleID.address);
+		}
 	}
 
+	// prepare hook rules, declare hook atoms as frozen and update hook atoms
+	frozenHookAtoms->clear();
+	typedef std::pair<ID, ID> HookAtomDefinition;
+	BOOST_FOREACH (HookAtomDefinition had, redefinedHookAtoms){
+		// prepare hook rule
+		Rule rule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+		rule.head.push_back(had.first);
+		rule.head.push_back(had.second);
+
+		// freeze hook atom
+		frozenHookAtoms->setFact(had.second.address);
+
+		// update hook atom for future extensions
+		hookAtoms[had.first] = had.second;
+	}
+
+	// filter the hook atoms
+	gpAddition.mask = frozenHookAtoms;
+
+	// program expansion
 	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms);
 	annotatedGroundProgram.addProgram(expansion);
-	solver->addProgram(expansion);
+	solver->addProgram(expansion, frozenHookAtoms);
 }
 
 bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed, bool partial){
