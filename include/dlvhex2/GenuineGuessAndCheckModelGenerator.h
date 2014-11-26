@@ -109,6 +109,7 @@ protected:
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
 
   // incremental solving
+  std::vector<ID> modelEliminationConstraints;
   bool domainExpandedInCurrentIncrementalStep;
   InterpretationPtr inputWithDomainAtoms;
   InterpretationPtr previousInnerEatomOutputs;

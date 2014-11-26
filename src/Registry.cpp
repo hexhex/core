@@ -735,6 +735,7 @@ ID Registry::getAuxiliaryAtom(char type, ID id)
 	oatom.kind |= ID::PROPERTY_AUX;
 	ID newAtomID = storeOrdinaryAtom(oatom);
 	DBGLOG(DBG, "Created auxiliary atom " << printToString<RawPrinter>(newAtomID, RegistryPtr(this,EmptyDeleter)) << " for atom " << printToString<RawPrinter>(id, RegistryPtr(this,EmptyDeleter)));
+	return newAtomID;
 }
 
 // maps an auxiliary constant symbol back to the ID behind

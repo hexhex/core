@@ -234,6 +234,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		}else{
 			// collect replacement atoms of inner external atoms and build a mask
 			innerEatomOutputs.reset(new PredicateMask());
+			innerEatomOutputs->setRegistry(factory.reg);
 			previousInnerEatomOutputs.reset(new Interpretation(factory.reg));
 			BOOST_FOREACH (ID eaID, factory.deidbInnerEatoms){
 				innerEatomOutputs->addPredicate(factory.reg->getAuxiliaryConstantSymbol('r', factory.reg->eatoms.getByID(eaID).predicate));
@@ -649,15 +650,26 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 	innerEatomOutputs->updateMask();
 	assert (innerEatomOutputs->mask()->getStorage().count() >= previousInnerEatomOutputs->getStorage().count() && "external output atom decreased");
 	if (innerEatomOutputs->mask()->getStorage().count() > previousInnerEatomOutputs->getStorage().count()){
+		DBGLOG(DBG, "Domain was expanded, creating " << (innerEatomOutputs->mask()->getStorage().count() - previousInnerEatomOutputs->getStorage().count()) << " new domain atoms");
+
 		// create domain atoms for the new values
 		bm::bvector<>::enumerator en = innerEatomOutputs->mask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = innerEatomOutputs->mask()->getStorage().end();
-		if (en < en_end){
+		while (en < en_end){
+			ID eaPred = factory.reg->getIDByAuxiliaryConstantSymbol(factory.reg->ogatoms.getByAddress(*en).tuple[0]);
 			if (!previousInnerEatomOutputs->getFact(*en)) {
-				OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-				domainAtom.tuple = factory.reg->ogatoms.getByAddress(*en).tuple;
-				domainAtom.tuple[0] = factory.reg->getAuxiliaryConstantSymbol('d', factory.reg->getIDByAuxiliaryConstantSymbol(factory.reg->ogatoms.getIDByAddress(*en)));
-				inputWithDomainAtoms->setFact(factory.reg->storeOrdinaryAtom(domainAtom).address);
+				DBGLOG(DBG, "Replacement atom " << printToString<RawPrinter>(factory.reg->ogatoms.getIDByAddress(*en), factory.reg) << " is new");
+				BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
+					const ExternalAtom ea = reg->eatoms.getByID(eaid);
+					if (ea.predicate == eaPred){
+						OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+						domainAtom.tuple = factory.reg->ogatoms.getByAddress(*en).tuple;
+						domainAtom.tuple[0] = factory.reg->getAuxiliaryConstantSymbol('d', eaid);
+						ID domainAtomID = factory.reg->storeOrdinaryAtom(domainAtom);
+						DBGLOG(DBG, "Adding domain atom " << domainAtomID);
+						inputWithDomainAtoms->setFact(domainAtomID.address);
+					}
+				}
 				previousInnerEatomOutputs->setFact(*en);
 			}
 			en++;
@@ -731,18 +743,20 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	OrdinaryASPProgram gpAddition = grounder->getGroundProgram();
 	gpAddition.edb = InterpretationPtr(new Interpretation(reg));
 	gpAddition.idb.clear();
-	Rule newRule(0);	// newRule.kind == 0 iff the rule does not redefine a previously defined atom
+	Rule newRule(ID::MAINKIND_RULE);	// newRule.head.size() == 0 iff the rule does not redefine a previously defined atom
+	DBGLOG(DBG, "Processing new ground program");
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
 		// no need to add a rule if it is already present
 		if (currentRules->getFact(ruleID.address)) continue;
 
 		// check if a previously defined atom is redefined
+		DBGLOG(DBG, "Processing new rule");
 		const Rule& rule = reg->rules.getByID(ruleID);
 		int hID = 0;
 		BOOST_FOREACH (ID headID, rule.head){
 			if (hookAtoms.find(headID) != hookAtoms.end()){
 				// yes: replace by hook atom and prepare another hook atom
-				if (newRule.kind == 0) newRule = rule;
+				if (newRule.head.size() == 0) newRule = rule;
 				newRule.head[hID] = hookAtoms[headID];
 				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', hookAtoms[headID]);
 			}else{
@@ -757,7 +771,8 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 			ID newRuleID = factory.reg->storeRule(newRule);
 			gpAddition.idb.push_back(newRuleID);
 			currentRules->setFact(newRuleID.address);
-			newRule = Rule(0);
+			currentRules->setFact(newRuleID.address);
+			newRule = Rule(ID::MAINKIND_RULE);
 		}else{
 			gpAddition.idb.push_back(ruleID);
 			currentRules->setFact(ruleID.address);
@@ -771,7 +786,8 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 		// prepare hook rule
 		Rule rule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 		rule.head.push_back(had.first);
-		rule.head.push_back(had.second);
+		rule.body.push_back(ID::posLiteralFromAtom(had.second));
+		gpAddition.idb.push_back(factory.reg->storeRule(rule));
 
 		// freeze hook atom
 		frozenHookAtoms->setFact(had.second.address);
@@ -784,6 +800,7 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	gpAddition.mask = frozenHookAtoms;
 
 	// program expansion
+	DBGLOG(DBG, "Expanding program by " << gpAddition.idb.size() << " rules");
 	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms);
 	annotatedGroundProgram.addProgram(expansion);
 	solver->addProgram(expansion, frozenHookAtoms);
