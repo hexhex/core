@@ -389,13 +389,20 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 					alreadyFrozen.insert(hexToClasp[*en].var());
 				}
 #endif
-				if (problemType == ASP){
-					asp.freeze(hexToClasp[*en].var(), Clasp::value_false);
-				}else{
-					//sat.freeze(hexToClasp[*en].var(), Clasp::value_false);
-					claspctx.setFrozen(hexToClasp[*en].var(), true);
+				switch (problemType) {
+					case ASP:
+						// Note: (1) asp.free() does more than (2) claspctx.setFrozen().
+						// (2) prevents the internal solver variable from being eliminated due to optimization
+						// (1) does in addition prevent Clark's completion an loop clauses for these variables from being added (now), which
+						//     allows for defining them in later incremental steps
+						asp.freeze(nonoptimizedMapHexToClasp(*en).var(), Clasp::value_false);
+						break;
+					case SAT:
+						claspctx.setFrozen(mapHexToClasp(*en).var(), true);
+						break;
+					default:
+						assert(false && "unknown problem type");
 				}
-//				claspctx.setFrozen(hexToClasp[*en].var(), true);
 			}
 			en++;
 		}
@@ -408,13 +415,17 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 		if (freezeByDefault){
 			DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
 			for (uint32_t i = 1; i <= claspctx.numVars(); i++){
-				if (problemType == ASP){
-					asp.freeze(i, Clasp::value_false);
-				}else{
-					//sat.freeze(i, Clasp::value_false);
-					claspctx.setFrozen(i, true);
+
+				switch (problemType) {
+					case ASP:
+						asp.freeze(i, Clasp::value_false);
+						break;
+					case SAT:
+						claspctx.setFrozen(i, true);
+						break;
+					default:
+						assert(false && "unknown problem type");
 				}
-//				claspctx.setFrozen(i, true);
 			}
 		}
 	}
