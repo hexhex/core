@@ -153,15 +153,18 @@ private:
 	void prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns);
 	void updateSymbolTable();
 	Clasp::Literal noLiteral;
-	std::vector<Clasp::Literal> hexToClasp;
-	std::vector<Clasp::Literal> nonoptimizedHexToClasp;	// stores mapping before optimization (necessary for incremental program definitions)
+
+	std::vector<Clasp::Literal> hexToClaspSolver;
+	std::vector<Clasp::Literal> hexToClaspProgram;	// stores mapping before optimization (necessary for incremental program definitions)
 	typedef std::vector<IDAddress> AddressVector;
 	std::vector<AddressVector*> claspToHex;
-	inline bool isMappedToClaspLiteral(IDAddress addr) const { return addr < hexToClasp.size() && hexToClasp[addr] != noLiteral; }
-	Clasp::Literal mapHexToClasp(IDAddress addr, bool registerVar = false, bool inverseLits = false);
-	Clasp::Literal nonoptimizedMapHexToClasp(IDAddress addr, bool registerVar = false, bool inverseLits = false);
 	void storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized = false);
 	void resetAndResizeClaspToHex(unsigned size);
+
+	inline bool isMappedToClaspLiteral(IDAddress addr) const { return addr < hexToClaspSolver.size() && hexToClaspSolver[addr] != noLiteral; }
+	Clasp::Literal convertHexToClaspSolverLit(IDAddress addr, bool registerVar = false, bool inverseLits = false);
+	Clasp::Literal convertHexToClaspProgramLit(IDAddress addr, bool registerVar = false, bool inverseLits = false);
+	const AddressVector* convertClaspSolverLitToHex(int index);
 
 	// output filtering (works on given interpretation and modifies it)
 	void outputProject(InterpretationPtr intr);

@@ -63,6 +63,54 @@
 // activate this for detailed benchmarking in this file 
 #undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 
+/*
+
+Variable Namespaces
+===================
+
+The ClaspSolver class uses three different name spaces for variables:
+ (i)   HEX-IDs
+ (ii)  clasp program variables
+ (iii) clasp solver variables
+
+There is a one-to-one correlation between (i) and (ii)
+(except for an additional clasp variable which is permantly set to false to express empty rule heads),
+while the relation between (ii) and (iii) is many-to-zero/one. This is because
+program variables can be eliminated due to optimization, or multiple program variables can be identified
+to be equivalent and are thus mapped to the same internal solver variable.
+
+That is:
+	(i) <1--1> (ii) <N--0/1> (iii)
+
+It is important to know when to use which namespace. All classes of the HEX-solver other than this one use only (i).
+When sending a program to clasp or calling clasp functions related to program variables (such as defining programs or freezing external variables),
+it expects (ii). When sending clauses/nogoods to clasp, it expects the literals to use (iii).
+Also when retrieving models from clasp, the result is represented using (iii).
+
+We have the following conversion options:
+
+(i) ---> (ii)   Translating a HEX-ID "id" (i) to a clasp program variable (ii) is via convertHexToClaspProgramLit(id.address).
+
+                Example usages: sending programs to clasp, adding new rules
+
+(i) ---> (iii)  Translating a HEX-ID "id" (i) to a clasp solver variable (iii) is via convertHexToClaspSolverLit(id.address).
+
+                Example usages: sending nogoods to clasp, external learning
+
+(ii) -/-> (i)   Unsupported/not needed (addition would be easy)
+
+(ii) -/-> (iii) Unsupported/not needed (addition would be easy)
+
+(iii) ---> (i)  Translating a positive or negative clasp solver variable "lit" (iii) to the list of address parts of a HEX-ID (i) of type ground atom
+                is via convertClaspSolverLitToHex(lit.index()); this returns a pointer to a std::vector<IDAddress>.
+
+                Example usages: assignment extraction
+
+(iii) -/-> (ii) Unsupported/not needed, but indirectly possible via (iii) --> (i) --> (ii)
+
+
+*/
+
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ExternalPropagator ==============================
@@ -268,7 +316,7 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 	DBGLOG(DBG, "Clasp notified about literal C:" << p.index() << "/" << (p.sign() ? "!" : "") << p.var() << " becoming true on dl " << level);
 	if (cs.claspToHex.size() > p.index()){
-		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[p.index()]){
+		BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(p.index())){
 			DBGLOG(DBG, "Assigning H:" << adr << " to true");
 			currentIntr->setFact(adr);
 			currentAssigned->setFact(adr);
@@ -290,7 +338,7 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 	DBGLOG(DBG, "This implies that literal C:" << pneg.index() << "/" << (pneg.sign() ? "!" : "") << p.var() << " becomes false on dl " << level);
 	if (cs.claspToHex.size() > pneg.index()){
-		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[pneg.index()]){
+		BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(pneg.index())){
 			DBGLOG(DBG, "Assigning H:" << adr << " to false");
 			currentIntr->clearFact(adr);
 			currentAssigned->setFact(adr);
@@ -352,7 +400,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 		if (solver.isTrue(it->second.lit) && !it->second.name.empty()) {
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
-			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
+			BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
 				if (!!extractCurrentIntr) extractCurrentIntr->setFact(adr);
 				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
 				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
@@ -361,7 +409,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 		if (solver.isFalse(it->second.lit) && !it->second.name.empty()) {
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is false");
-			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
+			BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
 				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
 				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
 			}
@@ -384,9 +432,9 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 		while (en < en_end){
 			if (isMappedToClaspLiteral(*en)){
 #ifndef NDEBUG
-				if (alreadyFrozen.count(hexToClasp[*en].var()) == 0){
+				if (alreadyFrozen.count(hexToClaspSolver[*en].var()) == 0){
 					cntFrozen++;
-					alreadyFrozen.insert(hexToClasp[*en].var());
+					alreadyFrozen.insert(hexToClaspSolver[*en].var());
 				}
 #endif
 				switch (problemType) {
@@ -395,10 +443,10 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 						// (2) prevents the internal solver variable from being eliminated due to optimization
 						// (1) does in addition prevent Clark's completion an loop clauses for these variables from being added (now), which
 						//     allows for defining them in later incremental steps
-						asp.freeze(nonoptimizedMapHexToClasp(*en).var(), Clasp::value_false);
+						asp.freeze(convertHexToClaspProgramLit(*en).var(), Clasp::value_false);
 						break;
 					case SAT:
-						claspctx.setFrozen(mapHexToClasp(*en).var(), true);
+						claspctx.setFrozen(convertHexToClaspSolverLit(*en).var(), true);
 						break;
 					default:
 						assert(false && "unknown problem type");
@@ -441,13 +489,13 @@ void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId
 	assert(rule.head.size() != 0);
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		DBGLOG(DBG, "Adding to head: " << nonoptimizedMapHexToClasp(h.address).var());
-		asp.addHead(nonoptimizedMapHexToClasp(h.address).var());
+		DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+		asp.addHead(convertHexToClaspProgramLit(h.address).var());
 	}
 	for (uint32_t i = 0; i < rule.body.size(); ++i){
 		// add literal to body
-		DBGLOG(DBG, "Adding to body: " << (!(nonoptimizedMapHexToClasp(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << nonoptimizedMapHexToClasp(rule.body[i].address).var());
-		asp.addToBody(nonoptimizedMapHexToClasp(rule.body[i].address).var(), !(nonoptimizedMapHexToClasp(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
+		DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << convertHexToClaspProgramLit(rule.body[i].address).var());
+		asp.addToBody(convertHexToClaspProgramLit(rule.body[i].address).var(), !(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
 	}
 	asp.endRule();
 }
@@ -464,13 +512,13 @@ void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID rule
 	}
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		DBGLOG(DBG, "Adding to head: " << nonoptimizedMapHexToClasp(h.address).var());
-		asp.addHead(nonoptimizedMapHexToClasp(h.address).var());
+		DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+		asp.addHead(convertHexToClaspProgramLit(h.address).var());
 	}
 	BOOST_FOREACH (ID b, rule.body){
 		// add literal to body
-		DBGLOG(DBG, "Adding to body: " << (!(nonoptimizedMapHexToClasp(b.address).sign() ^ b.isNaf()) ? "" : "!") << nonoptimizedMapHexToClasp(b.address).var());
-		asp.addToBody(nonoptimizedMapHexToClasp(b.address).var(), !(nonoptimizedMapHexToClasp(b.address).sign() ^ b.isNaf()));
+		DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()) ? "" : "!") << convertHexToClaspProgramLit(b.address).var());
+		asp.addToBody(convertHexToClaspProgramLit(b.address).var(), !(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()));
 	}
 	asp.endRule();
 }
@@ -511,7 +559,7 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Interpreta
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(nonoptimizedMapHexToClasp(*en).var()).endRule();
+		asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
 		en++;
 	}
 
@@ -677,7 +725,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 		}
 
 		// mclit = mapped clasp literal
-		const Clasp::Literal mclit = mapHexToClasp(lit.address);
+		const Clasp::Literal mclit = convertHexToClaspSolverLit(lit.address);
 		if (claspctx.eliminated(mclit.var())){
 			DBGLOG(DBG, "some literal was eliminated");
 			return TransformNogoodToClaspResult(clause, false, true);
@@ -702,7 +750,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 			neg.insert(mclit.var());
 		}
 
-		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
+		// 1. cs.hexToClaspSolver maps hex-atoms to clasp-literals
 		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
 		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
 		Clasp::Literal clit = Clasp::Literal(mclit.var(), !(mclit.sign() ^ lit.isNaf()));
@@ -789,17 +837,17 @@ void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
 
 	bool inverselits = (ctx.config.getOption("ClaspInverseLiterals") != 0);
 
-	assert(hexToClasp.empty());
-	hexToClasp.reserve(reg->ogatoms.getSize());
+	assert(hexToClaspSolver.empty());
+	hexToClaspSolver.reserve(reg->ogatoms.getSize());
 
-	// build symbol table and hexToClasp
+	// build symbol table and hexToClaspSolver
 	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
 	unsigned largestIdx = 0;
 	unsigned varCnt = 0;
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
-			Clasp::Literal clasplit = mapHexToClasp(lit.address, true, inverselits);
+			Clasp::Literal clasplit = convertHexToClaspSolverLit(lit.address, true, inverselits);
 			if (clasplit.index() > largestIdx) largestIdx = clasplit.index();
 		}
 	}
@@ -812,26 +860,14 @@ void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
 	return;
 }
 
-void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
-{
-	for(unsigned u = 0; u < claspToHex.size(); ++u)
-	{
-		if( claspToHex[u] )
-			delete claspToHex[u];
-	}
-	claspToHex.resize(size, NULL);
-	for(unsigned u = 0; u < claspToHex.size(); ++u)
-		claspToHex[u] = new AddressVector;
-}
-
 void ClaspSolver::updateSymbolTable(){
 
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::updateSymbolTable");
 	#endif
 
-	hexToClasp.clear();
-	hexToClasp.reserve(reg->ogatoms.getSize());
+	hexToClaspSolver.clear();
+	hexToClaspSolver.reserve(reg->ogatoms.getSize());
 
 	// go through clasp symbol table
 	const Clasp::SymbolTable& symTab = claspctx.symbolTable();
@@ -854,52 +890,70 @@ void ClaspSolver::updateSymbolTable(){
 		c2h->push_back(hexAdr);
 	}
 
-	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
-}
-
-Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
-	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
-		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit, true);
-		std::string str = idAddressToString(addr);
-#ifndef NDEBUG
-		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
-#endif
-		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-	}
-	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
-	return hexToClasp[addr];
-}
-
-Clasp::Literal ClaspSolver::nonoptimizedMapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
-	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
-		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit, true);
-		std::string str = idAddressToString(addr);
-#ifndef NDEBUG
-		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
-#endif
-		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-	}
-	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
-	return nonoptimizedHexToClasp[addr];
+	DBGLOG(DBG, "hexToClaspSolver.size()=" << hexToClaspSolver.size() << ", symTab.size()=" << symTab.size());
 }
 
 void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized){
 
-	if(addr >= hexToClasp.size()){
-		hexToClasp.resize(addr + 1, noLiteral);
+	if(addr >= hexToClaspSolver.size()){
+		hexToClaspSolver.resize(addr + 1, noLiteral);
 	}
-	hexToClasp[addr] = lit;
+	hexToClaspSolver[addr] = lit;
 
 	if (alsoStoreNonoptimized){
-		if(addr >= nonoptimizedHexToClasp.size()){
-			nonoptimizedHexToClasp.resize(addr + 1, noLiteral);
+		if(addr >= hexToClaspProgram.size()){
+			hexToClaspProgram.resize(addr + 1, noLiteral);
 		}
-		nonoptimizedHexToClasp[addr] = lit;
+		hexToClaspProgram[addr] = lit;
 	}
+}
+
+void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
+{
+	for(unsigned u = 0; u < claspToHex.size(); ++u)
+	{
+		if( claspToHex[u] )
+			delete claspToHex[u];
+	}
+	claspToHex.resize(size, NULL);
+	for(unsigned u = 0; u < claspToHex.size(); ++u)
+		claspToHex[u] = new AddressVector;
+}
+
+Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
+	if (!isMappedToClaspLiteral(addr)){
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+		Clasp::Literal clasplit(c, inverseLits);
+		storeHexToClasp(addr, clasplit, true);
+		std::string str = idAddressToString(addr);
+#ifndef NDEBUG
+		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+#endif
+		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+	}
+	assert(addr < hexToClaspSolver.size());
+	assert(hexToClaspSolver[addr] != noLiteral);
+	return hexToClaspSolver[addr];
+}
+
+Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool registerVar, bool inverseLits) {
+	if (!isMappedToClaspLiteral(addr)){
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+		Clasp::Literal clasplit(c, inverseLits);
+		storeHexToClasp(addr, clasplit, true);
+		std::string str = idAddressToString(addr);
+#ifndef NDEBUG
+		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+#endif
+		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+	}
+	assert(addr < hexToClaspSolver.size());
+	assert(hexToClaspSolver[addr] != noLiteral);
+	return hexToClaspProgram[addr];
+}
+
+const ClaspSolver::AddressVector* ClaspSolver::convertClaspSolverLitToHex(int index){
+	return claspToHex[index];
 }
 
 void ClaspSolver::outputProject(InterpretationPtr intr){
@@ -1039,7 +1093,7 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(mapHexToClasp(*en).var()).endRule();
+		asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspSolverLit(*en).var()).endRule();
 		en++;
 	}
 
@@ -1105,8 +1159,8 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
 		if (isMappedToClaspLiteral(a.address)){
-			DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << mapHexToClasp(a.address).index() << "/" << (mapHexToClasp(a.address).sign() ^ a.isNaf() ? "!" : "") << mapHexToClasp(a.address).var() << ")");
-			Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
+			DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << convertHexToClaspSolverLit(a.address).index() << "/" << (convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf() ? "!" : "") << convertHexToClaspSolverLit(a.address).var() << ")");
+			Clasp::Literal al = Clasp::Literal(convertHexToClaspSolverLit(a.address).var(), convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf());
 			this->assumptions.push_back(al);
 		}else{
 			DBGLOG(DBG, "Ignoring assumption H:" << RawPrinter::toString(reg, a));
@@ -1220,7 +1274,7 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				model = InterpretationPtr(new Interpretation(reg));
 				for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
 					if (modelEnumerator->lastModel().isTrue(it->second.lit) && !it->second.name.empty()) {
-						BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
+						BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
 							model->setFact(adr);
 						}
 					}
