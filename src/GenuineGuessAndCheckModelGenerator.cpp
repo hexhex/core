@@ -329,7 +329,7 @@ void GenuineGuessAndCheckModelGenerator::addHookRules(){
 			hookRules.push_back(getIncrementalHookRule(h, hookAtoms[h]));
 		}
 	}
-	AnnotatedGroundProgram hookRulesAGP(factory.ctx, OrdinaryASPProgram(factory.reg, hookRules, InterpretationPtr(new Interpretation(factory.reg)), factory.ctx.maxint, frozenHookAtoms));
+	AnnotatedGroundProgram hookRulesAGP(factory.ctx, OrdinaryASPProgram(factory.reg, hookRules, InterpretationPtr(new Interpretation(factory.reg)), factory.ctx.maxint, frozenHookAtoms), factory.innerEatoms);
 	annotatedGroundProgram.addProgram(hookRulesAGP);
 }
 
@@ -411,6 +411,9 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 				incrementalProgramExpansion();
 				buildFrozenHookAtomAssumptions();
 				solver->restartWithAssumptions(hookAssumptions);
+				for (int i = 0; i < factory.innerEatoms.size(); ++i){
+					eaEvaluated[i] = eaVerified[i] = false;
+				}
 				continue;
 			}
 		}
@@ -904,6 +907,16 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	}
 
 	solver->addProgram(expansion, frozenHookAtoms);
+/*
+	solver = GenuineGroundSolver::getInstance(
+		factory.ctx, annotatedGroundProgram,
+		frozenHookAtoms,
+		// do the UFS check for disjunctions only if we don't do
+		// a minimality check in this class;
+		// this will not find unfounded sets due to external sources,
+		// but at least unfounded sets due to disjunctions
+		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+*/
 }
 
 ID GenuineGuessAndCheckModelGenerator::getIncrementalHookRule(ID headAtomID, ID hookAtomID){

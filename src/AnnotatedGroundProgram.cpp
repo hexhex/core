@@ -93,6 +93,7 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 	eaMasks.insert(eaMasks.end(), other.eaMasks.begin(), other.eaMasks.end());
 	typedef const boost::unordered_map<IDAddress, std::vector<ID> >::value_type AuxToEAPair;
 	BOOST_FOREACH (AuxToEAPair pair, other.auxToEA){
+		DBGLOG(DBG, "Copying " << pair.second.size() << " auxToEA mapping infos of auxiliary " << pair.first);
 		auxToEA[pair.first].insert(auxToEA[pair.first].end(), pair.second.begin(), pair.second.end());
 	}
 	if (!!other.supportSets){
@@ -631,15 +632,15 @@ const boost::unordered_map<IDAddress, std::vector<ID> >& AnnotatedGroundProgram:
 }
 
 const std::vector<ID>& AnnotatedGroundProgram::getAuxToEA(IDAddress ida) const{
-	assert(auxToEA.find(ida) != auxToEA.end());
+	assert(auxToEA.find(ida) != auxToEA.end() && "could not find auxiliary mapping");
 	return auxToEA.at(ida);
 }
 
-boost::shared_ptr<ExternalAtomMask> AnnotatedGroundProgram::getEAMask(int eaIndex){
+const boost::shared_ptr<ExternalAtomMask> AnnotatedGroundProgram::getEAMask(int eaIndex) const{
 	assert((uint32_t)eaIndex >= 0 && (uint32_t)eaIndex < indexedEatoms.size());
 	eaMasks[eaIndex]->updateMask();
 	return eaMasks[eaIndex];
-}
+}																																																																																																																																																							
 
 const OrdinaryASPProgram& AnnotatedGroundProgram::getGroundProgram() const{
 	return groundProgram;
@@ -655,15 +656,15 @@ ID AnnotatedGroundProgram::getIndexedEAtom(int index) const{
 	return indexedEatoms[index];
 }
 
-InterpretationConstPtr AnnotatedGroundProgram::getProgramMask() const{
-	assert(!!programMask);
-	return programMask;
-}
+																																																																																						InterpretationConstPtr AnnotatedGroundProgram::getProgramMask() const{
+																																																																																							assert(!!programMask);
+																																																																																							return programMask;
+																																																																																						}
 
 
-void AnnotatedGroundProgram::setCompleteSupportSetsForVerification(SimpleNogoodContainerPtr supportSets){
-	this->supportSets = supportSets;
-}
+																																																																																						void AnnotatedGroundProgram::setCompleteSupportSetsForVerification(SimpleNogoodContainerPtr supportSets){
+																																																																																							this->supportSets = supportSets;
+																																																																																						}
 
 bool AnnotatedGroundProgram::allowsForVerificationUsingCompleteSupportSets() const{
 	return !!supportSets;
@@ -673,7 +674,7 @@ SimpleNogoodContainerPtr AnnotatedGroundProgram::getCompleteSupportSetsForVerifi
 	return supportSets;
 }
 
-bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify){
+bool AnnotatedGroundProgram::verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify) const{
 
 	const ExternalAtom& eatom = reg->eatoms.getByID(indexedEatoms[eaIndex]);
 

@@ -220,6 +220,7 @@ public:
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 	virtual ~ClaspSolver();
 	virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen);
 
 	// search control
 	void restartWithAssumptions(const std::vector<ID>& assumptions);

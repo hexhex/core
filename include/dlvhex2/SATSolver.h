@@ -50,6 +50,7 @@ public:
 	virtual void addPropagator(PropagatorCallback* pb) = 0;
 	virtual void removePropagator(PropagatorCallback* pb) = 0;
 	virtual InterpretationPtr getNextModel() = 0;
+	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
 	static Ptr getInstance(ProgramCtx& ctx, NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 };

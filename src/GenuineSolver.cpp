@@ -213,6 +213,10 @@ void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, Interpreta
 	solver->addProgram(program, frozen);
 }
 
+void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
+	solver->addNogoodSet(ns, frozen);
+}
+
 DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=2 ts=8 tw=80: */

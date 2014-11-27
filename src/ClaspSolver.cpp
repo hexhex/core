@@ -458,8 +458,6 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
 		DBGLOG(DBG, "Setting " << cntFrozen << " out of " << claspctx.numVars() << " variables to frozen");
 #endif
 	}else{
-		DBGLOG(DBG, "Setting no variables to frozen");
-
 		if (freezeByDefault){
 			DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
 			for (uint32_t i = 1; i <= claspctx.numVars(); i++){
@@ -605,7 +603,7 @@ asp.update();
 	freezeVariables(frozen, false /* do not freeze variables by default */);
 
 	inconsistent = !asp.endProgram();
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
 }
@@ -618,8 +616,6 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstP
 
 	DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
 
-	//claspctx.startAddConstraints();
-	//Clasp::ClauseCreator cc(claspctx.master());
 	sat.startProgram(claspctx);
 
 	prepareProblem(sat, ns);
@@ -631,19 +627,8 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstP
 		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
 		if (!ngClasp.tautological){
 			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
-/*
-			// Incremental SAT:
 
-			sat.endProgram();
-			sat.updateProgram();
-*/
 			sat.addClause(ngClasp.clause);
-			//cc.start();
-			//BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
-			//	cc.add(lit);
-			//}
-			//Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
-			//Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
 		}else{
 			DBGLOG(DBG, "Skipping tautological nogood");
 		}
@@ -725,7 +710,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 		}
 
 		// mclit = mapped clasp literal
-		const Clasp::Literal mclit = convertHexToClaspSolverLit(lit.address);
+		const Clasp::Literal mclit = convertHexToClaspSolverLit(lit.address, extendDomainIfNecessary);
 		if (claspctx.eliminated(mclit.var())){
 			DBGLOG(DBG, "some literal was eliminated");
 			return TransformNogoodToClaspResult(clause, false, true);
@@ -852,12 +837,8 @@ void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
 		}
 	}
 	claspctx.symbolTable().endInit();
-
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables, symbol table has " << claspctx.symbolTable().size() << " entries");
 	sat.prepareProblem(claspctx.numVars());
-
 	updateSymbolTable();
-	return;
 }
 
 void ClaspSolver::updateSymbolTable(){
@@ -875,7 +856,13 @@ void ClaspSolver::updateSymbolTable(){
 	// each variable can be a positive or negative literal, literals are (var << 1 | sign)
 	// build empty set of NULL-pointers to vectors
 	// (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
-	DBGLOG(DBG, "Problem has " << claspctx.numVars() << " variables");
+#ifndef NDEBUG
+	if (problemType == ASP){
+		DBGLOG(DBG, "ASP problem has " << claspctx.numVars() << " variables");
+	}else if (problemType == SAT){
+		DBGLOG(DBG, "SAT problem has " << claspctx.numVars() << " variables");
+	}
+#endif
 	resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1 + 1);	// the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
 
 	LOG(DBG, "Symbol table of optimized program:");
@@ -910,14 +897,19 @@ void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoS
 
 void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 {
+	DBGLOG(DBG, "resetAndResizeClaspToHex: current size is " << claspToHex.size());
 	for(unsigned u = 0; u < claspToHex.size(); ++u)
 	{
-		if( claspToHex[u] )
+		if(claspToHex[u]){
 			delete claspToHex[u];
+			claspToHex[u] = NULL;
+		}
 	}
+	DBGLOG(DBG, "resetAndResizeClaspToHex: resizing to " << size);
 	claspToHex.resize(size, NULL);
-	for(unsigned u = 0; u < claspToHex.size(); ++u)
+	for(unsigned u = 0; u < claspToHex.size(); ++u) {
 		claspToHex[u] = new AddressVector;
+	}
 }
 
 Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
@@ -1080,6 +1072,7 @@ ClaspSolver::~ClaspSolver(){
 
 void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
 
+	assert(problemType == ASP && "programs can only be added in ASP mode");
 	DBGLOG(DBG, "Adding program component incrementally");
 	nextSolveStep = Restart;
 
@@ -1106,7 +1099,7 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	// finalize update
 	freezeVariables(frozen, false /* do not freeze variables by default */);
 	inconsistent = !asp.endProgram();
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
 	DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	// update projection
@@ -1122,6 +1115,82 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 		inconsistent = true;
 		return;
 	}
+
+	DBGLOG(DBG, "Prepare new model enumerator");
+	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+	modelEnumerator->init(claspctx, 0, config.solve.numModels);
+
+	DBGLOG(DBG, "Finalizing reinitialization");
+	if (!claspctx.endInit()){
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		inconsistent = true;
+		return;
+	}
+
+	updateSymbolTable();
+
+	DBGLOG(DBG, "Resetting solver object");
+	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+	nextSolveStep = Restart;
+
+	DBGLOG(DBG, "Resetting post propagator");
+	if (!!ep.get()) claspctx.master()->removePost(ep.get());
+	ep.reset(new ExternalPropagator(*this));
+	claspctx.master()->addPost(ep.get());
+}
+
+void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
+
+	assert(problemType == SAT && "programs can only be added in SAT mode");
+	DBGLOG(DBG, "Adding set of nogoods incrementally");
+
+//	sat.updateProgram();
+	claspctx.unfreeze();
+
+	// add new variables
+	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
+	for (int i = 0; i < ns.getNogoodCount(); ++i){
+		const Nogood ng = ns.getNogood(i);
+		BOOST_FOREACH (ID id, ng){
+			// this will register the variable if not already available
+			convertHexToClaspProgramLit(id.address, true);
+			assert(isMappedToClaspLiteral(id.address) && "new variable was not properly mapped to clasp");
+		}
+	}
+	claspctx.symbolTable().endInit();
+
+	// add the new constraints
+	// (SATBuilder does not currently not support this, so we need to do it my hand!)
+	claspctx.startAddConstraints();
+	Clasp::ClauseCreator cc(claspctx.master());
+	for (int i = 0; i < ns.getNogoodCount(); i++){
+		const Nogood& ng = ns.getNogood(i);
+		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
+		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
+		if (!ngClasp.tautological){
+			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
+			cc.start(Clasp::Constraint_t::learnt_other);
+			BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
+				cc.add(lit);
+			}
+
+			Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
+			assert (!claspctx.master()->hasConflict() && (claspctx.master()->decisionLevel() == 0 || ci.learnt()));
+			Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
+			DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
+
+			if (!res.ok()){
+				inconsistent = true;
+				break;
+			}
+		}else{
+			DBGLOG(DBG, "Skipping tautological nogood");
+		}
+	}
+
+	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+
+	freezeVariables(frozen, true /* freeze variables by default */);
 
 	DBGLOG(DBG, "Prepare new model enumerator");
 	modelEnumerator.reset(config.solve.createEnumerator(config.solve));

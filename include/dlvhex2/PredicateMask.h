@@ -79,9 +79,9 @@ protected:
   // with maybe auxiliary bit set
   std::set<IDAddress> predicates;
   // bitset interpretation for masking inputs
-  InterpretationPtr maski;
+  mutable InterpretationPtr maski;
   // address of the last ogatom already inspected for updating mask
-  IDAddress knownAddresses;
+  mutable IDAddress knownAddresses;
 
   boost::mutex updateMutex;
 };
@@ -92,14 +92,14 @@ private:
   const ProgramCtx* ctx;
   const ExternalAtom* eatom;
   // bits of all ground output atoms (positive and negative ground replacement atoms) that are relevant in the respective ground program
-  InterpretationPtr outputAtoms;
+  mutable InterpretationPtr outputAtoms;
   // bits of all ground auxiliary input replacement atoms (that are relevant in the respective ground program?)
-  InterpretationPtr auxInputMask;
+  mutable InterpretationPtr auxInputMask;
   // cache for replacement tuple: first=positive_repl, including auxinputpred if IncludeAuxInputInAuxiliaries, including constants and variables
   // should not be modified
-  Tuple preparedTuple;
+  mutable Tuple preparedTuple;
   // can be modified if protected by mutex, should always be reset to preparedTuple
-  Tuple workTuple;
+  mutable Tuple workTuple;
 protected:
   bool matchOutputAtom(const Tuple& togatom);
 public:

@@ -862,6 +862,10 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
 	throw GeneralError("Internal grounder does not support incremental extension of the program");
 }
 
+void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
+	throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
+}
+
 void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	// reset

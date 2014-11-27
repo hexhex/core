@@ -137,7 +137,7 @@ public:
 	typedef std::pair<IDAddress, std::vector<ID> > AuxToExternalAtoms;
 	const boost::unordered_map<IDAddress, std::vector<ID> >& getAuxToEA() const;
 	const std::vector<ID>& getAuxToEA(IDAddress ida) const;
-	boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex);
+	const boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex) const;
 
 	const OrdinaryASPProgram& getGroundProgram() const;
 	const std::vector<ID>& getIndexedEAtoms() const;
@@ -153,7 +153,7 @@ public:
 
 	// tries to verify an external atom which allows for verification using support sets and returns the result of this check
 	// (only supported if support sets have been defined)
-	bool verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify);
+	bool verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify) const;
 };
 
 DLVHEX_NAMESPACE_END

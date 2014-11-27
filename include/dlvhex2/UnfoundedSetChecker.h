@@ -65,7 +65,8 @@ protected:
 
 	// problem specification
 	const OrdinaryASPProgram& groundProgram;
-	AnnotatedGroundProgram agp;
+	AnnotatedGroundProgram emptyagp;
+	const AnnotatedGroundProgram& agp;
 	InterpretationConstPtr componentAtoms;
 	SimpleNogoodContainerPtr ngc;
 	InterpretationPtr domain; // domain of all problem variables
@@ -312,6 +313,10 @@ private:
 	// counter for auxiliary atoms
 	int atomcnt;
 
+	// number of program rules respected in the encoding (allows for incremental addition of further rules)
+	int problemRuleCount;
+	ID hookAtom;	// allows for extension of the problem encoding when additional rules are added
+
 	// stores how many nogoods in ngc we have already transformed and learned in the UFS search
 	int learnedNogoodsFromMainSearch;
 
@@ -328,6 +333,11 @@ private:
 	* Constructs the nogood set used for unfounded set detection and instantiates the solver
 	*/
 	void constructUFSDetectionProblemAndInstantiateSolver();
+
+	/**
+	* Extends the nogood set used for unfounded set detection and reinstantiates the solver
+	*/
+	void expandUFSDetectionProblemAndReinstantiateSolver();
 
 	/**
 	* Prepares the list of assumptions for an unfounded set search over a given compatible set
@@ -363,7 +373,7 @@ private:
 	ProgramCtx& ctx;
 
 	BaseModelGenerator* mg;
-	AnnotatedGroundProgram agp;
+	const AnnotatedGroundProgram& agp;
 	int lastAGPComponentCount;	// used in order to detect extensions of the agp
 	Nogood ufsnogood;
 	SimpleNogoodContainerPtr ngc;

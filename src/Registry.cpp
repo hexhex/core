@@ -732,6 +732,8 @@ ID Registry::getAuxiliaryAtom(char type, ID id)
 {
 	OrdinaryAtom oatom = lookupOrdinaryAtom(id);
 	oatom.tuple[0] = getAuxiliaryConstantSymbol(type, oatom.tuple[0]);
+	// the only property of new atom is AUX
+	oatom.kind &= (ID::ALL_ONES ^ ID::PROPERTY_MASK);
 	oatom.kind |= ID::PROPERTY_AUX;
 	ID newAtomID = storeOrdinaryAtom(oatom);
 	DBGLOG(DBG, "Created auxiliary atom " << printToString<RawPrinter>(newAtomID, RegistryPtr(this,EmptyDeleter)) << " for atom " << printToString<RawPrinter>(id, RegistryPtr(this,EmptyDeleter)));

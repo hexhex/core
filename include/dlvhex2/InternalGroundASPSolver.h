@@ -152,6 +152,7 @@ protected:
 public:
 	InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
 	virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
 	virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
 	virtual void addPropagator(PropagatorCallback* pb);

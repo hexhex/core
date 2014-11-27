@@ -203,6 +203,7 @@ protected:
 	Nogood getCause(IDAddress adr);
 public:
 	CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
+	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
 	virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
 	virtual void addPropagator(PropagatorCallback* pb);

@@ -82,6 +82,7 @@ public:
 	virtual void addPropagator(PropagatorCallback* pb) = 0;
 	virtual void removePropagator(PropagatorCallback* pb) = 0;
 	virtual void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
+	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
@@ -113,6 +114,7 @@ public:
 	void addPropagator(PropagatorCallback* pb);
 	void removePropagator(PropagatorCallback* pb);
 	void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr());
+	void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
 	inline GenuineGrounderPtr getGenuineGrounder(){ return grounder; }
 	inline GenuineGroundSolverPtr getGenuineGroundSolver(){ return solver; }

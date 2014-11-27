@@ -667,6 +667,10 @@ CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), con
 	initWatchingStructures();
 };
 
+void CDNLSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
+	throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
+}
+
 void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	// reset
