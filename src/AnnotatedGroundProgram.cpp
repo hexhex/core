@@ -76,12 +76,12 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 		newGroundIdb.insert(newGroundIdb.end(), other.groundProgram.idb.begin(), other.groundProgram.idb.end());
 
 		InterpretationPtr newGroundEdb(new Interpretation(reg));
-		newGroundEdb->add(*groundProgram.edb);
-		newGroundEdb->add(*other.groundProgram.edb);
+		if (!!groundProgram.edb) newGroundEdb->add(*groundProgram.edb);
+		if (!!other.groundProgram.edb) newGroundEdb->add(*other.groundProgram.edb);
 
 		InterpretationPtr newGroundMask(new Interpretation(reg));
-		newGroundMask->add(*groundProgram.mask);
-		newGroundMask->add(*other.groundProgram.mask);
+		if (!!groundProgram.mask) newGroundMask->add(*groundProgram.mask);
+		if (!!other.groundProgram.mask) newGroundMask->add(*other.groundProgram.mask);
 
 		groundProgram = OrdinaryASPProgram(groundProgram.registry, newGroundIdb, newGroundEdb, groundProgram.maxint, newGroundMask);
 		haveGrounding = true;

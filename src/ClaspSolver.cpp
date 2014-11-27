@@ -421,7 +421,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDefault){
 
 	if (!!frozen){
-		DBGLOG(DBG, "Setting selected variables to frozen");
+		DBGLOG(DBG, "Setting selected variables to frozen: " << *frozen);
 
 #ifndef NDEBUG
 		int cntFrozen = 0;

@@ -109,11 +109,12 @@ protected:
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
 
   // incremental solving
+  std::vector<ID> hookAssumptions;
   std::vector<ID> modelEliminationConstraints;
-  bool domainExpandedInCurrentIncrementalStep;
   InterpretationPtr inputWithDomainAtoms;
   InterpretationPtr previousInnerEatomOutputs;
   PredicateMaskPtr innerEatomOutputs;
+  int previousRuleCount;
   InterpretationPtr currentRules;
   InterpretationPtr frozenHookAtoms;
   std::map<ID, ID> hookAtoms;
@@ -176,6 +177,16 @@ protected:
   bool isModel(InterpretationConstPtr compatibleSet);
 
   /**
+   * Adds hook rules for all atoms in the annotatedGroundProgram.
+   */
+  void addHookRules();
+
+  /**
+   * Resets vector "hookAssumptions" and then adds assumptions such that all atoms in "frozenHookAtoms" are false.
+   */
+  void buildFrozenHookAtomAssumptions();
+
+  /**
    * Checks if the domain of external atoms needs to be expanded wrt. a given model.
    * If this is the case, then the domain predicates are extended accordingly.
    * \return True if the domain needs to be expanded and false otherwise.
@@ -186,6 +197,11 @@ protected:
    * Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).
    */
   void incrementalProgramExpansion();
+
+  /**
+   * Constructs the rule headAtomID :- hookAtomID.
+   */
+  ID getIncrementalHookRule(ID headAtomID, ID hookAtomID);
 
   /**
    * Makes an unfounded set check over a (possibly) partial interpretation if useful.
