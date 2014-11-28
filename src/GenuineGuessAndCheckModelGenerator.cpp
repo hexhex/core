@@ -267,7 +267,12 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
-		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+
+		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms, factory.idb);
+		}else{
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+		}
 		previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
 	}
 	// for incremental solving we need hook rules for all atoms which occur in the heads
@@ -331,7 +336,7 @@ void GenuineGuessAndCheckModelGenerator::addHookRules(){
 		}
 	}
 	mask->add(*frozenHookAtoms);
-	AnnotatedGroundProgram hookRulesAGP(factory.ctx, OrdinaryASPProgram(factory.reg, hookRules, InterpretationPtr(new Interpretation(factory.reg)), factory.ctx.maxint), factory.innerEatoms);
+	AnnotatedGroundProgram hookRulesAGP(factory.ctx, OrdinaryASPProgram(factory.reg, hookRules, InterpretationPtr(new Interpretation(factory.reg)), factory.ctx.maxint), factory.innerEatoms, factory.idb);
 	annotatedGroundProgram.addProgram(hookRulesAGP);
 }
 

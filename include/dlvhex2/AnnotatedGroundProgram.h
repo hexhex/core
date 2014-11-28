@@ -62,6 +62,7 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 	ProgramCtx* ctx;
 	RegistryPtr reg;
 	OrdinaryASPProgram groundProgram;
+	std::vector<ID> dependencyIDB;
 	bool haveGrounding;	// true if groundProgram is initialized, otherwise false (then we have only information about ground external atoms in the program but not about the entire program)
 
 	// back-mapping of (ground) external auxiliaries to their nonground external atoms
@@ -76,15 +77,14 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 	// index of all atoms in the program
 	InterpretationPtr programMask;
 
-	// settings
-	bool includeEDB;
-
 	// program decomposition and meta information
 	struct ProgramComponent{
 		InterpretationConstPtr componentAtoms;
 		OrdinaryASPProgram program;
-		ProgramComponent(InterpretationConstPtr componentAtoms, OrdinaryASPProgram& program) : componentAtoms(componentAtoms), program(program){}
+		ProgramComponent(InterpretationConstPtr componentAtoms, OrdinaryASPProgram& program) : componentAtoms(componentAtoms), program(program) {}
+		typedef boost::shared_ptr<ProgramComponent> Ptr;
 	};
+	typedef ProgramComponent::Ptr ProgramComponentPtr;
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
 	typedef Graph::vertex_descriptor Node;
 	boost::unordered_map<IDAddress, Node> depNodes;
@@ -95,23 +95,44 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 	std::vector<bool> headCycles;
 	InterpretationPtr headCyclicRules;
 	std::vector<bool> eCycles;
-	std::vector<ProgramComponent> programComponents;
+	std::vector<ProgramComponentPtr> programComponents;
 
 	// meta information about the overall program
 	bool headCyclesTotal, eCyclesTotal;
 
 	// initialization members
 	void createProgramMask();
-	void createEAMasks(bool includeEDB);
+	void createEAMasks();
 	void mapAuxToEAtoms();
-	void initialize(bool includeEDB);
+	void initialize();
 	void computeAtomDependencyGraph();
+	void computeAdditionalDependencies();	// adds dependencies defined via dependencyIDB (see constructor)
 	void computeStronglyConnectedComponents();
 	void computeHeadCycles();
 	void computeECycles();
 public:
 	AnnotatedGroundProgram();
-	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>(), bool includeEDB = false);
+	/**
+	 * Analyzes a ground program and stored meta information.
+	 * @input ctx ProgramCtx
+	 * @input groundProgram The ground program to analyze
+	 * @input indexedEatoms The set of relevant external atoms, i.e., the external atoms meta information shall be generated for
+	 * @input dependencyIDB A (possibly nonground) IDB whose rules define possible additional dependencies if the set of facts is extended.
+	 *                               The class will consider atoms as dependent if they might become dependent with future domain expansions.
+	 *                               Thus allows for extended the AnnotatedGroundProgram without rearranging SCCs.
+	 *
+	 *                               Example: The program
+	 *                                  p(1) v x.
+	 *                                  q(1) :- p(1).
+	 *                               stemming from the nonground program
+	 *                                  p(1) v x.
+	 *                                  p(X) :- q(X), d(X).
+	 *                                  q(1) :- p(1).
+	 *                               has the dependency q(1) -> p(1) (and thus might put p(1) and q(1) in different SCCs).
+	 *                               But when the element d(1) is added, a newly added rule (p(1) :- q(1), d(1)) introduces the dependency { p(1) -> q(1) }.
+	 *                               In contrast, the dependency x -> p(1) will never hold, even if the domain is expanded.
+	 */
+	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>(), std::vector<ID> dependencyIDB  = std::vector<ID>());
 	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
 	// Incremental extension
