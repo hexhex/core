@@ -907,7 +907,7 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 			throw PluginError("Could not register dlvhex module in Python");
 		}
 		Py_Initialize();
-		PySys_SetArgvEx(iargv-1, pargv, 0);
+//		PySys_SetArgvEx(iargv-1, pargv, 0);
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
 #endif

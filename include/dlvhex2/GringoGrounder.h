@@ -227,6 +227,7 @@ private:
 	ProgramCtx& ctx;
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
+	InterpretationConstPtr frozen;
 	ID intPred, anonymousPred;
 
 	detail::GringoOptions gringo;
@@ -295,7 +296,7 @@ private:
 	};
 
 public:
-	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p/*, InterpretationConstPtr frozen*/);
+	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen);
 	const OrdinaryASPProgram& getGroundProgram();
 
 protected:

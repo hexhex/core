@@ -951,6 +951,7 @@ const ClaspSolver::AddressVector* ClaspSolver::convertClaspSolverLitToHex(int in
 void ClaspSolver::outputProject(InterpretationPtr intr){
 	if( !!intr && !!projectionMask )
 	{
+		DBGLOG(DBG, "Projecting " << *intr);
 		intr->getStorage() -= projectionMask->getStorage();
 		DBGLOG(DBG, "Projected to " << *intr);
 	}
@@ -1075,6 +1076,9 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	assert(problemType == ASP && "programs can only be added in ASP mode");
 	DBGLOG(DBG, "Adding program component incrementally");
 	nextSolveStep = Restart;
+	
+	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
+	if (!!ep.get()) claspctx.master()->removePost(ep.get());
 
 	// Update program
 	inconsistent |= asp.endProgram();
@@ -1106,6 +1110,7 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	if (!!p.getGroundProgram().mask){
 		InterpretationPtr pm = InterpretationPtr(new Interpretation(reg));
 		if (!!projectionMask) pm->add(*projectionMask);
+		DBGLOG(DBG, "Adding to program mask:" << *p.getGroundProgram().mask);
 		pm->add(*p.getGroundProgram().mask);
 		projectionMask = pm;
 	}
@@ -1134,7 +1139,6 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	nextSolveStep = Restart;
 
 	DBGLOG(DBG, "Resetting post propagator");
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
 	ep.reset(new ExternalPropagator(*this));
 	claspctx.master()->addPost(ep.get());
 }
@@ -1143,6 +1147,9 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
 
 	assert(problemType == SAT && "programs can only be added in SAT mode");
 	DBGLOG(DBG, "Adding set of nogoods incrementally");
+	
+	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
+	if (!!ep.get()) claspctx.master()->removePost(ep.get());
 
 //	sat.updateProgram();
 	claspctx.unfreeze();
@@ -1210,7 +1217,6 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
 	nextSolveStep = Restart;
 
 	DBGLOG(DBG, "Resetting post propagator");
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
 	ep.reset(new ExternalPropagator(*this));
 	claspctx.master()->addPost(ep.get());
 }

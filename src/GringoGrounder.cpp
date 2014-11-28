@@ -1182,8 +1182,8 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
 }
 
-GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
-  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()){
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
+  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen){
   gringo.disjShift = false;
   groundProgram.mask = nongroundProgram.mask;
   doRun();
@@ -1242,6 +1242,18 @@ int GringoGrounder::doRun()
 		programStream << std::endl;
 		printer.print(intPred);
 		programStream << "(0.." << ctx.maxint << ").";
+
+		if (!!frozen){
+			bm::bvector<>::enumerator en = frozen->getStorage().first();
+			bm::bvector<>::enumerator en_end = frozen->getStorage().end();
+			// declare frozen atoms as external
+			while (en < en_end){
+				programStream << "#external ";
+				printer.print(ctx.registry()->ogatoms.getIDByAddress(*en));
+				programStream << ".";
+				en++;
+			}
+		}
 
 		LOG(DBG, "Sending the following input to Gringo: {{" << programStream.str() << "}}");
 

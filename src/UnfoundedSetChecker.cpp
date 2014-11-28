@@ -1629,6 +1629,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 	bm::bvector<>::enumerator en_end = domain->getStorage().end();
 	DBGLOG(DBG, "A: Encoding interpretation");
 	while (en < en_end){
+		DBGLOG(DBG, interpretationShadow[*en] << "=" << compatibleSet->getFact(*en));
 		assumptions.push_back(ID(compatibleSet->getFact(*en) ? 0 : ID::NAF_MASK, interpretationShadow[*en]));
 		en++;
 	}
@@ -1640,6 +1641,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 		// do not set an ordinary atom which is false in I
 		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
 			if (!compatibleSet->getFact(*en)){
+				DBGLOG(DBG, *en << "=0");
 				assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
 			}
 		}
@@ -1654,6 +1656,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 			const Rule& rule = reg->rules.getByID(ruleId);
 			BOOST_FOREACH (ID h, rule.head){
 				if (domain->getFact(h.address)){
+					DBGLOG(DBG, h.address << "=0");
 					assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(h.address)));
 				}
 			}

@@ -268,6 +268,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
 		annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+		previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
 	}
 	// for incremental solving we need hook rules for all atoms which occur in the heads
 	if (factory.ctx.config.getOption("IncrementalGrounding")){
@@ -329,7 +330,8 @@ void GenuineGuessAndCheckModelGenerator::addHookRules(){
 			hookRules.push_back(getIncrementalHookRule(h, hookAtoms[h]));
 		}
 	}
-	AnnotatedGroundProgram hookRulesAGP(factory.ctx, OrdinaryASPProgram(factory.reg, hookRules, InterpretationPtr(new Interpretation(factory.reg)), factory.ctx.maxint, frozenHookAtoms), factory.innerEatoms);
+	mask->add(*frozenHookAtoms);
+	AnnotatedGroundProgram hookRulesAGP(factory.ctx, OrdinaryASPProgram(factory.reg, hookRules, InterpretationPtr(new Interpretation(factory.reg)), factory.ctx.maxint), factory.innerEatoms);
 	annotatedGroundProgram.addProgram(hookRulesAGP);
 }
 
@@ -882,9 +884,6 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 		hookAtoms[had.first] = had.second;
 	}
 
-	// filter the hook atoms
-	gpAddition.mask = frozenHookAtoms;
-
 	// add model elimination constraints to avoid repetition of models
 #ifdef DEBUG
 	DBGLOG(DBG, "Adding model elimination constraints");
@@ -897,6 +896,7 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 
 	// program expansion
 	DBGLOG(DBG, "Expanding program by " << gpAddition.idb.size() << " rules");
+	mask->add(*frozenHookAtoms);
 	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms);
 	annotatedGroundProgram.addProgram(expansion);
 
