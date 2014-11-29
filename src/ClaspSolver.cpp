@@ -63,6 +63,10 @@
 // activate this for detailed benchmarking in this file 
 #undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 
+
+// @clasp examples: Run the following command to use the Makefile in clasp/libclasp/examples:
+//   export CXXFLAGS="-DWITH_THREADS=0 -I $PWD/../ -I $PWD/../../libprogram_opts/"
+
 /*
 
 Variable Namespaces
