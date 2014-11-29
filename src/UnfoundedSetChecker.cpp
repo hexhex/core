@@ -72,6 +72,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	reg = ctx.registry();
 
 	mode = Ordinary;
+	DBGLOG(DBG, "Starting UFS checker in ordinary mode, program idb has size " << groundProgram.idb.size());
 }
 
 UnfoundedSetChecker::UnfoundedSetChecker(
@@ -92,6 +93,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	reg = ctx.registry();
 
 	mode = WithExt;
+	DBGLOG(DBG, "Starting UFS checker in external atom mode, program idb has size " << groundProgram.idb.size());
 }
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate){
@@ -1001,6 +1003,7 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 
 	// remove external atom guessing rules and skipped rules from IDB
 	std::vector<ID> ufsProgram;
+DBGLOG(DBG, "ch ");
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
 		if (mg &&
@@ -1013,7 +1016,9 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 	}
 
 	// we need the the compatible set with and without auxiliaries
+DBGLOG(DBG, "1");
 	InterpretationConstPtr compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
+DBGLOG(DBG, "1");
 
 #ifndef NDEBUG
 	std::stringstream programstring;
@@ -2092,8 +2097,10 @@ UnfoundedSetCheckerPtr UnfoundedSetCheckerManager::instantiateUnfoundedSetChecke
 		SimpleNogoodContainerPtr ngc){
 
 	if (ctx.config.getOption("UFSCheckAssumptionBased") && false){
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker ordinary/assumption-based");
 		return UnfoundedSetCheckerPtr(new AssumptionBasedUnfoundedSetChecker(ctx, groundProgram, componentAtoms, ngc));
 	}else{
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker ordinary/encoding-based");
 		return UnfoundedSetCheckerPtr(new EncodingBasedUnfoundedSetChecker(ctx, groundProgram, componentAtoms, ngc));
 	}
 }
@@ -2107,8 +2114,10 @@ UnfoundedSetCheckerPtr UnfoundedSetCheckerManager::instantiateUnfoundedSetChecke
 		SimpleNogoodContainerPtr ngc){
 
 	if (ctx.config.getOption("UFSCheckAssumptionBased")){
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker external/assumption-based");
 		return UnfoundedSetCheckerPtr(new AssumptionBasedUnfoundedSetChecker(mg, ctx, groundProgram, agp, componentAtoms, ngc));
 	}else{
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker external/encoding-based");
 		return UnfoundedSetCheckerPtr(new EncodingBasedUnfoundedSetChecker(mg, ctx, groundProgram, agp, componentAtoms, ngc));
 	}
 }
