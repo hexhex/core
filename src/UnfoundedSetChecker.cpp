@@ -391,7 +391,7 @@ Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
 	// find all rules r such that H(r) intersects with the unfounded set
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
-		if (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary())) continue;
+		if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
 
 		bool intersects = false;
 		BOOST_FOREACH (ID h, rule.head){
@@ -1003,8 +1003,9 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 	std::vector<ID> ufsProgram;
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
-		if (rule.isEAGuessingRule() ||								// EA-guessing rule
-		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){	// ignored part of the program
+		if (mg &&
+			(rule.isEAGuessingRule() ||								// EA-guessing rule
+		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end())){	// ignored part of the program
 			// skip it
 		}else{
 			ufsProgram.push_back(ruleId);
@@ -1146,7 +1147,7 @@ void AssumptionBasedUnfoundedSetChecker::constructDomain(){
 	// IDB
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
-		if (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary())) continue;
+		if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
 		BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
 		BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
 	}
@@ -1201,7 +1202,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemCreateAuxAt
 void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(NogoodSet& ufsDetectionProblem, ID ruleID){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
-	if (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary())) return;
+	if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) return;
 
 #ifndef NDEBUG
 	std::stringstream programstring;
@@ -1934,6 +1935,7 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
 	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
+
 /*
 // Test incremental definition of an instance
 std::cout << "=================" << std::endl;
@@ -1945,37 +1947,41 @@ OrdinaryAtom at2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 at2.tuple.push_back(ctx.registry()->storeConstantTerm("b"));
 ID at2ID = ctx.registry()->storeOrdinaryGAtom(at2);
 
+OrdinaryAtom at3(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+at3.tuple.push_back(ctx.registry()->storeConstantTerm("c"));
+ID at3ID = ctx.registry()->storeOrdinaryGAtom(at3);
+
 InterpretationPtr frozen(new Interpretation(ctx.registry()));
-frozen->setFact(at1ID.address);
-frozen->setFact(at2ID.address);
+//frozen->setFact(at1ID.address);
+//frozen->setFact(at2ID.address);
+frozen->setFact(at3ID.address);
 
 Rule r1(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 r1.head.push_back(at1ID);
 r1.body.push_back(ID::posLiteralFromAtom(at2ID));
 std::vector<ID> idb1;
 idb1.push_back(ctx.registry()->storeRule(r1));
-OrdinaryASPProgram p1(ctx.registry(), idb1, InterpretationPtr(new Interpretation(ctx.registry())), ctx.maxint, InterpretationPtr());
+//OrdinaryASPProgram p1(ctx.registry(), idb1, InterpretationPtr(new Interpretation(ctx.registry())), ctx.maxint, InterpretationPtr());
 
 Rule r2(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 r2.head.push_back(at2ID);
 r2.body.push_back(ID::posLiteralFromAtom(at1ID));
-std::vector<ID> idb2;
-idb2.push_back(ctx.registry()->storeRule(r2));
-OrdinaryASPProgram p2(ctx.registry(), idb2, InterpretationPtr(new Interpretation(ctx.registry())), ctx.maxint, InterpretationPtr());
+idb1.push_back(ctx.registry()->storeRule(r2));
 
-GenuineGroundSolverPtr ss = GenuineGroundSolver::getInstance(ctx, p1);
+Rule r3(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+r3.head.push_back(at2ID);
+r3.body.push_back(ID::posLiteralFromAtom(at3ID));
+idb1.push_back(ctx.registry()->storeRule(r3));
 
-std::cout << "It 1" << std::endl;
-InterpretationConstPtr model;
-while (!!(model = ss->getNextModel())){
-	std::cout << *model << std::endl;
-}
+OrdinaryASPProgram p1(ctx.registry(), idb1, InterpretationPtr(new Interpretation(ctx.registry())), ctx.maxint, InterpretationPtr());
 
-ss->addProgram(AnnotatedGroundProgram(ctx, p1));
+GenuineGroundSolverPtr ss = GenuineGroundSolver::getInstance(ctx, p1, frozen);
 
 std::vector<ID> ass;
-std::cout << "It 2" << std::endl;
+ass.push_back(ID::nafLiteralFromAtom(at3ID));
 ss->restartWithAssumptions(ass);
+std::cout << "It 1" << std::endl;
+InterpretationConstPtr model;
 while (!!(model = ss->getNextModel())){
 	std::cout << *model << std::endl;
 }

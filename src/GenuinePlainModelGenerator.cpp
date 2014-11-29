@@ -169,24 +169,86 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
-
 #if 0
+	{
 	// Input: a :- fr. b v b2. fr :- b.
 	// Expected result: { { a, fr, b }, { b2 } }
 	OrdinaryASPProgram program(reg, std::vector<ID>(), postprocessedInput, factory.ctx.maxint, mask);
 
+	int r = 0;
+	BOOST_FOREACH (ID id, factory.xidb){
+		std::cout << (r++) << printToString<RawPrinter>(id, reg) << std::endl;
+	}
+
+	// add first 11 rules
+	program.idb.push_back(factory.xidb[11]);
+	program.idb.push_back(factory.xidb[12]);
+	program.idb.push_back(factory.xidb[0]);
+	program.idb.push_back(factory.xidb[3]);
+	program.idb.push_back(factory.xidb[1]);
+	program.idb.push_back(factory.xidb[2]);
+	program.idb.push_back(factory.xidb[4]);
+	program.idb.push_back(factory.xidb[5]);
+	program.idb.push_back(factory.xidb[13]);
+	program.idb.push_back(factory.xidb[14]);
+	program.idb.push_back(factory.xidb[17]);
+
+	// freeze all body vars
+	std::vector<ID> ass;
 	InterpretationPtr frozen(new Interpretation(reg));
-	frozen->setFact(0);
-	frozen->setFact(1);
-	frozen->setFact(2);
-	std::vector<ID> idb1; idb1.push_back(factory.xidb[0]); idb1.push_back(factory.xidb[1]);
+	for (int i = 2; i < program.idb.size(); ++i){
+		ID id = program.idb[i];
+		const Rule& rule = reg->rules.getByID(id);
+		if (rule.body.size() > 0){
+			frozen->setFact(rule.body[0].address);
+			ass.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(rule.body[0])));
+		}
+	}
+
+	// solve
+	GenuineGroundSolverPtr solver = GenuineGroundSolver::getInstance(factory.ctx, program, frozen);
+	solver->restartWithAssumptions(ass);
+	InterpretationConstPtr intr;
+	std::cout << "It 1" << std::endl;
+	while (!!(intr = solver->getNextModel())){
+		std::cout << "Model: " << *intr << std::endl;
+	}
+
+	// add remaining 7 rules
+	std::vector<ID> idb1;
+	idb1.push_back(factory.xidb[6]);
+	idb1.push_back(factory.xidb[7]);
+	idb1.push_back(factory.xidb[8]);
+	idb1.push_back(factory.xidb[9]);
+	idb1.push_back(factory.xidb[10]);
+	idb1.push_back(factory.xidb[15]);
+	idb1.push_back(factory.xidb[16]);
+
+	frozen->clear();
+	frozen->setFact(reg->rules.getByID(factory.xidb[7]).body[0].address); ass.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(reg->rules.getByID(factory.xidb[7]).body[0])));
+	frozen->setFact(reg->rules.getByID(factory.xidb[8]).body[0].address); ass.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(reg->rules.getByID(factory.xidb[8]).body[0])));
+	frozen->setFact(reg->rules.getByID(factory.xidb[15]).body[0].address); ass.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(reg->rules.getByID(factory.xidb[15]).body[0])));
+	frozen->setFact(reg->rules.getByID(factory.xidb[10]).body[0].address); ass.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(reg->rules.getByID(factory.xidb[10]).body[0])));
+
 	OrdinaryASPProgram p1(reg, idb1, postprocessedInput, factory.ctx.maxint, mask);
+	solver->addProgram(AnnotatedGroundProgram(factory.ctx, p1), frozen);
 
-	std::vector<ID> idb2; idb2.push_back(factory.xidb[2]);
+	for (int i = 0; i < ass.size(); ++i){
+		if (ass[i] == ID::nafLiteralFromAtom(reg->rules.getByID(factory.xidb[15]).head[0])){
+			ass.erase(ass.begin() + i);
+			break;
+		}
+	}
+	std::vector<ID> idb2;
 	OrdinaryASPProgram p2(reg, idb2, postprocessedInput, factory.ctx.maxint, mask);
-
-	solver = GenuineSolver::getInstance(factory.ctx, p1, frozen);
 	solver->addProgram(AnnotatedGroundProgram(factory.ctx, p2), frozen);
+
+	solver->restartWithAssumptions(ass);
+	std::cout << "It 2" << std::endl;
+	while (!!(intr = solver->getNextModel())){
+		std::cout << "Model: " << *intr << std::endl;
+	}
+	}
 #endif
 }
 

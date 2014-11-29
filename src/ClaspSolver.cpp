@@ -117,6 +117,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 
+	cs.claspctx.master()->addPost(this);
 	startAssignmentExtraction();
 
 	// initialize propagation deferring
@@ -130,6 +131,7 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 
 ClaspSolver::ExternalPropagator::~ExternalPropagator(){
 	stopAssignmentExtraction();
+	cs.claspctx.master()->removePost(this);
 }
 
 void ClaspSolver::ExternalPropagator::startAssignmentExtraction(){
@@ -139,19 +141,31 @@ void ClaspSolver::ExternalPropagator::startAssignmentExtraction(){
 	currentAssigned = InterpretationPtr(new Interpretation(cs.reg));
 	currentChanged = InterpretationPtr(new Interpretation(cs.reg));
 
-	// add watches for all literals
+	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
+	DBGLOG(DBG, "Extracting full interpretation from clasp");
+	cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
+
+	// add watches for all literals and decision levels
 	for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
 		// skip eliminated variables
 		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+
+		uint32_t level = cs.claspctx.master()->level(it->second.lit.var());
+		if (cs.claspToHex.size() > it->second.lit.index()){
+			BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(it->second.lit.index())){
+				// add the variable to the undo watch for the decision level on which it was assigned
+				while (assignmentsOnDecisionLevel.size() < level + 1){
+					assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
+					DBGLOG(DBG, "Adding undo watch to level " << level);
+					if (level > 0) cs.claspctx.master()->addUndoWatch(level, this);
+				}
+			}
+		}
 
 		DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
 		cs.claspctx.master()->addWatch(it->second.lit, this);
 		cs.claspctx.master()->addWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
 	}
-
-	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
-	DBGLOG(DBG, "Extracting full interpretation from clasp");
-	cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
 }
 
 void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
@@ -167,11 +181,11 @@ void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
 	}
 
 	// remove watches for all decision levels
-	for (uint32_t i = 0; i <= assignmentsOnDecisionLevel.size(); i++){
-		if (cs.claspctx.master()->validLevel(i)){
+	for (uint32_t i = 1; i < assignmentsOnDecisionLevel.size(); i++){
+		//if (cs.claspctx.master()->validLevel(i)){
 			DBGLOG(DBG, "Removing watch for decision level " << i);
 			cs.claspctx.master()->removeUndoWatch(i, this);
-		}
+		//}
 	}
 
 	currentIntr.reset();
@@ -324,15 +338,13 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 			// add the variable to the undo watch for the decision level on which it was assigned
 			while (assignmentsOnDecisionLevel.size() < level + 1){
+				if(assignmentsOnDecisionLevel.size() > 0){
+					DBGLOG(DBG, "Adding undo watch to level " << assignmentsOnDecisionLevel.size());
+					cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
+				}
 				assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
 			}
 			assignmentsOnDecisionLevel[level].push_back(adr);
-			if(level > 0 && assignmentsOnDecisionLevel[level].size() == 1){
-				DBGLOG(DBG, "Adding undo watch to level " << level);
-				cs.claspctx.master()->addUndoWatch(level, this);
-			}else{
-				DBGLOG(DBG, "Do not add undo watch to level " << level);
-			}
 		}
 	}
 
@@ -346,10 +358,10 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 			// add the variable to the undo watch for the decision level on which it was assigned
 			while (assignmentsOnDecisionLevel.size() < level + 1){
+				if(assignmentsOnDecisionLevel.size() > 0) cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
 				assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
 			}
 			assignmentsOnDecisionLevel[level].push_back(adr);
-			if(level > 0) cs.claspctx.master()->addUndoWatch(level, this);
 		}
 	}
 	DBGLOG(DBG, "ExternalPropagator::propagate finished");
@@ -544,8 +556,7 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Interpreta
 	asp.setNonHcfConfiguration(config.testerConfig());
 
 	// The following two lines allow for defining the program incrementally
-	// Note: If the program is to be defined incrementally, then endProgram() and update() must be called before each extension, even for the first one
-	inconsistent |= asp.endProgram();
+	// Note: If the program is to be defined incrementally, then updateProgram() must be called before each extension, even for the first one
 	asp.updateProgram();
 
 	false_ = nextVar++;
@@ -603,9 +614,16 @@ asp.update();
 	freezeVariables(frozen, false /* do not freeze variables by default */);
 
 	inconsistent = !asp.endProgram();
+
 	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	asp.write(ss);
+	DBGLOG(DBG, "Program in LParse format: " << ss.str());
+#endif
 }
 
 void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen){
@@ -683,7 +701,7 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 }
 
 void ClaspSolver::shutdownClasp(){
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
+	if (!!ep.get()) ep.reset();
 	resetAndResizeClaspToHex(0);
 }
 
@@ -995,7 +1013,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 	DBGLOG(DBG, "Adding post propagator");
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
@@ -1063,7 +1080,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 
 	DBGLOG(DBG, "Adding post propagator");
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
 }
 
 ClaspSolver::~ClaspSolver(){
@@ -1078,10 +1094,11 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	nextSolveStep = Restart;
 	
 	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
+	if (!!ep.get()) ep.reset();
+	//if (!!ep.get()) claspctx.master()->removePost(ep.get());
 
 	// Update program
-	inconsistent |= asp.endProgram();
+	//inconsistent |= asp.endProgram();
 	asp.updateProgram();
 
 	// transfer added edb
@@ -1140,7 +1157,12 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 
 	DBGLOG(DBG, "Resetting post propagator");
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	asp.write(ss);
+	DBGLOG(DBG, "Updated program in LParse format: " << ss.str());
+#endif
 }
 
 void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
@@ -1149,7 +1171,7 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
 	DBGLOG(DBG, "Adding set of nogoods incrementally");
 	
 	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
+	if (!!ep.get()) ep.reset();
 
 //	sat.updateProgram();
 	claspctx.unfreeze();
@@ -1218,7 +1240,6 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
 
 	DBGLOG(DBG, "Resetting post propagator");
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
 }
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){

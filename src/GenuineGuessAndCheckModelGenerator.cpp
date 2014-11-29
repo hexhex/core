@@ -257,41 +257,41 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     postprocessedInput = postprocInput;
 
     // evaluate edb+xidb+gidb
-    {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init guessprog");
-	DBGLOG(DBG,"evaluating guessing program");
-	// no mask
-	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
-	// append gidb to xidb
-	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-		grounder = GenuineGrounder::getInstance(factory.ctx, program);
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init guessprog");
+		DBGLOG(DBG,"evaluating guessing program");
+		// no mask
+		OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
+		// append gidb to xidb
+		program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+			grounder = GenuineGrounder::getInstance(factory.ctx, program);
 
-		if (factory.ctx.config.getOption("IncrementalGrounding")){
-			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms, factory.idb);
-		}else{
-			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+			if (factory.ctx.config.getOption("IncrementalGrounding")){
+				annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms, factory.idb);
+			}else{
+				annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+			}
+			previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
 		}
-		previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
-	}
-	// for incremental solving we need hook rules for all atoms which occur in the heads
-	if (factory.ctx.config.getOption("IncrementalGrounding")){
-		addHookRules();
-		buildFrozenHookAtomAssumptions();
-	}
+		// for incremental solving we need hook rules for all atoms which occur in the heads
+		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			addHookRules();
+			buildFrozenHookAtomAssumptions();
+		}
 
-	solver = GenuineGroundSolver::getInstance(
-		factory.ctx, annotatedGroundProgram,
-		frozenHookAtoms,
-		// do the UFS check for disjunctions only if we don't do
-		// a minimality check in this class;
-		// this will not find unfounded sets due to external sources,
-		// but at least unfounded sets due to disjunctions
-		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+		solver = GenuineGroundSolver::getInstance(
+			factory.ctx, annotatedGroundProgram,
+			frozenHookAtoms,
+			// do the UFS check for disjunctions only if we don't do
+			// a minimality check in this class;
+			// this will not find unfounded sets due to external sources,
+			// but at least unfounded sets due to disjunctions
+			!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
 
-	if (factory.ctx.config.getOption("IncrementalGrounding")) solver->restartWithAssumptions(hookAssumptions);
-    }
+		if (factory.ctx.config.getOption("IncrementalGrounding")) solver->restartWithAssumptions(hookAssumptions);
+	}
 
     // external learning related initialization
     learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
@@ -326,6 +326,7 @@ void GenuineGuessAndCheckModelGenerator::addHookRules(){
 		en++;
 	}
 	BOOST_FOREACH (ID ruleID, annotatedGroundProgram.getGroundProgram().idb){
+		currentRules->setFact(ruleID.address);
 		const Rule& rule = factory.reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID h, rule.head){
 			if (hookAtoms.find(h) == hookAtoms.end()){
@@ -424,7 +425,33 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 				continue;
 			}
 		}
+/*
+#ifndef NDEBUG
+		DBGLOG(DBG, "Checking if incremental instance is equivalent to full one");
+		// check if the current model of the incrementally extended program also occurs in the models of the program if solved from scratch
+		GenuineGroundSolverPtr solver2 = GenuineGroundSolver::getInstance(
+			factory.ctx, annotatedGroundProgram,
+			frozenHookAtoms,
+			// do the UFS check for disjunctions only if we don't do
+			// a minimality check in this class;
+			// this will not find unfounded sets due to external sources,
+			// but at least unfounded sets due to disjunctions
+			!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+		InterpretationPtr model2;
+		bool found = false;
+		solver2->restartWithAssumptions(hookAssumptions);
+		while (!!(model2 = solver2->getNextModel())){
+			DBGLOG(DBG, "Checking if " << *modelCandidate << " is equivalent to " << *model2);
+			if (model2->getStorage() == modelCandidate->getStorage()){
+				found = true;
+				break;
+			}
+		}
 
+		assert (found && "model of incrementally extended program does not occur in models of the program built from scratch");
+
+#endif
+*/
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 		LOG_SCOPE(DBG,"gM", false);
 		LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
@@ -916,16 +943,6 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	}
 
 	solver->addProgram(expansion, frozenHookAtoms);
-/*
-	solver = GenuineGroundSolver::getInstance(
-		factory.ctx, annotatedGroundProgram,
-		frozenHookAtoms,
-		// do the UFS check for disjunctions only if we don't do
-		// a minimality check in this class;
-		// this will not find unfounded sets due to external sources,
-		// but at least unfounded sets due to disjunctions
-		!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
-*/
 }
 
 ID GenuineGuessAndCheckModelGenerator::getIncrementalHookRule(ID headAtomID, ID hookAtomID){
