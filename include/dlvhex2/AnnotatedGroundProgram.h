@@ -135,8 +135,17 @@ public:
 	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>(), std::vector<ID> dependencyIDB  = std::vector<ID>());
 	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
-	// Incremental extension
-	// Note: program "other" MUST NOT cyclically depend on the current program (this condition is not checked but violation harms validity of the state of this object!)
+	/** Allows for incremental extension of a program.
+	 * Note: This operation is only allowed if for all cyclically depending atoms a,b in the merged program, for each of the input programs either
+	 * (i) The cyclic dependency of a and b is already contained in the input program; or
+	 * (ii) None of the atoms a,b occurs in the input program.
+	 * It is allowed that one of the input programs fulfills (i) and the other one (ii), but it is also allowed that they fulfill the same condition.
+	 * Informally, the condition guarantees that no previously existing strongly connected components need no be merged, but
+	 * the addition of a program only amounts to an extension of existing SCCs or the addition of new SCCs.
+	 * If both input programs stem from the same nonground program (but with different domains of constants), then it can be guaranteed
+	 * by passing the nonground program as parameter dependencyIDB to the constructor.
+	 * @param other The program to add.
+	 */
 	void addProgram(const AnnotatedGroundProgram& other);
 
 	const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);

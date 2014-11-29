@@ -382,7 +382,9 @@ private:
 
 	std::vector<bool> intersectsWithNonHCFDisjunctiveRules;
 
+	bool choiceRuleCompatible;
 	void computeChoiceRuleCompatibility(bool choiceRuleCompatible);
+	void computeChoiceRuleCompatibilityForComponent(bool choiceRuleCompatible, int comp);
 
 	UnfoundedSetCheckerPtr instantiateUnfoundedSetChecker(
 			ProgramCtx& ctx,

@@ -665,12 +665,16 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 		}
 	}else{
 		// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 &&
+		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && !factory.ctx.config.getOption("IncrementalGrounding") &&
 		    factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
 			DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
 			return true;
 		}else{
-			DBGLOG(DBG, "Head- or e-cycles --> FLP/UFS check necessary");
+			if (factory.ctx.config.getOption("IncrementalGrounding")){
+				DBGLOG(DBG, "Incremental mode needs to call UFS-checker to determine if there are head- or e-cycles");
+			}else{
+				DBGLOG(DBG, "Head- or e-cycles --> FLP/UFS check necessary");
+			}
 
 			// Explicit FLP check
 			if (factory.ctx.config.getOption("FLPCheck")){

@@ -57,7 +57,7 @@ AnnotatedGroundProgram::AnnotatedGroundProgram() : ctx(0), groundProgram(Ordinar
 AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms, std::vector<ID> dependencyIDB) :
 	ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true), dependencyIDB(dependencyIDB){
 
-	initialize();
+		initialize();
 }
 
 AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms) :
@@ -89,33 +89,150 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 		haveGrounding = false;
 	}
 
+	// build a mapping of SCCs of the other program to SCCs of this program
+	std::map<int, int> otherCompToThisComp;
+	bm::bvector<>::enumerator en = other.programMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = other.programMask->getStorage().end();
+	int thisComp;
+	int prevCompCount = depSCC.size();
+	while (en < en_end){
+		assert(other.componentOfAtom.find(*en) != other.componentOfAtom.end() && "atom has no \"other\" component assigned");
+		int otherComp = other.componentOfAtom.at(*en);
+		DBGLOG(DBG, "Mapping atom " << *en << " (" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg) << ") in \"other\" component " << otherComp);
+
+		// check if the atom already occurs in this program
+		if (componentOfAtom.find(*en) != componentOfAtom.end()){
+			int thisComp = componentOfAtom[*en];
+			// if we already mapped the atom previously, then the "this" component must be the same
+			if (otherCompToThisComp.find(otherComp) != otherCompToThisComp.end()){
+				if (thisComp == otherCompToThisComp[otherComp]){
+					DBGLOG(DBG, "The \"other\" component was already previsouly mapped to the same \"this\" component" << (thisComp >= prevCompCount ? " (the \"this\" component was newly generated)" : " (the \"this\" component did already exist)"));
+				}else{
+					DBGLOG(DBG, "The \"other\" component was previsouly mapped to \"this\" component " << otherCompToThisComp[otherComp] << " but shall now be mapped to \"this\" component " << thisComp << "; violation of the criterion");
+					assert(false && "violation of the criterion, see description of AnnotatedGroundProgram::addProgram");
+				}
+			}else{
+				DBGLOG(DBG, "The atom occurs in component " << thisComp << "; will map \"other\" component " << otherComp << " to \"this\" component " << thisComp);
+				otherCompToThisComp[otherComp] = thisComp;
+			}
+		}else{
+			DBGLOG(DBG, "The atom does not occur in \"this\" program, will map it to a new \"this\" component");
+			otherCompToThisComp[otherComp] = depSCC.size();
+			depSCC.push_back(other.depSCC[otherComp]);
+			headCycles.push_back(other.headCycles[otherComp]);
+			eCycles.push_back(other.eCycles[otherComp]);
+			programComponents.push_back(other.programComponents[otherComp]);
+		}
+
+		en++;
+	}
+
+	// extend mapped SCCs
+	DBGLOG(DBG, "Extending pre-existing \"this\" components by corresponding \"other\" components");
+	typedef std::pair<int, int> CompMapping;
+	BOOST_FOREACH (CompMapping m, otherCompToThisComp){
+		if (m.second >= prevCompCount){
+			DBGLOG(DBG, "Adding \"other\" component " << m.first << " to \"this\" component " << m.second);
+			DBGLOG(DBG, "\"other\" component info:");
+#ifndef NDEBUG
+			{
+				std::stringstream ss;
+				BOOST_FOREACH (IDAddress adr, other.depSCC[m.first]) ss << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg);
+				DBGLOG(DBG, other.depSCC[m.first].size() << " atoms in component vector: " << ss.str() << " (" << other.programComponents[m.first]->componentAtoms->getStorage().count() << " in bitvector: " << *other.programComponents[m.first]->componentAtoms << ")");
+			}
+#endif
+			DBGLOG(DBG, "head cycles=" << other.headCycles[m.first]);
+			DBGLOG(DBG, "e-cycles=" << other.eCycles[m.first]);
+			DBGLOG(DBG, other.programComponents[m.first]->program.edb->getStorage().count() << " atoms in EDB");
+			if (!!other.programComponents[m.first]->program.mask){
+				DBGLOG(DBG, other.programComponents[m.first]->program.mask->getStorage().count() << " atoms in program mask");
+			}
+			DBGLOG(DBG, "maxint=" << other.programComponents[m.first]->program.maxint);
+			DBGLOG(DBG, "Previous \"this\" component info:");
+#ifndef NDEBUG
+			{
+				std::stringstream ss;
+				BOOST_FOREACH (IDAddress adr, depSCC[m.second]) ss << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg);
+				DBGLOG(DBG, depSCC[m.second].size() << " atoms in component vector: " << ss.str() << " (" << programComponents[m.second]->componentAtoms->getStorage().count() << " in bitvector: " << *programComponents[m.second]->componentAtoms << ")");
+			}
+#endif
+			DBGLOG(DBG, "head cycles=" << headCycles[m.second]);
+			DBGLOG(DBG, "e-cycles=" << eCycles[m.second]);
+			DBGLOG(DBG, programComponents[m.second]->program.edb->getStorage().count() << " atoms in EDB");
+			if (!!programComponents[m.second]->program.mask){
+				DBGLOG(DBG, programComponents[m.second]->program.mask->getStorage().count() << " atoms in program mask");
+			}
+			DBGLOG(DBG, "maxint=" << programComponents[m.second]->program.maxint);
+			depSCC[m.second].insert(other.depSCC[m.first].begin(), other.depSCC[m.first].end());
+			if (other.headCycles[m.first]) headCycles[m.second] = true;
+			if (other.eCycles[m.first]) eCycles[m.second];
+			
+			InterpretationPtr intr(new Interpretation(reg));
+			intr->add(*other.programComponents[m.first]->componentAtoms);
+			intr->add(*programComponents[m.second]->componentAtoms);
+			programComponents[m.second]->componentAtoms = intr;
+
+			intr.reset(new Interpretation(reg));
+			intr->add(*other.programComponents[m.first]->program.edb);
+			intr->add(*programComponents[m.second]->program.edb);
+			programComponents[m.second]->program.edb = intr;
+
+			intr.reset(new Interpretation(reg));
+			if (!!other.programComponents[m.first]->program.mask) intr->add(*other.programComponents[m.first]->program.mask);
+			if (!!programComponents[m.second]->program.mask) intr->add(*programComponents[m.second]->program.mask);
+			programComponents[m.second]->program.mask= intr;
+
+			programComponents[m.second]->program.idb.insert(programComponents[m.second]->program.idb.begin(), other.programComponents[m.first]->program.idb.begin(), other.programComponents[m.first]->program.idb.end());
+
+			if (programComponents[m.second]->program.maxint > other.programComponents[m.first]->program.maxint) other.programComponents[m.first]->program.maxint = programComponents[m.second]->program.maxint;
+			DBGLOG(DBG, "New \"this\" component info:");
+#ifndef NDEBUG
+			{
+				std::stringstream ss;
+				BOOST_FOREACH (IDAddress adr, depSCC[m.second]) ss << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg);
+				DBGLOG(DBG, depSCC[m.second].size() << " atoms in component vector: " << ss.str() << " (" << programComponents[m.second]->componentAtoms->getStorage().count() << " in bitvector: " << *programComponents[m.second]->componentAtoms << ")");
+			}
+#endif
+			DBGLOG(DBG, "head cycles=" << headCycles[m.second]);
+			DBGLOG(DBG, "e-cycles=" << eCycles[m.second]);
+			DBGLOG(DBG, programComponents[m.second]->program.edb->getStorage().count() << " atoms in EDB");
+			if (!!programComponents[m.second]->program.mask){
+				DBGLOG(DBG, programComponents[m.second]->program.mask->getStorage().count() << " atoms in program mask");
+			}
+			DBGLOG(DBG, "maxint=" << programComponents[m.second]->program.maxint);
+		}
+	}
+	DBGLOG(DBG, "Indexing atoms from new program part");
+	typedef const boost::unordered_map<IDAddress, int>::value_type ComponentOfAtomPair;
+	BOOST_FOREACH (ComponentOfAtomPair pair, other.componentOfAtom){
+		componentOfAtom[pair.first] = otherCompToThisComp[pair.second];
+	}
+
+	// copy all indexed external atom (duplications do not matter) including EA-masks
 	indexedEatoms.insert(indexedEatoms.end(), other.indexedEatoms.begin(), other.indexedEatoms.end());
 	eaMasks.insert(eaMasks.end(), other.eaMasks.begin(), other.eaMasks.end());
+
+	// extend aux mapping
 	typedef const boost::unordered_map<IDAddress, std::vector<ID> >::value_type AuxToEAPair;
 	BOOST_FOREACH (AuxToEAPair pair, other.auxToEA){
 		DBGLOG(DBG, "Copying " << pair.second.size() << " auxToEA mapping infos of auxiliary " << pair.first);
 		auxToEA[pair.first].insert(auxToEA[pair.first].end(), pair.second.begin(), pair.second.end());
 	}
+
+	// copy support sets
 	if (!!other.supportSets){
 		if (!supportSets) supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 		for (int i = 0; i < other.supportSets->getNogoodCount(); ++i){
 			supportSets->addNogood(other.supportSets->getNogood(i));
 		}
 	}
-	depSCC.insert(depSCC.end(), other.depSCC.begin(), other.depSCC.end());
-	typedef const boost::unordered_map<IDAddress, int>::value_type ComponentOfAtomPair;
-	BOOST_FOREACH (ComponentOfAtomPair pair, other.componentOfAtom){
-		componentOfAtom[pair.first] = pair.second;
-	}
-	headCycles.insert(headCycles.end(), other.headCycles.begin(), other.headCycles.end());
-	eCycles.insert(eCycles.end(), other.eCycles.begin(), other.eCycles.end());
 
+	// extend indices of cyclic rules
 	InterpretationPtr newHeadCyclicRules(new Interpretation(reg));
 	newHeadCyclicRules->add(*headCyclicRules);
 	newHeadCyclicRules->add(*other.headCyclicRules);
 	headCyclicRules = newHeadCyclicRules;
 
-	programComponents.insert(programComponents.end(), other.programComponents.begin(), other.programComponents.end());
 	eaMasks.insert(eaMasks.end(), other.eaMasks.begin(), other.eaMasks.end());
 	headCyclesTotal |= other.headCyclesTotal;
 	eCyclesTotal |= other.eCyclesTotal;
@@ -333,6 +450,7 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 		if (nongroundDepNodes.find(id) == nongroundDepNodes.end()) nongroundDepNodes[id] = boost::add_vertex(id, nongroundDepGraph);
 		en++;
 	}
+	std::vector<std::pair<ID, ID> > nongroundExternalEdges;
 	BOOST_FOREACH (ID ruleID, dependencyIDB){
 		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID h, rule.head){
@@ -356,7 +474,6 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 
 		// add an arc from all head atoms to atoms which are input to some external atom in the rule body
 		DBGLOG(DBG, "Adding e-edges");
-		std::vector<std::pair<ID, ID> > nongroundExternalEdges;
 		BOOST_FOREACH (ID b, rule.body){
 			if (b.isExternalAtom()){
 				const ExternalAtom& ea = reg->eatoms.getByID(b);
@@ -416,9 +533,28 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 		nodeNr++;
 	}
 
+	// determine for each nonground SCC if it contains e-cycles
+	std::vector<bool> nongroundDepSCCECycle(nongroundDepSCC.size(), false);
+    for (uint32_t comp = 0; comp < nongroundDepSCC.size(); ++comp){
+
+            // check for each e-edge x -> y nonground atoms x and y are both this component; if yes, then there is a cycle
+            typedef std::pair<ID, ID> Edge;
+	        BOOST_FOREACH (Edge e, nongroundExternalEdges){
+				assert(e.first.isOrdinaryAtom() && "atom is not ordinary");
+				assert(e.second.isOrdinaryAtom() && "atom is not ordinary");
+				int n1 = (e.first.isOrdinaryGroundAtom() ? e.first.address + reg->ogatoms.getSize(): e.first.address);
+				int n2 = (e.second.isOrdinaryGroundAtom() ? e.second.address + reg->ogatoms.getSize(): e.second.address);
+	            if (nongroundDepSCC[comp]->getFact(n1) && nongroundDepSCC[comp]->getFact(n2)){
+        	            // yes, there is a cycle
+						nongroundDepSCCECycle[comp] = true;
+						break;
+                }
+            }
+	}
+
 	DBGLOG(DBG, "Nonground atoms in SCCs:");
 	for (int i = 0; i < nongroundDepSCC.size(); ++i){
-		DBGLOG(DBG, "SCC " << i << ": " << nongroundDepSCC[i]->getStorage().count() << " atoms");
+		DBGLOG(DBG, "SCC " << i << ": component " << (nongroundDepSCCECycle[i] ? "contains" : "does not contain") << " an e-cycle and consists of " << nongroundDepSCC[i]->getStorage().count() << " atoms");
 	}
 
 	// Now enrich the ground graph using the information from the nonground graph.
@@ -472,7 +608,11 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 							if ((nongroundDepSCC[i]->getStorage() & unifiesWith[at1adr]->getStorage()).count() > 0 &&
 								(nongroundDepSCC[i]->getStorage() & unifiesWith[at2adr]->getStorage()).count() > 0){
 								DBGLOG(DBG, "Ground atoms " << at1adr << " and " << at2adr << " are dependent using nonground information");
-								boost::add_edge(depNodes[at1adr], depNodes[at2adr], nongroundDepGraph);
+								DBGLOG(DBG, "Adding dependency from " << at1adr << " to " << at2adr << (nongroundDepSCCECycle[i] ? " (this is an e-edge)" : " (this is an ordinary edge)"));
+								boost::add_edge(depNodes[at1adr], depNodes[at2adr], depGraph);
+								if (nongroundDepSCCECycle[i]){
+									externalEdges.push_back(std::pair<IDAddress, IDAddress>(at1adr, at2adr));
+								}
 								break;
 							}
 						}
@@ -524,8 +664,6 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 		}
 	}
 	for (uint32_t comp = 0; comp < depSCC.size(); ++comp){
-		DBGLOG(DBG, "Partition " << comp);
-
 		OrdinaryASPProgram componentProgram(reg, std::vector<ID>(), groundProgram.edb);
 		InterpretationPtr componentAtoms = InterpretationPtr(new Interpretation(reg));
 		ProgramComponentPtr currentComp(new ProgramComponent(componentAtoms, componentProgram));
@@ -534,6 +672,7 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
 			componentAtoms->setFact(ida);
 		}
+		DBGLOG(DBG, "Partition " << comp << ": " << *componentAtoms);
 
 		// compute the program partition
 		bm::bvector<>::enumerator en = componentAtoms->getStorage().first();
