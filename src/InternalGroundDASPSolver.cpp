@@ -47,7 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p) : InternalGroundASPSolver(ctx, p), ufscm(ctx, p){
+InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p) : InternalGroundASPSolver(ctx, p), ufscm(ctx, program){
 }
 
 InterpretationPtr InternalGroundDASPSolver::getNextModel(){
