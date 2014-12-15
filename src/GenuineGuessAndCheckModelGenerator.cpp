@@ -338,33 +338,58 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
 		// append gidb to xidb
 		program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
-		{
-			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-			grounder = GenuineGrounder::getInstance(factory.ctx, program);
 
-			if (factory.ctx.config.getOption("IncrementalGrounding")){
-				annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms, factory.idb);
-			}else{
-				annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
-			}
-			previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
-		}
-		// for incremental solving we need hook rules for all atoms which occur in the heads
 		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			// grounding bootstrapping needs to ground all sub-components without predecessors
+			std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+			std::vector<int> expandedComponents;
+			int nr = 0;
+			InterpretationConstPtr domainAtomsFromCurrentEA;
+			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+				const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
+				DBGLOG(DBG, "Grounding root component " << nr << " to bootstrap incremental grounding");
+				domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, postprocessedInput, gxidbPerComponent[nr], factory.deidbInnerEatoms);
+				domainMaskPerComponent[nr]->updateMask();
+				expandedComponents.push_back(nr);
+			}
+
+			// prepare the solver for a program consisting only of the postprocessed input
+			DBGLOG(DBG, "Initializing program with postprocessed input " << *postprocessedInput << " as EDB and empty IDB");
+			std::vector<ID> emptyIDB;
+			OrdinaryASPProgram emptyProg(factory.reg, emptyIDB, postprocessedInput, factory.ctx.maxint);
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, emptyProg, factory.innerEatoms, factory.idb);
+			solver = GenuineGroundSolver::getInstance(
+				factory.ctx, annotatedGroundProgram,
+				frozenHookAtoms,
+				// do the UFS check for disjunctions only if we don't do
+				// a minimality check in this class;
+				// this will not find unfounded sets due to external sources,
+				// but at least unfounded sets due to disjunctions
+				!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+
+			incrementalProgramExpansion(expandedComponents);
+			previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
+
+			// for incremental solving we need hook rules for all atoms which occur in the heads
 			addHookRules();
 			buildFrozenHookAtomAssumptions();
+
+			// new restart the solver for the real program
+			solver->restartWithAssumptions(hookAssumptions);
+		}else{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+			grounder = GenuineGrounder::getInstance(factory.ctx, program);
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+
+			solver = GenuineGroundSolver::getInstance(
+				factory.ctx, annotatedGroundProgram,
+				frozenHookAtoms,
+				// do the UFS check for disjunctions only if we don't do
+				// a minimality check in this class;
+				// this will not find unfounded sets due to external sources,
+				// but at least unfounded sets due to disjunctions
+				!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
 		}
-
-		solver = GenuineGroundSolver::getInstance(
-			factory.ctx, annotatedGroundProgram,
-			frozenHookAtoms,
-			// do the UFS check for disjunctions only if we don't do
-			// a minimality check in this class;
-			// this will not find unfounded sets due to external sources,
-			// but at least unfounded sets due to disjunctions
-			!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
-
-		if (factory.ctx.config.getOption("IncrementalGrounding")) solver->restartWithAssumptions(hookAssumptions);
 	}
 
     // external learning related initialization
@@ -1051,7 +1076,7 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	}
 
 	mask->add(*frozenHookAtoms);
-	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms);
+	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms, factory.idb);
 	annotatedGroundProgram.addProgram(expansion);
 
 	DBGLOG(DBG, "Adding the following " << gpAddition.idb.size() << " rules:");

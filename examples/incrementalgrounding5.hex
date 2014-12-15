@@ -15,4 +15,4 @@ t :- s, x.	% likewise
 
 % Since the cyclic dependency between s and t involves the external atom and
 % is only visible after &id[p](a) was added in the second iteration,
-% a non-incrementaln minimality check also produces the models {p(a),x,s,t,tt}, {p(b),x,s,t,tt}
+% a non-incremental minimality check also produces the models {p(a),x,s,t,tt}, {p(b),x,s,t,tt}
