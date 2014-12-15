@@ -1486,12 +1486,12 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemBasicEABeha
 
 		eatom.updatePredicateInputMask();
 
-		// if none of the input atoms, which are true in I, are unfounded, then the output of the external atom does not change
+		// if none of the input atoms in the scope of this UFS checker, which are true in I, are unfounded, then the output of the external atom does not change
 		Nogood inputNogood;
 		bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
 		while (en < en_end){
-			inputNogood.insert(NogoodContainer::createLiteral(becomeFalse[*en], false));
+			if (domain->getFact(*en)) inputNogood.insert(NogoodContainer::createLiteral(becomeFalse[*en], false));
 			en++;
 		}
 		// make sure that this nogood is invalidated over an extended domain
