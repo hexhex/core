@@ -233,6 +233,84 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
 			postprocInput->add(*domPredictaesExtension);
 		}else{
+			DBGLOG(DBG, "Creating subcomponent graph");
+			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
+			std::vector<dlvhex::ID> idbWithoutAuxRules;
+			BOOST_FOREACH (ID ruleID, factory.idb){
+				const Rule& rule = reg->rules.getByID(ruleID);
+				if (rule.head.size() > 0 && rule.head[0].isAuxiliary()) continue;
+				else idbWithoutAuxRules.push_back(ruleID);
+			}
+			std::vector<dlvhex::ID> auxRules;
+			subdepgraph->createDependencies(idbWithoutAuxRules, auxRules);
+
+			// find for each component the set of domain predicates and the sub-(xidb+gidb)
+			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));
+			std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+			int nr = 0;
+			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+				// find the set of domain predicates
+				const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
+				PredicateMaskPtr pm(new PredicateMask());
+				pm->setRegistry(reg);
+				BOOST_FOREACH (ID ruleID, ci.innerRules){
+					const Rule& rule = reg->rules.getByID(ruleID);
+					BOOST_FOREACH (ID b, rule.body){
+						if (b.isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(reg->lookupOrdinaryAtom(b).tuple[0]) == 'd'){
+							pm->addPredicate(reg->lookupOrdinaryAtom(b).tuple[0]);
+						}
+					}
+				}				
+				domainMaskPerComponent.push_back(pm);
+				
+				// add sub-xidb
+				gxidbPerComponent.push_back(std::vector<ID>());
+				gxidbPerComponent[nr].reserve(ci.innerRules.size() + ci.innerConstraints.size());
+				std::back_insert_iterator<std::vector<ID> > inserter(gxidbPerComponent[nr]);
+				std::transform(ci.innerRules.begin(), ci.innerRules.end(), inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, &factory, factory.ctx, _1));
+				std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(), inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, &factory, factory.ctx, _1));
+
+				// add sub-gidb
+				BOOST_FOREACH (ID rid, ci.innerRules){
+					if (rid.doesRuleContainExtatoms()){
+						BOOST_FOREACH (ID lit, factory.reg->rules.getByID(rid).body){
+							if (lit.isExternalAtom()) gxidbPerComponent[nr].push_back(factory.createEatomGuessingRule(factory.ctx, rid, lit));
+						}
+					}
+				}
+				BOOST_FOREACH (ID rid, ci.innerConstraints){
+					if (rid.doesRuleContainExtatoms()){
+						BOOST_FOREACH (ID lit, factory.reg->rules.getByID(rid).body){
+							if (lit.isExternalAtom()) gxidbPerComponent[nr].push_back(factory.createEatomGuessingRule(factory.ctx, rid, lit));
+						}
+					}
+				}
+#ifndef NDEBUG
+				{
+				std::stringstream ss;
+				RawPrinter rp(ss, reg);
+				ss << "gxidb of subcomponent " << nr << std::endl;
+				BOOST_FOREACH (ID ruleID, gxidbPerComponent[nr]){
+					rp.print(ruleID);
+					ss << std::endl;
+				}
+				DBGLOG(DBG, ss.str());
+				}
+#endif
+			}
+
+			if (factory.ctx.config.getOption("DumpCompGraph")){
+					std::string fnamev = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphVerbose.dot";
+					LOG(INFO,"dumping verbose component graph to " << fnamev);
+					std::ofstream filev(fnamev.c_str());
+					subcompgraph->writeGraphViz(filev, true);
+					
+					std::string fnamet = factory.ctx.config.getStringOption("DebugPrefix")+"_SubCompGraphTerse.dot";
+					LOG(INFO,"dumping terse component graph to " << fnamet);
+					std::ofstream filet(fnamet.c_str());
+					subcompgraph->writeGraphViz(filet, false);
+			}
+
 			// collect replacement atoms of inner external atoms and build a mask
 			innerEatomOutputs.reset(new PredicateMask());
 			innerEatomOutputs->setRegistry(factory.reg);
@@ -240,10 +318,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			BOOST_FOREACH (ID eaID, factory.deidbInnerEatoms){
 				innerEatomOutputs->addPredicate(factory.reg->getAuxiliaryConstantSymbol('r', factory.reg->eatoms.getByID(eaID).predicate));
 			}
-
-			// store input enhanced with domain atoms
-			inputWithDomainAtoms.reset(new Interpretation(factory.reg));
-			inputWithDomainAtoms->add(*postprocInput);
 
 			// keep a set of rules currently in the grounding
 			currentRules.reset(new Interpretation(factory.reg));
@@ -411,20 +485,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			return InterpretationPtr();
 		}
 
-		// check if new values were introduced which were not respected in the grounding
-		if (factory.ctx.config.getOption("IncrementalGrounding")){
-			DBGLOG(DBG, "Sending candidate to possible domain expansion: " << *modelCandidate);
-			if (incrementalDomainExpansion(modelCandidate)){
-				DBGLOG(DBG, "Expanding program and restarting search");
-				incrementalProgramExpansion();
-				buildFrozenHookAtomAssumptions();
-				solver->restartWithAssumptions(hookAssumptions);
-				for (int i = 0; i < factory.innerEatoms.size(); ++i){
-					eaEvaluated[i] = eaVerified[i] = false;
-				}
-				continue;
-			}
-		}
 /*
 #ifndef NDEBUG
 		DBGLOG(DBG, "Checking if incremental instance is equivalent to full one");
@@ -468,6 +528,22 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			continue;
 		}
 
+		// check if new values were introduced which were not respected in the grounding
+		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			DBGLOG(DBG, "Sending candidate to possible domain expansion: " << *modelCandidate);
+			std::vector<int> expandedComponents;
+			if (incrementalDomainExpansion(modelCandidate, expandedComponents)){
+				DBGLOG(DBG, "Expanding program and restarting search");
+				incrementalProgramExpansion(expandedComponents);
+				buildFrozenHookAtomAssumptions();
+				solver->restartWithAssumptions(hookAssumptions);
+				for (int i = 0; i < factory.innerEatoms.size(); ++i){
+					eaEvaluated[i] = eaVerified[i] = false;
+				}
+				continue;
+			}
+		}
+
 		// remove edb and the guess (from here we don't need the guess anymore)
 		DBGLOG(DBG, "Got a model, removing replacement atoms");
 		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
@@ -475,6 +551,20 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		modelCandidate->getStorage() -= mask->getStorage();
 
 		LOG(DBG,"returning model without guess: " << *modelCandidate);
+
+		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			// Add the model as constraint in the next incremental step because it will be output now and must not be enumerated again after the next incremental expansion.
+			Rule modelConstraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+			bm::bvector<>::enumerator en = modelCandidate->getStorage().first();
+			bm::bvector<>::enumerator en_end = modelCandidate->getStorage().end();
+			while (en < en_end){
+				modelConstraint.body.push_back(ID::posLiteralFromAtom(factory.reg->ogatoms.getIDByAddress(*en)));
+				en++;
+			}
+			ID modelConstraintID = factory.reg->storeRule(modelConstraint);
+			modelEliminationConstraints.push_back(modelConstraintID);
+		}
+
 		return modelCandidate;
 	}while(true);
 }
@@ -728,66 +818,35 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	assert (false);
 }
 
-bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(InterpretationConstPtr model){
+bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(InterpretationConstPtr model, std::vector<int>& expandedComponents){
 
-	// evaluate all inner external atoms if not already done to make sure that all potential output atoms are in the registry
-	int eaIndex = 0;
-	InterpretationPtr eaResult(new Interpretation(factory.reg));
-	IntegrateExternalAnswerIntoInterpretationCB vcb(eaResult);
-	BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
-		if (!eaEvaluated[eaIndex]) {
-			evaluateExternalAtom(factory.ctx, factory.reg->eatoms.getByID(eaid), model, vcb,
-			     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+	bool expanded = false;
+
+	// expand subcomponent-wise iteratively
+	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+	int nr = 0;
+	InterpretationConstPtr domainAtomsFromCurrentEA;
+	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+		const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
+
+		// check if there are new domain atoms for this component
+		DBGLOG(DBG, "Checking if component " << nr << " needs to be expanded");
+		int oldDomainAtomCount = domainMaskPerComponent[nr]->mask()->getStorage().count();
+		domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, model, gxidbPerComponent[nr], factory.deidbInnerEatoms, false);
+		domainMaskPerComponent[nr]->updateMask();
+		int newDomainAtomCount = domainMaskPerComponent[nr]->mask()->getStorage().count();
+		assert (newDomainAtomCount >= oldDomainAtomCount && "number of domain atoms decreased");
+
+		if (newDomainAtomCount > oldDomainAtomCount){
+			DBGLOG(DBG, "Expanded domain of external atoms in component " << nr << " from " << oldDomainAtomCount << " to " << newDomainAtomCount);
+			expandedComponents.push_back(nr);
+			expanded |= true;
+		}else{
+			DBGLOG(DBG, "Did not expand domain of external atoms");
 		}
-		eaIndex++;
 	}
 
-	// check if an external atom introduced new values
-	innerEatomOutputs->updateMask();
-	assert (innerEatomOutputs->mask()->getStorage().count() >= previousInnerEatomOutputs->getStorage().count() && "external output atom decreased");
-	if (innerEatomOutputs->mask()->getStorage().count() > previousInnerEatomOutputs->getStorage().count()){
-		DBGLOG(DBG, "Domain was expanded, creating " << (innerEatomOutputs->mask()->getStorage().count() - previousInnerEatomOutputs->getStorage().count()) << " new domain atoms");
-
-		// create domain atoms for the new values
-		bm::bvector<>::enumerator en = innerEatomOutputs->mask()->getStorage().first();
-		bm::bvector<>::enumerator en_end = innerEatomOutputs->mask()->getStorage().end();
-		while (en < en_end){
-			ID eaPred = factory.reg->getIDByAuxiliaryConstantSymbol(factory.reg->ogatoms.getByAddress(*en).tuple[0]);
-			if (!previousInnerEatomOutputs->getFact(*en)) {
-				DBGLOG(DBG, "Replacement atom " << printToString<RawPrinter>(factory.reg->ogatoms.getIDByAddress(*en), factory.reg) << " is new");
-				BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
-					const ExternalAtom ea = reg->eatoms.getByID(eaid);
-					if (ea.predicate == eaPred){
-						OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-						domainAtom.tuple = factory.reg->ogatoms.getByAddress(*en).tuple;
-						domainAtom.tuple[0] = factory.reg->getAuxiliaryConstantSymbol('d', eaid);
-						ID domainAtomID = factory.reg->storeOrdinaryAtom(domainAtom);
-						DBGLOG(DBG, "Adding domain atom " << domainAtomID);
-						inputWithDomainAtoms->setFact(domainAtomID.address);
-					}
-				}
-				previousInnerEatomOutputs->setFact(*en);
-			}
-			en++;
-		}
-		return true;
-	}else{
-		// If the model does NOT expand the domain, then keep (its positive part) as a constraint.
-		// This is because we might restart the search later on (because of some other model)
-		// and do not want to enumerate this one again (both to avoid duplicates and for performance reasons).
-		// Keeping the positive part suffices because proper supersets cannot be models because of the minimality criterion.
-		Rule modelConstraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-		bm::bvector<>::enumerator en = model->getStorage().first();
-		bm::bvector<>::enumerator en_end = model->getStorage().end();
-		while (en < en_end){
-			modelConstraint.body.push_back(ID::posLiteralFromAtom(factory.reg->ogatoms.getIDByAddress(*en)));
-			en++;
-		}
-		ID modelConstraintID = factory.reg->storeRule(modelConstraint);
-		modelEliminationConstraints.push_back(modelConstraintID);
-		DBGLOG(DBG, "Domain was not expanded, adding model constraint " << printToString<RawPrinter>(modelConstraintID, factory.reg));
-		return false;
-	}
+	return expanded;
 }
 
 namespace
@@ -838,7 +897,7 @@ namespace
 	}
 }
 
-void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
+void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::vector<int>& expandedComponents){
 
 	// update rule index
 	DBGLOG(DBG, "Updating rule index");
@@ -846,22 +905,54 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 		currentRules->setFact(annotatedGroundProgram.getGroundProgram().idb[previousRuleCount].address);
 	}
 
+	if (expandedComponents.size() == 0){
+		LOG(DBG,"domain was not expanded -> skipping program expansion");
+		return;
+	}
+
 	LOG(DBG,"domain was expanded -> regrounding");
-	OrdinaryASPProgram program(reg, factory.xidb, inputWithDomainAtoms, factory.ctx.maxint);
-	// append gidb to xidb
-	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
+	InterpretationPtr edb(new Interpretation(factory.reg));
+	edb->add(*postprocessedInput);
+	std::vector<ID> idb;
+	ComponentGraph::ComponentSet componentsToGround;
+	BOOST_FOREACH (int nr, expandedComponents){
+		ComponentGraph::ComponentIterator comp = subcompgraph->getComponents().first;
+		for (int i = 0; i < nr; ++i) comp++;
+		DBGLOG(DBG,"regrounding component " << nr << " over domain " << *domainMaskPerComponent[nr]->mask());
+		edb->add(*domainMaskPerComponent[nr]->mask());
+		idb.insert(idb.end(), gxidbPerComponent[nr].begin(), gxidbPerComponent[nr].end());
+		componentsToGround.insert(*comp);
+	}
+
+	// also ground components which depend on such components
+	std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
+	int nr = 0;
+	for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
+		if (componentsToGround.find(*comp) != componentsToGround.end()) continue;
+
+		ComponentGraph::ComponentSet preds;
+		transitivePredecessorComponents(*subcompgraph, *comp, preds);
+		for (ComponentGraph::ComponentSet::iterator pcomp = preds.begin(); pcomp != preds.end(); ++pcomp){
+			if (componentsToGround.find(*pcomp) != componentsToGround.end()){
+				DBGLOG(DBG, "grounding depending component " << nr);
+				edb->add(*domainMaskPerComponent[nr]->mask());
+				idb.insert(idb.end(), gxidbPerComponent[nr].begin(), gxidbPerComponent[nr].end());
+			}
+		}
+	}
+
+	OrdinaryASPProgram program(reg, idb, edb, factory.ctx.maxint);
 
 	DBGLOG(DBG, "Grounding with frozen atoms " << *annotatedGroundProgram.getProgramMask());
 	grounder = GenuineGrounder::getInstance(factory.ctx, program, annotatedGroundProgram.getProgramMask());
 
-	// add all new rules
-	// if they redefine a previously defined atom, use the hook atom instead
+	// if a previously defined atom is redefined, then use its hook instead and prepare a new hook for future expansions
+	// if an atom which was not previously defined is now defined, then leave it unchanged and prepare a hook for future expansions
 	std::map<ID, ID> redefinedHookAtoms;
 	OrdinaryASPProgram gpAddition = grounder->getGroundProgram();
 	gpAddition.edb = InterpretationPtr(new Interpretation(reg));
 	gpAddition.idb.clear();
-	Rule newRule(ID::MAINKIND_RULE);	// newRule.head.size() == 0 iff the rule does not redefine a previously defined atom
-	DBGLOG(DBG, "Processing new ground program");
+	DBGLOG(DBG, "Checking if the new ground program redefines previously defined atoms");
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
 		// no need to add a rule if it is already present
 		if (currentRules->getFact(ruleID.address)) continue;
@@ -871,27 +962,32 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 		const Rule& rule = reg->rules.getByID(ruleID);
 		int hID = 0;
 		BOOST_FOREACH (ID headID, rule.head){
+			// no need to process the same atom twice
+			if (redefinedHookAtoms.find(headID) != redefinedHookAtoms.end()) continue;
+
+			// was the atom defined in previous expansions?
 			if (hookAtoms.find(headID) != hookAtoms.end()){
-				// yes
-				// replace by hook atom
-				if (newRule.head.size() == 0) newRule = rule;
-				newRule.head[hID] = hookAtoms[headID];
+				// yes: prepare a new hook atom
+				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', hookAtoms[headID]);
+				frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
+
+				DBGLOG(DBG, "Atom " << printToString<RawPrinter>(headID, factory.reg) << " was previously defined, will replace it by its hook " << printToString<RawPrinter>(hookAtoms[headID], factory.reg) <<
+							" and prepare book " << printToString<RawPrinter>(redefinedHookAtoms[headID], factory.reg) << " for future extensions");
 
 				// the old hook is not undefined anymore
 				frozenHookAtoms->clearFact(hookAtoms[headID].address);
-
-				// prepare a new hook atom
-				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', hookAtoms[headID]);
-				frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
 
 				// prepare new hook rule
 				ID hookRuleID = getIncrementalHookRule(hookAtoms[headID], redefinedHookAtoms[headID]);
 				gpAddition.idb.push_back(hookRuleID);
 				DBGLOG(DBG, "Adding hook rule " << printToString<RawPrinter>(hookRuleID, factory.reg));
 			}else{
-				// the atom was not previously defined: prepare a hook atom for future extensions
+				// no: prepare a hook atom for future extensions
 				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', headID);
 				frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
+				
+				DBGLOG(DBG, "Atom " << printToString<RawPrinter>(headID, factory.reg) << " was previously not defined, will not replace it but prepare book " <<
+							printToString<RawPrinter>(redefinedHookAtoms[headID], factory.reg) << " for future extensions");
 
 				// prepare hook rule
 				ID hookRuleID = getIncrementalHookRule(headID, redefinedHookAtoms[headID]);
@@ -901,16 +997,31 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 			hID++;
 		}
 
-		// add the new rule either in unmodified form or with hook atoms
-		if (newRule.head.size() != 0){
-			ID newRuleID = factory.reg->storeRule(newRule);
-			DBGLOG(DBG, "Rewriting rule " << printToString<RawPrinter>(ruleID, factory.reg) << " to " << printToString<RawPrinter>(newRuleID, factory.reg));
-			gpAddition.idb.push_back(newRuleID);
-			newRule = Rule(ID::MAINKIND_RULE);
-		}else{
-			DBGLOG(DBG, "Keeping rule " << printToString<RawPrinter>(ruleID, factory.reg));
-			gpAddition.idb.push_back(ruleID);
+	}
+
+	DBGLOG(DBG, "Substituting atoms by their hooks");
+	// 1. If the atom has no hooks from previous expansions, then it is unchanged
+	// 2. If the atom has a hook from previous expansions, then use this hook (not the one from the new expansion!)
+	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
+		// no need to add a rule if it is already present
+		if (currentRules->getFact(ruleID.address)) continue;
+
+		// check if a previously defined atom is redefined
+		DBGLOG(DBG, "Processing new rule");
+		Rule rule = reg->rules.getByID(ruleID);
+		for (int i = 0; i < rule.head.size(); ++i){
+			ID headID = rule.head[i];
+			if (hookAtoms.find(headID) != hookAtoms.end()) rule.head[i] = hookAtoms[headID];
 		}
+		for (int i = 0; i < rule.body.size(); ++i){
+			ID bodyID = rule.body[i];
+			if (hookAtoms.find(bodyID) != hookAtoms.end()) rule.body[i] =  hookAtoms[bodyID];
+		}
+		
+		// add the new rule
+		ID newRuleID = factory.reg->storeRule(rule);
+		DBGLOG(DBG, "Rewriting rule " << printToString<RawPrinter>(ruleID, factory.reg) << " to " << printToString<RawPrinter>(newRuleID, factory.reg));
+		gpAddition.idb.push_back(newRuleID);
 	}
 
 	// update hook atoms
@@ -931,10 +1042,23 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(){
 	modelEliminationConstraints.clear();
 
 	// program expansion
-	DBGLOG(DBG, "Expanding program by " << gpAddition.idb.size() << " rules");
+	DBGLOG(DBG, "Program expansion is finalized as follows");
+
+	DBGLOG(DBG, "Previous program:");
+	DBGLOG(DBG, *annotatedGroundProgram.getGroundProgram().edb);
+	BOOST_FOREACH (ID id, annotatedGroundProgram.getGroundProgram().idb){
+		DBGLOG(DBG, printToString<RawPrinter>(id, factory.reg));
+	}
+
 	mask->add(*frozenHookAtoms);
 	AnnotatedGroundProgram expansion(factory.ctx, gpAddition, factory.innerEatoms);
 	annotatedGroundProgram.addProgram(expansion);
+
+	DBGLOG(DBG, "Adding the following " << gpAddition.idb.size() << " rules:");
+	DBGLOG(DBG, *expansion.getGroundProgram().edb);
+	BOOST_FOREACH (ID id, expansion.getGroundProgram().idb){
+		DBGLOG(DBG, printToString<RawPrinter>(id, factory.reg));
+	}
 
 	DBGLOG(DBG, "Complete ground program is now:");
 	DBGLOG(DBG, *annotatedGroundProgram.getGroundProgram().edb);

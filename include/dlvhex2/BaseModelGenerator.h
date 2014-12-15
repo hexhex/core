@@ -71,6 +71,15 @@ protected:
   // will create additional "auxiliary" aggregate atoms in registry)
   virtual void convertRuleBody(ProgramCtx& ctx, const Tuple& body, Tuple& convbody);
 
+  /**
+   * Adds domain predicates for inner external atoms (where necessary).
+   * @param ci The component whose external atoms shall be prepared for liberal domain-expansion safety
+   * @param ctx ProgramCtx
+   * @param idb IDB of the unit
+   * @param deidb Reference to a vector where a simplified version of the IDB will be stored that can be used later for computing the extensions of domain predicates (see computeExtensionOfDomainPredicates)
+   * @param deidbInnerEatoms Reference to a vector which will store the inner external atoms which are relevant for liberal domain-expansion safety and can be used later for computing the extensions of domain predicates (see computeExtensionOfDomainPredicates)
+   * @param outerEatoms External atoms which shall be treated as outer external atoms and are not included the domain expansion computation
+   */
   void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, const std::vector<ID>& outerEatoms);
 };
 
@@ -252,7 +261,16 @@ protected:
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, InterpretationPtr inputs) const;
 
-  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms);
+  /**
+   * Computes the relevant domain atoms, i.e., the extensions of the domain predicates.
+   * @param ci The component whose domain atoms to be computed
+   * @param ctx ProgramCtx
+   * @param edb Set of facts (usually the input model of the component)
+   * @param deidb The IDB used for computing the domain expansion; this is a simplified version of the actual IDB and is computed by addDomainPredicatesAndCreateDomainExplorationProgram.
+   * @param deidbInnerEatoms The inner atoms which are relevant for liberal domain-expansion safety; this is a subset of all inner external atoms in the unit and is computed by addDomainPredicatesAndCreateDomainExplorationProgram.
+   * @param enumerateNonmonotonic If true, then the inner external atoms in deidbInnerEatoms are evaluated under all possible inputs to make sure that they are fully grounded; otherwise they are evaluated only under the current EDB, but then the grounding might be incomplete and might require incremental expansion.
+   */
+  InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic = true);
 };
 
 DLVHEX_NAMESPACE_END

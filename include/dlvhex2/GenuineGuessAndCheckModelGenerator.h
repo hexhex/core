@@ -109,6 +109,11 @@ protected:
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
 
   // incremental solving
+  //	sub-component management for regrounding
+  ComponentGraphPtr subcompgraph;
+  std::vector<PredicateMaskPtr> domainMaskPerComponent;
+  std::vector<std::vector<ID> > gxidbPerComponent;
+  //	management of resolving
   std::vector<ID> hookAssumptions;
   std::vector<ID> modelEliminationConstraints;
   InterpretationPtr inputWithDomainAtoms;
@@ -187,16 +192,19 @@ protected:
   void buildFrozenHookAtomAssumptions();
 
   /**
-   * Checks if the domain of external atoms needs to be expanded wrt. a given model.
+   * Checks if the domain of external atoms needs to be expanded wrt. a given compatible set.
    * If this is the case, then the domain predicates are extended accordingly.
+   * @param model The compatible set used for domain expansion.
+   * @param expandedComponents The indices of all expanded components will be added to this vector.
    * \return True if the domain needs to be expanded and false otherwise.
    */
-  bool incrementalDomainExpansion(InterpretationConstPtr model);
+  bool incrementalDomainExpansion(InterpretationConstPtr model, std::vector<int>& expandedComponents);
 
   /**
    * Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).
+   * @param expandedComponents The vector of all component indices which shall be respected in the expansion; other components will be ignored.
    */
-  void incrementalProgramExpansion();
+  void incrementalProgramExpansion(const std::vector<int>& expandedComponents);
 
   /**
    * Constructs the rule headAtomID :- hookAtomID.
