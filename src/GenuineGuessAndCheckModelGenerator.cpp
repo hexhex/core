@@ -370,6 +370,22 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			incrementalProgramExpansion(expandedComponents);
 			previousRuleCount = annotatedGroundProgram.getGroundProgram().idb.size();
 
+/*
+			// Start with empty grounding:
+
+			grounder = GenuineGrounder::getInstance(factory.ctx, program);
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms, factory.idb);
+
+			solver = GenuineGroundSolver::getInstance(
+				factory.ctx, annotatedGroundProgram,
+				frozenHookAtoms,
+				// do the UFS check for disjunctions only if we don't do
+				// a minimality check in this class;
+				// this will not find unfounded sets due to external sources,
+				// but at least unfounded sets due to disjunctions
+				!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+*/
+
 			// for incremental solving we need hook rules for all atoms which occur in the heads
 			addHookRules();
 			buildFrozenHookAtomAssumptions();
