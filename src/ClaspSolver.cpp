@@ -935,6 +935,7 @@ void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 }
 
 Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
+	DBGLOG(DBG, "Translating HEX address " << addr << " to clasp");
 	if (!isMappedToClaspLiteral(addr)){
 		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
 		Clasp::Literal clasplit(c, inverseLits);
@@ -944,6 +945,9 @@ Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool regi
 		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
 #endif
 		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+		DBGLOG(DBG, "Creating new clasp variable " << hexToClaspSolver[addr].var() << " for HEX address " << addr);
+	}else{
+		DBGLOG(DBG, "Mapping to " << hexToClaspSolver[addr].var() << " already exists");
 	}
 	assert(addr < hexToClaspSolver.size());
 	assert(hexToClaspSolver[addr] != noLiteral);
@@ -1110,15 +1114,27 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
-		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspSolverLit(*en).var()).endRule();
+		// redundancy check
+		if (convertHexToClaspSolverLit(*en).var() > 0){
+			// add fact
+			asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspSolverLit(*en).var()).endRule();
+		}
 		en++;
 	}
 
 	// transfer added idb
 	DBGLOG(DBG, "Sending added IDB to clasp");
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
-		sendRuleToClasp(asp, ruleId);
+		// redundancy check
+		bool redundant = false;
+		BOOST_FOREACH (ID h, reg->rules.getByID(ruleId).head){
+			if (convertHexToClaspSolverLit(h.address).var() == 0){
+				redundant = true;
+				break;
+			}
+		}
+
+		if (!redundant) sendRuleToClasp(asp, ruleId);
 	}
 
 	// finalize update

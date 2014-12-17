@@ -351,7 +351,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			InterpretationConstPtr domainAtomsFromCurrentEA;
 			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
 				const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
-				DBGLOG(DBG, "Grounding root component " << nr << " to bootstrap incremental grounding");
+				DBGLOG(DBG, "Grounding component " << nr << " to bootstrap incremental grounding");
 				domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, postprocessedInput, gxidbPerComponent[nr], factory.deidbInnerEatoms);
 				domainMaskPerComponent[nr]->updateMask();
 				expandedComponents.push_back(nr);
@@ -605,6 +605,12 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			while (en < en_end){
 				modelConstraint.body.push_back(ID::posLiteralFromAtom(factory.reg->ogatoms.getIDByAddress(*en)));
 				en++;
+			}
+			// avoid empty rules by adding a naf-literal whose atom is never defined
+			if (modelConstraint.body.size() == 0){
+				OrdinaryAtom at(ID::MAINKIND_ATOM || ID::SUBKIND_ATOM_ORDINARYG);
+				at.tuple.push_back(factory.reg->getAuxiliaryConstantSymbol('o', ID::termFromInteger(0)));
+				modelConstraint.body.push_back(ID::nafLiteralFromAtom(factory.reg->storeOrdinaryAtom(at)));
 			}
 			ID modelConstraintID = factory.reg->storeRule(modelConstraint);
 			modelEliminationConstraints.push_back(modelConstraintID);
@@ -995,64 +1001,87 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	// if an atom which was not previously defined is now defined, then leave it unchanged and prepare a hook for future expansions
 	std::map<ID, ID> redefinedHookAtoms;
 	OrdinaryASPProgram gpAddition = grounder->getGroundProgram();
-	gpAddition.edb = InterpretationPtr(new Interpretation(reg));
+	InterpretationPtr newEdb(new Interpretation(reg));
+	gpAddition.edb = newEdb;
 	gpAddition.idb.clear();
 	DBGLOG(DBG, "Checking if the new ground program redefines previously defined atoms");
+	InterpretationPtr definedIDs(new Interpretation(reg));
+	bm::bvector<>::enumerator en = gpAddition.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = gpAddition.edb->getStorage().end();
+	while (en < en_end){
+		DBGLOG(DBG, "Processind EDB fact " << *en);
+		definedIDs->setFact(*en);
+		en++;
+	}
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
 		// no need to add a rule if it is already present
 		if (currentRules->getFact(ruleID.address)) continue;
 
 		// check if a previously defined atom is redefined
-		DBGLOG(DBG, "Processing new rule");
+		DBGLOG(DBG, "Processing rule " << printToString<RawPrinter>(ruleID, factory.reg));
 		const Rule& rule = reg->rules.getByID(ruleID);
 		int hID = 0;
 		BOOST_FOREACH (ID headID, rule.head){
-			// no need to process the same atom twice
-			if (redefinedHookAtoms.find(headID) != redefinedHookAtoms.end()) continue;
-
-			// was the atom defined in previous expansions?
-			if (hookAtoms.find(headID) != hookAtoms.end()){
-				// yes: prepare a new hook atom
-				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', hookAtoms[headID]);
-				frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
-
-				DBGLOG(DBG, "Atom " << printToString<RawPrinter>(headID, factory.reg) << " was previously defined, will replace it by its hook " << printToString<RawPrinter>(hookAtoms[headID], factory.reg) <<
-							" and prepare book " << printToString<RawPrinter>(redefinedHookAtoms[headID], factory.reg) << " for future extensions");
-
-				// the old hook is not undefined anymore
-				frozenHookAtoms->clearFact(hookAtoms[headID].address);
-
-				// prepare new hook rule
-				ID hookRuleID = getIncrementalHookRule(hookAtoms[headID], redefinedHookAtoms[headID]);
-				gpAddition.idb.push_back(hookRuleID);
-				DBGLOG(DBG, "Adding hook rule " << printToString<RawPrinter>(hookRuleID, factory.reg));
-			}else{
-				// no: prepare a hook atom for future extensions
-				redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', headID);
-				frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
-				
-				DBGLOG(DBG, "Atom " << printToString<RawPrinter>(headID, factory.reg) << " was previously not defined, will not replace it but prepare book " <<
-							printToString<RawPrinter>(redefinedHookAtoms[headID], factory.reg) << " for future extensions");
-
-				// prepare hook rule
-				ID hookRuleID = getIncrementalHookRule(headID, redefinedHookAtoms[headID]);
-				gpAddition.idb.push_back(hookRuleID);
-				DBGLOG(DBG, "Adding hook rule " << printToString<RawPrinter>(hookRuleID, factory.reg));
-			}
-			hID++;
+			definedIDs->setFact(headID.address);
 		}
+	}
+	en = gpAddition.edb->getStorage().first();
+	en_end = gpAddition.edb->getStorage().end();
+	while (en < en_end){
+		ID headID = reg->ogatoms.getIDByAddress(*en);
 
+		// no need to process the same atom twice
+		if (redefinedHookAtoms.find(headID) != redefinedHookAtoms.end()) continue;
+
+		// was the atom defined in previous expansions?
+		if (hookAtoms.find(headID) != hookAtoms.end()){
+			// yes: prepare a new hook atom
+			redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', hookAtoms[headID]);
+			frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
+
+			DBGLOG(DBG, "Atom " << printToString<RawPrinter>(headID, factory.reg) << " was previously defined, will replace it by its hook " << printToString<RawPrinter>(hookAtoms[headID], factory.reg) <<
+						" and prepare book " << printToString<RawPrinter>(redefinedHookAtoms[headID], factory.reg) << " for future extensions");
+
+			// the old hook is not undefined anymore
+			frozenHookAtoms->clearFact(hookAtoms[headID].address);
+
+			// prepare new hook rule
+			ID hookRuleID = getIncrementalHookRule(hookAtoms[headID], redefinedHookAtoms[headID]);
+			gpAddition.idb.push_back(hookRuleID);
+			DBGLOG(DBG, "Adding hook rule " << printToString<RawPrinter>(hookRuleID, factory.reg));
+		}else{
+			// no: prepare a hook atom for future extensions
+			redefinedHookAtoms[headID] = factory.reg->getAuxiliaryAtom('k', headID);
+			frozenHookAtoms->setFact(redefinedHookAtoms[headID].address);
+			
+			DBGLOG(DBG, "Atom " << printToString<RawPrinter>(headID, factory.reg) << " was previously not defined, will not replace it but prepare book " <<
+						printToString<RawPrinter>(redefinedHookAtoms[headID], factory.reg) << " for future extensions");
+
+			// prepare hook rule
+			ID hookRuleID = getIncrementalHookRule(headID, redefinedHookAtoms[headID]);
+			gpAddition.idb.push_back(hookRuleID);
+			DBGLOG(DBG, "Adding hook rule " << printToString<RawPrinter>(hookRuleID, factory.reg));
+		}
+		en++;
 	}
 
 	DBGLOG(DBG, "Substituting atoms by their hooks");
 	// 1. If the atom has no hooks from previous expansions, then it is unchanged
 	// 2. If the atom has a hook from previous expansions, then use this hook (not the one from the new expansion!)
+	en = grounder->getGroundProgram().edb->getStorage().first();
+	en_end = grounder->getGroundProgram().edb->getStorage().end();
+	while (en < en_end){
+		DBGLOG(DBG, "Processind EDB fact " << *en);
+		ID id = reg->ogatoms.getIDByAddress(*en);
+		newEdb->setFact(hookAtoms.find(id) != hookAtoms.end() ? hookAtoms[id] : *en);
+		en++;
+	}
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
 		// no need to add a rule if it is already present
 		if (currentRules->getFact(ruleID.address)) continue;
 
 		// check if a previously defined atom is redefined
-		DBGLOG(DBG, "Processing new rule");
+		DBGLOG(DBG, "Processing rule " << printToString<RawPrinter>(ruleID, reg));
 		Rule rule = reg->rules.getByID(ruleID);
 		for (int i = 0; i < rule.head.size(); ++i){
 			ID headID = rule.head[i];
