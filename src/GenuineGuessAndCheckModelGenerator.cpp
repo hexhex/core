@@ -274,14 +274,18 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 				BOOST_FOREACH (ID rid, ci.innerRules){
 					if (rid.doesRuleContainExtatoms()){
 						BOOST_FOREACH (ID lit, factory.reg->rules.getByID(rid).body){
-							if (lit.isExternalAtom()) gxidbPerComponent[nr].push_back(factory.createEatomGuessingRule(factory.ctx, rid, lit));
+							if (lit.isExternalAtom() && std::find(factory.innerEatoms.begin(), factory.innerEatoms.end(), ID::atomFromLiteral(lit)) != factory.innerEatoms.end()){
+								gxidbPerComponent[nr].push_back(factory.createEatomGuessingRule(factory.ctx, rid, lit));
+							}
 						}
 					}
 				}
 				BOOST_FOREACH (ID rid, ci.innerConstraints){
 					if (rid.doesRuleContainExtatoms()){
 						BOOST_FOREACH (ID lit, factory.reg->rules.getByID(rid).body){
-							if (lit.isExternalAtom()) gxidbPerComponent[nr].push_back(factory.createEatomGuessingRule(factory.ctx, rid, lit));
+							if (lit.isExternalAtom() && std::find(factory.innerEatoms.begin(), factory.innerEatoms.end(), ID::atomFromLiteral(lit)) != factory.innerEatoms.end()){
+								gxidbPerComponent[nr].push_back(factory.createEatomGuessingRule(factory.ctx, rid, lit));
+							}
 						}
 					}
 				}

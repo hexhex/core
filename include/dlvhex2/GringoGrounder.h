@@ -74,7 +74,7 @@ private:
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
 	InterpretationConstPtr frozen;
-	ID intPred, anonymousPred;
+	ID intPred, anonymousPred, unsatPred;
 
 	class Printer : public RawPrinter{
 	public:
@@ -98,8 +98,7 @@ private:
 		ProgramCtx& ctx;
 		OrdinaryASPProgram& groundProgram;
 		InterpretationPtr mask;
-		ID intPred;
-		ID anonymousPred;
+		ID intPred, anonymousPred, unsatPred;
 		bool incAdd; // if true, then the ground program will not be reset before adding new rules
 
 		struct LParseRule{
@@ -126,7 +125,7 @@ private:
 
 		std::stringstream emptystream;
 	public:
-		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, bool incAdd = false);
+		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, ID unsatPred, bool incAdd = false);
 		void transformRules();
 
 		void finishRules();
@@ -228,7 +227,7 @@ private:
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
 	InterpretationConstPtr frozen;
-	ID intPred, anonymousPred;
+	ID intPred, anonymousPred, unsatPred;
 
 	detail::GringoOptions gringo;
 
@@ -253,8 +252,7 @@ private:
 		ProgramCtx& ctx;
 		OrdinaryASPProgram& groundProgram;
 		InterpretationPtr mask;
-		ID intPred;
-		ID anonymousPred;
+		ID intPred, anonymousPred, unsatPred;
 
 		struct LParseRule{
 			enum Type{ Regular, Weight };
@@ -277,7 +275,7 @@ private:
 		std::map<int, ID> indexToGroundAtomID;
 		std::list<LParseRule> rules;
 	public:
-		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred);
+		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, ID unsatPred);
 		void doFinalize();
 
 		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);

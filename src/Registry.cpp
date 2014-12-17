@@ -70,10 +70,11 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is an integer (arity))
  * 'a': Action auxiliary (ActionPlugin)
  *      (source ID is the ID of the name of the action)
- * 'd': domain predicates for auto strong safety
+ * 'd': domain predicates for liberal safety
  * 'g': aggregate input (internal AggregatePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
+ * 'o': special atoms introduced by gringo
  * 'x': reserved for local use
  */
 
