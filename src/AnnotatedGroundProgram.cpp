@@ -116,7 +116,7 @@ void AnnotatedGroundProgram::addProgram(const AnnotatedGroundProgram& other){
 				otherCompToThisComp[otherComp] = thisComp;
 			}
 		}else{
-			DBGLOG(DBG, "The atom does not occur in \"this\" program, will map it to a new \"this\" component");
+			DBGLOG(DBG, "The atom does not occur in \"this\" program, will map it to a new \"this\" component " << depSCC.size());
 			otherCompToThisComp[otherComp] = depSCC.size();
 			depSCC.push_back(other.depSCC[otherComp]);
 			headCycles.push_back(other.headCycles[otherComp]);
@@ -523,7 +523,7 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 	BOOST_FOREACH (int componentOfNode, nongroundComponentMap){
 		if (!nongroundDepSCC[componentOfNode]) nongroundDepSCC[componentOfNode] = InterpretationPtr(new Interpretation(reg));
 
-		// since "nonground atoms" can actually be strictly nonground or ground, taking only the address part would cause confusion; by convention we add the number of nonground atoms in the registry to ground addresses
+		// since "nonground atoms" can actually be strictly nonground or ground, taking only the address part would cause confusion; by convention we add the number of ground atoms in the registry to nonground addresses
 		if (nongroundDepGraph[nodeNr].isOrdinaryGroundAtom()){
 			nongroundDepSCC[componentOfNode]->setFact(nongroundDepGraph[nodeNr].address + reg->ogatoms.getSize());
 		}else{
@@ -558,7 +558,7 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 	}
 
 	// Now enrich the ground graph using the information from the nonground graph.
-	// For this, check for each pair of ground atoms if they unify with atoms from the same SCC of the nonground graph.
+	// For this, check for each pair of ground atoms if they unify with atoms from the same SCC of the nonground graph s.t. the two atoms are either different or the same with a reflexive connection.
 	// Step 1: Build for each atom a in the ground graph the set of nonground atoms N(a) it unifies with
 	typedef std::pair<IDAddress, Node> GPair;
 	std::vector<InterpretationPtr> unifiesWith;
@@ -607,13 +607,38 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 							DBGLOG(DBG, "Ground atom 2 unifies with " << (nongroundDepSCC[i]->getStorage() & unifiesWith[at2adr]->getStorage()).count() << " atoms in this SCC");
 							if ((nongroundDepSCC[i]->getStorage() & unifiesWith[at1adr]->getStorage()).count() > 0 &&
 								(nongroundDepSCC[i]->getStorage() & unifiesWith[at2adr]->getStorage()).count() > 0){
-								DBGLOG(DBG, "Ground atoms " << at1adr << " and " << at2adr << " are dependent using nonground information");
-								DBGLOG(DBG, "Adding dependency from " << at1adr << " to " << at2adr << (nongroundDepSCCECycle[i] ? " (this is an e-edge)" : " (this is an ordinary edge)"));
-								boost::add_edge(depNodes[at1adr], depNodes[at2adr], depGraph);
-								if (nongroundDepSCCECycle[i]){
-									externalEdges.push_back(std::pair<IDAddress, IDAddress>(at1adr, at2adr));
+								bool dep = false;
+								DBGLOG(DBG, "Checking if the atoms of the intersection of the SCC with N(a1) and the intersection with N(a2) differ in at least one atom");
+								if ((nongroundDepSCC[i]->getStorage() & (unifiesWith[at1adr]->getStorage() - unifiesWith[at2adr]->getStorage())).count() > 0 &&
+									(nongroundDepSCC[i]->getStorage() & (unifiesWith[at2adr]->getStorage() - unifiesWith[at1adr]->getStorage())).count() > 0){
+									DBGLOG(DBG, "Yes");
+									dep = true;
+								}else{
+									DBGLOG(DBG, "No: Checking if one of the SCC's atoms which unified both with a1 and a2 is reflexive");
+									Interpretation::Storage st = (nongroundDepSCC[i]->getStorage() & unifiesWith[at1adr]->getStorage() & unifiesWith[at2adr]->getStorage());
+									bm::bvector<>::enumerator en = st.first();
+									bm::bvector<>::enumerator en_end = st.end();
+									while (en < en_end){
+										Node cn = nongroundDepNodes[*en < reg->ogatoms.getSize() ? reg->ogatoms.getIDByAddress(*en) : reg->onatoms.getIDByAddress(*en - reg->ogatoms.getSize())];
+										if (boost::edge(cn, cn, nongroundDepGraph).second){
+											DBGLOG(DBG, "Yes");
+											dep = true;
+											break;
+										}
+										en++;
+									}
 								}
-								break;
+								if (dep) {
+									DBGLOG(DBG, "Ground atoms " << at1adr << " and " << at2adr << " are dependent using nonground information");
+									DBGLOG(DBG, "Adding dependency from " << at1adr << " to " << at2adr << (nongroundDepSCCECycle[i] ? " (this is an e-edge)" : " (this is an ordinary edge)"));
+									boost::add_edge(depNodes[at1adr], depNodes[at2adr], depGraph);
+									if (nongroundDepSCCECycle[i]){
+										externalEdges.push_back(std::pair<IDAddress, IDAddress>(at1adr, at2adr));
+									}
+									break;
+								}else{
+									DBGLOG(DBG, "Ground atoms " << at1adr << " and " << at2adr << " do not depend on each other because they unify only with the same non-reflexive atom in the SCC");
+								}
 							}
 						}
 					}
