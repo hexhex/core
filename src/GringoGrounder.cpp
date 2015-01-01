@@ -984,7 +984,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 						ogatom.text = ctx.registry()->terms.getByID(unsatPred).symbol;
 						ogatom.kind |= ID::PROPERTY_AUX;
-						ogatom.tuple.push_back(unsatPredicate);
+						ogatom.tuple.push_back(unsatPred);
 						ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
 						if (aid == ID_FAIL){
 							aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
@@ -1177,7 +1177,7 @@ GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, Int
 
 Output *GringoGrounder::output()
 {
-	return new GroundHexProgramBuilder(ctx, groundProgram, intPred, anonymousPred);
+	return new GroundHexProgramBuilder(ctx, groundProgram, intPred, unsatPred, anonymousPred);
 }
 
 const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
