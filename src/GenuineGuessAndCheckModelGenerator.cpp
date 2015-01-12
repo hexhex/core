@@ -1073,7 +1073,7 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	while (en < en_end){
 		DBGLOG(DBG, "Processind EDB fact " << *en);
 		ID id = reg->ogatoms.getIDByAddress(*en);
-		newEdb->setFact(hookAtoms.find(id) != hookAtoms.end() ? hookAtoms[id] : *en);
+		newEdb->setFact(hookAtoms.find(id) != hookAtoms.end() ? hookAtoms[id].address : *en);
 		en++;
 	}
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){

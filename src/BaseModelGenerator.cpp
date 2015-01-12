@@ -964,7 +964,10 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
       if (!b.isNaf() && b.isExternalAtom()){
         const ExternalAtom& ea = reg->eatoms.getByID(b);
 
-          if (ctx.liberalSafetyChecker->isExternalAtomNecessaryForDomainExpansionSafety(b)){
+          // ground external atoms are always added to prevent rules from being eliminated
+          std::set<ID> vars;
+          reg->getOutVariablesInID(b, vars);
+          if (vars.size() == 0 || ctx.liberalSafetyChecker->isExternalAtomNecessaryForDomainExpansionSafety(b)){
 			bool isOuterEatom = (std::find(outerEatoms.begin(), outerEatoms.end(), ID::atomFromLiteral(b)) != outerEatoms.end());
 
             // print a warning if there is a nonmonotonic external atom which is necessary for de-safety, because this makes grounding really slow
@@ -1049,7 +1052,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
           }
       }
     }
-    if (ruleDom.body.size() > 0 && ruleExpl.body.size() > 0){
+//    if (ruleDom.body.size() > 0 && ruleExpl.body.size() > 0){
       ID ruleDomID = reg->storeRule(ruleDom);
       ID ruleExplID = reg->storeRule(ruleExpl);
 #ifndef NDEBUG
@@ -1067,7 +1070,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 #endif
       idbWithDomainPredicates.push_back(ruleDomID);
       deidb.push_back(ruleExplID);
-    }
+//    }
   }
 
   // update the original IDB

@@ -375,7 +375,7 @@ void AnnotatedGroundProgram::initialize(){
 void AnnotatedGroundProgram::computeAtomDependencyGraph(){
 
 	// construct atom dependency graph
-	DBGLOG(DBG, "Contructing atom dependency graph for " << groundProgram.idb.size() << " rules");
+	DBGLOG(DBG, "Constructing atom dependency graph for " << groundProgram.idb.size() << " rules");
 	bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
 	while (en < en_end){
@@ -438,7 +438,7 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 
 	// Construct a nonground atom dependency graph
 	// Note: This graph is of a different kind from the one used in the very first HEX algorithm (which is still somewhere in the code) as it uses only positive and a different kind of external dependencies
-	DBGLOG(DBG, "Contructing nonground atom dependency graph for " << dependencyIDB.size() << " rules");
+	DBGLOG(DBG, "Constructing nonground atom dependency graph for " << dependencyIDB.size() << " rules and EDB " << *groundProgram.edb);
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ID> NongroundGraph;
 	typedef std::pair<ID, Node> Pair;
 	NongroundGraph nongroundDepGraph;
@@ -446,10 +446,12 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 	bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
 	while (en < en_end){
+		DBGLOG(DBG, "Retrieving ground atom " << *en);
 		ID id = reg->ogatoms.getIDByAddress(*en);
 		if (nongroundDepNodes.find(id) == nongroundDepNodes.end()) nongroundDepNodes[id] = boost::add_vertex(id, nongroundDepGraph);
 		en++;
 	}
+	DBGLOG(DBG, "Analyzing IDB");
 	std::vector<std::pair<ID, ID> > nongroundExternalEdges;
 	BOOST_FOREACH (ID ruleID, dependencyIDB){
 		const Rule& rule = reg->rules.getByID(ruleID);
@@ -500,6 +502,7 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 	}
 
 	// for all pairs of distinct nonground atoms we also need unification dependencies! (this is different from the ground case)
+	DBGLOG(DBG, "Adding unification edges");
 	BOOST_FOREACH (Pair p1, nongroundDepNodes){
 		BOOST_FOREACH (Pair p2, nongroundDepNodes){
 			if (p1.first != p2.first && p1.first.isOrdinaryNongroundAtom() && p2.first.isOrdinaryNongroundAtom()){
@@ -514,6 +517,7 @@ void AnnotatedGroundProgram::computeAdditionalDependencies(){
 	}
 
 	// compute SCC decomposition of the nonground graph
+	DBGLOG(DBG, "Computing SCC decomposition");
 	std::vector<int> nongroundComponentMap(nongroundDepNodes.size());
 	int num = boost::strong_components(nongroundDepGraph, boost::make_iterator_property_map(nongroundComponentMap.begin(), get(boost::vertex_index, nongroundDepGraph)));
 
