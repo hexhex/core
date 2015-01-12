@@ -1195,9 +1195,11 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 					en++;
 				}
 
+				typedef std::pair<IDAddress, bool> Pair;
 				if (!enumerateNonmonotonic) {
 					// evalute external atom
 					DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input << " (do not enumerate nonmonotonic input assignments due to user request)");
+					BOOST_FOREACH (Pair p, nonmonotonicinput) input->clearFact(p.first);
 					evaluateExternalAtom(ctx, ea, input, cb);
 				}else{
 					DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
@@ -1206,7 +1208,6 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 					{
 						// set nonmonotonic input
 						allOnes = true;
-						typedef std::pair<IDAddress, bool> Pair;
 						BOOST_FOREACH (Pair p, nonmonotonicinput){
 							if (p.second) input->setFact(p.first);
 							else{

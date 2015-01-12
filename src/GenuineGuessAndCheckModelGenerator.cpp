@@ -352,7 +352,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
 				const ComponentGraph::ComponentInfo& ci = subcompgraph->getComponentInfo(*comp);
 				DBGLOG(DBG, "Grounding component " << nr << " to bootstrap incremental grounding");
-				domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, postprocessedInput, gxidbPerComponent[nr], factory.deidbInnerEatoms);
+				domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, postprocessedInput, gxidbPerComponent[nr], factory.deidbInnerEatoms, false);
 				domainMaskPerComponent[nr]->updateMask();
 				expandedComponents.push_back(nr);
 			}
