@@ -1049,7 +1049,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
           }
       }
     }
-    if (ruleDom.body().size() > 0 && ruleExpl.body.size() > 0){
+    if (ruleDom.body.size() > 0 && ruleExpl.body.size() > 0){
       ID ruleDomID = reg->storeRule(ruleDom);
       ID ruleExplID = reg->storeRule(ruleExpl);
 #ifndef NDEBUG
