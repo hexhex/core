@@ -935,7 +935,7 @@ void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 }
 
 Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
-	DBGLOG(DBG, "Translating HEX address " << addr << " to clasp");
+//	DBGLOG(DBG, "Translating HEX address " << addr << " to clasp");
 	if (!isMappedToClaspLiteral(addr)){
 		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
 		Clasp::Literal clasplit(c, inverseLits);
@@ -945,9 +945,9 @@ Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool regi
 		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
 #endif
 		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-		DBGLOG(DBG, "Creating new clasp variable " << hexToClaspSolver[addr].var() << " for HEX address " << addr);
-	}else{
-		DBGLOG(DBG, "Mapping to " << hexToClaspSolver[addr].var() << " already exists");
+//		DBGLOG(DBG, "Creating new clasp variable " << hexToClaspSolver[addr].var() << " for HEX address " << addr);
+//	}else{
+//		DBGLOG(DBG, "Mapping to " << hexToClaspSolver[addr].var() << " already exists");
 	}
 	assert(addr < hexToClaspSolver.size());
 	assert(hexToClaspSolver[addr] != noLiteral);

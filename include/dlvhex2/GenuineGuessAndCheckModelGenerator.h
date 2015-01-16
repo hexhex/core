@@ -110,6 +110,7 @@ protected:
 
   // incremental solving
   //	sub-component management for regrounding
+  bool groundingIsComplete;
   ComponentGraphPtr subcompgraph;
   std::vector<PredicateMaskPtr> domainMaskPerComponent;
   std::vector<std::vector<ID> > gxidbPerComponent;
@@ -194,11 +195,11 @@ protected:
   /**
    * Checks if the domain of external atoms needs to be expanded wrt. a given compatible set.
    * If this is the case, then the domain predicates are extended accordingly.
-   * @param model The compatible set used for domain expansion.
    * @param expandedComponents The indices of all expanded components will be added to this vector.
+   * @param model The compatible set used for domain expansion; if no model is specified, then the program is exhaustively grounded.
    * \return True if the domain needs to be expanded and false otherwise.
    */
-  bool incrementalDomainExpansion(InterpretationConstPtr model, std::vector<int>& expandedComponents);
+  bool incrementalDomainExpansion(std::vector<int>& expandedComponents, InterpretationConstPtr model = InterpretationConstPtr());
 
   /**
    * Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).

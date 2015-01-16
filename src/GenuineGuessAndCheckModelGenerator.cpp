@@ -228,11 +228,14 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     }
 
     // compute extensions of domain predicates and add it to the input
+    groundingIsComplete = true; // usually we compute the full grounding in advance, except if incremental grounding is used (see below)
     if (factory.ctx.config.getOption("LiberalSafety")){
 		if (!factory.ctx.config.getOption("IncrementalGrounding")){
 			InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms);
 			postprocInput->add(*domPredictaesExtension);
 		}else{
+			groundingIsComplete = false;
+
 			DBGLOG(DBG, "Creating subcomponent graph");
 			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
 			std::vector<dlvhex::ID> idbWithoutAuxRules;
@@ -526,6 +529,47 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 		if( !modelCandidate )
 		{
+			// Current program is inconsistent, but it might be the case that it has answer sets if the grounding is expanded.
+			// Now it is time to compute the full grounding to make sure that we do not miss answer sets.
+			// Note that the grounding is already expanded during the search if true external atoms, which have not been included in the grounding, are detected.
+			// However, while this might help to find some answer sets without computing the full grounding (it thus might reduce the time to first model),
+			// it is in general not sufficient to find all answer sets.
+			if (factory.ctx.config.getOption("IncrementalGrounding") && !groundingIsComplete){
+				LOG(DBG,"current grounding unsatisfiable, but incremental grounding is used -> checking if domain needs to be expanded");
+
+				InterpretationPtr postprocInput(new Interpretation(reg));
+				postprocInput->add(*postprocessedInput);
+				int inpSize = postprocInput->getStorage().count();
+				InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocessedInput, factory.deidb, factory.deidbInnerEatoms);
+				postprocInput->add(*domPredictaesExtension);
+				postprocessedInput = postprocInput;
+				if (postprocInput->getStorage().count() > inpSize){
+					DBGLOG(DBG, "Expanding program and restarting search");
+
+					OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
+					// append gidb to xidb
+					program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
+
+					DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+					grounder = GenuineGrounder::getInstance(factory.ctx, program);
+					annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+
+					solver = GenuineGroundSolver::getInstance(
+						factory.ctx, annotatedGroundProgram,
+						frozenHookAtoms,
+						// do the UFS check for disjunctions only if we don't do
+						// a minimality check in this class;
+						// this will not find unfounded sets due to external sources,
+						// but at least unfounded sets due to disjunctions
+						!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+
+					for (int i = 0; i < factory.innerEatoms.size(); ++i) eaEvaluated[i] = eaVerified[i] = false;
+				}
+
+				groundingIsComplete = true;
+				continue;
+			}
+
 			LOG(DBG,"unsatisfiable -> returning no model");
 			return InterpretationPtr();
 		}
@@ -577,7 +621,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		if (factory.ctx.config.getOption("IncrementalGrounding")){
 			DBGLOG(DBG, "Sending candidate to possible domain expansion: " << *modelCandidate);
 			std::vector<int> expandedComponents;
-			if (incrementalDomainExpansion(modelCandidate, expandedComponents)){
+			if (incrementalDomainExpansion(expandedComponents, modelCandidate)){
 				DBGLOG(DBG, "Expanding program and restarting search");
 				incrementalProgramExpansion(expandedComponents);
 				buildFrozenHookAtomAssumptions();
@@ -869,7 +913,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	assert (false);
 }
 
-bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(InterpretationConstPtr model, std::vector<int>& expandedComponents){
+bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(std::vector<int>& expandedComponents, InterpretationConstPtr model){
 
 	bool expanded = false;
 
@@ -883,7 +927,7 @@ bool GenuineGuessAndCheckModelGenerator::incrementalDomainExpansion(Interpretati
 		// check if there are new domain atoms for this component
 		DBGLOG(DBG, "Checking if component " << nr << " needs to be expanded");
 		int oldDomainAtomCount = domainMaskPerComponent[nr]->mask()->getStorage().count();
-		domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, model, gxidbPerComponent[nr], factory.deidbInnerEatoms, false);
+		domainAtomsFromCurrentEA = computeExtensionOfDomainPredicates(ci, factory.ctx, !!model ? model : postprocessedInput, gxidbPerComponent[nr], factory.deidbInnerEatoms, !model);
 		domainMaskPerComponent[nr]->updateMask();
 		int newDomainAtomCount = domainMaskPerComponent[nr]->mask()->getStorage().count();
 		assert (newDomainAtomCount >= oldDomainAtomCount && "number of domain atoms decreased");
