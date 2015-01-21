@@ -782,7 +782,7 @@ bool ID_isTrue(ID* this_){
 }
 
 bool isFalse(ID id) {
-	if (isAssigned(id) && emb_query->interpretation->getFact(id.address)) return true;
+	if (isAssigned(id) && !emb_query->interpretation->getFact(id.address)) return true;
 	else return false;
 }
 
