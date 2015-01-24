@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("UFSCheckAssumptionBased", 1);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
-  pctx.config.setOption("ExternalLearning", 0);
+  pctx.config.setOption("ExternalLearning", 1);
   pctx.config.setOption("UFSLearning", 1);
   pctx.config.setOption("UFSLearnStrategy", 2);
   pctx.config.setOption("ExternalLearningIOBehavior", 1);
