@@ -2394,6 +2394,42 @@ public:
   }
 };
 
+class TestGen2Atom:      // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestGen2Atom(std::string name, int arity):
+    PluginAtom(name, false)
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    for (int i = 0; i < arity; ++i) addInputConstant();
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	OrdinaryAtom myat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+	myat.tuple = query.input;
+
+        // find relevant input
+	bool match = false;
+        bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+        while (en < en_end){
+
+                if (getRegistry()->ogatoms.getByAddress(*en).unifiesWith(myat)){
+			match = true;
+			break;
+		}
+		en++;
+        }
+        Tuple tu;
+        if (match) answer.get().push_back(tu);
+  }
+};
+
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2444,6 +2480,9 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestDLSimulatorAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestCautiousQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestBraveQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen1", 1), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen2", 2), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen3", 3), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

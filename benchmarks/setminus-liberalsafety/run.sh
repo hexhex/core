@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "{1..20}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
-	confstr="--extlearn --flpcheck=aufs prog$instance.hex;--extlearn --flpcheck=aufs --liberalsafety prognd$instance.hex"
+	confstr="--extlearn --flpcheck=aufs --ufslearn=none prog$instance.hex;--extlearn --flpcheck=aufs --ufslearn=none --liberalsafety prognd$instance.hex"
 
 	inststr=`printf "%03d" ${instance}`
 

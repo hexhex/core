@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "{1..20}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
-	confstr=";--extlearn;--welljustified;-n=1;--extlearn -n=1;--welljustified -n=1"
+	confstr="--extlearn=none --ufslearn=none;--extlearn --ufslearn=none;--welljustified;--extlearn=none --ufslearn=none -n=1;--extlearn --ufslearn=none -n=1;--welljustified -n=1"
 
 	# write instance file
 	inststr=`printf "%03d" ${instance}`
