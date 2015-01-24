@@ -1158,6 +1158,14 @@ void processOptionsPrePlugin(
 
 		case 18:
 			{
+				// overwrite default settings: assume that nothing is enabled
+                                pctx.config.setOption("ExternalLearningIOBehavior", 0);
+                                pctx.config.setOption("ExternalLearningMonotonicity", 0);
+                                pctx.config.setOption("ExternalLearningFunctionality", 0);
+                                pctx.config.setOption("ExternalLearningLinearity", 0);
+                                pctx.config.setOption("ExternalLearningNeg", 0);
+                                pctx.config.setOption("ExternalLearningUser", 0);
+
 				bool noneToken = false;
 				bool enableToken = false;
 				if (optarg){
@@ -1171,12 +1179,6 @@ void processOptionsPrePlugin(
 						const std::string& token = *f;
 						if (token == "none" )
 						{
-							pctx.config.setOption("ExternalLearningIOBehavior", 0);
-							pctx.config.setOption("ExternalLearningMonotonicity", 0);
-							pctx.config.setOption("ExternalLearningFunctionality", 0);
-							pctx.config.setOption("ExternalLearningLinearity", 0);
-							pctx.config.setOption("ExternalLearningNeg", 0);
-							pctx.config.setOption("ExternalLearningUser", 0);
 							noneToken = true;
 						}
 						else if (token == "iobehavior" )
