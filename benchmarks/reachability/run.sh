@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "instances/*.graph" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
-	confstr="--extlearn --flpcheck=aufs --ufslearn=none --liberalsafety reachability.hex -n=1;--extlearn --flpcheck=aufs --ufslearn=none reachability_strongsafety.hex -n=1"
+	confstr="--extlearn --flpcheck=aufs --ufslearn=none --liberalsafety reachability.hex -n=1;--extlearn --flpcheck=aufs --ufslearn=none --strongsafety reachability_strongsafety.hex -n=1"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
 fi

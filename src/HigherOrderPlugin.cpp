@@ -554,7 +554,8 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 		// disable strong safety check (sorry, at the moment there is no other way
 		// because the strong safety check is too naive)
 		ctx.config.setOption("SkipStrongSafetyCheck",1);
-		LOG(WARNING,"disabled strong safety check due to higher order rewriting");
+                ctx.config.setOption("LiberalSafety",0);
+		LOG(WARNING,"disabled liberal safety and strong safety check due to higher order rewriting");
 	}
 }
 

@@ -214,8 +214,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
-      << "     --liberalsafety" << std::endl
-      << "                      Uses more liberal safety conditions than strong safety" << std::endl
+      << "     --strongsafety   Applies traditional strong safety criteria (default)" << std::endl
+      << "     --liberalsafety  Uses more liberal safety conditions than strong safety" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -821,6 +821,7 @@ void processOptionsPrePlugin(
 		{ "forcegc", no_argument, 0, 49 },
 		{ "incremental", no_argument, 0, 50 },
 		{ "pythonmain", required_argument, 0, 51 },
+                { "strongsafety", no_argument, 0, 52 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -833,6 +834,7 @@ void processOptionsPrePlugin(
   bool defiaux = false;
   bool iaux = false;
   bool heuristicChosen = false;
+  bool heuristicMonolithic = false;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -916,7 +918,7 @@ void processOptionsPrePlugin(
 				else if( heuri == "monolithic" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
-					pctx.config.setOption("IncludeAuxInputInAuxiliaries",1);
+					heuristicMonolithic = true;
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
@@ -1411,7 +1413,6 @@ void processOptionsPrePlugin(
 
 		case 33:
 			pctx.config.setOption("LiberalSafety", 1);
-			pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
 			break;
 
 		case 35:
@@ -1509,6 +1510,8 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("HavePythonMain", 1);
 			break;
 #endif
+                case 52:
+                        pctx.config.setOption("LiberalSafety", 0);
 		}
 	}
 
@@ -1519,12 +1522,13 @@ void processOptionsPrePlugin(
 		pctx.config.setOption("UFSCheck", 0);
 	}
 	if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver")){
-		throw GeneralError("Liberal safety is only supported for genuine solvers");
+		std::cerr << "Liberal safety is only supported for genuine solvers, will disable it";
+		pctx.config.setOption("LiberalSafety", 0);
 	}
 	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
 		LOG(WARNING, "Model caching (modelqueuesize) is only compatible with clasp backend");
 	}
-	if (pctx.config.getOption("GenuineSolver")){
+	if (pctx.config.getOption("GenuineSolver") || pctx.config.getOption("LiberalSafety") || heuristicMonolithic){
 		pctx.config.setOption("IncludeAuxInputInAuxiliaries", 1);
 	}
 	if (defiaux){
