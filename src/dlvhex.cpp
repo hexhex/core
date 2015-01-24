@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
-  pctx.config.setOption("LiberalSafety",0);
+  pctx.config.setOption("LiberalSafety",1);
   pctx.config.setOption("LiberalSafetyNullFreezeCount",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("WellJustified",0);
