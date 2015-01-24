@@ -159,7 +159,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
       << "     --extlearn[=none,iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
-      << "                        none (default): Deactivate external learning" << std::endl
+      << "                        none: Deactivate external learning" << std::endl
       << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
@@ -192,9 +192,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        (same as --flpcriterion=none)" << std::endl
       << "     --ufslearn=[none,reduct,ufs]" << std::endl
       << "                      Enable learning from UFS checks (only useful with --flpcheck=[a]ufs[m])" << std::endl
-      << "                        none (default): No learning" << std::endl
+      << "                        none: No learning" << std::endl
       << "                        reduct: Learning is based on the FLP-reduct" << std::endl
-      << "                        ufs: Learning is based on the unfounded set" << std::endl
+      << "                        ufs (default): Learning is based on the unfounded set" << std::endl
       << "     --eaevalheuristics=[always,inputcomplete,eacomplete,post,never]" << std::endl
       << "                      Selects the heuristic for external atom evaluation" << std::endl
       << "                      always: Evaluate whenever possible" << std::endl
@@ -414,14 +414,14 @@ int main(int argc, char *argv[])
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
-  pctx.config.setOption("UFSLearning", 0);
+  pctx.config.setOption("UFSLearning", 1);
   pctx.config.setOption("UFSLearnStrategy", 2);
-  pctx.config.setOption("ExternalLearningIOBehavior", 0);
-  pctx.config.setOption("ExternalLearningMonotonicity", 0);
-  pctx.config.setOption("ExternalLearningFunctionality", 0);
-  pctx.config.setOption("ExternalLearningLinearity", 0);
-  pctx.config.setOption("ExternalLearningNeg", 0);
-  pctx.config.setOption("ExternalLearningUser", 0);
+  pctx.config.setOption("ExternalLearningIOBehavior", 1);
+  pctx.config.setOption("ExternalLearningMonotonicity", 1);
+  pctx.config.setOption("ExternalLearningFunctionality", 1);
+  pctx.config.setOption("ExternalLearningLinearity", 1);
+  pctx.config.setOption("ExternalLearningNeg", 1);
+  pctx.config.setOption("ExternalLearningUser", 1);
   pctx.config.setOption("ExternalLearningGeneralize", 0);
   pctx.config.setOption("AlwaysEvaluateAllExternalAtoms", 0);
   pctx.config.setOption("NongroundNogoodInstantiation", 0);
