@@ -126,7 +126,7 @@ public:
   static ID getOutputAtom(const PluginAtom::Query& query, const Tuple& i, const Tuple& o, bool sign);
 
   /**
-   * \brief Parses a learning rule, checks if it is valid learning rule (i.e. it is of the kind as described in the explanation of learnFromRule),
+   * \brief Parses a learning rule, checks if it is valid learning rule (that is, if it is of the kind as described in the explanation of learnFromRule),
    *        and returns its ID; if the parser or the validity check fails, ID_FAIL is returned.
    * @param ctx Modifiable pointer to the program context
    * @param learningrule String representation of a (possibly nonground) learning rule

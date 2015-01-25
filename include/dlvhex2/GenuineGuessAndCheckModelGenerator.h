@@ -165,15 +165,22 @@ protected:
   /**
    * \brief Triggern nonground nogood learning and instantiation.
    * 
+   * @param compatibleSet Current compatible set.
+   * @param assigned Set of currently assigned atoms or NULL to represent a complete assignment (optimization).
+   * @param changed Set of atoms which possibly changes since the previous call (optimization)
+   *
    * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly.
    */
-  void updateEANogoods(InterpretationConstPtr compatibleSet = InterpretationConstPtr(), InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+  void updateEANogoods(InterpretationConstPtr compatibleSet, InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
    * \brief Checks after completion of an assignment if it is compatible.
    *
    * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
    * of previously recorded verfication results are used to compute the return value.
+   *
+   * @param modelCandidate The model candidate to check for compatibility
+   * @return True if compatibel and false otherwise.
    */
   bool finalCompatibilityCheck(InterpretationConstPtr modelCandidate);
 
@@ -183,16 +190,22 @@ protected:
    * The details depend on the selected semantics (well-justified FLP or FLP) and the selected algorithm (explicit or ufs-based).
    * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
    * of previously recorded verfication results are used to compute the return value.
+   *
+   * @param compatibleSet The model candidate to check for minimality.
+   * @return True if \p compatibleSet is an answer set and false otherwise.
    */
   bool isModel(InterpretationConstPtr compatibleSet);
 
   /**
-   * \brief Adds hook rules for all atoms in the annotatedGroundProgram.
+   * \brief Adds hook rules for all atoms in the annotatedGroundProgram to allow for incremental extension.
+   *
+   * The method adds for all atoms "a" in the ground program rules of type "a :- a'" where "a'" is a new atom;
+   * this allows for defining "a" in a later incremental step.
    */
   void addHookRules();
 
   /**
-   * \brief Resets vector "hookAssumptions" and then adds assumptions such that all atoms in "frozenHookAtoms" are false.
+   * \brief Resets vector "hookAssumptions" and then adds assumptions such that all atoms in GenuineGuessAndCheckModelGenerator::frozenHookAtoms are false.
    */
   void buildFrozenHookAtomAssumptions();
 
@@ -203,7 +216,7 @@ protected:
    *
    * @param expandedComponents The indices of all expanded components will be added to this vector.
    * @param model The compatible set used for domain expansion; if no model is specified, then the program is exhaustively grounded.
-   * \return True if the domain needs to be expanded and false otherwise.
+   * @return True if the domain needs to be expanded and false otherwise.
    */
   bool incrementalDomainExpansion(std::vector<int>& expandedComponents, InterpretationConstPtr model = InterpretationConstPtr());
 
@@ -316,7 +329,16 @@ protected:
   void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 
 public:
+  /**
+   * \brief Constructor.
+   * @param factory Reference to the factory which created this model generator.
+   * @param input Input interpretation to this model generator.
+   */
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
+
+  /**
+   * \brief Destuctor.
+   */
   virtual ~GenuineGuessAndCheckModelGenerator();
 
   // generate and return next model, return null after last model

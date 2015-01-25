@@ -57,6 +57,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/**
+  * \brief Stores meta information about a ground program, including mappings of external atom auxiliaries to external atoms.
+  */
 class DLVHEX_EXPORT AnnotatedGroundProgram{
 
 	ProgramCtx* ctx;
@@ -113,11 +116,11 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 public:
 	AnnotatedGroundProgram();
 	/**
-	 * Analyzes a ground program and stored meta information.
-	 * @input ctx ProgramCtx
-	 * @input groundProgram The ground program to analyze
-	 * @input indexedEatoms The set of relevant external atoms, i.e., the external atoms meta information shall be generated for
-	 * @input dependencyIDB A (possibly nonground) IDB whose rules define possible additional dependencies if the set of facts is extended.
+	 * \brief Analyzes a ground program and stored meta information.
+	 * @param ctx ProgramCtx
+	 * @param groundProgram The ground program to analyze
+	 * @param indexedEatoms The set of relevant external atoms, i.e., the external atoms meta information shall be generated for
+	 * @param dependencyIDB A (possibly nonground) IDB whose rules define possible additional dependencies if the set of facts is extended.
 	 *                               The class will consider atoms as dependent if they might become dependent with future domain expansions.
 	 *                               Thus allows for extended the AnnotatedGroundProgram without rearranging SCCs.
 	 *
@@ -133,9 +136,17 @@ public:
 	 *                               In contrast, the dependency x -> p(1) will never hold, even if the domain is expanded.
 	 */
 	AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>(), std::vector<ID> dependencyIDB  = std::vector<ID>());
+
+	/**
+	 * \brief Analyzes a ground program and stored meta information.
+	 * @param ctx ProgramCtx
+	 * @param indexedEatoms The set of relevant external atoms, i.e., the external atoms meta information shall be generated for
+	 */
 	AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms);
 
-	/** Allows for incremental extension of a program.
+	/**
+	 * \brief Allows for incremental extension of a program.
+	 *
 	 * Note: This operation is only allowed if for all cyclically depending atoms a,b in the merged program, for each of the input programs either
 	 * (i) The cyclic dependency of a and b is already contained in the input program; or
 	 * (ii) None of the atoms a,b occurs in the input program.
