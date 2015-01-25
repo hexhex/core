@@ -373,7 +373,7 @@ class ExistsAtom : public PluginAtom
 		int arity;
 
 		// stores for each external atom and input tuple the associated output tuple of null terms
-		typedef std::pair<const ExternalAtom*, Tuple> ExistentialScope;
+		typedef std::pair<ID, Tuple> ExistentialScope;
 		boost::unordered_map<ExistentialScope, Tuple> nullTerms;
 
 		std::string getName(std::string f, int ar){
@@ -399,7 +399,7 @@ class ExistsAtom : public PluginAtom
 			Registry &registry = *getRegistry();
 
 			// check if there is already a tuple of null terms associated with the current external atom and input tuple
-			ExistentialScope key(query.eatom, query.input);
+			ExistentialScope key(query.eatomID, query.input);
 			if (nullTerms.find(key) == nullTerms.end()){
 				// create a new null term for each output position
 				Tuple tuple;

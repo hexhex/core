@@ -62,8 +62,8 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
 	}
 
 	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
-	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
+	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
 
 	Nogood extNgInput;
 
@@ -101,12 +101,12 @@ Set<ID> ExternalLearningHelper::getOutputAtoms(const PluginAtom::Query& query, c
 	// construct replacement atom
 	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
 	replacement.tuple.resize(1);
-	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
+	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
 	
-	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
+	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate != ID_FAIL){
 //		replacement.tuple.push_back(query.ctx->registry()->storeVariableTerm("X"));
 //		replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-		replacement.tuple.push_back(query.eatom->auxInputPredicate);
+		replacement.tuple.push_back(query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate);
 	}
 	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
 	int s = replacement.tuple.size();
@@ -134,11 +134,11 @@ ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, Tuple o
 	if (ground) replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
 	else replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
 	replacement.tuple.resize(1);
-	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
-	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
+	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
+	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate != ID_FAIL){
 //		replacement.tuple.push_back(query.ctx->registry()->storeVariableTerm("X"));
 //		replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-		replacement.tuple.push_back(query.eatom->auxInputPredicate);
+		replacement.tuple.push_back(query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate);
 	}
 	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
 	int s = replacement.tuple.size();
@@ -161,11 +161,11 @@ ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, const T
 	if (ground) replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
 	else replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
 	replacement.tuple.resize(1);
-	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
-	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.eatom->auxInputPredicate != ID_FAIL){
+	replacement.tuple[0] = query.ctx->registry()->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
+	if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries") && query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate != ID_FAIL){
 //		replacement.tuple.push_back(query.ctx->registry()->storeVariableTerm("X"));
 //		replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-		replacement.tuple.push_back(query.eatom->auxInputPredicate);
+		replacement.tuple.push_back(query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate);
 	}
 	replacement.tuple.insert(replacement.tuple.end(), ituple.begin(), ituple.end());
 	int s = replacement.tuple.size();
@@ -241,21 +241,19 @@ ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string lear
 void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp){
 
 	if (nogoods){
-		if (query.ctx->config.getOption("ExternalLearningIOBehavior")){
-			DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
+		DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
-			Nogood extNgInput;
-			if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true);
+		Nogood extNgInput;
+		if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true);
 
-			Set<ID> out = ExternalLearningHelper::getOutputAtoms(query, answer, false);
-			BOOST_FOREACH (ID oid, out){
-				Nogood extNg = !inp->dependsOnOutputTuple()
-						? extNgInput
-						: (*inp)(query, prop, true, query.ctx->registry()->ogatoms.getByID(oid).tuple);
-				extNg.insert(oid);
-				DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
-				nogoods->addNogood(extNg);
-			}
+		Set<ID> out = ExternalLearningHelper::getOutputAtoms(query, answer, false);
+		BOOST_FOREACH (ID oid, out){
+			Nogood extNg = !inp->dependsOnOutputTuple()
+					? extNgInput
+					: (*inp)(query, prop, true, query.ctx->registry()->ogatoms.getByID(oid).tuple);
+			extNg.insert(oid);
+			DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
+			nogoods->addNogood(extNg);
 		}
 	}
 }
@@ -263,40 +261,38 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
 void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, std::vector<Tuple>& recordedTuples, NogoodContainerPtr nogoods){
 
 	if (nogoods){
-		if (query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()){
-			DBGLOG(DBG, "External Learning: Functionality");
+		DBGLOG(DBG, "External Learning: Functionality");
 
-			// there is a unique output
-			const std::vector<Tuple>& otuples = answer.get();
+		// there is a unique output
+		const std::vector<Tuple>& otuples = answer.get();
 
-			if (otuples.size() > 0){
-				ID uniqueOut = ExternalLearningHelper::getOutputAtom(query, otuples[0], true);
+		if (otuples.size() > 0){
+			ID uniqueOut = ExternalLearningHelper::getOutputAtom(query, otuples[0], true);
 
-				// go through all output tuples which have been generated so far
-				BOOST_FOREACH (Tuple t, recordedTuples){
-					// compare the non-functional prefix
-					bool match = true;
-					for (int i = 0; i < prop.functionalStart; ++i){
-						if (otuples[0][i] != t[i]){
-							match = false;
-							break;
-						}
-					}
-					if (!match) continue;
-
-					ID id = ExternalLearningHelper::getOutputAtom(query, t, true);
-					if (id != uniqueOut){
-						Nogood excludeOthers;
-						excludeOthers.insert(uniqueOut);
-						excludeOthers.insert(id);
-						DBGLOG(DBG, "Learned nogood " << excludeOthers.getStringRepresentation(query.ctx->registry()) << " from functionality");
-						nogoods->addNogood(excludeOthers);
+			// go through all output tuples which have been generated so far
+			BOOST_FOREACH (Tuple t, recordedTuples){
+				// compare the non-functional prefix
+				bool match = true;
+				for (int i = 0; i < prop.functionalStart; ++i){
+					if (otuples[0][i] != t[i]){
+						match = false;
+						break;
 					}
 				}
+				if (!match) continue;
 
-				// remember that otuples[0] was generated
-				recordedTuples.push_back(otuples[0]);
+				ID id = ExternalLearningHelper::getOutputAtom(query, t, true);
+				if (id != uniqueOut){
+					Nogood excludeOthers;
+					excludeOthers.insert(uniqueOut);
+					excludeOthers.insert(id);
+					DBGLOG(DBG, "Learned nogood " << excludeOthers.getStringRepresentation(query.ctx->registry()) << " from functionality");
+					nogoods->addNogood(excludeOthers);
+				}
 			}
+
+			// remember that otuples[0] was generated
+			recordedTuples.push_back(otuples[0]);
 		}
 	}
 }
@@ -305,16 +301,14 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 
 	// learning of negative information
 	if (nogoods){ 
-	    if (query.ctx->config.getOption("ExternalLearningNeg")){
-
 		Nogood extNgInput;
 		if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false);
 
 		// iterate over negative output atoms
 		bm::bvector<>::enumerator en = query.extinterpretation->getStorage().first();
 		bm::bvector<>::enumerator en_end = query.extinterpretation->getStorage().end();
-		ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
-		ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.eatom->predicate);
+		ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
+		ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
 		while (en < en_end){
 			const OrdinaryAtom& atom = query.ctx->registry()->ogatoms.getByAddress(*en);
 			if (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate){
@@ -323,9 +317,9 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 				// compare auxiliary predicate input
 				int aux = 0;
 				if (query.ctx->config.getOption("IncludeAuxInputInAuxiliaries")){
-					if (query.eatom->auxInputPredicate != ID_FAIL){
+					if (query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate != ID_FAIL){
 						aux = 1;
-						if (atom.tuple[1] != query.eatom->auxInputPredicate) paramMatch = false; 
+						if (atom.tuple[1] != query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate) paramMatch = false; 
 					}
 				}
 				// compare other inputs
@@ -362,7 +356,6 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 			en++;
 		}
 	}
-    }
 }
 
 void ExternalLearningHelper::learnFromGroundRule(const PluginAtom::Query& query, ID groundRule, NogoodContainerPtr nogoods){

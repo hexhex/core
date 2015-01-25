@@ -404,18 +404,20 @@ ID BaseModelGenerator::VerifyExternalAtomCB::getFalsifiedAtom(){
 // (inputi and outputi may point to the same interpretation)
 
 bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
-  const ExternalAtom& eatom,
+  ID eatomID,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb,
   NogoodContainerPtr nogoods,
   InterpretationConstPtr assigned,
-  InterpretationConstPtr changed) const
+  InterpretationConstPtr changed,
+  bool* fromCache) const
 {
   LOG_SCOPE(PLUGIN,"eEA",false);
-  DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
+  DBGLOG(DBG,"= evaluateExternalAtom for " << eatomID <<
       " with input interpretation " << *inputi);
 
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
+  const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(eatomID);
 
   RegistryPtr reg = ctx.registry();
 
@@ -455,10 +457,10 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 	}
 
 	// XXX here we copy it, we should just reference it
-	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, &eatom, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
+	PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
 	// XXX make this part of constructor
 	query.extinterpretation = inputi;
-	return evaluateExternalAtomQuery(query, cb, nogoods);
+	return evaluateExternalAtomQuery(query, cb, nogoods, fromCache);
   }
   else
   {
@@ -493,9 +495,9 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
+			PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
 			query.extinterpretation = inputi;
-			if( ! evaluateExternalAtomQuery(query, cb, nogoods) )
+			if( ! evaluateExternalAtomQuery(query, cb, nogoods, fromCache) )
 				return false;
 		}
 	}
@@ -506,10 +508,11 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
 bool BaseModelGenerator::evaluateExternalAtomQuery(
 		PluginAtom::Query& query,
 	       	ExternalAnswerTupleCallback& cb,
-	       	NogoodContainerPtr nogoods) const {
+	       	NogoodContainerPtr nogoods,
+		bool* fromCache) const {
 	const ProgramCtx& ctx = *query.ctx;
 	const RegistryPtr reg = ctx.registry();
-	const ExternalAtom& eatom = *query.eatom;
+	const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(query.eatomID);
 	const Tuple& inputtuple = query.input;
 
 	if( Logger::Instance().shallPrint(Logger::PLUGIN) ) {
@@ -521,14 +524,8 @@ bool BaseModelGenerator::evaluateExternalAtomQuery(
 
     PluginAtom::Answer answer;
     assert(!!eatom.pluginAtom);
-    if( query.ctx->config.getOption("UseExtAtomCache") ){
-      eatom.pluginAtom->retrieveCached(query, answer, nogoods);
-    }
-    else
-    {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
-      eatom.pluginAtom->retrieve(query, answer, nogoods);
-    }
+    bool fromCache_ = eatom.pluginAtom->retrieveFacade(query, answer, nogoods, query.ctx->config.getOption("UseExtAtomCache"));
+    if (fromCache) *fromCache = fromCache_;
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if( !answer.get().empty() )
@@ -570,13 +567,14 @@ bool BaseModelGenerator::evaluateExternalAtomQuery(
 }
 
 void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
-    const ExternalAtom& eatom,
+    ID eatomID,
     NogoodContainerPtr nogoods) const{
 
   LOG_SCOPE(PLUGIN,"lSS",false);
-  DBGLOG(DBG,"= learnSupportSetsForExternalAtom for " << eatom);
+  DBGLOG(DBG,"= learnSupportSetsForExternalAtom for " << eatomID);
 
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidlss,"learn support sets for external atom");
+  const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(eatomID);
 
   RegistryPtr reg = ctx.registry();
 
@@ -603,7 +601,7 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
 
 	// prepare query
 	// XXX here we copy it, we should just reference it
-	PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), eatom.inputs, eatom.tuple, &eatom, pim);
+	PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), eatom.inputs, eatom.tuple, eatomID, pim);
 	// XXX make this part of constructor
 	query.extinterpretation = eatominp;
 	eatom.pluginAtom->learnSupportSets(query, nogoods);
@@ -630,7 +628,7 @@ void BaseModelGenerator::learnSupportSetsForExternalAtom(ProgramCtx& ctx,
 			const Tuple& inputtuple = eaitc.lookup(*bit);
 			// build query as reference to the storage in cache
 			// XXX here we copy, we could make it const ref in Query
-			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, &eatom);
+			PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, eatomID);
 			query.extinterpretation = eatominp;
 			eatom.pluginAtom->learnSupportSets(query, nogoods);
 		}
@@ -648,8 +646,7 @@ bool BaseModelGenerator::evaluateExternalAtoms(ProgramCtx& ctx,
 {
   BOOST_FOREACH(ID eatomid, eatoms)
   {
-    const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(eatomid);
-    if( !evaluateExternalAtom(ctx, eatom, inputi, cb, nogoods) )
+    if( !evaluateExternalAtom(ctx, eatomid, inputi, cb, nogoods) )
     {
       LOG(DBG,"callbacks aborted evaluateExternalAtoms");
       return false;
@@ -1205,7 +1202,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 					// evalute external atom
 					DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input << " (do not enumerate nonmonotonic input assignments due to user request)");
 					BOOST_FOREACH (Pair p, nonmonotonicinput) input->clearFact(p.first);
-					evaluateExternalAtom(ctx, ea, input, cb);
+					evaluateExternalAtom(ctx, eaid, input, cb);
 				}else{
 					DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
 					bool allOnes;
@@ -1223,7 +1220,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 
 						// evalute external atom
 						DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
-						evaluateExternalAtom(ctx, ea, input, cb);
+						evaluateExternalAtom(ctx, eaid, input, cb);
 
 						// enumerate next assignment to nonmonotonic input atoms
 						if (!allOnes){
@@ -1238,20 +1235,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
 							BOOST_FOREACH (IDAddress c, clear) nonmonotonicinput[c] = false;
 						}
 					}while(!allOnes);
-/*
-					}else{
-						// set nonmonotonic input
-						typedef std::pair<IDAddress, bool> Pair;
-						BOOST_FOREACH (Pair p, nonmonotonicinput){
-							if (edb->getFact(p.second)) input->setFact(p.first);
-							else input->clearFact(p.first);
-						}
 
-						// evalute external atom
-						DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
-						evaluateExternalAtom(ctx, ea, input, cb);
-					}
-*/
 					DBGLOG(DBG, "Enumerated all nonmonotonic input assignments to " << eaid);
 				}
 			}

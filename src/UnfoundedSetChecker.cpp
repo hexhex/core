@@ -240,7 +240,7 @@ bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
 	if (!!ngc && !!solver){
 		// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
 		int oldNogoodCount = ngc->getNogoodCount();
-		mg->evaluateExternalAtom(ctx, eatom, ufsVerStatus.eaInput, cb, ngc);
+		mg->evaluateExternalAtom(ctx, eaID, ufsVerStatus.eaInput, cb, ngc);
 		DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 		for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 
@@ -255,7 +255,7 @@ bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
 			}
 		}
 	}else{
-		mg->evaluateExternalAtom(ctx, eatom, ufsVerStatus.eaInput, cb);
+		mg->evaluateExternalAtom(ctx, eaID, ufsVerStatus.eaInput, cb);
 	}
 
 	// remove the external atom from the remaining lists of all auxiliaries which wait for the EA to be verified

@@ -543,8 +543,8 @@ class AggAtom : public PluginAtom
 			// we can answer the query separately for each key
 
 			// go through all input atoms
-			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+			bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end();
 
 			boost::unordered_map<Tuple, InterpretationPtr> subQueries;
 			while (en < en_end){
@@ -695,98 +695,8 @@ class SumAtom : public AggAtom
 				*returnValue += t[t.size() - 1].address;
 			}
 		}
-/*
-		class SumInputNogoodProvider : public ExternalLearningHelper::InputNogoodProvider{
-		private:
-			bool negate;
-			int arity;
-		public:
-			SumInputNogoodProvider(bool negate, int arity) : negate(negate), arity(arity) {}
-
-			Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const{
-
-				int functionValue = tuple[tuple.size() - 1].address;
-
-				// if the function does not deliver a certain value
-				if (!contained){
-					// try to collect input atoms such that their sum is larger than functionValue; then this set is a reason for the failure
-					bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-					bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-					Nogood ng;
-					int intermediateSum = 0;
-					while (en < en_end){
-						const OrdinaryAtom& ogatom = query.ctx->registry()->ogatoms.getByAddress(*en);
-						if (intermediateSum > functionValue) break;
-						bool match = (ogatom.tuple[0] == query.input[1]);
-						for (int i = 0; i < tuple.size() - 1; ++i){
-							if (ogatom.tuple[1 + i] != tuple[i]){
-								match = false;
-								break;
-							}
-						}
-						if (match){
-							ng.insert(NogoodContainer::createLiteral(*en, true));
-							intermediateSum += ogatom.tuple[1 + arity].address;
-						}
-						en++;
-					}
-					if (intermediateSum > functionValue){
-						return ng;
-					}else{
-						// all positive atoms together do not suffice to reach the desired sum;
-						// then the negative atoms form a reason for the failure
-						ng.clear();
-						bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
-						bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
-						while (en < en_end){
-							if (!query.interpretation->getFact(*en)){
-								const OrdinaryAtom& ogatom = query.ctx->registry()->ogatoms.getByAddress(*en);
-								bool match = (ogatom.tuple[0] == query.input[1]);
-								for (int i = 0; i < tuple.size() - 1; ++i){
-									if (ogatom.tuple[1 + i] != tuple[i]){
-										match = false;
-										break;
-									}
-								}
-								if (match){
-									ng.insert(NogoodContainer::createLiteral(*en, false));
-								}
-							}
-							en++;
-						}
-						return ng;
-					}
-				}
-
-				// default: take the whole input information
-				ExternalLearningHelper::DefaultInputNogoodProvider inp(negate);
-				return inp(query, prop, contained, tuple);
-			}
-		};
-*/
 
 	public:
-/*
-		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
-
-			const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
-
-			std::vector<Query> atomicQueries = splitQuery(query, prop);
-			DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
-			BOOST_FOREACH (Query atomicQuery, atomicQueries){
-				Answer atomicAnswer;
-				AggAtom::retrieve(atomicQuery, atomicAnswer);
-
-				ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, ExternalLearningHelper::InputNogoodProviderConstPtr(new SumInputNogoodProvider(true, arity)));
-				ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
-
-				// overall answer is the union of the atomic answers
-				answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
-			}
-
-			ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, ExternalLearningHelper::InputNogoodProviderConstPtr(new SumInputNogoodProvider(false, arity)));
-		}
-*/
 		SumAtom(int arity) : AggAtom("sum", arity) {}
 };
 

@@ -223,7 +223,8 @@ class PythonAtom : public PluginAtom
 				PythonAPI::emb_nogoods = nogoods;
 
 				DBGLOG(DBG, "Retrieving external source properties");
-				const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
+
+				const ExtSourceProperties& prop = query.ctx->registry()->eatoms.getByID(query.eatomID).getExtSourceProperties();
 
 				std::vector<Query> atomicQueries = splitQuery(query, prop);
 				DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
@@ -699,6 +700,10 @@ void output(boost::python::tuple args) {
 	emb_answer->get().push_back(outputTuple);
 }
 
+ID getExternalAtomID() {
+	return emb_query->eatomID;
+}
+
 boost::python::tuple getInputAtoms() {
 
 	bm::bvector<>::enumerator en = emb_query->predicateInputMask->getStorage().first();
@@ -830,6 +835,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtomWithSign);
 	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtom);
 	boost::python::def("output", PythonAPI::output);
+	boost::python::def("getExternalAtomID", PythonAPI::getExternalAtomID);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtomsOfPredicate);
 	boost::python::def("getTrueInputAtoms", PythonAPI::getTrueInputAtoms);

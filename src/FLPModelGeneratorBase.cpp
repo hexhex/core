@@ -881,7 +881,7 @@ FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx
 		InterpretationPtr eares = InterpretationPtr(new Interpretation(intr->getRegistry()));
 		IntegrateExternalAnswerIntoInterpretationCB cb(eares);
 		DBGLOG(DBG, "Calling EA with input: " << *eaInput);
-		evaluateExternalAtom(ctx, eatom, eaInput, cb);
+		evaluateExternalAtom(ctx, factory.innerEatoms[eaIndex], eaInput, cb);
 		if (!verified) verified = eares;
 		else verified->getStorage() &= eares->getStorage();
 		falsified->getStorage() -= eares->getStorage();

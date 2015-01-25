@@ -898,38 +898,6 @@ public:
     setOutputArity(1);
   }
 
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-	assert(false);	// this method should never be called
-
-	// find relevant input
-	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-
-	std::vector<Tuple> tuples1;
-	std::vector<Tuple> tuples2;
-	while (en < en_end){
-
-		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		Tuple tu;
-		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
-			tu.push_back(atom.tuple[i]);
-		}
-		if (atom.tuple[0] == query.input[0]){
-			tuples1.push_back(tu);
-		}
-		if (atom.tuple[0] == query.input[1]){
-			tuples2.push_back(tu);
-		}
-		en++;
-	}
-	BOOST_FOREACH (Tuple t, tuples1){
-		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
-			answer.get().push_back(t);
-		}
-	}
-  }
-
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
   {
 	static std::map<std::string, ID> ruleIDs;
@@ -1005,38 +973,6 @@ public:
     prop.monotonicInputPredicates.insert(0);
     prop.antimonotonicInputPredicates.insert(1);
     setOutputArity(1);
-  }
-
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-	assert(false);	// this method should never be called
-
-	// find relevant input
-	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-
-	std::vector<Tuple> tuples1;
-	std::vector<Tuple> tuples2;
-	while (en < en_end){
-
-		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		Tuple tu;
-		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
-			tu.push_back(atom.tuple[i]);
-		}
-		if (atom.tuple[0] == query.input[0]){
-			tuples1.push_back(tu);
-		}
-		if (atom.tuple[0] == query.input[1]){
-			tuples2.push_back(tu);
-		}
-		en++;
-	}
-	BOOST_FOREACH (Tuple t, tuples1){
-		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
-			answer.get().push_back(t);
-		}
-	}
   }
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
@@ -1122,38 +1058,6 @@ public:
     addInputPredicate();
     addInputPredicate();
     setOutputArity(1);
-  }
-
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-	assert(false);	// this method should never be called
-
-	// find relevant input
-	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-
-	std::vector<Tuple> tuples1;
-	std::vector<Tuple> tuples2;
-	while (en < en_end){
-
-		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		Tuple tu;
-		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
-			tu.push_back(atom.tuple[i]);
-		}
-		if (atom.tuple[0] == query.input[0]){
-			tuples1.push_back(tu);
-		}
-		if (atom.tuple[0] == query.input[1]){
-			tuples2.push_back(tu);
-		}
-		en++;
-	}
-	BOOST_FOREACH (Tuple t, tuples1){
-		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
-			answer.get().push_back(t);
-		}
-	}
   }
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
@@ -2319,7 +2223,6 @@ public:
   }
 
 
-// If there is a finstion with nogoods then the one without nogoods should never be called 
 // function that evaluates external atom with learning
 // input parameters: 
 // 1. Query is a class, defined in PluginInterface.h (struct DLVHEX_EXPORT Query)

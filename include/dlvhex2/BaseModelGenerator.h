@@ -213,25 +213,29 @@ protected:
   // calls eatom function with each input tuple
   // reintegrates output tuples as auxiliary atoms into outputi
   // (inputi and outputi may point to the same interpretation)
+  // fromCache may point to a boolean (or be 0) where the method stored whether the query was answered from cache
+  // 
   //
   // returns false if process was aborted by callback, true otherwise
   virtual bool evaluateExternalAtom(ProgramCtx& ctx,
-    const ExternalAtom& eatom,
+    ID eatomID,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
     NogoodContainerPtr nogoods = NogoodContainerPtr(),
     InterpretationConstPtr assigned = InterpretationConstPtr(),
-    InterpretationConstPtr changed = InterpretationConstPtr()) const;
+    InterpretationConstPtr changed = InterpretationConstPtr(),
+    bool* fromCache = 0) const;
   virtual bool evaluateExternalAtomQuery(
     PluginAtom::Query& query,
     ExternalAnswerTupleCallback& cb,
-    NogoodContainerPtr nogoods) const;
+    NogoodContainerPtr nogoods,
+    bool* fromCache = 0) const;
 
   // calculates constant input tuples from auxiliary input predicates and from given constants
   // calls eatom function with each input tuple and maximum input for support set learning
   // returns false if process was aborted by callback, true otherwise
   virtual void learnSupportSetsForExternalAtom(ProgramCtx& ctx,
-    const ExternalAtom& eatom,
+    ID eatomID,
     NogoodContainerPtr nogoods) const;
 
   // calls evaluateExternalAtom for each atom in eatoms

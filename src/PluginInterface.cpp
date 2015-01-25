@@ -188,7 +188,7 @@ PluginAtom::checkOutputArity(const ExtSourceProperties& prop, const unsigned ari
     return prop.hasVariableOutputArity() || (arity == outputSize);
 }
 
-
+/*
 void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom retrieveCached");
@@ -202,25 +202,6 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
   // The currently implemented "poor (wo)man's version" is:
   // * store answers in cache with queries as keys, disregard relations between patterns
   ///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
-
-#if 0
-  #include "dlvhex2/PrintVisitor.h"
-  #include <iostream>
-  std::cerr << "cache:" << std::endl;
-  for( QueryAnswerCache::const_iterator i = queryAnswerCache.begin(); i != queryAnswerCache.end(); ++i)
-  {
-	  std::cerr << "  query: <";
-	  RawPrintVisitor visitor(std::cerr);
-	  i->first.getInterpretation().accept(visitor);
-	  std::cerr << "|" << i->first.getInputTuple() << "|" << i->first.getPatternTuple() << ">" << std::endl;
-  }
-
-
-	  std::cerr << "retrieving query: <";
-	  RawPrintVisitor visitor(std::cerr);
-	  query.getInterpretation().accept(visitor);
-	  std::cerr << "|" << query.getInputTuple() << "|" << query.getPatternTuple() << ">";
-#endif
 
   boost::mutex::scoped_lock lock(cacheMutex);
 
@@ -239,28 +220,57 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
     // -> retrieve and replace in cache
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
-      #if 0
-      #ifndef NDEBUG
-      std::stringstream o;
-      RawPrinter printer(o, query.interpretation->getRegistry());
-      o << "retrieving for ";
-      printer.printmany(query.input, ",");
-      o << "/";
-      printer.printmany(query.pattern, ",");
-      o << "/" << *query.interpretation;
-      LOG(o.str());
-      #endif
-      #endif
       retrieve(query, ans);
       // if there was no answer, perhaps it has never been used, so we use it manually
       ans.use();
-      //LOG("after retrieve: answ is used = " << ans.hasBeenUsed());
     }
     answer = ans;
   }
 }
+*/
 
-void PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache)
+{
+	bool fromCache = false;
+
+	// split the query
+	const ExtSourceProperties& prop = query.ctx->registry()->eatoms.getByID(query.eatomID).getExtSourceProperties();
+
+	DBGLOG(DBG, "Splitting query");
+	std::vector<Query> atomicQueries = splitQuery(query, prop);
+	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
+	BOOST_FOREACH (Query atomicQuery, atomicQueries){
+		Answer atomicAnswer;
+		bool subqueryFromCache;
+		if (useCache){
+			subqueryFromCache = retrieveCached(atomicQuery, atomicAnswer, query.ctx->config.getOption("ExternalLearningUser") ? nogoods : NogoodContainerPtr());
+		}else{
+			subqueryFromCache = false;
+
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
+			retrieve(atomicQuery, atomicAnswer, query.ctx->config.getOption("ExternalLearningUser") ? nogoods : NogoodContainerPtr());
+		}
+
+		// learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
+		if (!subqueryFromCache){
+			if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods);
+			if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
+		}
+
+		// overall answer is the union of the atomic answers
+		DBGLOG(DBG, "Atomic query delivered " << atomicAnswer.get().size() << " tuples");
+		answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
+
+		// query counts as answered from cache if at least one subquery was answered from cache
+		fromCache |= subqueryFromCache;
+	}
+
+	if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
+
+	return fromCache;
+}
+
+bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
 {
 	DBGLOG(DBG, "Retrieve with learning, pointer to nogood container: " << (!nogoods ? "not " : "") << "available" );
 
@@ -301,6 +311,8 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 				for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
 			}
 		}
+
+		return true; // answered from cache
 	}
 	else
 	{
@@ -324,27 +336,18 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 			ans.use();
 		}
 		answer = ans;
+
+		return false; // not answered from cache
 	}
 }
 
 void PluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
+	DBGLOG(DBG, "Default implementation of PluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods): delegating the call to PluginAtom::retrieve(const Query& query, Answer& answer)");
+	retrieve(query, answer);
+}
 
-	const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
-
-	std::vector<Query> atomicQueries = splitQuery(query, prop);
-	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
-	BOOST_FOREACH (Query atomicQuery, atomicQueries){
-		Answer atomicAnswer;
-		retrieve(atomicQuery, atomicAnswer);
-
-		ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods);
-		ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
-
-		// overall answer is the union of the atomic answers
-		answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
-	}
-
-	ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
+void PluginAtom::retrieve(const Query& query, Answer& answer){
+	DBGLOG(DBG, "Default implementation of PluginAtom::retrieve(const Query& query, Answer& answer): doing nothing");
 }
 
 void PluginAtom::learnSupportSets(const Query&, NogoodContainerPtr nogoods){
@@ -353,14 +356,15 @@ void PluginAtom::learnSupportSets(const Query&, NogoodContainerPtr nogoods){
 
 std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const ExtSourceProperties& prop){
 
+	const ExternalAtom& eatom = query.ctx->registry()->eatoms.getByID(query.eatomID);
 	std::vector<Query> atomicQueries;
 	if ((prop.isLinearOnAtomLevel() || prop.isLinearOnTupleLevel()) && query.ctx->config.getOption("ExternalLearningLinearity")){
 
 		DBGLOG(DBG, "Splitting query by exploiting linearity");
 
 		if (prop.isLinearOnAtomLevel()){
-			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+			bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
 			while (en < en_end){
 				DBGLOG(DBG, "Creating partial query for input atom " << *en);
 				// create a partial query only for this input atom
@@ -374,8 +378,8 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
 		}
 		if (prop.isLinearOnTupleLevel()){
 			// collect all tuples
-			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+			bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
 
 			// extract tuples from atoms in input interpretation
 			std::set<Tuple> tuples;
@@ -427,7 +431,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
 							ID atomID = query.interpretation->getRegistry()->storeOrdinaryGAtom(atom);
 							DBGLOG(DBG, "Input atom: " << atomID);
 
-							if (query.eatom->getPredicateInputMask()->getFact(atomID.address)){
+							if (eatom.getPredicateInputMask()->getFact(atomID.address)){
 								qa.predicateInputMask->setFact(atomID.address);
 							}
 						}

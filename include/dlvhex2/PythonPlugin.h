@@ -166,6 +166,7 @@
  *   <li><em>bool learn(tup)</em>: Learns a nogood as a tuple of atom IDs or their negations \em tup; returns if learning was enabled.</li>
  *   <li><em>ID storeOutputAtom(args, [sign])</em>: Constructs an output atom from IDs or values \em args (for learning purposes) and its sign, where true (default) means positive and false means negative, and returns its ID.</li>
  *   <li><em>void output(args)</em>: Adds a tuple of IDs or values \em args to the external source output.</li>
+ *   <li><em>ID getExternalAtomID()</em>: Returns the ID of the currently evaluated external atom; the changed information (cf. hasChanged) is relative to the last call for the same external atom</li>
  *   <li><em>tuple getInputAtoms([pred])</em>: Returns a tuple of \em all input atoms (\em not only true ones!) to this external atom; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
  *   <li><em>tuple getTrueInputAtoms([pred])</em>: Returns a tuple of all input atoms to this external atom <em>which are currently true</em>; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
  *   <li><em>int getInputAtomCount()</em>: Returns the number of \em input atoms (\em not only true ones!).</li>

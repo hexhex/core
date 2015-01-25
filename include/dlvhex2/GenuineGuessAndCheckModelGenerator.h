@@ -147,54 +147,60 @@ protected:
   // members
 
   /**
-   * Initializes heuristics for external atom evaluation and UFS checking over partial assignments
+   * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments
    */
   void setHeuristics();
 
   /**
-   * Learns related nonground nogoods
+   * \brief Learns related nonground nogoods.
+   * @param ng The nogood to generalize.
    */
   void generalizeNogood(Nogood ng);
 
   /**
-   * Learns all support sets provided by external sources and adds them to supportSets
+   * \brief Learns all support sets provided by external sources and adds them to supportSets
    */
   void learnSupportSets();
 
   /**
-   * Triggern nonground nogood learning and instantiation
-   * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly
+   * \brief Triggern nonground nogood learning and instantiation.
+   * 
+   * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly.
    */
   void updateEANogoods(InterpretationConstPtr compatibleSet = InterpretationConstPtr(), InterpretationConstPtr assigned = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
-   * Checks after completion of an assignment if it is compatible.
+   * \brief Checks after completion of an assignment if it is compatible.
+   *
    * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
-   *   of previously recorded verfication results are used to compute the return value.
+   * of previously recorded verfication results are used to compute the return value.
    */
   bool finalCompatibilityCheck(InterpretationConstPtr modelCandidate);
 
   /**
-   * Checks if a compatible set is a model, i.e., it does the FLP check.
-   * The details depend on the selected semantics (well-justified FLP or FLP) and the selected algorithm (explicit or ufs-based)
+   * \brief Checks if a compatible set is a model, i.e., it does the FLP check.
+   *
+   * The details depend on the selected semantics (well-justified FLP or FLP) and the selected algorithm (explicit or ufs-based).
    * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
-   *   of previously recorded verfication results are used to compute the return value.
+   * of previously recorded verfication results are used to compute the return value.
    */
   bool isModel(InterpretationConstPtr compatibleSet);
 
   /**
-   * Adds hook rules for all atoms in the annotatedGroundProgram.
+   * \brief Adds hook rules for all atoms in the annotatedGroundProgram.
    */
   void addHookRules();
 
   /**
-   * Resets vector "hookAssumptions" and then adds assumptions such that all atoms in "frozenHookAtoms" are false.
+   * \brief Resets vector "hookAssumptions" and then adds assumptions such that all atoms in "frozenHookAtoms" are false.
    */
   void buildFrozenHookAtomAssumptions();
 
   /**
-   * Checks if the domain of external atoms needs to be expanded wrt. a given compatible set.
+   * \brief Checks if the domain of external atoms needs to be expanded wrt. a given compatible set.
+   *
    * If this is the case, then the domain predicates are extended accordingly.
+   *
    * @param expandedComponents The indices of all expanded components will be added to this vector.
    * @param model The compatible set used for domain expansion; if no model is specified, then the program is exhaustively grounded.
    * \return True if the domain needs to be expanded and false otherwise.
@@ -202,7 +208,7 @@ protected:
   bool incrementalDomainExpansion(std::vector<int>& expandedComponents, InterpretationConstPtr model = InterpretationConstPtr());
 
   /**
-   * Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).
+   * \brief Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).
    * @param expandedComponents The vector of all component indices which shall be respected in the expansion; other components will be ignored.
    */
   void incrementalProgramExpansion(const std::vector<int>& expandedComponents);
@@ -214,9 +220,9 @@ protected:
 
   /**
    * Makes an unfounded set check over a (possibly) partial interpretation if useful.
-   * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms (can be 0 if partial=false)
-   * @param changed The set of atoms with modified truth value since the last call (can be 0 if partial=false)
+   * @param partialInterpretation The current assignment.
+   * @param assigned Currently assigned atoms (can be 0 if partial=false).
+   * @param changed The set of atoms with modified truth value since the last call (can be 0 if partial=false).
    * @param partial True if the assignment is (potentially) partial; in this case the check is driven by a heuristic.
    * @return bool True if the check is passed, i.e., if there is *no* unfounded set. False if the check is failed, i.e., there *is* an unfounded set.
    */
@@ -224,25 +230,25 @@ protected:
 
   /**
    * Finds a new atom in the scope of an external atom which shall be watched wrt. an interpretation.
-   * @pre Some atom in the scope of the external atom is yet unassigned
-   * @param eaIndex The index of the inner external atom
-   * @param search Search interpretation; can be 0 to indicate that all atoms of the EA's mask are eligable
-   * @param truthValue Indicates whether to search for a true or a false atom in search
-   * @return Address of an atom to watch or ALL_ONES if none exists
+   * @pre Some atom in the scope of the external atom is yet unassigned.
+   * @param eaIndex The index of the inner external atom.
+   * @param search Search interpretation; can be 0 to indicate that all atoms of the EA's mask are eligable.
+   * @param truthValue Indicates whether to search for a true or a false atom in search.
+   * @return Address of an atom to watch or ALL_ONES if none exists.
    */
   IDAddress getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue);
 
   /**
    * Removes verification results for external atoms if relevant parts of the input have changed.
-   * @param changed The set of atoms with modified truth value since the last call
+   * @param changed The set of atoms with modified truth value since the last call.
    */
   void unverifyExternalAtoms(InterpretationConstPtr changed);
 
   /**
    * Heuristically decides if and which external atoms we evaluate.
-   * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms
-   * @param changed The set of atoms with modified truth value since the last call
+   * @param partialInterpretation The current assignment.
+   * @param assigned Currently assigned atoms.
+   * @param changed The set of atoms with modified truth value since the last call.
    * @return bool True if evaluation yielded a conflict, otherwise false.
    */
   bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
@@ -251,38 +257,42 @@ protected:
    * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete).
    * Learns nogoods if external learning is activated.
    * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
-   * @param eaIndex The index of the external atom to verify
-   * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
-   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
-   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   * @param eaIndex The index of the external atom to verify.
+   * @param partialInterpretation The current assignment.
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete).
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed).
+   * @param answeredFromCacheOrSupportSets Optional pointer to a boolean where it is to be stored whether the query was answered from cache or support sets (true) or the external source was actually called (false).
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false.
    */
   bool verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation,
 					           InterpretationConstPtr assigned = InterpretationConstPtr(),
-					           InterpretationConstPtr changed = InterpretationConstPtr());
+					           InterpretationConstPtr changed = InterpretationConstPtr(),
+					           bool* answeredFromCacheOrSupportSets = 0);
   /**
    * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete) using explicit evaluation.
    * Learns nogoods if external learning is activated.
    * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
-   * @param eaIndex The index of the external atom to verify
-   * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
-   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
-   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   * @param eaIndex The index of the external atom to verify.
+   * @param partialInterpretation The current assignment.
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete).
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed).
+   * @param answeredFromCache Optional pointer to a boolean where it is to be stored whether the query was answered from cache (true) or the external source was actually called (false).
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false.
    */
   bool verifyExternalAtomByEvaluation(int eaIndex, InterpretationConstPtr partialInterpretation,
 					           InterpretationConstPtr assigned = InterpretationConstPtr(),
-					           InterpretationConstPtr changed = InterpretationConstPtr());
+					           InterpretationConstPtr changed = InterpretationConstPtr(),
+					           bool* answeredFromCache = 0);
 
   /**
    * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete) using complete support sets.
    * Learns nogoods if external learning is activated.
    * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
-   * @param eaIndex The index of the external atom to verify
-   * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete)
-   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
-   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   * @param eaIndex The index of the external atom to verify.
+   * @param partialInterpretation The current assignment.
+   * @param assigned Currently assigned atoms (if 0, then the assignment is assumed to be complete).
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed).
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false.
    */
   bool verifyExternalAtomBySupportSets(int eaIndex, InterpretationConstPtr partialInterpretation,
 					            InterpretationConstPtr assigned = InterpretationConstPtr(),
@@ -295,11 +305,13 @@ protected:
   const OrdinaryASPProgram& getGroundProgram();
 
   /**
-   * Is called by the ASP solver in its propagation method.
+   * \brief Is called by the ASP solver in its propagation method to trigger fruther learning methods.
+   *
    * This function can add additional (learned) nogoods to the solver to force implications or tell the solver that the current assignment is conflicting.
-   * @param partialInterpretation The current assignment
-   * @param assigned Currently assigned atoms
-   * @param changed The set of atoms with modified truth value since the last call
+   *
+   * @param partialInterpretation The current assignment.
+   * @param assigned Currently assigned atoms.
+   * @param changed The set of atoms with modified truth value since the last call.
    */
   void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 
