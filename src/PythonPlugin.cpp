@@ -222,40 +222,19 @@ class PythonAtom : public PluginAtom
 				PythonAPI::emb_answer = &answer;
 				PythonAPI::emb_nogoods = nogoods;
 
-				DBGLOG(DBG, "Retrieving external source properties");
-
-				const ExtSourceProperties& prop = query.ctx->registry()->eatoms.getByID(query.eatomID).getExtSourceProperties();
-
-				std::vector<Query> atomicQueries = splitQuery(query, prop);
-				DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
-				BOOST_FOREACH (Query atomicQuery, atomicQueries){
-					Answer atomicAnswer;
-
-					boost::python::tuple t;
-					DBGLOG(DBG, "Constructing input tuple");
-					for (int i = 0; i < getInputArity(); ++i){
-						if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
-						else {
-							boost::python::tuple tupleparameters;
-							for (int var = i; var < query.input.size(); ++var) tupleparameters += boost::python::make_tuple(query.input[var]);
-							t += boost::python::make_tuple(tupleparameters);
-						}
+				boost::python::tuple t;
+				DBGLOG(DBG, "Constructing input tuple");
+				for (int i = 0; i < getInputArity(); ++i){
+					if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
+					else {
+						boost::python::tuple tupleparameters;
+						for (int var = i; var < query.input.size(); ++var) tupleparameters += boost::python::make_tuple(query.input[var]);
+						t += boost::python::make_tuple(tupleparameters);
 					}
-
-					DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
-					PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
-
-					DBGLOG(DBG, "Calling learning helper functions");
-					ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, answer, prop, nogoods);
-					ExternalLearningHelper::learnFromFunctionality(atomicQuery, answer, prop, otuples, nogoods);
-
-					// overall answer is the union of the atomic answers
-					DBGLOG(DBG, "Constructing answer");
-					answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
 				}
 
-				DBGLOG(DBG, "Calling negative learning helper functions");
-				ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
+				DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
+				PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
 
 				DBGLOG(DBG, "Resetting Python");
 				PythonAPI::emb_query = NULL;
@@ -305,7 +284,10 @@ boost::python::tuple ID_tuple(ID* this_){
 std::string getValue(ID id){
 	std::stringstream ss;
 	RawPrinter printer(ss, emb_ctx->registry());
-	printer.print(id);
+	if (id.kind & ID::NAF_MASK) ss << "-";
+	ID id_ = id;
+	id_.kind &= (ID::ALL_ONES ^ ID::NAF_MASK);
+	printer.print(id_);
 	std::string str = ss.str();
 	return ss.str();
 }
@@ -613,8 +595,10 @@ boost::python::tuple loadSubprogram(std::string filename) {
 ID negate(ID id) {
 	if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
 	if (!!emb_nogoods && emb_ctx->registry()->ogatoms.getIDByAddress(id.address).isExternalAuxiliary()){
-		return NogoodContainer::createLiteral(emb_ctx->registry()->swapExternalAtomAuxiliaryAtom(emb_ctx->registry()->ogatoms.getIDByAddress(id.address)).address, true);
+		DBGLOG(DBG, "Negating external atom output atom " << id);
+		return emb_ctx->registry()->swapExternalAtomAuxiliaryAtom(emb_ctx->registry()->ogatoms.getIDByAddress(id.address));
 	}else{
+		DBGLOG(DBG, "Negating ordinary literal " << id);
 		id.kind ^= dlvhex::ID::NAF_MASK;
 		return id;
 	}
