@@ -435,11 +435,11 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(ctx.registry(), eatom, inputi);
 
-  InterpretationConstPtr eatomassigned =
-    projectEAtomInputInterpretation(ctx.registry(), eatom, assigned);
+  InterpretationConstPtr eatomassigned;
+  if (assigned) eatomassigned = projectEAtomInputInterpretation(ctx.registry(), eatom, assigned);
 
-  InterpretationConstPtr eatomchanged =
-    projectEAtomInputInterpretation(ctx.registry(), eatom, changed);
+  InterpretationConstPtr eatomchanged;
+  if (changed) eatomchanged = projectEAtomInputInterpretation(ctx.registry(), eatom, changed);
 
   InterpretationPtr pim = InterpretationPtr(new Interpretation(ctx.registry()));
   pim->add(*eatom.getPredicateInputMask());

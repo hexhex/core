@@ -611,8 +611,12 @@ boost::python::tuple loadSubprogram(std::string filename) {
 
 ID negate(ID id) {
 	if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
-	id.kind ^= dlvhex::ID::NAF_MASK;
-	return id;
+	if (!!emb_nogoods && emb_ctx->registry()->ogatoms.getIDByAddress(id.address).isExternalAuxiliary()){
+		return NogoodContainer::createLiteral(emb_ctx->registry()->swapExternalAtomAuxiliaryAtom(emb_ctx->registry()->ogatoms.getIDByAddress(id.address)).address, true);
+	}else{
+		id.kind ^= dlvhex::ID::NAF_MASK;
+		return id;
+	}
 }
 
 ID ID_negate(ID* this_){
@@ -621,7 +625,7 @@ ID ID_negate(ID* this_){
 
 bool learn(boost::python::tuple args) {
 
-	if (!!emb_nogoods){
+	if (!!emb_nogoods && emb_ctx->config.getOption("ExternalLearningUser")){
 		Nogood ng;
 		for (int i = 0; i < boost::python::len(args); ++i){
 			dlvhex::ID id = boost::python::extract<ID>(args[i]);
@@ -636,7 +640,7 @@ bool learn(boost::python::tuple args) {
 	}
 }
 
-ID storeOutputAtom(boost::python::tuple args) {
+ID storeOutputAtomWithSign(boost::python::tuple args, bool sign) {
 
 	Tuple outputTuple;
 	for (int i = 0; i < boost::python::len(args); ++i){
@@ -660,7 +664,11 @@ ID storeOutputAtom(boost::python::tuple args) {
 			}
 		}
 	}
-	return ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, true);
+	return ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, sign);
+}
+
+ID storeOutputAtom(boost::python::tuple args) {
+	return storeOutputAtomWithSign(args, true);
 }
 
 void output(boost::python::tuple args) {
@@ -763,13 +771,26 @@ bool ID_isInputAtom(ID* this_){
 	return isInputAtom(*this_);
 }
 
+bool isAssignmentComplete() {
+	return !emb_query->assigned;
+}
+
 bool isAssigned(ID id) {
-	if (!!emb_query->assigned || emb_query->assigned->getFact(id.address)) return true;
+	if (!emb_query->assigned || emb_query->assigned->getFact(id.address)) return true;
 	else return false;
 }
 
 bool ID_isAssigned(ID* this_){
 	return isAssigned(*this_);
+}
+
+bool hasChanged(ID id) {
+	if (!emb_query->changed || emb_query->changed->getFact(id.address)) return true;
+	else return false;
+}
+
+bool ID_hasChanged(ID* this_){
+	return hasChanged(*this_);
 }
 
 bool isTrue(ID id) {
@@ -806,6 +827,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeAtom", PythonAPI::storeAtom);
 	boost::python::def("negate", PythonAPI::negate);
 	boost::python::def("learn", PythonAPI::learn);
+	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtomWithSign);
 	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtom);
 	boost::python::def("output", PythonAPI::output);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
@@ -815,7 +837,9 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("getInputAtomCount", PythonAPI::getInputAtomCount);
 	boost::python::def("getTrueInputAtomCount", PythonAPI::getTrueInputAtomCount);
 	boost::python::def("isInputAtom", PythonAPI::isInputAtom);
+	boost::python::def("isAssignmentComplete", PythonAPI::isAssignmentComplete);
 	boost::python::def("isAssigned", PythonAPI::isAssigned);
+	boost::python::def("hasChanged", PythonAPI::hasChanged);
 	boost::python::def("isTrue", PythonAPI::isTrue);
 	boost::python::def("isFalse", PythonAPI::isFalse);
 	boost::python::def("storeExternalAtom", PythonAPI::storeExternalAtom);
@@ -831,6 +855,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 		.def("negate", &PythonAPI::ID_negate)
 		.def("isInputAtom", &PythonAPI::ID_isInputAtom)
 		.def("isAssigned", &PythonAPI::ID_isAssigned)
+		.def("hasChanged", &PythonAPI::ID_hasChanged)
 		.def("isTrue", &PythonAPI::ID_isTrue)
 		.def("isFalse", &PythonAPI::ID_isFalse)
 		.def(boost::python::self == dlvhex::ID());

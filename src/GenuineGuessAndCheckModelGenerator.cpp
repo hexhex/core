@@ -808,6 +808,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 			}
 			LOG(DBG,"learned nogood " << ng.getStringRepresentation(reg));
 		}
+		DBGLOG(DBG, "Adding learned nogood " << ng.getStringRepresentation(reg) << " to solver");
 		if (ng.isGround()) solver->addNogood(ng);
 	}
 

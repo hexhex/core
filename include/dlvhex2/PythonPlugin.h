@@ -164,14 +164,16 @@
  *   <li><em>dlvhex.ID storeAtom(args)</em>: Transforms a sequence of terms or values \em args into a dlvhex atom.</li>
  *   <li><em>dlvhex.ID negate(aID)</em>: Negates an atom ID \em aID.</li>
  *   <li><em>bool learn(tup)</em>: Learns a nogood as a tuple of atom IDs or their negations \em tup; returns if learning was enabled.</li>
- *   <li><em>ID storeOutputAtom(args)</em>: Constructs an output atom from IDs or values \em args (for learning purposes) and returns its ID.</li>
+ *   <li><em>ID storeOutputAtom(args, [sign])</em>: Constructs an output atom from IDs or values \em args (for learning purposes) and its sign, where true (default) means positive and false means negative, and returns its ID.</li>
  *   <li><em>void output(args)</em>: Adds a tuple of IDs or values \em args to the external source output.</li>
  *   <li><em>tuple getInputAtoms([pred])</em>: Returns a tuple of \em all input atoms (\em not only true ones!) to this external atom; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
  *   <li><em>tuple getTrueInputAtoms([pred])</em>: Returns a tuple of all input atoms to this external atom <em>which are currently true</em>; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
  *   <li><em>int getInputAtomCount()</em>: Returns the number of \em input atoms (\em not only true ones!).</li>
  *   <li><em>int getTrueInputAtomCount()</em>: Returns the number of input atoms <em>which are currently true</em>.</li>
  *   <li><em>bool isInputAtom(id)</em>: Checks if atom \em id belongs to the input of the current external atom.</li>
- *   <li><em>bool isAssigned(id)</em>: Checks if an input atom identified by ID \em id is assigned.</li>
+ *   <li><em>bool isAssignmentComplete()</em>: Returns true if the external source is evaluated over an interpretation which is complete for sure (if it returns false, then the assignment is \em possibly partial but it might still be complete).</li>
+ *   <li><em>bool isAssigned(id)</em>: Provided that the source declared that it is interested in this property (cf. setCaresAboutAssigned), the method checks if an input atom identified by ID \em id is assigned.</li>
+ *   <li><em>bool hasChanged(id)</em>: Provided that the source declared that it is interested in this property (cf. setCaresAboutChanged), the method checks if an input atom has \em possibly changes since the last call (if the method returns false, then it has not changed for sure).</li>
  *   <li><em>bool isTrue(id)</em>: Checks if an input atom identified by ID \em id is assigned to true.</li>
  *   <li><em>bool isFalse(id)</em>: Checks if an input atom identified by ID \em id is assigned to false.</li>
  *   <li><em>void addAtom(name, args, ar, [prop])</em>: Add external atom \em name with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).</li>
@@ -213,6 +215,7 @@
  *   <li><em>id.negate()</em> for <em>dlvhex.negate(id)</em></li>
  *   <li><em>id.isInputAtom()</em> for <em>dlvhex.isInputAtom(id)</em></li>
  *   <li><em>id.isAssigned()</em> for <em>dlvhex.isAssigned(id)</em></li>
+ *   <li><em>id.hasChanged()</em> for <em>dlvhex.hasChanged(id)</em></li>
  *   <li><em>id.isTrue()</em> for <em>dlvhex.isTrue(id)</em></li>
  *   <li><em>id.isFalse()</em> for <em>dlvhex.isFalse(id)</em></li>
  * </ul>
