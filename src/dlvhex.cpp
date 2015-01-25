@@ -835,6 +835,7 @@ void processOptionsPrePlugin(
   bool iaux = false;
   bool heuristicChosen = false;
   bool heuristicMonolithic = false;
+  bool solverSet = false;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -1078,6 +1079,7 @@ void processOptionsPrePlugin(
 							throw UsageError("unknown solver backend '" + solver +"' specified!");
 						}
 						LOG(INFO,"selected '" << solver << "' solver backend");
+						solverSet = true;
 					}
 					break;
 
@@ -1517,12 +1519,22 @@ void processOptionsPrePlugin(
 
 	// global constraints
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
-		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
+		// if solver was not set by user, disable it silently, otherwise print a warning
+		if (!solverSet){
+			DBGLOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
+		}else{
+			LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=explicit");
+		}
 		pctx.config.setOption("FLPCheck", 1);
 		pctx.config.setOption("UFSCheck", 0);
 	}
 	if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver")){
-		std::cerr << "Liberal safety is only supported for genuine solvers, will disable it";
+		// if solver was not set by user, disable it silently, otherwise print a warning
+		if (!solverSet){
+			DBGLOG(WARNING, "Liberal safety is only supported for genuine solvers, will disable it");
+		}else{
+			LOG(WARNING, "Liberal safety is only supported for genuine solvers, will disable it");
+		}
 		pctx.config.setOption("LiberalSafety", 0);
 	}
 	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
@@ -1533,6 +1545,16 @@ void processOptionsPrePlugin(
 	}
 	if (defiaux){
 		pctx.config.setOption("IncludeAuxInputInAuxiliaries", iaux);
+	}
+	if (!pctx.config.getOption("GenuineSolver") && pctx.config.getOption("ExternalLearning")){
+		// if solver was not set by user, disable it silently, otherwise print a warning
+		if (!solverSet){
+			DBGLOG(WARNING, "Cannot use external learning with non-genuine solver, will disable it");
+		}else{
+			LOG(WARNING, "Cannot use external learning with non-genuine solver, will disable it");
+		}
+		pctx.config.setOption("ExternalLearning", 0);
+	
 	}
 
 	// configure plugin path
