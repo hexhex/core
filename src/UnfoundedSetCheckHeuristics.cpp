@@ -38,19 +38,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// ============================== UnfoundedSetCheckHeuristicsResult ==============================
-
-UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult::UnfoundedSetCheckHeuristicsResult(bool doUFSCheck, const std::set<ID>& skipProgram) : std::pair<bool, const std::set<ID>&>(doUFSCheck, skipProgram){
-}
-
-// ============================== Base ==============================
-
-UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : groundProgram(groundProgram), reg(reg){
-}
-
-void UnfoundedSetCheckHeuristics::notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-}
-
 // ============================== Post ==============================
 
 UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristics(groundProgram, reg){

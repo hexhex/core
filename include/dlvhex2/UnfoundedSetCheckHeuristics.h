@@ -38,6 +38,7 @@
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/AnnotatedGroundProgram.h"
+#include "dlvhex2/UnfoundedSetCheckHeuristicsInterface.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
@@ -45,91 +46,50 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * Decides when to do an unfounded set check (over partial interpretations)
+ * \brief Contains implementers of UnfoundedSetCheckHeuristics to decide for a given (partial) assignment
+ * if a minimality check shall be performed at this point. Note that this is only for optimization purposes
+ * as the reasoner will automatically do such a check whenever it is necessary.
+ * However, heuristics may initiate additional checks to possibly detect unfounded atoms earlier.
  */
-// ============================== Base ==============================
-
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristics{
-protected:
-	RegistryPtr reg;
-	const AnnotatedGroundProgram& groundProgram;
-
-public:
-	/**
-	 * Wrapper for the result of heuristics.
-	 */
-	class UnfoundedSetCheckHeuristicsResult : public std::pair<bool, const std::set<ID>&>{
-	public:
-		UnfoundedSetCheckHeuristicsResult(bool doUFSCheck, const std::set<ID>& skipProgram);
-		inline bool doUFSCheck() const { return first; }
-		inline const std::set<ID>& skipProgram() const { return second; }
-	};
-
-	UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-
-	/**
-	* Decides if the reasoner shall do an unfounded set check at this point.
-	* @param verifiedAuxes The set of verified external atom auxiliaries wrt. the current partial interpretation
-	* @param partialAssignment The current (partial) interpretation
-	* @param assigned The current set of assigned atoms; if 0, then the interpretation is complete
-	* @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
-	* @return UnfoundedSetCheckHeuristicsResult
-	*         The first component is true if the heuristics suggests to do an UFS check, otherwise false.
-	*         If true, then the second component is the set of rules which shall be ignored in the UFS check. The assignment must be complete for all non-ignored rules.
-	*/
-	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
-
-	/**
-	 * Notifies the heuristic about changes in the assignment, although the caller is not going to perform an UFS check at this point.
-	 * This allows the heuristic to update internal data structures.
-	 */
-	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
-};
-
-typedef boost::shared_ptr<UnfoundedSetCheckHeuristics> UnfoundedSetCheckHeuristicsPtr;
-
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsFactory{
-public:
-	/**
-	* Creates a heuristic instance for a certain ground program
-	* @param groundProgram The ground program
-	* @param reg RegistryPtr
-	*/
-	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) = 0;
-	virtual ~UnfoundedSetCheckHeuristicsFactory(){}
-};
-
-typedef boost::shared_ptr<UnfoundedSetCheckHeuristicsFactory> UnfoundedSetCheckHeuristicsFactoryPtr;
 
 // ============================== Post ==============================
 
+/**
+ * \brief Performs UFS checks only over complete interpretations.
+ */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
 public:
 	UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for UnfoundedSetCheckHeuristicsPost.
+ */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSetCheckHeuristicsFactory{
 	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 // ============================== Max ==============================
 
+/**
+ * \brief Performs UFS checks whenever deterministic reasoning cannot derive further atoms.
+ */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
 private:
-	// stores the atoms which were assigned and verified when the skipProgram was updated last time
+	/** \brief stores the atoms which were assigned and verified when the skipProgram was updated last time. */
 	InterpretationPtr previouslyAssignedAndVerifiedAtoms;
 
-	// remembers external atom replacement atoms which have already been assigned but could not be verified yet
+	/** \brief Remembers external atom replacement atoms which have already been assigned but could not be verified yet. */
 	InterpretationPtr notYetVerifiedExternalAtoms;
 
-	// stores for each atom in which rule (identified by its index in the ground program) it occurs (positively or negatively)
+	/** \brief Stores for each atom in which rule (identified by its index in the ground program) it occurs (positively or negatively). */
 	std::map<IDAddress, std::set<int> > rulesOfAtom;
 
-	// stores for each rule (address) the number of total and of currently assigned and verified atoms
+	/** \brief Stores for each rule (address) the number of total and of currently assigned and verified atoms. */
 	std::vector<int> atomsInRule, assignedAndVerifiedAtomsInRule;
 
-	// skip program according to previouslyAssignedAtoms
+	/** \brief Skip program according to previouslyAssignedAtoms. */
 	std::set<ID> skipProgram;
 public:
 	UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
@@ -137,19 +97,27 @@ public:
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for UnfoundedSetCheckHeuristicsMax.
+ */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMaxFactory : public UnfoundedSetCheckHeuristicsFactory{
 	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 // ============================== Periodic ==============================
 
+/**
+ * \brief Performs UFS checks periodically.
+ */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax{
 private:
+	/** Counts the number of calls in order to periodically perform the UFS check. */
 	int counter;
 
-	// this interpretation is only resetted if an actual UFS check is performed
-	// this allows for reusing UnfoundedSetCheckHeuristicsMax for the implementation since it ensures that the notification of UnfoundedSetCheckHeuristicsMax
-	// about changed atoms is correct
+	/** \brief This interpretation is only resetted if an actual UFS check is performed.
+	  *        This allows for reusing UnfoundedSetCheckHeuristicsMax for the implementation since it ensures that the notification of UnfoundedSetCheckHeuristicsMax
+	  *        about changed atoms is correct.
+	  */
 	InterpretationPtr accumulatedChangedAtoms;
 public:
 	UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
@@ -157,6 +125,9 @@ public:
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for UnfoundedSetCheckHeuristicsPeriodic.
+ */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodicFactory : public UnfoundedSetCheckHeuristicsFactory{
 	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };

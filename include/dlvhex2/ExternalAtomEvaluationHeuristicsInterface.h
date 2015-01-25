@@ -44,32 +44,51 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * Decides when to evaluate an external atom
+ * \brief Decides when to evaluate an external atom.
+ *
+ * The implementers of this interface decide for a given (partial) assignment and an external atom
+ * if it should be evaluated at this point. Note that this is only for optimization purposes
+ * as the reasoner will automatically evaluate external atoms whenever this is necessary.
+ * However, heuristics may initiate additional calls which might trigger learning methods
+ * to add nogoods in order to guide the search.
  */
 class DLVHEX_EXPORT ExternalAtomEvaluationHeuristics{
 protected:
+	/** \brief Pointer to the registry. */
 	RegistryPtr reg;
+
 public:
 	ExternalAtomEvaluationHeuristics(RegistryPtr reg) : reg(reg) {}
 	virtual ~ExternalAtomEvaluationHeuristics() {}
 	/**
 	* Decides if the reasoner shall evaluate a given external atom at this point.
-	* @param eatom The external atom in question
-	* @param eatomMask Mask with all atoms relevant for this external atom
-	* @param programMask All atoms in the program
-	* @param partialAssignment The current (partial) interpretation
-	* @param assigned The current set of assigned atoms; if 0, then the interpretation is complete
-	* @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
-	* @return bool True if the heuristics suggests to evaluate the external atom, otherwise false
+	* @param eatom The external atom in question.
+	* @param eatomMask Mask with all atoms relevant for this external atom.
+	* @param programMask All atoms in the program.
+	* @param partialAssignment The current (partial) interpretation.
+	* @param assigned The current set of assigned atoms; if 0, then the interpretation is complete.
+	* @param changed The set of atoms with a (possibly) modified truth value since the last call; if NULL then all atoms have (possibly) changed.
+	* @return True if the heuristics suggests to evaluate the external atom, otherwise false.
 	*/
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
 };
 
 typedef boost::shared_ptr<ExternalAtomEvaluationHeuristics> ExternalAtomEvaluationHeuristicsPtr;
 
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristics.
+ */
 class DLVHEX_EXPORT ExternalAtomEvaluationHeuristicsFactory{
 public:
+	/**
+	 * \brief Creates a new instance of the heuristics.
+	 * @param reg Pointer to the registry.
+	 */
 	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg) = 0;
+
+	/**
+	 * \brief Destructor.
+	 */
 	virtual ~ExternalAtomEvaluationHeuristicsFactory(){}
 };
 

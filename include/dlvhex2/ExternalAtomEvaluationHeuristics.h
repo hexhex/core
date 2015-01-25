@@ -46,55 +46,72 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Always ==============================
 
-// Evaluates always when the heuristics is asked
-
+/**
+ * \brief Evaluates always when the heuristics is asked.
+ */
 class ExternalAtomEvaluationHeuristicsAlways : public ExternalAtomEvaluationHeuristics{
 public:
 	ExternalAtomEvaluationHeuristicsAlways(RegistryPtr reg);
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristicsAlways.
+ */
 class ExternalAtomEvaluationHeuristicsAlwaysFactory : public ExternalAtomEvaluationHeuristicsFactory{
 	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
 };
 
 // ============================== InputComplete ==============================
 
-// Evaluates always when the heuristics is asked and the input to the external atom is complete
-
+/**
+ * \brief Evaluates always when the heuristics is asked and the input to the external atom is complete.
+ */
 class ExternalAtomEvaluationHeuristicsInputComplete : public ExternalAtomEvaluationHeuristics{
 public:
 	ExternalAtomEvaluationHeuristicsInputComplete(RegistryPtr reg);
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristicsInputComplete.
+ */
 class ExternalAtomEvaluationHeuristicsInputCompleteFactory : public ExternalAtomEvaluationHeuristicsFactory{
 	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
 };
 
 // ============================== EAComplete ==============================
 
-// Evaluates always when the heuristics is asked and all atoms relevant for this external atom are assigned
-
+/**
+ * \brief Evaluates always when the heuristics is asked and all atoms relevant for this external atom are assigned.
+ */
 class ExternalAtomEvaluationHeuristicsEAComplete : public ExternalAtomEvaluationHeuristics{
 public:
 	ExternalAtomEvaluationHeuristicsEAComplete(RegistryPtr reg);
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristicsEAComplete.
+ */
 class ExternalAtomEvaluationHeuristicsEACompleteFactory : public ExternalAtomEvaluationHeuristicsFactory{
 	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
 };
 
 // ============================== Never ==============================
 
-// Evaluates never when the heuristics is asked
+/**
+ * Never evaluates when the heuristics is asked (but the reasoner will still do this whenever absolutely necessary).
+ */
 class ExternalAtomEvaluationHeuristicsNever : public ExternalAtomEvaluationHeuristics{
 public:
 	ExternalAtomEvaluationHeuristicsNever(RegistryPtr reg);
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristicsNever.
+ */
 class ExternalAtomEvaluationHeuristicsNeverFactory : public ExternalAtomEvaluationHeuristicsFactory{
 	virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
 };

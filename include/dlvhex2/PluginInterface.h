@@ -403,7 +403,7 @@ public:
 
   /**
    * \brief Must create a model generator factory for the component described by ci.
-   * Needs to be implemented only if providesCustomModelGeneratorFactory return true;
+   * Needs to be implemented only if PluginAtom::providesCustomModelGeneratorFactory return true;
    */
   virtual BaseModelGeneratorFactoryPtr getCustomModelGeneratorFactory(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci) const
 	{ assert(false && "This plugin does not provide a custom model generator factory"); return BaseModelGeneratorFactoryPtr(); }
@@ -561,18 +561,30 @@ typedef boost::shared_ptr<PluginEnvironment> PluginEnvironmentPtr;
  * other than three output terms will cause an error at parsing time.
  * 
  * The only member function of the atom class that needs to be defined is
- * retrieve:
+ * retrieve. There are two overloaded versions:
  *
  * \code
  *   virtual void
  *   retrieve(const Query& query, Answer& answer)
  *   {
  * \endcode
+ *
+ * and
+ *
+ * \code
+ *   virtual void
+ *   retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+ *   {
+ * \endcode
  * 
  * retrieve() always takes a query object as input and returns the result tuples in an
- * answer object.
+ * answer object. The second version also takes a pointer to a NogoodContainer
+ * which can be used for learning additional user-defined nogoods (see NogoodContainer and ExternalLearningHelper).
+ * Note that this pointer can be NULL as external sources are sometimes evaluated without the need to learn something.
+ * However, whenever it is not NULL, the external source is free to add customized nogoods in order to prune the search space.
+ * If both methods are overridden, the second one takes precedence over the first one.
  * 
- * By definition the same query should return the same result, this is used by the 
+ * By definition, the same query should return the same result, this is used by the 
  * method retrieveCached() which has the effect that retrieve() is never called twice
  * for the same query (if you do not disable the cache via --nocache).
  * 
@@ -593,12 +605,12 @@ typedef boost::shared_ptr<PluginEnvironment> PluginEnvironmentPtr;
  * \code
  *   if( query.input[0].isInteger() )
  *   {
- *      std::cerr << "got integer << query.input[0].address << std::endl;
+ *      std::cerr << "got integer " << query.input[0].address << std::endl;
  *   }
  *   else
  *   {
  *      const Term& t = registry->terms.getByID(query.input[0]);
- *      std::cerr << "got term << t << std::endl;
+ *      std::cerr << "got term " << t << std::endl;
  *   }
  * \endcode
  *
@@ -854,20 +866,24 @@ public:
    *
    * Three types of input parameters can be specified: PREDICATE, CONSTANT, and TUPLE.
    *
-   * * An input argument of type PREDICATE means that the atom needs those facts
-   *   of the interpretation whose predicate match the value of this argument.
-   * * An input argument of type CONSTANT means that only its value is relevent
-   *   to the external atom, regardless of the interpretation.
-   * * An input argument of type TUPLE may be specified as last input type only, it
-   *   means that an unspecified number of CONSTANT values may be specified after
-   *   other inputs.
-   *
    * Specifying the input parameters' types is necessary for reducing the
    * interpretation that will be passed to the external atom as well as
    * improving the dependency information used by the internal
    * evaluation strategies of dlvhex.
    */
-  typedef enum { PREDICATE, CONSTANT, TUPLE } InputType;
+  typedef enum {
+    /** \brief An input argument of type PREDICATE means that the atom needs those facts
+      *        of the interpretation whose predicate match the value of this argument. */
+    PREDICATE,
+    /** \brief An input argument of type CONSTANT means that only its value is relevent
+      *        to the external atom, regardless of the interpretation. */
+    CONSTANT,
+    /** \brief An input argument of type TUPLE may be specified as last input type only, it
+      *        means that an unspecified number of CONSTANT values may be specified after
+      *        other inputs.
+      */
+    TUPLE
+  } InputType;
 
 protected:
   /**
@@ -903,6 +919,7 @@ protected:
    *
    * @param nameIsRelevant If true, the name of the predicate parameter might influence the result,
    *                       otherwise only its extension is relevant.
+   *
    * Only use in constructor!
    */
   void addInputPredicate(bool nameIsRelevant = false);
@@ -926,12 +943,16 @@ protected:
    *
    * Only use in constructor!
    *
-   * This arity always has to be fixed, i.e., there are no variable-output-arity
-   * external atoms.
+   * Use prop.setVariableOutputArity(true) to define an external atom with variable output arity.
+   *
+   * @param arity The desired output arity >= 0.
    */
   void setOutputArity(unsigned arity);
 
 public:
+  /**
+   * \brief Destructor.
+   */
   virtual ~PluginAtom() {}
 
   /**
@@ -964,26 +985,30 @@ public:
   bool checkOutputArity(const ExtSourceProperties& prop, unsigned arity) const;
 
   /**
+   * \brief Can be used to customize the generic properties of an external source for a particular external atom.
+   *
    * The function is called once for each external atom in order to finalize the initialization of its properties.
    * While the properties in class PluginAtom apply to all external atoms of the type,
    * this method can modify the properties for selected external atoms.
    * It may inspect the input list and set additional external atom properties,
    * which do not hold in general but only for a certain usage of the external source.
    * 
-   * Example: Let \code{&sql[r1, ..., rn, query](X1, ..., Xm)} be an SQL-query processor
-   *          over relations \code{r1, ..., rn}.
+   * Example: Let \code{.txt}&sql[r1, ..., rn, query](X1, ..., Xm)\endcode be an SQL-query processor
+   *          over relations r1, ..., rn.
    *          Then &sql is in general not monotonic, but if query is a simple
    *          selection of all tuples, then it becomes monotonic.
    * 
    * When this method is called, \p eatom.prop already contains the properties
-   * derived from the plugin and specified directly in the HEX-program (using syntax \code{<...>}).
+   * derived from the plugin and specified directly in the HEX-program (using syntax <...>).
    * This method may modify them or add additional properties.
    *
-   * @param Reference to the external atom whose properties are to be initialized.
+   * @param eatom Reference to the external atom whose properties are to be initialized.
    */
   virtual void setupProperties(const ExternalAtom& eatom) {}
 
   /**
+   * \brief Decides for a support set instance whether to keep or drop it.
+   *
    * Decides for a ground support set if it should be kept (in possibly modified form) or rejected.
    * This allows for checking the satisfaction of guard literals in the nogood, which depend on the external source.
    * @param keep Must be set to true if ng should be kept.
@@ -1074,7 +1099,8 @@ public:
   virtual void retrieve(const Query& query, Answer& answer);
 
   /**
-   * \brief Is called for learning support sets. Needs to be implemented if prop.providesSupportSets() = true.
+   * \brief Is called for learning support sets. Needs to be implemented if PluginAtom::prop declares
+   * that the external source provides support sets.
    *
    * This function implements the learning of support sets from external atoms.
    * The learned support sets should be added to \nogoods.
@@ -1087,9 +1113,9 @@ public:
   /**
    * \brief Tries to generalize learned nogoods to nonground nogoods. Should only be overridden by experienced users.
    *
-   * \@param ng A learned nogood with some external atom auxiliary over this external predicate.
-   * \@param ctx Program context.
-   * \@param nogoods The nogood container where related nogoods shall be added.
+   * @param ng A learned nogood with some external atom auxiliary over this external predicate.
+   * @param ctx Program context.
+   * @param nogoods The nogood container where related nogoods shall be added.
    */
   virtual void generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
@@ -1101,15 +1127,13 @@ public:
    *        (if an external source does not have such properties, then the query is passed as is to one of the
    *        retrieve methods).
    *        By overriding the method, customized decomposition strategies may be implemented.
-   * \@param query The original query to split up.
-   * \@param prop External source properties.
-   * \@return std::vector<Query> A set of subqueries to be sent to one of the retrieve methods.
+   * @param query The original query to split up.
+   * @param prop External source properties.
+   * @return A set of subqueries to be sent to one of the retrieve methods.
    */
   virtual std::vector<Query> splitQuery(const Query& query, const ExtSourceProperties& prop);
 
   /**
-   * \brief Returns the type of the input argument specified by position
-   * (starting with 0). Returns TUPLE for TUPLE input arguments (variably many).
    * \brief Returns the type of the input argument specified by position.
    *
    * Should not be overridden.
@@ -1140,7 +1164,7 @@ public:
 
   /**
    * \brief Must create a model generator factory for the component described by ci.
-   * Needs to be implemented only if providesCustomExternalAtomEvaluationHeuristicsFactory return true;
+   * Needs to be implemented only if PluginAtom::providesCustomExternalAtomEvaluationHeuristicsFactory return true;
    * @return True if this plugin provides a custom heuristics for external atom evaluations, false otherwise.
    */
   virtual ExternalAtomEvaluationHeuristicsFactoryPtr getCustomExternalAtomEvaluationHeuristicsFactory() const
@@ -1170,6 +1194,8 @@ public:
    *
    * PluginContainer calls this method automatically when loading a plugin and its
    * atoms.
+   *
+   * @param reg Pointer to the registry to set.
    */
   virtual void setRegistry(RegistryPtr reg);
 
@@ -1181,6 +1207,8 @@ public:
    * As PluginAtom internally stores IDs, it has to be associated with a fixed
    * Registry for its lifetime. Create several instantiations if you need the same
    * atom in several registries.
+   *
+   * @return Pointer to the registry used by this plugin.
    */
   RegistryPtr getRegistry() const
     { return registry; }
@@ -1190,7 +1218,7 @@ public:
    *
    * Should not be overridden.
    *
-   * Returns The ID of the predicate name specified in the constructor or ID_FAIL if no registry is set.
+   * @return ID of the predicate name specified in the constructor or ID_FAIL if no registry is set.
    */
   ID getPredicateID() const
     { return predicateID; }
@@ -1199,6 +1227,7 @@ public:
    * \brief Get predicate name (as specified in constructor).
    *
    * Should not be overridden.
+   *
    * @return Predicate name specified in the constructor (without leading &)
    */
   const std::string& getPredicate() const
@@ -1221,46 +1250,55 @@ protected:
   // Calling setRegistry provides the predicate ID.
   std::string predicate;
 
-  // \brief ID of the predicate name, ID_FAIL if no registry is set
+  /** \brief ID of the predicate name, ID_FAIL if no registry is set. */
   ID predicateID;
 
-  // \brief Whether the function is monotonic in all parameters (this will automatically declare all predicate input parameters as monotonic, cf. \see prop)
+  /** \brief Whether the function is monotonic in all parameters (this will automatically declare all predicate input parameters as monotonic, see PluginAtom::prop). */
   bool allmonotonic;
 
-  /// \brief general properties of the external source (may be overridden on atom-level)
+  /** \brief General properties of the external source (may be overridden on atom-level). */
   ExtSourceProperties prop;
 
-  /// \brief Type of each input argument (only last may be TUPLE).
+  /** \brief Type of each input argument (only last may be TUPLE). */
   std::vector<InputType> inputType;
 
-  // \brief number of output arguments.
+  /** \brief Number of output arguments. */
   unsigned outputSize;
 
   // Query/Answer cache
-  // \brief Type used for associating an \see Answer to a \see Query
+  /** \brief Type used for associating an Answer to a Query. */
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
-  // \brief Type used for associating a container of learned Nogoods \see Query
+  /** \brief Type used for associating a container of learned nogoods to a Query. */
   typedef boost::unordered_map<const Query, SimpleNogoodContainerPtr> QueryNogoodCache;
-  // \brief Associates an \see Answer to a \see Query
+  /** \brief Associates an Answer to a Query. */
   QueryAnswerCache queryAnswerCache;
-  // \brief Associates a container of learned Nogoods \see Query
+  /** \brief Associates a container of learned Nogoods Query. */
   QueryNogoodCache queryNogoodCache;
-  // \brief Mutex for accessing \see queryAnswerCache and \see queryNogoodCache
+  /** \brief Mutex for accessing PluginAtom::queryAnswerCache and PluginAtom::queryNogoodCache. */
   boost::mutex cacheMutex;
 
-  /// \brief output tuples generated so far (used for learning for functional sources)
+  /** \brief Output tuples generated so far (used for learning for functional sources). */
   std::vector<Tuple> otuples;
 
-  /// \brief Registry associated with this atom
-  //
-  // This association cannot be done by the plugin itself, it is done by
-  // the PluginContainer loading or receiving the plugin.
-
-  // Registry associated with this atom
+  /** \brief Registry associated with this atom.
+   *
+   * This association cannot be done by the plugin itself, it is done by
+   * the PluginContainer loading or receiving the plugin.
+   */
   RegistryPtr registry;
 
 private:
+  /**
+   * \brief Copy-constructor of the plugin atom.
+   * @param pa Other plugin atom to copy.
+   */
   PluginAtom(const PluginAtom& pa){}
+
+  /**
+   * \brief Assignment operator.
+   * @param pa Other plugin atom to assign.
+   * @return Reference to this object.
+   */
   const PluginAtom& operator=(const PluginAtom& pa){ return *this; }
 };
 
@@ -1293,8 +1331,10 @@ public:
   /**
    * Conversion function.
    *
-   * The input program is read from i. The output must be passed on to the
-   * stream o, either the original input stream or the result of a conversion.
+   * The input program is read from \p i. The output must be passed on to the
+   * stream \p o, either the original input stream or the result of a conversion.
+   * @param i Input stream (concatenation of all input files and stdin).
+   * @param o Output stream which is expected to contain a HEX-program when this method returns.
    */
   virtual void convert(std::istream& i, std::ostream& o) = 0;
 };

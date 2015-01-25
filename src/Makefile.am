@@ -112,6 +112,7 @@ libdlvhex2_base_la_SOURCES = \
     Term.cpp \
     URLBuf.cpp \
     UnfoundedSetCheckHeuristics.cpp \
+    UnfoundedSetCheckHeuristicsInterface.cpp \
     UnfoundedSetChecker.cpp
 
 # dlvhex MLP component
