@@ -1420,7 +1420,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 						bool answeredFromCacheOrSupportSets;
 						DBGLOG(DBG, "Heuristic decides to evaluate external atom " << factory.innerEatoms[eaIndex]);
 						conflict |= verifyExternalAtom(eaIndex, partialInterpretation, assigned,
-										eatom.getExtSourceProperties().doesCareAboutChanged() ? changedAtomsPerExternalAtom[eaIndex] : changed,
+										eatom.getExtSourceProperties().doesCareAboutChanged() ? changedAtomsPerExternalAtom[eaIndex] : InterpretationConstPtr(),
 										&answeredFromCacheOrSupportSets);
 
 						// if the external source was actually called, then clear the set of changed atoms (otherwise keep them until the source is actually called)
