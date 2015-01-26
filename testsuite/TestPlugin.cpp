@@ -883,6 +883,23 @@ public:
       answer.insert(tu);
     }
   }
+
+  class EAHeuristics : public ExternalAtomEvaluationHeuristics{
+  public:
+    EAHeuristics(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg) {}
+    bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) { return true; }
+  };
+
+  class EAHeuristicsFactory : public ExternalAtomEvaluationHeuristicsFactory{
+  public:
+    ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg){ return ExternalAtomEvaluationHeuristicsPtr(new EAHeuristics(reg)); }
+  };
+
+  bool providesCustomExternalAtomEvaluationHeuristicsFactory() const { return true; }
+
+  ExternalAtomEvaluationHeuristicsFactoryPtr getCustomExternalAtomEvaluationHeuristicsFactory() const
+	{ return ExternalAtomEvaluationHeuristicsFactoryPtr(new EAHeuristicsFactory()); }
+
 };
 
 class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learning

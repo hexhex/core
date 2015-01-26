@@ -60,7 +60,7 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
 public:
 	UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 /**
@@ -76,25 +76,9 @@ class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSet
  * \brief Performs UFS checks whenever deterministic reasoning cannot derive further atoms.
  */
 class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
-private:
-	/** \brief stores the atoms which were assigned and verified when the skipProgram was updated last time. */
-	InterpretationPtr previouslyAssignedAndVerifiedAtoms;
-
-	/** \brief Remembers external atom replacement atoms which have already been assigned but could not be verified yet. */
-	InterpretationPtr notYetVerifiedExternalAtoms;
-
-	/** \brief Stores for each atom in which rule (identified by its index in the ground program) it occurs (positively or negatively). */
-	std::map<IDAddress, std::set<int> > rulesOfAtom;
-
-	/** \brief Stores for each rule (address) the number of total and of currently assigned and verified atoms. */
-	std::vector<int> atomsInRule, assignedAndVerifiedAtomsInRule;
-
-	/** \brief Skip program according to previouslyAssignedAtoms. */
-	std::set<ID> skipProgram;
 public:
 	UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
-	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 /**
@@ -114,15 +98,9 @@ private:
 	/** Counts the number of calls in order to periodically perform the UFS check. */
 	int counter;
 
-	/** \brief This interpretation is only resetted if an actual UFS check is performed.
-	  *        This allows for reusing UnfoundedSetCheckHeuristicsMax for the implementation since it ensures that the notification of UnfoundedSetCheckHeuristicsMax
-	  *        about changed atoms is correct.
-	  */
-	InterpretationPtr accumulatedChangedAtoms;
 public:
 	UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
-	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 /**

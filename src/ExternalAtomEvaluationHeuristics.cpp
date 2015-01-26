@@ -46,6 +46,10 @@ bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eato
 	return true;
 }
 
+bool ExternalAtomEvaluationHeuristicsAlways::frequent(){
+	return true;
+}
+
 ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsAlwaysFactory::createHeuristics(RegistryPtr reg){
 	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsAlways(reg));
 }

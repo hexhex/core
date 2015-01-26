@@ -53,6 +53,7 @@ class ExternalAtomEvaluationHeuristicsAlways : public ExternalAtomEvaluationHeur
 public:
 	ExternalAtomEvaluationHeuristicsAlways(RegistryPtr reg);
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+	virtual bool frequent();
 };
 
 /**

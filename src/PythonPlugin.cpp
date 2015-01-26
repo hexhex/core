@@ -617,6 +617,7 @@ bool learn(boost::python::tuple args) {
 			if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.learn: Parameters must be positive or negated atom IDs");
 			ng.insert(NogoodContainer::createLiteral(id));
 		}
+		DBGLOG(DBG, "Learning nogood " << ng.getStringRepresentation(emb_ctx->registry()) << " from python plugin");
 		emb_nogoods->addNogood(ng);
 
 		return true;

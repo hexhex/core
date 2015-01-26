@@ -1214,15 +1214,13 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 
 	bool performCheck = false;
 	static std::set<ID> emptySkipProgram;
-	const std::set<ID>* skipProgram = &emptySkipProgram;
 
 	if (partial){
 		assert (!!assigned && !!changed);
 
 		DBGLOG(DBG, "Calling UFS check heuristic");
-		UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristicsResult decision = ufsCheckHeuristics->doUFSCheck(verifiedAuxes, partialInterpretation, assigned, changed);
 
-		if (decision.doUFSCheck()){
+		if (ufsCheckHeuristics->doUFSCheck(verifiedAuxes, partialInterpretation, assigned, changed)){
 
 			if (!factory.ctx.config.getOption("UFSCheck") && !factory.ctx.config.getOption("UFSCheckAssumptionBased")){
 				LOG(WARNING, "Partial unfounded set checks are only possible if FLP check method is set to unfounded set check; will skip the check");
@@ -1236,39 +1234,17 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
 
 			DBGLOG(DBG, "Heuristic decides to do a partial UFS check");
 			performCheck = true;
-			skipProgram = &decision.skipProgram();
-
-#ifndef NDEBUG
-			// check if all replacement atoms in the non-skipped program for UFS checking are verified
-			BOOST_FOREACH (ID ruleID, annotatedGroundProgram.getGroundProgram().idb){
-				const Rule& rule = reg->rules.getByID(ruleID);
-				if (decision.skipProgram().count(ruleID) > 0) continue;	// check only non-skipped rules
-				if (rule.isEAGuessingRule()) continue;		// guessing rules are irrelevant for the UFS check
-
-				BOOST_FOREACH (ID h, rule.head){
-					assert (assigned->getFact(h.address) && "UFS checker heuristic tried to perform UFS check over program part with unassigned head atoms");
-				}
-				BOOST_FOREACH (ID b, rule.body){
-					assert (assigned->getFact(b.address) && "UFS checker heuristic tried to perform UFS check over program part with unassigned body atoms");
-					if (b.isExternalAuxiliary() && !b.isExternalInputAuxiliary()){
-						assert (verifiedAuxes->getFact(b.address) && "UFS checker heuristic tried to perform UFS check over program part with non-verified external atom replacements");
-					}
-				}
-			}
-#endif
 		}else{
 			DBGLOG(DBG, "Heuristic decides not to do an UFS check");
 		}
 	}else{
-
-
-
 		DBGLOG(DBG, "Since the method was called for a full check, it will be performed");
 		performCheck = true;
 	}
 
 	if (performCheck){
-		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, *skipProgram,
+		std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation,
+			                                            (partial ? ufsCheckHeuristics->getSkipProgram() : emptySkipProgram),
 			                                            factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 		bool ufsFound = (ufs.size() > 0);
 #ifndef NDEBUG
@@ -1372,45 +1348,53 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	while (en < en_end){
 		if (assigned->getFact(*en)){
 
-			// for all external atoms which watch this atom
-			BOOST_FOREACH (int eaIndex, verifyWatchList[*en]){
-				if (!eaEvaluated[eaIndex]){
-					const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+			// first call high and then low frquency heuristics
+			for (int hf = 1; hf >= 0; hf--){
+				bool highFrequency = (hf == 1);
+				DBGLOG(DBG, "Calling " << (highFrequency ? "high" : "low") << " frequency heuristics");
 
-					// evaluate external atom if the heuristics decides so
-					bool doEval;
-					{
-						DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtoms eh");
-						assert (!!eaEvalHeuristics[eaIndex]);
-						doEval = eaEvalHeuristics[eaIndex]->doEvaluate(eatom,
-						                                                annotatedGroundProgram.getEAMask(eaIndex)->mask(),
-						                                                annotatedGroundProgram.getProgramMask(),
-						                                                partialInterpretation, assigned, changed);
-					}
-					if (doEval){
-						// evaluate it
-						bool answeredFromCacheOrSupportSets;
-						DBGLOG(DBG, "Heuristic decides to evaluate external atom " << factory.innerEatoms[eaIndex]);
-						conflict |= verifyExternalAtom(eaIndex, partialInterpretation, assigned,
-										eatom.getExtSourceProperties().doesCareAboutChanged() ? changedAtomsPerExternalAtom[eaIndex] : InterpretationConstPtr(),
-										&answeredFromCacheOrSupportSets);
+				// for all external atoms which watch this atom
+				// for low frquency heuristics we use unverifyWatchList by intend as it contains all atoms relevant to this external atom
+				std::vector<int>& watchlist = (highFrequency ? unverifyWatchList[*en] : verifyWatchList[*en]);
+				BOOST_FOREACH (int eaIndex, watchlist){
+					assert (!!eaEvalHeuristics[eaIndex]);
 
-						// if the external source was actually called, then clear the set of changed atoms (otherwise keep them until the source is actually called)
-						if (!answeredFromCacheOrSupportSets && eatom.getExtSourceProperties().doesCareAboutChanged()){
-							assert (!!changedAtomsPerExternalAtom[eaIndex]);
-							DBGLOG(DBG, "Resetting changed atoms of external atom " << factory.innerEatoms[eaIndex]);
-							changedAtomsPerExternalAtom[eaIndex]->clear();
+					if ((highFrequency == eaEvalHeuristics[eaIndex]->frequent()) && !eaEvaluated[eaIndex]){
+						const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+
+						// evaluate external atom if the heuristics decides so
+						DBGLOG(DBG, "Calling " << (highFrequency ? "high" : "low") << " frequency heuristics for external atom " << eaEvalHeuristics[eaIndex]);
+						if (eaEvalHeuristics[eaIndex]->doEvaluate(
+												eatom,
+												annotatedGroundProgram.getEAMask(eaIndex)->mask(),
+												annotatedGroundProgram.getProgramMask(),
+												partialInterpretation, assigned, changed)){
+							// evaluate it
+							bool answeredFromCacheOrSupportSets;
+							DBGLOG(DBG, "Heuristic decides to evaluate external atom " << factory.innerEatoms[eaIndex]);
+							conflict |= verifyExternalAtom(eaIndex, partialInterpretation, assigned,
+											eatom.getExtSourceProperties().doesCareAboutChanged() ? changedAtomsPerExternalAtom[eaIndex] : InterpretationConstPtr(),
+											&answeredFromCacheOrSupportSets);
+
+							// if the external source was actually called, then clear the set of changed atoms (otherwise keep them until the source is actually called)
+							if (!answeredFromCacheOrSupportSets && eatom.getExtSourceProperties().doesCareAboutChanged()){
+								assert (!!changedAtomsPerExternalAtom[eaIndex]);
+								DBGLOG(DBG, "Resetting changed atoms of external atom " << factory.innerEatoms[eaIndex]);
+								changedAtomsPerExternalAtom[eaIndex]->clear();
+							}
+						}
+
+						// if the external atom is still not verified then find a new yet unassigned atom to watch
+						// (only necessary for low frequency heuristics since high frequency ones always watch all atoms)
+						if (!highFrequency && !eaEvaluated[eaIndex]){
+							IDAddress id = getWatchedLiteral(eaIndex, assigned, false);
+							if (id != ID::ALL_ONES) verifyWatchList[id].push_back(eaIndex);
 						}
 					}
-					if (!eaEvaluated[eaIndex]){
-						// find a new yet unassigned atom to watch
-						IDAddress id = getWatchedLiteral(eaIndex, assigned, false);
-						if (id != ID::ALL_ONES) verifyWatchList[id].push_back(eaIndex);
-					}
 				}
+				// current atom was set, so remove all watches
+				verifyWatchList[*en].clear();
 			}
-			// current atom was set, so remove all watches
-			verifyWatchList[*en].clear();
 		}
 
 		en++;
@@ -1518,6 +1502,7 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 	// Although there is already another reason for backtracking,
 	// we still need to notify the heuristics such that it can update its internal information about assigned atoms.
 	assert (!!ufsCheckHeuristics);
+	ufsCheckHeuristics->updateSkipProgram(verifiedAuxes, partialAssignment, assigned, changed);
 	if (!conflict) unfoundedSetCheck(partialAssignment, assigned, changed, true);
 	else ufsCheckHeuristics->notify(verifiedAuxes, partialAssignment, assigned, changed);
 }

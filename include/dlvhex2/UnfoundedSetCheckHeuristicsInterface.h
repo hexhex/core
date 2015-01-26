@@ -65,35 +65,24 @@ protected:
 	 */
 	RegistryPtr reg;
 
-	/**
-	 * \brief Reference to the ground program for which the initation of unfounded set checks shall be decided.
-	 */
+	/** \brief Reference to the ground program for which the initation of unfounded set checks shall be decided. */
 	const AnnotatedGroundProgram& groundProgram;
 
+	/** \brief stores the atoms which were assigned and verified when the skipProgram was updated last time. */
+	InterpretationPtr previouslyAssignedAndVerifiedAtoms;
+
+	/** \brief Remembers external atom replacement atoms which have already been assigned but could not be verified yet. */
+	InterpretationPtr notYetVerifiedExternalAtoms;
+
+	/** \brief Stores for each atom in which rule (identified by its index in the ground program) it occurs (positively or negatively). */
+	std::map<IDAddress, std::set<int> > rulesOfAtom;
+
+	/** \brief Stores for each rule (address) the number of total and of currently assigned and verified atoms. */
+	std::vector<int> atomsInRule, assignedAndVerifiedAtomsInRule;
+
+	/** \brief See UnfoundedSetCheckHeuristics::updateSkipProgram and UnfoundedSetCheckHeuristics::getSkipProgram. */
+	std::set<ID> skipProgram;
 public:
-	/**
-	 * \brief Wrapper for the result of heuristics.
-	 */
-	class UnfoundedSetCheckHeuristicsResult : public std::pair<bool, const std::set<ID>&>{
-	public:
-		/**
-		 * \brief Constructor.
-		 * @param doUFSCheck The outcome whether to do an unfounded set check or not.
-		 * @param skipProgram The set of rules (identified by their IDs) which are to be ignored in the UFS check.
-		 */
-		UnfoundedSetCheckHeuristicsResult(bool doUFSCheck, const std::set<ID>& skipProgram);
-
-		/**
-		 * \brief See UnfoundedSetCheckHeuristicsResult::UnfoundedSetCheckHeuristicsResult.
-		 */
-		inline bool doUFSCheck() const { return first; }
-
-		/**
-		 * \brief See UnfoundedSetCheckHeuristicsResult::UnfoundedSetCheckHeuristicsResult.
-		 */
-		inline const std::set<ID>& skipProgram() const { return second; }
-	};
-
 	UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 
 	/**
@@ -103,10 +92,9 @@ public:
 	 * @param partialAssignment The current (partial) interpretation
 	 * @param assigned The current set of assigned atoms; if NULL, then the interpretation is complete
 	 * @param changed The set of atoms with a (possibly) modified truth value since the last call of this method; if NULL, then all atoms have changed
-	 * @return The first component is true if the heuristics suggests to do an UFS check, otherwise false.
-	 *         If true, then the second component is the set of rules which shall be ignored in the UFS check. The assignment must be complete for all non-ignored rules.
+	 * @return True if the heuristics decides to do an unfounded set check now, and false otherwise.
 	 */
-	virtual UnfoundedSetCheckHeuristicsResult doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
+	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
 
 	/**
 	  * \brief Notifies the heuristic about changes in the assignment, although the caller is not going to perform an UFS check at this point.
@@ -117,6 +105,25 @@ public:
 	  * @param changed The set of atoms with a (possibly) modified truth value since the last call of this method; if NULL, then all atoms have changed
 	  */
 	virtual void notify(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+
+	/**
+	  * \brief Updates the skip program according to a new partial assignment.
+	  * 
+	  * The skip program is the set of rules which are currently not (fully) assignment and thus have to be excluded from UFS checks.
+	  * 
+	  * @param partialAssignment The current (partial) interpretation
+	  * @param assigned The current set of assigned atoms; if NULL, then the interpretation is complete
+	  * @param changed The set of atoms with a (possibly) modified truth value since the last call of this method; if NULL, then all atoms have changed
+	  */
+	void updateSkipProgram(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+
+	/**
+	  * \brief Returns a reference to the current skip program.
+	  *
+	  * The method UnfoundedSetCheckHeuristics::updateSkipProgram should be called before this method is used.
+	  * @return The current set of rules which are not fully assigned and thus have to be excluded from UFS checks.
+	  */
+	inline const std::set<ID>& getSkipProgram() const { return skipProgram; }
 };
 
 typedef boost::shared_ptr<UnfoundedSetCheckHeuristics> UnfoundedSetCheckHeuristicsPtr;

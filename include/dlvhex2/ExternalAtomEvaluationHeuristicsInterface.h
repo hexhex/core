@@ -60,8 +60,9 @@ protected:
 public:
 	ExternalAtomEvaluationHeuristics(RegistryPtr reg) : reg(reg) {}
 	virtual ~ExternalAtomEvaluationHeuristics() {}
+
 	/**
-	* Decides if the reasoner shall evaluate a given external atom at this point.
+	* \brief Decides if the reasoner shall evaluate a given external atom at this point.
 	* @param eatom The external atom in question.
 	* @param eatomMask Mask with all atoms relevant for this external atom.
 	* @param programMask All atoms in the program.
@@ -71,6 +72,24 @@ public:
 	* @return True if the heuristics suggests to evaluate the external atom, otherwise false.
 	*/
 	virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) = 0;
+
+	/**
+	* \brief Decides if the heuristics is called more or less frequently.
+	*
+	* External atom evaluation heuristics are called only when at least one relevant atom has changed since the last call.
+	* To this end, external atoms hold watches on the atoms. The number of such watches is controlled by this method.
+	* If it returns false (default), then each external atom randomly adds a watch exactly to one of the relevant atoms.
+	* If it returns true, then each external atom watches all relevant atoms.
+	* In the former case, the heuristics is only called if a particular relevant atom changes, while in the latter case
+	* it is called whenever any relevant atom changes. This might allow for earlier propagation (by nogood learning),
+	* but causes more overhead.
+	* 
+	* As a rule of thumb, heuristics which mostly decide to evaluate external atoms might want to further increase the evaluation frequency
+	* by returning true, while heuristics which mostly decide not to evaluate external atoms usually return false to avoid overhead.
+	*
+	* @return True if the heuristics wants to be called more frequently, otherwise false.
+	*/
+	virtual bool frequent() { return false; }
 };
 
 typedef boost::shared_ptr<ExternalAtomEvaluationHeuristics> ExternalAtomEvaluationHeuristicsPtr;
