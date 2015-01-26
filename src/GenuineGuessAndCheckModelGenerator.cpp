@@ -500,12 +500,19 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 			eaEvalHeuristics.push_back(defaultExternalAtomEvalHeuristics);
 		}
 
-		// watch all atoms in the scope of the external atom for unverification
+		// watch all atoms in the scope of the external atom for watch one input atom for verification
 		bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().end();
 		if (en < en_end){
-			// watch one input atom for verification
 			verifyWatchList[*en].push_back(i);
+		}
+
+		// watch all atoms in the scope of the external atom for unverification
+		en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
+		en_end = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().end();
+		while (en < en_end){
+			unverifyWatchList[*en].push_back(i);
+			en++;
 		}
 	}
 
@@ -1318,59 +1325,24 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationCon
 
 	DBGLOG(DBG, "Unverify External Atoms");
 
-	bm::bvector<>::enumerator en;
-	bm::bvector<>::enumerator en_begin;
-	if (!!changed) en_begin = changed->getStorage().first();
-	bm::bvector<>::enumerator en_end;
-	if (!!changed) en_end = changed->getStorage().end();
+	// for all changed atoms
+	bm::bvector<>::enumerator en = changed->getStorage().first();
+	bm::bvector<>::enumerator en_end = changed->getStorage().end();
+	while (en < en_end){
+		// for all external atoms which watch this atom for unverification
+		BOOST_FOREACH (int eaIndex, unverifyWatchList[*en]){
+			if (eaEvaluated[eaIndex]){
+				// unverify
+				eaVerified[eaIndex] = false;
+				eaEvaluated[eaIndex] = false;
+				verifiedAuxes->getStorage() -= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 
-	// for each eatom, if it is evaluated:
-	// * look if there is a bit in changed that matches the eatom mask
-	// * if yes:
-	//     * unverify eatom and use the changed bit as new watch
-	//     * if a watched atom was assigned, possibly evaluate the external atom (driven by a heuristics)
-
-	// unverify/unfalsify external atoms which watch this atom
-	for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
-		if( !eaEvaluated[eaIndex] )
-			// we don't need to verify watches because the eatom was not evaluated
-			continue;
-
-		  const InterpretationConstPtr& mask = annotatedGroundProgram.getEAMask(eaIndex)->mask();
-
-		  // check if something in its mask was changed
-		  bool unverify = false;
-		  if (!!changed){
-			  DBGLOG(DBG, "Checking if a changed atom belongs to the input of external atom " << factory.innerEatoms[eaIndex]);
-			  en = en_begin;
-			  while (en < en_end){
-				if(mask->getFact(*en)){
-					// yes, it changed, so we unverify and leave
-					DBGLOG(DBG, "atom " << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg) <<
-						    " changed and unverified external atom " <<
-					printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
-
-					unverify = true;
-					break;
-				}
-				en++;
-			  }
-		  }else{
-			// everything changed (potentially): unverify all external atoms
-			const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-		  	unverify = true;
-		  }
-		  if (unverify){
-			// unverify
-			eaVerified[eaIndex] = false;
-			eaEvaluated[eaIndex] = false;
-			verifiedAuxes->getStorage() -= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
-
-			// *en is our new watch (as it is either undefined or was recently changed)
-			verifyWatchList[*en].push_back(eaIndex);
+				// *en is our new watch (as it is either undefined or was recently changed)
+				verifyWatchList[*en].push_back(eaIndex);
+			}
 		}
+		en++;
 	}
-
 	DBGLOG(DBG, "Unverify External Atoms finished");
 }
 
