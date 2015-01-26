@@ -150,6 +150,7 @@ ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, Tuple o
 	return idreplacement;
 }
 
+#if 0
 ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, const Tuple& ituple, const Tuple& otuple, bool sign){
 
 	bool ground = true;
@@ -176,6 +177,7 @@ ID ExternalLearningHelper::getOutputAtom(const PluginAtom::Query& query, const T
 	ID idreplacement = NogoodContainer::createLiteral(query.ctx->registry()->storeOrdinaryAtom(replacement));
 	return idreplacement;
 }
+#endif
 
 ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule){
 

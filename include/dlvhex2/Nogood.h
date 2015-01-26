@@ -46,7 +46,24 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * \brief Stores a set of signed literals.
+ * \brief Stores a set of signed literals which cannot be simultanously true.
+ * 
+ * A nogood is used to restrict the search space. To this end, they contain
+ * signed literals (that is, positive or negative atoms) which cannot be simultanously
+ * true in a compatible set.
+ * 
+ * In dlvhex, they are mainly used to encode conditions which contradict the semantics
+ * of external atoms.
+ * For instance, the nogood <em>{ p(a), -q(a), -&diff[p,q](a) }</em> encodes that whenever the atom
+ * <em>p(a)</em> is true and the atom <em>q(a)</em> is false, then the atom &diff[p,q](a) must be true
+ * (i.e. must not be false) since constant <em>a</em> will be in the output of the set difference of <em>p</em> and <em>q</em>.
+ * 
+ * Note: For constructing <em>external source output atoms</em> (such as <em>&diff[p,q](a)</em>), use
+ * the method ExternalLearningHelper::getOutputAtom.
+ * 
+ * Nogoods can be added to the reasoner in the method PluginAtom::retrieve.
+ * When adding dlvhex IDs to a nogood, they need to be passed through NogoodContainer::createLiteral to strip off
+ * property flags (Nogood::insert performs this step automatically).
  */
 class DLVHEX_EXPORT Nogood : public Set<ID>, public ostream_printable<Nogood>{
 private:
@@ -139,6 +156,9 @@ public:
 
 	/**
 	 * \brief Adds a literal to this nogood.
+	 * 
+	 * Note: Before adding, the literal is passed through NogoodContainer::createLiteral to translate it into a uniform form (strip off property flags from the ID).
+	 * 
 	 * @param lit ID of the literal to add.
 	 */
 	void insert(ID lit);
@@ -266,7 +286,10 @@ public:
 	virtual void addNogood(Nogood ng) = 0;
 
 	/**
-	 * \brief Transforms a literal into a generic form by dropping all property flags from the ID (keeping only the NAF flag).
+	 * \brief Transforms a literal into a generic form by stripping off all property flags from the ID (keeping only the NAF flag if present).
+	 * 
+	 * This method must be called for dlvhex literal IDs before using them in an instance of Nogood (which is automatically done by Nogood::insert).
+	 * 
 	 * @param lit A positive or negative literal ID.
 	 * @return Simplified ID.
 	 */
@@ -279,7 +302,8 @@ public:
 	}
 
 	/**
-	 * \brief Transforms an atom address into a generic ID form by dropping all property flags from the ID (keeping only the NAF flag).
+	 * \brief Transforms an atom address into a generic ID form by dropping all property flags from the ID (keeping only the NAF flag if present).
+	 * 
 	 * @param litadr IDAddress of a ground or nonground atom.
 	 * @param truthValue Defines whether to generate a positive or negative literal from the given IDAddress.
 	 * @param ground Defines whether the given IDAddress refers to a ground or nonground literal.

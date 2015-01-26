@@ -33,16 +33,19 @@
  */
 
 /**
- * \defgroup pluginframework The Plugin Framework
+ * \defgroup pluginframework The C++ Plugin Framework
  *
  * \section introduction Introduction
  *
- * dlvhex evaluates Answer Set Programs with external atoms. One important
+ * The dlvhex reasoner evaluates Answer %Set Programs with external atoms. One important
  * design principle was to provide a mechanism to easily add further external
  * atoms without having to recompile the main application. A \em plugin is a
  * shared library that provides functions to realise custom external atoms.
  * Furthermore, a plugin can supply rewriting facilities, which may alter the
  * input logic program prior to evaluation.
+ * Plugins can be written in C++ as described below or in Python as described
+ * \ref pythonpluginframework "here"; the latter does not have all features of the C++
+ * version but should be sufficient in almost all cases.
  *
  * This Section gives an overview of dlvhex plugins and external atoms.
  *
@@ -114,7 +117,7 @@
  * relevant part of the interpretation, but also supports dlvhex in calculating
  * the dependencies within a HEX-program.
  *
- * \section writingplugin Writing a Plugin
+ * \section writingplugin Writing a C++ Plugin
  * We wanted to keep the interface between dlvhex and the plugins as lean as
  * possible.
  * Necessary tasks are:
@@ -125,14 +128,21 @@
  *
  * Usual tasks for implementing a plugin interface are at least one of the
  * following. We give the most usual implementation tasks first:
- * - external atoms (method createAtoms)
- * - a usage (--help) message (method printUsage)
- * - commandline option processing (method processOptions)
- * - input converter (method createConverter or createConverters)
- * - ProgramCtx modifications before evaluation (method setupProgramCtx)
- * - input parser modules (method createParserModules or createParser)
- * - program rewriter (method createRewriter)
- * - dependency graph optimizer (method createOptimizer)
+ * - external atoms (method PluginInterface::createAtoms)
+ * - a usage (--help) message (method PluginInterface::printUsage)
+ * - commandline option processing (method PluginInterface::processOptions)
+ * - input converter (method createConverter or PluginInterface::createConverters)
+ * - ProgramCtx modifications before evaluation (method PluginInterface::setupProgramCtx)
+ * - input parser modules (method createParserModules or PluginInterface::createParser)
+ * - program rewriter (method PluginInterface::createRewriter)
+ * - dependency graph optimizer (method PluginInterface::createOptimizer)
+ * 
+ * In particular, the task of defining external atoms which can be used in the HEX-program
+ * is done by implementing a class derived from PluginAtom
+ * and registering it via PluginInterface::createAtoms.
+ * Each such class defines exactly one external predicate (e.g. &concat) by implementing
+ * the method PluginAtom::retrieve, which comes in two overloaded versions depending on whether
+ * customized learning techniques shall be used or not.
  * 
  * For details about each of these tasks see the respective method
  * documentation, the test plugin in testsuite/TestPlugin.cpp,
@@ -163,6 +173,17 @@
  * PluginAtom interface. (The HEX programs do not change at all, just the
  * implementation of the external atom.)
  *
+ * In addition to the actual semantics of an external atom, the class PluginAtom
+ * allows allows for defining customized learning functions.
+ * To this end, the method PluginAtom::retrieve comes with an overloaded
+ * version which gets a pointer to a NogoodContainer where customized nogoods
+ * can be added to restrict the search space.
+ * For instance, the nogood <em>{ p(a), -q(a), -&diff[p,q](a) }</em> encodes that whenever the atom <em>p(a)</em> is true and the atom
+ * <em>q(a)</em> is false, then the atom &diff[p,q](a) must be true (i.e. must not be false) since constant <em>a</em>
+ * will be in the output of the set difference of <em>p</em> and <em>q</em>.
+ * We refer to the classes Nogood and NogoodContainer for details.
+ * Moreover, the class ExternalLearningHelper contains some methods which help with the construction of nogoods.
+ * 
  * In TestPlugin.cpp, some plugin atoms are implemented both using
  * PluginAtom and ComfortPluginAtom in order to provide an example of the
  * differences.
@@ -177,6 +198,12 @@
  * You need packages for libtool, automake, and autoconf.
  * We also provide a dlvhex.m4 script for easier configuration of DLVHEX plugins,
  * see for its usage the dlvhex-stringplugin or the dlvhex-scriptplugin.
+ *
+ * \section usage Using a C++ Plugin
+ * 
+ * In order to load a Python-implemented plugin stored as shared object in a directory PATH,
+ * pass the additional option \code --plugindir=PATH \endcode to dlvhex.
+ * Alternatively, you make install the plugin in the global plugin directory by calling <em>make install</em>.
  */
 #if !defined(_DLVHEX_PLUGININTERFACE_H)
 #define _DLVHEX_PLUGININTERFACE_H
@@ -1031,7 +1058,7 @@ public:
    * 
    * @param query Input to the external source.
    * @param answer Output of the external source.
-   * @param nogoods Nogoods learned from the external source.
+   * @param nogoods Here, nogoods learned from the external source can be added to prune the search space; see Nogood, NogoodContainer and ExternalLearningHelper.
    * @param useCache True to use the cache (if possible), false to answer the query directly.
    *
    * @return True if the query was answered from cache and false otherwise.
@@ -1047,7 +1074,7 @@ public:
    * 
    * @param query Input to the external source.
    * @param answer Output of the external source.
-   * @param nogoods Nogoods learned from the external source.
+   * @param nogoods Here, nogoods learned from the external source can be added to prune the search space; see Nogood, NogoodContainer and ExternalLearningHelper.
    *
    * @return True if the query was answered from cache and false otherwise.
    */
@@ -1072,7 +1099,7 @@ public:
    * 
    * @param query Input to the external source.
    * @param answer Output of the external source.
-   * @param nogoods Nogoods learned from the external source.
+   * @param nogoods Here, nogoods learned from the external source can be added to prune the search space; see Nogood, NogoodContainer and ExternalLearningHelper.
    */
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods);
 

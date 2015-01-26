@@ -241,6 +241,10 @@ void Nogood::heuristicNormalization(RegistryPtr reg){
 }
 
 void Nogood::insert(ID lit){
+	// strip off property flags
+	lit = NogoodContainer::createLiteral(lit);
+
+	// actual insertion
 	Set<ID>::insert(lit);
 	ground &= lit.isOrdinaryGroundAtom();
 }
