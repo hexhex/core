@@ -1046,24 +1046,34 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
           }
       }
     }
-    if (ruleDom.body.size() > 0 || ruleExpl.body.size() > 0){
-      ID ruleDomID = reg->storeRule(ruleDom);
-      ID ruleExplID = reg->storeRule(ruleExpl);
+
+    // add rule with domain predicates to IDB
+    ID ruleDomID = reg->storeRule(ruleDom);
+    idbWithDomainPredicates.push_back(ruleDomID);
 #ifndef NDEBUG
-      {
+    {
       std::stringstream s;
       RawPrinter printer(s, reg);
       s << "adding domain predicates: rewriting rule ";
       printer.print(ruleid);
       s << " to ";
       printer.print(ruleDomID);
-      s << " (for IDB) and domain-exploration rule ";
-      printer.print(ruleExplID);
-      DBGLOG(DBG, s.str());
+    }
+#endif
+
+    // create domain exploration rule (if necessary)
+    if (ruleExpl.head.size() > 0 || ruleExpl.body.size() > 0){
+      ID ruleExplID = reg->storeRule(ruleExpl);
+      deidb.push_back(ruleExplID);
+#ifndef NDEBUG
+      {
+        std::stringstream s;
+        RawPrinter printer(s, reg);
+        s << "Creating domain-exploration rule ";
+        printer.print(ruleExplID);
+        DBGLOG(DBG, s.str());
       }
 #endif
-      idbWithDomainPredicates.push_back(ruleDomID);
-      deidb.push_back(ruleExplID);
     }
   }
 
