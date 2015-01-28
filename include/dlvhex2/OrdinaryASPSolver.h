@@ -40,14 +40,21 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// abstract base class to capture ASP solvers
+/**
+  * \brief Abstract base class to capture ASP solvers.
+  */
 class OrdinaryASPSolver
 {
 public:
-  // instantiate (implement for each derived class)
-  // static OrdinaryASPSolverPtr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
+	// instantiate (implement for each derived class)
+	// static OrdinaryASPSolverPtr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
 
-  // get next model
+	/**
+	  * \brief Returns the next model.
+	  * 
+	  * This will also trigger callbacks to the propagators, see addPropagator.
+	  * @return The next model or a NULL-pointer of no more models exist.
+	  */
 	virtual InterpretationPtr getNextModel() = 0;
 };
 typedef boost::shared_ptr<OrdinaryASPSolver> OrdinaryASPSolverPtr;
