@@ -194,7 +194,7 @@ public:
 	virtual ~UnfoundedSetChecker() {}
 
 	/**
-	* \brief Returns an unfounded set of groundProgram wrt. compatibleSet;
+	* \brief Returns an unfounded set of groundProgram with respect to a compatibleSet;
 	* If the empty set is returned,
 	* then there does not exist a greater (nonempty) unfounded set.
 	* 
