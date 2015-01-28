@@ -86,43 +86,43 @@ struct ExtSourceProperties
 	PluginAtom* pa;
 
 	// all indices are 0-based
-	/** \brief See isMonotonic. */
+	/** \brief See ExtSourceProperties::isMonotonic. */
 	std::set<int> monotonicInputPredicates;
-	/** \brief See isAntiMonotonic. */
+	/** \brief See ExtSourceProperties::isAntiMonotonic. */
 	std::set<int> antimonotonicInputPredicates;
-	/** \brief See isIndependentOfPredicateParameterName. */
+	/** \brief See ExtSourceProperties::isIndependentOfPredicateParameterName. */
 	std::set<int> predicateParameterNameIndependence;
-	/** \brief See hasFiniteDomain. */
+	/** \brief See ExtSourceProperties::hasFiniteDomain. */
 	std::set<int> finiteOutputDomain;
-	/** \brief See hasRelativeFiniteDomain. */
+	/** \brief See ExtSourceProperties::hasRelativeFiniteDomain. */
 	std::set<std::pair<int, int> > relativeFiniteOutputDomain;
-	/** \brief See isFunctional. */
+	/** \brief See ExtSourceProperties::isFunctional. */
 	bool functional;
-	/** \brief See isFunctional. */
+	/** \brief See ExtSourceProperties::isFunctional. */
 	int functionalStart;
-	/** \brief See providesSupportSets. */
+	/** \brief See ExtSourceProperties::providesSupportSets. */
 	bool supportSets;
-	/** \brief See providesCompletePositiveSupportSets. */
+	/** \brief See ExtSourceProperties::providesCompletePositiveSupportSets. */
 	bool completePositiveSupportSets;
-	/** \brief See providesCompleteNegativeSupportSets. */
+	/** \brief See ExtSourceProperties::providesCompleteNegativeSupportSets. */
 	bool completeNegativeSupportSets;
-	/** \brief See hasVariableOutputArity. */
+	/** \brief See ExtSourceProperties::hasVariableOutputArity. */
 	bool variableOutputArity;
-	/** \brief See doesCareAboutAssigned. */
+	/** \brief See ExtSourceProperties::doesCareAboutAssigned. */
 	bool caresAboutAssigned;
-	/** \brief See doesCareAboutChanged. */
+	/** \brief See ExtSourceProperties::doesCareAboutChanged. */
 	bool caresAboutChanged;
-	/** \brief See isLinearOnAtomLevel. */
+	/** \brief See ExtSourceProperties::isLinearOnAtomLevel. */
 	bool atomlevellinear;		// predicate input can be split into single atoms
-	/** \brief See isLinearOnTupleLevel. */
+	/** \brief See ExtSourceProperties::isLinearOnTupleLevel. */
 	bool tuplelevellinear;		// predicate input can be split such that only atoms with the same arguments must be grouped
-	/** \brief See doesItUseEnvironment. */
+	/** \brief See ExtSourceProperties::doesItUseEnvironment. */
 	bool usesEnvironment;		// external atom uses the environment (cf. acthex)
-	/** \brief See hasFiniteFiber. */
+	/** \brief See ExtSourceProperties::hasFiniteFiber. */
 	bool finiteFiber;		// a fixed output value can be produced only by finitly many different inputs
-	/** \brief See hasWellorderingStrlen. */
+	/** \brief See ExtSourceProperties::hasWellorderingStrlen. */
 	std::set<std::pair<int, int> > wellorderingStrlen;	// <i,j> means that output value at position j is strictly smaller than at input position i (strlen)
-	/** \brief See hasWellorderingNatural. */
+	/** \brief See ExtSourceProperties::hasWellorderingNatural. */
 	std::set<std::pair<int, int> > wellorderingNatural;	// <i,j> means that output value at position j is strictly smaller than at input position i (wrt. natural numbers)
 
 	/**
@@ -150,43 +150,43 @@ struct ExtSourceProperties
 	ExtSourceProperties& operator|=(const ExtSourceProperties& prop2);
 
 	// setter
-	/** \brief See isMonotonic. */
+	/** \brief See ExtSourceProperties::isMonotonic. */
 	inline void addMonotonicInputPredicate(int index) { monotonicInputPredicates.insert(index); }
-	/** \brief See isAntiMonotonic. */
+	/** \brief See ExtSourceProperties::isAntiMonotonic. */
 	inline void addAntimonotonicInputPredicate(int index) { antimonotonicInputPredicates.insert(index); }
-	/** \brief See isIndependentOfPredicateParameterName. */
+	/** \brief See ExtSourceProperties::isIndependentOfPredicateParameterName. */
 	inline void addPredicateParameterNameIndependence(int index) { predicateParameterNameIndependence.insert(index); }
-	/** \brief See hasFiniteDomain. */
+	/** \brief See ExtSourceProperties::hasFiniteDomain. */
 	inline void addFiniteOutputDomain(int index) { finiteOutputDomain.insert(index); }
-	/** \brief See hasRelativeFiniteDomain. */
+	/** \brief See ExtSourceProperties::hasRelativeFiniteDomain. */
 	inline void addRelativeFiniteOutputDomain(int index1, int index2) { relativeFiniteOutputDomain.insert(std::pair<int, int>(index1, index2)); }
-	/** \brief See isFunction. */
+	/** \brief See ExtSourceProperties::isFunction. */
 	inline void setFunctional(bool value) { functional = value; }
-	/** \brief See isFunction. */
+	/** \brief See ExtSourceProperties::isFunction. */
 	inline void setFunctionalStart(int value) { functionalStart = value; }
-	/** \brief See providesSupportSets. */
+	/** \brief See ExtSourceProperties::providesSupportSets. */
 	inline void setSupportSets(bool value) { supportSets = value; }
-	/** \brief See providesCompletePositiveSupportSets. */
+	/** \brief See ExtSourceProperties::providesCompletePositiveSupportSets. */
 	inline void setCompletePositiveSupportSets(bool value) { completePositiveSupportSets = value; }
-	/** \brief See providesCompleteNegativeSupportSets. */
+	/** \brief See ExtSourceProperties::providesCompleteNegativeSupportSets. */
 	inline void setCompleteNegativeSupportSets(bool value) { completeNegativeSupportSets = value; }
-	/** \brief See hasVariableOutputArity. */
+	/** \brief See ExtSourceProperties::hasVariableOutputArity. */
 	inline void setVariableOutputArity(bool value) { variableOutputArity = value; }
-	/** \brief See doesCareAboutAssigned. */
+	/** \brief See ExtSourceProperties::doesCareAboutAssigned. */
 	inline void setCaresAboutAssigned(bool value) { caresAboutAssigned = value; }
-	/** \brief See doesCareAboutChanged. */
+	/** \brief See ExtSourceProperties::doesCareAboutChanged. */
 	inline void setCaresAboutChanged(bool value) { caresAboutChanged = value; }
-	/** \brief See isLinearOnAtomLevel. */
+	/** \brief See ExtSourceProperties::isLinearOnAtomLevel. */
 	inline void setAtomlevellinear(bool value) { atomlevellinear = value; }
-	/** \brief See isLinearOnTupleLevel. */
+	/** \brief See ExtSourceProperties::isLinearOnTupleLevel. */
 	inline void setTuplelevellinear(bool value) { tuplelevellinear = value; }
-	/** \brief See doesItUseEnvironment. */
+	/** \brief See ExtSourceProperties::doesItUseEnvironment. */
 	inline void setUsesEnvironment(bool value) { usesEnvironment = value; }
-	/** \brief See hasFiniteFiber. */
+	/** \brief See ExtSourceProperties::hasFiniteFiber. */
 	inline void setFiniteFiber(bool value) { finiteFiber = value; }
-	/** \brief See hasWellorderingStrlen. */
+	/** \brief See ExtSourceProperties::hasWellorderingStrlen. */
 	inline void addWellorderingStrlen(int index1, int index2) { wellorderingStrlen.insert(std::pair<int, int>(index1, index2)); }
-	/** \brief See hasWellorderingNatural. */
+	/** \brief See ExtSourceProperties::hasWellorderingNatural. */
 	inline void addWellorderingNatural(int index1, int index2) { wellorderingNatural.insert(std::pair<int, int>(index1, index2)); }
 
 	/**
