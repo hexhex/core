@@ -53,7 +53,7 @@ struct Rule:
   /** \brief The IDs of literals in the body of this rule. */
   Tuple body;
 
-  /** \brief The IDs of literals used as guards for the head of this rule. */
+  /** \brief The IDs of literals used as guards for the head of this rule (for disjunctions with variable length). */
   Tuple headGuard;
 
   /** \brief Vector of weights of the body literals; only for lparse weight rules (not to be confused with weak constraints!). */
