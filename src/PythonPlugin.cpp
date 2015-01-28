@@ -923,7 +923,23 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 			throw PluginError("Could not register dlvhex module in Python");
 		}
 		Py_Initialize();
-		PySys_SetArgvEx(iargv-1, pargv, 0);
+		wchar_t** wpargv = new wchar_t**[iargv];
+		for(int i = 0; i < iargv; ++i) {
+			if( pargv[i] == NULL ) wpargv[i] = NULL
+			else {
+				wpargv[i] = new wchar_t[strlen(pargv[i])+1];
+				for(int c = 0; c < strlen(pargv[i])+1; c++) {
+					// do a brutal cast (this will work in all 7-bit ASCII cases which is
+					// enough for now)
+					wpargv[i][c] = wchar_t(pargv[i][c]);
+					if( wpargv[i][c] & 0x7F != wpargv[i][c] ) {
+						LOG(WARN,"console input argument contains non-7-bit character in
+argument '" << pargv[i] << "' !");
+					}
+				}
+			}
+		}
+		PySys_SetArgvEx(iargv-1, wpargv, 0);
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
 #endif
