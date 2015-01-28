@@ -41,65 +41,103 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// Anonymous variables: are parsed as one variable "_".
-// Then they are processed into new distinct variables,
-// each with the anonymous bit set and with a new ID.
+/**
+  * \brief Stores terms.
+  *
+  * Supported types: constants, variables and nested terms.
+  * Integers do not use this class but rather store the value directly in the address field of the ID.
+  */
 struct DLVHEX_EXPORT Term:
 private ostream_printable<Term>
 {
-	// the kind part of the ID of this symbol
+	/** \brief The kind part of the ID of this symbol. */
 	IDKind kind;
 
-	// the textual representation of a
-	//  constant,
-	//  constant string (including ""), or
-	//  variable
+	// Anonymous variables: are parsed as one variable "_".
+	// Then they are processed into new distinct variables,
+	// each with the anonymous bit set and with a new ID.
+	/** \brief the Textual representation of a  constant,  constant string (including ""), or variable. */
 	std::string symbol;
 
-	// nested terms
-	// for primitive terms (constant, constant string, variable), the only element is ID_FAIL
-	// for nested terms, arguments[0] is the function symbol (primitive term) and arguments[n] for n>=1 are the arguments (which might be nested themselves)
-	// for nested terms, symbol contains a string representation of the whole term
+	/** \brief Stores the arguments of nested terms.
+	  *
+	  * Nested terms are function terms consisting of a function symbol and its arguments.
+	  * For primitive terms (constant, constant string, variable), the only element is ID_FAIL.
+	  * For nested terms, arguments[0] is the function symbol (primitive term) and arguments[n] for n>=1 are the arguments (which might be nested themselves).
+	  * Moreover ,for nested terms, symbol contains a string representation of the whole term.
+	  */
 	std::vector<ID> arguments;
 
+	/**
+	  * Constructor.
+	  * @param kind Identifies the type of the term; will be reused by Registry to construct the ID.
+	  * @param symbol The term string, which can be a constant (with or without quotation marks), a variable, or a nested term (in text format).
+	  */
 	Term(IDKind kind, const std::string& symbol): kind(kind), symbol(symbol) { 
 		assert(ID(kind,0).isTerm()); 
 
 		arguments.push_back(ID_FAIL);
 	}
 
+	/**
+	  * Constructor for nested terms.
+	  * @param kind Identifies the type of the term; will be reused by Registry to construct the ID.
+	  * @param arguments Element [0] is the function symbol, the remaining elements specify its arguments.
+	  * @param reg Registry to use for interpreting term IDs.
+	  */
 	Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg);
 
-	// sets the symbol to the text representation generated from the arguments of the nested term
+	/**
+	  * \brief Recomputes the text representation of nested terms given their arguments.
+	  *
+	  * Sets Term::symbol to the text representation generated from the arguments of the nested term.
+	  * @param reg Registry to use for interpreting term IDs.
+	  */
 	void updateSymbolOfNestedTerm(Registry* reg);
 
+	/**
+	  * \brief Checks if the constant term is quoted.
+	  * @return True if it is quoted and false otherwise. */
 	bool isQuotedString() const {
 		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
 			return true;
 		return false;
 	}
 
+	/**
+	  * \brief Checks if the term is nested.
+	  * @return True if it is nested and false otherwise. */
 	bool isNestedTerm() const {
 		return arguments[0] != ID_FAIL;
 	}
-	
+
+	/**
+	  * \brief Returns a text representation of this term with quotes (independent of whether the term is stored with or without quotes).
+	  * @return Text representation of the term. */
 	std::string getQuotedString() const {
 		return '"' + getUnquotedString() + '"';
 	}
 	
+	/**
+	  * \brief Returns a text representation of this term without quotes (independent of whether the term is stored with or without quotes).
+	  * @return Text representation of the term. */
 	std::string getUnquotedString() const {;
 		if (isQuotedString())
 			return symbol.substr(1, symbol.length()-2);
 		return symbol;
 	}
 
-	// splits a string representation into arguments
+	/**
+	  * \brief Parses a nested term and splits the string representation in Term::symbol into arguments.
+	  * @param reg Registry to use for interpreting term IDs.
+	  */	
 	void analyzeTerm(RegistryPtr reg);
 	
-  // the following method is not useful, as integers are always
-  // represented in the ID.address field and never stored into a table
-  // int getInt() const
-	
+	/**
+	  * \brief Prints the term in form Term(symbol).
+	  * @param o Stream to print.
+	  * @return \p o.
+	  */
 	std::ostream& print(std::ostream& o) const { 
 		return o << "Term(" << symbol << ")"; 
 	}
