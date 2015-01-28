@@ -115,11 +115,11 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 	boost::unordered_map<IDAddress, int> componentOfAtom;
 	/** \brief Stores edges (a,b) between ground atoms a,b such that atom a externally depends on b. */
 	std::vector<std::pair<IDAddress, IDAddress> > externalEdges;
-	/** \brief Stores for each component in depSCC whether it contains head cycles. *//
+	/** \brief Stores for each component in depSCC whether it contains head cycles. */
 	std::vector<bool> headCycles;
-	/** \brief Stores the set of rules which contain at least two cyclically depending atoms in their heads. *//
+	/** \brief Stores the set of rules which contain at least two cyclically depending atoms in their heads. */
 	InterpretationPtr headCyclicRules;
-	/** \brief Stores for each component in depSCC whether it contains cycles through external atoms. *//
+	/** \brief Stores for each component in depSCC whether it contains cycles through external atoms. */
 	std::vector<bool> eCycles;
 	/** \brief Vector of all program components. */
 	std::vector<ProgramComponentPtr> programComponents;
@@ -144,9 +144,9 @@ class DLVHEX_EXPORT AnnotatedGroundProgram{
 	void computeAdditionalDependencies();
 	/** \brief Computes strongly connected components in depSCC. */
 	void computeStronglyConnectedComponents();
-	/** \brief Analyzes all components and the overall program for head cycles. *//
+	/** \brief Analyzes all components and the overall program for head cycles. */
 	void computeHeadCycles();
-	/** \brief Analyzes all components and the overall program for cycles through external atoms. *//
+	/** \brief Analyzes all components and the overall program for cycles through external atoms. */
 	void computeECycles();
 public:
 	/** \brief Constructor. */
@@ -296,7 +296,7 @@ public:
 	  * \brief Returns the external atoms indexed by this AnnotatedGroundProgram.
 	  * @return Set of indexed external atoms.
 	  */
-	const std::vector<ID>& getIndexedEatoms() const;
+	const std::vector<ID>& getIndexedEAtoms() const;
 	/**
 	  * \brief Returns a single external atom identified by its index.
 	  * @param index Identifies the external atom.
