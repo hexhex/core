@@ -117,9 +117,6 @@ std::ostream& AnswerSet::print(std::ostream& o) const
   interpretation->print(o, "{", ", ", "}");
   if (weightVector.size() > 0){
 	printWeightVector(o);
-  }else{
-    if( costWeight != -1 || costLevel != -1 )
-      o << ",weight=" << costWeight << ",level=" << costLevel;
   }
   return o;
 }

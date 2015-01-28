@@ -74,7 +74,7 @@ DLVHEX_NAMESPACE_BEGIN
  * 'g': aggregate input (internal AggregatePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
- * 'o': special atoms introduced by gringo
+ * 'o': special atoms introduced by gringo (IDs of kind integer) and predicate for guard atoms (ID(0, 0))
  * 'x': reserved for local use
  */
 
