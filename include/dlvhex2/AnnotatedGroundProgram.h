@@ -295,7 +295,7 @@ public:
 	/**
 	  * \brief Returns the external atoms indexed by this AnnotatedGroundProgram.
 	  * @return Set of indexed external atoms.
-	  *//
+	  */
 	const std::vector<ID>& getIndexedEatoms() const;
 	/**
 	  * \brief Returns a single external atom identified by its index.
