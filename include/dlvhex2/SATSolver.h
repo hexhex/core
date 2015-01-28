@@ -86,7 +86,7 @@ public:
 	  * \brief Adds a set of additional nogoods to the solver instance.
 	  *
 	  * @param ns The set of nogoods to add.
-	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant);
+	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant).
 	  */
 	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
@@ -95,7 +95,7 @@ public:
 	  *
 	  * @param ctx ProgramCtx.
 	  * @param ns Encoding of the SAT instance as a set of nogoods.
-	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant);
+	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant).
 	  * if NULL, then all variables are frozen.
 	  * @return Pointer to the new solver instance.
 	  */

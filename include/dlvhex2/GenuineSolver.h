@@ -151,7 +151,7 @@ public:
 	  *
 	  * Note that modularity conditions do not allow for closing cycles over multiple incremental step (the conditions are as in gringo and clasp).
 	  * @param program The program component to be added.
-	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant);
+	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant).
 	  */
 	virtual void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
@@ -159,7 +159,7 @@ public:
 	  * \brief Adds a set of nogoods to the solver.
 	  * 
 	  * @param ns Encoding of the SAT instance as a set of nogoods.
-	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant);
+	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant).
 	  * if NULL, then all variables are frozen.
 	  */
 	virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
@@ -172,7 +172,7 @@ public:
 	  *
 	  * @param ctx ProgramCtx.
 	  * @param program Ground program to be solved; will automatically be wrapped in an AnnotatedGroundProgram.
-	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their trutz values are relevant);
+	  * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their trutz values are relevant).
 	  * if NULL, then all variables are frozen.
 	  * @param minCheck True to force a minimality check for detecting unfounded sets due to disjunctions before returning a model.
 	  * False leaves the decision open to the implementer of this class and might be more efficient. This might be useful to avoid redundancy if the caller performs an extended
