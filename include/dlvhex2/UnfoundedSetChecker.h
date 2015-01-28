@@ -93,7 +93,7 @@ protected:
 	* \brief Checks if an UFS candidate is actually an unfounded set.
 	* @param compatibleSet The interpretation over which we compute UFSs.
 	* @param compatibleSetWithoutAux The interpretation over which we compute UFSs (without EA replacements).
-	* @param ufsCandidate A candidate compatible set (solution to the nogood set created by getUFSDetectionProblem).
+	* @param ufsCandidate A candidate unfounded set (solution to the nogood set created by getUFSDetectionProblem).
 	* @return True if ufsCandidate is an unfounded set and false otherwise.
 	*/
 	bool isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate);
