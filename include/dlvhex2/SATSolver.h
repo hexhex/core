@@ -60,7 +60,7 @@ public:
 
 	/**
 	  * \brief Adds a propagator callback which is to be called by the SAT solver whenever
-	  * 1. it cannot propagate by other means, or 2. when a model is complete but before getNextModel returns it.
+	  * it cannot propagate by other means or when a model is complete but before getNextModel returns it.
 	  *
 	  * The propagator can add additional nogoods by calling NogoodContainer::addNogood inherited from the base class.
 	  *
