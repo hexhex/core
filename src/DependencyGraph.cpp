@@ -442,6 +442,13 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     if( itat->isNaf() )
       continue;
 
+/*
+    // do not use domain predicates for input grounding since they are indirectly used by their respective external atom replacements
+    if (itat->isAuxiliary() && registry->getTypeByAuxiliaryConstantSymbol(registry->lookupOrdinaryAtom(*itat).tuple[0]) == 'd'){
+      continue;
+    }
+*/
+
     if( itat->isExternalAtom() )
     {
       // skip external atoms which are not necessary for safety

@@ -236,16 +236,26 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		}else{
 			groundingIsComplete = false;
 
-			DBGLOG(DBG, "Creating subcomponent graph");
+			std::vector<ID> gxidb = factory.xidb;
+			gxidb.insert(gxidb.end(), factory.gidb.begin(), factory.gidb.end());
+#ifndef NDEBUG
+			std::stringstream ss;
+			BOOST_FOREACH (ID ruleID, gxidb) { ss << std::endl << printToString<RawPrinter>(ruleID, factory.ctx.registry()); }
+			DBGLOG(DBG, "Creating subcomponent graph for program" << ss.str());
+#endif
 			DependencyGraphPtr subdepgraph(new DependencyGraph(factory.ctx, factory.ctx.registry()));
+/*
 			std::vector<dlvhex::ID> idbWithoutAuxRules;
 			BOOST_FOREACH (ID ruleID, factory.idb){
 				const Rule& rule = reg->rules.getByID(ruleID);
 				if (rule.head.size() > 0 && rule.head[0].isAuxiliary()) continue;
 				else idbWithoutAuxRules.push_back(ruleID);
 			}
+*/
 			std::vector<dlvhex::ID> auxRules;
-			subdepgraph->createDependencies(idbWithoutAuxRules, auxRules);
+			subdepgraph->createDependencies(gxidb, auxRules);
+			assert(auxRules.size() == 0 && "createDependencies for an ordinary ASP program must not produce auxiliary rules");
+//			subdepgraph->createDependencies(idbWithoutAuxRules, auxRules);
 
 			// find for each component the set of domain predicates and the sub-(xidb+gidb)
 			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));
@@ -555,7 +565,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			// Note that the grounding is already expanded during the search if true external atoms, which have not been included in the grounding, are detected.
 			// However, while this might help to find some answer sets without computing the full grounding (it thus might reduce the time to first model),
 			// it is in general not sufficient to find all answer sets.
-			if (factory.ctx.config.getOption("IncrementalGrounding") && !groundingIsComplete){
+			if (false && factory.ctx.config.getOption("IncrementalGrounding") && !groundingIsComplete){
 				LOG(DBG,"current grounding unsatisfiable, but incremental grounding is used -> checking if domain needs to be expanded");
 
 				InterpretationPtr postprocInput(new Interpretation(reg));
@@ -662,7 +672,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			}
 			// avoid empty rules by adding a naf-literal whose atom is never defined
 			if (modelConstraint.body.size() == 0){
-				OrdinaryAtom at(ID::MAINKIND_ATOM || ID::SUBKIND_ATOM_ORDINARYG);
+				OrdinaryAtom at(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
 				at.tuple.push_back(factory.reg->getAuxiliaryConstantSymbol('o', ID::termFromInteger(0)));
 				modelConstraint.body.push_back(ID::nafLiteralFromAtom(factory.reg->storeOrdinaryAtom(at)));
 			}
@@ -1069,7 +1079,7 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	bm::bvector<>::enumerator en = gpAddition.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = gpAddition.edb->getStorage().end();
 	while (en < en_end){
-		DBGLOG(DBG, "Processind EDB fact " << *en);
+		DBGLOG(DBG, "Processing EDB fact " << *en);
 		definedIDs->setFact(*en);
 		en++;
 	}
@@ -1133,7 +1143,12 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	while (en < en_end){
 		DBGLOG(DBG, "Processind EDB fact " << *en);
 		ID id = reg->ogatoms.getIDByAddress(*en);
-		newEdb->setFact(hookAtoms.find(id) != hookAtoms.end() ? hookAtoms[id].address : *en);
+		if (hookAtoms.find(id) != hookAtoms.end()){
+			newEdb->setFact(hookAtoms[id].address);
+			frozenHookAtoms->clearFact(hookAtoms[id].address);
+		}else{
+			newEdb->setFact(*en);
+		}
 		en++;
 	}
 	BOOST_FOREACH (ID ruleID, grounder->getGroundProgram().idb){
@@ -1207,6 +1222,10 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 		eaEvaluated[eaIndex] = false;
 		eaVerified[eaIndex] = false;
 	}
+	createVerificationWatchLists();
+
+	DBGLOG(DBG, "Resetting UFS check heuristics");
+	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(annotatedGroundProgram, reg);
 }
 
 ID GenuineGuessAndCheckModelGenerator::getIncrementalHookRule(ID headAtomID, ID hookAtomID){

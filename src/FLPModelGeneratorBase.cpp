@@ -112,7 +112,7 @@ ID FLPModelGeneratorFactoryBase::createEatomGuessingRule(const ProgramCtx& ctx, 
       const Rule& r = reg->rules.getByID(rid);
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
       DBGLOG(DBG,"processing external atom " << printToString<RawPrinter>(lit, reg) <<
-                 " (lit " << lit << " eatom " << eatom << ")");
+                 " (lit " << lit << " eatom " << eatom << ") in rule " << printToString<RawPrinter>(rid, reg));
       DBGLOG_INDENT(DBG);
 
       // prepare replacement atom

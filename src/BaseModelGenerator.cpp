@@ -1028,17 +1028,17 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
 	            // create a rule p(X) v n(X) :- d(X) for each domain atom d
 	            // this nondeterminisim is necessary to make the grounding exhaustive; otherwise the grounder may optimize the grounding too much and we are not aware of relevant atoms
-	            Rule choosingRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
-	            choosingRule.head.push_back(chosenDomainAtomID);
-	            choosingRule.head.push_back(notChosenDomainAtomID);
-	            choosingRule.body.push_back(ID::posLiteralFromAtom(domainAtomID));
-	            ID choosingRuleID = reg->storeRule(choosingRule);
-	            deidb.push_back(choosingRuleID);
+	            Rule choiceRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+	            choiceRule.head.push_back(chosenDomainAtomID);
+	            choiceRule.head.push_back(notChosenDomainAtomID);
+	            choiceRule.body.push_back(ID::posLiteralFromAtom(domainAtomID));
+	            ID choiceRuleID = reg->storeRule(choiceRule);
+	            deidb.push_back(choiceRuleID);
 	            {
 		            std::stringstream s;
 		            RawPrinter printer(s, reg);
-		            s << "adding choosing rule ";
-		            printer.print(choosingRuleID);
+		            s << "adding domain atom choice rule ";
+		            printer.print(choiceRuleID);
 		            s << " for external atom " << b;
 		            DBGLOG(DBG, s.str());
 	            }
@@ -1076,6 +1076,21 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 #endif
     }
   }
+
+
+#ifndef NDEBUG
+  {
+    DBGLOG(DBG, "addDomainPredicatesAndCreateDomainExplorationProgram Result");
+    std::stringstream ss;
+    RawPrinter printer(ss, reg);
+    ss << "IDB with domain predicates: " << std::endl;
+    BOOST_FOREACH (ID ruleID, idbWithDomainPredicates) { printer.print(ruleID); ss << std::endl; }
+    ss << "Domain exploration program: " << std::endl;
+    BOOST_FOREACH (ID ruleID, deidb) { printer.print(ruleID); ss << std::endl; }
+    DBGLOG(DBG, ss.str());
+    DBGLOG(DBG, "addDomainPredicatesAndCreateDomainExplorationProgram Result finished");
+  }
+#endif
 
   // update the original IDB
   idb = idbWithDomainPredicates;
