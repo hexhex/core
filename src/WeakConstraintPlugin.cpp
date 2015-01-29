@@ -68,7 +68,7 @@ WeakConstraintPlugin::~WeakConstraintPlugin()
 void WeakConstraintPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --weak-enable     Enable weak constraint plugin." << std::endl;
+	o << "     --weak-enable    Enable weak constraint plugin." << std::endl;
 }
 
 // accepted options: --weak-enable

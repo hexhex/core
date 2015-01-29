@@ -72,15 +72,17 @@ AggregatePlugin::~AggregatePlugin()
 void AggregatePlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --aggregate-enable       Enable aggregate plugin." << std::endl;
-	o << "     --aggregate-mode={ext,simplify}" << std::endl
-	  << "                              ext=rewrite aggregates to external atoms" << std::endl
-	  << "                              simplify=keep aggregates but simplify them" << std::endl
-	  << "                                       (which is necessary for gringo backend)" << std::endl;
-	o << "     --max-variable-share=<N> Defines the maximum number N of variables" << std::endl
-	  << "                              in an aggregate which can be shared with" << std::endl
-	  << "                              other body atoms in the rule" << std::endl
-	  << "                              (only relevant for --aggregate-mode=ext)" << std::endl;
+	o << "     --aggregate-enable" << std::endl
+          << "                      Enable aggregate plugin." << std::endl;
+	o << "     --aggregate-mode=[ext,simplify]" << std::endl
+	  << "                      extrewrite : Aggregates to external atoms" << std::endl
+	  << "                      simplify   : Keep aggregates but simplify them" << std::endl
+	  << "                                   (which is necessary for gringo backend)" << std::endl;
+	o << "     --max-variable-share=<N>" << std::endl
+          << "                      Defines the maximum number N of variables" << std::endl
+	  << "                      in an aggregate which can be shared with" << std::endl
+	  << "                      other body atoms in the rule" << std::endl
+	  << "                      (only relevant for --aggregate-mode=ext)." << std::endl;
 }
 
 // accepted options: --higherorder-enable

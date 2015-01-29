@@ -72,7 +72,8 @@ HigherOrderPlugin::~HigherOrderPlugin()
 void HigherOrderPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --higherorder-enable     Enable higher order plugin." << std::endl;
+	o << "     --higherorder-enable" << std::endl
+          << "                      Enable higher order plugin." << std::endl;
 }
 
 // accepted options: --higherorder-enable

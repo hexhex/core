@@ -470,7 +470,7 @@ void ManualEvalHeuristicsPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --manualevalheuristics-enable" << std::endl <<
-       "                  Enable parsing and processing of '#evalunit(...).' instructions." << std::endl;
+       "                      Enable parsing and processing of '#evalunit(...).' instructions." << std::endl;
 }
 
 // accepted options: --manualevalheuristics-enable

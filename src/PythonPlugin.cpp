@@ -76,9 +76,11 @@ PythonPlugin::~PythonPlugin()
 void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --pythonplugin=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
-	o << "     --pythonmain=PATH        Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl;
-	o << "     --pythonarg=ARG          Passes arguments to Python (sys.argv) (can be used multiple times)" << std::endl;
+	o << "     --pythonplugin=[PATH]" << std::endl
+          << "                      Add Python script \"PATH\" as new plugin." << std::endl;
+	o << "     --pythonmain=PATH" << std::endl
+          << "                      Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program." << std::endl;
+	o << "     --pythonarg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl;
 }
 
 // accepted options: --pythonplugin=[PATH]

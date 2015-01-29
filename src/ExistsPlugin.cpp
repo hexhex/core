@@ -76,8 +76,9 @@ ExistsPlugin::~ExistsPlugin()
 void ExistsPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --exists-enable       Enable existential quantifier plugin." << std::endl;
-	o << "     --exists-maxarity=<N> Maximum number of existentially quantified variables in an atom." << std::endl;
+	o << "     --exists-enable  Enable existential quantifier plugin." << std::endl;
+	o << "     --exists-maxarity=<N>" << std::endl
+          << "                      Maximum number of existentially quantified variables in an atom." << std::endl;
 }
 
 // accepted options: --exists-enable

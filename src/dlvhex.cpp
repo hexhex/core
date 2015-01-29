@@ -155,125 +155,139 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   // As soos as we have more options, we can introduce sections here!
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  out << "     --               Parse from stdin." << std::endl
-//      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --extlearn[=none,iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
-      << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
-      << "                        none: Deactivate external learning" << std::endl
-      << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
-      << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
-      << "                        functionality: Apply special rules for functional external atoms" << std::endl
-      << "                        linearity: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
-      << "                        neg: Learn negative information" << std::endl
-      << "                        user: Apply user-defined rules for nogood learning" << std::endl
-      << "                        generalize: Generalize learned ground nogoods to nonground nogoods" << std::endl
-      << "                      By default, all options except \"generalize\" are enabled" << std::endl
-      << "     --supportsets     Exploits support sets for evaluation" << std::endl
-      << "     --evalall  Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
-      << "                       This makes nogood learning more independent of the sequence of external atom checks." << std::endl
-      << "                       Only useful with --extlearn." << std::endl
-      << "     --nongroundnogoods" << std::endl
-      << "                      Automatically instantiate learned nonground nogoods" << std::endl
-      << "     --flpcheck=[explicit,ufs,ufsm,aufs,aufsm,none]" << std::endl
-      << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
-      << "                        explicit: Compute the reduct and compare its models with the candidate" << std::endl
-      << "                        ufs: Use unfounded sets for minimality checking" << std::endl
-      << "                        ufsm: (monolithic) Use unfounded sets for minimality checking; do not decompose the program for UFS checking" << std::endl
-      << "                        aufs (default): Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
-      << "                        aufsm: (monolithic) Use unfounded sets for minimality checking by exploiting assumptions; do not decompose the program for UFS checking" << std::endl
-      << "                        none: Disable the check" << std::endl
-      << "     --flpcriterion=[all,head,e,none]" << std::endl
-      << "                      Defines the kind of cycles whose absence is exploited for skipping minimality checks" << std::endl
-      << "                        all (default): Exploit head- and e-cycles for skipping minimality checks" << std::endl
-      << "                        head: Exploit head-cycles for skipping minimality checks" << std::endl
-      << "                        e: Exploit e-cycles for skipping minimality checks" << std::endl
-      << "                        none: Do not exploit head- or e-cycles for skipping minimality checks" << std::endl
-      << "     --noflpcriterion Do no apply decision criterion to skip the FLP check" << std::endl
-      << "                        (same as --flpcriterion=none)" << std::endl
-      << "     --ufslearn=[none,reduct,ufs]" << std::endl
-      << "                      Enable learning from UFS checks (only useful with --flpcheck=[a]ufs[m])" << std::endl
-      << "                        none: No learning" << std::endl
-      << "                        reduct: Learning is based on the FLP-reduct" << std::endl
-      << "                        ufs (default): Learning is based on the unfounded set" << std::endl
-      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,post,never]" << std::endl
-      << "                      Selects the heuristic for external atom evaluation" << std::endl
-      << "                      always: Evaluate whenever possible" << std::endl
-      << "                      inputcomplete: Evaluate whenever the input to the external atom is complete" << std::endl
-      << "                      eacomplete: Evaluate whenever all atoms relevant for the external atom are assigned" << std::endl
-      << "                      post: Only evaluate at the end but use custom heuristics if provided by plugins" << std::endl
-      << "                      never (default): Only evaluate at the end and ignore custom heuristics provided by plugins" << std::endl
-      << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
-      << "                      post (default): Do UFS check only over complete interpretations" << std::endl
-      << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
-      << "                      periodic: Do UFS check in periodic intervals" << std::endl
-      << " --modelqueuesize=N   Size of the model queue, i.e. number of models which can be computed in parallel; default is 5" << std::endl
-      << "                        (only useful for clasp solver)" << std::endl
+  out << "Input, Output and Reasoning Options (influence the results):" << std::endl
+      << "     --               Parse from stdin." << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
-      << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
-      << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
-      << "     --split          Use instantiation splitting techniques" << std::endl
-    //        << "--strongsafety     Check rules also for strong safety." << std::endl
+      << " -f, --filter=foo[,bar[,...]]" << std::endl
+      << "                      Only display instances of the specified predicate(s)." << std::endl
+      << "     --nofacts        Do not output EDB facts." << std::endl
+      << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
+      << " -a, --allmodels      Display all models also under weak constraints." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
-      << "     --strongsafety   Applies traditional strong safety criteria (default)" << std::endl
-      << "     --liberalsafety  Uses more liberal safety conditions than strong safety" << std::endl
+      << "     --strongsafety   Applies traditional strong safety criteria (default)." << std::endl
+      << "     --liberalsafety  Uses more liberal safety conditions than strong safety." << std::endl
+      << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)." << std::endl
+      << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
+      << "     --split          Use instantiation splitting techniques." << std::endl
+      << "     --noeval         Just parse the program, don't evaluate it (only useful with --verbose)." << std::endl
+      << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components" << std::endl
+      << "                      (only useful with genuine solvers)." << std::endl
+      << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+      << "     --keepauxpreds   Keep auxiliary predicates in answer sets." << std::endl
+
+      << std::endl << "Plugin Options:" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
-			<< "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
-      << " -f, --filter=foo[,bar[,...]]" << std::endl
-      << "                      Only display instances of the specified predicate(s)." << std::endl
-      << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
-      << " -a, --allmodels      Display all models also under weak constraints." << std::endl
-//      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
-//      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
-      << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
-      << "                      with --verbose)." << std::endl
+      << "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
 #ifdef HAVE_PYTHON
-      << "     --pythonmain=PATH Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl
+      << "     --pythonplugin=PATH" << std::endl
+      << "                      Call method \"register\" in the specified Python script (with dlvhex support)" << std::endl
+      << "                      to load plugins atom implementations." << std::endl
+      << "     --pythonmain=PATH" << std::endl
+      << "                      Call method \"main\" in the specified Python script (with dlvhex support)" << std::endl
+      << "                      instead of evaluating a program." << std::endl
 #endif
-      << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+
+      << std::endl << "Performance Tuning Options:" << std::endl
+      << "     --extlearn[=none,iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
+      << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)." << std::endl
+      << "                         none             : Deactivate external learning" << std::endl
+      << "                         iobehavior       : Apply generic rules to learn input-output behavior" << std::endl
+      << "                         monotonicity     : Apply special rules for monotonic and antimonotonic external atoms" << std::endl
+      << "                                            (only useful with iobehavior)" << std::endl
+      << "                         functionality    : Apply special rules for functional external atoms" << std::endl
+      << "                         linearity        : Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
+      << "                         neg              : Learn negative information" << std::endl
+      << "                         user             : Apply user-defined rules for nogood learning" << std::endl
+      << "                         generalize       : Generalize learned ground nogoods to nonground nogoods" << std::endl
+      << "                      By default, all options except \"generalize\" are enabled." << std::endl
+      << "     --supportsets    Exploits support sets for evaluation." << std::endl
+      << "     --evalall        Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
+      << "                      This makes nogood learning more independent of the sequence of external atom checks." << std::endl
+      << "                      Only useful with --extlearn." << std::endl
+      << "     --nongroundnogoods" << std::endl
+      << "                      Automatically instantiate learned nonground nogoods." << std::endl
+      << "     --flpcheck=[explicit,ufs,ufsm,aufs,aufsm,none]" << std::endl
+      << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct." << std::endl
+      << "                         explicit         : Compute the reduct and compare its models with the candidate" << std::endl
+      << "                         ufs              : Use unfounded sets for minimality checking" << std::endl
+      << "                         ufsm             : Use unfounded sets for minimality checking;" << std::endl
+      << "                                            do not decompose the program for UFS checking" << std::endl
+      << "                         aufs (default)   : Use unfounded sets for minimality checking by exploiting assumptions" << std::endl
+      << "                         aufsm            : Use unfounded sets for minimality checking by exploiting assumptions;" << std::endl
+      << "                                            do not decompose the program for UFS checking" << std::endl
+      << "                         none             : Disable the check" << std::endl
+      << "     --flpcriterion=[all,head,e,none]" << std::endl
+      << "                      Defines the kind of cycles whose absence is exploited for skipping minimality checks." << std::endl
+      << "                         all (default)    : Exploit head- and e-cycles for skipping minimality checks" << std::endl
+      << "                         head             : Exploit head-cycles for skipping minimality checks" << std::endl
+      << "                         e                : Exploit e-cycles for skipping minimality checks" << std::endl
+      << "                         none             : Do not exploit head- or e-cycles for skipping minimality checks" << std::endl
+      << "     --noflpcriterion Do no apply decision criterion to skip the FLP check." << std::endl
+      << "                      (equivalent to --flpcriterion=none)" << std::endl
+      << "     --ufslearn=[none,reduct,ufs]" << std::endl
+      << "                      Enable learning from UFS checks (only useful with --flpcheck=[a]ufs[m])." << std::endl
+      << "                         none             : No learning" << std::endl
+      << "                         reduct           : Learning is based on the FLP-reduct" << std::endl
+      << "                         ufs (default)    : Learning is based on the unfounded set" << std::endl
+      << "     --eaevalheuristics=[always,inputcomplete,eacomplete,post,never]" << std::endl
+      << "                      Selects the heuristic for external atom evaluation." << std::endl
+      << "                         always           : Evaluate whenever possible" << std::endl
+      << "                         inputcomplete    : Evaluate whenever the input to the external atom is complete" << std::endl
+      << "                         eacomplete       : Evaluate whenever all atoms relevant for the external atom are assigned" << std::endl
+      << "                         post (default)   : Only evaluate at the end" << std::endl
+      << "                         never            : Only evaluate at the end and also ignore custom heuristics provided by plugins" << std::endl
+      << "                      Except for heuristics \"never\", custom heuristics provided by external atoms overrule the" << std::endl
+      << "                      global heuristics for the particular external atom." << std::endl
+      << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
+      << "                      Specifies the frequency of unfounded set checks (only useful with --flpcheck=[a]ufs[m])." << std::endl
+      << "                         post (default)   : Do UFS check only over complete interpretations" << std::endl
+      << "                         max              : Do UFS check as frequent as possible and over maximal subprograms" << std::endl
+      << "                         periodic         : Do UFS check in periodic intervals" << std::endl
+      << "     --modelqueuesize=N" << std::endl
+      << "                      Size of the model queue, i.e. number of models which can be computed in parallel." << std::endl
+      << "                      Default value is 5. The option is only useful for clasp solver." << std::endl
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
       << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
-      << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)" << std::endl
-      << "     --nofacts        Do not output EDB facts" << std::endl
+      << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)." << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
-			<< "                      old - old dlvhex behavior" << std::endl
-			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
-			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
-			<< "                      greedy - (default) heuristics with advantages for external behavior learning" << std::endl
-			<< "                      monolithic - put everything into one unit" << std::endl
-			<< "                                   (for testing purposes, does [currently] not work in general)" << std::endl
-			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
-			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
-			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
-			<< "     --dumpevalplan=F dump evaluation plan (usable as manual heuristics) to file F" << std::endl
-      << " --forcegc            Always use the guess and check model generator" << std::endl
-      << " --incremental        Ground the program incrementally in order to deal with value invention" << std::endl
-      << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
+      << "                         old              : Old dlvhex behavior" << std::endl
+      << "                         trivial          : Use component graph as eval graph (much overhead)" << std::endl
+      << "                         easy             : Simple heuristics, used for LPNMR2011" << std::endl
+      << "                         greedy (default) : Heuristics with advantages for external behavior learning" << std::endl
+      << "                         monolithic       : Put entire program into one unit" << std::endl
+      << "                         manual:<file>    : Read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
+      << "                                            where component indices <idx> are from '--graphviz=comp'" << std::endl
+      << "                         asp:<script>     : Use asp program <script> as eval heuristic" << std::endl
+      << "     --forcegc        Always use the guess and check model generator." << std::endl
+      << "     --incremental    Ground the program incrementally in order to deal with value invention." << std::endl
+      << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)." << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
-      << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
-      << "                      1  - program analysis information (including dot-file)" << std::endl
-      << "                      2  - program modifications by plugins" << std::endl
-      << "                      4  - intermediate model generation info" << std::endl
-      << "                      8  - timing information" << std::endl
-      << "                           (only if configured with --enable-benchmark)" << std::endl
+      << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)." << std::endl
+      << "     --constspace     Free partial models immediately after using them. This may cause some models." << std::endl
+      << "                      to be computed multiple times. (Not with monolithic.)" << std::endl
+
+      << std::endl << "Debugging and General Options:" << std::endl
+      << "     --dumpevalplan=F Dump evaluation plan (usable as manual heuristics) to file F." << std::endl
+      << " -v, --verbose[=N]    Specify verbose category (if option is used without [=N] then default is 1):" << std::endl
+      << "                         1                : Program analysis information (including dot-file)" << std::endl
+      << "                         2                : Program modifications by plugins" << std::endl
+      << "                         4                : Intermediate model generation info" << std::endl
+      << "                         8                : Timing information" << std::endl
+      << "                                           (only if configured with --enable-benchmark)" << std::endl
       << "                      add values for multiple categories." << std::endl
-      << "     --dumpstats      dump certain benchmarking results and statistics in CSV format." << std::endl
-      << "                      (only if configured with --enable-benchmark)" << std::endl
+      << "     --dumpstats      Dump certain benchmarking results and statistics in CSV format." << std::endl
+      << "                      (Only if configured with --enable-benchmark.)" << std::endl
       << "     --graphviz=G     Specify comma separated list of graph types to export as .dot files." << std::endl
       << "                      Default is none, graph types are:" << std::endl
-      << "                      dep    - Dependency Graph (once per program)" << std::endl
-      << "                      cycinp - Graph for analysis cyclic predicate inputs (once per G&C-eval unit)" << std::endl
-      << "                      comp   - Component Graph (once per program)" << std::endl
-      << "                      eval   - Evaluation Graph (once per program)" << std::endl
-      << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
-      << "                      imodel - Individual Model Graph (once per model)" << std::endl
-      << "                      attr   - Attribute dependency graph (once per program)" << std::endl
-      << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
-      << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
-      << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)" << std::endl
-      << "     --constspace     Free partial models immediately after using them. This may cause some models" << std::endl
-      << "                      to be computed multiple times. (Not with monolithic.)" << std::endl
+      << "                         dep              : Dependency Graph (once per program)" << std::endl
+      << "                         cycinp           : Graph for analysis cyclic predicate inputs (once per G&C-eval unit)" << std::endl
+      << "                         comp             : Component Graph (once per program)" << std::endl
+      << "                         eval             : Evaluation Graph (once per program)" << std::endl
+      << "                         model            : Model Graph (once per program, after end of computation)" << std::endl
+      << "                         imodel           : Individual Model Graph (once per model)" << std::endl
+      << "                         attr             : Attribute dependency graph (once per program)" << std::endl
       << "     --version        Show version information." << std::endl;
 }
 
@@ -283,7 +297,7 @@ printVersion()
 {
   std::cout << PACKAGE_TARNAME << " " << VERSION << std::endl;
 
-  std::cout << "Copyright (C) 2011 Roman Schindlauer, Thomas Krennwallner, Peter Schüller, Christoph Redl" << std::endl
+  std::cout << "Copyright (C) 2005-2015 Roman Schindlauer, Thomas Krennwallner, Peter Schüller, Christoph Redl" << std::endl
 	    << "License LGPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/lgpl.html>" << std::endl
 	    << "This is free software: you are free to change and redistribute it." << std::endl
 	    << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
@@ -412,7 +426,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("UFSCheckMonolithic", 0);
   pctx.config.setOption("UFSCheckAssumptionBased", 1);
   pctx.config.setOption("GenuineSolver", 0);
-  pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 1);
   pctx.config.setOption("UFSLearning", 1);
   pctx.config.setOption("UFSLearnStrategy", 2);
@@ -430,7 +443,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
-  // TODO was/is not implemented: pctx.config.setOption("WeakReverseAllModels", 0);
   pctx.config.setOption("UseExtAtomCache",1);
   pctx.config.setOption("KeepNamespacePrefix",0);
   pctx.config.setOption("DumpDepGraph",0);
@@ -1331,24 +1343,28 @@ void processOptionsPrePlugin(
 				if (heur == "always")
 				{
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
+					pctx.config.setOption("NoPropagator", 0);
 				}
 				else if (heur == "inputcomplete")
 				{
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
+					pctx.config.setOption("NoPropagator", 0);
 				}
 				else if (heur == "eacomplete")
 				{
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsEACompleteFactory());
+					pctx.config.setOption("NoPropagator", 0);
 				}
 				else if (heur == "post")
 				{
 					// here we evaluate only after the model candidate has been completed
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+					pctx.config.setOption("NoPropagator", 0);
 				}
 				else if (heur == "never")
 				{
 					// here we evaluate only after the model candidate has been completed
-					// differently from post, even the propagator is diables, thus also custom heuristics provided by external atoms cannot overwrite this behavior
+					// differently from post, even the propagator is diabled, thus also custom heuristics provided by external atoms cannot overwrite this behavior
 					pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
 					pctx.config.setOption("NoPropagator", 1);
 				}

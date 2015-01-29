@@ -570,7 +570,10 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 						// but at least unfounded sets due to disjunctions
 						!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
 
-					for (int i = 0; i < factory.innerEatoms.size(); ++i) eaEvaluated[i] = eaVerified[i] = false;
+					for (int i = 0; i < factory.innerEatoms.size(); ++i){
+						eaEvaluated[i] = false;
+						eaVerified[i] = false;
+					}
 				}
 
 				groundingIsComplete = true;
@@ -634,7 +637,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 				buildFrozenHookAtomAssumptions();
 				solver->restartWithAssumptions(hookAssumptions);
 				for (int i = 0; i < factory.innerEatoms.size(); ++i){
-					eaEvaluated[i] = eaVerified[i] = false;
+					eaEvaluated[i] = false;
+					eaVerified[i] = false;
 				}
 				continue;
 			}
@@ -839,6 +843,8 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 	compatible = true;
 	for (uint32_t eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
+		DBGLOG(DBG, "NoPropagator: " << factory.ctx.config.getOption("NoPropagator") << ", eaEvaluated[" << eaIndex << "]=" << eaEvaluated[eaIndex]);
+		assert(!(factory.ctx.config.getOption("NoPropagator") && eaEvaluated[eaIndex]) && "Verification result was stored for later usage although NoPropagator property was set");
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == true){
 		}
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false){
@@ -1193,6 +1199,12 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	}
 
 	solver->addProgram(expansion, frozenHookAtoms);
+
+	DBGLOG(DBG, "Resetting evaluation status of external atoms");
+	for (int eaIndex = 0; eaIndex < eaEvaluated.size(); ++eaIndex){
+		eaEvaluated[eaIndex] = false;
+		eaVerified[eaIndex] = false;
+	}
 }
 
 ID GenuineGuessAndCheckModelGenerator::getIncrementalHookRule(ID headAtomID, ID hookAtomID){
@@ -1456,6 +1468,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
 
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
 		if(factory.ctx.config.getOption("NoPropagator") == 0){
+			DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
 			eaEvaluated[eaIndex] = true;
 			if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 		}
@@ -1476,6 +1489,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomBySupportSets(int eaI
 
 	// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
 	if( factory.ctx.config.getOption("NoPropagator") == 0 ){
+		DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
 		eaEvaluated[eaIndex] = true;
 	}
 
