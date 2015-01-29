@@ -181,12 +181,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
       << "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
 #ifdef HAVE_PYTHON
-      << "     --pythonplugin=PATH" << std::endl
-      << "                      Call method \"register\" in the specified Python script (with dlvhex support)" << std::endl
-      << "                      to load plugins atom implementations." << std::endl
+      << "     --pythonplugin=[PATH]" << std::endl
+      << "                      Add Python script \"PATH\" as new plugin." << std::endl
       << "     --pythonmain=PATH" << std::endl
-      << "                      Call method \"main\" in the specified Python script (with dlvhex support)" << std::endl
-      << "                      instead of evaluating a program." << std::endl
+      << "                      Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program." << std::endl
+      << "     --pythonarg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl
 #endif
 
       << std::endl << "Performance Tuning Options:" << std::endl
