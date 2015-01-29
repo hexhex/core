@@ -147,9 +147,14 @@ protected:
   // members
 
   /**
-   * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments
+   * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments.
    */
   void setHeuristics();
+
+  /**
+   * \brief Adds watches to all external auxilies for incremental verification and unverification of external atoms.
+   */
+  void createVerificationWatchLists();
 
   /**
    * \brief Learns related nonground nogoods.

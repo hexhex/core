@@ -217,6 +217,7 @@ void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 #endif
 
 	// call HEX propagators
+	DBGLOG(DBG, "Need to call " << cs.propagators.size() << " propagators");
 	BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators){
 		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator #" << (++propNr));
 		propagator->propagate(currentIntr, currentAssigned, currentChanged);
