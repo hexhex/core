@@ -88,7 +88,7 @@ void StrongNegationPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
-	ctxdata.enabled = (ctx.config.getOption("StrongNegationEnableDefault") == 1);
+	ctxdata.enabled = true;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;

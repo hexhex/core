@@ -47,6 +47,9 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 namespace spirit = boost::spirit;
@@ -72,8 +75,8 @@ HigherOrderPlugin::~HigherOrderPlugin()
 void HigherOrderPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --higherorder-enable" << std::endl
-          << "                      Enable higher order plugin." << std::endl;
+	o << "     --higherorder-enable[=true,false]" << std::endl
+          << "                      Enable higher order plugin (default is disabled)." << std::endl;
 }
 
 // accepted options: --higherorder-enable
@@ -85,6 +88,7 @@ void HigherOrderPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	HigherOrderPlugin::CtxData& ctxdata = ctx.getPluginData<HigherOrderPlugin>();
+	ctxdata.enabled = false;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -94,9 +98,18 @@ void HigherOrderPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--higherorder-enable" )
+		if( boost::starts_with(str, "--higherorder-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--higherorder-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --strongnegation-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 

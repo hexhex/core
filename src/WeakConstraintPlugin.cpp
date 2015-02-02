@@ -84,7 +84,7 @@ void WeakConstraintPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
-	ctxdata.enabled = ctx.onlyBestModels = (ctx.config.getOption("WeakEnableDefault") == 1);
+	ctxdata.enabled = ctx.onlyBestModels = true;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;

@@ -76,7 +76,8 @@ ExistsPlugin::~ExistsPlugin()
 void ExistsPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --exists-enable  Enable existential quantifier plugin." << std::endl;
+	o << "     --exists-enable[=true,false]" << std::endl
+          << "                      Enable existential quantifier plugin (default is disabled)." << std::endl;
 	o << "     --exists-maxarity=<N>" << std::endl
           << "                      Maximum number of existentially quantified variables in an atom." << std::endl;
 }
@@ -90,6 +91,7 @@ void ExistsPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	ExistsPlugin::CtxData& ctxdata = ctx.getPluginData<ExistsPlugin>();
+	ctxdata.enabled = false;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -99,10 +101,19 @@ void ExistsPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--exists-enable" )
+		if( boost::starts_with(str, "--exists-enable" ) )
 		{
-			ctxdata.enabled = true;
-			ctx.config.setOption("LiberalSafetyHomomorphismCheck", 1);
+			std::string m = str.substr(std::string("--exists-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+				ctx.config.setOption("LiberalSafetyHomomorphismCheck", 1);
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --strongnegation-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 		if( boost::starts_with(str, "--exists-maxarity=") )

@@ -493,9 +493,6 @@ int main(int argc, char *argv[])
 #ifdef HAVE_PYTHON
 	pctx.config.setOption("HavePythonMain", 0);
 #endif
-	pctx.config.setOption("AggregateEnableDefault", 1);
-	pctx.config.setOption("WeakEnableDefault", 1);
-	pctx.config.setOption("StrongNegationEnableDefault", 1);
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default

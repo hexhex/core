@@ -103,7 +103,7 @@ void AggregatePlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
-	ctxdata.enabled = (ctx.config.getOption("AggregateEnableDefault") == 1);
+	ctxdata.enabled = true;
 	ctxdata.mode = CtxData::Simplify;
 
 	typedef std::list<const char*>::iterator Iterator;
