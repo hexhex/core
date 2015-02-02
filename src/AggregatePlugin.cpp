@@ -72,12 +72,13 @@ AggregatePlugin::~AggregatePlugin()
 void AggregatePlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --aggregate-enable" << std::endl
-          << "                      Enable aggregate plugin." << std::endl;
+	o << "     --aggregate-enable[=true,false]" << std::endl
+          << "                      Enable aggregate plugin (default is enabled)." << std::endl;
 	o << "     --aggregate-mode=[ext,simplify]" << std::endl
-	  << "                      extrewrite : Aggregates to external atoms" << std::endl
-	  << "                      simplify   : Keep aggregates but simplify them" << std::endl
-	  << "                                   (which is necessary for gringo backend)" << std::endl;
+	  << "                         extrewrite       : Aggregates to external atoms" << std::endl
+	  << "                         simplify (default)" << std::endl
+	  << "                                          : Keep aggregates but simplify them" << std::endl
+	  << "                                            (which is necessary for gringo backend)" << std::endl;
 	o << "     --max-variable-share=<N>" << std::endl
           << "                      Defines the maximum number N of variables" << std::endl
 	  << "                      in an aggregate which can be shared with" << std::endl

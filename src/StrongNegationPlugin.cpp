@@ -75,8 +75,8 @@ StrongNegationPlugin::~StrongNegationPlugin()
 void StrongNegationPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --strongnegation-enable" << std::endl
-          << "                      Enable strong negation plugin." << std::endl;
+	o << "     --strongnegation-enable[=true,false]" << std::endl
+          << "                      Enable or disable strong negation plugin (default is enabled)." << std::endl;
 }
 
 // accepted options: --strongnegation-enable
