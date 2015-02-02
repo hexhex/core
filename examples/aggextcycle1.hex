@@ -1,0 +1,24 @@
+#maxint=5.
+
+dom(0).
+dom(1).
+dom(2).
+
+% This cycles goes only through an external atom and is checked by the dlvhex UFS checker.
+r(X) :- dom(X), &id[r](X).
+
+% This cycle goes only through an aggregate and is checked by clasp.
+t :- 1 = #sum{ Y : s(Y) }.
+s(1) :- t.
+
+% The following two rules form a cycle which goes
+% both through an aggregate and an external atom.
+% This results in nonminimal models because
+% clasp can handle only aggregates and
+% the dlvhex UFS checker can handle only external atoms.
+% Thus, their combination is not considered in the minimality check.
+q(X) :- dom(X), &id[p](X).
+p(1) :- 1 = #sum{ Z : q(Z) }.
+
+% In contrast, with --aggregate-mode=ext, the cycle IS detected as
+% the aggregate is rewritten to an external atom.

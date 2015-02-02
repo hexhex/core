@@ -402,8 +402,14 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		}else{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 			grounder = GenuineGrounder::getInstance(factory.ctx, program);
-			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+			OrdinaryASPProgram gp = grounder->getGroundProgram();
 
+			// do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
+			if (!!gp.mask) mask->add(*gp.mask);
+			gp.mask = InterpretationConstPtr();
+
+			// run solver
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, factory.innerEatoms);
 			solver = GenuineGroundSolver::getInstance(
 				factory.ctx, annotatedGroundProgram,
 				frozenHookAtoms,
