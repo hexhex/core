@@ -571,6 +571,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 
 		if (ruleID.isWeightRule()){
 			// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+			LOG(WARNING, "A cycle through weight rules (usually from aggregate atoms) was detected. This might result in non-minimal models.");
 			if (compatibleSet->getFact(rule.head[0].address)){
 				Nogood ng;
 				ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
@@ -1218,6 +1219,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 
 	if (ruleID.isWeightRule()){
 		// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+		LOG(WARNING, "A cycle through weight rules (usually from aggregate atoms) was detected. This might result in non-minimal models.");
 		Nogood ng;
 		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
 		ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));

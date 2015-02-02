@@ -47,6 +47,9 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 namespace spirit = boost::spirit;
@@ -85,6 +88,7 @@ void StrongNegationPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
+	ctxdata.enabled = (ctx.config.getOption("StrongNegationEnableDefault") == 1);
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -94,9 +98,18 @@ void StrongNegationPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--strongnegation-enable" )
+		if( boost::starts_with(str, "--strongnegation-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--strongnegation-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --strongnegation-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 

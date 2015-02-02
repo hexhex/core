@@ -94,6 +94,8 @@ void AggregatePlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
+	ctxdata.enabled = (ctx.config.getOption("AggregateEnableDefault") == 1);
+	ctxdata.mode = CtxData::Simplify;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -103,9 +105,18 @@ void AggregatePlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--aggregate-enable" )
+		if( boost::starts_with(str, "--aggregate-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--aggregate-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --aggregate-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 		if( boost::starts_with(str, "--max-variable-share=") )
@@ -120,6 +131,10 @@ void AggregatePlugin::processOptions(
 				ctxdata.mode = CtxData::ExtRewrite;
 			}else if (m == "simplify"){
 				ctxdata.mode = CtxData::Simplify;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --aggregate-mode option: " << m;
+				throw PluginError(ss.str());
 			}
 			processed = true;
 		}

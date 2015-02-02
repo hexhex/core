@@ -47,6 +47,9 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 WeakConstraintPlugin::CtxData::CtxData():
@@ -80,6 +83,7 @@ void WeakConstraintPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
+	ctxdata.enabled = ctx.onlyBestModels = (ctx.config.getOption("WeakEnableDefault") == 1);
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -89,10 +93,19 @@ void WeakConstraintPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--weak-enable" )
+		if( boost::starts_with(str, "--weak-enable" ) )
 		{
-			ctxdata.enabled = true;
-			ctx.onlyBestModels = true;
+			std::string m = str.substr(std::string("--weak-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+				ctx.onlyBestModels = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --weak-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 

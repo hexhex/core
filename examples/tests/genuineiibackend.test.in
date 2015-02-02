@@ -1,8 +1,8 @@
 3col.hex 3col.out --solver=genuineii
-agg1.hex agg1.out --solver=genuineii --aggregate-enable
-agg2.hex agg2.out --solver=genuineii --aggregate-enable
-agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable --strongsafety
-agg4.hex agg4.out --nofacts --solver=genuineii --aggregate-enable
+agg1.hex agg1.out --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg2.hex agg2.out --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext --strongsafety
+agg4.hex agg4.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 weak1.hex weak1.out --solver=genuineii --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=genuineii --strongnegation-enable --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuineii
