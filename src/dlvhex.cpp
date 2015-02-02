@@ -162,6 +162,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      Only display instances of the specified predicate(s)." << std::endl
       << "     --nofacts        Do not output EDB facts." << std::endl
       << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
+      << " -N, --maxint=<num>   Set maximum integer (#maxint in the program takes precedence over the parameter)." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
       << "     --strongsafety   Applies traditional strong safety criteria (default)." << std::endl
@@ -775,7 +776,7 @@ void processOptionsPrePlugin(
   int ch;
   int longid;
   
-  static const char* shortopts = "hsvf:p:are:m:n:";
+  static const char* shortopts = "hsvf:p:are:m:n:N:";
   static struct option longopts[] =
 	{
 		{ "help", no_argument, 0, 'h' },
@@ -788,10 +789,8 @@ void processOptionsPrePlugin(
 		{ "heuristics", required_argument, 0, 'e' },
 		{ "modelbuilder", required_argument, 0, 'm' },
 		{ "number", required_argument, 0, 'n' },
-		//{ "firstorder", no_argument, &longid, 1 },
+		{ "maxint", required_argument, 0, 'N' },
 		{ "weaksafety", no_argument, &longid, 2 },
-		//{ "ruleml",     no_argument, &longid, 3 },
-		//{ "dlt",        no_argument, &longid, 4 },
 		{ "noeval",     no_argument, &longid, 5 },
 		{ "keepnsprefix", no_argument, &longid, 6 },
 		{ "solver", required_argument, &longid, 7 },
@@ -821,14 +820,14 @@ void processOptionsPrePlugin(
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
 		{ "liberalsafety", no_argument, 0, 33 },
-    { "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
-    { "noclaspincremental", no_argument, 0, 43 },
-    { "claspsingletonloopnogoods", no_argument, 0, 44 },
-    { "claspinverseliterals", no_argument, 0, 45 },
-    { "dumpstats", no_argument, 0, 37 },
-    { "iauxinaux", optional_argument, 0, 38 },
-    { "legacyecycledetection", no_argument, 0, 46 },
-    { "constspace", no_argument, 0, 39 },
+		{ "claspconfig", required_argument, 0, 36 }, // perhaps only temporary
+		{ "noclaspincremental", no_argument, 0, 43 },
+		{ "claspsingletonloopnogoods", no_argument, 0, 44 },
+		{ "claspinverseliterals", no_argument, 0, 45 },
+		{ "dumpstats", no_argument, 0, 37 },
+		{ "iauxinaux", optional_argument, 0, 38 },
+		{ "legacyecycledetection", no_argument, 0, 46 },
+		{ "constspace", no_argument, 0, 39 },
 		{ "forcesinglethreading", no_argument, 0, 40 },
 		{ "lazyufscheckerinitialization", no_argument, 0, 47 },
 		{ "supportsets", no_argument, 0, 48 },
@@ -988,6 +987,24 @@ void processOptionsPrePlugin(
 					LOG(ERROR,"could not parse model count '" << optarg << "' - using default=" << models << "!");
 				}
 				pctx.config.setOption("NumberOfModels", models);
+			}
+			break;
+
+		case 'N':
+			{
+				int maxint = 0;
+				try
+				{
+					if( optarg[0] == '=' )
+						maxint = boost::lexical_cast<unsigned>(&optarg[1]);
+					else
+						maxint = boost::lexical_cast<unsigned>(optarg);
+				}
+				catch(const boost::bad_lexical_cast&)
+				{
+					LOG(ERROR,"could not parse maxint '" << optarg << "' - using default=" << maxint << "!");
+				}
+				pctx.maxint = maxint;
 			}
 			break;
 
