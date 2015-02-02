@@ -574,7 +574,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 			if (ctx.config.getOption("AllowAggExtCycles")){
 				LOG(WARNING, "A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and might result in non-minimal models. See aggregate options.");
 			}else{
-				throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is now allowed. See aggregate options.");
+				throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is not allowed. See aggregate options.");
 			}
 			if (compatibleSet->getFact(rule.head[0].address)){
 				Nogood ng;
@@ -1226,7 +1226,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 		if (ctx.config.getOption("AllowAggExtCycles")){
 			LOG(WARNING, "A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and might result in non-minimal models. See aggregate options.");
 		}else{
-			throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is now allowed. See aggregate options.");
+			throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is not allowed. See aggregate options.");
 		}
 		Nogood ng;
 //		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
