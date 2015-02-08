@@ -1270,7 +1270,7 @@ void processOptionsPrePlugin(
 				pctx.config.setOption("ExternalLearning", noneToken ? 0 : 1);
 			}
 
-			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
+			LOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
 			break;
 
 		case 19:
