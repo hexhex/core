@@ -87,9 +87,10 @@ That is:
 	(i) <1--1> (ii) <N--0/1> (iii)
 
 It is important to know when to use which namespace. All classes of the HEX-solver other than this one use only (i).
-When sending a program to clasp or calling clasp functions related to program variables (such as defining programs or freezing external variables),
+When sending an ASP program to clasp or calling clasp functions related to ASP program variables (such as defining programs or freezing external variables),
 it expects (ii). When sending clauses/nogoods to clasp, it expects the literals to use (iii).
 Also when retrieving models from clasp, the result is represented using (iii).
+Note that (ii) is only relevant in ASP mode, whereas SAT mode uses only (i) and (iii).
 
 We have the following conversion options:
 
