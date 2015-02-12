@@ -27,7 +27,7 @@
  * @author Christoph Redl
  * @author Peter Schueller <peterschueller@sabanciuniv.edu> (performance improvements, incremental model update)
  *
- * @brief Interface to genuine clasp 3.0.0-based Solver.
+ * @brief Interface to genuine clasp 3.1.1-based Solver.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -66,55 +66,6 @@
 
 // @clasp examples: Run the following command to use the Makefile in clasp/libclasp/examples:
 //   export CXXFLAGS="-DWITH_THREADS=0 -I $PWD/../ -I $PWD/../../libprogram_opts/"
-
-/*
-
-Variable Namespaces
-===================
-
-The ClaspSolver class uses three different name spaces for variables:
- (i)   HEX-IDs
- (ii)  clasp program variables
- (iii) clasp solver variables
-
-There is a one-to-one correlation between (i) and (ii)
-(except for an additional clasp variable which is permantly set to false to express empty rule heads),
-while the relation between (ii) and (iii) is many-to-zero/one. This is because
-program variables can be eliminated due to optimization, or multiple program variables can be identified
-to be equivalent and are thus mapped to the same internal solver variable.
-
-That is:
-	(i) <1--1> (ii) <N--0/1> (iii)
-
-It is important to know when to use which namespace. All classes of the HEX-solver other than this one use only (i).
-When sending an ASP program to clasp or calling clasp functions related to ASP program variables (such as defining programs or freezing external variables),
-it expects (ii). When sending clauses/nogoods to clasp, it expects the literals to use (iii).
-Also when retrieving models from clasp, the result is represented using (iii).
-Note that (ii) is only relevant in ASP mode, whereas SAT mode uses only (i) and (iii).
-
-We have the following conversion options:
-
-(i) ---> (ii)   Translating a HEX-ID "id" (i) to a clasp program variable (ii) is via convertHexToClaspProgramLit(id.address).
-
-                Example usages: sending programs to clasp, adding new rules
-
-(i) ---> (iii)  Translating a HEX-ID "id" (i) to a clasp solver variable (iii) is via convertHexToClaspSolverLit(id.address).
-
-                Example usages: sending nogoods to clasp, external learning
-
-(ii) -/-> (i)   Unsupported/not needed (addition would be easy)
-
-(ii) -/-> (iii) Unsupported/not needed (addition would be easy)
-
-(iii) ---> (i)  Translating a positive or negative clasp solver variable "lit" (iii) to the list of address parts of a HEX-ID (i) of type ground atom
-                is via convertClaspSolverLitToHex(lit.index()); this returns a pointer to a std::vector<IDAddress>.
-
-                Example usages: assignment extraction
-
-(iii) -/-> (ii) Unsupported/not needed, but indirectly possible via (iii) --> (i) --> (ii)
-
-
-*/
 
 DLVHEX_NAMESPACE_BEGIN
 
