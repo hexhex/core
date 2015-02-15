@@ -803,6 +803,14 @@ bool ID_isFalse(ID* this_){
 	return isFalse(*this_);
 }
 
+void resetCacheOfPlugins() {
+	if( PythonAPI::emb_ctx == NULL ) {
+		LOG(ERROR,"cannot reset plugin cache - emb_ctx = NULL");
+	} else {
+		PythonAPI::emb_ctx->resetCacheOfPlugins(false); // false -> reset all caches
+	}
+}
+
 };
 
 BOOST_PYTHON_MODULE(dlvhex) {
@@ -839,6 +847,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeRule", PythonAPI::storeRule);
 	boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
 	boost::python::def("loadSubprogram", PythonAPI::loadSubprogram);
+	boost::python::def("resetCacheOfPlugins", PythonAPI::resetCacheOfPlugins);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
 		.def("extension", &PythonAPI::ID_extension)
