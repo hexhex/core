@@ -209,8 +209,9 @@ public:
   // setup this ProgramCtx (using setupProgramCtx() for of all plugins)
   void setupByPlugins();
 
-  // reset the cache of Plugins that use Environment
-  void resetCacheOfPlugins();
+  // reset the cache of Plugins (either all, or only those that use Environment)
+  // (the default value is for backwards-compatibility with ActHex)
+  void resetCacheOfPlugins(bool resetOnlyIfUsesEnvironment=true);
 
   //
   // state processing
