@@ -186,6 +186,7 @@
  *   <li>\code{.txt}bool isInputAtom(id)\endcode Checks if atom \em id belongs to the input of the current external atom.</li>
  *   <li>\code{.txt}bool isTrue(id)\endcode Checks if an input atom identified by ID \em id is assigned to true.</li>
  *   <li>\code{.txt}bool isFalse(id)\endcode Checks if an input atom identified by ID \em id is assigned to false.</li>
+ *   <li>\code{.txt}void resetCacheOfPlugins()\endcode Empties all caches of external atom evaluation results and all cached nogoods from external learning.</li>
  * </ul>
  * 
  * <b>Conflict-driven Learning</b><br/>
