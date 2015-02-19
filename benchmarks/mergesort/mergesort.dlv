@@ -1,0 +1,29 @@
+intlist(X) :- list(X).
+result(Xs) :- list(X), sorted(X, Xs).
+
+% 1. recursively split list in half
+sublistbounds(List, 1, LenHalf) :- intlist(List), #length(List, Len), Len > 1, LenHalf = Len / 2.
+sublistbounds(List, LenHalfI, Len) :- intlist(List), #length(List, Len), LenHalf = Len / 2, LenHalfI = LenHalf + 1.
+extract(List, Lower, Lower, [Element]) :- sublistbounds(List, Lower, Upper), #getnth(List, Lower, Element).
+extract(List, Lower, PartUpperI, ExtendedList) :- extract(List, PartLower, PartUpper, PartList), sublistbounds(List, Lower, Upper), PartLower = Lower, PartUpperI = PartUpper + 1, Lower <= PartUpperI, PartUpperI <= Upper, #getnth(List, PartUpperI, Element), #append(PartList, [Element], ExtendedList).
+sublist(List, Half1, Half2) :- sublistbounds(List, Lower1, Upper1), sublistbounds(List, Lower2, Upper2), Lower1 < Lower2, extract(List, Lower1, Upper1, Half1), extract(List, Lower2, Upper2, Half2).
+intlist(X) :- sublist(_, X, _).
+intlist(X) :- sublist(_, _, X).
+
+% 2. merge recursively
+sorted(List, List) :- intlist(List), #length(List, Len), Len = 1.
+toMerge(Half1s, Half2s) :- sublist(List, Half1, Half2), sorted(Half1, Half1s), sorted(Half2, Half2s).
+sorted(List, Merged) :- sublist(List, Half1, Half2), sorted(Half1, Half1s), sorted(Half2, Half2s), merged(Half1s, Half2s, Merged).
+
+% 2.1. base case
+merged(L1, L2, L2) :- toMerge(L1, L2), #length(L1, Len1), Len1 = 0.
+merged(L1, L2, L1) :- toMerge(L1, L2), #length(L2, Len2), Len2 = 0.
+
+% 2.2. non-base case
+toMerge(S1, L2) :- toMerge(L1, L2), #length(L1, Len1), #length(L2, Len2), Len1 > 0, Len2 > 0, #head(L1, H1), #head(L2, H2), H1 <= H2, #tail(L1, S1).
+merged(L1, L2, LM) :- toMerge(L1, L2), #length(L1, Len1), #length(L2, Len2), Len1 > 0, Len2 > 0, #head(L1, H1), #head(L2, H2), H1 <= H2, #tail(L1, S1), merged(S1, L2, SM), #append([H1], SM, LM).
+toMerge(L1, S2) :- toMerge(L1, L2), #length(L1, Len1), #length(L2, Len2), Len1 > 0, Len2 > 0, #head(L1, H1), #head(L2, H2), H1 > H2, #tail(L2, S2).
+merged(L1, L2, LM) :- toMerge(L1, L2), #length(L1, Len1), #length(L2, Len2), Len1 > 0, Len2 > 0, #head(L1, H1), #head(L2, H2), H1 > H2, #tail(L2, S2), merged(S2, L1, SM), #append([H2], SM, LM).
+
+% merging is symmetric
+merged(X, Y, Z) :- merged(Y, X, Z).
