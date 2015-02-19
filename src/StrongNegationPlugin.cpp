@@ -47,6 +47,9 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 namespace spirit = boost::spirit;
@@ -72,7 +75,8 @@ StrongNegationPlugin::~StrongNegationPlugin()
 void StrongNegationPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --strongnegation-enable   Enable strong negation plugin." << std::endl;
+	o << "     --strongnegation-enable[=true,false]" << std::endl
+          << "                      Enable or disable strong negation plugin (default is enabled)." << std::endl;
 }
 
 // accepted options: --strongnegation-enable
@@ -84,6 +88,7 @@ void StrongNegationPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
+	ctxdata.enabled = true;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -93,9 +98,18 @@ void StrongNegationPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--strongnegation-enable" )
+		if( boost::starts_with(str, "--strongnegation-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--strongnegation-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --strongnegation-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 

@@ -75,8 +75,10 @@ FunctionPlugin::~FunctionPlugin()
 void FunctionPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --function-maxarity=<N>    Maximum number of output terms in functionDecompose." << std::endl
-	  << "     --function-rewrite         Rewrite function symbols to external atoms" << std::endl;
+	o << "     --function-maxarity=<N>" << std::endl
+          << "                      Maximum number of output terms in functionDecompose." << std::endl
+	  << "     --function-rewrite" << std::endl
+          << "                      Rewrite function symbols to external atoms." << std::endl;
 }
 
 // accepted options: --exists-enable

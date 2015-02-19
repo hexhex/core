@@ -62,58 +62,94 @@ DLVHEX_NAMESPACE_BEGIN
   */
 class DLVHEX_EXPORT AnnotatedGroundProgram{
 
+	/** \brief ProgramCtx. */
 	ProgramCtx* ctx;
+	/** \brief Registry to be used for interpretation of IDs. */
 	RegistryPtr reg;
+	/** \brief Underlying ground program without annotations. */
 	OrdinaryASPProgram groundProgram;
+	/** \brief Subset of nonground rules used for computing additional dependencies  (see constructor AnnotatedGroundProgram::AnnotatedGroundProgram). */
 	std::vector<ID> dependencyIDB;
-	bool haveGrounding;	// true if groundProgram is initialized, otherwise false (then we have only information about ground external atoms in the program but not about the entire program)
+	/** \brief True if groundProgram is initialized, otherwise false (then we have only information about ground external atoms in the program but not about the entire program). */
+	bool haveGrounding;
 
 	// back-mapping of (ground) external auxiliaries to their nonground external atoms
+	/** \brief %Set of external atoms in the original program whose ground instances shall be tracked. */
 	std::vector<ID> indexedEatoms;
+	/** \brief Stores for each external atom in indexedEatoms its mask, i.e., set of ground atoms stemming from this external atom. */
 	std::vector<boost::shared_ptr<ExternalAtomMask> > eaMasks;
+	/** \brief Stores for each external atom auxiliary in groundProgram the set of (nonground) external atoms it stems from (this external atom is in general not unique). */
 	boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
 
-	// set of complete support sets for the external atoms in this ground program
-	// (can be used for compatibility checking without actual external calls)
+	/** \brief %Set of complete support sets for the external atoms in this ground program
+	  * (can be used for compatibility checking without actual external calls).
+	  */
 	SimpleNogoodContainerPtr supportSets;
 
-	// index of all atoms in the program
+	/** \brief %Set of all atoms in the program. */
 	InterpretationPtr programMask;
 
-	// program decomposition and meta information
+	/** \brief Stores a strongly connected component of the ground program according to its atom dependencies. */
 	struct ProgramComponent{
+		/** \brief Atoms in this component. */
 		InterpretationConstPtr componentAtoms;
+		/** \brief Program component. */
 		OrdinaryASPProgram program;
+		/** \brief Constructor.
+		  * @param componentAtoms Atoms in this component.
+		  * @param program Ground program of this component.
+		  */
 		ProgramComponent(InterpretationConstPtr componentAtoms, OrdinaryASPProgram& program) : componentAtoms(componentAtoms), program(program) {}
 		typedef boost::shared_ptr<ProgramComponent> Ptr;
 	};
 	typedef ProgramComponent::Ptr ProgramComponentPtr;
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
 	typedef Graph::vertex_descriptor Node;
+	/** \brief Stores for each ground atom IDAddress the according node in the atom dependency graph. */
 	boost::unordered_map<IDAddress, Node> depNodes;
+	/** \brief Atom dependency graph. */
 	Graph depGraph;
+	/** \brief Strongly connected components (of atoms) of depGraph. */
 	std::vector<std::set<IDAddress> > depSCC;
+	/** \brief Stores for each ground atom the index of the component in depSCC where the atom is contained. */
 	boost::unordered_map<IDAddress, int> componentOfAtom;
+	/** \brief Stores edges (a,b) between ground atoms a,b such that atom a externally depends on b. */
 	std::vector<std::pair<IDAddress, IDAddress> > externalEdges;
+	/** \brief Stores for each component in depSCC whether it contains head cycles. */
 	std::vector<bool> headCycles;
+	/** \brief Stores the set of rules which contain at least two cyclically depending atoms in their heads. */
 	InterpretationPtr headCyclicRules;
+	/** \brief Stores for each component in depSCC whether it contains cycles through external atoms. */
 	std::vector<bool> eCycles;
+	/** \brief Vector of all program components. */
 	std::vector<ProgramComponentPtr> programComponents;
 
-	// meta information about the overall program
-	bool headCyclesTotal, eCyclesTotal;
+	/** \brief Stores if the overall program contains head cycles. */
+	bool headCyclesTotal;
+	/** \brief Stores if the overall program contains cycles through external atoms. */
+	bool eCyclesTotal;
 
 	// initialization members
+	/** \brief Initializes programMask. */
 	void createProgramMask();
+	/** \brief Initializes eaMasks. */
 	void createEAMasks();
+	/** \brief Initializes auxToEA. */
 	void mapAuxToEAtoms();
+	/** \brief Calls all other initialization methods. */
 	void initialize();
+	/** \brief Creates depGraph. */
 	void computeAtomDependencyGraph();
-	void computeAdditionalDependencies();	// adds dependencies defined via dependencyIDB (see constructor)
+	/** \brief Adds dependencies defined via dependencyIDB (see constructor AnnotatedGroundProgram::AnnotatedGroundProgram). */
+	void computeAdditionalDependencies();
+	/** \brief Computes strongly connected components in depSCC. */
 	void computeStronglyConnectedComponents();
+	/** \brief Analyzes all components and the overall program for head cycles. */
 	void computeHeadCycles();
+	/** \brief Analyzes all components and the overall program for cycles through external atoms. */
 	void computeECycles();
 public:
+	/** \brief Constructor. */
 	AnnotatedGroundProgram();
 	/**
 	 * \brief Analyzes a ground program and stored meta information.
@@ -159,41 +195,145 @@ public:
 	 */
 	void addProgram(const AnnotatedGroundProgram& other);
 
+	/**
+	  * \brief Assignment operator.
+	  * @param other Assign another AnnotatedGroundProgram and overwrite the contents. */
 	const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
 
+	/**
+	  * \brief Set the external atoms to track.
+	  * @param indexedEatoms Set of (possibly nonground) external atoms.*/
 	void setIndexEAtoms(std::vector<ID> indexedEatoms);
 
+	/**
+	  * \brief Checks for a given rule if it has at least to cyclically depending atoms in its head.
+	  * @param ruleID ID of a rule in this program.
+	  * @return True if rule \p ruleID is involved in head cycles.
+	  */
 	bool containsHeadCycles(ID ruleID) const;
+	/**
+	  * \brief Returns the number of components of this program.
+	  * @return Number of components of this program.
+	  */
 	int getComponentCount() const;
+	/**
+	  * \brief Retrieves a component as OrdinaryASPProgram.
+	  * @param compNr A component index from 0 to getComponentCount()-1.
+	  * @return Underlying (not annotated) ground program.
+	  */
 	const OrdinaryASPProgram& getProgramOfComponent(int compNr) const;
+	/**
+	  * \brief Returns the set of atoms of a component.
+	  * @param compNr A component index from 0 to getComponentCount()-1.
+	  * @return %Set of atoms.
+	  */
 	InterpretationConstPtr getAtomsOfComponent(int compNr) const;
+	/**
+	  * \brief Checks a given component for head cycles.
+	  * @param compNr A component index from 0 to getComponentCount()-1.
+	  * @return True if component \p compNr has head cycles and false otherwise.
+	  */
 	bool hasHeadCycles(int compNr) const;
+	/**
+	  * \brief Checks a given component for cycles through external atoms.
+	  * @param compNr A component index from 0 to getComponentCount()-1.
+	  * @return True if component \p compNr has cycles through external atoms and false otherwise.
+	  */
 	bool hasECycles(int compNr) const;
+	/**
+	  * \brief Checks a given component for head cycles when the atom dependency graph is restricted to \p intr.
+	  * @param compNr A component index from 0 to getComponentCount()-1.
+	  * @param intr A set of atoms; the atom dependency graph will be reduced to these atoms for answering the request.
+	  * @return True if component \p compNr has head cycles when restricted to \p intr and false otherwise.
+	  */
 	bool hasECycles(int compNr, InterpretationConstPtr intr) const;
+	/**
+	  * \brief Checks the program has head cycles.
+	  * @return True if it has head cycles and false otherwise.
+	  */
 	bool hasHeadCycles() const;
+	/**
+	  * \brief Checks the program has cycles through external atoms.
+	  * @return True if it has cycles through external atoms and false otherwise.
+	  */
 	bool hasECycles() const;
+	/**
+	  * \brief Checks thr program for cycles through external atoms when the atom dependency graph is restricted to \p intr.
+	  * @param intr A set of atoms; the atom dependency graph will be reduced to these atoms for answering the request.
+	  * @return True if the program cycles through external atoms when restricted to \p intr and false otherwise.
+	  */
 	bool hasECycles(InterpretationConstPtr intr) const;
 
+	/**
+	  * \brief Checks if \p ida is contained in the ground program and mapped back to an external atom in indexEAtoms.
+	  * @return True if \p ida is contained in the ground program and mapped back to an external atom in indexEAtoms.
+	  */
 	bool mapsAux(IDAddress ida) const;
 	typedef std::pair<IDAddress, std::vector<ID> > AuxToExternalAtoms;
+	/**
+	  * \brief Returns all pairs of external auxiliary atoms and their associated external atoms they stem from.
+	  * @return Pairs of external atom auxiliaries (IDAddress) and the set of external atoms (IDs) they stem from.
+	  */
 	const boost::unordered_map<IDAddress, std::vector<ID> >& getAuxToEA() const;
+	/**
+	  * \brief Returns for a given external auxiliary atom the associated external atoms it stem from.
+	  * @return The set of external atoms (IDs) the auxiliary \p ida stems from.
+	  */
 	const std::vector<ID>& getAuxToEA(IDAddress ida) const;
+	/**
+	  * \brief Returns the the mask of a tracked external atom with a given index.
+	  * @param eaIndex Index of an external atom in indexedEatoms.
+	  * @return Mask of the external atom identified by \p eaIndex.
+	  */
 	const boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex) const;
 
+	/**
+	  * \brief Returns the (not annotated) underlying ground program.
+	  * @return Ground program.
+	  */
 	const OrdinaryASPProgram& getGroundProgram() const;
+	/**
+	  * \brief Returns the external atoms indexed by this AnnotatedGroundProgram.
+	  * @return Set of indexed external atoms.
+	  */
 	const std::vector<ID>& getIndexedEAtoms() const;
+	/**
+	  * \brief Returns a single external atom identified by its index.
+	  * @param index Identifies the external atom.
+	  * @return ID of external atom associated with \p index.
+	  */
 	ID getIndexedEAtom(int index) const;
+	/**
+	  * \brief Returns the mask of the overall program.
+	  * @return Program mask.
+	  */
 	InterpretationConstPtr getProgramMask() const;
 
-	// sets support sets for verification
+	/**
+	  * \brief Sets support sets for verification.
+	  * @param supportSets Support sets encoded as nogoods.
+	  */
 	void setCompleteSupportSetsForVerification(SimpleNogoodContainerPtr supportSets);
 
-	// returns if complete support sets have been defined
+	/**
+	  * \brief Returns if complete support sets have been defined.
+	  * @return True if complete support sets have been defined and false otherwise.
+	  */
 	bool allowsForVerificationUsingCompleteSupportSets() const;
+	/**
+	  * \brief Returns the complete support sets added for verification.
+	  * @return Support sets encoded as nogoods.
+	  */
 	SimpleNogoodContainerPtr getCompleteSupportSetsForVerification();
 
-	// tries to verify an external atom which allows for verification using support sets and returns the result of this check
-	// (only supported if support sets have been defined)
+	/**
+	  * \brief Tries to verify an external atom which allows for verification using support sets and returns the result of this check.
+	  * (only supported if support sets have been defined).
+	  * @param eaIndex Identifies an external atom by its index.
+	  * @param interpretation An interpretation which is complete for the given ground program (including external atom auxilies).
+	  * @param auxiliariesToVerify The set of external atoms to verify.
+	  * @return Verification result.
+	  */
 	bool verifyExternalAtomsUsingCompleteSupportSets(int eaIndex, InterpretationConstPtr interpretation, InterpretationConstPtr auxiliariesToVerify) const;
 };
 

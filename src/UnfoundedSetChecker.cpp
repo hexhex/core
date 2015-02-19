@@ -571,6 +571,11 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 
 		if (ruleID.isWeightRule()){
 			// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+			if (ctx.config.getOption("AllowAggExtCycles")){
+				LOG(WARNING, "A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and might result in non-minimal models. See aggregate options.");
+			}else{
+				throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is not allowed. See aggregate options.");
+			}
 			if (compatibleSet->getFact(rule.head[0].address)){
 				Nogood ng;
 				ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
@@ -1218,8 +1223,13 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 
 	if (ruleID.isWeightRule()){
 		// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+		if (ctx.config.getOption("AllowAggExtCycles")){
+			LOG(WARNING, "A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and might result in non-minimal models. See aggregate options.");
+		}else{
+			throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is not allowed. See aggregate options.");
+		}
 		Nogood ng;
-		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
+//		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
 		ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
 		ufsDetectionProblem.addNogood(ng);
 		return;

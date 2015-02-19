@@ -76,9 +76,11 @@ PythonPlugin::~PythonPlugin()
 void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --pythonplugin=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
-	o << "     --pythonmain=PATH        Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl;
-	o << "     --pythonarg=ARG          Passes arguments to Python (sys.argv) (can be used multiple times)" << std::endl;
+	o << "     --pythonplugin=[PATH]" << std::endl
+          << "                      Add Python script \"PATH\" as new plugin." << std::endl;
+	o << "     --pythonmain=PATH" << std::endl
+          << "                      Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program." << std::endl;
+	o << "     --pythonarg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl;
 }
 
 // accepted options: --pythonplugin=[PATH]
@@ -801,6 +803,14 @@ bool ID_isFalse(ID* this_){
 	return isFalse(*this_);
 }
 
+void resetCacheOfPlugins() {
+	if( PythonAPI::emb_ctx == NULL ) {
+		LOG(ERROR,"cannot reset plugin cache - emb_ctx = NULL");
+	} else {
+		PythonAPI::emb_ctx->resetCacheOfPlugins(false); // false -> reset all caches
+	}
+}
+
 };
 
 BOOST_PYTHON_MODULE(dlvhex) {
@@ -837,6 +847,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeRule", PythonAPI::storeRule);
 	boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
 	boost::python::def("loadSubprogram", PythonAPI::loadSubprogram);
+	boost::python::def("resetCacheOfPlugins", PythonAPI::resetCacheOfPlugins);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
 		.def("extension", &PythonAPI::ID_extension)
@@ -923,7 +934,23 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 			throw PluginError("Could not register dlvhex module in Python");
 		}
 		Py_Initialize();
-		PySys_SetArgvEx(iargv-1, pargv, 0);
+		wchar_t** wpargv = new wchar_t**[iargv];
+		for(int i = 0; i < iargv; ++i) {
+			if( pargv[i] == NULL ) wpargv[i] = NULL
+			else {
+				wpargv[i] = new wchar_t[strlen(pargv[i])+1];
+				for(int c = 0; c < strlen(pargv[i])+1; c++) {
+					// do a brutal cast (this will work in all 7-bit ASCII cases which is
+					// enough for now)
+					wpargv[i][c] = wchar_t(pargv[i][c]);
+					if( wpargv[i][c] & 0x7F != wpargv[i][c] ) {
+						LOG(WARN,"console input argument contains non-7-bit character in
+argument '" << pargv[i] << "' !");
+					}
+				}
+			}
+		}
+		PySys_SetArgvEx(iargv-1, wpargv, 0);
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
 #endif

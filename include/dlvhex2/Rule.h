@@ -38,57 +38,147 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/**
+  * \brief Stores a rule of a HEX-program.
+  */
 struct Rule:
   private ostream_printable<Rule>
 {
-  // the kind part of the ID of this rule
+  /** \brief The kind part of the ID of this rule. */
   IDKind kind;
 
-  // the IDs of ordinary atoms in the head of this rule
+  /** \brief The IDs of ordinary atoms in the head of this rule. */
   Tuple head;
 
-  // the IDs of literals in the body of this rule
+  /** \brief The IDs of literals in the body of this rule. */
   Tuple body;
 
-  // the IDs of literals used as guards for the head of this rule
+  /** \brief The IDs of literals used as guards for the head of this rule (for disjunctions with variable length). */
   Tuple headGuard;
 
-  // only for lparse weight rules (not to be confused with weak constraints!)
+  /** \brief Vector of weights of the body literals; only for lparse weight rules (not to be confused with weak constraints!). */
   Tuple bodyWeightVector;
+
+  /** \brief Integer bound value of lparse weight rules (not to be confused with weak constraints!). */
   ID bound;
 
-  // additional information for weak constraints (ID_FAIL if unused)
+  /** \brief Integer weight value for weak constraints (ID_FAIL if unused). */
   ID weight;
+
+  /** \brief Integer level value for weak constraints (ID_FAIL if unused). */
   ID level;
 
+  /** \brief Constructor.
+    * @param kind Specifies the type of the rule. */
   Rule(IDKind kind):
     kind(kind), head(), headGuard(), body(), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isRule()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param head Vector of the IDs of atoms in the rule head.
+    * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
+    */
   Rule(IDKind kind, const Tuple& head, const Tuple& body):
     kind(kind), head(head), body(body), headGuard(), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isRule()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param head Vector of the IDs of atoms in the rule head.
+    * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
+    * @param headGuard Vector of IDs of atoms or literals in the head guard (for disjunctions of arbitrary length).
+    */
   Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& headGuard):
     kind(kind), head(head), body(body), headGuard(headGuard), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isRule()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param head Vector of the IDs of atoms in the rule head.
+    * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
+    * @param weight For weight rules.
+    * @param level For weight rules.
+    */
   Rule(IDKind kind, const Tuple& head, const Tuple& body, ID weight, ID level):
     kind(kind), head(head), body(body), headGuard(), bound(ID_FAIL), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param head Vector of the IDs of atoms in the rule head.
+    * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
+    * @param headGuard Vector of IDs of atoms or literals in the head guard (for disjunctions of arbitrary length).
+    * @param weight For weak constraints.
+    * @param level For weak constraints.
+    */
   Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& headGuard, ID weight, ID level):
     kind(kind), head(head), body(body), headGuard(headGuard), bound(ID_FAIL), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param weight For weak constraints.
+    * @param level For weak constraints.
+    */
   Rule(IDKind kind, ID weight, ID level):
     kind(kind), head(), body(), headGuard(), bound(ID_FAIL), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param head Vector of the IDs of atoms in the rule head.
+    * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
+    * @param bodyWeightVector Weights of body literals for weight rules (lparse).
+    * @param bound Integer bound value for weight rules (lparse).
+    */
   Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& bodyWeightVector, ID bound):
     kind(kind), head(head), body(body), headGuard(), bodyWeightVector(bodyWeightVector), bound(bound), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isWeightRule()); assert(body.size() == bodyWeightVector.size()); }
+
+  /**
+    * \brief Constructor.
+    * @param kind Specifies the type of the rule.
+    * @param head Vector of the IDs of atoms in the rule head.
+    * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
+    * @param headGuard Vector of IDs of atoms or literals in the head guard (for disjunctions of arbitrary length).
+    * @param bodyWeightVector Weights of body literals for weight rules (lparse).
+    * @param bound Integer bound value for weight rules (lparse).
+    */
   Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& headGuard, const Tuple& bodyWeightVector, ID bound):
     kind(kind), head(head), body(body), headGuard(headGuard), bodyWeightVector(bodyWeightVector), bound(bound), weight(ID_FAIL), level(ID_FAIL)
       { assert(ID(kind,0).isWeightRule()); assert(body.size() == bodyWeightVector.size()); }
+
+  /**
+    * \brief Checks if this is an external atom guessing rule (ground or nonground).
+    *
+    * This is the case if the head consists of exactly two atoms, which are both external atom auxiliary atoms.
+    * @return True if this is a ground or nonground external atom guessing rule and false otherwise.
+    */
   inline bool isEAGuessingRule() const
     { return head.size() == 2 && head[0].isExternalAuxiliary() && head[1].isExternalAuxiliary(); }
+
+  /**
+    * \brief Checks if this is an external atom input guessing rule (ground or nonground).
+    *
+    * This is the case if the head consists of exactly one atom, which is an external atom input auxiliary atom.
+    * @return True if this is a ground or nonground external atom guessing rule and false otherwise.
+    */
   inline bool isEAAuxInputRule() const
     { return head.size() == 1 && head[0].isExternalInputAuxiliary(); }
+
+  /**
+    * \brief Prints this rule in form Rule(head <- body [weight:level]; weightvector >= bound).
+    *
+    * @param o Stream to print.
+    * @return \p o.
+    */
   std::ostream& print(std::ostream& o) const
     { o << "Rule(" << printvector(head) << " <- " << printvector(body);
       if( weight != ID_FAIL || level != ID_FAIL )

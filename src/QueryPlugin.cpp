@@ -46,6 +46,9 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 namespace spirit = boost::spirit;
@@ -76,10 +79,11 @@ QueryPlugin::~QueryPlugin()
 void QueryPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --query-enable   Enable this (i.e., the querying) plugin." << std::endl <<
-		   "     --query-brave    Do brave reasoning." << std::endl <<
-		   "     --query-all      Give all witnesses when doing ground reasoning." << std::endl <<
-			 "     --query-cautious Do cautious reasoning." << std::endl;
+	o << "     --query-enable[=true,false]" << std::endl
+          << "                      Enable or disable the querying plugin (default is disabled)." << std::endl
+          << "     --query-brave    Do brave reasoning." << std::endl
+          << "     --query-all      Give all witnesses when doing ground reasoning." << std::endl
+          << "     --query-cautious Do cautious reasoning." << std::endl;
 }
 
 // accepted options: --query-enables --query-brave --query-cautious
@@ -91,6 +95,7 @@ void QueryPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	ctxdata.enabled = false;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -100,9 +105,18 @@ void QueryPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--query-enable" )
+		if( boost::starts_with(str, "--query-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--query-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --strongnegation-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
 		}
 		else if( str == "--query-brave" )

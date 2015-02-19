@@ -402,8 +402,14 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		}else{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 			grounder = GenuineGrounder::getInstance(factory.ctx, program);
-			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
+			OrdinaryASPProgram gp = grounder->getGroundProgram();
 
+			// do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
+			if (!!gp.mask) mask->add(*gp.mask);
+			gp.mask = InterpretationConstPtr();
+
+			// run solver
+			annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, factory.innerEatoms);
 			solver = GenuineGroundSolver::getInstance(
 				factory.ctx, annotatedGroundProgram,
 				frozenHookAtoms,
@@ -419,7 +425,10 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
     learnedEANogoodsTransferredIndex = 0;
     nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
-    if(factory.ctx.config.getOption("NoPropagator") == 0) solver->addPropagator(this);
+    if(factory.ctx.config.getOption("NoPropagator") == 0){
+        DBGLOG(DBG, "Adding propagator to solver");
+        solver->addPropagator(this);
+    }
     learnSupportSets();
 
     // external atom evaluation and unfounded set checking
@@ -429,8 +438,9 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram,
                                                                          factory.ctx.config.getOption("GenuineSolver") >= 3,
                                                                          factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
-    //   incremental algorithms
+    // necessary for incremental algorithms
     setHeuristics();
+    createVerificationWatchLists();
 }
 
 void GenuineGuessAndCheckModelGenerator::addHookRules(){
@@ -475,6 +485,7 @@ void GenuineGuessAndCheckModelGenerator::buildFrozenHookAtomAssumptions(){
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
+        DBGLOG(DBG, "Removing propagator to solver");
 	solver->removePropagator(this);
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
@@ -499,6 +510,19 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 			DBGLOG(DBG, "Using default external atom heuristics for external atom " << factory.innerEatoms[i]);
 			eaEvalHeuristics.push_back(defaultExternalAtomEvalHeuristics);
 		}
+	}
+
+	// create ufs check heuristics as selected
+	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(annotatedGroundProgram, reg);
+	verifiedAuxes = InterpretationPtr(new Interpretation(reg));
+}
+
+void GenuineGuessAndCheckModelGenerator::createVerificationWatchLists(){
+
+	// set external atom evaluation strategy according to selected heuristics
+	verifyWatchList.clear();
+	unverifyWatchList.clear();
+	for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i){
 
 		// watch all atoms in the scope of the external atom for watch one input atom for verification
 		bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
@@ -515,10 +539,6 @@ void GenuineGuessAndCheckModelGenerator::setHeuristics(){
 			en++;
 		}
 	}
-
-	// create ufs check heuristics as selected
-	ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(annotatedGroundProgram, reg);
-	verifiedAuxes = InterpretationPtr(new Interpretation(reg));
 }
 
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
@@ -561,6 +581,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 					grounder = GenuineGrounder::getInstance(factory.ctx, program);
 					annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, grounder->getGroundProgram(), factory.innerEatoms);
 
+					// reset main search
 					solver = GenuineGroundSolver::getInstance(
 						factory.ctx, annotatedGroundProgram,
 						frozenHookAtoms,
@@ -569,8 +590,22 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 						// this will not find unfounded sets due to external sources,
 						// but at least unfounded sets due to disjunctions
 						!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+					if(factory.ctx.config.getOption("NoPropagator") == 0){
+						DBGLOG(DBG, "Adding propagator to solver");
+						solver->addPropagator(this);
+					}
+					for (int i = 0; i < factory.innerEatoms.size(); ++i){
+						eaEvaluated[i] = false;
+						eaVerified[i] = false;
+					}
+					createVerificationWatchLists();
 
-					for (int i = 0; i < factory.innerEatoms.size(); ++i) eaEvaluated[i] = eaVerified[i] = false;
+					// reset UFS search
+					ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram,
+										factory.ctx.config.getOption("GenuineSolver") >= 3,
+										factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr()));
+					ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(annotatedGroundProgram, reg);
+					verifiedAuxes = InterpretationPtr(new Interpretation(reg));
 				}
 
 				groundingIsComplete = true;
@@ -581,33 +616,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 			return InterpretationPtr();
 		}
 
-/*
-#ifndef NDEBUG
-		DBGLOG(DBG, "Checking if incremental instance is equivalent to full one");
-		// check if the current model of the incrementally extended program also occurs in the models of the program if solved from scratch
-		GenuineGroundSolverPtr solver2 = GenuineGroundSolver::getInstance(
-			factory.ctx, annotatedGroundProgram,
-			frozenHookAtoms,
-			// do the UFS check for disjunctions only if we don't do
-			// a minimality check in this class;
-			// this will not find unfounded sets due to external sources,
-			// but at least unfounded sets due to disjunctions
-			!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
-		InterpretationPtr model2;
-		bool found = false;
-		solver2->restartWithAssumptions(hookAssumptions);
-		while (!!(model2 = solver2->getNextModel())){
-			DBGLOG(DBG, "Checking if " << *modelCandidate << " is equivalent to " << *model2);
-			if (model2->getStorage() == modelCandidate->getStorage()){
-				found = true;
-				break;
-			}
-		}
-
-		assert (found && "model of incrementally extended program does not occur in models of the program built from scratch");
-
-#endif
-*/
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 		LOG_SCOPE(DBG,"gM", false);
 		LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
@@ -634,7 +642,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 				buildFrozenHookAtomAssumptions();
 				solver->restartWithAssumptions(hookAssumptions);
 				for (int i = 0; i < factory.innerEatoms.size(); ++i){
-					eaEvaluated[i] = eaVerified[i] = false;
+					eaEvaluated[i] = false;
+					eaVerified[i] = false;
 				}
 				continue;
 			}
@@ -839,6 +848,8 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 	compatible = true;
 	for (uint32_t eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
+		DBGLOG(DBG, "NoPropagator: " << factory.ctx.config.getOption("NoPropagator") << ", eaEvaluated[" << eaIndex << "]=" << eaEvaluated[eaIndex]);
+		assert(!(factory.ctx.config.getOption("NoPropagator") && eaEvaluated[eaIndex]) && "Verification result was stored for later usage although NoPropagator property was set");
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == true){
 		}
 		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false){
@@ -1001,6 +1012,9 @@ namespace
 }
 
 void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::vector<int>& expandedComponents){
+
+	// no need for expansion if the grounding is known to be complete
+	if (groundingIsComplete) return;
 
 	// update rule index
 	DBGLOG(DBG, "Updating rule index");
@@ -1193,6 +1207,12 @@ void GenuineGuessAndCheckModelGenerator::incrementalProgramExpansion(const std::
 	}
 
 	solver->addProgram(expansion, frozenHookAtoms);
+
+	DBGLOG(DBG, "Resetting evaluation status of external atoms");
+	for (int eaIndex = 0; eaIndex < eaEvaluated.size(); ++eaIndex){
+		eaEvaluated[eaIndex] = false;
+		eaVerified[eaIndex] = false;
+	}
 }
 
 ID GenuineGuessAndCheckModelGenerator::getIncrementalHookRule(ID headAtomID, ID hookAtomID){
@@ -1308,6 +1328,8 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationCon
 		// for all external atoms which watch this atom for unverification
 		BOOST_FOREACH (int eaIndex, unverifyWatchList[*en]){
 			if (eaEvaluated[eaIndex]){
+				DBGLOG(DBG, "Unverifying external atom " << eaIndex);
+
 				// unverify
 				eaVerified[eaIndex] = false;
 				eaEvaluated[eaIndex] = false;
@@ -1456,6 +1478,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
 
 		// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
 		if(factory.ctx.config.getOption("NoPropagator") == 0){
+			DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
 			eaEvaluated[eaIndex] = true;
 			if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
 		}
@@ -1476,6 +1499,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomBySupportSets(int eaI
 
 	// we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
 	if( factory.ctx.config.getOption("NoPropagator") == 0 ){
+		DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
 		eaEvaluated[eaIndex] = true;
 	}
 

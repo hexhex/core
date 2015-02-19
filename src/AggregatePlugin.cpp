@@ -72,15 +72,26 @@ AggregatePlugin::~AggregatePlugin()
 void AggregatePlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --aggregate-enable       Enable aggregate plugin." << std::endl;
-	o << "     --aggregate-mode={ext,simplify}" << std::endl
-	  << "                              ext=rewrite aggregates to external atoms" << std::endl
-	  << "                              simplify=keep aggregates but simplify them" << std::endl
-	  << "                                       (which is necessary for gringo backend)" << std::endl;
-	o << "     --max-variable-share=<N> Defines the maximum number N of variables" << std::endl
-	  << "                              in an aggregate which can be shared with" << std::endl
-	  << "                              other body atoms in the rule" << std::endl
-	  << "                              (only relevant for --aggregate-mode=ext)" << std::endl;
+	o << "     --aggregate-enable[=true,false]" << std::endl
+          << "                      Enable aggregate plugin (default is enabled)." << std::endl;
+	o << "     --aggregate-mode=[ext,simplify]" << std::endl
+	  << "                         extrewrite       : Rewrite aggregates to external atoms" << std::endl
+	  << "                         simplify (default)" << std::endl
+	  << "                                          : Keep aggregates but simplify them" << std::endl
+	  << "                                            (which is necessary for gringo backend)" << std::endl;
+	o << "     --max-variable-share=<N>" << std::endl
+          << "                      Defines the maximum number N of variables" << std::endl
+	  << "                      in an aggregate which can be shared with" << std::endl
+	  << "                      other body atoms in the rule" << std::endl
+	  << "                      (only relevant for --aggregate-mode=ext)." << std::endl
+	  << "     --allow-aggextcycles" << std::endl
+          << "                      Allows cycles which involve both aggregates and" << std::endl
+          << "                      external atoms. If the option is not specified," << std::endl
+          << "                      such cycles lead to abortion; if specified, only" << std::endl
+          << "                      a warning is printed but the models might be not minimal." << std::endl
+          << "                      With --aggregate-mode=ext, the option is irrelevant" << std::endl
+          << "                      as aggregates are replaced by external atoms (models will be minimal in that case)." << std::endl
+          << "                      See examples/aggextcycle1.hex.";
 }
 
 // accepted options: --higherorder-enable
@@ -92,6 +103,8 @@ void AggregatePlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
+	ctxdata.enabled = true;
+	ctxdata.mode = CtxData::Simplify;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -101,24 +114,39 @@ void AggregatePlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--aggregate-enable" )
+		if( boost::starts_with(str, "--aggregate-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--aggregate-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --aggregate-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
-		}
-		if( boost::starts_with(str, "--max-variable-share=") )
+		}else if( boost::starts_with(str, "--max-variable-share=") )
 		{
 			ctxdata.maxArity = boost::lexical_cast<int>(str.substr(std::string("--max-variable-share=").length()));
 			processed = true;
-		}
-		if( boost::starts_with(str, "--aggregate-mode=") )
+		}else if( boost::starts_with(str, "--aggregate-mode=") )
 		{
 			std::string m = str.substr(std::string("--aggregate-mode=").length());
 			if (m == "ext"){
 				ctxdata.mode = CtxData::ExtRewrite;
 			}else if (m == "simplify"){
 				ctxdata.mode = CtxData::Simplify;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --aggregate-mode option: " << m;
+				throw PluginError(ss.str());
 			}
+			processed = true;
+		}else if( str == "--allow-aggextcycles" )
+		{
+			ctx.config.setOption("AllowAggExtCycles", 1);
 			processed = true;
 		}
 
