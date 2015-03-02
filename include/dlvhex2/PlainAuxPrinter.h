@@ -37,16 +37,23 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Prints auxiliary atoms in a generic fashion of kind aux_XXX(...). */
 class PlainAuxPrinter:
   public AuxPrinter
 {
 public:
+  /** \brief Constructor.
+    * @param reg Registry to use for resolving IDs. */
   PlainAuxPrinter(RegistryPtr reg);
 
-  // print an ID and return true,
-  // or do not print it and return false
+  /** \brief Print an ID.
+    * @param out Stream to print \p id to.
+    * @param id ID of an auxiliary atom.
+    * @param prefix String to print before \p id.
+    * @return True. */
   virtual bool print(std::ostream& out, ID id, const std::string& prefix) const;
 protected:
+  /** \brief reg Registry to use for resolving IDs. */
   RegistryPtr reg;
 };
 
