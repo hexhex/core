@@ -39,7 +39,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-/** \brief Default heuristics which tries to merge as much as possible, but such that the worst case for the grounder is avoided (see GTTV'13 paper).
+/** \brief Default heuristics which tries to merge as much as possible, but such that the worst case for the grounder is avoided (see GTTV'13 paper). */
 class EvalHeuristicGreedy:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
