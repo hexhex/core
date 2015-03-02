@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements aggregate functions both by native handling or by rewriting them to external atoms. */
 class AggregatePlugin:
   public PluginInterface
 {
@@ -46,13 +47,19 @@ public:
 	public PluginData
 	{
 		public:
-		// whether plugin is enabled
+		/** \brief Stores if plugin is enabled. */
 		bool enabled;
 
-		// maximum input arity used
+		/** \brief Maximum input arity to external atoms (number of variables shared between aggregate function and remaining rule body). */
 		int maxArity;
 
-		enum Mode { ExtRewrite, Simplify };
+		/** \brief Supported plugin modes. */
+		enum Mode {
+			/** \brief Rewrting aggregates to external atoms. */
+			ExtRewrite,
+			/** \brief Simplify them such that they can be natively handled. */
+			Simplify };
+		/** \brief Selected mode. */
 		Mode mode;
 
 		CtxData();
@@ -60,7 +67,9 @@ public:
 	};
 
 public:
+	/** \brief Constructor. */
 	AggregatePlugin();
+	/** \brief Destructor. */
 	virtual ~AggregatePlugin();
 
 	// output help message for this plugin

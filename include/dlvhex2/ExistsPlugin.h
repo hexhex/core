@@ -38,6 +38,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements existential quantification over unnamed individuals. */
 class ExistsPlugin:
   public PluginInterface
 {
@@ -47,16 +48,18 @@ public:
     public PluginData
   {
   public:
-    // whether plugin is enabled
+    /** \brief Stores if plugin is enabled. */
     bool enabled;
 
-    // maximal input arity
+    /** \brief Maximal input arity for existential quantification.
+      *
+      * This number corresponds to the maximum number of forall variables in the scope of an existential quantifier. */
     int maxArity;
 
-    // IDs of existentially quantified atoms
+    /** \brief Set of IDs of existentially quantified atoms. */
     std::set<ID> existentialAtoms;
 
-    // IDs of external atoms which simulate existnaital atoms
+    /** \brief Set of IDs of external atoms which simulate existnaital atoms. */
     std::set<ID> existentialSimulationAtoms;
 
     CtxData();
@@ -64,7 +67,9 @@ public:
   };
 
 public:
+  /** \brief Constructor. */
   ExistsPlugin();
+  /** \brief Destructor. */
   virtual ~ExistsPlugin();
 
 	// output help message for this plugin

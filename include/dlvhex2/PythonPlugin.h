@@ -278,6 +278,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements a meta-plugin which allows for loading other plugins implemented in Python. */
 class PythonPlugin:
   public PluginInterface
 {
@@ -287,16 +288,21 @@ public:
 	public PluginData
 	{
 		public:
-
+		/** \brief List of Python scripts to load. */
 		std::vector<std::string> pythonScripts;
+		/** \brief List of commandline arguments to be passed to python. */
 		std::vector<std::string> commandlineArguments;
 
+		/** \brief Constructor. */
 		CtxData();
+		/** \brief Destructor. */
 		virtual ~CtxData() {}
 	};
 
 public:
+	/** \brief Constructor. */
 	PythonPlugin();
+	/** \brief Destructor. */
 	virtual ~PythonPlugin();
 
 	// output help message for this plugin
@@ -316,6 +322,8 @@ public:
 
 	virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
 
+	/** \brief Runs the main method from a Python script.
+	  * @param filename Name of a Python script. */
 	void runPythonMain(std::string filename);
 
 	// no atoms!

@@ -38,6 +38,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements function symbols either by native handling or by rewriting to external atoms. */
 class FunctionPlugin:
   public PluginInterface
 {
@@ -47,10 +48,10 @@ public:
     public PluginData
   {
   public:
-    // maximal input arity
+    /** \brief Maximal input arity for external atoms which handle functional terms. */
     int maxArity;
 
-    // rewrite function symbols to external atoms
+    /** \brief True to rewrite function symbols to external atoms and false to handle them natively. */
     bool rewrite;
 
     CtxData();
@@ -58,7 +59,9 @@ public:
   };
 
 public:
+  /** \brief Constructor. */
   FunctionPlugin();
+  /** \brief Destructor. */
   virtual ~FunctionPlugin();
 
 	// output help message for this plugin

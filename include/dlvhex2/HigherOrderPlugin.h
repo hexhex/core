@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements higher-order atoms (i.e., atoms with variables as predicates) by rewriting them to ordinary ASP. */
 class HigherOrderPlugin:
   public PluginInterface
 {
@@ -50,18 +51,20 @@ public:
 		typedef std::set<ID> PredicateInputSet;
 
   public:
-    // whether plugin is enabled
+    /** \brief Stores if plugin is enabled. */
     bool enabled;
 
-		// which higher order arities were encountered?
-		AritySet arities;
+    /** \brief Stores the higher order arities which were encountered in the program. */
+    AritySet arities;
 
-    // which predicates are used as predicate inputs and therefore
-    // 1) are derived via special rules
-    // 2) should not be printed from auxiliaries
+    /** \brief Stores which predicates are used as predicate inputs.
+      *
+      * Such predicates
+      * 1) are derived via special rules
+      * 2) should not be printed from auxiliaries. */
     PredicateInputSet predicateInputConstants;
 
-    // predicate mask for auxiliary higher order predicates
+    /** \brief Predicate mask for auxiliary higher order predicates. */
     PredicateMask myAuxiliaryPredicateMask;
 
     CtxData();
@@ -69,7 +72,9 @@ public:
   };
 
 public:
+  /** \brief Constructor. */
   HigherOrderPlugin();
+  /** \brief Destructor. */
   virtual ~HigherOrderPlugin();
 
 	// output help message for this plugin

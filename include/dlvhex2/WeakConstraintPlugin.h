@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements weak plugins by rewriting them to ordinary rules. */
 class WeakConstraintPlugin:
   public PluginInterface
 {
@@ -46,7 +47,7 @@ public:
 	public PluginData
 	{
 		public:
-		// whether plugin is enabled
+		/** \brief Stores if plugin is enabled. */
 		bool enabled;
 
 		CtxData();
@@ -54,7 +55,9 @@ public:
 	};
 
 public:
+	/** \brief Constructor. */
 	WeakConstraintPlugin();
+	/** \brief Destructor. */
 	virtual ~WeakConstraintPlugin();
 
 	// output help message for this plugin

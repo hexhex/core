@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Allows for implementing evaluation heuristics by manually specifying the units. */
 class ManualEvalHeuristicsPlugin:
        	public PluginInterface
 {
@@ -46,28 +47,33 @@ public:
 		public PluginData
        	{
 	public:
-		// whether plugin is enabled
+		/** \brief Stores if plugin is enabled. */
 		bool enabled;
 
-		// id of last rule in input (other rules are auxiliary, created by hex or plugins)
+		/** \brief ID of last rule in input (other rules are auxiliary, created by hex or plugins). */
 		ID lastUserRuleID;
 
-		// assumption: parser processes rules in input and plugin understandable instructions sequentially
-		//
-		// running index used during parsing (rules of which unit are we currently parsing?)
+		/** \brief Running index used during parsing (rules of which unit are we currently parsing).
+		  *
+		  * Assumption: parser processes rules in input and plugin understandable instructions sequentially.
+	 	  */
 		unsigned currentUnit;
 
-		// maximum rule id parsed is stored for each unit instruction
-		// the ID might be ID_FAIL which means that no rule comes before that, i.e., the first instruction in a file was #evalunit(...).
 		typedef std::pair<ID,unsigned> UnitInstruction;
 		typedef std::list<UnitInstruction> InstructionList;
+		/** \brief Maximum rule id parsed is stored for each unit instruction.
+		  *
+		  * The ID might be ID_FAIL which means that no rule comes before that, i.e., the first instruction in a file was #evalunit(...).
+		  */
 		InstructionList instructions;
 
 		CtxData();
 		virtual ~CtxData() {};
 	};
 
+	/** \brief Constructor. */
 	ManualEvalHeuristicsPlugin();
+	/** \brief Destructor. */
 	virtual ~ManualEvalHeuristicsPlugin();
 
 	// output help message for this plugin
