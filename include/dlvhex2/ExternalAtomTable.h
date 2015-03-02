@@ -42,6 +42,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup table for external atoms. */
 class ExternalAtomTable:
 	public Table<
 		// value type is symbol struct
@@ -56,13 +57,6 @@ class ExternalAtomTable:
 				boost::multi_index::tag<impl::PredicateTag>,
 				BOOST_MULTI_INDEX_MEMBER(ExternalAtom,ID,predicate)
 			>
-      #if 0
-			// kind TODO perhaps we do not need this index?
-			boost::multi_index::ordered_non_unique<
-				boost::multi_index::tag<impl::KindTag>,
-				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,IDKind,kind)
-			>,
-      #endif
 		>
 	>
 {
@@ -74,26 +68,42 @@ public:
 
 	// methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct
-  // assert that ID exists in table
+  /** \brief Retrieve by ID.
+    *
+    * Aassert that id.kind is correct.
+    * Assert that ID exists in table.
+    * @param id ID of an external atom.
+    * @return External atom corresponding to \p id. */
 	inline const ExternalAtom& getByID(ID id) const throw ();
 
-  // get all external atoms with certain predicate id
+  /** \brief Get all external atoms with certain predicate id.
+    * @param id External predicate ID.
+    * @return Pair of begin and end iterator representing all external atoms in the table using the given predicate. */
   // NOTE: you may need to lock the mutex also while iterating!
 	// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
-	// store atom, assuming it does not exist
+	/** \brief Store atom, assuming it does not exist.
+	  * \param atom External atom to store.
+	  * \param ID of the stored external atom. */
 	inline ID storeAndGetID(const ExternalAtom& atom) throw();
 
-	// update
-	// (oldStorage must be from getByID() or from *const_iterator)
+	/** \brief Updates an external atom in the table.
+	  *
+	  * oldStorage must be from getByID() or from *const_iterator.
+	  * @param oldStorage Old external atom.
+	  * @param newStorage New external atom. */
 	inline void update(
 			const ExternalAtom& oldStorage, ExternalAtom& newStorage) throw();
 
-	// implementation in Registry.cpp !
+	  /** \brief Prints the table in human-readable format.
+	    *
+	    * Implementation in Registry.cpp!
+	    *
+	    * @param o Stream to print to.
+	    * @param reg Registry used to resolve IDs.
+	    * @return \p o. */
 	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
 };
 

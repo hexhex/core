@@ -44,6 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup tables for terms. */
 class TermTable:
 	public Table<
 		// value type is symbol struct
@@ -54,13 +55,6 @@ class TermTable:
 			boost::multi_index::random_access<
 				boost::multi_index::tag<impl::AddressTag>
 			>,
-      #if 0
-			// kind TODO perhaps we do not need this index?
-			boost::multi_index::ordered_non_unique<
-				boost::multi_index::tag<impl::KindTag>,
-				BOOST_MULTI_INDEX_MEMBER(Term,IDKind,kind)
-			>,
-      #endif
 			// unique IDs for unique symbol strings
 			boost::multi_index::hashed_unique<
 				boost::multi_index::tag<impl::TermTag>,
@@ -72,26 +66,31 @@ class TermTable:
 	// types
 public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
-  //typedef Container::index<impl::KindTag>::type KindIndex;
-	typedef Container::index<impl::TermTag>::type TermIndex;
+  typedef Container::index<impl::TermTag>::type TermIndex;
 
 	// methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct for Term
-  // assert that ID exists
+  /** \brief Retrieve by ID.
+    *
+    * Assert that id.kind is correct for Term.
+    * Assert that ID exists.
+    * @param id Term ID.
+    * @return Term corresponding to \p id.
+    */
 	inline const Term& getByID(ID id) const throw ();
 
-	// given string, look if already stored
-	// if no, return ID_FAIL, otherwise return ID
+  /** \brief Given string, look if already stored.
+    *
+    * @param str Term string to lookup.
+    * @return ID_FAIL if term is not stored, otherwise return term ID. */
 	inline ID getIDByString(const std::string& str) const throw();
 
-	// given an argument vector, look if already stored
-	// if no, return ID_FAIL, otherwise return ID
-//	inline ID getIDByArguments(const std::vector<ID>& args) const throw();
-
-	// store symbol, assuming it does not exist
-  // assert that symbol did not exist
+  /** \brief Store term in the table.
+    * Store symbol, assuming it does not exist.
+    * Assert that symbol did not exist.
+    *
+    * @param symb Term to store.
+    * @return ID of the stored term. */
 	inline ID storeAndGetID(const Term& symb) throw();
 
   // retrieve range by kind (return lower/upper bound iterators, +provide method to get ID from iterator)

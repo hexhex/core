@@ -43,6 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup table for module atoms. */
 class ModuleAtomTable:
 	public Table<
 		// value type is symbol struct
@@ -66,13 +67,6 @@ class ModuleAtomTable:
 				  BOOST_MULTI_INDEX_MEMBER(ModuleAtom,ID,outputAtom)
 				>
 			>
-      #if 0
-			// kind TODO perhaps we do not need this index?
-			boost::multi_index::ordered_non_unique<
-				boost::multi_index::tag<impl::KindTag>,
-				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,IDKind,kind)
-			>,
-      #endif
 		>
 	>
 {
@@ -87,28 +81,44 @@ public:
 
 	// methods
 public:
-	// get the ModuleAtom by ID
+	/** \brief Get the ModuleAtom by ID.
+	  * @param id ID of a module atom.
+	  * @returm ModuleAtom corresponding to \p id. */
 	inline const ModuleAtom& getByID(ID id) const throw ();
 
-  // get the ID of the module atom with predicate, inputs, and output atom specified
+  /** \brief Get the ID of the module atom with predicate, inputs, and output atom specified.
+    * @return predicate1 ID of the predicate to use for constructing the module atom.
+    * @return inputs1 Input IDs to the constructed the module atom.
+    * @return outputAtom1 Output IDs of constructed the module atom.
+    * @return ID of the stored ModuleAtom. */
 	inline ID getIDByElement(ID predicate1, const Tuple& inputs1, ID outputAtom1) const throw();
 
-  // get all module atoms with certain predicate id
-  // NOTE: you may need to lock the mutex also while iterating!
+  /** \brief Get all module atoms with certain predicate id.
+    *
+    * NOTE: you may need to lock the mutex also while iterating!
+    * @param id A predicate ID.
+    * @return Pair of a begin and an end iterator representing all ModuleAtoms with the given predicate in this table. */
 	// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
-  // get range over all atoms sorted by address
-  // NOTE: you may need to lock the mutex also while iterating!
+  /** \brief Get range over all atoms sorted by address.
+    *
+    * NOTE: you may need to lock the mutex also while iterating!
+    * @return Pair of a begin and an end iterator representing all ModuleAtoms in this table. */
   inline std::pair<AddressIterator, AddressIterator>
   getAllByAddress() const throw();
 
-	// store atom, assuming it does not exist
+	/** \brief Store atom, assuming it does not exist.
+	  * @param atom ModuleAtom to store.
+	  * @return ID of the stored ModuleAtom. */
 	inline ID storeAndGetID(const ModuleAtom& atom) throw();
 
-	// update
-	// (oldStorage must be from getByID() or from *const_iterator)
+	/** \brief Update a ModuleAtom in the table.
+	  *
+	  * oldStorage must be from getByID() or from *const_iterator.
+	  * @param oldStorage Old ModuleAtom.
+	  * @param newStorage New ModuleAtom. */
 	inline void update(
 			const ModuleAtom& oldStorage, ModuleAtom& newStorage) throw();
 };

@@ -58,6 +58,7 @@ namespace impl
 	struct InstTag {}; // instantiation Tag, for ordinary ground atom (for MLP case)
 }
 
+/** \brief Implements a lookup table for custom key and value types. */
 template<typename ValueT, typename IndexT>
 class Table:
   public ostream_printable< Table<ValueT,IndexT> >
@@ -68,16 +69,19 @@ public:
 		boost::multi_index_container<ValueT, IndexT> Container;
 
   // public, because other algorithms might need to lock this
+  /** \brief Multithreading mutex. */
   mutable boost::shared_mutex mutex;
   typedef boost::shared_lock<boost::shared_mutex> ReadLock;
   typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
 	// storage
 protected:
+	/** \brief Internal container. */
 	Container container;
 
 	// methods
 public:
+	/** \brief Constructor. */
 	Table() {}
 	// no virtual functions allowed, no virtual destructor
 	// -> never store this in a ref to baseclass, destruction will not work!
@@ -89,19 +93,29 @@ public:
   // we will only create those accessors we really need
   // two important objectives: space efficiency and time efficiency
 
+  /** \brief Prints the table in human-readable format.
+    * @param o Stream to print to.
+    * @return \p o. */
   std::ostream& print(std::ostream& o) const;
 
+  /** \brief Copy-constructor.
+    * @param other Other table. */
   Table(const Table& other):
     container(other.container)
   {
   }
 
+  /** \brief Assignment operator.
+    * @param other Other table.
+    * @return This table. */
   Table& operator=(const Table& other)
   {
     WriteLock lock(mutex);
     container = other.container;
   }
 
+  /** \brief Retrieves the size of the table.
+    * @return Table size. */
   inline unsigned getSize() const
   {
     ReadLock lock(mutex);

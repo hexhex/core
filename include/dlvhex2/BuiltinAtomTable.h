@@ -38,6 +38,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup table for builtin atoms. */
 class BuiltinAtomTable:
 	public Table<
 		// value type is symbol struct
@@ -48,13 +49,6 @@ class BuiltinAtomTable:
 			boost::multi_index::random_access<
 				boost::multi_index::tag<impl::AddressTag>
 			>
-      #if 0
-			// kind TODO perhaps we do not need this index?
-			boost::multi_index::ordered_non_unique<
-				boost::multi_index::tag<impl::KindTag>,
-				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,IDKind,kind)
-			>,
-      #endif
 		>
 	>
 {
@@ -66,12 +60,17 @@ public:
 
 	// methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct
-  // assert that ID exists in table
+  /** \brief Retrieve by ID.
+    *
+    * Assert that id.kind is correct.
+    * Assert that ID exists in table.
+    * @param id ID of a builtin atom.
+    * @return BuiltinAtom corresponding to \p id. */
 	inline const BuiltinAtom& getByID(ID id) const throw ();
 
-	// store atom, assuming it does not exist
+	/** \brief Store atom, assuming it does not exist.
+	  * @param atom BuiltinAtom to store.
+	  * @return ID of the stored BuiltinAtom. */
 	inline ID storeAndGetID(const BuiltinAtom& atom) throw();
 };
 
