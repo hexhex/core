@@ -49,26 +49,38 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
+/**
+  * \brief A model generator factory provides model generators
+  * for a certain types of interpretations
+  */
 class DLVHEX_EXPORT BaseModelGeneratorFactory:
   public ModelGeneratorFactoryBase<Interpretation>
 {
   // methods
 public:
+  /** \brief Constructor. */
   BaseModelGeneratorFactory() {}
+  /** \brief Destructor. */
   virtual ~BaseModelGeneratorFactory() {}
 
 protected:
-  // rewrite all eatoms in body to auxiliary replacement atoms
-  // store into registry and return id
+  /** \brief Rewrite all eatoms in body to auxiliary replacement atoms
+    * store into registry and return id.
+    *
+    * @param ctx ProgramCtx.
+    * @param ruleid ID of the rule to rewrite.
+    * @return ID of the rewritten rule.
+    */
   virtual ID convertRule(ProgramCtx& ctx, ID ruleid);
-  // rewrite all eatoms in body tuple to auxiliary replacement atoms
-  // store new body into convbody
-  // (works recursively for aggregate atoms,
-  // will create additional "auxiliary" aggregate atoms in registry)
+  /** \brief Rewrite all eatoms in body tuple to auxiliary replacement atoms
+    * store new body into convbody.
+    *
+    * Works recursively for aggregate atoms,
+    * will create additional "auxiliary" aggregate atoms in registry.
+    * @param ctx ProgramCtx.
+    * @param body Body of the rule to rewrite.
+    * @param convbody Vector where new body is to be stored.
+    */
   virtual void convertRuleBody(ProgramCtx& ctx, const Tuple& body, Tuple& convbody);
 
   /**
@@ -83,9 +95,9 @@ protected:
   void addDomainPredicatesAndCreateDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, std::vector<ID>& idb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, const std::vector<ID>& outerEatoms);
 };
 
-//
-// the base model generator
-//
+/**
+  * \brief Base class for all model generators.
+  */
 class DLVHEX_EXPORT BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
@@ -95,8 +107,14 @@ class DLVHEX_EXPORT BaseModelGenerator:
   friend class AssumptionBasedUnfoundedSetChecker;
   // members
 public:
+  /**
+    * \brief Constructor.
+    *
+    * @param input Input interpretation, i.e., facts to be added before solving.
+    */
   BaseModelGenerator(InterpretationConstPtr input):
     ModelGeneratorBase<Interpretation>(input) {}
+  /** \brief Destructor. */
   virtual ~BaseModelGenerator() {}
 
 protected:
@@ -105,28 +123,52 @@ protected:
   //
 
 public:
-  // callback function object for handling external atom answer tuples
+  /** \brief Base class for callback functions for handling external atom answer tuples. */
   struct ExternalAnswerTupleCallback
   {
+    /** \brief Destructor. */
     virtual ~ExternalAnswerTupleCallback();
     // boolean return values specifies whether to continue the process
     // (true = continue, false = abort)
 
-    // encountering next eatom
+    /**
+      * \brief Is called when the next eatom is encountered.
+      *
+      * @param eatom The external atom currently encountered.
+      * @return True if enumeration shall be continued als false to abort.
+      */
     virtual bool eatom(const ExternalAtom& eatom) = 0;
+
+    /**
+      * \brief Is called when the next input tuple is encountered.
+      *
+      * Preceded by eatom(...).
+      *
+      * @param input The input tuple currently encountered.
+      * @return True if enumeration shall be continued als false to abort.
+      */
     // encountering next input tuple
-    // (preceded by eatom(...))
     virtual bool input(const Tuple& input) = 0;
-    // encountering next output tuple
-    // (preceded by input(...) even for empty input tuples)
+
+    /**
+      * \brief Is called when the next output tuple is encountered.
+      *
+      * Preceded by eatom(...) even for empty input tuples.
+      *
+      * @param eatom The output tuple currently encountered.
+      * @return True if enumeration shall be continued als false to abort.
+      */
     virtual bool output(const Tuple& output) = 0;
   };
 
-  // callback function object for handling external atom answer tuples
-  // by multiple callbacks
+  /**
+    * \brief Callback function object for handling external atom answer tuples
+    * by multiple callbacks.
+    */
   struct ExternalAnswerTupleMultiCallback:
     public ExternalAnswerTupleCallback
   {
+    /** \brief List of atomic callbacks. */
     std::vector<ExternalAnswerTupleCallback*> callbacks;
 
     virtual ~ExternalAnswerTupleMultiCallback();
@@ -135,14 +177,23 @@ public:
     virtual bool output(const Tuple& output);
   };
 
-  // callback for checking whether external computations
-  // reflect guesses of external atom truth values
+  /**
+    * \brief Callback for checking whether external computations
+    * reflect guesses of external atom truth values
+    */
   struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
     public ExternalAnswerTupleCallback
   {
+    /**
+      * \brief Constructor.
+      *
+      * @param guess_pos Set of guessed positive replacement atoms.
+      * @param guess_neg Set of guessed negative replacement atoms.
+      */
     VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
         InterpretationPtr guess_pos,
         InterpretationPtr guess_neg);
+    /** \brief Destructor. */
     virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
     // remembers eatom and prepares replacement.tuple[0]
     virtual bool eatom(const ExternalAtom& eatom);
@@ -151,30 +202,60 @@ public:
     // creates replacement ogatom and activates respective bit in output interpretation
     virtual bool output(const Tuple& output);
   protected:
+    /** \brief RegistryPtr. */
     RegistryPtr reg;
-    InterpretationPtr guess_pos, guess_neg;
-    ID pospred, negpred;
+    /** \brief See constructor. */
+    InterpretationPtr guess_pos;
+    /** \brief See constructor. */
+    InterpretationPtr guess_neg;
+    /** \brief Cache of positive replacement predicate. */
+    ID pospred;
+    /** \brief Cache of negative replacement predicate. */
+    ID negpred;
+    /** \brief Current replacement atom (temporary storage). */
     OrdinaryAtom replacement;
   };
 
+  /**
+    * \brief Verifies positive and negative replacement atoms against an external atom.
+    */
   struct VerifyExternalAtomCB:
     public ExternalAnswerTupleCallback
   {
   protected:
+    /** \brief External atom to verify. */
     const ExternalAtom& exatom;
+    /** \brief Mask of the external atom to verify. */
     const ExternalAtomMask& eaMask;
+    /** \brief RegistryPtr. */
     RegistryPtr reg;
-    ID pospred, negpred;
+    /** \brief Cache of positive replacement predicate. */
+    ID pospred;
+    /** \brief Cache of negative replacement predicate. */
+    ID negpred;
+    /** \brief Current replacement atom (temporary storage). */
     OrdinaryAtom replacement;
+    /** \brief Set of guessed atoms. */
     InterpretationConstPtr guess;
+    /** \brief Set of guessed atoms remaining to be verified. */
     InterpretationPtr remainingguess;
+    /** \brief Intermediate result. */
     bool verified;
+    /** \brief If verification fails, this field will contain a falsified replacement atom. */
     ID falsified;
 
   public:
     bool onlyNegativeAuxiliaries();
 
+    /**
+      * \brief Constructor.
+      *
+      * @param guess Set of guessed replacement atoms.
+      * @param exatom External atom to verify against to.
+      * @param eaMask Mask of \p exatom.
+      */
     VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& exatom, const ExternalAtomMask& eaMask);
+    /** \brief Destructor. */
     virtual ~VerifyExternalAtomCB();
     // remembers eatom and prepares replacement.tuple[0]
     virtual bool eatom(const ExternalAtom& eatom);
@@ -183,15 +264,31 @@ public:
     // creates replacement ogatom and activates respective bit in output interpretation
     virtual bool output(const Tuple& output);
 
+    /**
+      * \brief Returns the verification result.
+      *
+      * @return Verification result.
+      */
     bool verify();
-    ID getFalsifiedAtom(); // returns a falsified atom (positive or negative auxiliary) if verify() returns false, and ID_FAIL otherwise
+
+    /** \brief Returns a falsified atom (positive or negative auxiliary).
+      *
+      * @return ID of a falsified atom if verify() returns false and ID_FAIL otherwise.
+      */
+    ID getFalsifiedAtom();
   };
 
-  // for usual model building where we want to collect all true answers
-  // as replacement atoms in an interpretation
+  /**
+    * \brief For usual model building where we want to collect all true answers
+    * as replacement atoms in an interpretation.
+    */
   struct IntegrateExternalAnswerIntoInterpretationCB:
     public ExternalAnswerTupleCallback
   {
+    /**
+      * \brief Constructor.
+      * @param outputi Interpretation to add the external atom output to.
+      */
     IntegrateExternalAnswerIntoInterpretationCB(
         InterpretationPtr outputi);
     virtual ~IntegrateExternalAnswerIntoInterpretationCB() {}
@@ -202,21 +299,34 @@ public:
     // creates replacement ogatom and activates respective bit in output interpretation
     virtual bool output(const Tuple& output);
   protected:
+    /** \brief RegistryPtr. */
     RegistryPtr reg;
+    /** \brief See constructor. */
     InterpretationPtr outputi;
+    /** \brief Current replacement atom (temporary storage). */
     OrdinaryAtom replacement;
   };
 
 protected:
-  // projects input interpretation for predicate inputs
-  // calculates constant input tuples from auxiliary input predicates and from given constants
-  // calls eatom function with each input tuple
-  // reintegrates output tuples as auxiliary atoms into outputi
-  // (inputi and outputi may point to the same interpretation)
-  // fromCache may point to a boolean (or be 0) where the method stored whether the query was answered from cache
-  // 
-  //
-  // returns false if process was aborted by callback, true otherwise
+  /**
+    * \brief Evaluates an external atom.
+    *
+    * Projects input interpretation for predicate inputs
+    * calculates constant input tuples from auxiliary input predicates and from given constants
+    * calls eatom function with each input tuple
+    * reintegrates output tuples as auxiliary atoms into outputi
+    * (inputi and outputi may point to the same interpretation)
+    * fromCache may point to a boolean (or be 0) where the method stored whether the query was answered from cache
+    *
+    * @param eatomID The external atom to evaluate.
+    * @param inputi Interpretation to use as input to the external atom.
+    * @param cb Callback during evaluation of the external atom (see BaseModelGenerator::ExternalAnswerTupleCallback).
+    * @param nogoods Container to add learned nogoods to (if external learning is enabled), can be NULL.
+    * @param assigned Set of atoms currently assigned; can be used by the external atom to optimize evaluation; can be NULL to indicate that all atoms are assigned.
+    * @param changed Set of atoms which possibly changed since last evaluation under the same input; can be used by the external atom to optimize evaluation; can be NULL to indicate that all atoms might have changed.
+    * @param fromCache Pointer to a bool field which is is stored whether the query was answered from cache (true) or by actual evaluation (false); can be NULL.
+    * @return False if process was aborted by callback and true otherwise.
+    */
   virtual bool evaluateExternalAtom(ProgramCtx& ctx,
     ID eatomID,
     InterpretationConstPtr inputi,
@@ -225,22 +335,45 @@ protected:
     InterpretationConstPtr assigned = InterpretationConstPtr(),
     InterpretationConstPtr changed = InterpretationConstPtr(),
     bool* fromCache = 0) const;
+  /**
+    * \brief Evaluates an external atom under a single and fixed input vector.
+    *
+    * @param query See PluginInterface::Query.
+    * @param cb Callback during evaluation of the external atom (see BaseModelGenerator::ExternalAnswerTupleCallback).
+    * @param nogoods Container to add learned nogoods to (if external learning is enabled), can be NULL.
+    * @param fromCache Pointer to a bool field which is is stored whether the query was answered from cache (true) or by actual evaluation (false); can be NULL.
+    * @return False if process was aborted by callback and true otherwise.
+    */
   virtual bool evaluateExternalAtomQuery(
     PluginAtom::Query& query,
     ExternalAnswerTupleCallback& cb,
     NogoodContainerPtr nogoods,
     bool* fromCache = 0) const;
 
-  // calculates constant input tuples from auxiliary input predicates and from given constants
-  // calls eatom function with each input tuple and maximum input for support set learning
-  // returns false if process was aborted by callback, true otherwise
+  /**
+    * \brief Calculates constant input tuples from auxiliary input predicates and from given constants
+    * calls eatom function with each input tuple and maximum input for support set learning.
+    *
+    * @param ctx ProgramCtx.
+    * @param eatomID The external atom to evaluate.
+    * @param nogoods Container to add learned nogoods to (if external learning is enabled), can be NULL.
+    * @return False if process was aborted by callback and true otherwise.
+    */
   virtual void learnSupportSetsForExternalAtom(ProgramCtx& ctx,
     ID eatomID,
     NogoodContainerPtr nogoods) const;
 
-  // calls evaluateExternalAtom for each atom in eatoms
-  //
-  // returns false if process was aborted by callback, true otherwise
+  /**
+    * \brief Evaluates multiple external atoms.
+    *
+    * Calls BaseModelGenerator::evaluateExternalAtom for each atom in eatoms.
+    *
+    * @param eatoms Vector of all external atoms to evaluate.
+    * @param inputi Interpretation to use as input to the external atoms.
+    * @param cb Callback during evaluation of the external atoms (see BaseModelGenerator::ExternalAnswerTupleCallback).
+    * @param nogoods Container to add learned nogoods to (if external learning is enabled), can be NULL.
+    * @return False if process was aborted by callback and true otherwise.
+    */
   virtual bool evaluateExternalAtoms(ProgramCtx& ctx,
     const std::vector<ID>& eatoms,
     InterpretationConstPtr inputi,
@@ -249,19 +382,40 @@ protected:
 
   // helper methods used by evaluateExternalAtom
 
-  // returns false iff tuple does not unify with eatom output pattern
-  // (the caller must decide whether to throw an exception or ignore the tuple)
+  /**
+    * \brief Checks if an output tuple matches the output pattern in the program.
+    *
+    * @param reg RegistryPtr.
+    * @param eatom The external atom whose output patter is to be used for the verification.
+    * @param t The tuple to verify.
+    * @return False if tuple does not unify with eatom output pattern
+              (the caller must decide whether to throw an exception or ignore the tuple), and true otherwise.
+    */
   virtual bool verifyEAtomAnswerTuple(RegistryPtr reg,
     const ExternalAtom& eatom, const Tuple& t) const;
 
-  // project a given interpretation to all predicates that are predicate inputs in the given eatom
-  // return this as a new interpretation
+  /**
+    * \brief Project a given interpretation to all predicates that are predicate inputs in the given eatom.
+    *
+    * @param reg RegistryPtr.
+    * @param eatom The external atom whose output patter is to be used for the projection.
+    * @return Projection of \p full as a new interpretation.
+    */
   virtual InterpretationPtr projectEAtomInputInterpretation(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr full) const;
 
-  // from auxiliary input predicates and the eatom,
-  // calculate all tuples that are inputs to the eatom
-  // and store them as true bits into "inputs", bits can be looked up in the EAInputTupleCache in registry
+  /**
+    * \brief Extracts the ground input vectors from the interpretation.
+    *
+    * Using auxiliary input predicate and the eatom, the method
+    * calculates all tuples that are inputs to the eatom
+    * and store them as true bits into \p inputs, bits can be looked up in the EAInputTupleCache in registry.
+    *
+    * @param reg RegistryPtr.
+    * @param eatom The external atom whose input vectors shall be computed.
+    * @param i The input interpretation to the external atom.
+    * @param inputs The set of input vector extracted from \p i; each bit can be resolved using Registry::EAInputTupleCache.
+    */
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, InterpretationPtr inputs) const;
 
