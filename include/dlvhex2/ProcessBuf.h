@@ -65,58 +65,88 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT ProcessBuf : public std::streambuf
 {
 public:
+  /** \brief Constructor. */
   ProcessBuf();
 
-  ProcessBuf(const ProcessBuf&);
+  /** \brief Copy-constructor.
+    * @param b Other ProcessBuf. */
+  ProcessBuf(const ProcessBuf& b);
 
+  /** \brief Destructor. */
   virtual
   ~ProcessBuf();
 
+  /** \brief Send EOF to the process. */
   virtual void
   endoffile();
 
+  /** \brief Open a commandline in a seprate process.
+    * @param c Commandline to open.
+    * @return Process ID if the new process. */
   virtual pid_t
-  open(const std::vector<std::string>&);
+  open(const std::vector<std::string>& c);
 
-  // wait for end of process
-  // if kill is true, kill if not already ended
+  /** \brief Wait for end of process.
+    * @param If true the process will be killed, otherwise the method waits.
+    * @return Return code of the process. */
   virtual int
   close(bool kill=false);
 
 private:
 
 #ifdef POSIX
+  /* \brief Child process ID (POSIX). */
   pid_t process;
+  /** \brief Bidirectional output pipe (POSIX, this and child process). */
   int outpipes[2];
+  /** \brief Bidirectional input pipe (POSIX, this and child process). */
   int inpipes[2];
 #else
 	#ifdef WIN32
+		/** Process handle (WIN32). */
 		PROCESS_INFORMATION processInformation;
+		/** \brief Bidirectional output pipe (WIN32, child process input read). */
 		HANDLE g_hChildStd_IN_Rd;
+		/** \brief Bidirectional output pipe (WIN32, child process input write). */
 		HANDLE g_hChildStd_IN_Wr;
+		/** \brief Bidirectional output pipe (WIN32, child process output read). */
 		HANDLE g_hChildStd_OUT_Rd;
+		/** \brief Bidirectional output pipe (WIN32, child process output write). */
 		HANDLE g_hChildStd_OUT_Wr;
 	#else
 		#error Either POSIX or WIN32 must be defined
 	#endif
 #endif
-
+  /** \brief Status of the child process. */
   int status;
+  /** \brief Buffer size. */
   unsigned bufsize;
 
+  /** \brief Data of the output buffer. */
   std::streambuf::char_type* obuf;
+  /** \brief Data of the input buffer. */
   std::streambuf::char_type* ibuf;
 
+  /** \brief Initializes obuf and ibuf. */
   void
   initBuffers();
 
 protected:
+  /** \brief Called when an overflow occurred.
+    * @param c See std::streambuf.
+    * @return std::streambuf. */
   virtual std::streambuf::int_type
   overflow(std::streambuf::int_type c);
 
+  /** \brief Called when an underflow occurred.
+    * @param c See std::streambuf.
+    * @return std::streambuf. */
   virtual std::streambuf::int_type
   underflow();
 
+  /** \brief Synchronization.
+    * @param c See std::streambuf.
+    * @return std::streambuf. */
   virtual std::streambuf::int_type
   sync();
 };
