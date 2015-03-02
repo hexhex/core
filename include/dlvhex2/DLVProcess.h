@@ -57,26 +57,30 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT DLVProcess : public Process
 {
  protected:
-  /// communication buffer
+  //** \brief Communication buffer. */
   ProcessBuf proc;
   
   /// iostreams to the dlv process
+  /** \brief Input pipe. */
   std::istream* ipipe;
+  /** \brief Output pipe. */
   std::ostream* opipe;
   
-  /// executable path/name
+  /** \brief Executable path/name. */
   std::string executable;
 
-  /// command line options
+  /** \brief Command line options. */
   std::vector<std::string> argv;
 
-  /// initialize in/out streams
+  /** \brief Initialize in/out streams. */
   void
   setupStreams();
   
  public:
+  /** \brief Constructor. */
   DLVProcess();
 
+  /** \brief Destructor. */
   virtual
   ~DLVProcess();
 

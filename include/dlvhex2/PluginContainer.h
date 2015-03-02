@@ -66,32 +66,42 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT PluginContainer
 {
 private:
-  /// copy ctor (must not be used, would duplicate library unloads)
-  PluginContainer(const PluginContainer&);
+  /** \brief Copy-constructor.
+   *
+   * Must not be used, would duplicate library unloads.
+   * @param c Other PluginContainer.
+   */
+  PluginContainer(const PluginContainer& p);
 
 public:
-  /// ctor
+  /** \brief Constructor. */
   PluginContainer();
 
-  /// dtor
-  // unloads shared libraries (if shared_ptr reference counts are ok)
+  /** \brief Destructor.
+    *
+    * Unloads shared libraries (if shared_ptr reference counts are ok). */
   ~PluginContainer();
 
   //
   // loading and accessing
   //
 
-	// search for plugins in searchpath and open those that are plugins
-	// may be called multiple times with different paths
-	// paths may be separated by ":" just like LD_LIBRARY_PATH
+	/** \brief Search for plugins in searchpath and open those that are plugins.
+	  *
+	  * May be called multiple times with different paths.
+	  * Paths may be separated by ":" just like LD_LIBRARY_PATH.
+	  * @param searchpath Path(es) to search. */
 	void loadPlugins(const std::string& searchpath="");
 
-  // add a PluginInterface to the container
-  // the smart pointer will not be reconfigured, so if you need to use a
-  // custom "deleter", do it before you call this method
+  /** \brief Add a PluginInterface to the container.
+    *
+    * The smart pointer will not be reconfigured, so if you need to use a
+    * custom "deleter", do it before you call this method.
+    * @param plugin Pointer to an internal plugin. */
   void addInternalPlugin(PluginInterfacePtr plugin);
 
-  // get container with plugins loaded so far
+  /** \brief Get container with plugins loaded so far.
+    * @return Vector of plugins loaded so far. */
   const std::vector<PluginInterfacePtr>& getPlugins() const
   { return pluginInterfaces; }
 
@@ -99,7 +109,8 @@ public:
   // batch operations on all plugins
   //
 
-	// call printUsage for each loaded plugin
+	/** \brief Calls printUsage for each loaded plugin.
+	  * @param o Stream to print the output to. */
 	void printUsage(std::ostream& o);
 
 public:
@@ -109,16 +120,17 @@ public:
   typedef std::vector<PluginInterfacePtr> PluginInterfaceVector;
   
 private:
-  // add loaded plugin (do not extract plugin atoms)
+  /** \brief Add loaded plugin (do not extract plugin atoms).
+    * @param lplugin Pointer to the loaded plugin. */
   void addInternalPlugin(LoadedPluginPtr lplugin);
 
-	/// current search path
+	/** \brief Current search path. */
 	std::string searchPath;
 
-  // loaded plugins
+  /** \brief Loaded plugins. */
   LoadedPluginVector plugins;
 
-  // loaded plugins (interface ptrs)
+  /** \brief Loaded plugins (interface ptrs). */
   PluginInterfaceVector pluginInterfaces;
 };
 typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;

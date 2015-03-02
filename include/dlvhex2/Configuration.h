@@ -49,39 +49,57 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT Configuration
 {
 public:
+	/** \brief Constructor. */
 	Configuration();
 
 	/**
 	 * @brief List of possible verbose actions.
 	 */
-	typedef enum { DUMP_CONVERTED_PROGRAM,
-	               DUMP_PARSED_PROGRAM,
-	               DUMP_REWRITTEN_PROGRAM,
-	               SAFETY_ANALYSIS,
-	               DUMP_DEPENDENCY_GRAPH,
-	               DUMP_OPTIMIZED_PROGRAM,
-	               PLUGIN_LOADING,
-	               COMPONENT_EVALUATION,
-	               MODEL_GENERATOR,
-	               GRAPH_PROCESSOR,
-	               PROFILING,
-	               DUMP_OUTPUT } verboseAction_t;
+	typedef enum {
+		/** \brief Output program after conversion (see PluginInterface::PluginConverter). */
+		DUMP_CONVERTED_PROGRAM,
+		/** \brief Output parsed program. */
+		DUMP_PARSED_PROGRAM,
+		/** \brief Output program after rewriting (see PluginInterface::PluginRewriter). */
+		DUMP_REWRITTEN_PROGRAM,
+		/** \brief Output information about safety. */
+		SAFETY_ANALYSIS,
+		/** \brief Output dependency graph as .dot file. */
+		DUMP_DEPENDENCY_GRAPH,
+		/** \brief Output program after optimization (see PluginInterface::PluginOptimizer). */
+		DUMP_OPTIMIZED_PROGRAM,
+		/** \brief Output detailed information about plugin loading. */
+		PLUGIN_LOADING,
+		/** \brief Output detailed information about solving. */
+		COMPONENT_EVALUATION,
+		/** \brief Output detailed information about model generation. */
+		MODEL_GENERATOR,
+		/** \brief Output detailed information about boost graphs. */
+		GRAPH_PROCESSOR,
+		/** \brief Profiling. */
+		PROFILING,
+		/** \brief Dump output. */
+		DUMP_OUTPUT } verboseAction_t;
 
 	/**
-	 * Return the value of the specified option identifier.
+	 * \brief Return the value of the specified option identifier.
+	 * @param o Name of the option to retrieve.
+	 * @return Value of option \p o.
 	 */
 	unsigned
-	getOption(const std::string&) const;
+	getOption(const std::string& o) const;
 
 	/**
-	 * @brief Check if the specified verbose action can be carried out.
+	 * @brief Check if the specified verbose action \p a can be carried out.
 	 * 
 	 * This function checks if the predefined (see Globals::Globals())
 	 * bit of the specified verbose action (see Globals::verboseLevel)
 	 * is set in the verbose level given as a parameter.
+	 * @param a Verbose action.
+	 * @return True if the specified verbose action \p a can be carried out and false otherwise.
 	 */
 	bool
-	doVerbose(verboseAction_t);
+	doVerbose(verboseAction_t a);
 
 	/**
 	 * Set an option with specified identifier to a value.
@@ -94,17 +112,25 @@ public:
 
 	/**
 	 * @brief Add a predicate to be filtered.
+	 * @param p Predicate (as string) to be filtered.
 	 */
 	void
 	addFilter(const std::string&);
 
 	/**
 	 * @brief Returns list of predicates to be filtered.
+	 * @return Vector of all predicates (as strings) to be filtered.
 	 */
 	const std::vector<std::string>&
 	getFilters() const;
 
+	/** \brief Retrieve the string value of an option.
+	  * @param key Name of the option.
+	  * @return String value of option \p key. */
 	const std::string& getStringOption(const std::string& key) const;
+	/** \brief Sets the value of a string option.
+	  * @param key Name of the string option to set.
+	  * @param value New value of option \p key. */
 	void setStringOption(const std::string& key, const std::string& value);
 
 private:
@@ -118,6 +144,9 @@ private:
 	 * @brief Associates option names with values.
 	 */
 	std::map<std::string, unsigned> optionMap;
+	/**
+	 * @brief Associates option names with string values.
+	 */
 	std::map<std::string, std::string> stringOptionMap;
 
 	/**

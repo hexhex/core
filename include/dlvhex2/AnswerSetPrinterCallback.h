@@ -38,14 +38,24 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Base class for customized answer set printers. */
 class AnswerSetPrinterCallback:
   public ModelCallback
 {
 public:
+  /** \brief Constructor.
+    * @param ctx ProgramCtx. */
   AnswerSetPrinterCallback(ProgramCtx& ctx);
+  /**
+   * \brief Method called for each answer set of the program.
+   * 
+   * @param model Pointer to the current answer set.
+   * @return True continues the model generation process, false stops the model generation process.
+   */
   virtual bool operator()(AnswerSetPtr model);
 
 protected:
+  /** \brief Mask representing the set of all atoms to be included in the output; might be NULL to represent that all atoms shall be output. */
   PredicateMaskPtr filterpm;
 };
 

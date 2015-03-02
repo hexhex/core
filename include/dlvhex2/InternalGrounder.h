@@ -143,10 +143,8 @@ protected:
 
 	Binder getBinderOfRule(std::vector<ID>& body);
 	int getClosestBinder(std::vector<ID>& body, int litIndex, std::set<ID> variables);
-//	std::set<ID> getDepVars(std::vector<ID>& body, int litIndex);
 	std::set<ID> getFreeVars(std::vector<ID>& body, int litIndex);
 	std::set<ID> getOutputVariables(ID ruleID);
-//	bool depends(std::vector<ID>& body, int lit1, int lit2);
 	std::vector<ID> reorderRuleBody(ID ruleID);
 	bool biDependency(ID bi1, ID bi2);
 

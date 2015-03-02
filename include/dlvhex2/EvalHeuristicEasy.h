@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Default heuristics in dlvhex 2.0 as described in the LPNMR'11 paper. */
 class EvalHeuristicEasy:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -46,7 +47,9 @@ public:
 
   // methods
 public:
+  /** \brief Constructor. */
   EvalHeuristicEasy();
+  /** \brief Destructor. */
   virtual ~EvalHeuristicEasy();
   virtual void build(EvalGraphBuilder& builder);
 };

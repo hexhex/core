@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Creates evaluation units as maximal bottoms as in dlvhex 1.x. */
 class EvalHeuristicOldDlvhex:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -46,7 +47,9 @@ public:
 
   // methods
 public:
+  /** \brief Constructor. */
   EvalHeuristicOldDlvhex();
+  /** \brief Destructor. */
   virtual ~EvalHeuristicOldDlvhex();
   virtual void build(EvalGraphBuilder& builder);
 };

@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Creates a single evaluation unit for the whole program. */
 class EvalHeuristicMonolithic:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -46,7 +47,9 @@ public:
 
   // methods
 public:
+  /** \brief Constructor. */
   EvalHeuristicMonolithic();
+  /** \brief Destructor. */
   virtual ~EvalHeuristicMonolithic();
   virtual void build(EvalGraphBuilder& builder);
 };

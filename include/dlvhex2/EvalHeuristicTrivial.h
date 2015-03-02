@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Heuristics which creates a separate evaluation unit for each strongly connected component. */
 class EvalHeuristicTrivial:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -46,7 +47,9 @@ public:
 
   // methods
 public:
+  /** \brief Constructor. */
   EvalHeuristicTrivial();
+  /** \brief Destructor. */
   virtual ~EvalHeuristicTrivial();
   virtual void build(EvalGraphBuilder& builder);
 };

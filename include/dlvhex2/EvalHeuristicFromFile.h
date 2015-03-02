@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Creates an evaluation graph based on a specification in a file. */
 class EvalHeuristicFromFile:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -46,12 +47,16 @@ public:
 
   // methods
 public:
+  /** \brief Constructor.
+    * @param fname File to read the evaluation graph from. */
   EvalHeuristicFromFile(const std::string& fname);
+  /** \brief Destructor. */
   virtual ~EvalHeuristicFromFile();
   virtual void build(EvalGraphBuilder& builder);
 
   // data
 protected:
+  /** \brief Filename the evaluation graph was read from. */
   std::string fname;
 };
 

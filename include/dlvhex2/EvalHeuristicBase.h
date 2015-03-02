@@ -37,6 +37,8 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
+ * \brief Base class for all evaluation heuristics.
+ *
  * An evaluation heuristic gets an eval graph builder and shall build an eval graph
  * using methods of the eval graph builder only.
  */
@@ -44,8 +46,13 @@ template<typename EvalGraphBuilderT>
 class EvalHeuristicBase
 {
 public:
+  /** \brief Constructor. */
   EvalHeuristicBase() {}
+  /** \brief Destructor. */
   virtual ~EvalHeuristicBase() {}
+  /** \brief Constructs the evaluation graph.
+    *
+    * @param builder EvalGraphBuilder to be used for constructing the evaluation graph. */
   virtual void build(EvalGraphBuilderT& builder) = 0;
 };
 

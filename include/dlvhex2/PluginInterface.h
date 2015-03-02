@@ -1386,8 +1386,8 @@ public:
   /**
    * \brief Method called for each complete model of the program.
    * 
-   * @param as Pointer to the current answer set
-   * @return true continues the model generation process, false stops the model generation process
+   * @param as Pointer to the current answer set.
+   * @return True continues the model generation process, false stops the model generation process.
    */
   virtual bool operator()(AnswerSetPtr as) = 0;
 };

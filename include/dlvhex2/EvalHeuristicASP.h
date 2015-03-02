@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Creates an evaluation graph specified by an ASP program. */
 class EvalHeuristicASP:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -46,12 +47,15 @@ public:
 
   // methods
 public:
+  /** \brief Constructor. */
   EvalHeuristicASP(const std::string& scriptname);
+  /** \brief Destructor. */
   virtual ~EvalHeuristicASP();
   virtual void build(EvalGraphBuilder& builder);
 
   // data
 protected:
+  /** \brief ASP program to be used for contructing the evaluation graph. */
   std::string scriptname;
 };
 

@@ -41,7 +41,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 namespace graphviz
 {
-
+/** \brief Writes \p s to \p o end escapes special symbols.
+  * @param o Output stream.
+  * @param s String. */
 void escape(std::ostream& o, const std::string& s);
 
 }

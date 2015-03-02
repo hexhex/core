@@ -39,6 +39,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Default heuristics which tries to merge as much as possible, but such that the worst case for the grounder is avoided (see GTTV'13 paper).
 class EvalHeuristicGreedy:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
@@ -48,10 +49,19 @@ public:
 
   // methods
 private:
-//  int isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const;
+  /**
+    * \brief Decides whetherh to merges two components into one.
+    * @param ctx ProgramCtx.
+    * @param ci1 First component.
+    * @param ci2 Second component.
+    * @param negativeExternalDependency Specifies whether there is a negative external dependency between \p ci1 and \p ci2.
+    * @param True if the components shall be merged and false otherwise.
+    */
   bool mergeComponents(ProgramCtx& ctx, const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2, bool negativeExternalDependency) const;
 public:
+  /** \brief Constructor. */
   EvalHeuristicGreedy();
+  /** \brief Destructor. */
   virtual ~EvalHeuristicGreedy();
   virtual void build(EvalGraphBuilder& builder);
 };
