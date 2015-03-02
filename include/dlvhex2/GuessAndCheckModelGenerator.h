@@ -45,6 +45,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Factory for the GuessAndCheckModelGenerator. */
 class GuessAndCheckModelGeneratorFactory:
   public FLPModelGeneratorFactoryBase,
   public ostream_printable<GuessAndCheckModelGeneratorFactory>
@@ -56,27 +57,45 @@ public:
 
   // storage
 protected:
-  // which solver shall be used for external evaluation?
+  /** \brief Defines the solver to be used for external evaluation. */
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-
+  /** \brief ProgramCtx. */
   ProgramCtx& ctx;
-
+  /** ComponentInfo of the component to be solved by the model generators instantiated by this factory. */
   ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
   WARNING("TODO see comment above about ComponentInfo copy construction bug")
 
-  // outer external atoms
+  /** \brief Outer external atoms of the component. */
   std::vector<ID> outerEatoms;
 
   // methods
 public:
+  /** \brief Constructor.
+    *
+    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+    */
   GuessAndCheckModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+  /** \brief Destructor. */
   virtual ~GuessAndCheckModelGeneratorFactory() {}
 
+  /**
+   * \brief Instantiates a model generator for the current component.
+   * @param input Input interpretation to this model generator.
+   * @return Model generator.
+   */
   virtual ModelGeneratorPtr createModelGenerator(InterpretationConstPtr input);
 
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to. */
   virtual std::ostream& print(std::ostream& o) const;
+
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to.
+    * @param verbose True will output more detailed information. */
   virtual std::ostream& print(std::ostream& o, bool verbose) const;
 };
 
@@ -91,19 +110,29 @@ public:
   // storage
 protected:
   // we store the factory again, because the base class stores it with the base type only!
+  /** \brief Reference to the factory which created this model generator. */
   Factory& factory;
 
-  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
+  /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
   InterpretationConstPtr postprocessedInput;
-  // non-external fact input, i.e., postprocessedInput before evaluating outer eatoms
+  /** \brief Non-external fact input, i.e., postprocessedInput before evaluating outer eatoms. */
   InterpretationPtr mask;
 
-  // result handle for retrieving edb+xidb+gidb guesses of this eval unit
+  /** \brief Result handle for retrieving edb+xidb+gidb guesses of this eval unit. */
   ASPSolverManager::ResultsPtr guessres;
 
   // members
 public:
+  /**
+   * \brief Constructor.
+   * @param factory Reference to the factory which created this model generator.
+   * @param input Input interpretation to this model generator.
+   */
   GuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
+
+  /**
+   * \brief Destuctor.
+   */
   virtual ~GuessAndCheckModelGenerator() {}
 
   // generate and return next model, return null after last model

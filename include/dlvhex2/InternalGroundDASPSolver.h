@@ -50,11 +50,17 @@ DLVHEX_NAMESPACE_BEGIN
 	// (there is a compiler bug in MSVC; the call of addNogood is actually _not_ ambigious because the method is pure virtual in GenuineGroundSolver)
 	#pragma warning (disable: 4250)
 #endif
+/** \brief Internal solver for disjunctive ASP without using third-party software. */
 class InternalGroundDASPSolver : public InternalGroundASPSolver{
 private:
+	/** \brief Manager for unfounded set checking. */
 	UnfoundedSetCheckerManager ufscm;
 
 public:
+	/** \brief Constructor.
+	  * @param ctx ProgramCtx.
+	  * @param p Ground program with meta information.
+	  */
 	InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
 	virtual InterpretationPtr getNextModel();
 

@@ -51,6 +51,8 @@ class PlainModelGeneratorFactory;
 // * this evaluation can be performed online
 // * evaluation yields a (probably empty) set of output interpretations
 //
+
+/** \brief A model generator for components without inner (i.e. non-cyclic) external atoms (outer external atoms are allowed). */
 class PlainModelGenerator:
   public BaseModelGenerator,
   public ostream_printable<PlainModelGenerator>
@@ -61,30 +63,33 @@ public:
 
   // storage
 protected:
+  /** \brief Reference to the factory which created this model generator. */
   Factory& factory;
 
-  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
+  /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
   InterpretationConstPtr postprocessedInput;
-  // result handle for asp solver evaluation, using externallyAugmentedInput
+  /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
   ASPSolverManager::ResultsPtr currentResults;
 
   // members
 public:
+  /**
+   * \brief Constructor.
+   * @param factory Reference to the factory which created this model generator.
+   * @param input Input interpretation to this model generator.
+   */
   PlainModelGenerator(Factory& factory, InterpretationConstPtr input);
+
+  /**
+   * \brief Destuctor.
+   */
   virtual ~PlainModelGenerator() {}
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
-
-  // TODO debug output?
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorBase::print() not overloaded"; }
 };
 
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
+/** \brief Factory for the PlainModelGenerator. */
 class PlainModelGeneratorFactory:
   public BaseModelGeneratorFactory,
   public ostream_printable<PlainModelGeneratorFactory>
@@ -96,28 +101,47 @@ public:
 
   // storage
 protected:
-  // which solver shall be used for external evaluation?
+  /** \brief Defines the solver to be used for external evaluation. */
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+  /** \brief ProgramCtx. */
   ProgramCtx& ctx;
+  /** \brief All external atoms of the component. */
   std::vector<ID> eatoms;
-  // original idb (containing eatoms where all inputs are known
-  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
+  /** \brief Original IDB containing eatoms where all inputs are known.
+    *
+    * Auxiliary input rules of these eatoms must be in predecessor unit!
+    */
   std::vector<ID> idb;
-  // rewritten idb (containing replacements for eatoms)
-  // (x stands for transformed)
+  /** \brief Rewritten idb (containing replacements for eatoms).
+    *
+    * x stands for transformed. */
   std::vector<ID> xidb;
 
   // methods
 public:
+  /** \brief Constructor.
+    *
+    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+    */
   PlainModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+  /** \brief Destructor. */
   virtual ~PlainModelGeneratorFactory() {}
 
+  /**
+   * \brief Instantiates a model generator for the current component.
+   * @param input Input interpretation to this model generator.
+   * @return Model generator.
+   */
   virtual ModelGeneratorPtr createModelGenerator(
-    InterpretationConstPtr input)
+  InterpretationConstPtr input)
     { return ModelGeneratorPtr(new PlainModelGenerator(*this, input)); }
 
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to. */
   virtual std::ostream& print(std::ostream& o) const;
 };
 

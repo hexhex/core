@@ -54,6 +54,8 @@ class GenuinePlainModelGeneratorFactory;
 // * this evaluation can be performed online
 // * evaluation yields a (probably empty) set of output interpretations
 //
+
+/** \brief A model generator for components without inner (i.e. non-cyclic) external atoms (outer external atoms are allowed). */
 class GenuinePlainModelGenerator:
   public BaseModelGenerator,
   public ostream_printable<GenuinePlainModelGenerator>
@@ -64,34 +66,34 @@ public:
 
   // storage
 protected:
+  /** \brief Reference to the factory which created this model generator. */
   Factory& factory;
 
-  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
+  /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
   InterpretationConstPtr postprocessedInput;
-  // result handle for asp solver evaluation, using externallyAugmentedInput
+  /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
   ASPSolverManager::ResultsPtr currentResults;
 
-  // genuine solver
+  /** \brief Solver instance. */
   GenuineSolverPtr solver;
 
   // members
 
 public:
+  /**
+   * \brief Constructor.
+   * @param factory Reference to the factory which created this model generator.
+   * @param input Input interpretation to this model generator.
+   */
   GenuinePlainModelGenerator(Factory& factory, InterpretationConstPtr input);
+  /** \brief Destructor. */
   virtual ~GenuinePlainModelGenerator();
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
-
-  // TODO debug output?
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorBase::print() not overloaded"; }
 };
 
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
+/** \brief Factory for the GenuinePlainModelGenerator. */
 class GenuinePlainModelGeneratorFactory:
   public BaseModelGeneratorFactory,
   public ostream_printable<GenuinePlainModelGeneratorFactory>
@@ -103,30 +105,50 @@ public:
 
   // storage
 protected:
-  // which solver shall be used for external evaluation?
+  /** \brief Defines the solver to be used for external evaluation. */
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+  /** \brief ProgramCtx. */
   ProgramCtx& ctx;
+  /** ComponentInfo of the component to be solved by the model generators instantiated by this factory. */
   ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
 
+  /** \brief All external atoms of the component. */
   std::vector<ID> eatoms;
-  // original idb (containing eatoms where all inputs are known
-  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
+
+  /** \brief Original IDB containing eatoms where all inputs are known.
+    *
+    * Auxiliary input rules of these eatoms must be in predecessor unit! */
   std::vector<ID> idb;
-  // rewritten idb (containing replacements for eatoms)
-  // (x stands for transformed)
+  /** \brief Rewritten IDB (containing replacements for eatoms).
+    *
+    * x stands for transformed. */
   std::vector<ID> xidb;
 
   // methods
 public:
+  /** \brief Constructor.
+    *
+    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+    */
   GenuinePlainModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+  /** \brief Destructor. */
   virtual ~GenuinePlainModelGeneratorFactory() {}
 
+  /**
+   * \brief Instantiates a model generator for the current component.
+   * @param input Input interpretation to this model generator.
+   * @return Model generator.
+   */
   virtual ModelGeneratorPtr createModelGenerator(
     InterpretationConstPtr input)
     { return ModelGeneratorPtr(new GenuinePlainModelGenerator(*this, input)); }
 
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to. */
   virtual std::ostream& print(std::ostream& o) const;
 };
 

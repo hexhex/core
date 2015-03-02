@@ -49,42 +49,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// the factory
-class GenuineGuessAndCheckModelGeneratorFactory:
-  public FLPModelGeneratorFactoryBase,
-  public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
-{
-  // types
-public:
-  friend class GenuineGuessAndCheckModelGenerator;
-  typedef ComponentGraph::ComponentInfo ComponentInfo;
+class GenuineGuessAndCheckModelGeneratorFactory;
 
-  // storage
-protected:
-  // which solver shall be used for external evaluation?
-  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-
-  ProgramCtx& ctx;
-
-  ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
-  WARNING("TODO see comment above about ComponentInfo copy construction bug")
-
-  // outer external atoms
-  std::vector<ID> outerEatoms;
-
-public:
-  GenuineGuessAndCheckModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  virtual ~GenuineGuessAndCheckModelGeneratorFactory() { }
-
-  virtual ModelGeneratorPtr createModelGenerator(InterpretationConstPtr input);
-
-  virtual std::ostream& print(std::ostream& o) const;
-  virtual std::ostream& print(std::ostream& o, bool verbose) const;
-};
-
-// the model generator (accesses and uses the factory)
+/** \brief Model generator for arbitrary components. */
 class GenuineGuessAndCheckModelGenerator:
   public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
@@ -97,16 +64,24 @@ public:
   // storage
 protected:
   // we store the factory again, because the base class stores it with the base type only!
+  /** \brief Reference to the factory which created this model generator. */
   Factory& factory;
-
+  /** \brief RegistryPtr. */
   RegistryPtr reg;
 
   // information about verification/falsification of current external atom guesses
-  boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList, unverifyWatchList;
-  std::vector<bool> eaEvaluated;	// is true iff the external atom guess was checked against the semantics (i.e., it is either verified or falsified)
-  std::vector<bool> eaVerified;		// if eaEvaluated is true, then: eaVerified is true iff the check verified the guess
-  InterpretationPtr verifiedAuxes;	// the set of currently verified external atom auxiliaries
-  std::vector<InterpretationPtr> changedAtomsPerExternalAtom;	// stores for each inner external atom the cumulative atoms which potentially changes since last evaluation
+  /** \brief Stores for each replacement atom the set of external atoms which shall be verified when the replacement atom is (re-)assigned. */
+  boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList;
+  /** \brief Stores for each replacement atom the set of external atoms which shall be unverified when the replacement atom is (re-)assigned. */
+  boost::unordered_map<IDAddress, std::vector<int> > unverifyWatchList;
+  /** \brief Stores for each external atom guess if it already was checked against the semantics (i.e., it is either verified or falsified). */
+  std::vector<bool> eaEvaluated;
+  /** \brief Stores for each external atom guess if it already was checked against the semantics and this check succeeded. */
+  std::vector<bool> eaVerified;
+  /** \brief The set of currently verified external atom auxiliaries. */
+  InterpretationPtr verifiedAuxes;
+  /** \brief Stores for each inner external atom the cumulative atoms which potentially changes since last evaluation. */
+  std::vector<InterpretationPtr> changedAtomsPerExternalAtom;
 
   // incremental solving
   //	sub-component management for regrounding
@@ -126,23 +101,33 @@ protected:
   std::map<ID, ID> hookAtoms;
 
   // heuristics
+  /** \brief Heuristics to be used for evaluating external atoms for which no dedicated heuristics is provided. */
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;
-  std::vector<ExternalAtomEvaluationHeuristicsPtr> eaEvalHeuristics;	// stores for each external atom its evaluation heuristics
+  /** \brief Stores for each external atom its evaluation heuristics; is either defaultExternalAtomEvalHeuristics or a dedicated one. */
+  std::vector<ExternalAtomEvaluationHeuristicsPtr> eaEvalHeuristics;
+  /* \brief Heuristics to be used for unfounded set checking over partial assignments. */
   UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
 
-  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
+  /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
   InterpretationConstPtr postprocessedInput;
-  // non-external fact input, i.e., postprocessedInput before evaluating outer eatoms
+  /** \brief Non-external fact input, i.e., postprocessedInput before evaluating outer eatoms. */
   InterpretationPtr mask;
 
   // internal solver
-  NogoodGrounderPtr nogoodGrounder;		// grounder for nonground nogoods
-  SimpleNogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
-  int learnedEANogoodsTransferredIndex;		// the highest index in learnedEANogoods which has already been transferred to the solver
+  /** \brief Grounder for nonground nogoods. */
+  NogoodGrounderPtr nogoodGrounder;
+  /** \brief All nogoods learned from EA evaluations. */
+  SimpleNogoodContainerPtr learnedEANogoods;
+  /** \brief The highest index in learnedEANogoods which has already been transferred to the solver. */
+  int learnedEANogoodsTransferredIndex;
+  /** \brief Grounder instance. */
   GenuineGrounderPtr grounder;
+  /** \brief Solver instance. */
   GenuineGroundSolverPtr solver;
+  /** \brief Manager for unfounded set checking. */
   UnfoundedSetCheckerManagerPtr ufscm;
-  InterpretationPtr programMask;		// all atoms in the program
+  /** \brief All atoms in the program. */
+  InterpretationPtr programMask;
 
   // members
 
@@ -348,6 +333,57 @@ public:
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
+};
+
+/** \brief Factory for the GenuineGuessAndCheckModelGenerator. */
+class GenuineGuessAndCheckModelGeneratorFactory:
+  public FLPModelGeneratorFactoryBase,
+  public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
+{
+  // types
+public:
+  friend class GenuineGuessAndCheckModelGenerator;
+  typedef ComponentGraph::ComponentInfo ComponentInfo;
+
+  // storage
+protected:
+  /** \brief Defines the solver to be used for external evaluation. */
+  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+  /** \brief ProgramCtx. */
+  ProgramCtx& ctx;
+  /** ComponentInfo of the component to be solved by the model generators instantiated by this factory. */
+  ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
+  WARNING("TODO see comment above about ComponentInfo copy construction bug")
+
+  /** \brief Outer external atoms of the component. */
+  std::vector<ID> outerEatoms;
+
+public:
+  /** \brief Constructor.
+    *
+    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+    */
+  GenuineGuessAndCheckModelGeneratorFactory(
+      ProgramCtx& ctx, const ComponentInfo& ci,
+      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+
+  /** \brief Destructor. */
+  virtual ~GenuineGuessAndCheckModelGeneratorFactory() { }
+
+  /** \brief Instantiates a model generator for the component.
+    * @param input The facts to be added before solving.
+    * @return Model generator. */
+  virtual ModelGeneratorPtr createModelGenerator(InterpretationConstPtr input);
+
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to. */
+  virtual std::ostream& print(std::ostream& o) const;
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to.
+    * @param verbose Provides more detailed output if true. */
+  virtual std::ostream& print(std::ostream& o, bool verbose) const;
 };
 
 DLVHEX_NAMESPACE_END
