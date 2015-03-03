@@ -158,7 +158,7 @@ struct SemanticActionBase
   }
 };
 
-/** \brief Grammar for parsing HEX using boost::spirit. /
+/** \brief Grammar for parsing HEX using boost::spirit. */
 class DLVHEX_EXPORT HexGrammarSemantics
 {
 public:
