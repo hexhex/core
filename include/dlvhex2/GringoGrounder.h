@@ -179,13 +179,15 @@ DLVHEX_NAMESPACE_BEGIN
 
 namespace detail
 {
-  // gringo config substitute (so that we only need one kind of libprogram_opts
+  /** \brief Gringo config substitute (so that we only need one kind of libprogram_opts. */
   class GringoOptions
   {
   public:
+    /** \brief See Gringo documentation. */
     enum IExpand { IEXPAND_ALL, IEXPAND_DEPTH };
 
   public:
+    /** \brief Constructor. */
     GringoOptions();
 
     // AppOptions interface
@@ -194,25 +196,26 @@ namespace detail
     //void addDefaults(std::string& def);
     //TermExpansionPtr termExpansion(IncConfig &config) const;
 
-    /** The constant assignments in the format "constant=term" */
+    /** \brief The constant assignments in the format "constant=term". */
     std::vector<std::string> consts;
-    /** Whether to print smodels output */
+    /** \brief Whether to print smodels output. */
     bool smodelsOut;
-    /** Whether to print in lparse format */
+    /** \brief Whether to print in lparse format. */
     bool textOut;
     bool metaOut;
-    /** True iff some output was requested*/
+    /** \brief True iff some output was requested. */
     bool groundOnly;
     int ifixed;
     bool ibase;
     bool groundInput;
-    /** whether disjunctions will get shifted */
+    /** \brief whether disjunctions will get shifted. */
     bool disjShift;
-    /** filename for optional dependency graph dump */
+    /** \brief Filename for optional dependency graph dump. */
     std::string depGraph;
     bool compat;
-    /** whether statistics will be printed to stderr */
+    /** \brief Whether statistics will be printed to stderr. */
     bool stats;
+    /** \brief See Gringo documentation. */
     IExpand iexpand;
   };
 }
@@ -223,86 +226,172 @@ namespace detail
 class GringoGrounder: public GenuineGrounder
 {
 private:
+	/** \brief ProgramCtx. */
 	ProgramCtx& ctx;
+	/** \brief Input nonground program. */
 	OrdinaryASPProgram nongroundProgram;
+	/** \brief Generated ground program. */
 	OrdinaryASPProgram groundProgram;
+	/** \brief Set of frozen atoms, i.e., atoms to be excluded from optimization. */
 	InterpretationConstPtr frozen;
-	ID intPred, anonymousPred, unsatPred;
+	/** \brief Predicate used for dummy integer facts. */
+	ID intPred;
+	/** \brief Predicate used for atoms introduced by Gringo without counterpart in the nonground program. */
+	ID anonymousPred;
+	/** \brief Predicate to be used as a propositional atom for representing unsatisfiability. */
+	ID unsatPred;
 
 	detail::GringoOptions gringo;
 
+	/** \brief Printer for sending a program to Gringo. */
 	class Printer : public RawPrinter{
 	public:
 		typedef RawPrinter Base;
+		/** \brief Predicate used for dummy integer facts. */
 		ID intPred;
+		/** \brief Constructor.
+		  * @param out Stream to send the ground program to.
+	 	  * @param registry Registry used for resolving IDs.
+		  * @param Predicate used for dummy integer facts. */
 		Printer(std::ostream& out, RegistryPtr registry, ID intPred) : RawPrinter(out, registry), intPred(intPred) {}
 
-		void printRule(ID id);
-		void printAggregate(ID id);
-		void printInt(ID id);
+		virtual void printRule(ID id);
+		virtual void printAggregate(ID id);
+		virtual void printInt(ID id);
 		virtual void print(ID id);
 	};
 
-
+	/** \brief Extracts the ground program from Gringo and stores it in HEX data structures. */
 	class GroundHexProgramBuilder : public LparseConverter{
 	private:
+		/** \brief Dummy. */
 		std::stringstream emptyStream;
+		/** \brief See Gringo documentation under LparseConverter. */
 		uint32_t symbols_;
+		/** \brief See Gringo documentation under LparseConverter. */
 		bool hasExternal_;
+		/** \brief ProgramCtx. */
 		ProgramCtx& ctx;
+		/** \brief Reference to OrdinaryASPProgram where the extracted ground program is to be added to. */
 		OrdinaryASPProgram& groundProgram;
+		/** \brief Set of atoms to be masked from the result (e.g. dummy integer facts). */
 		InterpretationPtr mask;
-		ID intPred, anonymousPred, unsatPred;
+		/** \brief Predicate used for dummy integer facts. */
+		ID intPred;
+		/** \brief Predicate used for atoms introduced by Gringo without counterpart in the nonground program. */
+		ID anonymousPred;
+		/** \brief Predicate to be used as a propositional atom for representing unsatisfiability. */
+		ID unsatPred;
 
+		/** \brief Stores a rule in Lparse format. */
 		struct LParseRule{
-			enum Type{ Regular, Weight };
+			/** \brief Rule type. */
+			enum Type{
+				/** \brief Ordinary rule. */
+				Regular,
+				/** \brief Weight rule. */
+				Weight };
+			/** \brief Type of the represented rule. */
 			Type type;
 
-			AtomVec head, pos, neg;
-			WeightVec wpos, wneg;
+			/** \brief Head atoms. */
+			AtomVec head;
+			/** \brief Positive body atoms. */
+			AtomVec pos;
+			/** \brief Negative body atoms. */
+			AtomVec neg;
+			/** \brief Weights of positive body atoms. */
+			WeightVec wpos;
+			/** \brief Weights of negative body atoms. */
+			WeightVec wneg;
+			/** \brief Bound for weight rules. */
 			int bound;
+			/** \brief Constructor.
+			  * @param h vector of head atoms, see LParseRule::head.
+			  * @param p See LParseRule::pos.
+			  * @param n See LParseRule::neg. */
 			LParseRule(const AtomVec& h, const AtomVec& p, const AtomVec& n) : head(h), pos(p), neg(n), bound(0), type(Regular){}
+			/** \brief Constructor.
+			  * @param h Single head atom, see LParseRule::head.
+			  * @param p See LParseRule::pos.
+			  * @param n See LParseRule::neg. */
 			LParseRule(int h, const AtomVec& p, const AtomVec& n) : pos(p), neg(n), bound(0), type(Regular){
 				head.push_back(h);
 			}
+			/** \brief Constructor.
+			  * @param h Single head atom, see LParseRule::head.
+			  * @param p See LParseRule::pos.
+			  * @param n See LParseRule::neg.
+			  * @param wp See LParseRule::wpos.
+			  * @param np See LParseRule::wneg.
+			  * @param bound See LParseRule::bound. */
 			LParseRule(int h, const AtomVec& p, const AtomVec& n, const WeightVec& wp, const WeightVec& wn, int bound) : pos(p), neg(n), wpos(wp), wneg(wn), bound(bound), type(Weight){
 				head.push_back(h);
 			}
 		};
 
+		/** \brief Registers a Gringo atom in HEX if necessary.
+		  * @param symbol Gringo atom to register. */
 		void addSymbol(uint32_t symbol);
 
+		/** \brief Stores for each known Gringo atom the HEX ID. */
 		std::map<int, ID> indexToGroundAtomID;
+		/** \brief List of rules in the ground program in Lparse format. */
 		std::list<LParseRule> rules;
 	public:
+		/** \brief Constructor.
+		  * @param ctx See GringoGrounder::ctx.
+		  * @param groundProgram See GringoGrounder::groundProgram.
+		  * @param intPred See GringoGrounder::intPred.
+		  * @param anonymousPred See GringoGrounder::anonymousPred.
+		  * @param unsatPred See GringoGrounder::groundProgrunsatPredam. */
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, ID unsatPred);
+		/** \brief Extracts the final ground program (GringoGrounder::groundProgram) in HEX format from GringoGrounder::rules. */
 		void doFinalize();
 
+		/** \brief See Gringo documentation. */
 		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
+		/** \brief See Gringo documentation. */
 		void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
+		/** \brief See Gringo documentation. */
 		void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
+		/** \brief See Gringo documentation. */
 		void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
+		/** \brief See Gringo documentation. */
 		void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
+		/** \brief See Gringo documentation. */
 		void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
+		/** \brief See Gringo documentation. */
 		void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
+		/** \brief See Gringo documentation. */
 		void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+		/** \brief See Gringo documentation. */
 		void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
-//		void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-//		void printExternalTableEntry(const Symbol &symbol);
+		/** \brief See Gringo documentation. */
 		void forgetStep(int) { }
+		/** \brief See Gringo documentation. */
 		uint32_t symbol();
 	};
 
 public:
+	/** \brief Constructor.
+	  * @param ctx See GringoGrounder::ctx.
+	  * @param p See GringoGrounder::nongroundProgram.
+	  * @param frozen See GringoGrounder::frozen. */
 	GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen);
+	/** \brief Extracts the final ground program.
+	  * @return Ground program. */
 	const OrdinaryASPProgram& getGroundProgram();
 
 protected:
+	/** \brief See Gringo documentation. */
 	Output *output();
-	/** returns a stream of constants provided through the command-line.
-	  * \returns input stream containing the constant definitions in ASP
+	/** \brief Returns a stream of constants provided through the command-line.
+	  * @returns Rnput stream containing the constant definitions in ASP.
 	  */
 	Streams::StreamPtr constStream() const;
+	/** \brief Runs Gringo.
+	  * @return Gringo return code. */
 	int  doRun();
 };
 

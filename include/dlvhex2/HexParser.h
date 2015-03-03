@@ -41,10 +41,15 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements the parser for HEX-programs. */
 class DLVHEX_EXPORT HexParser
 {
 public:
+  /** \brief Destructor. */
   virtual ~HexParser();
+  /** \brief Parses \p in into \p out.
+    * @param in InputProvider to parse from.
+    * @param out ProgramCtx to receive EDB and IDB of the parsed program. */
   virtual void parse(InputProviderPtr in, ProgramCtx& out) = 0;
 };
 typedef boost::shared_ptr<HexParser> HexParserPtr;
@@ -56,12 +61,21 @@ class DLVHEX_EXPORT ModuleHexParser:
   public HexParser
 {
 public:
+  /** \brief Adds an additional module the the parser.
+    *
+    * Modules are used to parse special non-standard HEX-syntax as
+    * supported e.g. by plugins.
+    * @param module ParserModule to add. */
   virtual void registerModule(HexParserModulePtr module);
 
 public:
+  /** \brief Parses \p in into \p out using the registered modules.
+    * @param in InputProvider to parse from.
+    * @param out ProgramCtx to receive EDB and IDB of the parsed program. */
   virtual void parse(InputProviderPtr in, ProgramCtx& out);
 
 protected:
+  /** \brief Currently registered modules. */
   std::vector<HexParserModulePtr> modules;
 };
 typedef boost::shared_ptr<ModuleHexParser> ModuleHexParserPtr;
