@@ -1,5 +1,13 @@
 dlvhex NEWS -- history of user-visible changes.
 
+* Version 2.5.0 (??)
+
+** Extended Python plugin API.
+** Code cleanup, bugfixes and stability improvements, improved error and warning messages.
+** New default options: strong negation, liberal safety and external learning methods are enabled by default (increased efficiency, decreased syntactic restrictions).
+** Complete doxygen documentation.
+** The solver backend was upgraded to clasp 3.1.1.
+
 * Version 2.4.0 (September 2014)
 
 ** A new interface which support plugins to be implemented in Python.
