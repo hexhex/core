@@ -122,7 +122,6 @@ void GringoGrounder::Printer::printRule(ID id){
 	}
 	if( !r.body.empty() )
 	{
-		out << " :- ";
 		bool first = true;
 		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
@@ -151,7 +150,11 @@ void GringoGrounder::Printer::printRule(ID id){
 				}
 			}
 
-			if (!first) out << ", ";
+			if (first) {
+				out << " :- ";
+			}else{
+				out << ", ";
+			}
 			first = false;
 			print(b);
 
@@ -745,7 +748,6 @@ void GringoGrounder::Printer::printRule(ID id){
 	}
 	if( !r.body.empty() )
 	{
-		out << " :- ";
 		bool first = true;
 		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
@@ -774,7 +776,11 @@ void GringoGrounder::Printer::printRule(ID id){
 				}
 			}
 
-			if (!first) out << ", ";
+			if (first) {
+				out << " :- ";
+			}else{
+				out << ", ";
+			}
 			first = false;
 			print(b);
 
