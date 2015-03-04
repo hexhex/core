@@ -876,59 +876,40 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatibleSet){
 
-	// which semantics?
-	if (factory.ctx.config.getOption("WellJustified")){
-		// well-justified FLP: fixpoint iteration
-		InterpretationPtr fixpoint = welljustifiedSemanticsGetFixpoint(factory.ctx, compatibleSet, annotatedGroundProgram.getGroundProgram());
-		InterpretationPtr reference = InterpretationPtr(new Interpretation(*compatibleSet));
-		factory.gpMask.updateMask();
-		factory.gnMask.updateMask();
-		reference->getStorage() -= factory.gpMask.mask()->getStorage();
-		reference->getStorage() -= factory.gnMask.mask()->getStorage();
-
-		DBGLOG(DBG, "Comparing fixpoint " << *fixpoint << " to reference " << *reference);
-		if ((fixpoint->getStorage() & reference->getStorage()).count() == reference->getStorage().count()){
-			DBGLOG(DBG, "Well-Justified FLP Semantics: Pass fixpoint test");
-			return true;
-		}else{
-			DBGLOG(DBG, "Well-Justified FLP Semantics: Fail fixpoint test");
-			return false;
-		}
+	// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
+	if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && !factory.ctx.config.getOption("IncrementalGrounding") &&
+	    factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
+		DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
+		return true;
 	}else{
-		// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 && !factory.ctx.config.getOption("IncrementalGrounding") &&
-		    factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
-			DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
-			return true;
+		if (factory.ctx.config.getOption("IncrementalGrounding")){
+			DBGLOG(DBG, "Incremental mode needs to call UFS-checker to determine if there are head- or e-cycles");
 		}else{
-			if (factory.ctx.config.getOption("IncrementalGrounding")){
-				DBGLOG(DBG, "Incremental mode needs to call UFS-checker to determine if there are head- or e-cycles");
-			}else{
-				DBGLOG(DBG, "Head- or e-cycles --> FLP/UFS check necessary");
-			}
-
-			// Explicit FLP check
-			if (factory.ctx.config.getOption("FLPCheck")){
-				DBGLOG(DBG, "FLP Check");
-				// do FLP check (possibly with nogood learning) and add the learned nogoods to the main search
-				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx,
-				                                                     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
-				updateEANogoods(compatibleSet);
-				return result;
-			}
-
-			// UFS check
-			if (factory.ctx.config.getOption("UFSCheck")){
-				DBGLOG(DBG, "UFS Check");
-				bool result = unfoundedSetCheck(compatibleSet);
-				updateEANogoods(compatibleSet);
-				return result;
-			}
-
-			// no check
-			return true;
+			DBGLOG(DBG, "Head- or e-cycles --> FLP/UFS check necessary");
 		}
+
+		// Explicit FLP check
+		if (factory.ctx.config.getOption("FLPCheck")){
+			DBGLOG(DBG, "FLP Check");
+			// do FLP check (possibly with nogood learning) and add the learned nogoods to the main search
+			bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx,
+			                                                     factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
+			updateEANogoods(compatibleSet);
+			return result;
+		}
+
+		// UFS check
+		if (factory.ctx.config.getOption("UFSCheck")){
+			DBGLOG(DBG, "UFS Check");
+			bool result = unfoundedSetCheck(compatibleSet);
+			updateEANogoods(compatibleSet);
+			return result;
+		}
+
+		// no check
+		return true;
 	}
+
 	assert (false);
 }
 

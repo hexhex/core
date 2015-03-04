@@ -271,25 +271,6 @@ protected:
       std::map<ID, std::pair<int, ID> >& shadowPredicates,
       std::map<ID, std::pair<int, ID> >& unfoundedPredicates,
       std::vector<ID>& idb);
-
-  // used for the well-justified semantics
-  /**
-    * \brief Computes the replacements of a given external atom which are deriveable from an interpretation under well-justified FLP semantics.
-    * @param ctx ProgramCtx.
-    * @param eaIndex Inner external atom index whose replacements shall be derived.
-    * @param intr Input interpretation as a basis for the derivation loop.
-    * @param assigned Assigned atoms in \p intr.
-    * @return A pair of verified (first element) and falsified (second element) replacement atoms; remaining ones are undecided yet.
-    */
-  std::pair<InterpretationPtr, InterpretationPtr> welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, int eaIndex, InterpretationConstPtr intr, InterpretationConstPtr assigned);
-  /**
-    * \brief Computes the least fixpoint of an interpretation under well-justified FLP semantics.
-    * ctx ProgramCtx.
-    * @param interpretation Input interpretation as a basis for the derivation loop.
-    * @param program Ground program.
-    * @return Least fixpoint of \p interpretation under well-justified semantics and \p program.
-    */
-  InterpretationPtr welljustifiedSemanticsGetFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program);
 };
 
 DLVHEX_NAMESPACE_END

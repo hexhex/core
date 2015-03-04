@@ -171,8 +171,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
       << "     --split          Use instantiation splitting techniques." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful with --verbose)." << std::endl
-      << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components" << std::endl
-      << "                      (only useful with genuine solvers)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets." << std::endl
 
@@ -465,7 +463,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("LiberalSafety",1);
   pctx.config.setOption("LiberalSafetyNullFreezeCount",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
-  pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("DumpStats",0);
@@ -806,7 +803,6 @@ void processOptionsPrePlugin(
 		{ "ufslearn", optional_argument, 0, 23 },
 		{ "noflpcriterion", no_argument, 0, 35 },
 		{ "flpcriterion", optional_argument, 0, 42 },
-		{ "welljustified", optional_argument, 0, 25 },
 		{ "eaevalheuristic", required_argument, 0, 26 },
                 { "eaevalheuristics", required_argument, 0, 26 }, // compatibility
 		{ "ufscheckheuristic", required_argument, 0, 27 },
@@ -1347,10 +1343,6 @@ void processOptionsPrePlugin(
 					throw GeneralError("Unknown UFS Learning option: \"" + learn + "\"");
 				}
 			}
-			break;
-
-		case 25:
-			pctx.config.setOption("WellJustified", 1);
 			break;
 
 		case 26:
