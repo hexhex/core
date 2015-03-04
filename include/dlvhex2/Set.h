@@ -40,6 +40,9 @@
 template<typename T>
 class Set;
 
+/** \brief This class implements an insertion iterator for Set according to public std::iterator.
+  *
+  * See public std::iterator for descriptions of the methods and operators in this class. */
 template<typename T>
 class insert_set_iterator : public std::iterator<std::output_iterator_tag, void, void, void, void>{
 protected:
@@ -66,6 +69,9 @@ public:
 	}
 };
 
+/** \brief This class implements a const_iterator for Set according to public std::iterator.
+  *
+  * See public std::iterator for descriptions of the methods and operators in this class. */
 template<typename T>
 class const_set_iterator : public std::iterator<std::input_iterator_tag, T, ptrdiff_t, const T*, const T&>{
 protected:
@@ -134,6 +140,9 @@ public:
 	}
 };
 
+/** \brief This class implements an iterator for Set according to public std::iterator.
+  *
+  * See public std::iterator for descriptions of the methods and operators in this class. */
 template<typename T>
 class set_iterator : public std::iterator<std::input_iterator_tag, T, ptrdiff_t, T*, T&>{
 protected:
@@ -202,6 +211,7 @@ public:
 	}
 };
 
+/** \brief Data structure for storing sets based on a sorted array. */
 template<typename T>
 class Set{
 private:
@@ -211,11 +221,15 @@ private:
 	int rsize;
 	int increase;
 
+	/** \brief Grows Set::data such that it covers Set::allocSize. */
 	void grow(){
 		allocSize += increase;
 		data = (T*)realloc(data, sizeof(T) * allocSize);
 	}
 
+	/** \brief Grows Set::data such that it covers a given minimum size.
+	  *
+	  * @param minSize Minimum size of the Set after this method retuns. */
 	void grow(int minSize){
 		allocSize = minSize % increase == 0
 					?	minSize
@@ -223,6 +237,9 @@ private:
 		data = (T*)realloc(data, sizeof(T) * allocSize);
 	}
 
+	/** \brief Implements binary search for the set.
+	  * @param e Element to search for.
+	  * @return Index of \p e in the Set or 0 if it is not contained. */
 	int binarySearch(T e) const{
 		if (rsize == 0) return 0;
 
@@ -258,6 +275,9 @@ public:
 	typedef T value_type;
 	typedef const T& const_reference;
 
+	/** \brief Constructor.
+	  * @param initialSize Internal size of the internal array.
+	  * @param inc Number of elements to add when the internal array needs to be resized. */
 	Set(int initialSize = 0, int inc = 10) : increase(inc), rsize(0){
 		if (initialSize == 0){
 			data = 0;
@@ -267,6 +287,8 @@ public:
 		allocSize = initialSize;
 	}
 
+	/** \brief Copy-constructor.
+	  * @param s2 Second set. */
 	Set(const Set<T>& s2){
 		data = (T*)realloc(0, sizeof(T) * s2.allocSize);
 		allocSize = s2.allocSize;
@@ -275,20 +297,30 @@ public:
 		memcpy(data, s2.data, sizeof(T) * rsize);
 	}
 
+	/** \brief Destructor. */
 	virtual ~Set(){
 		if (data) free(data);
 		data = 0;
 	}
 
+	/** \brief Checks if an element is contained in the set.
+	  * @param e Element to search for.
+	  * @return True if \p e is contained in the Set and false otherwise. */
 	inline bool contains(T e) const{
 		int p =  binarySearch(e);
 		return (p < rsize) && (data[p] == e);
 	}
 
-	inline int count(T e) const{		// for compatibility with std::set
+	/** \brief Retrieves the size of the Set.
+	  *
+	  * For compatibility with std::set.
+	  * @return Size of the Set. */
+	inline int count(T e) const{
 		return contains(e) ? 1 : 0;
 	}
 
+	/** \brief Adds an element to the Set.
+	  * @param e Element to add. */
 	inline void insert(T e){
 		// find location for insertion
 		int p = binarySearch(e);
@@ -306,7 +338,9 @@ public:
 		rsize++;
 	}
 
-	//	template<typename _Iter>
+	/** \brief Inserts a range of elements given by a pair of begin and end iterator.
+	  * @param begin Begin iterator.
+	  * @param end End iterator. */
 	template<typename _Iter>
 	inline void insert(_Iter begin, _Iter end){
 		grow(size() + (end - begin));
@@ -315,6 +349,8 @@ public:
 		}
 	}
 
+	/** \brief Removes an element from the Set if contained.
+	  * @param e Element to remove. */
 	inline void erase(T e){
 		// find element
 		int p = binarySearch(e);
@@ -327,6 +363,9 @@ public:
 		rsize--;
 	}
 
+	/** \brief Searches for an element in the Set.
+	  * @param e Element to search for.
+	  * @return Iterator pointing to \p e if contained and the end() iterator otherwise. */
 	inline set_iterator<T> find(T e){
 		// find element
 		int p = binarySearch(e);
@@ -335,6 +374,9 @@ public:
 		return set_iterator<T>(*this, p);
 	}
 
+	/** \brief Searches for an element in the Set.
+	  * @param e Element to search for.
+	  * @return Const iterator pointing to \p e if contained and the end() iterator otherwise. */
 	inline const_set_iterator<T> find(T e) const{
 		// find element
 		int p = binarySearch(e);
@@ -343,50 +385,78 @@ public:
 		return const_set_iterator<T>(*this, p);
 	}
 
+	/** \brief Checks if the Set is empty.
+	  * @return True if the Set is empty and false otherwise. */
 	bool empty() const{
 		return rsize == 0;
 	}
 
+	/** \brief Empties the Set. */
 	void clear(){
 		rsize = 0;
 	}
 
+	/** \brief Retruns the begin iterator of the Set.
+	  * @return Begin iterator of the Set. */
 	set_iterator<T> begin(){
 		return set_iterator<T>(*this, 0);
 	}
 
+	/** \brief Retruns the end iterator of the Set.
+	  * @return End iterator of the Set. */
 	set_iterator<T> end(){
 		return set_iterator<T>(*this, rsize);
 	}
 
+	/** \brief Retruns the const begin iterator of the Set.
+	  * @return Const begin iterator of the Set. */
 	const_set_iterator<T> begin() const{
 		return const_set_iterator<T>(*this, 0);
 	}
 
+	/** \brief Retruns the const end iterator of the Set.
+	  * @return Const end iterator of the Set. */
 	const_set_iterator<T> end() const{
 		return const_set_iterator<T>(*this, rsize);
 	}
 
+	/** \brief Accesses an element given by its index.
+	  * @param i Index of the element to access.
+	  * @return Reference to element \p i in the Set. */
 	inline T& operator[](int i){
 		return data[i];
 	}
 
+	/** \brief Accesses an element given by its index.
+	  * @param i Index of the element to access.
+	  * @return Reference to element \p i in the Set. */
 	inline const T& operator[](int i) const{
 		return data[i];
 	}
 
+	/** \brief Retrieves the size of the Set.
+	  *
+	  * For compatibility with std::set.
+	  * @return Size of the Set. */
 	inline int size() const{
 		return rsize;
 	}
 
+	/** \brief Retrieves the internal data (array).
+	  * @return Pointer to the begin of the internal array. */
 	T* getData(){
 		return data;
 	}
 
+	/** \brief Retrieves the internal data (array).
+	  * @return Pointer to the begin of the internal array. */
 	const T* getData() const{
 		return data;
 	}
 
+	/** \brief Assigns another Set to this one.
+	  * @param s2 Second Set.
+	  * @return Reference to this Set. */
 	Set<T>& operator=(const Set<T>& s2){
 		clear();
 		grow(s2.size());
@@ -396,83 +466,69 @@ public:
 	}
 };
 
-/*
-// alternative implementation based on Set<T>
-
-template<typename T>
-struct SetElement{
-	T element;
-	long index;
-
-	SetElement(){
-	}
-
-	SetElement(T el, long i) : element(el), index(i){
-	}
-
-	bool operator<(const SetElement<T>& el2) const{
-		return element < el2.element;
-	}
-
-	bool operator>(const SetElement<T>& el2) const{
-		return element > el2.element;
-	}
-	
-	bool operator==(const SetElement<T>& el2) const{
-		return element == el2.element;
-	}
-
-	bool operator!=(const SetElement<T>& el2) const{
-		return element != el2.element;
-	}
-};
-*/
-
+/** \brief Implements a pair of an index and an element. */
 template<typename T>
 struct SortElement{
+	/** \brief Index. */
 	long index;
+	/** \brief Element. */
 	T elem;
 
+	/** \brief Constructor. */
 	SortElement(){
 	}
 
+	/** \brief Constructor.
+	  * @param i See SortElement::index. 
+	  * @param el See SortElement::elem. */
 	SortElement(int i, T el) : index(i), elem(el){
 	}
 
+	/** \brief Compares the index of \p el2 to the one in this object.
+	  * @param el2 Second SortElement.
+	  * @return True if the index of this SortElement is smaller than the one in \p el2 and false otherwise. */
 	bool operator<(const SortElement<T>& el2) const{
 		return index < el2.index;
 	}
 
+	/** \brief Compares the index of \p el2 to the one in this object.
+	  * @param el2 Second SortElement.
+	  * @return True if the index of this SortElement is larger than the one in \p el2 and false otherwise. */
 	bool operator>(const SortElement<T>& el2) const{
 		return index > el2.index;
 	}
-	
+
+	/** \brief Compares the index of \p el2 to the one in this object.
+	  * @param el2 Second SortElement.
+	  * @return True if the index of this SortElement is equal than the one in \p el2 and false otherwise. */
+
 	bool operator==(const SortElement<T>& el2) const{
 		return index == el2.index;
 	}
 
+	/** \brief Compares the index of \p el2 to the one in this object.
+	  * @param el2 Second SortElement.
+	  * @return True if the index of this SortElement is not equal than the one in \p el2 and false otherwise. */
 	bool operator!=(const SortElement<T>& el2) const{
 		return index != el2.index;
 	}
 };
 
-// implementation based on boost::unordered_map
+/** \brief Implementation of an ordered set based on boost::unordered_map. */
 template<typename T, typename H>
 class OrderedSet{
 private:
+	/** \brief Internal sorage. */
 	DynamicVector<T, long> os;
-//	boost::unordered_map<T, long, H> os;
+	/** \brief Next element to insert. */
 	long c;
 
+	/** \brief Renumbers the elements but keeps their order; useful after elements have been deleted. */
 	void renumber(){
 		typedef SortElement<T> SortEl;
 		std::vector<SortElement<T> > sorted;
 		sorted.reserve(os.size());
 
-//		typedef std::pair<T, long> Pair;
-//		BOOST_FOREACH (Pair p, os){
-//			sorted.push_back(SortEl(p.second, p.first));
-//		}
 		for (T i = 0; i < os.size(); ++i){
 			if (os.find(i) != os.end()){
 				sorted.push_back(SortEl(os[i], i));
@@ -488,9 +544,12 @@ private:
 	}
 
 public:
+	/** \brief Constructor. */
 	OrderedSet() : c(0){
 	}
 	
+	/** \brief Inserts a new element.
+	  * @param el Element to insert. */
 	inline void insert(T el){
 		if (c >= 1000000000){
 			renumber();
@@ -498,86 +557,35 @@ public:
 		os[el] = c++;
 	}
 
+	/** \brief Removes an element.
+	  * @param el Element to remove. */
 	inline void erase(T el){
 		os.erase(el);
 	}
 
+	/** \brief Get the insertion index of an element.
+	  *
+	  * The larger the insertion index, the later the element was added.
+	  * @param el Element whose insertion index shall be retrieved.
+	  * @return Insertion index of \p el. */
 	long getInsertionIndex(T el){
 		return os[el];
 	}
 
+	/** \brief Compares two elements according to their insertion index
+	  *
+	  * @param el1 First element to be compared.
+	  * @param el2 Second element to be compared.
+	  * @return -1 if \p el1 was inserted before \p el2, 1 if \p el1 was inserted after \p el2, 0 otherwise. */
 	inline int compare(T el1, T el2){
 		if (getInsertionIndex(el1) < getInsertionIndex(el2)) return -1;
 		else if (getInsertionIndex(el1) > getInsertionIndex(el2)) return +1;
 		else return 0;
 	}
 
+	/** \brief No operation; kept for backwards compatibility. */
 	void resize(int s){
-//		os.resize(s);
 	}
-
-
-/*
-// alternative implementation based on Set<T>
-
-private:
-	Set<SetElement<T> > os;
-	long c;
-
-	// reusable element (to avoid reallocation on stack of insert, erase and getInsertionIndex)
-	SetElement<T> tmpEl;
-
-	void renumber(){
-		typedef SetElement<T> SetEl;
-		typedef SortElement<T> SortEl;
-		std::vector<SortElement<T> > sorted;
-		sorted.reserve(os.size());
-		
-		BOOST_FOREACH (SetEl se, os){
-			sorted.push_back(SortEl(se.index, se.element));
-		}
-
-		std::sort(sorted.begin(), sorted.end());
-
-		os.clear();
-		c = 0;
-		BOOST_FOREACH (SortEl se, sorted){
-			os.insert(SetEl(se.elem, c++));
-		}
-	}
-public:
-	OrderedSet() : c(0){
-	}
-	
-	inline void insert(T el){
-		if (c >= 10000000){
-			renumber();
-		}
-		tmpEl.element = el;
-		tmpEl.index = c++;
-		os.insert(tmpEl);
-	}
-
-	inline void erase(T el){
-		tmpEl.element = el;
-		os.erase(tmpEl);
-	}
-
-	inline long getInsertionIndex(T el){
-		tmpEl.element = el;
-		if (os.count(tmpEl) > 0){
-			return (os.find(tmpEl))->index;
-		}else{
-			return -1;
-		}
-	}
-
-	inline int compare(T el1, T el2){
-		if (getInsertionIndex(el1) < getInsertionIndex(el2)) return -1;
-		else if (getInsertionIndex(el1) > getInsertionIndex(el2)) return +1;
-		else return 0;
-	}
-*/
 };
 
 // compatibility with BOOST_FOREACH

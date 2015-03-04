@@ -81,7 +81,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-
+/** \brief Solver for logic programs with modules.
+  *
+  * @todo Documentation of this class is missing. */
 class DLVHEX_EXPORT MLPSolver{
 
     typedef Interpretation InterpretationType;
