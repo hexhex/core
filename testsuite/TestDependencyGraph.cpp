@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   TestDependencyGraphFull.cpp
+ * @file   TestDependencyGraph.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Test the dependency graph builder (and the graph)
@@ -34,7 +34,7 @@
 
 #include <boost/cstdint.hpp>
 #include "dlvhex2/DependencyGraph.h"
-#include "dlvhex2/DependencyGraphFull.h"
+//#include "dlvhex2/DependencyGraphFull.h"
 #include "dlvhex2/HexParser.h"
 #include "dlvhex2/InputProvider.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -150,6 +150,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
   ID idfX = ctx.registry()->onatoms.getIDByString("f(X)");
   BOOST_REQUIRE(idfX != ID_FAIL);
 
+/*
   // full dependency graph
   {
     DependencyGraphFull depgraph(ctx.registry());
@@ -171,6 +172,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
   }
+*/
 
   // smaller more efficient dependency graph
   {
@@ -202,6 +204,7 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
 {
 	LOG_REGISTRY_PROGRAM(ctx);
 
+/*
   // full dependency graph
   {
     // clone registry, because full depgraph will modify it for auxiliary rules
@@ -228,6 +231,7 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
   }
+*/
 
   // smaller more efficient dependency graph
   {
@@ -260,6 +264,7 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
 {
 	//LOG_REGISTRY_PROGRAM(ctx);
 
+/*
 	// full dependency graph
   {
     // clone registry, because full depgraph will modify it for auxiliary rules
@@ -282,6 +287,7 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
   }
+*/
 
   // smaller more efficient dependency graph
   {

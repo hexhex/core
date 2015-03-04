@@ -136,7 +136,7 @@ TestEvalHeuristic_LDADD = $(LDADD_ASPSOLVER)
 TestComponentGraph_SOURCES = TestComponentGraph.cpp
 TestComponentGraph_LDADD = $(LDADD_BASE)
 
-TestDependencyGraph_SOURCES = TestDependencyGraph.cpp $(top_srcdir)/src/DependencyGraphFull.cpp
+TestDependencyGraph_SOURCES = TestDependencyGraph.cpp
 TestDependencyGraph_LDADD = $(LDADD_BASE)
 
 TestHexParser_SOURCES = TestHexParser.cpp

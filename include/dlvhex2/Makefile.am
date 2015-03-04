@@ -22,7 +22,6 @@ pkginclude_HEADERS = \
   ComponentGraph.h \
   ConcurrentMessageQueueOwning.h \
   Configuration.h \
-  DependencyGraphFull.h \
   DependencyGraph.h \
   DumpingEvalGraphBuilder.h \
   DLVProcess.h \
