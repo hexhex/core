@@ -179,7 +179,6 @@ inline print_container* printopt(const boost::optional<T>& t)
   * @param t Object to print, can be undefined using boost::optional.
   * @return print_container pointer for \p t if defined and a dummy container otherwise. */
 template<typename T>
-template<typename T>
 inline print_container* printptr(const boost::shared_ptr<T>& t)
 {
   if( !!t )
