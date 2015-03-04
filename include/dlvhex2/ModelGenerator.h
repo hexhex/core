@@ -51,6 +51,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Base class for interpretations. */
 class DLVHEX_EXPORT InterpretationBase:
   public ostream_printable<InterpretationBase>
 
@@ -61,15 +62,15 @@ public:
   { return o << "InterpretationBase::print() not overloaded"; }
 };
 
-//
-// A model generator does the following:
-// * it is constructed by a ModelGeneratorFactory which knows the program
-//   (and can precompute information for evaluation,
-//    and may also provide this to the model generator)
-// * it is evaluated on a (probably empty) input interpretation
-// * this evaluation can be performed online
-// * evaluation yields a (probably empty) set of output interpretations
-//
+/** \brief Base class for model generators.
+  *
+  * A model generator does the following:
+  * * it is constructed by a ModelGeneratorFactory which knows the program
+  *   (and can precompute information for evaluation,
+  *   and may also provide this to the model generator)
+  * * it is evaluated on a (probably empty) input interpretation
+  * * this evaluation can be performed online
+  * * evaluation yields a (probably empty) set of output interpretations. */
 template<typename InterpretationT>
 class ModelGeneratorBase:
   public ostream_printable<ModelGeneratorBase<InterpretationT> >
@@ -86,16 +87,20 @@ public:
 
   // storage
 protected:
+  /** \brief Input interpretation. */
   InterpretationConstPtr input;
 
   // members
 public:
-  // initialize with factory and input interpretation
+  /** \brief Initialize with factory and input interpretation.
+    * @param input Input interpretation. */
   ModelGeneratorBase(InterpretationConstPtr input):
     input(input) {}
+  /** \brief Destructor. */
   virtual ~ModelGeneratorBase() {}
 
-  // generate and return next model, return null after last model
+  /** \brief Generate and return next model, return NULL after last model.
+    * @return Next model if any and NULL after last model. */
   virtual InterpretationPtr generateNextModel() = 0;
 
   // debug output
@@ -103,10 +108,10 @@ public:
     { return o << "ModelGeneratorBase::print() not overloaded"; }
 };
 
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
+/** \brief Instantiates a ModelGenerator.
+  *
+  * A model generator factory provides model generators
+  * for a certain types of interpretations. */
 template<typename InterpretationT>
 class ModelGeneratorFactoryBase:
   public ostream_printable<ModelGeneratorFactoryBase<InterpretationT> >
@@ -126,17 +131,21 @@ public:
 
   // methods
 public:
+  /** \brief Constructor. */
   ModelGeneratorFactoryBase() {}
+  /** \brief Constructor. */
   virtual ~ModelGeneratorFactoryBase() {}
 
+  /** \brief Creates a ModelGenerator for a certain input interpretation.
+    * @param input Input interpretation. */
   virtual ModelGeneratorPtr createModelGenerator(
       InterpretationConstPtr input) = 0;
   virtual std::ostream& print(std::ostream& o) const
     { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }
 };
 
-// model generator factory properties for eval units
-// such properties are required by model builders
+/** \brief Model generator factory properties for eval units
+  * such properties are required by model builders. */
 template<typename InterpretationT>
 struct EvalUnitModelGeneratorFactoryProperties:
   public ostream_printable<EvalUnitModelGeneratorFactoryProperties<InterpretationT> >

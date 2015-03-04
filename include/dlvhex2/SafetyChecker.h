@@ -50,27 +50,34 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT SafetyCheckerBase
 {
 protected:
+  /** \brief ProgramCtx. */
   const ProgramCtx& ctx;
   
 public:
+  /** \brief Constructor.
+    * @param ctx See SafetyCheckerBase::ctx. */
   SafetyCheckerBase(const ProgramCtx& ctx);
+  /** \brief Destructor. */
   virtual ~SafetyCheckerBase();
 
 public:
   
-  /// operator() does the safety check
+  /** \brief operator() does the safety check. */
   virtual void
   operator() () const throw (SyntaxError) = 0;
 };
 
 
 /**
- * @brief Safety checker class.
+ * @brief Ordinary safety checker class.
  */
 class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
 {
 public:
+  /** \brief Constructor.
+    * @param ctx See SafetyCheckerBase::ctx. */
   SafetyChecker(const ProgramCtx& ctx);
+  /** \brief Destructor. */
   virtual ~SafetyChecker();
 
   virtual void
@@ -86,7 +93,10 @@ public:
 class DLVHEX_EXPORT StrongSafetyChecker : public SafetyCheckerBase
 {
 public:
+  /** \brief Constructor.
+    * @param ctx See SafetyCheckerBase::ctx. */
   StrongSafetyChecker(const ProgramCtx& ctx);
+  /** \brief Destructor. */
   virtual ~StrongSafetyChecker();
   
   virtual void

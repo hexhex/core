@@ -80,7 +80,11 @@ DLVHEX_NAMESPACE_BEGIN
 struct DLVHEX_EXPORT ComfortTerm:
   public ostream_printable<ComfortTerm>
 {
-  enum Type { STR, INT };
+  enum Type {
+	/** \brief String term. */
+	STR,
+	/** \brief Integer term. */
+	INT };
 
   /**
    * \brief Type of stored content.
@@ -105,44 +109,59 @@ struct DLVHEX_EXPORT ComfortTerm:
 
   /**
    * \brief detect whether object stores a constant.
+   * @return True if constant and false otherwise.
    */
   bool isConstant() const
     { return (type == STR) && (!isupper(strval[0])); }
 
   /**
    * \brief detect whether object stores a variable.
+   * @return True if variable and false otherwise.
    */
   bool isVariable() const
     { return (type == STR) && (isupper(strval[0])); }
 
   /**
    * \brief detect whether object stores an integer.
+   * @return True if integer and false otherwise.
    */
   bool isInteger() const
     { return type == INT; }
+  /**
+   * \brief detect whether object stores an anonymous variable.
+   * @return True if anonymous variable and false otherwise.
+   */
   bool isAnon() const
     { return type == STR && strval == "_"; }
 
   /**
    * \brief Construct variable term.
+   * @param s String representation of the term.
+   * @return Term.
    */
   static ComfortTerm createVariable(const std::string& s)
     { assert(!s.empty() && isupper(s[0])); return ComfortTerm(STR, s, 0); }
 
   /**
    * \brief Construct constant term.
+   * @param s String representation of the constant term.
+   * @return Term.
    */
   static ComfortTerm createConstant(const std::string& s)
     { assert(!s.empty() && !isupper(s[0])); return ComfortTerm(STR, s, 0); }
 
   /**
    * \brief Construct integer term.
+   * @param i String representation of the integer term.
+   * @return Term.
    */
   static ComfortTerm createInteger(int i)
     { return ComfortTerm(INT, "", i); }
 
   /**
    * \brief Check equality.
+   * @param other Term to compare to.
+   * @return True if this term is equal to \p other and false otherwise.
    */
   inline bool operator==(const ComfortTerm& other) const
     { return
@@ -152,6 +171,8 @@ struct DLVHEX_EXPORT ComfortTerm:
 
   /**
    * \brief Check inequality.
+   * @param other Term to compare to.
+   * @return True if this term is not equal to \p other and false otherwise.
    */
   inline bool operator!=(const ComfortTerm& other) const
     { return !operator==(other); }
@@ -160,6 +181,8 @@ struct DLVHEX_EXPORT ComfortTerm:
    * \brief Compare terms.
    *
    * We require this for storing ComfortTerm in sets.
+   * @param other Term to compare to.
+   * @return True if this term is smaller than \p other and false otherwise.
    */
   inline bool operator<(const ComfortTerm& other) const
     { return
@@ -170,7 +193,9 @@ struct DLVHEX_EXPORT ComfortTerm:
   /**
    * \brief Print term (using ostream_printable<T>).
    * 
-   * Non-virtual on purpose. (see Printhelpers.hpp)
+   * Non-virtual on purpose. (see Printhelpers.h)
+   * @param o Stream to print to.
+   * @return \p o.
    */
   std::ostream& print(std::ostream& o) const;
 
@@ -179,21 +204,32 @@ protected:
    * \brief Constructor.
    *
    * Use "create..." functions to create comfort terms.
+   * @param type See ComfortTerm::type.
+   * @param strval See ComfortTerm::strval.
+   * @param intval See ComfortTerm::intval.
    */
   ComfortTerm(Type type, const std::string& strval, int intval):
     type(type), strval(strval), intval(intval) {}
 
 public:
+  /** \brief Constructor. */
   ComfortTerm() : type(STR), strval("") {}
 
+  /** \brief Constructor for integer terms.
+    * @param intval Integer. */
   ComfortTerm(int intval) : type(INT), intval(intval){
   }
 
+  /** \brief Constructor for constant or string terms.
+    * @param strval Value.
+    * @param addQuotes True to store "\p strval" and false to store \p strval. */
   ComfortTerm(std::string strval, bool addQuotes = false) : type(STR){
     if (addQuotes && (strval.length() == 0 || strval[0] != '\"' || strval[strval.length() - 1] != '\"')) this->strval = std::string("\"") + strval + std::string("\"");
     else this->strval = strval;
   }
 
+  /** \brief Retrieves the term as string without quotes, independent if it is stored with or without quotes.
+    * @return Term as string without quotes, independent if it is stored with or without quotes. */
   std::string getUnquotedString() const{
     if (strval.length() > 1 && strval[0] == '\"' && strval[strval.length() - 1] == '\"')
       return strval.substr(1, strval.length() - 2);
@@ -201,10 +237,14 @@ public:
       return strval;
   }
 
+  /** \brief Retrieves the internal term as string.
+    * @return Internal term as string (including quotes if stored). */
   std::string getString() const{
     return strval;
   }
 
+  /** \brief Retrieves the internal term as string.
+    * @return Internal variable as string. */
   std::string getVariable() const{
     return strval;
   }
@@ -238,6 +278,7 @@ struct DLVHEX_EXPORT ComfortAtom:
 
   /**
    * \brief Return string representation (cached).
+   * @return String representation.
    */
   inline const std::string& toString() const
     { if( strval.empty() ) calculateStrVal(); return strval; }
@@ -246,6 +287,8 @@ struct DLVHEX_EXPORT ComfortAtom:
    * \brief Compare atoms.
    *
    * We require this for storing ComfortAtom in sets.
+   * @param other Atom to compare to.
+   * @return True if this atom is smaller than \p other and false otherwise.
    */
   bool operator<(const ComfortAtom& other) const
     { return tuple < other.tuple; }
@@ -253,17 +296,24 @@ struct DLVHEX_EXPORT ComfortAtom:
   /**
    * \brief Print atom (using ostream_printable<T>).
    * 
-   * Non-virtual on purpose. (see Printhelpers.hpp)
+   * Non-virtual on purpose. (see Printhelpers.h)
+   * @param o Stream to print to.
+   * @return \p o.
    */
   std::ostream& print(std::ostream& o) const;
 
   /**
    * \brief Return predicate symbol.
+   * \return Predicate symbol of the atom as string.
    */
   inline const std::string& getPredicate() const
     { assert(!tuple.empty() && !tuple.front().isInteger());
       return tuple.front().strval; }
 
+  /**
+   * \brief Return arguments of the atom as ComfortTerm.
+   * \return Arguments of the atom as ComfortTerm.
+   */
   inline const ComfortTuple getArguments() const
     { 
       ComfortTuple ct = tuple;
@@ -272,17 +322,26 @@ struct DLVHEX_EXPORT ComfortAtom:
       return ct;
     }
 
+  /**
+   * \brief Return a single argument of the atom as ComfortTerm.
+   * @param index Index of the argument to retrieve.
+   * \return Argument \p index of the atom as ComfortTerm.
+   */
   inline const ComfortTerm getArgument(int index) const
     { 
       assert(index >= 0 && index < (int)tuple.size());
       return tuple[index];
     }
 
+  /** \brief Retrieves the arity of the atom.
+    * @param Arity of the atom. */
   inline unsigned getArity() const
     { 
       return tuple.size() - 1;
     }
 
+  /** \brief Checks if the atom is a strongly negated one.
+    * @return True if the atom is strongly negated and false otherwise. */
   inline unsigned isStrongNegated() const
     { 
       assert(!tuple.empty() && !tuple.front().isInteger());
@@ -290,12 +349,17 @@ struct DLVHEX_EXPORT ComfortAtom:
       return tuple[0].strval[0] == '-';
     }
 
+  /** \brief Reassignes an argument of the atom.
+    * @param index Index of the argument to reassign.
+    * @param arg New value. */
   inline void setArgument(int index, ComfortTerm arg)
     { 
       assert(index >= 0 && index < (int)tuple.size());
       tuple[index] = arg;
     }
 
+  /** \brief Reassignes all arguments of the atom.
+    * @param args New values. */
   inline void setArguments(ComfortTuple args)
     { 
 	assert(tuple.size() > 0);
@@ -307,8 +371,13 @@ struct DLVHEX_EXPORT ComfortAtom:
 	}
     }
 
+  /** \brief Constructor. */
   inline ComfortAtom(){}
 
+  /** \brief Constructor.
+    * @param pred Predicate.
+    * @parma args Arguments.
+    * @param True to create a strongly negated atom. */
   inline ComfortAtom(ComfortTerm pred, ComfortTuple args, bool stronglyNegated = false){
 	tuple.push_back(pred);
 	BOOST_FOREACH (ComfortTerm arg, args){
@@ -322,13 +391,15 @@ struct DLVHEX_EXPORT ComfortAtom:
 
   /**
    * \brief Check whether one atom unifies with another one.
+   * @param other Atom to compare to.
+   * @return True if this atom unifies with \p other and false otherwise.
    */
   bool unifiesWith(const ComfortAtom& other) const;
 
 protected:
-  // cached string representation
+  /** \brief Cached string representation. */
   mutable std::string strval;
-  // calculate cached string representation
+  /** \brief Calculate cached string representation. */
   void calculateStrVal() const;
 };
 
@@ -337,11 +408,15 @@ struct ComfortLiteral:
   public ostream_printable<ComfortLiteral>
 {
 public:
+  /** \brief Creates a string representation of a literal.
+    * @return String representation of a literal. */
   inline const std::string& toString() const
     { if( strval.empty() ) calculateStrVal(); return strval; }
 
 protected:
+  /** \brief Cached string representation. */
   mutable std::string strval;
+  /** \brief Recomputes ComportLiteral::strval. */
   void calculateStrVal() const;
 };
 
@@ -356,7 +431,6 @@ protected:
  *
  * You can stream instances of this class into std::ostream&.
  */
-
 struct ComfortInterpretation;
 struct DLVHEX_EXPORT ComfortInterpretation:
   public std::set<ComfortAtom>,
@@ -364,28 +438,34 @@ struct DLVHEX_EXPORT ComfortInterpretation:
 {
   /**
    * \brief Insert atom.
+   * @param a Atom to insert.
    */
-  void insert(const ComfortAtom&);
+  void insert(const ComfortAtom& a);
 
   /**
    * \brief Insert all atoms from other interpretation.
+   * @param i Interpretation to insert.
    */
-  void insert(const ComfortInterpretation&);
+  void insert(const ComfortInterpretation& i);
 
   /**
    * \brief Remove atoms whose predicate matches a string in the given set.
+   * @param predicates Predicates to search for.
    */
   void remove(const std::set<std::string>& predicates);
 
   /**
    * \brief Remove atoms whose predicate does not match any string in the
    *        given set.
+   * @param predicates Predicates to search for.
    */
   void keep(const std::set<std::string>& predicates);
 
   /**
    * \brief Copy all atoms that match the specified predicate into
    *        destination interpretation.
+   * @param predicates Predicates to search for.
+   * @param destination Target ComfortInterpretation to receive the result.
    */
   void matchPredicate(
       const std::string& predicate,
@@ -394,6 +474,8 @@ struct DLVHEX_EXPORT ComfortInterpretation:
   /**
    * \brief Copy all atoms that unify with the specified atom into
    *        destination interpretation.
+   * @param atom Atom to search for.
+   * @param destination Target ComfortInterpretation to receive the result.
    */
   void matchAtom(
       const ComfortAtom& atom,
@@ -401,16 +483,25 @@ struct DLVHEX_EXPORT ComfortInterpretation:
 
   /**
    * \brief Return set difference *this \ subtractThis.
+   * @param subtractThis Interpretation to remove from this one.
+   * @return Set difference *this \ subtractThis.
    */
   ComfortInterpretation difference(const ComfortInterpretation& subtractThis) const;
 
   /**
    * \brief Print interpretation (using ostream_printable<T>).
    * 
-   * Non-virtual on purpose. (see Printhelpers.hpp)
+   * Non-virtual on purpose. (see Printhelpers.h)
+   * @param o Stream to print to.
+   * @return \p o.
    */
   std::ostream& print(std::ostream& o) const;
 
+  /**
+   * \brief Check inequality.
+   * @param c2 Interpretation to compare to.
+   * @return True if this interpretation is equal to \p c2 and false otherwise.
+   */
   bool operator==(const ComfortInterpretation& c2) const;
 };
 
@@ -442,8 +533,11 @@ public:
    */
   struct ComfortQuery
   {
+    /** \brief Interpretation relevant to this external atom call. */
     ComfortInterpretation interpretation;
+	/** \brief Ground terms of the input list. */
     ComfortTuple input;
+	/** \brief Output list as it occurs in the program. */
     ComfortTuple pattern;
   };
 
@@ -463,6 +557,8 @@ public:
    * As in PluginAtom, your constructor must set predicate and
    * monotonicity, and use addInput...() methods to define inputs and must
    * use setOutputArity().
+   * @param predicate External predicate to be defined by this class.
+   * @param monotonic True to indicate that the external atom is monotonic in all input parameters.
    */
   ComfortPluginAtom(const std::string& predicate, bool monotonic=false):
     PluginAtom(predicate, monotonic) {}
@@ -482,8 +578,10 @@ public:
    * - they must contain the same number of terms as pattern
    * - constants in pattern must match constants in answer tuples
    * - variables in pattern must be replaced by constants in answer tuples
+   * @param q See ComfortPluginAtom::ComfortQuery.
+   * @param a See ComfortPluginAtom::ComfortAnswer.
    */
-  virtual void retrieve(const ComfortQuery&, ComfortAnswer&) = 0;
+  virtual void retrieve(const ComfortQuery& q, ComfortAnswer& a) = 0;
 
 protected:
   /**
@@ -493,6 +591,8 @@ protected:
    * non-comfort retriefe() and dlvhex core data types.
    *
    * This method will never need to be overloaded.
+   * @param q See ComfortPluginAtom::ComfortQuery.
+   * @param a See ComfortPluginAtom::ComfortAnswer.
    */
   virtual void retrieve(const Query& q, Answer& a);
 };

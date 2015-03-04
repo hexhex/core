@@ -49,33 +49,39 @@ DLVHEX_NAMESPACE_BEGIN
 namespace ASPSolver
 {
 
-// DLV softwares
+/** \brief Interface to DLV software. */
 struct DLVHEX_EXPORT DLVSoftware:
   public ASPSolverManager::SoftwareBase
 {
   typedef ASPSolverManager::SoftwareConfiguration<DLVSoftware> Configuration;
 
-  // specific options for DLV
+  /** \brief Specific options for DLV. */
   struct DLVHEX_EXPORT Options:
     public ASPSolverManager::GenericOptions
   {
+    /** \brief Constructor. */
     Options();
+    /** \brief Destructor. */
     virtual ~Options();
 
-    // commandline arguments to add (default="-silent")
-    // this does not include the .typ file for dlvdb
-    // (this is managed by DLVDBSoftware::Options/DLVDBSoftware::Delegate)
+    /** \brief Commandline arguments to add (default="-silent").
+      *
+      * This does not include the .typ file for dlvdb
+      * (this is managed by DLVDBSoftware::Options/DLVDBSoftware::Delegate). */
     std::vector<std::string> arguments;
   };
 
-  // the delegate for DLVSoftware
+  /** \brief The delegate for DLVSoftware. */
   class DLVHEX_EXPORT Delegate:
     public ASPSolverManager::DelegateInterface
   {
   public:
     typedef DLVSoftware::Options Options;
 
+    /** \brief Constructor.
+      * @param options See DLVSoftware::Options. */
     Delegate(const Options& options);
+    /** \brief Destructor. */
     virtual ~Delegate();
     virtual void useASTInput(const OrdinaryASPProgram& program);
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
@@ -90,7 +96,7 @@ struct DLVHEX_EXPORT DLVSoftware:
 };
 
 #ifdef HAVE_LIBDLV
-// "DLV as a shared library" softwares
+/** \brief Interace to "DLV as a shared library" software. */
 struct DLVHEX_EXPORT DLVLibSoftware:
   public DLVSoftware
 {
@@ -98,14 +104,16 @@ struct DLVHEX_EXPORT DLVLibSoftware:
 
   //typedef DLVSoftware::Options Options;
 
-  // the delegate for DLVSoftware
+  /** \brief The delegate for "DLV as a shared library". */
   class DLVHEX_EXPORT Delegate:
     public ASPSolverManager::DelegateInterface
   {
   public:
     typedef DLVSoftware::Options Options;
 
+    /** \brief Specific options for "DLV as a shared library". */
     Delegate(const Options& options);
+    /** \brief Destructor. */
     virtual ~Delegate();
     virtual void useASTInput(const OrdinaryASPProgram& program);
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
@@ -118,59 +126,20 @@ struct DLVHEX_EXPORT DLVLibSoftware:
 };
 #endif
 
-#if 0
-#ifdef HAVE_DLVDB
-
-// DLVDB software (inherits most from DLV)
-struct DLVHEX_EXPORT DLVDBSoftware:
-  public DLVSoftware
-{
-  typedef ASPSolverManager::SoftwareConfiguration<DLVDBSoftware> Configuration;
-
-  // specific options
-  struct DLVHEX_EXPORT Options:
-    public DLVSoftware::Options
-  {
-    Options();
-    virtual ~Options();
-
-    // the auxiliary file mapping between database and predicates
-    // (if empty, no .typ file is used)
-    std::string typFile;
-  };
-
-  // inherit DLV delegate
-  class DLVHEX_EXPORT Delegate:
-    public DLVSoftware::Delegate
-  {
-  public:
-    typedef DLVDBSoftware::Options Options;
-
-    Delegate(const Options& options);
-    virtual ~Delegate();
-
-  protected:
-    virtual void setupProcess();
-
-  protected:
-    Options options;
-  };
-};
-#endif
-#endif
-
 #ifdef HAVE_LIBCLINGO
-// clingo=clasp+gringo software (very basic integration, involves parsing)
+/** \brief Interface to clingo=clasp+gringo software (very basic integration, involves parsing). */
 struct DLVHEX_EXPORT ClingoSoftware:
   public ASPSolverManager::SoftwareBase
 {
   typedef ASPSolverManager::SoftwareConfiguration<ClingoSoftware> Configuration;
 
-  // specific options for clingo
+  /** \brief Specific options for clingo. */
   struct DLVHEX_EXPORT Options:
     public ASPSolverManager::GenericOptions
   {
+    /** \brief Constructor. */
     Options();
+    /** \brief Destructor. */
     virtual ~Options();
 
     // nothing there yet
@@ -183,7 +152,9 @@ struct DLVHEX_EXPORT ClingoSoftware:
   public:
     typedef ClingoSoftware::Options Options;
 
+    /** \brief The delegate for clingo. */
     Delegate(const Options& options);
+    /** \brief Destructor. */
     virtual ~Delegate();
     virtual void useASTInput(const OrdinaryASPProgram& program);
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);

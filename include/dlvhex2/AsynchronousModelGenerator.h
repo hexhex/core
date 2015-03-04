@@ -46,7 +46,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-/*
+/** \brief Allows for running another ModelGenerator in a separate thread.
+ *
  * Runs generateNextModel() of other model generators asynchronously and
  * caches the results even before AsynchronousModelGenerator::generateNextModel()
  * was called.
@@ -57,19 +58,35 @@ DLVHEX_NAMESPACE_BEGIN
 class AsynchronousModelGenerator : public BaseModelGenerator{
 
 private:
-	int maxModels;			// maximum number of cached models
+	/** \brief Maximum number of cached models. */
+	int maxModels;
+	/** \brief Underlying ModelGenerator used for evaluation of a single unit. */
 	BaseModelGenerator::Ptr mg;
+	/** \brief Thread to run AsynchronousModelGenerator::generateModels. */
 	boost::thread* mgThread;
 
-	bool eom, terminationRequest;
+	/** \brief Indicates end of models. */
+	bool eom;
+	/** \brief Indicates a request from outside to end model enumeration. */
+	bool terminationRequest;
+	/** \brief Number of models retrieved from AsynchronousModelGenerator::mg so far. */
 	std::queue<InterpretationPtr> models;
+	/** \brief Mutex for multithreaded access. */
 	boost::mutex modelsMutex;
-	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
+	/** \brief Wait for more space in AsynchronousModelGenerator::models. */
+	boost::condition waitForQueueSpaceCondition;
+	/** \brief Wait for more models from AsynchronousModelGenerator::mg. */
+	boost::condition waitForModelCondition;
 
-	// is run in a separate thread to prepare models
+	/** \brief Is run in a separate thread to prepare models. */
 	void generateModels();
 public:
+	/** \brief Constructor.
+	  * @param input Input interpretation.
+	  * @param mg Basic model generator to run in a separate thread.
+	  * @param maxModels Size of the model cache. */
 	AsynchronousModelGenerator(InterpretationConstPtr input, BaseModelGenerator::Ptr mg, int maxModels = 5);
+	/** \brief Destructor. */
 	~AsynchronousModelGenerator();
 
 	virtual InterpretationPtr generateNextModel();

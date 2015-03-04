@@ -55,40 +55,52 @@
 #include <iomanip>
 #include <sstream>
 
-// singleton logger class
+/** \brief Singleton logger class. */
 class DLVHEX_EXPORT Logger
 {
 public:
-  // levels are specified and can be activated via bitmasks
-  // (all 32 bits may be used)
-  // logger itself logs on DBG
+  /** \brief Levels are specified and can be activated via bitmasks.
+    * All 32 bits may be used. Logger itself logs on DBG. */
   typedef uint32_t Levels;
+  /** \brief Debug message. */
   static const Levels DBG =     0x01;
+  /** \brief Info message printed to the user. */
   static const Levels INFO =    0x02;
+  /** \brief Warning message printed to the user. */
   static const Levels WARNING = 0x04;
+  /** \brief Error message printed to the user. */
   static const Levels ERROR =   0x08;
 
   // this is now very dlvhex-specific
-  static const Levels PLUGIN =  0x10; // plugin related things
-  static const Levels ANALYZE = 0x20; // program analysis
-  static const Levels MODELB =  0x40; // model building
-  static const Levels STATS  =  0x80; // statistic information
+  /** \brief Plugin related things. */
+  static const Levels PLUGIN =  0x10;
+  /** \brief Program analysis. */
+  static const Levels ANALYZE = 0x20;
+  /** \brief Model building. */
+  static const Levels MODELB =  0x40;
+  /** \brief Statistic information. */
+  static const Levels STATS  =  0x80;
 
 private:
+  /** \brief Stream to print to. */
   std::ostream& out;
-//  std::string indent;
+  /** \brief Indent to be printed at the beginning of lines. */
   boost::thread_specific_ptr<std::string> indent;
+   /** \brief One or more levels to print (bitwise or). */
   Levels printlevels;
-  // width of field for level printing, if 0, level is not printed
+  /** \brief Width of field for level printing, if 0, level is not printed. */
   int levelwidth;
 
 private:
-  // default output is std::cerr, change this later with stream() = ...
-  // default output is all output levels, change this later with printlevels() = ...
-  // default output is i hex character of level printed, change this later with levelwidth() = ...
+  /** \brief Constructor.
+    *
+    * Default output is std::cerr, change this later with stream() = ... .
+    * Default output is all output levels, change this later with printlevels() = ... .
+    * Default output is i hex character of level printed, change this later with levelwidth() = ... . */
   Logger():
     out(std::cerr), printlevels(~static_cast<Levels>(0)), levelwidth(1) {}
 
+  /** \brief Destructor. */
   ~Logger()
     {
       stream() << std::endl;
@@ -99,17 +111,32 @@ private:
     }
 
 public:
+  /** \brief Get singleton Logger instance.
+    * @return Singleton Logger instance. */
   static Logger& Instance();
+  /** \brief Return Logger mutex for multithreading access.
+    * @return Logger mutex for multithreading access. */
   static boost::mutex& Mutex();
 
+  /** \brief Return stream the Logger prints to.
+    * @return Stream. */
   inline std::ostream& stream()
     { return out; }
 
+  /** \brief Sets one or more levels to print to.
+    * @param levels See Logger::printlevels. */
   void setPrintLevels(Levels levels);
+  /** \brief Sets width of field for level printing.
+    * @param width See Logger::levelwidth. */
   void setPrintLevelWidth(int width);
+  /** \brief Get current print levels.
+    * @return See Logger::printlevels. */
   Levels getPrintLevels() const;
 
-  // this method does not ask shallPrint!
+  /** \brief Starts a new output line-
+    *
+    * This method does not ask shallPrint!
+    * @param forlevel Print level. */
   inline void startline(Levels forlevel)
     {
       if (!indent.get()) indent.reset(new std::string(""));
@@ -120,18 +147,27 @@ public:
       }
     }
 
+  /** \brief Checks for a given level if it shall be printed according to the current settings.
+    * @param forlevel Level to check.
+    * @return True if \p forlevel shall be printed. */
   inline bool shallPrint(Levels forlevel)
     { return (printlevels & forlevel) != 0; }
 
   friend class Closure;
+  /** \brief Allows for printing within a given scope using some indent. */
   class Closure
   {
   private:
+    /** \brief Logger to use. */
     Logger& l;
+    /** Level to print at. */
     Levels level;
+    /** \brief Value to be removed from the indent after the scope was left (restore the old indent). */
     unsigned cutoff;
+    /** \brief Message to print. */
     bool message;
 
+    /** \brief Prints an ENTRY message. */
     inline void sayHello()
     {
       // hello message
@@ -142,6 +178,7 @@ public:
       }
     }
 
+    /** \brief Prints an EXIT message. */
     inline void sayGoodbye()
     {
       // goodbye message
@@ -153,7 +190,13 @@ public:
     }
 
   public:
-    // generic
+    /** \brief Generic constructor.
+      *
+      * With value (converted/reinterpret-casted to const void* const).
+      * @param l See Logger::Closure::l.
+      * @param level See Logger::Closure::level.
+      * @param str String to print.
+      * @param message See Logger::Closure::message. */
     Closure(Logger& l, Levels level, const std::string& str, bool message):
       l(l), level(level), message(message)
     {
@@ -168,7 +211,14 @@ public:
       }
     }
 
-    // with value (converted/reinterpret-casted to const void* const)
+    /** \brief Constructor.
+      *
+      * With value (converted/reinterpret-casted to const void* const).
+      * @param l See Logger::Closure::l.
+      * @param level See Logger::Closure::level.
+      * @param str String to print.
+      * @param val Value to print.
+      * @param message See Logger::Closure::message. */
     Closure(Logger& l, Levels level, const std::string& str, const void* const val, bool message):
       l(l), level(level), message(message)
     {
@@ -185,6 +235,7 @@ public:
       }
     }
 
+    /** \brief Destructor. */
     ~Closure()
     {
       if (!l.indent.get()) l.indent.reset(new std::string(""));
@@ -198,9 +249,12 @@ public:
     }
   };
 
+  /** \brief Logger initializer. */
   class Init
   {
   public:
+    /** \brief Initializes the logger for a given set of levels to print.
+      * @param levels Levels to print. */
     Init(Levels levels)
     {
       Logger::Instance().setPrintLevels(levels);
