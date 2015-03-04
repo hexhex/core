@@ -42,6 +42,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Template for online model building of a ModelGraph based on an EvalGraph. */
 template<typename EvalGraphT>
 class OnlineModelBuilder:
   public ModelBuilder<EvalGraphT>
@@ -96,9 +97,9 @@ public:
   typedef boost::optional<typename MyModelGraph::SuccessorIterator>
 		OptionalModelSuccessorIterator;
 
-  // properties required at each eval unit for model building:
-  // model generator factory
-  // current models and refcount
+  /** Properties required at each eval unit for model building:
+    * * model generator factory
+    * * current models and refcount. */
   struct EvalUnitModelBuildingProperties
   {
     // storage
@@ -113,23 +114,27 @@ public:
     unsigned orefcount;
 
   protected:
-		// imodel currently being present in iteration (dummy if !needInput)
+		/** \brief imodel currently being present in iteration (dummy if !needInput). */
     OptionalModel imodel;
 
   public:
-		// current successor of imodel
+		/** \brief Current successor of imodel. */
     OptionalModelSuccessorIterator currentisuccessor;
 
+    /** \brief Constructor. */
     EvalUnitModelBuildingProperties():
       currentmg(), needInput(false), orefcount(0),
       imodel(), currentisuccessor()
 			{}
-
+    /** \brief Return input model.
+      * @return Input model or nothing. */
     inline const OptionalModel& getIModel() const
     {
       return imodel;
     }
 
+    /** \brief Set input model.
+      * @param m Input model or nothing. */
     void setIModel(OptionalModel m)
     {
       // we can change the imodel iff currentmg is null
@@ -143,13 +148,18 @@ public:
       imodel = m;
     }
 
+    /** \brief Checks if an output model is present.
+      * @return True if an output model is present. */
     bool hasOModel() const
       { return !!currentisuccessor; }
   };
   typedef boost::vector_property_map<EvalUnitModelBuildingProperties>
     EvalUnitModelBuildingPropertyMap;
 
-  // helper for printEUMBP
+  /** \brief Helper for printEUMBP.
+    * @param o The stream to print to.
+    * @param p EvalUnitModelBuildingProperties.
+    * @return \p o. */
   std::ostream& printEUMBPhelper(
       std::ostream& o, const EvalUnitModelBuildingProperties& p) const
   {
@@ -168,12 +178,18 @@ public:
     return o;
   }
 
+  /** \brief Helper for printEUMBP.
+    * @param p EvalUnitModelBuildingProperties.
+    * @return print_container pointer. */
   print_container* printEUMBP(
       const EvalUnitModelBuildingProperties& p) const
   {
     return print_function(boost::bind(&Self::printEUMBPhelper, this, _1, p));
   }
 
+  /** \brief Returns the output model.
+    * @param p EvalUnitModelBuildingProperties.
+    * @return Output model. */
   Model getOModel(const EvalUnitModelBuildingProperties& p) const
   {
     assert(!!p.currentisuccessor);
@@ -181,23 +197,33 @@ public:
   }
 
 protected:
+    /** \brief Clears the interpretation of an input model.
+      * @param m Input model. */
     void clearIModel(Model m) {
 	    mg.propsOf(m).interpretation.reset();
     }
 
+    /** \brief Clears the interpretation of an output model.
+      * @param msi ModelSuccessorIterator. */
     void clearOModel(ModelSuccessorIterator msi) {
 	    mg.propsOf(mg.sourceOf(*msi)).interpretation.reset();
     }
 
 
 private:
+  /** \brief Observer. */
   typedef typename EvalGraphT::Observer EvalGraphObserverBase;
   class EvalGraphObserver:
     public EvalGraphObserverBase
   {
   public:
+    /** \brief Constructor.
+      * @param omb Model builder. */
     EvalGraphObserver(Self& omb): omb(omb) {}
+    /** \brief Destructor. */
     virtual ~EvalGraphObserver() {}
+    /** \brief Adds a unit.
+      * @param u Evaluation unit. */
     virtual void addUnit(EvalUnit u)
     {
       DBGLOG(DBG,"observing addUnit(" << u << ")");
@@ -205,6 +231,8 @@ private:
         omb.mbp[u];
       mbprops.needInput = false;
     }
+    /** \brief Adds a dependency.
+      * @param g Dependency. */
     virtual void addDependency(EvalUnitDep d)
     {
       DBGLOG(DBG,"observing addDependency(" << omb.eg.sourceOf(d) << " -> " << omb.eg.targetOf(d) << ")");
@@ -214,18 +242,25 @@ private:
     }
 
   protected:
+    /** \brief Model builder. */
     Self& omb;
   };
 
   // members
 protected:
-  EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
+  /** \brief Model building properties. */
+  EvalUnitModelBuildingPropertyMap mbp;
+  /** \brief EvalGraphObserver. */
   boost::shared_ptr<EvalGraphObserver> ego;
+  /** \brief See ModelBuilderConfig. */
   bool redundancyElimination;
+  /** \brief See ModelBuilderConfig. */
   bool constantSpace;
 
   // methods
 public:
+  /** \brief Constructor.
+    * @param cfg Configuration. */
   OnlineModelBuilder(ModelBuilderConfig<EvalGraphT>& cfg):
     Base(cfg),
     mbp(),
@@ -260,23 +295,34 @@ public:
     eg.addObserver(ego);
   }
 
+  /** \brief Destructor. */
   virtual ~OnlineModelBuilder() { }
 
 protected:
-	// helper for getNextIModel
+	/** \brief Helper for getNextIModel.
+	  * @param u Evaluation Unit.
+	  * @return Model. */
 	Model createIModelFromPredecessorOModels(EvalUnit u);
 
 	/**
    * nonrecursive "get next" wrt. a mandatory imodel
+   * @param u Evaluation unit.
+   * @return OptionalModel.
 	 */
   OptionalModel advanceOModelForIModel(EvalUnit u);
-  // helper for advanceOModelForIModel
+  /** \brief Helper for advanceOModelForIModel.
+    * @param u Evaluation unit.
+    * @return OptionalModel. */
   OptionalModel createNextModel(EvalUnit u);
-  // helper for advanceOModelForIModel
+  /** \brief Helper for advanceOModelForIModel.
+    * @param u Evaluation unit.
+    * @param cursor Cursor.
+    * @return EvalUnitPredecessorIterator or nothing. */
   boost::optional<EvalUnitPredecessorIterator>
   ensureModelIncrement(EvalUnit u, EvalUnitPredecessorIterator cursor);
 
-  // for constant space
+  /** \brief Removes a model from the model graph to keep the evaluation in constant space.
+    * @param m Model to remove. */
   void removeIModelFromGraphs(Model m);
 
 public:

@@ -38,16 +38,23 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Generic configuration for all model builders. */
 template<typename EvalGraphT>
 struct ModelBuilderConfig
 {
+	/** \brief Constructor.
+	  * @param eg See ModelBuilderConfig::eg. */
 	ModelBuilderConfig(EvalGraphT& eg):
 	       	eg(eg), redundancyElimination(true), constantSpace(false) {}
+	/** \brief Evaluation graph to use for model building. */
 	EvalGraphT& eg;
+	/** \brief True to optimize redundant parts in the model building process. */
 	bool redundancyElimination; 
+	/** \brief True to work with constant space. */
 	bool constantSpace; 
 };
 
+/** \brief Base class for all model builders. */
 template<typename EvalGraphT>
 class ModelBuilder
 {
@@ -80,20 +87,24 @@ public:
   typedef typename EvalUnitPropertyBundle::Interpretation::Ptr
     InterpretationPtr;
 
-  // we need special properties
+  /** \brief Properties of a model. */
   struct ModelProperties
   {
-    // the interpretation data of this model
+    /** \brief The interpretation data of this model. */
     InterpretationPtr interpretation;
 
     // for input models only:
 
-    // whether this model is an input dummy for a root eval unit
+    /** \brief Whether this model is an input dummy for a root eval unit. */
     bool dummy;
-    // whether we already tried to create all output models for this (MT_IN/MT_INPROJ) model
+    /** \brief Whether we already tried to create all output models for this (MT_IN/MT_INPROJ) model. */
     bool childModelsGenerated;
 
+    /** \brief Constructor. */
     ModelProperties();
+    /** \brief Prints this properties strcture.
+      * @param o Stream to print to.
+      * @return \p o. */
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -106,26 +117,43 @@ public:
 
   // members
 protected:
+  /** \brief Evaluation graph to use. */
   EvalGraphT& eg;
+  /** \brief Model graph to be constructed during model building. */
   MyModelGraph mg;
 
   // methods
 public:
+  /** \brief Constructor.
+    * @param cfg Configuration. */
   ModelBuilder(ModelBuilderConfig<EvalGraphT>& cfg):
     eg(cfg.eg), mg(cfg.eg) {}
+  /** \brief Destructor. */
   virtual ~ModelBuilder() {}
+  /** \brief Returns the internal evaluation graph.
+    * @return Evaluation graph. */
   inline EvalGraphT& getEvalGraph() { return eg; }
+  /** \brief Returns the internal model graph.
+    * @return Model graph. */
   inline MyModelGraph& getModelGraph() { return mg; }
 
-  // get next input model (projected if projection is configured) at unit u
+  /** \brief Get next input model (projected if projection is configured) at e given unit.
+    * @param u The unit whose next input model shall be returned.
+    * @return Next input model at unit \p u. */
   virtual OptionalModel getNextIModel(EvalUnit u) = 0;
 
-  // get next output model (projected if projection is configured) at unit u
+  /** \brief Get next output model (projected if projection is configured) at e given unit.
+    * @param u The unit whose next output model shall be returned.
+    * @return Next output model at unit \p u. */
   virtual OptionalModel getNextOModel(EvalUnit u) = 0;
 
   // debugging methods
-  virtual void printEvalGraphModelGraph(std::ostream&) = 0;
-  virtual void printModelBuildingPropertyMap(std::ostream&) = 0;
+  /** \brief Prints both the evaluation and the model graph for debugging purposes.
+    * @param o The stream to print to. */
+  virtual void printEvalGraphModelGraph(std::ostream& o) = 0;
+  /** \brief Prints the model building properties for debugging purposes.
+    * @param o The stream to print to. */
+  virtual void printModelBuildingPropertyMap(std::ostream& o) = 0;
 };
 
 // impl

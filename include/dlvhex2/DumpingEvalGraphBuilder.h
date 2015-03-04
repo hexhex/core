@@ -37,21 +37,31 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Evaluation Graph builder that dumps its evaluation plan. */
 class DumpingEvalGraphBuilder:
 	public EvalGraphBuilder
 {
 protected:
+	/** \brief Stream where the EvaluationGraph is dumped to. */
 	std::ofstream output;
+	/** \brief Assignment of unique indexes to components. */
   std::map<ComponentGraph::Component, unsigned> componentidx;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
+	/** \brief Constructor.
+	  * @param ctx See EvalGraphBuilder::ctx.
+	  * @param cg See EvalGraphBuilder::cg.
+	  * @param eg Evaluation graph to write the result to.
+	  * @param externalEvalConfig See ASPSolverManager::SoftwareConfiguration.
+	  * @param outputfilename Name of the file where the evaluation graph is written to. */
 	DumpingEvalGraphBuilder(
       ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig,
 			const std::string& outputfilename);
+	/** \brief Destructor. */
 	virtual ~DumpingEvalGraphBuilder();
 
 	// write to file how eval units were created
