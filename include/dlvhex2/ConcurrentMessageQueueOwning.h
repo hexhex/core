@@ -118,7 +118,6 @@ namespace dlvhex
       * @param lock Mutex.
       * @param t Timeout
       * @return True if free space is available, false if timeout occurred. */
-    inline void
     inline bool
     waitOnTimedCapacity(boost::mutex::scoped_lock& lock, const boost::posix_time::time_duration& t)
     {
