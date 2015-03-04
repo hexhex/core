@@ -818,4 +818,251 @@ void FLPModelGeneratorBase::createFoundingRules(
 	}
 }
 
+std::pair<InterpretationPtr, InterpretationPtr>
+FLPModelGeneratorBase::welljustifiedSemanticsGetVerifiedEAOutput(ProgramCtx& ctx, int eaIndex, InterpretationConstPtr intr, InterpretationConstPtr assigned){
+
+	const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(factory.innerEatoms[eaIndex]);
+
+	// get the set of undefined input atoms
+	InterpretationPtr undefInput = InterpretationPtr(new Interpretation(intr->getRegistry()));
+	undefInput->getStorage() = eatom.getPredicateInputMask()->getStorage() - assigned->getStorage();
+	DBGLOG(DBG, "Undefined EA input: " << *undefInput);
+	bm::bvector<>::enumerator en = undefInput->getStorage().first();
+	bm::bvector<>::enumerator en_end = undefInput->getStorage().end();
+	std::vector<IDAddress> undefAtoms;
+	std::vector<bool> undefValues;
+	while (en < en_end){
+		undefAtoms.push_back(*en);
+		undefValues.push_back(false);
+		en++;
+	}
+
+	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(intr->getRegistry()));
+	InterpretationPtr verified;
+	InterpretationPtr falsified = InterpretationPtr(new Interpretation(intr->getRegistry()));
+	eaInput->getStorage() = intr->getStorage();
+
+	// assume that all output atoms are falsified
+	annotatedGroundProgram.getEAMask(eaIndex)->updateMask();
+	en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+	en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
+	while (en < en_end){
+		if (ctx.registry()->ogatoms.getIDByAddress(*en).isExternalAuxiliary()) falsified->setFact(*en);
+		en++;
+	}
+
+	// now iterate over all (exponentially many) possible assignments
+	DBGLOG(DBG, "Trying all exponentially many completions of the assignment");
+	while (true){
+		if (!!verified) DBGLOG(DBG, "Currently verified atoms: " << *verified);
+		DBGLOG(DBG, "Increment interpretation");
+		for (int i = undefAtoms.size() - 1; i >= 0; --i){
+			if (undefValues[i] == true){
+				undefValues[i] = false;
+			}else{
+				if (!!verified) undefValues[i] = true;
+				break;
+			}
+			if (i == 0){
+				if (!verified) verified = InterpretationPtr(new Interpretation(intr->getRegistry()));
+				DBGLOG(DBG, "Verified EA output: " << *verified);
+				return std::pair<InterpretationPtr, InterpretationPtr>(verified, falsified);
+			}
+		}
+
+		// add the current assignment to the EA input interpretation
+		DBGLOG(DBG, "Setting interpretation");
+		for (int i = undefAtoms.size() - 1; i >= 0; --i){
+			if (undefValues[i]) eaInput->setFact(undefAtoms[i]);
+			else eaInput->clearFact(undefAtoms[i]);
+		}
+
+		// eval EA
+		InterpretationPtr eares = InterpretationPtr(new Interpretation(intr->getRegistry()));
+		IntegrateExternalAnswerIntoInterpretationCB cb(eares);
+		DBGLOG(DBG, "Calling EA with input: " << *eaInput);
+		evaluateExternalAtom(ctx, factory.innerEatoms[eaIndex], eaInput, cb);
+		if (!verified) verified = eares;
+		else verified->getStorage() &= eares->getStorage();
+		falsified->getStorage() -= eares->getStorage();
+
+		if (undefAtoms.size() == 0) return std::pair<InterpretationPtr, InterpretationPtr>(verified, falsified);
+	}
+}
+
+InterpretationPtr FLPModelGeneratorBase::welljustifiedSemanticsGetFixpoint(ProgramCtx& ctx, InterpretationConstPtr interpretation, const OrdinaryASPProgram& program){
+
+	RegistryPtr reg = interpretation->getRegistry();
+
+	DBGLOG(DBG, "Well-Justified FLP Semantics: Fixpoint Computation (reference interpretation: " << *interpretation << ")");
+	// create a bitset of all ground atoms and prepare the set of all remaining rules (initially all rules)
+	std::set<ID> remainingRules;
+	InterpretationPtr allAtoms = InterpretationPtr(new Interpretation(*program.edb));
+	allAtoms->getStorage() -= program.mask->getStorage();
+	BOOST_FOREACH (ID ruleID, program.idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID h, rule.head) allAtoms->setFact(h.address);
+		BOOST_FOREACH (ID b, rule.body) allAtoms->setFact(b.address);
+		if (rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()){
+			// skip EA guessing rules
+		}else{
+			// skip rules with unsatisfied body
+			bool inReduct = true;
+			BOOST_FOREACH (ID b, rule.body){
+				if (interpretation->getFact(b.address) != !b.isNaf()){
+					inReduct = false;
+					break;
+				}
+			}
+			if (inReduct){
+				remainingRules.insert(ruleID);
+			}
+		}
+	}
+	DBGLOG(DBG, "All atoms: " << *allAtoms);
+
+	// now construct the fixpoint
+	InterpretationPtr fixpoint = InterpretationPtr(new Interpretation(reg));
+	InterpretationPtr assigned = InterpretationPtr(new Interpretation(reg));
+
+	// all false ordinary atoms and all facts are immediately set
+	bm::bvector<>::enumerator en = allAtoms->getStorage().first();
+	bm::bvector<>::enumerator en_end = allAtoms->getStorage().end();
+	while (en < en_end){
+		if (!interpretation->getFact(*en) && !reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()) assigned->setFact(*en);
+		en++;
+	}
+	DBGLOG(DBG, "Initially false: " << *assigned);
+	assigned->getStorage() |= program.edb->getStorage();
+	fixpoint->getStorage() |= program.edb->getStorage();
+	DBGLOG(DBG, "Initial interpretation: " << *fixpoint);
+	DBGLOG(DBG, "Initially assigned: " << *assigned);
+
+	InterpretationPtr eares = InterpretationPtr(new Interpretation(reg));
+
+	// fixpoint iteration
+	bool changed = true;
+	std::vector<bool> eaVerified;
+	for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
+	while (remainingRules.size() > 0 && changed){
+		changed = false;
+
+		// check if some EA output atoms can already be verified over the partial interpretation
+		int eaIndex = 0;
+		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
+			DBGLOG(DBG, "Eval EA under " << *fixpoint);
+			const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
+			std::pair<InterpretationPtr, InterpretationPtr> verfals = welljustifiedSemanticsGetVerifiedEAOutput(ctx, eaIndex, fixpoint, assigned);
+			DBGLOG(DBG, "Verified atoms: " << *verfals.first);
+			DBGLOG(DBG, "Falsified atoms: " << *verfals.second);
+			assigned->getStorage() |= verfals.first->getStorage();
+			assigned->getStorage() |= verfals.second->getStorage();
+			fixpoint->getStorage() |= verfals.first->getStorage();
+			eaIndex++;
+		}
+
+		// check if an external atom is verified
+		eaIndex = 0;
+		BOOST_FOREACH (ID eatomID, factory.innerEatoms){
+			if (!eaVerified[eaIndex]){
+				DBGLOG(DBG, "Checking if external atom " << eatomID << " is verified");
+				const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
+				eatom.updatePredicateInputMask();
+				DBGLOG(DBG, "Predicate input mask: " << *eatom.getPredicateInputMask());
+				if ((eatom.getPredicateInputMask()->getStorage() & assigned->getStorage()).count() == eatom.getPredicateInputMask()->getStorage().count()){
+					DBGLOG(DBG, "external atom " << eatomID << " is verified");
+					// set all output atoms as verified
+					annotatedGroundProgram.getEAMask(eaIndex)->updateMask();
+					bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+					bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
+					while (en < en_end){
+						DBGLOG(DBG, "Checking if " << *en << " is an output auxiliary of this external atom");
+						if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+							DBGLOG(DBG, "External atom " << eatomID << " implies " << *en << "=" << interpretation->getFact(*en));
+							assigned->setFact(*en);
+							if (interpretation->getFact(*en)){
+								fixpoint->setFact(*en);
+							}
+						}
+						en++;
+					}
+				}
+				eaVerified[eaIndex] = true;
+			}
+			eaIndex++;
+		}
+
+		// search for a rule with satisfied body
+		BOOST_FOREACH (ID ruleID, remainingRules){
+			DBGLOG(DBG, "Checking applicability of rule " << ruleID);
+			// check if the body is satisfied
+			const Rule& rule = reg->rules.getByID(ruleID);
+			bool bodySatisfied = true;
+			BOOST_FOREACH (ID b, rule.body){
+				if (assigned->getFact(b.address)){
+					if (fixpoint->getFact(b.address) == b.isNaf()){
+						DBGLOG(DBG, "Atom " << b.address << " is " << (fixpoint->getFact(b.address) ? "true" : "false") << " but should be " << (b.isNaf() ? "false" : "true"));
+						bodySatisfied = false;
+						break;
+					}else{
+						DBGLOG(DBG, "Satisfied atom " << b.address << " is " << (fixpoint->getFact(b.address) ? "true" : "false"));
+					}
+				}else{
+					DBGLOG(DBG, "Atom " << b.address << " is unassigned");
+					bodySatisfied = false;
+					break;
+				}
+			}
+			if (bodySatisfied){
+				DBGLOG(DBG, "Rule body satisfied: " << ruleID);
+				// set head literal, if all other head literals are known to be false
+				ID impliedAtom = ID_FAIL;
+				BOOST_FOREACH (ID h, rule.head){
+					if (!assigned->getFact(h.address)){
+						if (impliedAtom != ID_FAIL){
+							DBGLOG(DBG, "Skipping choice rule " << ruleID << ": Multiple unassigned head literals");
+							impliedAtom = ID_FAIL;
+							break;
+						}
+						impliedAtom = h;
+					}else{
+						if (fixpoint->getFact(h.address)){
+							DBGLOG(DBG, "Skipping choice rule " << ruleID << ": Head already satisfied");
+							break;
+						}
+					}
+				}
+
+				// rule was processed: remove it
+				assert (std::find(remainingRules.begin(), remainingRules.end(), ruleID) != remainingRules.end());
+				remainingRules.erase(std::find(remainingRules.begin(), remainingRules.end(), ruleID));
+
+				// derive head atom if the choice is unique
+				if (impliedAtom != ID_FAIL){
+					DBGLOG(DBG, "Rule " << ruleID << " implies " << impliedAtom.address);
+					fixpoint->setFact(impliedAtom.address);
+					assigned->setFact(impliedAtom.address);
+					changed = true;
+					break;
+				}
+			}
+		}
+	}
+
+	// remove external auxiliaries
+	fixpoint->getStorage() -= program.mask->getStorage();
+	en = fixpoint->getStorage().first();
+	en_end = fixpoint->getStorage().end();
+	while (en < en_end){
+		if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+			fixpoint->clearFact(*en);
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Fixpoint is: " << *fixpoint);
+
+	return fixpoint;
+}
+
 DLVHEX_NAMESPACE_END
