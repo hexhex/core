@@ -167,7 +167,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	BOOST_FOREACH (ID a, rule.body){
 		// check if the literals contains an anonamous variable
 		vars.clear();
-		reg->getVariablesInID(a, vars);
+		reg->getVariablesInID(a, vars, true);
 		bool av = false;
 		BOOST_FOREACH (ID v, vars){
 			if (v.isAnonymousVariable()){

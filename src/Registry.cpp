@@ -275,10 +275,10 @@ void Registry::getExternalAtomsInTuple(
 // add these ids to out
 // (returns even local variables for aggregates)
 // id is a literal or atom
-void Registry::getVariablesInID(ID id, std::set<ID>& out) const
+void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous) const
 {
   if (id.isTerm()){
-    if (id.isVariableTerm()) out.insert(id);
+    if (id.isVariableTerm() && (includeAnonymous || !id.isAnonymousVariable())) out.insert(id);
     if (id.isNestedTerm()){
       const Term& t = terms.getByID(id);
       BOOST_FOREACH (ID nid, t.arguments) getVariablesInID(nid, out);
@@ -334,10 +334,10 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
   }
 }
 
-void Registry::getOutVariablesInID(ID id, std::set<ID>& out) const
+void Registry::getOutVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous) const
 {
   if (id.isTerm()){
-    if (id.isVariableTerm()) out.insert(id);
+    if (id.isVariableTerm() && (includeAnonymous || !id.isAnonymousVariable())) out.insert(id);
     if (id.isNestedTerm()){
       const Term& t = terms.getByID(id);
       BOOST_FOREACH (ID nid, t.arguments) getOutVariablesInID(nid, out);
@@ -393,10 +393,10 @@ void Registry::getOutVariablesInID(ID id, std::set<ID>& out) const
   }
 }
 
-std::set<ID> Registry::getVariablesInID(const ID& id) const
+std::set<ID> Registry::getVariablesInID(const ID& id, bool includeAnonymous) const
 {
   std::set<ID> out;
-  getVariablesInID(id, out);
+  getVariablesInID(id, out, includeAnonymous);
   return out;
 }
 
@@ -404,18 +404,18 @@ std::set<ID> Registry::getVariablesInID(const ID& id) const
 // add these ids to out
 // (returns even local variables for aggregates)
 // tuple t contains IDs of literals or atoms
-void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out) const
+void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out, bool includeAnonymous) const
 {
   BOOST_FOREACH(ID id, t)
   {
-    getVariablesInID(id, out);
+    getVariablesInID(id, out, includeAnonymous);
   }
 }
 
-std::set<ID> Registry::getVariablesInTuple(const Tuple& t) const
+std::set<ID> Registry::getVariablesInTuple(const Tuple& t, bool includeAnonymous) const
 {
   std::set<ID> out;
-  getVariablesInTuple(t, out);
+  getVariablesInTuple(t, out, includeAnonymous);
   return out;
 }
 
