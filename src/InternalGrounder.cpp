@@ -157,6 +157,8 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 					throw GeneralError("Internal grounder cannot handle function symbols");
 				}
 			}
+		}else if (a.isNaf() && a.isBuiltinAtom()){
+			throw GeneralError("Internal grounder cannot default negated builtins");
 		}
 	}
 
@@ -209,6 +211,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 			newrule.body.push_back(a);
 		}
 	}
+
 	return reg->storeRule(newrule);
 }
 

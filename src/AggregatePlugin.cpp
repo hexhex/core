@@ -479,12 +479,12 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			}
 
 			// add an atom  #int(valueVariable)
-			{
-				BuiltinAtom batom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
-				batom.tuple.push_back(ID::termFromBuiltin(ID::TERM_BUILTIN_INT));
-				batom.tuple.push_back(valueVariable);
-				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(batom)));
-			}
+//			if (ctxdata.mode == AggregatePlugin::CtxData::ExtRewrite) {
+//				BuiltinAtom batom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+//				batom.tuple.push_back(ID::termFromBuiltin(ID::TERM_BUILTIN_INT));
+//				batom.tuple.push_back(valueVariable);
+//				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(batom)));
+//			}
 		}else{
 			// take it as it is
 			newRule.body.push_back(b);

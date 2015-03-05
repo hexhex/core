@@ -230,14 +230,16 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 	{
 		// left bound
 		if (!!boost::fusion::at_c<0>(source)){
-			bound1.tuple.push_back(boost::fusion::at_c<1>(boost::fusion::at_c<0>(source).get()));
+			IDAddress adr = boost::fusion::at_c<1>(boost::fusion::at_c<0>(source).get()).address;
+			bound1.tuple.push_back(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(adr))));
 			bound1.tuple.push_back(boost::fusion::at_c<0>(boost::fusion::at_c<0>(source).get()));
 			bound1.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr)));
 		}
 
 		// left right bound
 		if (!!boost::fusion::at_c<2>(source)){
-			bound2.tuple.push_back(boost::fusion::at_c<0>(boost::fusion::at_c<2>(source).get()));
+			IDAddress adr = boost::fusion::at_c<0>(boost::fusion::at_c<2>(source).get()).address;
+			bound2.tuple.push_back(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(adr))));
 			bound2.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr)));
 			bound2.tuple.push_back(boost::fusion::at_c<1>(boost::fusion::at_c<2>(source).get()));
 		}
@@ -308,7 +310,7 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 		DBGLOG(DBG, "Checking bound 1");
 		ID boundID = reg->batoms.storeAndGetID(bound1);
 		DBGLOG(DBG, "Bound atom 1: " << printToString<RawPrinter>(boundID, reg));
-		r.body.push_back(ID::nafLiteralFromAtom(boundID));
+		r.body.push_back(ID::posLiteralFromAtom(boundID));
 		ID consRuleID = reg->storeRule(r);
 		DBGLOG(DBG, "Choice constraint 1: " << printToString<RawPrinter>(consRuleID, reg));
 		target.push_back(consRuleID);
@@ -318,7 +320,7 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 		DBGLOG(DBG, "Checking bound 2");
 		ID boundID = reg->batoms.storeAndGetID(bound2);
 		DBGLOG(DBG, "Bound atom 2: " << printToString<RawPrinter>(boundID, reg));
-		r.body.push_back(ID::nafLiteralFromAtom(boundID));
+		r.body.push_back(ID::posLiteralFromAtom(boundID));
 		ID consRuleID = reg->storeRule(r);
 		DBGLOG(DBG, "Choice constraint 2: " << printToString<RawPrinter>(consRuleID, reg));
 		target.push_back(consRuleID);
