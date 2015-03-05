@@ -333,7 +333,7 @@ struct sem<ChoiceParserModuleSemantics::choiceElement>
     ChoiceParserModuleSemantics& mgr,
 		const boost::fusion::vector2<
 		  	dlvhex::ID,
-			boost::optional<std::vector<dlvhex::ID> >
+			boost::optional<boost::optional<std::vector<dlvhex::ID> > >
 		>& source,
     ID& target)
   {
@@ -350,8 +350,8 @@ struct sem<ChoiceParserModuleSemantics::choiceElement>
 	r.head.push_back(negChoiceAtomID);
 
 	// add condition of choice element to rule body if available
-	if (!!boost::fusion::at_c<1>(source)){
-		r.body = boost::fusion::at_c<1>(source).get();
+	if ((!!boost::fusion::at_c<1>(source)) && (!!boost::fusion::at_c<1>(source).get())){
+		r.body = boost::fusion::at_c<1>(source).get().get();
 	}
 
 	// Note: The rule body of the original choice rule is still missing!
@@ -388,7 +388,7 @@ struct ChoiceParserModuleGrammarBase:
 
 		choiceElement
 			= (
-					Base::classicalAtom >> qi::lit(':') >> (Base::bodyLiteral % qi::lit(',')) > qi::eps
+					Base::classicalAtom >> -(qi::lit(':') >> (Base::bodyLiteral % qi::lit(','))) > qi::eps
 				) [ Sem::choiceElement(sem) ];
 
 		#ifdef BOOST_SPIRIT_DEBUG
