@@ -151,3 +151,5 @@ non3col2.hex non3col2.out --solver=genuinegc
 headguard1.hex headguard1.out --solver=genuinegc
 headguard2.hex headguard2.out --solver=genuinegc
 headguard3.hex headguard3.stderr --solver=genuinegc
+choicerule1.hex choicerule1.out --solver=genuinegc -N=10
+choicerule2.hex choicerule2.out --solver=genuinegc -N=10

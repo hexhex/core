@@ -82,9 +82,9 @@ private:
 		ID intPred;
 		Printer(std::ostream& out, RegistryPtr registry, ID intPred) : RawPrinter(out, registry), intPred(intPred) {}
 
-		void printRule(ID id);
-		void printAggregate(ID id);
-		void printInt(ID id);
+		virtual void printRule(ID id);
+		virtual void printAggregate(ID id);
+		virtual void printInt(ID id);
 		virtual void print(ID id);
 	};
 

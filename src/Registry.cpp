@@ -72,6 +72,7 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is the ID of the name of the action)
  * 'd': domain predicates for liberal safety
  * 'g': aggregate input (internal AggregatePlugin)
+ * 'c': choice rules (internal ChoicePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
  * 'o': special atoms introduced by gringo (IDs of kind integer) and predicate for guard atoms (ID(0, 0))

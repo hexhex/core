@@ -235,6 +235,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			// collect all variables from the conjunction of the symbolic set
 			std::set<ID> conjSymSetVars;
 			BOOST_FOREACH (ID cs, aatom.literals){
+				DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
 				reg->getVariablesInID(cs, conjSymSetVars);
 			}
 
@@ -260,11 +261,20 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 
 					std::set<ID> bbVars;
 					reg->getVariablesInID(bb, bbVars);
+					bool sharedVar = false;
 					BOOST_FOREACH (ID v, bbVars){
-						if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
-							conjSymSetVars.insert(v);
-							changed = true;
+						if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) != conjSymSetVars.end()){
+							sharedVar = true;
 							break;
+						}
+					}
+					if (sharedVar) {
+						BOOST_FOREACH (ID v, bbVars){
+							if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
+								conjSymSetVars.insert(v);
+								changed = true;
+								break;
+							}
 						}
 					}
 				}
@@ -360,6 +370,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 					reg->getVariablesInID(bb, bbVars);
 					BOOST_FOREACH (ID v, conjSymSetVars){
 						if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()){
+							DBGLOG(DBG, "Adding " << printToString<RawPrinter>(bb, reg) << " because it shares a variable with the literals in the symbolic set");
 							inputRule.body.push_back(bb);
 							if (bb.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
 						}

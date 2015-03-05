@@ -74,6 +74,7 @@
 // internal plugins
 #include "dlvhex2/QueryPlugin.h"
 #include "dlvhex2/AggregatePlugin.h"
+#include "dlvhex2/ChoicePlugin.h"
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
 #include "dlvhex2/WeakConstraintPlugin.h"
@@ -535,6 +536,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
+			PluginInterfacePtr choicePlugin(new ChoicePlugin);
+			pctx.pluginContainer()->addInternalPlugin(choicePlugin);
 #ifdef HAVE_PYTHON
 			PluginInterfacePtr _pythonPlugin(pythonPlugin);
 			pctx.pluginContainer()->addInternalPlugin(_pythonPlugin);

@@ -143,7 +143,11 @@ void GringoGrounder::Printer::printRule(ID id){
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
 					bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
-					if (!first) out << ", ";
+					if (first) {
+						out << " :- ";
+					}else{
+						out << ", ";
+					}
 					first = false;
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
 					continue;
@@ -769,7 +773,11 @@ void GringoGrounder::Printer::printRule(ID id){
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
           bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
-					if (!first) out << ", ";
+					if (first) {
+						out << " :- ";
+					}else{
+						out << ", ";
+					}
 					first = false;
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
 					continue;
