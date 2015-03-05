@@ -50,8 +50,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 class ProgramCtx;
 
-/**
- * This template provides a framework for building an evaluation graph. It provides
+/** \brief This template provides a framework for building an evaluation graph.
+ *
+ * It provides
  * one modifier method createEvalUnit() for creating an evaluation unit; this method
  * does all necessary checks.
  *
@@ -77,7 +78,10 @@ protected:
   BOOST_CONCEPT_ASSERT((boost::Convertible<Component, void*>));
   BOOST_CONCEPT_ASSERT((boost::Convertible<EvalUnit, unsigned>));
 
+  /** \brief Identity function. */
   struct identity {
+    /** @param u.
+      * @return \p u. */
     inline unsigned operator()(unsigned u) const { return u; }
   };
 
@@ -93,43 +97,61 @@ protected:
     > ComponentEvalUnitMapping;
 
 protected:
-  // for subgraph of component graph that still needs to be put into eval units:
-  //
-  // we cannot use subgraph to keep track of the rest of the component graph,
-  // because subgraph does not allow for removing vertices and is furthermore
-  // broken for bundled properties (see boost bugtracker)
-  //
-  // therefore we use the mapping to keep track of used components
-  // and we filter the graph using boost::filtered_graph
-  // (components are unsigned ints as verified by the following concept check)
+  /** \brief For subgraph of component graph that still needs to be put into eval units.
+    *
+    * We cannot use subgraph to keep track of the rest of the component graph,
+    * because subgraph does not allow for removing vertices and is furthermore
+    * broken for bundled properties (see boost bugtracker).
+    *
+    * Therefore we use the mapping to keep track of used components
+    * and we filter the graph using boost::filtered_graph
+    * (components are unsigned ints as verified by the following concept check). */
   struct UnusedVertexFilter
   {
     // unfortunately, this predicate must be default constructible
+    /** \brief Constructor. */
     UnusedVertexFilter(): ceum(0) {}
+    /** \brief Constructor.
+      * @param ceum See UnusedVertexFilter::ceum. */
     UnusedVertexFilter(const ComponentEvalUnitMapping* ceum): ceum(ceum) {}
+    /** \brief Copy-constructor.
+      * @param other Second UnusedVertexFilter. */
     UnusedVertexFilter(const UnusedVertexFilter& other): ceum(other.ceum) {}
 		UnusedVertexFilter& operator=(const UnusedVertexFilter& other)
 			{ ceum = other.ceum; return *this; }
-		// return true if vertex is still in graph -> return true if not mapped yet
+    /* Execution.
+     * @return True if vertex is still in graph -> return true if not mapped yet. */
     bool operator()(Component comp) const
 			{ assert(ceum); return ceum->left.find(comp) == ceum->left.end(); }
+    /** \brief Assigns evaluation units to components. */
     const ComponentEvalUnitMapping* ceum;
   };
+  /** \brief Edges of component graph that still need to be put into eval units. */
   struct UnusedEdgeFilter
   {
     // unfortunately, this predicate must be default constructible
+    /** \brief Constructor. */
     UnusedEdgeFilter(): cg(0), ceum(0) {}
+    /** \brief Constructor.
+      * @param cg ComponentGraph.
+      * @param ceum See UnusedEdgeFilter::ceum. */
     UnusedEdgeFilter(const ComponentGraph* const cg,
 				const ComponentEvalUnitMapping* const ceum): cg(cg), ceum(ceum) {}
+    /** \brief Copy-constructor.
+      * @param other Second UnusedEdgeFilter. */
     UnusedEdgeFilter(const UnusedEdgeFilter& other): cg(other.cg), ceum(other.ceum) {}
 		UnusedEdgeFilter& operator=(const UnusedEdgeFilter& other)
 			{ cg = other.cg; ceum = other.ceum; return *this; }
+    /* Execution.
+     * @return True if edge is still in graph -> return true if not mapped yet. */
     bool operator()(Dependency dep) const
 			{ assert(cg && ceum);
 				return
 					(ceum->left.find(cg->targetOf(dep)) == ceum->left.end()) &&
 					(ceum->left.find(cg->sourceOf(dep)) == ceum->left.end()); }
+    /** \brief ComponentGraph to process. */
     const ComponentGraph* cg;
+    /** \brief Assigns evaluation units to components. */
     const ComponentEvalUnitMapping* ceum;
   };
 
@@ -141,81 +163,97 @@ public:
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
-  // overall program context
+  /** \brief Overall program context. */
   ProgramCtx& ctx;
-  // component graph (we clone it and store it here in the constructor)
+  /** \brief Component graph (we clone it and store it here in the constructor). */
   boost::scoped_ptr<ComponentGraph> clonedcgptr;
-  // component graph (reference to cloned storage)
+  /** \brief Component graph (reference to cloned storage). */
   ComponentGraph& cg;
-	// eval graph
+	/** \brief Eval graph. */
 	EvalGraphT& eg;
-  // configuration for model generator factory
+  /** \brief Configuration for model generator factory. */
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
 
-	// mapping of nonshared components to eval units
+	/** \brief Mapping of nonshared components to eval units. */
   ComponentEvalUnitMapping mapping;
 
-  //
-  // subgraph of component graph that still needs to be put into eval units
-  //
-  // (see comment above)
+  /** \brief Subgraph of component graph that still needs to be put into eval units.
+   *
+   * See comment UnusedVertexFilter. */
   UnusedEdgeFilter unusedEdgeFilter;
+  /** \brief Edges of component graph that still need to be put into eval units.
+   *
+   * See comment UnusedEdgeFilter. */
   UnusedVertexFilter unusedVertexFilter;
-  // induced subgraph of cg:
-	//   nodes not in mapping are part of this graph
-	//   edges where both nodes are not in mapping are part of this graph
-  //
-  // (the sources of boost::filtered_graph suggest that after an update to
-  // usedNodes, iterators of cgrest should not be reused, but the graph
-  // need not be reconstructed)
+  /** \brief Induced subgraph of cg:
+    * * Nodes not in mapping are part of this graph
+    * * Edges where both nodes are not in mapping are part of this graph.
+    *
+    * The sources of boost::filtered_graph suggest that after an update to
+    * usedNodes, iterators of cgrest should not be reused, but the graph
+    * need not be reconstructed. */
   ComponentGraphRest cgrest;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
+	/** \brief Constructor.
+	  * @param ctx See EvalGraphBuilder::ctx.
+	  * @param cg See EvalGraphBuilder::cg.
+	  * @param eg Evaluation graph to write the result to.
+	  * @param externalEvalConfig See ASPSolverManager::SoftwareConfiguration. */
 	EvalGraphBuilder(
       ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+	/** \brief Destructor. */
 	virtual ~EvalGraphBuilder();
 
   //
   // accessors
   // 
+  /** \brief Retrieve internal evaluation graph.
+    * @return Evaluation graph. */
   inline const EvalGraphT& getEvalGraph() const { return eg; }
+  /** \brief Retrieve internal component graph.
+    * @return Component graph. */
   inline ComponentGraph& getComponentGraph() { return cg; }
-	// returns a graph consisting of all components that still need to be built into some evaluation unit
+  /** \brief Returns a graph consisting of all components that still need to be built into some evaluation unit.
+    * @return Remaining components. */
   inline const ComponentGraphRest& getComponentGraphRest() const { return cgrest; }
-  // get component corresponding to given unit (previously generated using createEvalUnit)
+  /** \brief Get component corresponding to given unit (previously generated using createEvalUnit).
+    * @param u Evaluation unit.
+    * @retrn \p u as Component. */
   Component getComponentForUnit(EvalUnit u) const;
 
-	// returns the registry (useful for printing, cannot do this inline as ProgramCtx depends on this header)
+	/** \brief Returns the registry (useful for printing, cannot do this inline as ProgramCtx depends on this header).
+	  * @return Registry. */
   RegistryPtr registry();
 
-	// returns the ProgramCtx
+	/** \brief Returns the ProgramCtx.
+	  * @return ProgramCtx. */
   inline ProgramCtx& getProgramCtx(){ return ctx; }
 
   //
   // modifiers
   //
 
-	// this methods modifies the eval graph
-  //
-  // it asserts that all requirements for evaluation units are fulfilled
-  // it adds an evaluation unit created from given nodes, including dependencies
-  //
-	// TODO add ordered unit dependencies
-	// TODO use ComponentRange
-	//template<typename NodeRange, typename UnitRange>
-	//virtual EvalUnit createEvalUnit(
-  //  NodeRange nodes, UnitRange orderedDependencies);
-	//
-	// comps = list of components to directly put into eval unit
-	// ccomps = list of components to copy into eval unit
-	//   (these copied components may only contain constraints, and these must obey the
-	//   constraint pushing restrictions (this will be asserted by createEvalUnit))
+//  NodeRange nodes, UnitRange orderedDependencies);
+  /** \brief This methods modifies the eval graph.
+    *
+    * It asserts that all requirements for evaluation units are fulfilled
+    * it adds an evaluation unit created from given nodes, including dependencies.
+    *
+    * @todo add ordered unit dependencies
+    * @todo ComponentRange
+    * @param comps List of components to directly put into eval unit.
+    * @param ccomps List of components to copy into eval unit
+    * (these copied components may only contain constraints, and these must obey the constraint pushing restrictions (this will be asserted by createEvalUnit)).
+    * @return Evaluation unit. */
   virtual EvalUnit createEvalUnit(
 			const std::list<Component>& comps, const std::list<Component>& ccomps);
+//template<typename NodeRange, typename UnitRange>
+//virtual EvalUnit createEvalUnit(
 };
 typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 

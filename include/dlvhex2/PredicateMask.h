@@ -43,72 +43,107 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** Allows for efficient retrieval of all atoms over a given predicate. */
 class DLVHEX_EXPORT PredicateMask
 {
 public:
+  /** \brief Constructor. */
   PredicateMask();
+  /** \brief Destructor. */
   ~PredicateMask();
 
-  // copy constructor and assignment  have tricky implementations
-  //
-  // copying a mask is not useful, masks should and can be shared
-  // (for a new registry they need to be recreated anyways)
-  // therefore copy constructing with maski != NULL will log a warning
-  PredicateMask(const PredicateMask&);
-  // assigning a mask is like copying and will likewise log a warning
-  PredicateMask& operator=(const PredicateMask&);
+  /** \brief Copy-constructor.
+    *
+    * Has a tricky implementation.
+    * Copying a mask is not useful, masks should and can be shared
+    * (for a new registry they need to be recreated anyways).
+    * Therefore copy constructing with maski != NULL will log a warning.
+    * @param p Other PredicateMask. */
+  PredicateMask(const PredicateMask& p);
+  /** \brief Copy-constructor.
+    *
+    * Has a tricky implementation.
+    * Copying a mask is not useful, masks should and can be shared
+    * (for a new registry they need to be recreated anyways).
+    * Therefore copy constructing with maski != NULL will log a warning.
+    * @param p Other PredicateMask. */
+  PredicateMask& operator=(const PredicateMask& p);
 
-  // set registry (cannot change registry!) and create initial interpretation
+  /** \brief Set registry and create initial interpretation.
+    * @param Set registry to use (cannot by changed later!). */
   void setRegistry(RegistryPtr registry);
 
-  // add predicate
-  // incrementally updates mask for new pred up to known address of other preds
-  // (does not update mask for other preds!)
+  /** \brief Add apredicate.
+    *
+    * Incrementally updates mask for new pred up to known address of other preds (does not update mask for other preds!).
+    * @param pred Predicate to add.
+    */
   void addPredicate(ID pred);
 
-  // incrementally updates mask for all predicates
+  /** \brief Incrementally updates mask for all predicates. */
   void updateMask();
 
-  // get mask
+  /** \brief Get mask.
+    * @return Interpretation containing all ground atoms over predicates in this mask. */
   InterpretationConstPtr mask() const
     { return maski; }
 
 protected:
-  // addresses of IDs of all relevant input predicates for this eatom
-  // (the corresponding IDKinds are ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT_TERM
-  // with maybe auxiliary bit set
+  /** \brief Addresses of IDs of all relevant input predicates for this eatom.
+    *
+    * The corresponding IDKinds are ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT_TERM with maybe auxiliary bit set. */
   std::set<IDAddress> predicates;
-  // bitset interpretation for masking inputs
-  InterpretationPtr maski;
-  // address of the last ogatom already inspected for updating mask
-  IDAddress knownAddresses;
+  /** \brief Bitset interpretation for masking inputs. */
+  mutable InterpretationPtr maski;
+  /** \brief Address of the last ogatom already inspected for updating mask. */
+  mutable IDAddress knownAddresses;
 
+  /** \brief Mutex for multithreading access. */
   boost::mutex updateMutex;
 };
 
+/** \brief Mask for external atoms.
+  *
+  * Extends PredicateMask by support for auxiliary atoms related to an external atom. */
 class DLVHEX_EXPORT ExternalAtomMask : public PredicateMask
 {
 private:
+  /** \brief ProgramCtx. */
   const ProgramCtx* ctx;
+  /** \brief ExternalAtom to watch. */
   const ExternalAtom* eatom;
-  // bits of all ground output atoms (positive and negative ground replacement atoms) that are relevant in the respective ground program
-  InterpretationPtr outputAtoms;
-  // bits of all ground auxiliary input replacement atoms (that are relevant in the respective ground program?)
-  InterpretationPtr auxInputMask;
-  // cache for replacement tuple: first=positive_repl, including auxinputpred if IncludeAuxInputInAuxiliaries, including constants and variables
-  // should not be modified
-  Tuple preparedTuple;
-  // can be modified if protected by mutex, should always be reset to preparedTuple
-  Tuple workTuple;
+  /** \brief Bits of all ground output atoms (positive and negative ground replacement atoms) that are relevant in the respective ground program. */
+  mutable InterpretationPtr outputAtoms;
+  /** \brief Bits of all ground auxiliary input replacement atoms (that are relevant in the respective ground program). */
+  mutable InterpretationPtr auxInputMask;
+  /** \brief Cache for replacement tuple: first=positive_repl, including auxinputpred if IncludeAuxInputInAuxiliaries, including constants and variables should not be modified. */
+  mutable Tuple preparedTuple;
+  /** \brief Can be modified if protected by mutex, should always be reset to preparedTuple. */
+  mutable Tuple workTuple;
 protected:
+  /** \brief Checks if a given tuple of a ground atom matches this external atom.
+    * @param togatom Ground tuple representing an atom.
+    * @return True if \p togatom belongs to this ExternalAtom and false otherwise. */
   bool matchOutputAtom(const Tuple& togatom);
 public:
+  /** \brief Constructor. */
   ExternalAtomMask();
+  /** \brief Destructor. */
   ~ExternalAtomMask();
 
+  /** \brief Sets the ExternalAtom to watch.
+    * @param ctx See ExternalAtomMask::ctx.
+    * @param eatom See ExternalAtomMask::eatom.
+    * @param groundidb The IDB to analyze for ground atoms belonging to this external atom. */
   void setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom, const std::vector<ID>& groundidb);
-  void addOutputAtoms(InterpretationConstPtr intr);     // allows for adding additional atoms to the mask, which are not in the IDB passed in setEatom
-  void updateMask();
+  /** Allows for adding additional atoms to the mask, which are not in the IDB passed in setEatom.
+    *
+    * The mask will include all atoms in \p intr which belong to ExternalAtomMask::eatom.
+    * @param intr A set of ground atoms. */
+  void addOutputAtoms(InterpretationConstPtr intr);
+  virtual void updateMask();
+  /** \brief Returns the set of all auxiliaries belonging to ExternalAtomMask::eatom.
+    * @return Interpretation containing all auxiliaries belonging to ExternalAtomMask::eatom. */
   const InterpretationConstPtr getAuxInputMask() const;
 };
 

@@ -12,9 +12,14 @@ if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
 	$bmscripts/runinsts.sh "instances/*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
-	# run single instance
-	confstr="--extlearn --flpcheck=aufs --liberalsafety mergesort.hex -n=1;--extlearn --flpcheck=aufs mergesort_strongsafety.hex -n=1"
+        dlvinst=$(mktemp "inst_${inststr}_XXXXXXXXXX.dlv")
+	cat $instance | sed 's/(\"/([/' | sed 's/\")/])/' | sed 's/;/,/g' > $dlvinst
 
-	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
+	# run single instance
+	confstr="dlvhex2 --plugindir=../../testsuite --verbose=8 --extlearn --flpcheck=aufs --ufslearn=none --liberalsafety mergesort.hex -n=1 $instance;dlvhex2 --plugindir=../../testsuite --verbose=8 --extlearn --flpcheck=aufs --ufslearn=none --strongsafety mergesort_strongsafety.hex -n=1 $instance;dlv -nofinitecheck mergesort.dlv $dlvinst"
+
+	$bmscripts/runconfigs.sh "CONF" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
+
+	rm $dlvinst
 fi
 

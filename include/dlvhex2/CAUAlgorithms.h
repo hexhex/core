@@ -42,18 +42,22 @@
 #include <boost/graph/two_bit_color_map.hpp>
 #include <boost/graph/reverse_graph.hpp>
 
+/** \brief Function templates related to Common Ancestor Units (CAUs). */
 namespace CAUAlgorithms
 {
   typedef std::set<int> Ancestry;
 
-  // store for each eval unit the ancestry starting from some join
-  // ancestry is stored in terms of join order integers
-  // (if a unit is reachable from multiple join orders, the set contains multiple values)
+  /** \brief Store for each eval unit the ancestry starting from some join.
+    *
+    * ancestry is stored in terms of join order integers
+    * (if a unit is reachable from multiple join orders, the set contains multiple values). */
   typedef boost::vector_property_map<Ancestry> AncestryPropertyMap;
 
-  // the first parameter is the unit for which we want to find the CAUs
-  // the second parameter is the ancestry map used for finding the CAUs
-  // (this is required for a subsequent call to markJoinRelevance and for debugging)
+  /** \brief Finds CAUs of a unit in an evaluation graph.
+    * @param caus Output of the CAUs of \p u.
+    * @param eg EvaluationGraph.
+    * @param u The unit for which we want to find the CAUs.
+    * @param apm The ancestry map used for finding the CAUs (this is required for a subsequent call to markJoinRelevance and for debugging). */
   template<typename EvalGraphT>
   void findCAUs(
       std::set<typename EvalGraphT::EvalUnit>& caus,
@@ -61,7 +65,12 @@ namespace CAUAlgorithms
       typename EvalGraphT::EvalUnit u,
       AncestryPropertyMap& apm);
 
-  // version with internal apm
+  /** \brief Finds CAUs of a unit in an evaluation graph.
+    *
+    * Uses an internal AncestryPropertyMap.
+    * @param caus Output of the CAUs of \p u.
+    * @param eg EvaluationGraph.
+    * @param u The unit for which we want to find the CAUs. */
   template<typename EvalGraphT>
   void findCAUs(
       std::set<typename EvalGraphT::EvalUnit>& caus,
@@ -69,6 +78,8 @@ namespace CAUAlgorithms
       typename EvalGraphT::EvalUnit u)
     { AncestryPropertyMap apm; return findCAUs(caus, eg, u, apm); }
 
+  /** \brief Logs a given AncestryPropertyMap.
+    * @param apm AncestryPropertyMap to log. */
   DLVHEX_EXPORT void logAPM(const AncestryPropertyMap& apm);
 
   //
@@ -77,22 +88,30 @@ namespace CAUAlgorithms
   // CAU itself is only join relevant if it has a CAU above.
   //
 
-  // store for each unit whether it is relevant for joining
-  // if it is relevant, offline model building ensures to use a common omodel
-  // otherwise, offline model building just iterates over all omodels at that unit
   typedef boost::vector_property_map<bool> JoinRelevancePropertyMap;
 
   // initialize with false (ensure one-time allocation)
+  /** \brief Stores for each unit whether it is relevant for joining.
+    *
+    * If it is relevant, offline model building ensures to use a common omodel
+    * otherwise, offline model building just iterates over all omodels at that unit.
+    * @param jrJoinRelevancePropertyMap.
+    * @param u EvalUnit. */ 
   template<typename EvalGraphT>
   void initJoinRelevance(
       JoinRelevancePropertyMap& jr,
       const EvalGraphT& eg);
 
-  // given the results of findCAUs(caus, eg, u),
-  // mark all units between u and elements of caus
-  // as relevant (true), others as irrelevant (false)
-  // (do this by going from caus along a DFS through the reversed graph,
-  // marking everything that has an ancestry as relevant)
+  /** \brief Given the results of findCAUs(caus, eg, u),
+    * mark all units between u and elements of caus
+    * as relevant (true), others as irrelevant (false)
+    * (do this by going from caus along a DFS through the reversed graph,
+    * marking everything that has an ancestry as relevant).
+    * @param jr JoinRelevancePropertyMap.
+    * @param eg EvaluationGraph.
+    * @param u EvalUnit.
+    * @param caus CAUs of \p u.
+    * @param AncestryPropertyMap AncestryPropertyMap. */
   template<typename EvalGraphT>
   void markJoinRelevance(
       JoinRelevancePropertyMap& jr,

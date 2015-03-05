@@ -26,7 +26,7 @@
 #define DLVPATH "dlv.exe"
 
 /* Define to 1 if we compile with Python support. */
-#define HAVE_PYTHON 1
+//#define HAVE_PYTHON 1
 
 /* Define to 1 if you have the `argz_add' function. */
 #define HAVE_ARGZ_ADD 1

@@ -84,10 +84,10 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 #ifndef GRINGO3	// GRINGO4
 		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
 #else	// GRINGO3
-		if (!!frozen){
-			throw GeneralError("Gringo 4 does not support frozen atoms");
-		}
-		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p));
+//		if (!!frozen){
+//			throw GeneralError("Gringo 3 does not support frozen atoms");
+//		}
+		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
 #endif
 		return ptr;
 		}
@@ -163,7 +163,7 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 	GenuineGrounderPtr grounder;
 	{
 		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-		grounder = GenuineGrounder::getInstance(ctx, p);
+		grounder = GenuineGrounder::getInstance(ctx, p, frozen);
 		gprog = &grounder->getGroundProgram();
 	}
 
@@ -211,6 +211,10 @@ void GenuineSolver::removePropagator(PropagatorCallback* pb){
 
 void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen){
 	solver->addProgram(program, frozen);
+}
+
+void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
+	solver->addNogoodSet(ns, frozen);
 }
 
 DLVHEX_NAMESPACE_END

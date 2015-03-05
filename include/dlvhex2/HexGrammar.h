@@ -28,7 +28,7 @@
  * @author Peter Schüller
  * @date   Wed Jul  8 14:00:48 CEST 2009
  * 
- * @brief  Grammar for parsing HEX using boost::spirit
+ * @brief  Grammar for parsing HEX using boost::spirit.
  *
  * We code everything as intended by boost::spirit (use templates)
  * however we explicitly instantiate the template paramters in
@@ -104,11 +104,12 @@ DLVHEX_NAMESPACE_BEGIN
  * * uses fixed HexParserIterator
  */
 
-//! skip parser for parsing hex (eliminates spaces and comments)
+/** \brief Skip parser for parsing hex (eliminates spaces and comments). */
 template<typename Iterator>
 struct HexParserSkipperGrammar:
 	boost::spirit::qi::grammar<Iterator>
 {
+	/** \brief Constructor. */
 	HexParserSkipperGrammar();
   boost::spirit::qi::rule<Iterator> ws;
 };
@@ -126,8 +127,9 @@ typedef boost::spirit::qi::grammar<
 typedef boost::shared_ptr<HexParserModuleGrammar>
   HexParserModuleGrammarPtr;
 
-// generic semantic action processor which creates useful compile-time error messages
-// (if the grammar compiles, this class is never used, this means we have a handler for each action)
+/** \brief Generic semantic action processor which creates useful compile-time error messages.
+  *
+  * If the grammar compiles, this class is never used, this means we have a handler for each action. */
 template<typename Tag>
 struct sem
 {
@@ -136,14 +138,16 @@ struct sem
     { BOOST_MPL_ASSERT(( boost::is_same< Source, void > )); }
 };
 
-// base class for semantic actions
-// this class delegates to sem<Tag>::operator() where all the true processing happens (hidden in compilation unit)
+/** \brief Base class for semantic actions.
+  *
+  * This class delegates to sem<Tag>::operator() where all the true processing happens (hidden in compilation unit). */
 template<typename ManagerClass, typename TargetAttribute, typename Tag>
 struct SemanticActionBase
 {
   typedef SemanticActionBase<ManagerClass, TargetAttribute, Tag> base_type;
 
   ManagerClass& mgr;
+  /** \brief Constructor. */
   SemanticActionBase(ManagerClass& mgr): mgr(mgr) {}
 
   template<typename SourceAttributes, typename Ctx>
@@ -154,17 +158,28 @@ struct SemanticActionBase
   }
 };
 
-//! see top of this file
+/** \brief Grammar for parsing HEX using boost::spirit. */
 class DLVHEX_EXPORT HexGrammarSemantics
 {
 public:
+  /** \brief ProgramCtx. */
   ProgramCtx& ctx;
-	std::string currentModuleName; // store module name to prefix pred_decl
+  /** \brief Stores module name to prefix pred_decl. */
+  std::string currentModuleName;
+  /** \brief Parse also modules. */
   int mlpMode;
+  /** \brief Checks if \p r contains external atoms and sets the kind flag appropriately.
+    * @param registry Registry used for resolving IDs.
+    * @param r Rule to check. */
   void markExternalPropertyIfExternalBody(RegistryPtr registry, Rule& r);
+  /** \brief Checks if \p r contains module atoms and sets the kind flag appropriately.
+    * @param registry Registry used for resolving IDs.
+    * @param r Rule to check. */
   void markModulePropertyIfModuleBody(RegistryPtr registry, Rule& r);
 
 public:
+  /** \brief Constructor.
+    * @param ctx ProgramCtx. */
   HexGrammarSemantics(ProgramCtx& ctx);
 
   // the classes defined here act as tags to resolve semantic actions
@@ -209,31 +224,44 @@ public:
   #undef DLVHEX_DEFINE_SEMANTIC_ACTION
 };
 
-//! basic HEX Grammar
+/** \brief Basic HEX Grammar. */
 template<typename Iterator, typename Skipper>
 struct DLVHEX_EXPORT HexGrammarBase
 {
+  /** \brief Handler called when different syntax elements are parsed. */
   HexGrammarSemantics& sem;
-  HexGrammarBase(HexGrammarSemantics&);
+  /** \brief Copy-constructor.
+    * @param g Grammar to copy. */
+  HexGrammarBase(HexGrammarSemantics& g);
 
-  //! register module for parsing top level elements of input file
-  //! (use this to parse queries or other meta or control flow information)
+  /** \brief Register module for parsing top level elements of input file.
+    *
+    * Use this to parse queries or other meta or control flow information.
+    * @param module ParserModule to register. */
   void registerToplevelModule(HexParserModuleGrammarPtr module);
 
-  //! register module for parsing body elements of rules and constraints
-  //! (use this to parse predicates in rule bodies)
+  /** \brief Register module for parsing body elements of rules and constraints.
+    *
+    * Use this to parse predicates in rule bodies.
+    * @param module ParserModule to register. */
   void registerBodyAtomModule(HexParserModuleGrammarPtr module);
 
-  //! register module for parsing head elements of rules
-  //! (use this to parse predicates in rule heads)
+  /** \brief Register module for parsing head elements of rules.
+    *
+    * Use this to parse predicates in rule heads.
+    * @param module ParserModule to register. */
   void registerHeadAtomModule(HexParserModuleGrammarPtr module);
 
-  //! register module for parsing terms
-  //! (use this to parse terms in any predicates)
+  /** \brief Register module for parsing terms.
+    *
+    * Use this to parse terms in any predicates.
+    * @param module ParserModule to register. */
   void registerTermModule(HexParserModuleGrammarPtr module);
 
-  // helper struct for creating rule types
-  // wrt Dummy see http://stackoverflow.com/questions/6301966/c-nested-template-classes-error-explicit-specialization-in-non-namespace-scop
+  /** \brief Helper struct for creating rule types.
+    *
+    * Wrt. Dummy see http://stackoverflow.com/questions/6301966/c-nested-template-classes-error-explicit-specialization-in-non-namespace-scop.
+    */
   template<typename Attrib=void, typename Dummy=void>
   struct Rule
   {
@@ -277,6 +305,7 @@ protected:
   std::vector<HexParserModuleGrammarPtr> modules;
 };
 
+/** \brief Implements the standard HEX-syntax. */
 template<typename Iterator, typename Skipper>
 struct HexGrammar:
   HexGrammarBase<Iterator, Skipper>,
@@ -285,6 +314,8 @@ struct HexGrammar:
   typedef HexGrammarBase<Iterator, Skipper> GrammarBase;
   typedef boost::spirit::qi::grammar<Iterator, Skipper> QiBase;
 
+  /** \brief Constructor.
+    * @param sem Handler for parsed syntax elements. */
   HexGrammar(HexGrammarSemantics& sem):
     GrammarBase(sem),
     QiBase(GrammarBase::start)

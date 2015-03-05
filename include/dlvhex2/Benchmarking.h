@@ -155,67 +155,108 @@ typedef unsigned Count;
 typedef boost::posix_time::ptime Time;
 typedef boost::posix_time::time_duration Duration;
 
+/** \brief Supports benchmarking of different components of dlvhex. */
 class DLVHEX_EXPORT BenchmarkController
 {
 public:
+  /** \brief Information about a single benchmark value. */
   struct Stat
   {
+    /** \brief Counter name. */
     std::string name;
+    /** \brief Number of calls. */
     Count count;
+    /** \brief Number of times the counter was printed. */
     Count prints;
+    /** \brief Timestamp when the counter was started. */
     Time start;
+    /** \brief Sum of durations the counter was run so far. */
     Duration duration;
+    /** \brief Flag whether the counter currently runs. */
     bool running;
 
+    /** \brief Constructor.
+      * @param name See Stat::name. */
     Stat(const std::string& name);
   };
   int sus;
 
 
 public:
+  /** \brief Prints a value in seconds.
+    * @param o Stream to print to.
+    * @param d Duration value.
+    * @param width Width of the output in characters for alignment. */
   inline std::ostream& printInSecs(std::ostream& o, const Duration& d, int width=0) const;
 
   // comfort formatting
+  /** \brief Outputs a count value.
+    * @param identifier Benchmark value to output.
+    * @param width See BenchmarkController::printInSecs. */
   std::string count(const std::string& identifier, int width=0) const;
+  /** \brief Outputs a duration value.
+    * @param identifier Benchmark value to output.
+    * @param width See BenchmarkController::printInSecs. */
   std::string duration(const std::string& identifier, int width=0) const;
 
-  // print information about stat
+  /** \brief Print information about stat.
+    * @param st Identifies a benchmark value. */
   inline void printInformation(const Stat& st); // inline for performance
-  // print continuous information about stat
+  /** \brief Print continuous information about stat.
+    * @param st Identifies a benchmark value. */
   inline void printInformationContinous(
     Stat& st, const Duration& dur); // inline for performance
   
 public:
-  // singleton access
+  // 
+  /** \brief Singleton access.
+    * @return Single instance of BenchmarkController. */
   static BenchmarkController& Instance();
 
-  // delete singleton-> causes destructor to be called
+  /** \brief Delete the singleton instance.
+    *
+    * Causes destructor to be called. */
   static void finish();
 
-  // output benchmark results, destruct
+  /** \brief Destructor.
+    *
+    * Output benchmark results, destruct. */
   ~BenchmarkController();
 
   //
   // configure
   //
 
-  // output stream
+  /** \brief Sets the output stream for printing.
+    * @param o Output stream to use in the following. */
   void setOutput(std::ostream* o);
-  // amount of accumulated output (default: each call)
+  /** \brief Amount of accumulated output (default: each call).
+    * @param skip Interval. */
   void setPrintInterval(Count skip);
 
   //
   // instrumentation points
   //
 
-  // get ID or register new one
+  /** \brief Get ID or register new one.
+    * @param name Identifier.
+    * @return ID of \p name. */
   ID getInstrumentationID(const std::string& name);
-  // print information about ID
+  /** \brief Print information about ID.
+    * @param id ID whose information is to be printed. */
   inline void printInformation(ID id); // inline for performance
-  // print only count of ID
+  /** \brief Print only count of ID.
+    * @param out Output stream.
+    * @param id ID whose information is to be printed.
+    * @return \p out. */
   inline std::ostream& printCount(std::ostream& out, ID id); // inline for performance
-  // print only duration of ID
+  /** \brief Print only duration of ID.
+    * @param out Output stream.
+    * @param id ID whose duration is to be printed. */
   inline std::ostream& printDuration(std::ostream& out, ID id); // inline for performance
+  /** \brief Retrieve Stat of \p id.
+    * @param id ID whose Stat is to be retrieved.
+    * @return Stat of \p id. */
   inline const Stat& getStat(ID id) const { return instrumentations[id]; }
 
   // 
@@ -223,38 +264,69 @@ public:
   //
   
   // stop and resume benchmarking
+  /** \brief Stop all benchmarking temporarily. */
   void suspend();
+  /** \brief Resume all benchmarking. */
   void resume();
   
   // start timer
+  /** \brief Start a benchmark.
+    * @param id ID of the benchmark to start. */
   inline void start(ID id); // inline for performance
-  // stop and record elapsed time, print stats
-  // if count is false, stop time but do not count (for suspending timer)
+  /** \brief Stop and record elapsed time, print stats.
+    *
+    * @param id ID of the benchmark to stop.
+    * @param count If count is false, stop time but do not count (for suspending timer).
+    */
   inline void stop(ID id, bool count=true); // inline for performance
-  // record count (no time), print stats
+  /** \brief Record count (no time), print stats.
+
+    * @param id ID of the benchmark to count.
+    * @param increment Increment the count by this value.
+    */
   inline void count(ID id, Count increment=1); // inline for performance
-  // stop and do not record anything
-  // if not running, do not do anything
+  /** \brief Stop and do not record anything.
+    *
+    * If not running, do not do anything.
+    * @param id ID of the benchmark to stop. */
   inline void invalidate(ID id); // inline for performance
 
-  // copy data from one id to another id and call stop() on that other id
-  // e.g. do this for several interesting benchmarks at first model
+  /** \brief Copy data from one id to another id and call stop() on that other id.
+    *
+    * E.g. do this for several interesting benchmarks at first model.
+    * @param id ID to copy.
+    * @param intoID ID to copy \p id into. */
   void snapshot(ID id, ID intoID);
+
+  /** \brief Copy data from one benchmark to another and call stop() on that other benchmark.
+    *
+    * E.g. do this for several interesting benchmarks at first model.
+    * @param fromstr Benchmark to copy.
+    * @param tostr Benchmark to copy \p fromstr into. */
   void snapshot(const std::string& fromstr, const std::string& tostr);
 
 private:
-  // init, display start of benchmarking
+  /** \brief Constructor.
+    *
+    * Init, display start of benchmarking. */
   BenchmarkController();
 
+  /** \brief ID of the benchmark which measures the BenchmarkController itself. */
   ID myID;
+  /** \brief ID to be used for the next benchmark registered. */
   ID maxID;
+  /** \brief Vector of benchmark statistics. */
   std::vector<Stat> instrumentations;
+  /** \brief Map from benchmark names to IDs. */
   std::map<std::string, ID> name2id;
 
+  /** \brief Output stream to be used. */
   std::ostream* output;
+  /** \brief Counter for skipping benchmark output. */
   Count printSkip;
 
-	boost::mutex mutex;
+  /** \brief Mutex for multithreading access. */
+  boost::mutex mutex;
 };
 
 //inline

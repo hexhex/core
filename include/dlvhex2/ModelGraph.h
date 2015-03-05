@@ -40,15 +40,22 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// this is used as index into an array by struct EvalUnitModels
+/** \brief This is used as index into an array by struct EvalUnitModels. */
 enum ModelType
 {
+  /** \brief Input model. */
   MT_IN = 0,
+  /** \brief Projected input model. */
   MT_INPROJ = 1,
+  /** \brief Output model. */
   MT_OUT = 2,
+  /** \brief Projected output model. */
   MT_OUTPROJ = 3,
 };
 
+/** \brief Returns a string representation for a model type.
+  * @param mt See ModelType.
+  * @return String representation of \p mt. */
 inline const char* toString(ModelType mt)
 {
   switch(mt)
@@ -61,13 +68,13 @@ inline const char* toString(ModelType mt)
   }
 }
 
-//
-// the ModelGraph template manages a generic model graph,
-// corresponding to an EvalGraph type:
-// it manages projection for units and corresponding model types
-// it manages correspondance of dependencies between models and units
-// it manages correspondance of join orders between model and unit dependencies
-//
+/** \brief Implements the ModelGraph.
+  *
+  * The ModelGraph template manages a generic model graph,
+  * corresponding to an EvalGraph type:
+  * * it manages projection for units and corresponding model types
+  * * it manages correspondance of dependencies between models and units
+  * * it manages correspondance of join orders between model and unit dependencies. */
 template<
   typename EvalGraphT,
   typename ModelPropertyBaseT = none_t,
@@ -115,15 +122,16 @@ public:
   typedef typename Traits::out_edge_iterator PredecessorIterator;
   typedef typename Traits::in_edge_iterator SuccessorIterator;
 
+  /** \brief Couples a model with its properties. */
   struct ModelPropertyBundle:
     public ModelPropertyBaseT,
     public ostream_printable<ModelPropertyBundle>
   {
     // storage
 
-    // location of this model
+    /** \brief Location of this model. */
     EvalUnit location;
-    // type of this model
+    /** \brief Type of this model. */
     ModelType type;
 
   protected:
@@ -139,11 +147,18 @@ public:
 
   public:
     // init
+    /** \brief Constructor.
+      * @param location See ModelGraph::location.
+      * @param type See ModelGraph::type. */
     ModelPropertyBundle(
       EvalUnit location = EvalUnit(),
       ModelType type = MT_IN):
         location(location),
         type(type) {}
+    /** \brief Constructor.
+      * @param base Properties.
+      * @param location See ModelGraph::location.
+      * @param type See ModelGraph::type. */
     ModelPropertyBundle(
       const ModelPropertyBaseT& base,
       EvalUnit location = EvalUnit(),
@@ -159,19 +174,25 @@ public:
     friend class ModelGraph<EvalGraphT, ModelPropertyBaseT, ModelDepPropertyBaseT>;
   };
 
+  /** \brief Couples a model dependency with its properties. */
   struct ModelDepPropertyBundle:
     public ModelDepPropertyBaseT,
     public ostream_printable<ModelDepPropertyBundle>
   {
     // storage
 
-    // join order
+    /** \brief Join order. */
     unsigned joinOrder;
 
     // init
+    /** \brief Constructor.
+      * @param joinOrder See ModelDepPropertyBundle::joinorder. */
     ModelDepPropertyBundle(
       unsigned joinOrder = 0):
         joinOrder(joinOrder) {}
+    /** \brief Constructor.
+      * @param base Properties.
+      * @param joinOrder See ModelDepPropertyBundle::joinorder. */
     ModelDepPropertyBundle(
       const ModelDepPropertyBaseT& base,
       unsigned joinOrder = 0):
@@ -181,25 +202,37 @@ public:
 
   // "exterior property map" for the eval graph: which models are present at which unit
   typedef std::list<Model> ModelList;
+  /** \brief Stores the models for one EvalUnit. */
   struct EvalUnitModels
   {
   protected:
-		// for each type of model we have a model list
-    // (we need to use a pointer here, because otherwise resizing 
-    //  the EvalUnitModelsPropertyMap will invalidate all iterators to the list)
-    // (this additinoally makes resizing the property map cheaper)
+    /** \brief For each type of model we have a model list.
+      *
+      * We need to use a pointer here, because otherwise resizing
+      * the EvalUnitModelsPropertyMap will invalidate all iterators to the list).
+      * This additinoally makes resizing the property map cheaper. */
     boost::shared_ptr< std::vector<ModelList> > models;
   public:
+    /** \brief Constructor. */
     EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
       { DBGLOG(DBG, "EvalUnitModels()@" << this); }
+    /** \brief Constructor.
+      * @param eum Models of the unit. */
     EvalUnitModels(const EvalUnitModels& eum): models(eum.models)
       { DBGLOG(DBG, "EvalUnitModels(const EvalUnitModels&)@" << this << " from " << &eum); }
 		~EvalUnitModels()
       { DBGLOG(DBG, "~EvalUnitModels()@" << this); }
+    /** \brief Retrieves all models of a given type.
+      * @param t ModelType.
+      * @return All models of type \p t. */
     inline ModelList& getModels(ModelType t)
       { assert(0 <= t && t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
+    /** \brief Retrieves all models of a given type.
+      * @param t ModelType.
+      * @return All models of type \p t. */
     inline const ModelList& getModels(ModelType t) const
       { assert(0 <= t && t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
+    /** \brief Internal reallocation of data structures according to current number of models. */
     void reallocate()
       { models.reset(new std::vector<ModelList>(models->begin(), models->end())); }
   };
@@ -210,17 +243,23 @@ public:
   // members
   //////////////////////////////////////////////////////////////////////////////
 private:
-  // which eval graph is this model graph linked to
+  /** \brief The eval graph this model graph is linked to. */
   EvalGraphT& eg;
+  /** \brief Model graph. */
   ModelGraphInt mg;
-  // "exterior property map" for the eval graph: which models are present at which unit
-  EvalUnitModelsPropertyMap mau; // "mau" stands for "models at unit"
+  /** \brief "exterior property map" for the eval graph: which models are present at which unit.
+    *
+    * "mau" stands for "models at unit". */
+  EvalUnitModelsPropertyMap mau;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-  // initialize with link to eval graph
+  /** \brief Constructor.
+    *
+    * Initialize with link to eval graph
+    * @param eg Evaluation graph. */
   ModelGraph(EvalGraphT& eg):
     eg(eg), mg(), mau()
 	{
@@ -238,48 +277,61 @@ public:
       mau[u].reallocate();
 	}
 
-  // create a new model including dependencies
-  // returns the new model
-  // modelsAtUnit is automatically updated
-  // order of dependencies determines join order
-  //
-  // MT_IN models:
-  // * checks if join order is equal to join order of eval graph
-  // * checks if input models depend on all units this unit depends on
-  //
-  // MT_INPROJ models:
-  // * checks if model depends on MT_IN model at same unit
-  // * checks if projection is configured for unit
-  //
-  // MT_OUT models:
-  // * checks if model depends on MT_IN or MT_INPROJ at same unit
-  //   iff unit has predecessors
-  //
-  // MT_OUTPROJ models:
-  // * checks if model depends on MT_OUT at same unit
-  // * checks if projection is configured for unit
+  /** \brief Create a new model including dependencies.
+    *
+    * Returns the new model.
+    * * modelsAtUnit is automatically updated.
+    * * order of dependencies determines join order.
+    *
+    * MT_IN models:
+    * * checks if join order is equal to join order of eval graph.
+    * * checks if input models depend on all units this unit depends on.
+    *
+    * MT_INPROJ models:
+    * * checks if model depends on MT_IN model at same unit.
+    * * checks if projection is configured for unit.
+    *
+    * MT_OUT models:
+    * * checks if model depends on MT_IN or MT_INPROJ at same unit iff unit has predecessors
+    *
+    * MT_OUTPROJ models:
+    * * checks if model depends on MT_OUT at same unit.
+    * * checks if projection is configured for unit.
+    * @param location ModelGraph::location.
+    * @param type ModelGraph::type.
+    * @param deps Set of models to add. */
   Model addModel(
     EvalUnit location,
     ModelType type,
     const std::vector<Model>& deps=std::vector<Model>());
 
-  // intersect sets of successors of models mm
-  // return first intersected element, boost::none if none
+  /** \brief Intersect sets of successors of models \p mm.
+    * @param location See ModelGraph::location.
+    * @return First intersected element, boost::none if none. */
   boost::optional<Model> getSuccessorIntersection(EvalUnit location, const std::vector<Model>& mm) const;
 
+  /** \brief Retrieves all models in this graph.
+    * @return Pair of begin and end operator. */
   inline std::pair<ModelIterator, ModelIterator> getModels() const
     { return boost::vertices(mg); }
 
+  /** \brief Retrieves the internal model graph.
+    * @return Internal model graph. */
   inline const ModelGraphInt& getInternalGraph() const
     { return mg; }
 
-  // return helper list that stores for each unit the set of i/omodels there
+  /** \brief Return helper list that stores for each unit the set of i/omodels there.
+    * @param unit EvalUnit.
+    * @param type ModelType.
+    * @return List of input/output models of unit \p unit. */
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
   {
     return mau[unit].getModels(type);
   }
 
-  // return list of relevant imodels at unit (depends on projection whether this is MT_IN or MT_INPROJ)
+  /** \brief Return list of relevant imodels at unit (depends on projection whether this is MT_IN or MT_INPROJ).
+    * @param unit EvalUnit.
+    * @return List of models of unit \p unit. */
   inline const ModelList& relevantIModelsAt(EvalUnit unit) const
   {
     if( eg.propsOf(unit).iproject )
@@ -288,7 +340,9 @@ public:
       return modelsAt(unit, MT_IN);
   }
 
-  // return list of relevant omodels at unit (depends on projection whether this is MT_OUT or MT_OUTPROJ)
+  /** \brief Return list of relevant omodels at unit (depends on projection whether this is MT_OUT or MT_OUTPROJ).
+    * @param unit EvalUnit.
+    * @return List of models of unit \p unit. */
   inline const ModelList& relevantOModelsAt(EvalUnit unit) const
   {
     if( eg.propsOf(unit).oproject )
@@ -297,55 +351,85 @@ public:
       return modelsAt(unit, MT_OUT);
   }
 
+  /** \brief Retrieves the properties of a given model.
+    * @param m Mode.
+    * @return Properties of \p m. */
   inline const ModelPropertyBundle& propsOf(Model m) const
   {
     return mg[m];
   }
 
+  /** \brief Retrieves the properties of a given model.
+    * @param m Mode.
+    * @return Properties of \p m. */
   inline ModelPropertyBundle& propsOf(Model m)
   {
     return mg[m];
   }
 
+  /** \brief Retrieves the properties of a given depndency.
+    * @param d Depndency.
+    * @return Properties of \p d. */
   inline const ModelDepPropertyBundle& propsOf(ModelDep d) const
   {
     return mg[d];
   }
 
+  /** \brief Retrieves the properties of a given depndency.
+    * @param d Depndency.
+    * @return Properties of \p d. */
   inline ModelDepPropertyBundle& propsOf(ModelDep d)
   {
     return mg[d];
   }
 
-  // predecessors are models this model is based on
-  // predecessors are dependencies, so predecessors are at targetOf(iterators)
+  /** \brief Predecessors are models this model is based on.
+    *
+    * Predecessors are dependencies, so predecessors are at targetOf(iterators).
+    * @param m Model.
+    * @return Predecessors of \p m represented by a pair of begin and end iterator. */
   inline std::pair<PredecessorIterator, PredecessorIterator>
   getPredecessors(Model m) const
   {
     return boost::out_edges(m, mg);
   }
 
-  // successors are models this model contributed to,
-  // successors are dependencies, so successors are at sourceOf(iterators)
+  /** \brief Successors are models this model contributed to.
+    *
+    * Successors are dependencies, so successors are at sourceOf(iterators).
+    * @param m Model.
+    * @return Successors of \p m represented by a pair of begin and end iterator. */
   inline std::pair<SuccessorIterator, SuccessorIterator>
   getSuccessors(Model m) const
   {
     return boost::in_edges(m, mg);
   }
 
+  /** \brief Retrieves the source of a dependency.
+    * @param d Depndency.
+    * @return Source of \p d. */
   inline Model sourceOf(ModelDep d) const
   {
     return boost::source(d, mg);
   }
+
+  /** \brief Retrieves the target of a dependency.
+    * @param d Depndency.
+    * @return Target of \p d. */
   inline Model targetOf(ModelDep d) const
   {
     return boost::target(d, mg);
   }
 
+  /** \brief Retrieves the number of models in the graph.
+    * @return Number of models in the graph. */
   inline unsigned countModels() const
   {
     return boost::num_vertices(mg);
   }
+
+  /** \brief Retrieves the number of depndencies in the graph.
+    * @return Number of depndencies in the graph. */
   inline unsigned countModelDeps() const
   {
     return boost::num_edges(mg);

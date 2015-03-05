@@ -47,18 +47,21 @@ DLVHEX_NAMESPACE_BEGIN
 //#define DBGLOGD(X,Y) DBGLOG(X,Y)
 #define DBGLOGD(X,Y) do{}while(false);
 
-bool Nogood::VariableSorter::operator() (VarType p1, VarType p2){
+namespace{
+	struct VariableSorter{
+		typedef std::pair<ID, std::vector<int> > VarType;
+		bool operator() (VarType p1, VarType p2){
+			for (uint32_t i = 0; i < p1.second.size(); i++){
+				if (p1.second[i] < p2.second[i]) return true;
+				if (p1.second[i] > p2.second[i]) return false;
+			}
+			if (p2.second.size() > p1.second.size()) return true;
 
-	for (uint32_t i = 0; i < p1.second.size(); i++){
-		if (p1.second[i] < p2.second[i]) return true;
-		if (p1.second[i] > p2.second[i]) return false;
-	}
-	if (p2.second.size() > p1.second.size()) return true;
-
-	// they are considered equal
-	return false;
+			// they are considered equal
+			return false;
+		}
+	};
 }
-
 
 Nogood::Nogood() : ground(true){
 }
@@ -238,6 +241,10 @@ void Nogood::heuristicNormalization(RegistryPtr reg){
 }
 
 void Nogood::insert(ID lit){
+	// strip off property flags
+	lit = NogoodContainer::createLiteral(lit);
+
+	// actual insertion
 	Set<ID>::insert(lit);
 	ground &= lit.isOrdinaryGroundAtom();
 }

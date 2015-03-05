@@ -112,6 +112,7 @@ libdlvhex2_base_la_SOURCES = \
     Term.cpp \
     URLBuf.cpp \
     UnfoundedSetCheckHeuristics.cpp \
+    UnfoundedSetCheckHeuristicsInterface.cpp \
     UnfoundedSetChecker.cpp
 
 # dlvhex MLP component
@@ -131,7 +132,7 @@ libdlvhex2_aspsolver_la_SOURCES = \
 # dlvhex internal plugins
 libdlvhex2_internalplugins_la_SOURCES = \
     AggregatePlugin.cpp \
-    ExistsPlugin.cpp \
+    ChoicePlugin.cpp \
     HigherOrderPlugin.cpp \
     ManualEvalHeuristicsPlugin.cpp \
     PythonPlugin.cpp \

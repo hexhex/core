@@ -39,17 +39,26 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// Predicate structure, used in PredicateTable.hpp
+/** \brief Predicate structure, used in PredicateTable.h. */
 struct Predicate:
   private ostream_printable<Predicate>
 {
-  // the kind part of the ID of this symbol
+  /** \brief The kind part of the ID of this symbol. */
   IDKind kind;
+  /** \brief The actual predicate as string. */
   std::string symbol;
+  /** \brief The arity of the predicate. */
   int arity;
 
+  /** \brief Constructor.
+    * @param kind See Predicate::kind.
+    * @param symbol See Predicate::symbol.
+    * @param arity See Predicate::arity. */
   Predicate(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
 		{ assert(ID(kind,0).isTerm()); }
+  /** \brief Writes the predicate p and its arity a as string of kind "Predicate(p,a)" to stream \p o.
+    * @param o The output stream to write to.
+    * @return \p o. */
   std::ostream& print(std::ostream& o) const
     { return o << "Predicate(" << symbol << " / " << arity << ")"; }
 };

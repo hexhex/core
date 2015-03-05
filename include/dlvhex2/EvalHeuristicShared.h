@@ -48,21 +48,26 @@ typedef ComponentGraph::ComponentIterator ComponentIterator;
 typedef std::vector<Component> ComponentContainer;
 typedef std::set<Component> ComponentSet;
 
-// topological sort of all components in graph into vector
-//
-// takes either internal component graph or component graph rest
+/** \brief Topological sort of all components in graph into vector.
+  *
+  * @param cg Either internal component graph or component graph rest.
+  * @param out Container for the result. */
 template<typename ComponentGraphIntOrRest, typename Sequence>
 void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out);
 
+/** \brief Defines which components to collapse and which components to share among units. */
 struct BuildCommand
 {
-	// components to collapse to unit
+	/** \brief Components to collapse to unit. */
 	ComponentContainer collapse;
-	// components to share into unit (constraint components)
+	/** \brief Components to share into unit (constraint components). */
 	ComponentContainer share;
 };
 typedef std::vector<BuildCommand> CommandVector;
 
+/** \brief Executes the commands in a vector.
+  * @param commands Commands to execute, see BuildCommand.
+  * @param builder EvalGraphBuilder. */
 void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder);
 
 // template implementation

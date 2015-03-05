@@ -3,6 +3,8 @@ agg1.hex agg1.out --solver=dlv
 agg2.hex agg2.out --solver=dlv
 # TODO hexhex/core issue 3 wellfounded does not terminate agg3.hex agg3.out --nofacts --solver=dlv
 agg4.hex agg4.out --nofacts --solver=dlv
+weak1.hex weak1.out --solver=dlv --strongnegation-enable --weak-enable
+weak2.hex weak2.out --solver=dlv --strongnegation-enable --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=dlv
 builtin_safety1.hex builtin_safety1.stderr --solver=dlv
 builtin_safety1a.hex builtin_safety1a.stderr --solver=dlv
@@ -44,7 +46,8 @@ naftest.hex naftest.out --solver=dlv
 nonmon_guess.hex nonmon_guess.out --solver=dlv
 nonmon_inc.hex nonmon_inc.out --solver=dlv
 nonmon_noloop.hex nonmon_noloop.out --solver=dlv
-notstronglysafe1.hex notstronglysafe1.stderr --solver=dlv
+notstronglysafe1.hex notstronglysafe1.stderr --strongsafety --solver=dlv
+notstronglysafe2.hex notstronglysafe2.stderr --strongsafety --solver=dlv
 notwellfounded1.hex notwellfounded1_nofacts.out --nofacts --solver=dlv
 notwellfounded1.hex notwellfounded1_withfacts.out --solver=dlv
 notwellfounded2.hex notwellfounded2.out --nofacts --solver=dlv
@@ -73,7 +76,7 @@ query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious 
 query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all --solver=dlv
 query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave --solver=dlv
 query_hex_nonground1.hex no_model.out --query-enable --query-cautious --solver=dlv
-rec_agg_bug1.hex rec_agg_bug1.stderr --solver=dlv
+rec_agg_bug1.hex rec_agg_bug1.stderr --solver=dlv --aggregate-enable=false
 safety1.hex safety1.stderr --solver=dlv
 safety2.hex safety2.stderr --solver=dlv
 simple1.hex simple1.out --solver=dlv

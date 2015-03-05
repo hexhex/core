@@ -45,6 +45,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup table for rules. */
 class RuleTable:
 	public Table<
 		// value type is symbol struct
@@ -72,7 +73,6 @@ class RuleTable:
 				  BOOST_MULTI_INDEX_MEMBER(Rule,ID,level)
 				>
 			>
-      // TODO more indices required?
 		>
 	>
 {
@@ -85,29 +85,51 @@ public:
   typedef ElementIndex::iterator ElementIterator;
 	// methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct for Rule
-  // assert that ID exists in table
+  /** \brief Retrieve by ID.
+    *
+    * Assert that id.kind is correct for Rule.
+    * Assert that ID exists in table.
+    * @param id ID of the rule to retrieve.
+    * @return Rule corresponding to \p id. */
 	inline const Rule& getByID(ID id) const throw ();
 
-        // get the ID of the rule
+        /** \brief Get the ID of the rule.
+	  * @param rule Rule whose ID shall be retrieved.
+	  * @return ID of \p rule. */
 	inline ID getIDByElement(const Rule& rule) const throw();
 
-	// store rule
-  // assert that rule did not exist in table
+	/** Stores rule.
+	  *
+ 	  * Assert that rule did not exist in table.
+	  * @param rule Rule to store.
+	  * @return ID of the stored rule.
+	  */
 	inline ID storeAndGetID(const Rule& rule) throw();
+	/** \brief Clears the table. */
 	inline void clear();
 
-	// update
-	// (oldStorage must be from getByID() or from *const_iterator)
+	/** \brief Update a rule in the table.
+	  *
+	  * oldStorage must be from getByID() or from *const_iterator.
+	  * @param oldStorage Old rule.
+	  * @param newStorage New rule.
+	  */
 	inline void update(
 			const Rule& oldStorage, Rule& newStorage) throw();
 
-	// implementation in Registry.cpp !
+	  /** \brief Prints the table in human-readable format.
+	    *
+	    * Implementation in Registry.cpp!
+	    *
+	    * @param o Stream to print to.
+	    * @param reg Registry used to resolve IDs.
+	    * @return \p o. */
 	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
 
-	// get range over all atoms sorted by address
-	// NOTE: you may need to lock the mutex also while iterating!
+	/** \brief Get range over all atoms sorted by address.
+	  * 
+	  * NOTE: you may need to lock the mutex also while iterating!
+	  * @return Pair of a begin and end iterator representing all rules in the table. */
 	inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 };

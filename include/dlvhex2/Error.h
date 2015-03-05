@@ -46,7 +46,6 @@ DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief General exception class.
- *
  */
 class DLVHEX_EXPORT GeneralError : public std::runtime_error
 {
@@ -54,6 +53,7 @@ public:
 
     /**
      * @brief initialize exception with error string.
+     * @return msg Error message.
      */
     explicit
     GeneralError(const std::string& msg);
@@ -66,6 +66,7 @@ public:
      * In derived classes, this function returns an error message extended with
      * context information of the error. what() just returns the message itself.
      * In this base class, getErrorMsg() is equal to what().
+     * @return Error message.
      */
     virtual std::string
     getErrorMsg() const
@@ -83,7 +84,11 @@ class DLVHEX_EXPORT SyntaxError : public GeneralError
 {
 public:
     
-    /// Ctor.
+    /** \brief Constructor.
+      * @param msg Error message.
+      * @param line Line number in the input where the error occurred.
+      * @param file Input file where the error occurred.
+      */
     explicit
     SyntaxError(const std::string& msg,
                 const unsigned line = 0,
@@ -101,27 +106,30 @@ public:
     /**
      * @brief Returns a formatted error message, indicating the origin of the
      * syntax error, if available.
+     * @return Error message.
      */
     virtual std::string
     getErrorMsg() const;
 
     /**
      * @brief Specifies the line that should be included in the error message.
+     * @param line Input line number.
      */
     void
-    setLine(unsigned);
+    setLine(unsigned line);
 
     /**
      * @brief Specifies the filename that should be specified in the error
      * message.
+     * @param file Input file.
      */
     void
-    setFile(const std::string&);
+    setFile(const std::string& file);
 
 private:
-
+    /** \brief Line number of the error. */
     unsigned line;
-
+    /** \brief File where the error occurred. */
     std::string file;
 };
 
@@ -139,6 +147,7 @@ public:
      *
      * A FatalError has no additional context, so we don't need a getErrorMsg()
      * function for building a special string after construction.
+     * @param msg Error message.
      */
     explicit
     FatalError(const std::string& msg);
@@ -153,7 +162,9 @@ class DLVHEX_EXPORT PluginError : public GeneralError
 {
 public:
 
-    /// Ctor.
+    /** \brief Constructor.
+      * @param msg Error message.
+      */
     explicit
     PluginError(const std::string& msg);
 
@@ -167,21 +178,23 @@ public:
      *
      * The context is usually the Atom, where this error occurred, and possibly
      * the line number, if available.
+     * @param ctx Error context.
      */
     void
-    setContext(const std::string&);
+    setContext(const std::string& ctx);
 
     /**
      * @brief Returns a formatted error message.
      *
      * The returned. message is built from the context and the actual error
      * message.
+     * @param msg Error message.
      */
     virtual std::string
     getErrorMsg() const;
 
 private:
-
+    /** \brief Error context. */
     std::string context;
 };
 
@@ -190,8 +203,12 @@ private:
 class UsageError: public FatalError
 {
 	public:
+		/** \brief Constructor.
+		  * @param msg Error message.
+		  */
 		UsageError(const std::string& msg):
 			FatalError(msg) {}
+		/** \brief Destructor. */
 		virtual ~UsageError() throw() {}
 };
 

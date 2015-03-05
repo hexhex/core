@@ -735,7 +735,7 @@ struct sem<HexGrammarSemantics::ruleVariableDisjunction>
     {
       // rule -> put into IDB
       Tuple body = boost::fusion::at_c<2>(source).get();
-      body.insert(body.end(), headGuard.begin(), headGuard.end());
+//      body.insert(body.end(), headGuard.begin(), headGuard.end());
 
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body, headGuard);
       if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
@@ -748,25 +748,15 @@ struct sem<HexGrammarSemantics::ruleVariableDisjunction>
     }
     else
     {
-      if( head.size() > 1 )
-      {
-        // disjunctive fact -> create rule
-        Tuple body;
-        body.insert(body.end(), headGuard.begin(), headGuard.end());
-        Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
-          head, body, headGuard);
-        if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
-        mgr.markExternalPropertyIfExternalBody(reg, r);
-        mgr.markModulePropertyIfModuleBody(reg, r);
-        target = reg->storeRule(r);
-      }
-      else
-      {
-        assert(head.size() == 1);
-
-        // return ID of fact
-        target = *head.begin();
-      }
+      // in order to process the head guard we need to create a rule
+      Tuple body;
+//      body.insert(body.end(), headGuard.begin(), headGuard.end());
+      Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
+        head, body, headGuard);
+      if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
+      mgr.markExternalPropertyIfExternalBody(reg, r);
+      mgr.markModulePropertyIfModuleBody(reg, r);
+      target = reg->storeRule(r);
     }
   }
 };
@@ -970,7 +960,10 @@ HexGrammarBase(HexGrammarSemantics& sem):
   cident
     = qi::lexeme[ ascii::lower >> *(ascii::alnum | qi::char_('_')) ];
   string
-    = qi::lexeme[ qi::char_('"') >> *(qi::char_ - (qi::char_('"') | qi::eol)) >> qi::char_('"') ];
+    = qi::lexeme[ qi::char_('"') >>
+       *( qi::string("\\\"")
+          | qi::as_string[qi::char_ - (qi::char_('"') | qi::eol)]
+        ) >> qi::char_('"') ];
   variable
     = qi::string("_") // this can be qi::char_('_') in boost 1.44 ... boost 1.46
     | qi::lexeme[ ascii::upper >> *(ascii::alnum | qi::char_('_')) ];

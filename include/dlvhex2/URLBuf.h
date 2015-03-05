@@ -50,51 +50,68 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief A std::streambuf for reading data from URLs.
+ * \brief A std::streambuf for reading data from URLs.
  */
 class DLVHEX_EXPORT URLBuf : public std::streambuf
 {
 public:
+  /** \brief Constructor. */
   URLBuf();
 
-  URLBuf(const URLBuf&);
+  /** \brief Copy-constructor.
+    * @param u Second URLBuf.
+    */
+  URLBuf(const URLBuf& u);
 
+  /** \brief Destructor. */
   virtual
   ~URLBuf();
 
-  /**
-   * @param url open this URL string
+  /** \brief Opens a URL for reading.
+   * @param url URL to open.
    */
   virtual void
   open(const std::string& url);
 
-  /**
-   * @return #response
+  /** \brief Retrieves the respondsecode from the server.
+   * @return Response.
    */
   virtual long
   responsecode() const;
 
 private:
-  /// input buffer
+  /** \brief Input buffer. */
   std::streambuf::char_type* ibuf;
 
-  /// size of #ibuf
+  /** Size of input buffer. */
   unsigned bufsize;
 
-  /// a CURL handle for accessing URLs
+  /** \brief CURL handle for accessing URLs. */
   CURL* easy_handle;
 
-  /// response code from HTTP/FTP/...
+  /** \brief Response code from HTTP/FTP/... . */
   long response;
 
+  /** \brief Write data to some URL stream.
+    * @param ptr Data pointer.
+    * @param size Size of data to write.
+    * @param nmemb Multiplicator for \p size.
+    * @param stream Buffer to write to.
+    * @return Size of written data.
+    */
   static size_t
   writer(void *ptr, size_t size, size_t nmemb, void *stream);
 
+  /** \brief Write data to this URL stream.
+    * @param size Size of data to write.
+    * @return Size of written data.
+    */
   size_t
   write(void* ptr, size_t size);
 
 protected:
   virtual std::streambuf::int_type
+  /** \brief Is called to fetch further data. */
   underflow();
 };
 

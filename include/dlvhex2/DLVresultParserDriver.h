@@ -54,35 +54,47 @@ typedef boost::shared_ptr<Registry> RegistryPtr;
 class DLVHEX_EXPORT DLVResultParser
 {
 public:
-    // Tells the parser how to postprocess the answer-set:
-    // * HO
-		//     Assumes that the elements of the answer-set are higher-order atoms of
-		//     kind: "a_2(p, x, y)" (where 2 is the arity).  The parser will just
-		//     ignore the predicate name (a_2) and use it's first parameter as new
-		//     predicate, i.e. "a_2(p, x, y)" is transformed into "p(x, y)".
-    // * FirstOrder
-	  //     Will take atoms just as they are.
-	  // Default is FirstOrder.
-    enum ParseMode{ FirstOrder, HO };
+    /** \brief Tells the parser how to postprocess the answer-set.
+      *
+      * Default is FirstOrder. */
+    enum ParseMode{
+        /** \brief Will take atoms just as they are. */
+	FirstOrder,
+	/** Assumes that the elements of the answer-set are higher-order atoms of
+	  * kind: "a_2(p, x, y)" (where 2 is the arity).  The parser will just
+	  * ignore the predicate name (a_2) and use it's first parameter as new
+	  * predicate, i.e. "a_2(p, x, y)" is transformed into "p(x, y)". */
+	HO };
 
     typedef boost::function<void (AnswerSet::Ptr)> AnswerSetAdder;
 
 protected:
+    /** \brief Registry. */
     RegistryPtr reg;
+    /** \brief See DLVResultParser::ParseMode. Default is FirstOrder. */
     ParseMode pMode;
 
 public:
+    /** \brief Constructor.
+      * @param reg See DLVResultParser::reg. */
     DLVResultParser(RegistryPtr reg);
+    /** \brief Constructor.
+      * @param reg See DLVResultParser::reg.
+      * @param mode See DLVResultParser::mode. */
     DLVResultParser(RegistryPtr reg, ParseMode mode);
+    /** \brief Destructor. */
     virtual ~DLVResultParser();
 
-    // this function changes the parse mode of this instance (see description of enum "ParseMode")
+    /** \brief This function changes the parse mode of this instance.
+      * @param mode See DLVResultParser::ParseMode. */
     void setParseMode(ParseMode mode);
 
-    // this function parses input,
-    // registers newly parsed atoms if necessary,
-    // sets parsed atoms to true in the interpretation of the answer set
-    // sets weak weights if present in the answer set
+    /** \brief This function parses input,
+      * registers newly parsed atoms if necessary,
+      * sets parsed atoms to true in the interpretation of the answer set
+      * sets weak weights if present in the answer set.
+      * @param is Input.
+      * @param answerSetAdder Container where parsed answer sets are to be added. */
     void parse(std::istream& is,
         AnswerSetAdder answerSetAdder) throw (SyntaxError);
 };

@@ -72,15 +72,26 @@ AggregatePlugin::~AggregatePlugin()
 void AggregatePlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --aggregate-enable       Enable aggregate plugin." << std::endl;
-	o << "     --aggregate-mode={ext,simplify}" << std::endl
-	  << "                              ext=rewrite aggregates to external atoms" << std::endl
-	  << "                              simplify=keep aggregates but simplify them" << std::endl
-	  << "                                       (which is necessary for gringo backend)" << std::endl;
-	o << "     --max-variable-share=<N> Defines the maximum number N of variables" << std::endl
-	  << "                              in an aggregate which can be shared with" << std::endl
-	  << "                              other body atoms in the rule" << std::endl
-	  << "                              (only relevant for --aggregate-mode=ext)" << std::endl;
+	o << "     --aggregate-enable[=true,false]" << std::endl
+          << "                      Enable aggregate plugin (default is enabled)." << std::endl;
+	o << "     --aggregate-mode=[ext,simplify]" << std::endl
+	  << "                         extrewrite       : Rewrite aggregates to external atoms" << std::endl
+	  << "                         simplify (default)" << std::endl
+	  << "                                          : Keep aggregates but simplify them" << std::endl
+	  << "                                            (which is necessary for gringo backend)" << std::endl;
+	o << "     --max-variable-share=<N>" << std::endl
+          << "                      Defines the maximum number N of variables" << std::endl
+	  << "                      in an aggregate which can be shared with" << std::endl
+	  << "                      other body atoms in the rule" << std::endl
+	  << "                      (only relevant for --aggregate-mode=ext)." << std::endl
+	  << "     --allow-aggextcycles" << std::endl
+          << "                      Allows cycles which involve both aggregates and" << std::endl
+          << "                      external atoms. If the option is not specified," << std::endl
+          << "                      such cycles lead to abortion; if specified, only" << std::endl
+          << "                      a warning is printed but the models might be not minimal." << std::endl
+          << "                      With --aggregate-mode=ext, the option is irrelevant" << std::endl
+          << "                      as aggregates are replaced by external atoms (models will be minimal in that case)." << std::endl
+          << "                      See examples/aggextcycle1.hex.";
 }
 
 // accepted options: --higherorder-enable
@@ -92,6 +103,8 @@ void AggregatePlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
+	ctxdata.enabled = true;
+	ctxdata.mode = CtxData::Simplify;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -101,24 +114,39 @@ void AggregatePlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--aggregate-enable" )
+		if( boost::starts_with(str, "--aggregate-enable" ) )
 		{
-			ctxdata.enabled = true;
+			std::string m = str.substr(std::string("--aggregate-enable").length());
+			if (m == "" || m == "=true"){
+				ctxdata.enabled = true;
+			}else if (m == "=false"){
+				ctxdata.enabled = false;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --aggregate-enable option: " << m;
+				throw PluginError(ss.str());
+			}
 			processed = true;
-		}
-		if( boost::starts_with(str, "--max-variable-share=") )
+		}else if( boost::starts_with(str, "--max-variable-share=") )
 		{
 			ctxdata.maxArity = boost::lexical_cast<int>(str.substr(std::string("--max-variable-share=").length()));
 			processed = true;
-		}
-		if( boost::starts_with(str, "--aggregate-mode=") )
+		}else if( boost::starts_with(str, "--aggregate-mode=") )
 		{
 			std::string m = str.substr(std::string("--aggregate-mode=").length());
 			if (m == "ext"){
 				ctxdata.mode = CtxData::ExtRewrite;
 			}else if (m == "simplify"){
 				ctxdata.mode = CtxData::Simplify;
+			}else{
+				std::stringstream ss;
+				ss << "Unknown --aggregate-mode option: " << m;
+				throw PluginError(ss.str());
 			}
+			processed = true;
+		}else if( str == "--allow-aggextcycles" )
+		{
+			ctx.config.setOption("AllowAggExtCycles", 1);
 			processed = true;
 		}
 
@@ -207,6 +235,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			// collect all variables from the conjunction of the symbolic set
 			std::set<ID> conjSymSetVars;
 			BOOST_FOREACH (ID cs, aatom.literals){
+				DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
 				reg->getVariablesInID(cs, conjSymSetVars);
 			}
 
@@ -232,11 +261,20 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 
 					std::set<ID> bbVars;
 					reg->getVariablesInID(bb, bbVars);
+					bool sharedVar = false;
 					BOOST_FOREACH (ID v, bbVars){
-						if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
-							conjSymSetVars.insert(v);
-							changed = true;
+						if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) != conjSymSetVars.end()){
+							sharedVar = true;
 							break;
+						}
+					}
+					if (sharedVar) {
+						BOOST_FOREACH (ID v, bbVars){
+							if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
+								conjSymSetVars.insert(v);
+								changed = true;
+								break;
+							}
 						}
 					}
 				}
@@ -332,6 +370,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 					reg->getVariablesInID(bb, bbVars);
 					BOOST_FOREACH (ID v, conjSymSetVars){
 						if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()){
+							DBGLOG(DBG, "Adding " << printToString<RawPrinter>(bb, reg) << " because it shares a variable with the literals in the symbolic set");
 							inputRule.body.push_back(bb);
 							if (bb.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
 						}
@@ -543,8 +582,8 @@ class AggAtom : public PluginAtom
 			// we can answer the query separately for each key
 
 			// go through all input atoms
-			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+			bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end();
 
 			boost::unordered_map<Tuple, InterpretationPtr> subQueries;
 			while (en < en_end){
@@ -695,98 +734,8 @@ class SumAtom : public AggAtom
 				*returnValue += t[t.size() - 1].address;
 			}
 		}
-/*
-		class SumInputNogoodProvider : public ExternalLearningHelper::InputNogoodProvider{
-		private:
-			bool negate;
-			int arity;
-		public:
-			SumInputNogoodProvider(bool negate, int arity) : negate(negate), arity(arity) {}
-
-			Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const{
-
-				int functionValue = tuple[tuple.size() - 1].address;
-
-				// if the function does not deliver a certain value
-				if (!contained){
-					// try to collect input atoms such that their sum is larger than functionValue; then this set is a reason for the failure
-					bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-					bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-					Nogood ng;
-					int intermediateSum = 0;
-					while (en < en_end){
-						const OrdinaryAtom& ogatom = query.ctx->registry()->ogatoms.getByAddress(*en);
-						if (intermediateSum > functionValue) break;
-						bool match = (ogatom.tuple[0] == query.input[1]);
-						for (int i = 0; i < tuple.size() - 1; ++i){
-							if (ogatom.tuple[1 + i] != tuple[i]){
-								match = false;
-								break;
-							}
-						}
-						if (match){
-							ng.insert(NogoodContainer::createLiteral(*en, true));
-							intermediateSum += ogatom.tuple[1 + arity].address;
-						}
-						en++;
-					}
-					if (intermediateSum > functionValue){
-						return ng;
-					}else{
-						// all positive atoms together do not suffice to reach the desired sum;
-						// then the negative atoms form a reason for the failure
-						ng.clear();
-						bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
-						bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
-						while (en < en_end){
-							if (!query.interpretation->getFact(*en)){
-								const OrdinaryAtom& ogatom = query.ctx->registry()->ogatoms.getByAddress(*en);
-								bool match = (ogatom.tuple[0] == query.input[1]);
-								for (int i = 0; i < tuple.size() - 1; ++i){
-									if (ogatom.tuple[1 + i] != tuple[i]){
-										match = false;
-										break;
-									}
-								}
-								if (match){
-									ng.insert(NogoodContainer::createLiteral(*en, false));
-								}
-							}
-							en++;
-						}
-						return ng;
-					}
-				}
-
-				// default: take the whole input information
-				ExternalLearningHelper::DefaultInputNogoodProvider inp(negate);
-				return inp(query, prop, contained, tuple);
-			}
-		};
-*/
 
 	public:
-/*
-		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
-
-			const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
-
-			std::vector<Query> atomicQueries = splitQuery(query, prop);
-			DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
-			BOOST_FOREACH (Query atomicQuery, atomicQueries){
-				Answer atomicAnswer;
-				AggAtom::retrieve(atomicQuery, atomicAnswer);
-
-				ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, ExternalLearningHelper::InputNogoodProviderConstPtr(new SumInputNogoodProvider(true, arity)));
-				ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
-
-				// overall answer is the union of the atomic answers
-				answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
-			}
-
-			ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, ExternalLearningHelper::InputNogoodProviderConstPtr(new SumInputNogoodProvider(false, arity)));
-		}
-*/
 		SumAtom(int arity) : AggAtom("sum", arity) {}
 };
 

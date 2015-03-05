@@ -38,6 +38,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Template for offline model building of a ModelGraph based on an EvalGraph. */
 template<typename EvalGraphT>
 class OfflineModelBuilder:
   public OnlineModelBuilder<EvalGraphT>
@@ -61,15 +62,21 @@ public:
   typedef boost::optional<ModelListIterator> OptionalModelListIterator;
 
 protected:
+  /** \brief Properties of offline model building. */
   struct OfflineModelBuildingProperties
   {
+    /** \brief True if input models have been built. */
     bool builtIModels;
+    /** \brief True if output models have been built. */
     bool builtOModels;
 
     // for non-joining iteration, we need this
+    /** \brief Current input model. */
     OptionalModelListIterator currentIModel;
+    /** \brief Current output model. */
     OptionalModelListIterator currentOModel;
 
+    /** \brief Constructor. */
     OfflineModelBuildingProperties():
       builtIModels(false), builtOModels(false),
       currentIModel(), currentOModel() {}
@@ -79,12 +86,15 @@ protected:
 
   // storage
 protected:
+  /** \brief Properties of models. */
   OfflineModelBuildingPropertyMap offmbp;
-  // TODO: for each call we need this storage, this is not threadsafe! (but the rest of model building is unlikely to be threadsafe as well)
+  /** \brief For each call we need this storage, this is not threadsafe! (but the rest of model building is unlikely to be threadsafe as well). */
   boost::optional<CAUAlgorithms::JoinRelevancePropertyMap> currentjrp;
 
   // methods
 public:
+  /** \brief Constructor.
+    * @param cfg Configuration. */
   OfflineModelBuilder(ModelBuilderConfig<EvalGraphT>& cfg):
     Base(cfg), offmbp()
   {
@@ -95,7 +105,7 @@ public:
 
     // (defaults for properties are ok)
   }
-
+  /** \brief Destructor. */
   virtual ~OfflineModelBuilder() { }
 
   inline EvalGraphT& getEvalGraph() { return Base::getEvalGraph(); }
@@ -103,7 +113,11 @@ public:
   void printEvalGraphModelGraph(std::ostream& o) { Base::printEvalGraphModelGraph(o); }
   void printModelBuildingPropertyMap(std::ostream& o) { Base::printModelBuildingPropertyMap(o); }
 
+  /** \brief Builds the input models at the given.
+    * @param u Unit whose input models are to be computed. */
   virtual unsigned buildIModels(EvalUnit u);
+  /** \brief Builds the output models at the given.
+    * @param u Unit whose output models are to be computed. */
   virtual unsigned buildOModels(EvalUnit u);
 
   // automatically calls buildOModelsRecursively on any non-calculated predecessor

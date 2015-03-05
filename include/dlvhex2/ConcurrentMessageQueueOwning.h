@@ -51,15 +51,21 @@ namespace dlvhex
   private:
     typedef boost::shared_ptr<MessageBase> MessagePtr;
 
-    std::queue<MessagePtr> q;   /// holds data of message queue
-    const std::size_t n;   /// capacity of message queue
-    std::size_t enq; /// enqueuing counter
-    std::size_t deq; /// dequeuing counter
+    /** \brief Holds data of message queue. */
+    std::queue<MessagePtr> q;
+    /** \brief Capacity of message queue. */
+    const std::size_t n;
+    /** \brief Enqueuing counter. */
+    std::size_t enq;
+    /** \brief Dequeuing counter. */
+    std::size_t deq;
 
-    // a mutex lock and the associated condition variable
+    /** \brief A mutex lock and the associated condition variable. */
     mutable boost::mutex mtx;
+    /** \brief Condition for multithreading access. */
     boost::condition_variable cnd;
 
+    /** \brief Notifier of model consumer. */
     inline void
     notifyConsumer()
     {
@@ -70,6 +76,7 @@ namespace dlvhex
     }
 
 
+    /** \brief Notifier of model produces. */
     inline void
     notifyProducer()
     {
@@ -79,7 +86,7 @@ namespace dlvhex
 	}
     }
 
-    
+    /** \brief Wait until free space is available in the queue. */
     inline void
     waitOnCapacity(boost::mutex::scoped_lock& lock)
     {
@@ -93,7 +100,7 @@ namespace dlvhex
       notifyConsumer();
     }
 
-    
+    /** \brief Wait until the queue is empty. */
     inline void
     waitOnEmpty(boost::mutex::scoped_lock& lock)
     {
@@ -107,7 +114,10 @@ namespace dlvhex
       notifyProducer();
     }
 
-    
+    /** \brief Wait until free space is available in the queue respecting a timeout.
+      * @param lock Mutex.
+      * @param t Timeout
+      * @return True if free space is available, false if timeout occurred. */
     inline bool
     waitOnTimedCapacity(boost::mutex::scoped_lock& lock, const boost::posix_time::time_duration& t)
     {
@@ -125,7 +135,10 @@ namespace dlvhex
       return no_timeout;
     }
 
-
+    /** \brief Wait until queue is empty respecting a timeout.
+      * @param lock Mutex.
+      * @param t Timeout
+      * @return True if queue is empty, false if timeout occurred. */
     inline bool
     waitOnTimedEmpty(boost::mutex::scoped_lock& lock, const boost::posix_time::time_duration& t)
     {
@@ -143,14 +156,16 @@ namespace dlvhex
       return no_timeout;
     }
 
-
+    /** \brief Add a message.
+      * @param m Message to add. */
     inline void
     pushMessage (MessagePtr m)
     {
       q.push(m);
     }
 
-
+    /** \brief Retrieve and remove a message.
+      * @param m Retrieved message. */
     inline void 
     popMessage (MessagePtr& m)
     {
@@ -162,7 +177,7 @@ namespace dlvhex
 
   public:
 
-    /// default ctor, capacity is one
+    /** \brief Default constructor, capacity is one. */
     ConcurrentMessageQueueOwning()
       : n(1), enq(0), deq(0)
     { }
@@ -171,25 +186,27 @@ namespace dlvhex
     /** 
      * Initialize with capacity, if @a capacity is 0, we force it to be 1.
      * 
-     * @param capacity the capacity of this message queue
+     * @param capacity the capacity of this message queue.
      */
     ConcurrentMessageQueueOwning(std::size_t capacity)
       : n(capacity > 0 ? capacity : 1), enq(0), deq(0)
     { }
 
 
-    /// copy ctor, just take capacity
+    /** \brief Copy-constructor, just take capacity but not content.
+      * @param q Second ConcurrentMessageQueueOwning. */
     ConcurrentMessageQueueOwning(const ConcurrentMessageQueueOwning<MessageBase>& q)
       : n(q.n), enq(0), deq(0)
     { }
 
-
+    /** \brief Destructor. */
     virtual
     ~ConcurrentMessageQueueOwning()
     {
       flush();
     }
 
+    /** \brief Pop all element from the queue. */
     void flush()
     {
       {
@@ -202,6 +219,8 @@ namespace dlvhex
       notifyProducer();
     }
 
+    /** \brief Clear queue.
+      * @return True. */
     bool
     empty () const
     {
@@ -209,25 +228,31 @@ namespace dlvhex
       return q.empty();
     }
 
-
+    /** \brief Return size of the queue.
+      * @return Size. */
     bool
     size () const
     {
       return n;
     }
 
-
+    /** \brief Send message.
+      * @param m Message.
+      * @param prio Unused. */
     void
-    send (MessagePtr m, unsigned int /* prio */)
+    send (MessagePtr m, unsigned int prio)
     {
       boost::mutex::scoped_lock lock(mtx);
       waitOnCapacity(lock);
       pushMessage(m);
     }
 
-
+    /** \brief Try to send a message.
+      * @param m Message.
+      * @param prio Unused.
+      * @return True if succeeded. */
     bool
-    try_send (MessagePtr m, unsigned int /* prio */)
+    try_send (MessagePtr m, unsigned int prio)
     {
       boost::mutex::scoped_lock lock(mtx);
 
@@ -241,9 +266,13 @@ namespace dlvhex
       return false;      
     }
 
-
+    /** \brief Try to send a message respecting a timeout.
+      * @param m Message.
+      * @param prio Unused.
+      * @param t Timeout.
+      * @return True if succeeded. */
     bool
-    timed_send (MessagePtr m, unsigned int /* prio */, const boost::posix_time::time_duration& t)
+    timed_send (MessagePtr m, unsigned int prio, const boost::posix_time::time_duration& t)
     {
       boost::mutex::scoped_lock lock(mtx);
 
@@ -256,18 +285,23 @@ namespace dlvhex
       return false;
     }
       
-
+    /** \brief Receive a message.
+      * @param m Output message.
+      * @param prio Unused. */
     void
-    receive (MessagePtr& m, unsigned int& /* prio */)
+    receive (MessagePtr& m, unsigned int& prio)
     {
       boost::mutex::scoped_lock lock(mtx);
       waitOnEmpty(lock);
       popMessage(m);
     }
 
-
+    /** \brief Try to receive a message.
+      * @param m Output message.
+      * @param prio Unused.
+      * @return True if succeeded. */
     bool
-    try_receive (MessagePtr& m, unsigned int /* prio */)
+    try_receive (MessagePtr& m, unsigned int prio)
     {
       boost::mutex::scoped_lock lock(mtx);
 
@@ -281,9 +315,13 @@ namespace dlvhex
       return false;      
     }
 
-
+    /** \brief Try to receive a message respecting a timeout.
+      * @param m Output message.
+      * @param prio Unused.
+      * @return t Timeout.
+      * @return True if succeeded. */
     bool
-    timed_receive (MessagePtr& m, unsigned int& /* prio */, const boost::posix_time::time_duration& t)
+    timed_receive (MessagePtr& m, unsigned int& prio, const boost::posix_time::time_duration& t)
     {
       boost::mutex::scoped_lock lock(mtx);
 

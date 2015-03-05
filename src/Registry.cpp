@@ -70,10 +70,12 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is an integer (arity))
  * 'a': Action auxiliary (ActionPlugin)
  *      (source ID is the ID of the name of the action)
- * 'd': domain predicates for auto strong safety
+ * 'd': domain predicates for liberal safety
  * 'g': aggregate input (internal AggregatePlugin)
+ * 'c': choice rules (internal ChoicePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
+ * 'o': special atoms introduced by gringo (IDs of kind integer) and predicate for guard atoms (ID(0, 0))
  * 'x': reserved for local use
  */
 
@@ -499,12 +501,14 @@ ID Registry::storeOrdinaryAtom(OrdinaryAtom& oatom)
 // ground version
 ID Registry::storeOrdinaryGAtom(OrdinaryAtom& ogatom)
 {
+//for (int i = 0; i < ogatom.tuple.size(); ++i) std::cerr << "Storing " << i << "/" << ogatom.tuple[i] << ":" << printToString<RawPrinter>(ogatom.tuple[i], RegistryPtr(this,Deleter)) << std::endl;
   return storeOrdinaryAtomHelper(this, ogatom, ogatoms);
 }
 
 // nonground version
 ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
 {
+//for (int i = 0; i < onatom.tuple.size(); ++i) std::cerr << "Storing " << i << "/" << onatom.tuple[i] << ":" << printToString<RawPrinter>(onatom.tuple[i], RegistryPtr(this,Deleter)) << std::endl;
   return storeOrdinaryAtomHelper(this, onatom, onatoms);
 }
 
@@ -719,6 +723,23 @@ ID Registry::getAuxiliaryVariableSymbol(char type, ID id)
   // return
   DBGLOG(DBG,"returning id " << av.id << " for aux var symbol " << av.symbol);
   return av.id;
+}
+
+namespace{
+   void EmptyDeleter(Registry* ptr)
+   {}
+}
+
+ID Registry::getAuxiliaryAtom(char type, ID id)
+{
+	OrdinaryAtom oatom = lookupOrdinaryAtom(id);
+	oatom.tuple[0] = getAuxiliaryConstantSymbol(type, oatom.tuple[0]);
+	// the only property of new atom is AUX
+	oatom.kind &= (ID::ALL_ONES ^ ID::PROPERTY_MASK);
+	oatom.kind |= ID::PROPERTY_AUX;
+	ID newAtomID = storeOrdinaryAtom(oatom);
+	DBGLOG(DBG, "Created auxiliary atom " << printToString<RawPrinter>(newAtomID, RegistryPtr(this,EmptyDeleter)) << " for atom " << printToString<RawPrinter>(id, RegistryPtr(this,EmptyDeleter)));
+	return newAtomID;
 }
 
 // maps an auxiliary constant symbol back to the ID behind

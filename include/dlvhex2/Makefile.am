@@ -14,6 +14,7 @@ pkginclude_HEADERS = \
   Atoms.h \
   BaseModelGenerator.h \
   Benchmarking.h \
+  ChoicePlugin.h \
   ClaspSolver.h \
   CDNLSolver.h \
   BuiltinAtomTable.h \
@@ -22,7 +23,6 @@ pkginclude_HEADERS = \
   ComponentGraph.h \
   ConcurrentMessageQueueOwning.h \
   Configuration.h \
-  DependencyGraphFull.h \
   DependencyGraph.h \
   DumpingEvalGraphBuilder.h \
   DLVProcess.h \
@@ -44,7 +44,6 @@ pkginclude_HEADERS = \
   ExternalAtomEvaluationHeuristics.h \
   ExternalAtomTable.h \
   ExternalLearningHelper.h \
-  ExistsPlugin.h \
   FinalEvalGraph.h \
   FLPModelGeneratorBase.h \
   FLPModelGeneratorBase.tcc \
@@ -116,6 +115,7 @@ pkginclude_HEADERS = \
   TermTable.h \
   URLBuf.h \
   UnfoundedSetCheckHeuristics.h \
+  UnfoundedSetCheckHeuristicsInterface.h \
   UnfoundedSetChecker.h \
   GenuineWellfoundedModelGenerator.h \
   WeakConstraintPlugin.h \

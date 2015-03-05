@@ -44,6 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup table for modules. */
 class ModuleTable:
 	public Table<
 		// value type is symbol struct
@@ -71,26 +72,44 @@ public:
 // methods
 public:
 
-  // retrieve by address
+  /** \brief Retrieve by address.
+    * @param address Address of the module to retrieve.
+    * @return Module corresonding to \p address. */
   inline const Module& getByAddress(int address) const throw ();
 
-  // retrieve module name by address
+  /** \brief Retrieve module name by address.
+    * @param address Address of the module to retrieve.
+    * @return Module name corresonding to \p address. */
   inline const std::string& getModuleName(int address) const throw ();
 
-  // get range over all atoms sorted by address
-  // NOTE: you may need to lock the mutex also while iterating!
+  /** \brief Get range over all atoms sorted by address.
+    *
+    * NOTE: you may need to lock the mutex also while iterating!
+    * @return Pair of a begin and an end iterator representing all modules in this table. */
   inline std::pair<AddressIterator, AddressIterator> getAllByAddress() const throw();
 
-  // given a module name, look if already stored
-  // if no, return MODULE_FAIL, otherwise return the module struct
+  /** \brief Given a module name, look if already stored.
+    * @eturn MODULE_FAIL if \p moduleName is not stored, otherwise return the module struct. */
   inline const Module& getModuleByName(const std::string& moduleName) const throw();
 
-	// get address of a module by its name
+  /** \brief Get address of a module by its name.
+    * @param moduleName Name of the module to retrieve.
+    * @return Address of the module correponding to \p moduleName. */
   inline int getAddressByName(const std::string& moduleName) const throw();
 
-  // store symbol, assuming it does not exist
-  // assert that symbol did not exist
+  /** \brief Store symbol, assuming it does not exist.
+    *
+    * Assert that symbol did not exist.
+    * @return mod Module to store.
+    * @return Address of the stored module. */
   inline int storeAndGetAddress(const Module& mod) throw();
+
+  /** \brief Prints the table in human-readable format.
+    *
+    * Implementation in Registry.cpp!
+    *
+    * @param o Stream to print to.
+    * @return \p o. */
   inline virtual std::ostream& print(std::ostream& o) const;
 
 };

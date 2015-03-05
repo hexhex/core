@@ -83,19 +83,25 @@ void Term::analyzeTerm(RegistryPtr reg){
 	int start = 0;
 	int end = symbol.length();
 	std::vector<std::string> tuple;
+	//DBGLOG(DBG,"Analyzing Term '" << symbol << "'");
 	for (int pos = 0; pos < end; ++pos){
-		if (symbol[pos] == '\"') quoted = !quoted;
-		if (symbol[pos] == '(' && !quoted && nestedcount == 0){
-			primitive = false;
-			tuple.push_back(symbol.substr(start, pos - start));
-			start = pos + 1;
-			end--;
+		if (symbol[pos] == '\"' &&
+				(pos == 0 || symbol[pos-1] != '\\')) quoted = !quoted;
+		if (symbol[pos] == '(' && !quoted ) {
+			if (nestedcount == 0) {
+				primitive = false;
+				tuple.push_back(symbol.substr(start, pos - start));
+				start = pos + 1;
+				// eliminate closing bracket
+				assert(symbol[end-1] == ')');
+				end--;
+			}
 			nestedcount++;
 		}
 		if (symbol[pos] == ')' && !quoted){
 			nestedcount--;
 		}
-		if (symbol[pos] == ',' && !quoted && nestedcount == 0){
+		if (symbol[pos] == ',' && !quoted && nestedcount == 1){
 			tuple.push_back(symbol.substr(start, pos - start));
 			start = pos + 1;
 		}
@@ -103,6 +109,10 @@ void Term::analyzeTerm(RegistryPtr reg){
 			tuple.push_back(symbol.substr(start, pos - start + 1));
 		}
 	}
+	// we did not find a ( -> it is primitive, or
+	// we came into (, increased by one, and eliminated the closing )
+	// therefore if it is not primitive we must leave the loop at 1
+	assert(primitive || nestedcount == 1);
 #ifndef NDEBUG
 	{
 		std::stringstream ss;
@@ -120,7 +130,7 @@ void Term::analyzeTerm(RegistryPtr reg){
 	// convert tuple of strings to terms
 	arguments.clear();
 	if (primitive){
-		arguments.push_back(ID_FAIL);
+		// no arguments
 		if (islower(symbol[0]) || symbol[0] == '\"') kind |= ID::SUBKIND_TERM_CONSTANT;
 		if (isupper(symbol[0])) kind |= ID::SUBKIND_TERM_VARIABLE;
 	}else{
@@ -133,8 +143,7 @@ void Term::analyzeTerm(RegistryPtr reg){
 			}else{
 				t.kind |= ID::SUBKIND_TERM_NESTED;
 			}
-			ID tid = reg->terms.getIDByString(t.symbol);
-			if (tid == ID_FAIL) tid = reg->terms.storeAndGetID(t);
+			ID tid = reg->storeTerm(t);
 			arguments.push_back(tid);
 		}
 		kind |= ID::SUBKIND_TERM_NESTED;

@@ -272,19 +272,32 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
 	if (parse){
 		pc.convert();
+		if( pc.terminationRequest ) throw GeneralError("Conversion of subprogram failed");
 		pc.parse();
+		if( pc.terminationRequest ) throw GeneralError("Parsing of subprogram failed");
 	}
 
 	DBGLOG(DBG, "Associate PluginAtom instances with ExternalAtom instances");
 	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
-
 	pc.safetyCheck();
+	if( pc.terminationRequest ) throw GeneralError("Safety check for subprogram failed");
 	pc.liberalSafetyCheck();
+	if( pc.terminationRequest ) throw GeneralError("Liberal safety check for subprogram failed");
 	pc.createDependencyGraph();
+	if( pc.terminationRequest ) throw GeneralError("Create dependency graph for subprogram failed");
 	pc.optimizeEDBDependencyGraph();
+	if( pc.terminationRequest ) throw GeneralError("Optimize EDB dependency graph for subprogram failed");
 	pc.createComponentGraph();
+	if( pc.terminationRequest ) throw GeneralError("Create component graph for subprogram failed");
+	// use SCCs to do strong safety check
+	if( !pc.config.getOption("SkipStrongSafetyCheck") ) {
+		pc.strongSafetyCheck();
+		if( pc.terminationRequest ) GeneralError("Strong safety check for subprogram failed");
+	}
 	pc.createEvalGraph();
+	if( pc.terminationRequest ) throw GeneralError("Create evaluation graph for subprogram failed");
 	pc.setupProgramCtx();
+	if( pc.terminationRequest ) throw GeneralError("Setup ProgramCtx for subprogram failed");
 
 	DBGLOG(DBG, "Setting AnswerSetCallback");
 	pc.modelCallbacks.clear();
@@ -453,11 +466,12 @@ void ProgramCtx::setupByPlugins()
 }
 
 // reset the cache of Plugins that use Environment
-void ProgramCtx::resetCacheOfPlugins()
+void ProgramCtx::resetCacheOfPlugins(bool resetOnlyIfUsesEnvironment)
 {
 	typedef std::pair<std::string, PluginAtomPtr> pairPluginAtomMap;
 	BOOST_FOREACH(pairPluginAtomMap p, pluginAtoms)
-		if(p.second->getExtSourceProperties().doesItUseEnvironment())
+		if( !resetOnlyIfUsesEnvironment ||
+        p.second->getExtSourceProperties().doesItUseEnvironment())
 			p.second->resetCache();
 }
 

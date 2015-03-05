@@ -1,8 +1,13 @@
 3col.hex 3col.out --solver=genuinegc
 agg1.hex agg1.out --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
 agg2.hex agg2.out --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
-agg3.hex agg3.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
+agg3.hex agg3.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify --strongsafety
 agg4.hex agg4.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
+aggextcycle1.hex aggextcycle1s.stderr --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify
+aggextcycle1.hex aggextcycle1sa.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=simplify --allow-aggextcycles
+aggextcycle1.hex aggextcycle1e.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=ext
+weak1.hex weak1.out --strongnegation-enable --weak-enable
+weak2.hex weak2.out --strongnegation-enable --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuinegc
 builtin_safety1.hex builtin_safety1.stderr --solver=genuinegc
 builtin_safety1a.hex builtin_safety1a.stderr --solver=genuinegc
@@ -54,7 +59,8 @@ naftest.hex naftest.out --solver=genuinegc
 nonmon_guess.hex nonmon_guess.out --solver=genuinegc
 nonmon_inc.hex nonmon_inc.out --solver=genuinegc
 nonmon_noloop.hex nonmon_noloop.out --solver=genuinegc
-notstronglysafe1.hex notstronglysafe1.stderr --solver=genuinegc
+notstronglysafe1.hex notstronglysafe1.stderr --strongsafety --solver=genuinegc
+notstronglysafe2.hex notstronglysafe2.stderr --strongsafety --solver=genuinegc
 notwellfounded1.hex notwellfounded1_nofacts.out --nofacts --solver=genuinegc
 notwellfounded1.hex notwellfounded1_withfacts.out --solver=genuinegc
 notwellfounded2.hex notwellfounded2.out --nofacts --solver=genuinegc
@@ -142,3 +148,8 @@ functionsymbols5.hex functionsymbols5.out --liberalsafety --solver=genuinegc --f
 functionsymbols6.hex functionsymbols6.stderr --liberalsafety --solver=genuinegc --function-maxarity=2 --function-rewrite
 non3col.hex non3col.out --solver=genuinegc
 non3col2.hex non3col2.out --solver=genuinegc
+headguard1.hex headguard1.out --solver=genuinegc
+headguard2.hex headguard2.out --solver=genuinegc
+headguard3.hex headguard3.stderr --solver=genuinegc
+choicerule1.hex choicerule1.out --solver=genuinegc -N=10
+choicerule2.hex choicerule2.out --solver=genuinegc -N=10

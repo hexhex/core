@@ -43,6 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Model generator for purely monotonic components. */
 class WellfoundedModelGeneratorFactory;
 
 class WellfoundedModelGenerator:
@@ -55,28 +56,31 @@ public:
 
   // storage
 protected:
+  /** \brief Reference to the factory which created this model generator. */
   Factory& factory;
 
-  // result handle for asp solver evaluation, using externallyAugmentedInput
+  /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
   ASPSolverManager::ResultsPtr currentResults;
 
   // members
 public:
+  /**
+   * \brief Constructor.
+   * @param factory Reference to the factory which created this model generator.
+   * @param input Input interpretation to this model generator.
+   */
   WellfoundedModelGenerator(Factory& factory, InterpretationConstPtr input);
+
+  /**
+   * \brief Destuctor.
+   */
   virtual ~WellfoundedModelGenerator() {}
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
-
-  // TODO debug output?
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorBase::print() not overloaded"; }
 };
 
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
+/** \brief Factory for the WellfoundedModelGenerator. */
 class WellfoundedModelGeneratorFactory:
   public BaseModelGeneratorFactory,
   public ostream_printable<WellfoundedModelGeneratorFactory>
@@ -88,31 +92,49 @@ public:
 
   // storage
 protected:
-  // which solver shall be used for external evaluation?
+  /** \brief Defines the solver to be used for external evaluation. */
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+  /** \brief ProgramCtx. */
   ProgramCtx& ctx;
-  // outer eatoms
+  /** \brief Outer eatoms of the component. */
   std::vector<ID> outerEatoms;
-  // inner eatoms
+  /** \brief Inner eatoms of the component. */
   std::vector<ID> innerEatoms;
-  // original idb (containing eatoms where all inputs are known
-  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
+  /** \brief Original IDB containing eatoms where all inputs are known.
+    *
+    * Auxiliary input rules of these eatoms must be in predecessor unit!
+    */
   std::vector<ID> idb;
-  // rewritten idb (containing replacements for eatoms)
-  // (x stands for transformed)
+  /** \brief Rewritten IDB (containing replacements for eatoms).
+    *
+    * x stands for transformed. */
   std::vector<ID> xidb;
 
   // methods
 public:
+  /** \brief Constructor.
+    *
+    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+    */
   WellfoundedModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+  /** \brief Destructor. */
   virtual ~WellfoundedModelGeneratorFactory() {}
 
+  /**
+   * \brief Instantiates a model generator for the current component.
+   * @param input Input interpretation to this model generator.
+   * @return Model generator.
+   */
   virtual ModelGeneratorPtr createModelGenerator(
     InterpretationConstPtr input)
     { return ModelGeneratorPtr(new WellfoundedModelGenerator(*this, input)); }
 
+  /** \brief Prints information about the model generator for debugging purposes.
+    * @param o Stream to print to. */
   virtual std::ostream& print(std::ostream& o) const;
 };
 

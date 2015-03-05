@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements strong negation by rewriting it to dedicated auxiliary predicates. */
 class StrongNegationPlugin:
   public PluginInterface
 {
@@ -46,18 +47,23 @@ public:
     public PluginData
   {
   public:
-    // whether plugin is enabled
+    /** \brief Stores if plugin is enabled. */
     bool enabled;
 
     // predicate constants which were encountered in negative form and their arity
     typedef std::map<ID,unsigned> PredicateArityMap;
+    /** \brief Stores for each predicate its arity. */
     PredicateArityMap negPredicateArities;
 
     // aux predicate constants and their positive counterparts
     typedef std::map<ID,ID> NegToPosMap;
+    /** \brief Stores for each strong negation auxiliary its positive counterpart. */
     NegToPosMap negToPos;
     
-    // for fast detection whether an ID is this plugin's responsitility to display
+    /** \brief Masks all strong negation auxiliary atoms.
+      *
+      * For fast detection whether an ID is this plugin's responsitility to display.
+      */
     PredicateMask myAuxiliaryPredicateMask;
 
     CtxData();
@@ -65,7 +71,9 @@ public:
   };
 
 public:
+  /** \brief Constructor. */
   StrongNegationPlugin();
+  /** \brief Destructor. */
   virtual ~StrongNegationPlugin();
 
 	// output help message for this plugin

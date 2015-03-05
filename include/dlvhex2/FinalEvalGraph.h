@@ -42,6 +42,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Definition of eval graph as used in real dlvhex evaluation. */
 struct FinalEvalUnitPropertyBase:
   public EvalUnitProjectionProperties,
   public EvalUnitModelGeneratorFactoryProperties<Interpretation>,

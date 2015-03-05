@@ -44,11 +44,16 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Instantiates nonground nogoods. */
 class DLVHEX_EXPORT NogoodGrounder{
 protected:
+	/** \brief RegistryPtr. */
 	RegistryPtr reg;
+	/** \brief Set of nogoods currently watched for being instantiated. */
 	SimpleNogoodContainerPtr watched;
+	/** \brief Set of instantiated nogoods (can be still nonground in case of partial instantiation!). */
 	SimpleNogoodContainerPtr destination;
+	/** \brief Ground program with meta information. */
 	AnnotatedGroundProgram& agp;
 public:
 	/**
@@ -85,11 +90,20 @@ typedef NogoodGrounder::Ptr NogoodGrounderPtr;
  */
 class DLVHEX_EXPORT ImmediateNogoodGrounder : public NogoodGrounder{
 private:
+	/** \brief Pointer to the next nogood in NogoodGrounder::NogoodGrounder to instantate; all indexes before have already been instantiated. */
 	int instantiatedNongroundNogoodsIndex;
 public:
+	/**
+	 * Initializes the nogood grounder for a container of watched nogoods
+	 * and a destination for resulting ground nogoods.
+	 * @param reg RegistryPtr
+	 * @param watched A container with the nogoods to ground
+	 * @param destination The container where the resulting nogoods shall be added (possibly the same as watched)
+	 * @param agp The ground program for which the nogoods shall be learned
+	 */
 	ImmediateNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
-	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
-	void resetWatched(SimpleNogoodContainerPtr watched);
+	virtual void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+	virtual void resetWatched(SimpleNogoodContainerPtr watched);
 };
 
 /**
@@ -98,13 +112,24 @@ public:
  */
 class DLVHEX_EXPORT LazyNogoodGrounder : public NogoodGrounder{
 private:
+	/** \brief Number of currently watched nogoods. */
 	int watchedNogoodsCount;
+	/** \brief Stores for all literals the indexes of nogoods which watch it. */
 	std::vector<std::pair<ID, int> > watchedLiterals;
-	std::set<std::pair<IDAddress, int> > alreadyCompared;	// store which atom was already compared to which nonground nogood
+	/** \brief Stores which atom was already compared to which nonground nogood. */
+	std::set<std::pair<IDAddress, int> > alreadyCompared;
 public:
+	/**
+	 * Initializes the nogood grounder for a container of watched nogoods
+	 * and a destination for resulting ground nogoods.
+	 * @param reg RegistryPtr
+	 * @param watched A container with the nogoods to ground
+	 * @param destination The container where the resulting nogoods shall be added (possibly the same as watched)
+	 * @param agp The ground program for which the nogoods shall be learned
+	 */
 	LazyNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
-	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
-	void resetWatched(SimpleNogoodContainerPtr watched);
+	virtual void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+	virtual void resetWatched(SimpleNogoodContainerPtr watched);
 };
 
 DLVHEX_NAMESPACE_END

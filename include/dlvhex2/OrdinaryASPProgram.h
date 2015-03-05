@@ -52,17 +52,36 @@ DLVHEX_NAMESPACE_BEGIN
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
-// this is kind of a program context for pure (=non-HEX) ASPs
+/**
+  * \brief This is kind of a program context for pure (=non-HEX) ASPs.
+  */
 struct OrdinaryASPProgram
 {
+  /** \brief Registry to be used for interpreting IDs. */
   RegistryPtr registry;
+  /** \brief Rules of the ordinary ASP program (must not contain external atoms). */
   std::vector<ID> idb;
+  /** \brief Facts of the ordinary ASP program. */
   Interpretation::ConstPtr edb;
+  /** \brief Maximum integer used for evaluating the ordinary ASP program. */
   uint32_t maxint;
+  /** \brief %Set of atoms to be removed from the answer sets. */
   Interpretation::ConstPtr mask;
 
+  /**
+    * \brief Constructor.
+    * @param registry Registry to be used for interpreting IDs.
+     */
   OrdinaryASPProgram(RegistryPtr registry) : registry(registry), edb(new Interpretation(registry)) {}
 
+  /**
+    * \brief Constructor.
+    * @param registry Registry to be used for interpreting IDs.
+    * @param idb Rules of the ordinary ASP program (must not contain external atoms).
+    * @param edb Facts of the ordinary ASP program.
+    * @param maxint Maximum integer used for evaluating the ordinary ASP program.
+    * @param mask %Set of atoms to be removed from the answer sets.
+    */
   OrdinaryASPProgram(
       RegistryPtr registry,
       const std::vector<ID>& idb,

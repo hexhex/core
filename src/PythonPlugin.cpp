@@ -54,6 +54,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <cstring>
+
 DLVHEX_NAMESPACE_BEGIN
 
 PythonPlugin::CtxData::CtxData()
@@ -74,8 +76,11 @@ PythonPlugin::~PythonPlugin()
 void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --pythonplugin=[PATH]    Add Python script \"PATH\" as new plugin." << std::endl;
-	o << "     --pythonmain=PATH        Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program" << std::endl;
+	o << "     --pythonplugin=[PATH]" << std::endl
+          << "                      Add Python script \"PATH\" as new plugin." << std::endl;
+	o << "     --pythonmain=PATH" << std::endl
+          << "                      Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program." << std::endl;
+	o << "     --pythonarg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl;
 }
 
 // accepted options: --pythonplugin=[PATH]
@@ -92,6 +97,7 @@ void PythonPlugin::processOptions(
 	Iterator it;
 	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
+
 	while( it != pluginOptions.end() )
 	{
 		bool processed = false;
@@ -99,6 +105,11 @@ void PythonPlugin::processOptions(
 		if( boost::starts_with(str, "--pythonplugin=") )
 		{
 			ctxdata.pythonScripts.push_back(str.substr(std::string("--pythonplugin=").length()));
+			processed = true;
+		}
+		else if( boost::starts_with(str, "--pythonarg=") )
+		{
+			ctxdata.commandlineArguments.push_back(str.substr(std::string("--pythonarg=").length()));
 			processed = true;
 		}
 
@@ -213,39 +224,19 @@ class PythonAtom : public PluginAtom
 				PythonAPI::emb_answer = &answer;
 				PythonAPI::emb_nogoods = nogoods;
 
-				DBGLOG(DBG, "Retrieving external source properties");
-				const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
-
-				std::vector<Query> atomicQueries = splitQuery(query, prop);
-				DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
-				BOOST_FOREACH (Query atomicQuery, atomicQueries){
-					Answer atomicAnswer;
-
-					boost::python::tuple t;
-					DBGLOG(DBG, "Constructing input tuple");
-					for (int i = 0; i < getInputArity(); ++i){
-						if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
-						else {
-							boost::python::tuple tupleparameters;
-							for (int var = i; var < query.input.size(); ++var) tupleparameters += boost::python::make_tuple(query.input[var]);
-							t += boost::python::make_tuple(tupleparameters);
-						}
+				boost::python::tuple t;
+				DBGLOG(DBG, "Constructing input tuple");
+				for (int i = 0; i < getInputArity(); ++i){
+					if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
+					else {
+						boost::python::tuple tupleparameters;
+						for (int var = i; var < query.input.size(); ++var) tupleparameters += boost::python::make_tuple(query.input[var]);
+						t += boost::python::make_tuple(tupleparameters);
 					}
-
-					DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
-					PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
-
-					DBGLOG(DBG, "Calling learning helper functions");
-					ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, answer, prop, nogoods);
-					ExternalLearningHelper::learnFromFunctionality(atomicQuery, answer, prop, otuples, nogoods);
-
-					// overall answer is the union of the atomic answers
-					DBGLOG(DBG, "Constructing answer");
-					answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
 				}
 
-				DBGLOG(DBG, "Calling negative learning helper functions");
-				ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
+				DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
+				PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
 
 				DBGLOG(DBG, "Resetting Python");
 				PythonAPI::emb_query = NULL;
@@ -295,7 +286,10 @@ boost::python::tuple ID_tuple(ID* this_){
 std::string getValue(ID id){
 	std::stringstream ss;
 	RawPrinter printer(ss, emb_ctx->registry());
-	printer.print(id);
+	if (id.kind & ID::NAF_MASK) ss << "-";
+	ID id_ = id;
+	id_.kind &= (ID::ALL_ONES ^ ID::NAF_MASK);
+	printer.print(id_);
 	std::string str = ss.str();
 	return ss.str();
 }
@@ -582,6 +576,10 @@ boost::python::tuple loadSubprogram(std::string filename) {
 	pc.changeState(StatePtr(new ConvertState()));
 	pc.convert();
 	pc.parse();
+	if( pc.maxint > emb_ctx->maxint ) {
+		DBGLOG(DBG, "updating maxint of emb_ctx from " << emb_ctx->maxint << " to " << pc.maxint);
+		emb_ctx->maxint = pc.maxint;
+	}
 
 	bm::bvector<>::enumerator en = pc.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = pc.edb->getStorage().end();
@@ -599,8 +597,14 @@ boost::python::tuple loadSubprogram(std::string filename) {
 
 ID negate(ID id) {
 	if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.negate: Can only negate literal IDs");
-	id.kind ^= dlvhex::ID::NAF_MASK;
-	return id;
+	if (!!emb_nogoods && emb_ctx->registry()->ogatoms.getIDByAddress(id.address).isExternalAuxiliary()){
+		DBGLOG(DBG, "Negating external atom output atom " << id);
+		return emb_ctx->registry()->swapExternalAtomAuxiliaryAtom(emb_ctx->registry()->ogatoms.getIDByAddress(id.address));
+	}else{
+		DBGLOG(DBG, "Negating ordinary literal " << id);
+		id.kind ^= dlvhex::ID::NAF_MASK;
+		return id;
+	}
 }
 
 ID ID_negate(ID* this_){
@@ -609,13 +613,14 @@ ID ID_negate(ID* this_){
 
 bool learn(boost::python::tuple args) {
 
-	if (!!emb_nogoods){
+	if (!!emb_nogoods && emb_ctx->config.getOption("ExternalLearningUser")){
 		Nogood ng;
 		for (int i = 0; i < boost::python::len(args); ++i){
 			dlvhex::ID id = boost::python::extract<ID>(args[i]);
 			if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.learn: Parameters must be positive or negated atom IDs");
 			ng.insert(NogoodContainer::createLiteral(id));
 		}
+		DBGLOG(DBG, "Learning nogood " << ng.getStringRepresentation(emb_ctx->registry()) << " from python plugin");
 		emb_nogoods->addNogood(ng);
 
 		return true;
@@ -624,7 +629,7 @@ bool learn(boost::python::tuple args) {
 	}
 }
 
-ID storeOutputAtom(boost::python::tuple args) {
+ID storeOutputAtomWithSign(boost::python::tuple args, bool sign) {
 
 	Tuple outputTuple;
 	for (int i = 0; i < boost::python::len(args); ++i){
@@ -648,7 +653,11 @@ ID storeOutputAtom(boost::python::tuple args) {
 			}
 		}
 	}
-	return ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, true);
+	return ExternalLearningHelper::getOutputAtom(*emb_query, outputTuple, sign);
+}
+
+ID storeOutputAtom(boost::python::tuple args) {
+	return storeOutputAtomWithSign(args, true);
 }
 
 void output(boost::python::tuple args) {
@@ -677,6 +686,10 @@ void output(boost::python::tuple args) {
 		}
 	}
 	emb_answer->get().push_back(outputTuple);
+}
+
+ID getExternalAtomID() {
+	return emb_query->eatomID;
 }
 
 boost::python::tuple getInputAtoms() {
@@ -751,13 +764,26 @@ bool ID_isInputAtom(ID* this_){
 	return isInputAtom(*this_);
 }
 
+bool isAssignmentComplete() {
+	return !emb_query->assigned;
+}
+
 bool isAssigned(ID id) {
-	if (!!emb_query->assigned || emb_query->assigned->getFact(id.address)) return true;
+	if (!emb_query->assigned || emb_query->assigned->getFact(id.address)) return true;
 	else return false;
 }
 
 bool ID_isAssigned(ID* this_){
 	return isAssigned(*this_);
+}
+
+bool hasChanged(ID id) {
+	if (!emb_query->changed || emb_query->changed->getFact(id.address)) return true;
+	else return false;
+}
+
+bool ID_hasChanged(ID* this_){
+	return hasChanged(*this_);
 }
 
 bool isTrue(ID id) {
@@ -770,12 +796,20 @@ bool ID_isTrue(ID* this_){
 }
 
 bool isFalse(ID id) {
-	if (isAssigned(id) && emb_query->interpretation->getFact(id.address)) return true;
+	if (isAssigned(id) && !emb_query->interpretation->getFact(id.address)) return true;
 	else return false;
 }
 
 bool ID_isFalse(ID* this_){
 	return isFalse(*this_);
+}
+
+void resetCacheOfPlugins() {
+	if( PythonAPI::emb_ctx == NULL ) {
+		LOG(ERROR,"cannot reset plugin cache - emb_ctx = NULL");
+	} else {
+		PythonAPI::emb_ctx->resetCacheOfPlugins(false); // false -> reset all caches
+	}
 }
 
 };
@@ -794,8 +828,10 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("storeAtom", PythonAPI::storeAtom);
 	boost::python::def("negate", PythonAPI::negate);
 	boost::python::def("learn", PythonAPI::learn);
+	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtomWithSign);
 	boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtom);
 	boost::python::def("output", PythonAPI::output);
+	boost::python::def("getExternalAtomID", PythonAPI::getExternalAtomID);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
 	boost::python::def("getInputAtoms", PythonAPI::getInputAtomsOfPredicate);
 	boost::python::def("getTrueInputAtoms", PythonAPI::getTrueInputAtoms);
@@ -803,13 +839,16 @@ BOOST_PYTHON_MODULE(dlvhex) {
 	boost::python::def("getInputAtomCount", PythonAPI::getInputAtomCount);
 	boost::python::def("getTrueInputAtomCount", PythonAPI::getTrueInputAtomCount);
 	boost::python::def("isInputAtom", PythonAPI::isInputAtom);
+	boost::python::def("isAssignmentComplete", PythonAPI::isAssignmentComplete);
 	boost::python::def("isAssigned", PythonAPI::isAssigned);
+	boost::python::def("hasChanged", PythonAPI::hasChanged);
 	boost::python::def("isTrue", PythonAPI::isTrue);
 	boost::python::def("isFalse", PythonAPI::isFalse);
 	boost::python::def("storeExternalAtom", PythonAPI::storeExternalAtom);
 	boost::python::def("storeRule", PythonAPI::storeRule);
 	boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
 	boost::python::def("loadSubprogram", PythonAPI::loadSubprogram);
+	boost::python::def("resetCacheOfPlugins", PythonAPI::resetCacheOfPlugins);
 	boost::python::class_<dlvhex::ID>("ID")
 		.def("value", &PythonAPI::ID_value)
 		.def("extension", &PythonAPI::ID_extension)
@@ -819,6 +858,7 @@ BOOST_PYTHON_MODULE(dlvhex) {
 		.def("negate", &PythonAPI::ID_negate)
 		.def("isInputAtom", &PythonAPI::ID_isInputAtom)
 		.def("isAssigned", &PythonAPI::ID_isAssigned)
+		.def("hasChanged", &PythonAPI::ID_hasChanged)
 		.def("isTrue", &PythonAPI::ID_isTrue)
 		.def("isFalse", &PythonAPI::ID_isFalse)
 		.def(boost::python::self == dlvhex::ID());
@@ -858,8 +898,35 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 
 	// load Python plugins
 	DBGLOG(DBG, "Initialize Python plugin");
+
+
+	// prepare sys.argv for Python
+	char** pargv;
+	int iargv;
+	{
+		std::vector<char*> argv;
+		// first argument = script or empty (should exist!)
+		if( !ctxdata.pythonScripts.empty() )
+		{
+			argv.push_back(strdup(ctxdata.pythonScripts[0].c_str()));
+		}
+		else argv.push_back(strdup(""));
+		// other arguments = as obtained from commandline
+		BOOST_FOREACH (std::string& arg, ctxdata.commandlineArguments){
+			LOG(DBG,"Handling Python Commandline Argument '" << arg << "'");
+			argv.push_back(strdup(arg.c_str()));
+		}
+		// terminator
+		argv.push_back(NULL);
+		// now prepare char** which we will give to python (also to free it)
+		iargv = argv.size();
+		pargv = new char*[iargv];
+		for(unsigned i = 0; i < iargv; ++i) pargv[i] = argv[i];
+	}
+
 #if PY_MAJOR_VERSION <= 2
 		Py_Initialize();
+		PySys_SetArgvEx(iargv-1, pargv, 0);
 		initdlvhex();
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
@@ -868,6 +935,23 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const{
 			throw PluginError("Could not register dlvhex module in Python");
 		}
 		Py_Initialize();
+		wchar_t** wpargv = new wchar_t**[iargv];
+		for(int i = 0; i < iargv; ++i) {
+			if( pargv[i] == NULL ) wpargv[i] = NULL
+			else {
+				wpargv[i] = new wchar_t[strlen(pargv[i])+1];
+				for(int c = 0; c < strlen(pargv[i])+1; c++) {
+					// do a brutal cast (this will work in all 7-bit ASCII cases which is
+					// enough for now)
+					wpargv[i][c] = wchar_t(pargv[i][c]);
+					if( wpargv[i][c] & 0x7F != wpargv[i][c] ) {
+						LOG(WARN,"console input argument contains non-7-bit character in
+argument '" << pargv[i] << "' !");
+					}
+				}
+			}
+		}
+		PySys_SetArgvEx(iargv-1, wpargv, 0);
 		PythonAPI::main = boost::python::import("__main__");
 		PythonAPI::dict = PythonAPI::main.attr("__dict__");
 #endif

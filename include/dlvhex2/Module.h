@@ -39,26 +39,41 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// Module structure, used in ModuleTable.hpp
+/** \brief Module structure, used in ModuleTable.h. */
 struct Module:
   private ostream_printable<Module>
 {
-  // the kind part of the ID of this symbol
-  IDKind kind; // not used in module
+  /** \brief The kind part of the ID of this symbol.
+    *
+    * Not used in module. */
+  IDKind kind;
+  /** \brief Name of the module. */
   std::string moduleName;
+  /** \brief Input to the module. */
   int inputList;
+  /** \brief EDB of the module. */
   int edb;
+  /** \brief IDB of the module. */
   int idb;
 
-//  Module(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
-//		{ assert(ID(kind,0).isTerm()); }
-
+  /** \brief Constructor. */
   Module(): moduleName(""), inputList(-1), edb(-1), idb(-1) { }
+  /** \brief Constructor.
+    * @param moduleName See Module::moduleName.
+    * @param inputList See Module::inputList.
+    * @param edb See Module::edb.
+    * @param idb See Module::idb. */
   Module(const std::string& moduleName, const int& inputList, const int& edb, const int& idb): 
                 moduleName(moduleName), inputList(inputList), edb(edb), idb(idb)
 		{  }
+  /** \brief Comparison of modules.
+    * @param mod2 The module to compare this one to.
+    * @return True if this module is equal to \p mod2 and false otherwise. */
   inline bool operator==(const Module& mod2) const 
          { return moduleName == mod2.moduleName && inputList == mod2.inputList && edb == mod2.edb && idb == mod2.idb; }
+  /** \brief Comparison of modules.
+    * @param mod2 The module to compare this one to.
+    * @return True if this module is not equal to \p mod2 and false otherwise. */
   inline bool operator!=(const Module& mod2) const 
          { return moduleName != mod2.moduleName || inputList || mod2.inputList || edb != mod2.edb || idb != mod2.idb; }
   std::ostream& print(std::ostream& o) const

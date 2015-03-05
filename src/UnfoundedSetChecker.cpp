@@ -64,6 +64,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	: mg(0),
 	  ctx(ctx),
 	  groundProgram(groundProgram),
+	  agp(emptyagp),
 	  componentAtoms(componentAtoms),
 	  ngc(ngc),
 	  domain(new Interpretation(ctx.registry())){
@@ -71,6 +72,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	reg = ctx.registry();
 
 	mode = Ordinary;
+	DBGLOG(DBG, "Starting UFS checker in ordinary mode, program idb has size " << groundProgram.idb.size());
 }
 
 UnfoundedSetChecker::UnfoundedSetChecker(
@@ -91,6 +93,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	reg = ctx.registry();
 
 	mode = WithExt;
+	DBGLOG(DBG, "Starting UFS checker in external atom mode, program idb has size " << groundProgram.idb.size());
 }
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate){
@@ -237,7 +240,7 @@ bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
 	if (!!ngc && !!solver){
 		// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
 		int oldNogoodCount = ngc->getNogoodCount();
-		mg->evaluateExternalAtom(ctx, eatom, ufsVerStatus.eaInput, cb, ngc);
+		mg->evaluateExternalAtom(ctx, eaID, ufsVerStatus.eaInput, cb, ngc);
 		DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 		for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 
@@ -252,7 +255,7 @@ bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
 			}
 		}
 	}else{
-		mg->evaluateExternalAtom(ctx, eatom, ufsVerStatus.eaInput, cb);
+		mg->evaluateExternalAtom(ctx, eaID, ufsVerStatus.eaInput, cb);
 	}
 
 	// remove the external atom from the remaining lists of all auxiliaries which wait for the EA to be verified
@@ -290,6 +293,14 @@ bool UnfoundedSetChecker::verifyExternalAtomByEvaluation(
 Nogood UnfoundedSetChecker::getUFSNogood(
 		const std::vector<IDAddress>& ufs,
 		InterpretationConstPtr interpretation){
+
+#ifndef NDEBUG
+	InterpretationPtr intr(new Interpretation(reg));
+	BOOST_FOREACH (IDAddress adr, ufs){
+		intr->setFact(adr);
+	}
+	DBGLOG(DBG, "Constructing nogoods for UFS: " << *intr);
+#endif
 
 	switch (ctx.config.getOption("UFSLearnStrategy")){
 		case 1:	return getUFSNogoodReductBased(ufs, interpretation);
@@ -382,6 +393,8 @@ Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
 	// find all rules r such that H(r) intersects with the unfounded set
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
+		if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
+
 		bool intersects = false;
 		BOOST_FOREACH (ID h, rule.head){
 			if (std::find(ufs.begin(), ufs.end(), h.address) != ufs.end()){
@@ -394,7 +407,7 @@ Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
 		intersectionRules++;
 #endif
 
-		// Check if the rule is external ("external" to the UFS, has nothing to do with external atoms), i.e., it does _not_ contain a true ordinary unfounded atom in its positive body
+		// Check if the rule is external ("external" to the UFS, has nothing to do with external atoms), i.e., it does _not_ contain an ordinary unfounded atom in its positive body
 		// (if the rule is not external, then condition (ii) will always be satisfied wrt. this unfounded set)
 		bool external = true;
 		BOOST_FOREACH (ID b, rule.body){
@@ -448,6 +461,7 @@ Nogood UnfoundedSetChecker::getUFSNogoodUFSBased(
 					// therefore there must be another (external) atom which is false under I u -X
 					// ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
 				}else{
+					assert(agp.mapsAux(b.address) && "mapping of auxiliary to EA not found");
 					const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
 					ea.updatePredicateInputMask();
 					bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
@@ -557,6 +571,11 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart
 
 		if (ruleID.isWeightRule()){
 			// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+			if (ctx.config.getOption("AllowAggExtCycles")){
+				LOG(WARNING, "A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and might result in non-minimal models. See aggregate options.");
+			}else{
+				throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is not allowed. See aggregate options.");
+			}
 			if (compatibleSet->getFact(rule.head[0].address)){
 				Nogood ng;
 				ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
@@ -989,10 +1008,12 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 
 	// remove external atom guessing rules and skipped rules from IDB
 	std::vector<ID> ufsProgram;
+DBGLOG(DBG, "ch ");
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
-		if (rule.isEAGuessingRule() ||								// EA-guessing rule
-		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){	// ignored part of the program
+		if (mg &&
+			(rule.isEAGuessingRule() ||								// EA-guessing rule
+		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end())){	// ignored part of the program
 			// skip it
 		}else{
 			ufsProgram.push_back(ruleId);
@@ -1000,7 +1021,9 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 	}
 
 	// we need the the compatible set with and without auxiliaries
+DBGLOG(DBG, "1");
 	InterpretationConstPtr compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
+DBGLOG(DBG, "1");
 
 #ifndef NDEBUG
 	std::stringstream programstring;
@@ -1021,7 +1044,11 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
 		constructUFSDetectionProblem(ufsDetectionProblem, compatibleSet, compatibleSetWithoutAux, skipProgram, ufsProgram);
 
 		// solve the ufs problem
-		solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
+
+		// We need to freeze the variables in the domain since their truth values in the models are relevant.
+		// However, since leaned clauses can only constraint frozen variables,
+		// it seems to be better to freeze all.
+		solver = SATSolver::getInstance(ctx, ufsDetectionProblem /*, domain*/);
 	}
 	InterpretationConstPtr model;
 
@@ -1130,7 +1157,7 @@ void AssumptionBasedUnfoundedSetChecker::constructDomain(){
 	// IDB
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
-		if (rule.isEAGuessingRule()) continue;
+		if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
 		BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
 		BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
 	}
@@ -1185,7 +1212,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemCreateAuxAt
 void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(NogoodSet& ufsDetectionProblem, ID ruleID){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
-	if (rule.isEAGuessingRule()) return;
+	if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) return;
 
 #ifndef NDEBUG
 	std::stringstream programstring;
@@ -1196,8 +1223,13 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 
 	if (ruleID.isWeightRule()){
 		// cycles through weight rules are not supported: the head atom must not be in the unfounded set
+		if (ctx.config.getOption("AllowAggExtCycles")){
+			LOG(WARNING, "A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and might result in non-minimal models. See aggregate options.");
+		}else{
+			throw GeneralError("A cycle through weight rules was detected. This usually comes from cycles which involve both aggregates and external atoms and is not allowed. See aggregate options.");
+		}
 		Nogood ng;
-		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
+//		ng.insert(NogoodContainer::createLiteral(interpretationShadow[rule.head[0].address], true));
 		ng.insert(NogoodContainer::createLiteral(rule.head[0].address, true));
 		ufsDetectionProblem.addNogood(ng);
 		return;
@@ -1308,13 +1340,13 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemDefineAuxil
 		}
 	}
 
-	DBGLOG(DBG, "N: Define \"become false\"");
+	DBGLOG(DBG, "N: Define \"became false\"");
 	{
 		bm::bvector<>::enumerator en = domain->getStorage().first();
 		bm::bvector<>::enumerator en_end = domain->getStorage().end();
 		while (en < en_end){
 			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
-				// define: become false bf=true iff en is true in I and true in X
+				// define: became false bf=true iff en is true in I and true in X
 				ID is = reg->ogatoms.getIDByAddress(interpretationShadow[*en]);
 				ID bf = reg->ogatoms.getIDByAddress(becomeFalse[*en]);
 
@@ -1427,6 +1459,10 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemNonempty(No
 		}
 		en++;
 	}
+
+	// add the hook atom to allow for retracting this nogood later
+	ng.insert(NogoodContainer::createLiteral(hookAtom.address, true));
+
 	ufsDetectionProblem.addNogood(ng);
 }
 
@@ -1440,6 +1476,10 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRestrictToS
 			if ((!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary) && !componentAtoms->getFact(*en)){
 				Nogood ng;
 				ng.insert(NogoodContainer::createLiteral(*en, true));
+
+				// add the hook atom to allow for retracting this nogood later
+				ng.insert(NogoodContainer::createLiteral(hookAtom.address, true));
+
 				ufsDetectionProblem.addNogood(ng);
 			}
 			en++;
@@ -1456,14 +1496,16 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemBasicEABeha
 
 		eatom.updatePredicateInputMask();
 
-		// if none of the input atoms, which are true in I, are unfounded, then the output of the external atom does not change
+		// if none of the input atoms in the scope of this UFS checker, which are true in I, are unfounded, then the output of the external atom does not change
 		Nogood inputNogood;
 		bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
 		while (en < en_end){
-			inputNogood.insert(NogoodContainer::createLiteral(becomeFalse[*en], false));
+			if (domain->getFact(*en)) inputNogood.insert(NogoodContainer::createLiteral(becomeFalse[*en], false));
 			en++;
 		}
+		// make sure that this nogood is invalidated over an extended domain
+		inputNogood.insert(NogoodContainer::createLiteral(hookAtom.address, true));
 
 		// go through the output atoms
 		agp.getEAMask(eaIndex)->updateMask();
@@ -1507,6 +1549,13 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 	DBGLOG(DBG, "Constructing UFS detection problem");
 
 	atomcnt = 0;
+
+	// create a hook atom
+	OrdinaryAtom hatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
+	hatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
+	hookAtom = reg->storeOrdinaryGAtom(hatom);
+
+	// create problem encoding
 	constructDomain();
 	constructUFSDetectionProblemFacts(ufsDetectionProblem);
 	constructUFSDetectionProblemCreateAuxAtoms();
@@ -1520,11 +1569,12 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 		constructUFSDetectionProblemRule(ufsDetectionProblem, ruleID);
 	}
 
-#if 0
 	// We need to freeze all variables which might be fixed by assumptions,
-	// or whichs truth values in the models are relevant.
+	// or whose truth values in the models are relevant.
 	// This includes all domains atoms and their shadows.
-	InterpretationPtr frozenInt(new Interpretation(reg));
+	InterpretationPtr frozenInt;
+#if 0
+	frozenInt.reset(new Interpretation(reg));
 	bm::bvector<>::enumerator en = domain->getStorage().first();
 	bm::bvector<>::enumerator en_end = domain->getStorage().end();
 	while (en < en_end){
@@ -1538,7 +1588,53 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 
 	// finally, instantiate the solver for the constructed search problem
 	DBGLOG(DBG, "Unfounded Set Detection Problem: " << ufsDetectionProblem);
-	solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
+	solver = SATSolver::getInstance(ctx, ufsDetectionProblem, frozenInt);
+
+	// remember the number of rules respected to far to allow for incremental extension
+	problemRuleCount = groundProgram.idb.size();
+}
+
+void AssumptionBasedUnfoundedSetChecker::expandUFSDetectionProblemAndReinstantiateSolver(){
+
+	DBGLOG(DBG, "Extend UFS detection problem");
+
+	// remember old domain
+	InterpretationPtr oldDomain = domain;
+
+	// compute (strictly) new domain
+	domain = InterpretationPtr(new Interpretation(reg));
+	constructDomain();
+	domain->getStorage() -= oldDomain->getStorage();
+
+	// create a hook atom
+	OrdinaryAtom hatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
+	hatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', ID(0, atomcnt++)));
+	hookAtom = reg->storeOrdinaryGAtom(hatom);
+
+	NogoodSet ufsDetectionProblem;
+
+	// add domain-specific part for the new domain
+	constructUFSDetectionProblemFacts(ufsDetectionProblem);
+	constructUFSDetectionProblemCreateAuxAtoms();
+	constructUFSDetectionProblemDefineAuxiliaries(ufsDetectionProblem);
+
+	// add global part for the new overall program
+	domain->add(*oldDomain);
+	constructUFSDetectionProblemNonempty(ufsDetectionProblem);
+	constructUFSDetectionProblemRestrictToSCC(ufsDetectionProblem);
+	constructUFSDetectionProblemBasicEABehavior(ufsDetectionProblem);
+
+	DBGLOG(DBG, "N: New Rules");
+	while (problemRuleCount < groundProgram.idb.size()){
+		ID ruleID = groundProgram.idb[problemRuleCount];
+		constructUFSDetectionProblemRule(ufsDetectionProblem, ruleID);
+		problemRuleCount++;
+	}
+
+	// finally, reinstantiate the solver for the constructed search problem
+	InterpretationPtr frozenInt;
+	DBGLOG(DBG, "Unfounded Set Detection Problem Addition: " << ufsDetectionProblem);
+	solver->addNogoodSet(ufsDetectionProblem);
 }
 
 void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram){
@@ -1549,6 +1645,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 	bm::bvector<>::enumerator en_end = domain->getStorage().end();
 	DBGLOG(DBG, "A: Encoding interpretation");
 	while (en < en_end){
+		DBGLOG(DBG, interpretationShadow[*en] << "=" << compatibleSet->getFact(*en));
 		assumptions.push_back(ID(compatibleSet->getFact(*en) ? 0 : ID::NAF_MASK, interpretationShadow[*en]));
 		en++;
 	}
@@ -1560,6 +1657,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 		// do not set an ordinary atom which is false in I
 		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary){
 			if (!compatibleSet->getFact(*en)){
+				DBGLOG(DBG, *en << "=0");
 				assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
 			}
 		}
@@ -1574,11 +1672,15 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 			const Rule& rule = reg->rules.getByID(ruleId);
 			BOOST_FOREACH (ID h, rule.head){
 				if (domain->getFact(h.address)){
+					DBGLOG(DBG, h.address << "=0");
 					assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(h.address)));
 				}
 			}
 		}
 	}
+
+	// let the CURRENT(!) hook atom be true
+	assumptions.push_back(ID::posLiteralFromAtom(hookAtom));
 
 #ifndef NDEBUG
 	BOOST_FOREACH (ID a, assumptions){
@@ -1735,6 +1837,15 @@ std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(Inter
 
 	DBGLOG(DBG, "Performing UFS Check wrt. " << *compatibleSet);
 
+	// check if the instance needs to be extended
+	DBGLOG(DBG, "Checking if problem encoding needs to be expanded");
+	if (groundProgram.idb.size() > problemRuleCount){
+		DBGLOG(DBG, "Problem encoding needs to be expanded");
+		expandUFSDetectionProblemAndReinstantiateSolver();
+	}else{
+		DBGLOG(DBG, "Problem encoding does not need to be expanded");
+	}
+
 	// learn from main search
 	learnNogoodsFromMainSearch(true);
 
@@ -1835,17 +1946,70 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		const AnnotatedGroundProgram& agp,
 		bool choiceRuleCompatible,
 		SimpleNogoodContainerPtr ngc) :
-			mg(&mg), ctx(ctx), agp(agp), lastAGPComponentCount(0), ngc(ngc){
+			mg(&mg), ctx(ctx), agp(agp), lastAGPComponentCount(0), choiceRuleCompatible(choiceRuleCompatible), ngc(ngc){
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
 	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
+
+/*
+// Test incremental definition of an instance
+std::cout << "=================" << std::endl;
+OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+at1.tuple.push_back(ctx.registry()->storeConstantTerm("a"));
+ID at1ID = ctx.registry()->storeOrdinaryGAtom(at1);
+
+OrdinaryAtom at2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+at2.tuple.push_back(ctx.registry()->storeConstantTerm("b"));
+ID at2ID = ctx.registry()->storeOrdinaryGAtom(at2);
+
+OrdinaryAtom at3(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+at3.tuple.push_back(ctx.registry()->storeConstantTerm("c"));
+ID at3ID = ctx.registry()->storeOrdinaryGAtom(at3);
+
+InterpretationPtr frozen(new Interpretation(ctx.registry()));
+//frozen->setFact(at1ID.address);
+//frozen->setFact(at2ID.address);
+frozen->setFact(at3ID.address);
+
+Rule r1(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+r1.head.push_back(at1ID);
+r1.body.push_back(ID::posLiteralFromAtom(at2ID));
+std::vector<ID> idb1;
+idb1.push_back(ctx.registry()->storeRule(r1));
+//OrdinaryASPProgram p1(ctx.registry(), idb1, InterpretationPtr(new Interpretation(ctx.registry())), ctx.maxint, InterpretationPtr());
+
+Rule r2(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+r2.head.push_back(at2ID);
+r2.body.push_back(ID::posLiteralFromAtom(at1ID));
+idb1.push_back(ctx.registry()->storeRule(r2));
+
+Rule r3(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+r3.head.push_back(at2ID);
+r3.body.push_back(ID::posLiteralFromAtom(at3ID));
+idb1.push_back(ctx.registry()->storeRule(r3));
+
+OrdinaryASPProgram p1(ctx.registry(), idb1, InterpretationPtr(new Interpretation(ctx.registry())), ctx.maxint, InterpretationPtr());
+
+GenuineGroundSolverPtr ss = GenuineGroundSolver::getInstance(ctx, p1, frozen);
+
+std::vector<ID> ass;
+ass.push_back(ID::nafLiteralFromAtom(at3ID));
+ss->restartWithAssumptions(ass);
+std::cout << "It 1" << std::endl;
+InterpretationConstPtr model;
+while (!!(model = ss->getNextModel())){
+	std::cout << *model << std::endl;
+}
+
+std::cout << "=================" << std::endl;
+*/
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		ProgramCtx& ctx,
 		const AnnotatedGroundProgram& agp,
 		bool choiceRuleCompatible) :
-			ctx(ctx), mg(0), agp(agp), lastAGPComponentCount(0){
+			ctx(ctx), mg(0), agp(agp), choiceRuleCompatible(choiceRuleCompatible), lastAGPComponentCount(0){
 
 	computeChoiceRuleCompatibility(choiceRuleCompatible);
 	if (!ctx.config.getOption("LazyUFSCheckerInitialization")) initializeUnfoundedSetCheckers();
@@ -1889,45 +2053,50 @@ void UnfoundedSetCheckerManager::initializeUnfoundedSetCheckers(){
 void UnfoundedSetCheckerManager::computeChoiceRuleCompatibility(bool choiceRuleCompatible){
 
 	for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-		if (agp.hasHeadCycles(comp) || !choiceRuleCompatible){
-			intersectsWithNonHCFDisjunctiveRules.push_back(false);
-		}else{
-			// Check if the component contains a disjunctive non-HCF rule
-			// Note that this does not necessarily mean that the component is non-NCF!
-			// Example:
-			//    a v b v c.
-			//    a :- b.
-			//    b :- a.
-			//    a :- c.
-			//    d :- c.
-			//    c :- d.
-			// The program has the following components:
-			// {a, b} with rules  a v b v c.
-			//                    a :- b.
-			//                    b :- a.
-			//                    a :- c.
-			// {c, d} with rules  a v b v c.
-			//                    d :- c.
-			//                    c :- d.
-			// Note that the component {c, d} contains a Non-HCF disjunctive rule (a v b v c.), but is not Non-HCF itself.
-			// Therefore, the optimization would skip the UFS check for the component {c, d} (and do it for {a, b}).
-			// 
-			// If disjunctive rules are considered as such, this is sufficient because the (polynomial) UFS check implemented
-			// directly in the reasoner detects the unfounded set:
-			//    A candidate is {c, a, b, d}, but none of these atoms can use the rule a v b v c. as source because it is satisfied independently of {a}, {b} and {c}.
-			// However, if disjunctive rules are transformed to choice rules, then a v b v c. becomes 1{a, b, c} and MULTIPLE atoms may use it as source.
-			// 
-			// Therefore, the (exponential) UFS check in this class is not only necessary for Non-HCF-components, but also for HCF-components which contain disjunctive rules
-			// which also also in some other Non-HCF-components.
-			bool dh = false;
-			BOOST_FOREACH (ID ruleID, agp.getProgramOfComponent(comp).idb){
-				if (agp.containsHeadCycles(ruleID)){
-					dh = true;
-					break;
-				}
+		computeChoiceRuleCompatibilityForComponent(choiceRuleCompatible, comp);
+	}
+}
+
+void UnfoundedSetCheckerManager::computeChoiceRuleCompatibilityForComponent(bool choiceRuleCompatible, int comp){
+
+	if (agp.hasHeadCycles(comp) || !choiceRuleCompatible){
+		intersectsWithNonHCFDisjunctiveRules.push_back(false);
+	}else{
+		// Check if the component contains a disjunctive non-HCF rule
+		// Note that this does not necessarily mean that the component is non-NCF!
+		// Example:
+		//    a v b v c.
+		//    a :- b.
+		//    b :- a.
+		//    a :- c.
+		//    d :- c.
+		//    c :- d.
+		// The program has the following components:
+		// {a, b} with rules  a v b v c.
+		//                    a :- b.
+		//                    b :- a.
+		//                    a :- c.
+		// {c, d} with rules  a v b v c.
+		//                    d :- c.
+		//                    c :- d.
+		// Note that the component {c, d} contains a Non-HCF disjunctive rule (a v b v c.), but is not Non-HCF itself.
+		// Therefore, the optimization would skip the UFS check for the component {c, d} (and do it for {a, b}).
+		// 
+		// If disjunctive rules are considered as such, this is sufficient because the (polynomial) UFS check implemented
+		// directly in the reasoner detects the unfounded set:
+		//    A candidate is {c, a, b, d}, but none of these atoms can use the rule a v b v c. as source because it is satisfied independently of {a}, {b} and {c}.
+		// However, if disjunctive rules are transformed to choice rules, then a v b v c. becomes 1{a, b, c} and MULTIPLE atoms may use it as source.
+		// 
+		// Therefore, the (exponential) UFS check in this class is not only necessary for Non-HCF-components, but also for HCF-components which contain disjunctive rules
+		// which also also in some other Non-HCF-components.
+		bool dh = false;
+		BOOST_FOREACH (ID ruleID, agp.getProgramOfComponent(comp).idb){
+			if (agp.containsHeadCycles(ruleID)){
+				dh = true;
+				break;
 			}
-			intersectsWithNonHCFDisjunctiveRules.push_back(dh);
 		}
+		intersectsWithNonHCFDisjunctiveRules.push_back(dh);
 	}
 }
 
@@ -1938,8 +2107,10 @@ UnfoundedSetCheckerPtr UnfoundedSetCheckerManager::instantiateUnfoundedSetChecke
 		SimpleNogoodContainerPtr ngc){
 
 	if (ctx.config.getOption("UFSCheckAssumptionBased") && false){
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker ordinary/assumption-based");
 		return UnfoundedSetCheckerPtr(new AssumptionBasedUnfoundedSetChecker(ctx, groundProgram, componentAtoms, ngc));
 	}else{
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker ordinary/encoding-based");
 		return UnfoundedSetCheckerPtr(new EncodingBasedUnfoundedSetChecker(ctx, groundProgram, componentAtoms, ngc));
 	}
 }
@@ -1953,8 +2124,10 @@ UnfoundedSetCheckerPtr UnfoundedSetCheckerManager::instantiateUnfoundedSetChecke
 		SimpleNogoodContainerPtr ngc){
 
 	if (ctx.config.getOption("UFSCheckAssumptionBased")){
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker external/assumption-based");
 		return UnfoundedSetCheckerPtr(new AssumptionBasedUnfoundedSetChecker(mg, ctx, groundProgram, agp, componentAtoms, ngc));
 	}else{
+		DBGLOG(DBG, "instantiateUnfoundedSetChecker external/encoding-based");
 		return UnfoundedSetCheckerPtr(new EncodingBasedUnfoundedSetChecker(mg, ctx, groundProgram, agp, componentAtoms, ngc));
 	}
 }
@@ -1976,17 +2149,18 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 	bool flpdc_head = (ctx.config.getOption("FLPDecisionCriterionHead") != 0);
 	bool flpdc_e = (ctx.config.getOption("FLPDecisionCriterionE") != 0);
 
-	if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e)){
-		DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");
-		return std::vector<IDAddress>();
+	// in incremental mode we need to proceed as we can decide the FLP criterion only after checking each component for necessary extensions
+	if (!ctx.config.getOption("IncrementalGrounding")){
+		if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e)){
+			DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");
+			return std::vector<IDAddress>();
+		}
 	}
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "UnfoundedSetChkMgr::getUFS");
 	std::vector<IDAddress> ufs;
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		if (preparedUnfoundedSetCheckers.size() > 0 && agp.getComponentCount() > lastAGPComponentCount){
-			DBGLOG(DBG, "Resetting UFS checker because new program components were discovered");
-			preparedUnfoundedSetCheckers.clear();
 		}
 		lastAGPComponentCount = agp.getComponentCount();
 
@@ -2019,6 +2193,10 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 			}
 		}
 	}else{
+		for (int i = intersectsWithNonHCFDisjunctiveRules.size(); i < agp.getComponentCount(); ++i){
+			computeChoiceRuleCompatibilityForComponent(choiceRuleCompatible, i);
+		}
+
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){

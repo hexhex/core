@@ -68,12 +68,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements the rule dependency graph. */
 class DependencyGraph
 {
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
+  /** \brief Meta information about a single node in the graph. */
   struct NodeInfo:
     public ostream_printable<NodeInfo>
   {
@@ -81,46 +83,49 @@ public:
 		// store rule as rule
 		// store external atom body literal as atom (in non-naf-negated form)
     // store nothing else as node
+    /** \brief Rule ID. */
     ID id;
 
-		NodeInfo(ID id=ID_FAIL): id(id) {}
+    /** \brief Constructor.
+      * @param id Rule ID. */
+    NodeInfo(ID id=ID_FAIL): id(id) {}
     std::ostream& print(std::ostream& o) const;
   };
 
+  /** \brief Stores meta information about a single dependency in the graph.
+    *
+    * * dependency A -> B where A is a regular rule and B is a regular rule:
+    *   * one of A's positive body ordinary atom literals
+    *     unifies with one of B's head atoms -> "positiveRegularRule"
+    *   * one of A's negative body ordinary atom literals
+    *     unifies with one of B's head atoms -> "negativeRule"
+    *   * one of A's head atoms unifies with one of B's head atoms
+    *     -> "unifyingHead"
+    *     if A or B has a disjunctive head -> "disjunctive"
+    * * dependency A -> B where A is a constraint and B is a regular rule:
+    *   * one of A's positive body ordinary atom literals
+    *     unifies with one of B's head atoms -> "positiveConstraint"
+    *   * one of A's negative body ordinary atom literals
+    *     unifies with one of B's head atoms -> "negativeRule"
+    * * dependency A -> X where A is a rule and X is an external atom:
+    *   * X is present in the positive body of A and X is monotonic
+    *     -> "positiveExternal"
+    *   * X is present in the positive body of A and X is nonmonotonic
+    *     -> "positiveExternal" and "negativeExternal"
+    *   * X is present in the negative body of A and X is monotonic
+    *     -> "negativeExternal"
+    *   * X is present in the negative body of A and X is nonmonotonic
+    *     -> "positiveExternal" and "negativeExternal"
+    * * dependency X -> A where X is an external atom and A is a rule:
+    *   * A is the auxiliary input rule providing input for X in rule/constraint B
+    *     -> "externalConstantInput"
+    *   * a predicate input of X matches one head of rule A
+    *     -> "externalPredicateInput"
+    *   * a nonmonotonic predicate input of X matches one head of rule A
+    *     -> "externalPredicateInput" and "externalNonmonotonicPredicateInput". */
   struct DependencyInfo:
     public ostream_printable<DependencyInfo>
   {
-    // the following dependencies are stored in this graph:
-    //
-    // * dependency A -> B where A is a regular rule and B is a regular rule:
-    //   * one of A's positive body ordinary atom literals
-    //     unifies with one of B's head atoms -> "positiveRegularRule"
-    //   * one of A's negative body ordinary atom literals
-    //     unifies with one of B's head atoms -> "negativeRule"
-    //   * one of A's head atoms unifies with one of B's head atoms
-    //     -> "unifyingHead"
-    //     if A or B has a disjunctive head -> "disjunctive"
-    // * dependency A -> B where A is a constraint and B is a regular rule:
-    //   * one of A's positive body ordinary atom literals
-    //     unifies with one of B's head atoms -> "positiveConstraint"
-    //   * one of A's negative body ordinary atom literals
-    //     unifies with one of B's head atoms -> "negativeRule"
-    // * dependency A -> X where A is a rule and X is an external atom:
-    //   * X is present in the positive body of A and X is monotonic
-    //     -> "positiveExternal"
-    //   * X is present in the positive body of A and X is nonmonotonic
-    //     -> "positiveExternal" and "negativeExternal"
-    //   * X is present in the negative body of A and X is monotonic
-    //     -> "negativeExternal"
-    //   * X is present in the negative body of A and X is nonmonotonic
-    //     -> "positiveExternal" and "negativeExternal"
-    // * dependency X -> A where X is an external atom and A is a rule:
-    //   * A is the auxiliary input rule providing input for X in rule/constraint B
-    //     -> "externalConstantInput"
-    //   * a predicate input of X matches one head of rule A
-    //     -> "externalPredicateInput"
-    //   * a nonmonotonic predicate input of X matches one head of rule A
-    //     -> "externalPredicateInput" and "externalNonmonotonicPredicateInput"
     bool positiveRegularRule;
     bool positiveConstraint;
     bool negativeRule;
@@ -132,7 +137,8 @@ public:
     bool externalPredicateInput;
     bool externalNonmonotonicPredicateInput;
 
-		DependencyInfo():
+    /** \brief Constructor. */
+    DependencyInfo():
     	positiveRegularRule(false),
       positiveConstraint(false),
 			negativeRule(false),
@@ -144,8 +150,14 @@ public:
       externalPredicateInput(false),
       externalNonmonotonicPredicateInput(false)
       {}
-		const DependencyInfo& operator|=(const DependencyInfo& other);
-    std::ostream& print(std::ostream& o) const;
+
+      /** \brief Merges another DependencyInfo into this one.
+        *
+        * Note that this is already possible without ambiguity.
+        * @param other ComponentInfo to merge into this one.
+        * @return Reference to this. */
+      const DependencyInfo& operator|=(const DependencyInfo& other);
+      std::ostream& print(std::ostream& o) const;
   };
 
   // for out-edge list we use vecS so we may have duplicate edges which is not a
@@ -171,7 +183,9 @@ public:
 protected:
   // the node mapping maps IDs of external atoms and rules
   // to nodes of the dependency graph
+	/** \brief See boost:graph. */
 	struct IDTag {};
+	/** \brief See boost:graph. */
 	struct NodeMappingInfo
 	{
 		ID id;
@@ -192,28 +206,44 @@ protected:
 
 protected:
   typedef std::vector<Node> NodeList;
+  /** \brief Stores for a given ordinary atom where it occurs. */
   struct HeadBodyInfo
   {
-    // ordinary ground or nonground atom id
+    /** \brief Ordinary ground or nonground atom id. */
     ID id;
+    /** \brief True if \p id occurs in a head. */
     bool inHead;
+    /** \brief True if \p id occurs in a body. */
     bool inBody;
+    /** \brief True if \p id occurs in the head of a nondisjunctive rule. */
     NodeList inHeadOfNondisjunctiveRules;
+    /** \brief True if \p id occurs in the head of a disjunctive rule. */
     NodeList inHeadOfDisjunctiveRules;
-    NodeList inPosBodyOfRegularRules; // only non-constraint rules
+    /** \brief True if \p id occurs in the positive body of a rule which is not a constraint. */
+    NodeList inPosBodyOfRegularRules;
+    /** \brief True if \p id occurs in the positive body of a constraint. */
     NodeList inPosBodyOfConstraints;
-    NodeList inNegBodyOfRules; // any rules
-    ID headPredicate; // constant term, only for inHead
+    /** \brief True if \p id occurs in the negative body of any rule (regular and constraint). */
+    NodeList inNegBodyOfRules;
+    /** \brief Predicate of the atom; only specified if inHead is true. */
+    ID headPredicate;
+    /** \brief Pointer to the original OrdinaryAtom. */
     const OrdinaryAtom* oatom;
 
+    /** \brief Constructor.
+      * @param oatom See HeadBodyInfo::oatom. */
     HeadBodyInfo(const OrdinaryAtom* oatom = NULL):
       id(ID_FAIL), inHead(false), inBody(false),
       headPredicate(ID_FAIL), oatom(oatom) {}
   };
 
+  /** \brief See boost::graph. */
   struct InHeadTag {};
+  /** \brief See boost::graph. */
   struct InBodyTag {};
+  /** \brief See boost::graph. */
   struct HeadPredicateTag {};
+  /** \brief See boost::graph. */
   struct HeadBodyHelper
   {
     typedef boost::multi_index_container<
@@ -242,6 +272,7 @@ protected:
     typedef HBInfos::index<InBodyTag>::type InBodyIndex;
     typedef HBInfos::index<HeadPredicateTag>::type HeadPredicateIndex;
 
+    /** \brief See boost::graph. */
     HBInfos infos;
   };
 
@@ -249,27 +280,44 @@ protected:
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
+  /** \brief ProgramCtx. */
   ProgramCtx& ctx;
+  /** \brief Registry used for resolving IDs. */
   RegistryPtr registry;
+  /** \brief Instance of the internal graph. */
   Graph dg;
+  /** \brief See boost::graph. */
 	NodeMapping nm;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 private:
-  // not implemented on purpose because forbidden to use
+  /** \brief Copy-constructor.
+    *
+    * Not implemented on purpose because forbidden to use.
+    * @param other Other graph. */
 	DependencyGraph(const Dependency& other);
 public:
+	/** \brief Constructor.
+	  * @param ctx See DependencyGraph::ctx.
+	  * @param registry See DependencyGraph::registry. */
 	DependencyGraph(ProgramCtx& ctx, RegistryPtr registry);
+	/** \brief Destructor. */
 	virtual ~DependencyGraph();
 
-  // this method creates all dependencies
+  /** \brief Creates all dependencies and auxiliary input rules.
+    * @param idb IDB of the program.
+    * @param createdAuxRules Container to receive the auxiliary input rules. */
   void createDependencies(const std::vector<ID>& idb, std::vector<ID>& createdAuxRules);
 
-  // output graph as graphviz source
+  /** \brief Output graph as graphviz source (dot file).
+    * @param o Stream to print the graph to.
+    * @param verbose True to include more information. */
   virtual void writeGraphViz(std::ostream& o, bool verbose) const;
 
+  /** \brief Retrieves the internal graph.
+    * @return Internal graph. */
   const Graph& getInternalGraph() const
     { return dg; }
 
@@ -282,43 +330,68 @@ public:
 			return it->node;
 		}
 
-  // get range over all nodes
+  /** \brief Get range over all nodes.
+    * @param Node Some node of the graph.
+    * @return NodeInfo of \p node. */
   inline std::pair<NodeIterator, NodeIterator> getNodes() const
     { return boost::vertices(dg); }
 
-	// get node info given node
+	/** \brief Get node info given node
+          * @param Node Some node of the graph.
+          * @return NodeInfo of \p node. */
 	inline const NodeInfo& getNodeInfo(Node node) const
 		{ return dg[node]; }
 
-	// get dependency info given dependency
+	/** \brief Get dependency info given dependency
+          * @param dep Some dependency of the graph.
+          * @return DependencyInfo of \p dep. */
 	inline const DependencyInfo& getDependencyInfo(Dependency dep) const
 		{ return dg[dep]; }
 
-	// get dependencies (to predecessors) = arcs from this node to others
+	/** \brief Get dependencies (to predecessors) = arcs from this node to others.
+          * @param Node Some node of the graph.
+          * @return Pair of begin and end iterator. */
   inline std::pair<PredecessorIterator, PredecessorIterator>
   getDependencies(Node node) const
 		{ return boost::out_edges(node, dg); }
 
-	// get provides (dependencies to successors) = arcs from other nodes to this one
+	/** \brief Get provides (dependencies to successors) = arcs from other nodes to this one.
+          * @param Node Some node of the graph.
+          * @return Pair of begin and end iterator. */
   inline std::pair<SuccessorIterator, SuccessorIterator>
   getProvides(Node node) const
 		{ return boost::in_edges(node, dg); }
 
-	// get source of dependency = node that depends
+	/** \brief Get source of dependency = node that depends.
+          * @param d Some depndency of the graph.
+          * @return Source of \p d. */
   inline Node sourceOf(Dependency d) const
 		{ return boost::source(d, dg); }
 
-	// get target of dependency = node upon which the source depends
+	/** \brief Get target of dependency = node upon which the source depends.
+          * @param d Some dependency of the graph.
+          * @return Target of \p d. */
   inline Node targetOf(Dependency d) const
 		{ return boost::target(d, dg); }
 
-	// get node/dependency properties
+	/** \brief Get node properties.
+          * @param Node Some node of the graph.
+          * @return NodeInfo of \p n. */
 	inline const NodeInfo& propsOf(Node n) const
 		{ return dg[n]; }
+	/** \brief Get node properties.
+          * @param Node Some node of the graph.
+          * @return NodeInfo of \p n. */
 	inline NodeInfo& propsOf(Node n)
 		{ return dg[n]; }
+	/** \brief Get dependency properties.
+          * @param d Some dependency of the graph.
+          * @return DependencyInfo of \p d. */
 	inline const DependencyInfo& propsOf(Dependency d) const
 		{ return dg[d]; }
+	/** \brief Get dependency properties.
+          * @param d Some dependency of the graph.
+          * @return DependencyInfo of \p d. */
 	inline DependencyInfo& propsOf(Dependency d)
 		{ return dg[d]; }
 
@@ -329,61 +402,122 @@ public:
 		{ return boost::num_edges(dg); }
 
 protected:
-  // create node, update mapping
+  /** \brief Creates a node and updates the node mapping.
+    * @param id Node to create.
+    * @return New node in the graph. */ 
   inline Node createNode(ID id);
   
 protected:
-  // create nodes for rules and external atoms
-  // create "positiveExternal" and "negativeExternal" dependencies
-  // create "externalConstantInput" dependencies and auxiliary rules
-  // fill HeadBodyHelper (required for efficient unification)
+  /** \brief Creates nodes for rules and external atoms.
+    *
+    * Create "positiveExternal" and "negativeExternal" dependencies.
+    * Create "externalConstantInput" dependencies and auxiliary rules.
+    * Fills HeadBodyHelper (required for efficient unification).
+    * @param idb IDB of the program.
+    * @param createdAuxRules Container to receive the auxiliary input rules.
+    * @param hbh Information about heads and bodies. */
   void createNodesAndIntraRuleDependencies(
       const std::vector<ID>& idb,
       std::vector<ID>& createdAuxRules,
       HeadBodyHelper& hbh);
     // helpers
+    /** \brief Creates edges for dependencies within rules.
+      * @param idrule ID of the rule to create the dependencies for.
+      * @param createdAuxRules Container to receive the auxiliary input rules.
+      * @param hbh Information about heads and bodies. */
     void createNodesAndIntraRuleDependenciesForRule(
         ID idrule,
         std::vector<ID>& createdAuxRules,
         HeadBodyHelper& hbh);
+      /** \brief Updates the graph after recognizing a head atom.
+        * @param idat Head atom.
+        * @param rule The rule atom \p idat belongs to.
+        * @param nrule Node of \p rule.
+        * @param hbh Information about heads and bodies. */
       void createNodesAndIntraRuleDependenciesForRuleAddHead(
           ID idat, const Rule& rule, Node nrule, HeadBodyHelper& hbh);
+      /** \brief Updates the graph after recognizing a body atom.
+        * @param idlit Body literal.
+        * @param idrule ID of the rule literal \p idlit belongs to.
+        * @param body Body of \p idrule.
+        * @param nrule Node of \p body.
+        * @param hbh Information about heads and bodies.
+        * @param createdAuxRules Container to receive the auxiliary input rules.
+        * @param inAggregateBody True to indicate that \p idlit is added to an aggregate body, false to add it to a regular rule body. */
       void createNodesAndIntraRuleDependenciesForBody(
           ID idlit, ID idrule, const Tuple& body, Node nrule,
           HeadBodyHelper& hbh, std::vector<ID>& createdAuxRules,
           bool inAggregateBody = false);
-    // this method creates an auxiliary rule for the eatom wrt a rule body (not a rule!)
-    // this way we can use the method both for grounding aggregate bodies as well as rule bodies
+    /** \brief This method creates an auxiliary rule for the eatom wrt a rule body (not a rule!).
+      *
+      * This way we can use the method both for grounding aggregate bodies as well as rule bodies.
+      *
+      * * For each eatom in the rule with variable inputs:
+      *   * create auxiliary input predicate for its input
+      *   * create auxiliary rule collecting its input, use as dependencies all positive literals (including eatoms) in the rule
+      *   (this potentially creates many aux rules (cf. extatom2.hex)).
+      * @param body Rule body.
+      * @param idlit Body literal.
+      * @param idat Head predicate.
+      * @param neatom Node of external atom \p eatom.
+      * @param eatom ID of the external atom to create auxiliary rules for.
+      * @param createdAuxRules Container to receive the auxiliary input rules.
+      * @param hbh Information about heads and bodies. */
     void createAuxiliaryRuleIfRequired(
         const Tuple& body,
         ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
         const PluginAtom* pluginAtom,
         std::vector<ID>& createdAuxRules,
         HeadBodyHelper& hbh);
-    // create auxiliary rule head predicate (in registry) and return ID
+    /** \brief Create auxiliary rule head predicate (in registry) and return ID.
+      * @param forEAtom ID of the external atom to create an auxiliary rule for.
+      * @return ID of the auxiliary rule for \p forEAtom. */
     ID createAuxiliaryRuleHeadPredicate(ID forEAtom);
-    // create auxiliary rule head (in registry) and return ID
+    /** \brief Create auxiliary rule head (in registry) and return ID.
+      * @param idauxpre Predicate to use in the auxiliary rule.
+      * @param variables Variable to pass from the rule body to the head.
+      * @return ID of the auxiliary rule. */
     ID createAuxiliaryRuleHead(ID idauxpred, const std::list<ID>& variables);
-    // create auxiliary rule (in registry) and return ID
+    /** \brief Create auxiliary rule (in registry) and return ID.
+      * @param head Head atom ID.
+      * @param body Rule body. 
+      * @return ID of the auxiliary rule. */
     ID createAuxiliaryRule(ID head, const std::list<ID>& body);
 
-	// create "externalPredicateInput" dependencies
+	/** \brief Create "externalPredicateInput" dependencies.
+          * @param createdAuxRules Container to receive the auxiliary input rules. */
   void createExternalPredicateInputDependencies(const HeadBodyHelper& hbh);
     // helpers
+	/** \brief Create "externalPredicateInput" dependencies.
+          * @param nonmonotonic Specifies whether to create a monotonic or nonmonotonic dependency.
+          * @param ni_eatom See boost::graph.
+          * @param predicate Input predicate.
+          * @param createdAuxRules Container to receive the auxiliary input rules. */
     void createExternalPredicateInputDependenciesForInput(
         bool nonmonotonic, const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh);
 
-  // build all unifying dependencies ("{positive,negative}{Rule,Constraint}", "unifyingHead")
+  /** \brief Build all unifying dependencies ("{positive,negative}{Rule,Constraint}", "unifyingHead").
+    * @param createdAuxRules Container to receive the auxiliary input rules. */
   void createUnifyingDependencies(const HeadBodyHelper& hbh);
     // helpers
-    // "unifyingHead" dependencies
+    /** \brief Create "unifyingHead" dependencies.
+      * @param createdAuxRules Container to receive the auxiliary input rules. */
     void createHeadHeadUnifyingDependencies(const HeadBodyHelper& hbh);
-    // "{positive,negative}{Rule,Constraint}" dependencies
+    /** \brief Create "{positive,negative}{Rule,Constraint}" dependencies.
+      * @param createdAuxRules Container to receive the auxiliary input rules. */
     void createHeadBodyUnifyingDependencies(const HeadBodyHelper& hbh);
 
 protected:
   // helpers for writeGraphViz: extend for more output
+  /** \brief Writes a single node in dot format.
+    * @param o Stream to write to.
+    * @param n Node to output.
+    * @param verbose True to include more detailed information. */
   virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
+  /** \brief Writes a single dependency in dot format.
+    * @param o Stream to write to.
+    * @param dep Dependency to output.
+    * @param verbose True to include more detailed information. */
   virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 };
 

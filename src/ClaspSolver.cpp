@@ -27,7 +27,7 @@
  * @author Christoph Redl
  * @author Peter Schueller <peterschueller@sabanciuniv.edu> (performance improvements, incremental model update)
  *
- * @brief Interface to genuine clasp 3.0.0-based Solver.
+ * @brief Interface to genuine clasp 3.1.1-based Solver.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,12 +63,17 @@
 // activate this for detailed benchmarking in this file 
 #undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 
+
+// @clasp examples: Run the following command to use the Makefile in clasp/libclasp/examples:
+//   export CXXFLAGS="-DWITH_THREADS=0 -I $PWD/../ -I $PWD/../../libprogram_opts/"
+
 DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ExternalPropagator ==============================
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 
+	cs.claspctx.master()->addPost(this);
 	startAssignmentExtraction();
 
 	// initialize propagation deferring
@@ -82,6 +87,7 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
 
 ClaspSolver::ExternalPropagator::~ExternalPropagator(){
 	stopAssignmentExtraction();
+	cs.claspctx.master()->removePost(this);
 }
 
 void ClaspSolver::ExternalPropagator::startAssignmentExtraction(){
@@ -91,19 +97,31 @@ void ClaspSolver::ExternalPropagator::startAssignmentExtraction(){
 	currentAssigned = InterpretationPtr(new Interpretation(cs.reg));
 	currentChanged = InterpretationPtr(new Interpretation(cs.reg));
 
-	// add watches for all literals
+	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
+	DBGLOG(DBG, "Extracting full interpretation from clasp");
+	cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
+
+	// add watches for all literals and decision levels
 	for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
 		// skip eliminated variables
 		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+
+		uint32_t level = cs.claspctx.master()->level(it->second.lit.var());
+		if (cs.claspToHex.size() > it->second.lit.index()){
+			BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(it->second.lit.index())){
+				// add the variable to the undo watch for the decision level on which it was assigned
+				while (assignmentsOnDecisionLevel.size() < level + 1){
+					assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
+					DBGLOG(DBG, "Adding undo watch to level " << level);
+					if (level > 0) cs.claspctx.master()->addUndoWatch(level, this);
+				}
+			}
+		}
 
 		DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
 		cs.claspctx.master()->addWatch(it->second.lit, this);
 		cs.claspctx.master()->addWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
 	}
-
-	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
-	DBGLOG(DBG, "Extracting full interpretation from clasp");
-	cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
 }
 
 void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
@@ -119,11 +137,11 @@ void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
 	}
 
 	// remove watches for all decision levels
-	for (uint32_t i = 0; i <= assignmentsOnDecisionLevel.size(); i++){
-		if (cs.claspctx.master()->validLevel(i)){
+	for (uint32_t i = 1; i < assignmentsOnDecisionLevel.size(); i++){
+		//if (cs.claspctx.master()->validLevel(i)){
 			DBGLOG(DBG, "Removing watch for decision level " << i);
 			cs.claspctx.master()->removeUndoWatch(i, this);
-		}
+		//}
 	}
 
 	currentIntr.reset();
@@ -151,6 +169,7 @@ void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 #endif
 
 	// call HEX propagators
+	DBGLOG(DBG, "Need to call " << cs.propagators.size() << " propagators");
 	BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators){
 		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator #" << (++propNr));
 		propagator->propagate(currentIntr, currentAssigned, currentChanged);
@@ -268,7 +287,7 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 	DBGLOG(DBG, "Clasp notified about literal C:" << p.index() << "/" << (p.sign() ? "!" : "") << p.var() << " becoming true on dl " << level);
 	if (cs.claspToHex.size() > p.index()){
-		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[p.index()]){
+		BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(p.index())){
 			DBGLOG(DBG, "Assigning H:" << adr << " to true");
 			currentIntr->setFact(adr);
 			currentAssigned->setFact(adr);
@@ -276,21 +295,19 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 			// add the variable to the undo watch for the decision level on which it was assigned
 			while (assignmentsOnDecisionLevel.size() < level + 1){
+				if(assignmentsOnDecisionLevel.size() > 0){
+					DBGLOG(DBG, "Adding undo watch to level " << assignmentsOnDecisionLevel.size());
+					cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
+				}
 				assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
 			}
 			assignmentsOnDecisionLevel[level].push_back(adr);
-			if(level > 0 && assignmentsOnDecisionLevel[level].size() == 1){
-				DBGLOG(DBG, "Adding undo watch to level " << level);
-				cs.claspctx.master()->addUndoWatch(level, this);
-			}else{
-				DBGLOG(DBG, "Do not add undo watch to level " << level);
-			}
 		}
 	}
 
 	DBGLOG(DBG, "This implies that literal C:" << pneg.index() << "/" << (pneg.sign() ? "!" : "") << p.var() << " becomes false on dl " << level);
 	if (cs.claspToHex.size() > pneg.index()){
-		BOOST_FOREACH (IDAddress adr, *cs.claspToHex[pneg.index()]){
+		BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(pneg.index())){
 			DBGLOG(DBG, "Assigning H:" << adr << " to false");
 			currentIntr->clearFact(adr);
 			currentAssigned->setFact(adr);
@@ -298,10 +315,10 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
 
 			// add the variable to the undo watch for the decision level on which it was assigned
 			while (assignmentsOnDecisionLevel.size() < level + 1){
+				if(assignmentsOnDecisionLevel.size() > 0) cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
 				assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
 			}
 			assignmentsOnDecisionLevel[level].push_back(adr);
-			if(level > 0) cs.claspctx.master()->addUndoWatch(level, this);
 		}
 	}
 	DBGLOG(DBG, "ExternalPropagator::propagate finished");
@@ -352,7 +369,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 		if (solver.isTrue(it->second.lit) && !it->second.name.empty()) {
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
-			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
+			BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
 				if (!!extractCurrentIntr) extractCurrentIntr->setFact(adr);
 				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
 				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
@@ -361,7 +378,7 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 		if (solver.isFalse(it->second.lit) && !it->second.name.empty()) {
 			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
 			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is false");
-			BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
+			BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
 				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
 				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
 			}
@@ -370,10 +387,10 @@ void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, Interpretati
 }
 
 // freezes all variables in "frozen"; if the pointer is 0, then all variables are frozen
-void ClaspSolver::freezeVariables(InterpretationConstPtr frozen){
+void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDefault){
 
 	if (!!frozen){
-		DBGLOG(DBG, "Setting selected variables to frozen");
+		DBGLOG(DBG, "Setting selected variables to frozen: " << *frozen);
 
 #ifndef NDEBUG
 		int cntFrozen = 0;
@@ -382,22 +399,49 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen){
 		bm::bvector<>::enumerator en = frozen->getStorage().first();
 		bm::bvector<>::enumerator en_end = frozen->getStorage().end();
 		while (en < en_end){
+			if (isMappedToClaspLiteral(*en)){
 #ifndef NDEBUG
-			if (alreadyFrozen.count(hexToClasp[*en].var()) == 0){
-				cntFrozen++;
-				alreadyFrozen.insert(hexToClasp[*en].var());
-			}
+				if (alreadyFrozen.count(hexToClaspSolver[*en].var()) == 0){
+					cntFrozen++;
+					alreadyFrozen.insert(hexToClaspSolver[*en].var());
+				}
 #endif
-			claspctx.setFrozen(hexToClasp[*en].var(), true);
+				switch (problemType) {
+					case ASP:
+						// Note: (1) asp.free() does more than (2) claspctx.setFrozen().
+						// (2) prevents the internal solver variable from being eliminated due to optimization
+						// (1) does in addition prevent Clark's completion an loop clauses for these variables from being added (now), which
+						//     allows for defining them in later incremental steps
+						asp.freeze(convertHexToClaspProgramLit(*en).var(), Clasp::value_false);
+						break;
+					case SAT:
+						claspctx.setFrozen(convertHexToClaspSolverLit(*en).var(), true);
+						break;
+					default:
+						assert(false && "unknown problem type");
+				}
+			}
 			en++;
 		}
 #ifndef NDEBUG
 		DBGLOG(DBG, "Setting " << cntFrozen << " out of " << claspctx.numVars() << " variables to frozen");
 #endif
 	}else{
-		DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
-		for (uint32_t i = 1; i <= claspctx.numVars(); i++){
-			claspctx.setFrozen(i, true);
+		if (freezeByDefault){
+			DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
+			for (uint32_t i = 1; i <= claspctx.numVars(); i++){
+
+				switch (problemType) {
+					case ASP:
+						asp.freeze(i, Clasp::value_false);
+						break;
+					case SAT:
+						claspctx.setFrozen(i, true);
+						break;
+					default:
+						assert(false && "unknown problem type");
+				}
+			}
 		}
 	}
 }
@@ -412,13 +456,13 @@ void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId
 	assert(rule.head.size() != 0);
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		DBGLOG(DBG, "Adding to head: " << nonoptimizedMapHexToClasp(h.address).var());
-		asp.addHead(nonoptimizedMapHexToClasp(h.address).var());
+		DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+		asp.addHead(convertHexToClaspProgramLit(h.address).var());
 	}
 	for (uint32_t i = 0; i < rule.body.size(); ++i){
 		// add literal to body
-		DBGLOG(DBG, "Adding to body: " << (!(nonoptimizedMapHexToClasp(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << nonoptimizedMapHexToClasp(rule.body[i].address).var());
-		asp.addToBody(nonoptimizedMapHexToClasp(rule.body[i].address).var(), !(nonoptimizedMapHexToClasp(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
+		DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << convertHexToClaspProgramLit(rule.body[i].address).var());
+		asp.addToBody(convertHexToClaspProgramLit(rule.body[i].address).var(), !(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
 	}
 	asp.endRule();
 }
@@ -435,13 +479,13 @@ void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID rule
 	}
 	BOOST_FOREACH (ID h, rule.head){
 		// add literal to head
-		DBGLOG(DBG, "Adding to head: " << nonoptimizedMapHexToClasp(h.address).var());
-		asp.addHead(nonoptimizedMapHexToClasp(h.address).var());
+		DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+		asp.addHead(convertHexToClaspProgramLit(h.address).var());
 	}
 	BOOST_FOREACH (ID b, rule.body){
 		// add literal to body
-		DBGLOG(DBG, "Adding to body: " << (!(nonoptimizedMapHexToClasp(b.address).sign() ^ b.isNaf()) ? "" : "!") << nonoptimizedMapHexToClasp(b.address).var());
-		asp.addToBody(nonoptimizedMapHexToClasp(b.address).var(), !(nonoptimizedMapHexToClasp(b.address).sign() ^ b.isNaf()));
+		DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()) ? "" : "!") << convertHexToClaspProgramLit(b.address).var());
+		asp.addToBody(convertHexToClaspProgramLit(b.address).var(), !(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()));
 	}
 	asp.endRule();
 }
@@ -462,15 +506,14 @@ void ClaspSolver::sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
 	}
 }
 
-void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
+void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
 	asp.start(claspctx, config.asp);
 	asp.setNonHcfConfiguration(config.testerConfig());
 
 	// The following two lines allow for defining the program incrementally
-	// Note: If the program is to be defined incrementally, then endProgram() and update() must be called before each extension, even for the first one
-	inconsistent |= asp.endProgram();
+	// Note: If the program is to be defined incrementally, then updateProgram() must be called before each extension, even for the first one
 	asp.updateProgram();
 
 	false_ = nextVar++;
@@ -482,7 +525,7 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p){
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(nonoptimizedMapHexToClasp(*en).var()).endRule();
+		asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
 		en++;
 	}
 
@@ -525,13 +568,22 @@ asp.update();
 		sendRuleToClasp(asp, ruleId);
 	}
 
+	freezeVariables(frozen, false /* do not freeze variables by default */);
+
 	inconsistent = !asp.endProgram();
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+
+	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	asp.write(ss);
+	DBGLOG(DBG, "Program in LParse format: " << ss.str());
+#endif
 }
 
-void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
+void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen){
 
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
@@ -539,9 +591,6 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
 
-	//claspctx.startAddConstraints();
-	//Clasp::ClauseCreator cc(claspctx.master());
-	Clasp::SatBuilder sat;
 	sat.startProgram(claspctx);
 
 	prepareProblem(sat, ns);
@@ -553,19 +602,8 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
 		if (!ngClasp.tautological){
 			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
-/*
-			// Incremental SAT:
 
-			sat.endProgram();
-			sat.updateProgram();
-*/
 			sat.addClause(ngClasp.clause);
-			//cc.start();
-			//BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
-			//	cc.add(lit);
-			//}
-			//Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
-			//Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
 		}else{
 			DBGLOG(DBG, "Skipping tautological nogood");
 		}
@@ -575,6 +613,8 @@ void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+
+	freezeVariables(frozen, true /* freeze variables by default */);
 }
 
 void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
@@ -618,7 +658,7 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 }
 
 void ClaspSolver::shutdownClasp(){
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
+	if (!!ep.get()) ep.reset();
 	resetAndResizeClaspToHex(0);
 }
 
@@ -645,7 +685,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 		}
 
 		// mclit = mapped clasp literal
-		const Clasp::Literal mclit = mapHexToClasp(lit.address);
+		const Clasp::Literal mclit = convertHexToClaspSolverLit(lit.address, extendDomainIfNecessary);
 		if (claspctx.eliminated(mclit.var())){
 			DBGLOG(DBG, "some literal was eliminated");
 			return TransformNogoodToClaspResult(clause, false, true);
@@ -670,7 +710,7 @@ ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const
 			neg.insert(mclit.var());
 		}
 
-		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
+		// 1. cs.hexToClaspSolver maps hex-atoms to clasp-literals
 		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
 		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
 		Clasp::Literal clit = Clasp::Literal(mclit.var(), !(mclit.sign() ^ lit.isNaf()));
@@ -757,39 +797,23 @@ void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
 
 	bool inverselits = (ctx.config.getOption("ClaspInverseLiterals") != 0);
 
-	assert(hexToClasp.empty());
-	hexToClasp.reserve(reg->ogatoms.getSize());
+	assert(hexToClaspSolver.empty());
+	hexToClaspSolver.reserve(reg->ogatoms.getSize());
 
-	// build symbol table and hexToClasp
+	// build symbol table and hexToClaspSolver
 	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
 	unsigned largestIdx = 0;
 	unsigned varCnt = 0;
 	for (int i = 0; i < ns.getNogoodCount(); i++){
 		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
-			Clasp::Literal clasplit = mapHexToClasp(lit.address, true, inverselits);
+			Clasp::Literal clasplit = convertHexToClaspSolverLit(lit.address, true, inverselits);
 			if (clasplit.index() > largestIdx) largestIdx = clasplit.index();
 		}
 	}
 	claspctx.symbolTable().endInit();
-
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables, symbol table has " << claspctx.symbolTable().size() << " entries");
 	sat.prepareProblem(claspctx.numVars());
-
 	updateSymbolTable();
-	return;
-}
-
-void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
-{
-	for(unsigned u = 0; u < claspToHex.size(); ++u)
-	{
-		if( claspToHex[u] )
-			delete claspToHex[u];
-	}
-	claspToHex.resize(size, NULL);
-	for(unsigned u = 0; u < claspToHex.size(); ++u)
-		claspToHex[u] = new AddressVector;
 }
 
 void ClaspSolver::updateSymbolTable(){
@@ -798,8 +822,8 @@ void ClaspSolver::updateSymbolTable(){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::updateSymbolTable");
 	#endif
 
-	hexToClasp.clear();
-	hexToClasp.reserve(reg->ogatoms.getSize());
+	hexToClaspSolver.clear();
+	hexToClaspSolver.reserve(reg->ogatoms.getSize());
 
 	// go through clasp symbol table
 	const Clasp::SymbolTable& symTab = claspctx.symbolTable();
@@ -807,7 +831,13 @@ void ClaspSolver::updateSymbolTable(){
 	// each variable can be a positive or negative literal, literals are (var << 1 | sign)
 	// build empty set of NULL-pointers to vectors
 	// (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
-	DBGLOG(DBG, "Problem has " << claspctx.numVars() << " variables");
+#ifndef NDEBUG
+	if (problemType == ASP){
+		DBGLOG(DBG, "ASP problem has " << claspctx.numVars() << " variables");
+	}else if (problemType == SAT){
+		DBGLOG(DBG, "SAT problem has " << claspctx.numVars() << " variables");
+	}
+#endif
 	resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1 + 1);	// the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
 
 	LOG(DBG, "Symbol table of optimized program:");
@@ -822,57 +852,85 @@ void ClaspSolver::updateSymbolTable(){
 		c2h->push_back(hexAdr);
 	}
 
-	DBGLOG(DBG, "hexToClasp.size()=" << hexToClasp.size() << ", symTab.size()=" << symTab.size());
-}
-
-Clasp::Literal ClaspSolver::mapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
-	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
-		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit, true);
-		std::string str = idAddressToString(addr);
-#ifndef NDEBUG
-		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
-#endif
-		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-	}
-	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
-	return hexToClasp[addr];
-}
-
-Clasp::Literal ClaspSolver::nonoptimizedMapHexToClasp(IDAddress addr, bool registerVar, bool inverseLits) {
-	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
-		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit, true);
-		std::string str = idAddressToString(addr);
-#ifndef NDEBUG
-		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
-#endif
-		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-	}
-	assert(addr < hexToClasp.size()); assert(hexToClasp[addr] != noLiteral);
-	return nonoptimizedHexToClasp[addr];
+	DBGLOG(DBG, "hexToClaspSolver.size()=" << hexToClaspSolver.size() << ", symTab.size()=" << symTab.size());
 }
 
 void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized){
 
-	if(addr >= hexToClasp.size()){
-		hexToClasp.resize(addr + 1, noLiteral);
+	if(addr >= hexToClaspSolver.size()){
+		hexToClaspSolver.resize(addr + 1, noLiteral);
 	}
-	hexToClasp[addr] = lit;
+	hexToClaspSolver[addr] = lit;
 
 	if (alsoStoreNonoptimized){
-		if(addr >= nonoptimizedHexToClasp.size()){
-			nonoptimizedHexToClasp.resize(addr + 1, noLiteral);
+		if(addr >= hexToClaspProgram.size()){
+			hexToClaspProgram.resize(addr + 1, noLiteral);
 		}
-		nonoptimizedHexToClasp[addr] = lit;
+		hexToClaspProgram[addr] = lit;
 	}
+}
+
+void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
+{
+	DBGLOG(DBG, "resetAndResizeClaspToHex: current size is " << claspToHex.size());
+	for(unsigned u = 0; u < claspToHex.size(); ++u)
+	{
+		if(claspToHex[u]){
+			delete claspToHex[u];
+			claspToHex[u] = NULL;
+		}
+	}
+	DBGLOG(DBG, "resetAndResizeClaspToHex: resizing to " << size);
+	claspToHex.resize(size, NULL);
+	for(unsigned u = 0; u < claspToHex.size(); ++u) {
+		claspToHex[u] = new AddressVector;
+	}
+}
+
+Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
+//	DBGLOG(DBG, "Translating HEX address " << addr << " to clasp");
+	if (!isMappedToClaspLiteral(addr)){
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+		Clasp::Literal clasplit(c, inverseLits);
+		storeHexToClasp(addr, clasplit, true);
+		std::string str = idAddressToString(addr);
+#ifndef NDEBUG
+		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+#endif
+		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+//		DBGLOG(DBG, "Creating new clasp variable " << hexToClaspSolver[addr].var() << " for HEX address " << addr);
+//	}else{
+//		DBGLOG(DBG, "Mapping to " << hexToClaspSolver[addr].var() << " already exists");
+	}
+	assert(addr < hexToClaspSolver.size());
+	assert(hexToClaspSolver[addr] != noLiteral);
+	return hexToClaspSolver[addr];
+}
+
+Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool registerVar, bool inverseLits) {
+	if (!isMappedToClaspLiteral(addr)){
+		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+		Clasp::Literal clasplit(c, inverseLits);
+		storeHexToClasp(addr, clasplit, true);
+		std::string str = idAddressToString(addr);
+#ifndef NDEBUG
+		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+#endif
+		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+	}
+	assert(addr < hexToClaspSolver.size());
+	assert(hexToClaspSolver[addr] != noLiteral);
+	return hexToClaspProgram[addr];
+}
+
+const ClaspSolver::AddressVector* ClaspSolver::convertClaspSolverLitToHex(int index){
+	return claspToHex[index];
 }
 
 void ClaspSolver::outputProject(InterpretationPtr intr){
 	if( !!intr && !!projectionMask )
 	{
+		DBGLOG(DBG, "Projecting " << *intr);
 		intr->getStorage() -= projectionMask->getStorage();
 		DBGLOG(DBG, "Projected to " << *intr);
 	}
@@ -889,8 +947,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 	nextSolveStep = Restart;
 
 	claspctx.requestStepVar();
-	sendProgramToClasp(p);
-	freezeVariables(frozen);
+	sendProgramToClasp(p, frozen);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
@@ -917,7 +974,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 	DBGLOG(DBG, "Adding post propagator");
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
@@ -931,8 +987,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 	nextSolveStep = Restart;
 
 	claspctx.requestStepVar();
-	sendNogoodSetToClasp(ns);
-	freezeVariables(frozen);
+	sendNogoodSetToClasp(ns, frozen);
 
 	if (inconsistent){
 		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
@@ -986,7 +1041,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 
 	DBGLOG(DBG, "Adding post propagator");
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
 }
 
 ClaspSolver::~ClaspSolver(){
@@ -996,11 +1050,16 @@ ClaspSolver::~ClaspSolver(){
 
 void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
 
+	assert(problemType == ASP && "programs can only be added in ASP mode");
 	DBGLOG(DBG, "Adding program component incrementally");
 	nextSolveStep = Restart;
+	
+	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
+	if (!!ep.get()) ep.reset();
+	//if (!!ep.get()) claspctx.master()->removePost(ep.get());
 
 	// Update program
-	inconsistent |= asp.endProgram();
+	//inconsistent |= asp.endProgram();
 	asp.updateProgram();
 
 	// transfer added edb
@@ -1008,27 +1067,40 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
-		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(mapHexToClasp(*en).var()).endRule();
+		// redundancy check
+		if (convertHexToClaspSolverLit(*en).var() > 0){
+			// add fact
+			asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspSolverLit(*en).var()).endRule();
+		}
 		en++;
 	}
 
 	// transfer added idb
 	DBGLOG(DBG, "Sending added IDB to clasp");
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
-		sendRuleToClasp(asp, ruleId);
+		// redundancy check
+		bool redundant = false;
+		BOOST_FOREACH (ID h, reg->rules.getByID(ruleId).head){
+			if (convertHexToClaspSolverLit(h.address).var() == 0){
+				redundant = true;
+				break;
+			}
+		}
+
+		if (!redundant) sendRuleToClasp(asp, ruleId);
 	}
 
 	// finalize update
+	freezeVariables(frozen, false /* do not freeze variables by default */);
 	inconsistent = !asp.endProgram();
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
 	DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
-	freezeVariables(frozen);
 
 	// update projection
 	if (!!p.getGroundProgram().mask){
 		InterpretationPtr pm = InterpretationPtr(new Interpretation(reg));
 		if (!!projectionMask) pm->add(*projectionMask);
+		DBGLOG(DBG, "Adding to program mask:" << *p.getGroundProgram().mask);
 		pm->add(*p.getGroundProgram().mask);
 		projectionMask = pm;
 	}
@@ -1057,9 +1129,90 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	nextSolveStep = Restart;
 
 	DBGLOG(DBG, "Resetting post propagator");
-	if (!!ep.get()) claspctx.master()->removePost(ep.get());
 	ep.reset(new ExternalPropagator(*this));
-	claspctx.master()->addPost(ep.get());
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	asp.write(ss);
+	DBGLOG(DBG, "Updated program in LParse format: " << ss.str());
+#endif
+}
+
+void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
+
+	assert(problemType == SAT && "programs can only be added in SAT mode");
+	DBGLOG(DBG, "Adding set of nogoods incrementally");
+	
+	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
+	if (!!ep.get()) ep.reset();
+
+//	sat.updateProgram();
+	claspctx.unfreeze();
+
+	// add new variables
+	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
+	for (int i = 0; i < ns.getNogoodCount(); ++i){
+		const Nogood ng = ns.getNogood(i);
+		BOOST_FOREACH (ID id, ng){
+			// this will register the variable if not already available
+			convertHexToClaspProgramLit(id.address, true);
+			assert(isMappedToClaspLiteral(id.address) && "new variable was not properly mapped to clasp");
+		}
+	}
+	claspctx.symbolTable().endInit();
+
+	// add the new constraints
+	// (SATBuilder does not currently not support this, so we need to do it my hand!)
+	claspctx.startAddConstraints();
+	Clasp::ClauseCreator cc(claspctx.master());
+	for (int i = 0; i < ns.getNogoodCount(); i++){
+		const Nogood& ng = ns.getNogood(i);
+		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
+		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
+		if (!ngClasp.tautological){
+			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
+			cc.start(Clasp::Constraint_t::learnt_other);
+			BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
+				cc.add(lit);
+			}
+
+			Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
+			assert (!claspctx.master()->hasConflict() && (claspctx.master()->decisionLevel() == 0 || ci.learnt()));
+			Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
+			DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
+
+			if (!res.ok()){
+				inconsistent = true;
+				break;
+			}
+		}else{
+			DBGLOG(DBG, "Skipping tautological nogood");
+		}
+	}
+
+	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+
+	freezeVariables(frozen, true /* freeze variables by default */);
+
+	DBGLOG(DBG, "Prepare new model enumerator");
+	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+	modelEnumerator->init(claspctx, 0, config.solve.numModels);
+
+	DBGLOG(DBG, "Finalizing reinitialization");
+	if (!claspctx.endInit()){
+		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+		inconsistent = true;
+		return;
+	}
+
+	updateSymbolTable();
+
+	DBGLOG(DBG, "Resetting solver object");
+	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+	nextSolveStep = Restart;
+
+	DBGLOG(DBG, "Resetting post propagator");
+	ep.reset(new ExternalPropagator(*this));
 }
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
@@ -1075,8 +1228,8 @@ void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){
 		if (isMappedToClaspLiteral(a.address)){
-			DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << mapHexToClasp(a.address).index() << "/" << (mapHexToClasp(a.address).sign() ^ a.isNaf() ? "!" : "") << mapHexToClasp(a.address).var() << ")");
-			Clasp::Literal al = Clasp::Literal(mapHexToClasp(a.address).var(), mapHexToClasp(a.address).sign() ^ a.isNaf());
+			DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << convertHexToClaspSolverLit(a.address).index() << "/" << (convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf() ? "!" : "") << convertHexToClaspSolverLit(a.address).var() << ")");
+			Clasp::Literal al = Clasp::Literal(convertHexToClaspSolverLit(a.address).var(), convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf());
 			this->assumptions.push_back(al);
 		}else{
 			DBGLOG(DBG, "Ignoring assumption H:" << RawPrinter::toString(reg, a));
@@ -1190,7 +1343,7 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				model = InterpretationPtr(new Interpretation(reg));
 				for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
 					if (modelEnumerator->lastModel().isTrue(it->second.lit) && !it->second.name.empty()) {
-						BOOST_FOREACH (IDAddress adr, *claspToHex[it->second.lit.index()]){
+						BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
 							model->setFact(adr);
 						}
 					}

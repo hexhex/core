@@ -37,6 +37,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements brave and cautious queries by rewriting them to answer set computation and postprocessind. */
 class QueryPlugin:
   public PluginInterface
 {
@@ -46,30 +47,42 @@ public:
     public PluginData
   {
   public:
-    // whether plugin is enabled
+    /** \brief Stores if plugin is enabled. */
     bool enabled;
 
-    // reasoning mode (at the moment DEFAULT triggers an error,
-    // so the user _must_ choose a reasoning mode)
-    enum Mode { DEFAULT, BRAVE, CAUTIOUS };
+    /** Available reasoning modes.
+      *
+      * at the moment DEFAULT triggers an error,
+      * so the user _must_ choose a reasoning mode. */
+    enum Mode {
+	DEFAULT,
+	/** \brief Brave reasoning. */
+	BRAVE,
+	/** \brief Cautious reasoning. */
+	CAUTIOUS
+	};
+    /** \brief Selected reasoning mode. */
     Mode mode;
 
-    // true for ground queries, false for nonground
+    /** \brief True for ground queries, false for nonground. */
     bool ground;
 
-    // the query (contains body literals)
-    // (this is not directly stored into IDB or EDB)
+    /** \brief The query (contains body literals).
+      *
+      * This is not directly stored into IDB or EDB. */
     Tuple query;
 
-    // auxiliary predicate symbols for nonground query evaluation
+    /** \brief Auxiliary predicate symbols for nonground query evaluation. */
     ID varAuxPred;
+    /** \brief Auxiliary predicate symbols for ground query evaluation. */
     ID novarAuxPred;
 
-    // IDs of variables as they occur in auxiliary nonground predicate
+    /** \brief IDs of variables as they occur in auxiliary nonground predicate. */
     Tuple variableIDs;
 
-    // whether to display all witnesses for ground queries
-    // (positive witnesses for brave and negative for cautious reasoning)
+    /** \brief Whether to display all witnesses for ground queries.
+      *
+      * Positive witnesses for brave and negative for cautious reasoning. */
     bool allWitnesses;
 
     CtxData();
@@ -77,7 +90,9 @@ public:
   };
 
 public:
+  /** \brief Constructor. */
   QueryPlugin();
+  /** \brief Destructor. */
   virtual ~QueryPlugin();
 
 	// output help message for this plugin

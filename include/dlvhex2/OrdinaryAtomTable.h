@@ -43,6 +43,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Implements a lookup table for ordinary atoms. */
 class OrdinaryAtomTable:
 	public Table<
 		// value type is symbol struct
@@ -53,13 +54,6 @@ class OrdinaryAtomTable:
 			boost::multi_index::random_access<
 				boost::multi_index::tag<impl::AddressTag>
 			>,
-      #if 0
-			// kind TODO perhaps we do not need this index?
-			boost::multi_index::ordered_non_unique<
-				boost::multi_index::tag<impl::KindTag>,
-				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,IDKind,kind)
-			>,
-      #endif
 			// (unique) textual representation (parsing index, see TODO above)
 			boost::multi_index::hashed_unique<
 				boost::multi_index::tag<impl::TextTag>,
@@ -92,47 +86,77 @@ public:
 
 	// methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct for OrdinaryGroundAtom
-  // assert that ID exists in table
+  /** \brief Retrieve by ID.
+    *
+    * Assert that id.kind is correct for OrdinaryGroundAtom.
+    * Assert that ID exists in table.
+    * @param id Term ID.
+    * @return Ordinary atom corresponding to \p id.
+    */
 	inline const OrdinaryAtom& getByID(ID id) const throw ();
 
-  // retrieve by address (ignore kind)
-  // assert that address exists in table
+  /** \brief Retrieve by address (ignore kind).
+    *
+    * Assert that address exists in table.
+    * @param addr Address of the ordinary atom to retrieve.
+    * @return Ordinary atom corresponding to \p addr.
+    */
 	inline const OrdinaryAtom& getByAddress(IDAddress addr) const throw ();
 
-  // retrieve ID by address (ignore kind)
-  // assert that address exists in table
+  /** \brief Retrieve ID by address (ignore kind).
+     *
+     * Assert that address exists in table.
+     * @param addr Address of the ordinary atom to retrieve.
+     * @return Ordinary atom corresponding to \p addr.
+     */
 	inline ID getIDByAddress(IDAddress addr) const throw ();
 
-	// given string, look if already stored
-	// if no, return ID_FAIL, otherwise return ID
+  /** \brief Given string, look if already stored.
+    * @param text String representation of the ordinary atom to retrieve.
+    * @return ID_FAIL if not stored, otherwise return ID. */
 	inline ID getIDByString(const std::string& text) const throw();
 
-	// given tuple, look if already stored
-	// if no, return ID_FAIL, otherwise return ID
+	/** \brief Given tuple, look if already stored.
+	  * @param tuple Tuple representation of the ordinary atom to retrieve.
+          * @return ID_FAIL if not stored, otherwise return ID.
+	  */
 	inline ID getIDByTuple(const Tuple& tuple) const throw();
 
-  // get ID given storage retrieved by other means
-  // (storage must have originated from iterator from here)
+  /** \brief Get ID given storage retrieved by other means.
+    *
+    * Storage must have originated from iterator from here.
+    * @param atom Atom to retrieve; must be in the table.
+    * @return ID of \param atom. */
 	inline ID getIDByStorage(const OrdinaryAtom& atom) const throw ();
 
-  // get IDAddress of given storage retrieved by other means
-  // (storage must have originated from iterator from here)
+  /** \brief Get IDAddress of given storage retrieved by other means.
+    *
+    * Storage must have originated from iterator from here.
+    * @param atom Atom to retrieve; must be in the table.
+    * @return IDAddress of \param atom. */
 	inline IDAddress getIDAddressByStorage(const OrdinaryAtom& atom) const throw ();
 
-	// store atom, assuming it does not exist
-  // assert that atom did not exist in table
+  /** \brief Store atom, assuming it does not exist.
+    *
+    * Assert that atom did not exist in table.
+    * @param atom Atom to retrieve; must be in the table.
+    * @return ID of \param atom. */
 	inline ID storeAndGetID(const OrdinaryAtom& atom) throw();
 
-  // get all ordinary atoms with certain predicate id
-  // NOTE: you may need to lock the mutex also while iterating!
-	// if you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow)
+  /** \brief Get all ordinary atoms with certain predicate id.
+    *
+    * NOTE: you may need to lock the mutex also while iterating!
+    * If you intend to use this method frequently, consider to use a PredicateMask instead for better efficiency (iteration is slow).
+    * @param id Predicate ID.
+    * @return Pair of begin and end iterator representing all atoms in the table with the given predicate. */
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
-  // get range over all atoms sorted by address
-  // NOTE: you may need to lock the mutex also while iterating!
+  /** \brief Get all ordinary atoms in the table.
+    *
+    * NOTE: you may need to lock the mutex also while iterating!
+    * @param id Predicate ID.
+    * @return Pair of begin and end iterator representing all atoms in the table. */
 	inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 };

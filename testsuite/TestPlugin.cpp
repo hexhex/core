@@ -883,6 +883,23 @@ public:
       answer.insert(tu);
     }
   }
+
+  class EAHeuristics : public ExternalAtomEvaluationHeuristics{
+  public:
+    EAHeuristics(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg) {}
+    bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed) { return true; }
+  };
+
+  class EAHeuristicsFactory : public ExternalAtomEvaluationHeuristicsFactory{
+  public:
+    ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg){ return ExternalAtomEvaluationHeuristicsPtr(new EAHeuristics(reg)); }
+  };
+
+  bool providesCustomExternalAtomEvaluationHeuristicsFactory() const { return true; }
+
+  ExternalAtomEvaluationHeuristicsFactoryPtr getCustomExternalAtomEvaluationHeuristicsFactory() const
+	{ return ExternalAtomEvaluationHeuristicsFactoryPtr(new EAHeuristicsFactory()); }
+
 };
 
 class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learning
@@ -896,38 +913,6 @@ public:
     addInputPredicate();
     addInputPredicate();
     setOutputArity(1);
-  }
-
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-	assert(false);	// this method should never be called
-
-	// find relevant input
-	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-
-	std::vector<Tuple> tuples1;
-	std::vector<Tuple> tuples2;
-	while (en < en_end){
-
-		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		Tuple tu;
-		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
-			tu.push_back(atom.tuple[i]);
-		}
-		if (atom.tuple[0] == query.input[0]){
-			tuples1.push_back(tu);
-		}
-		if (atom.tuple[0] == query.input[1]){
-			tuples2.push_back(tu);
-		}
-		en++;
-	}
-	BOOST_FOREACH (Tuple t, tuples1){
-		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
-			answer.get().push_back(t);
-		}
-	}
   }
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
@@ -1005,38 +990,6 @@ public:
     prop.monotonicInputPredicates.insert(0);
     prop.antimonotonicInputPredicates.insert(1);
     setOutputArity(1);
-  }
-
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-	assert(false);	// this method should never be called
-
-	// find relevant input
-	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-
-	std::vector<Tuple> tuples1;
-	std::vector<Tuple> tuples2;
-	while (en < en_end){
-
-		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		Tuple tu;
-		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
-			tu.push_back(atom.tuple[i]);
-		}
-		if (atom.tuple[0] == query.input[0]){
-			tuples1.push_back(tu);
-		}
-		if (atom.tuple[0] == query.input[1]){
-			tuples2.push_back(tu);
-		}
-		en++;
-	}
-	BOOST_FOREACH (Tuple t, tuples1){
-		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
-			answer.get().push_back(t);
-		}
-	}
   }
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
@@ -1122,38 +1075,6 @@ public:
     addInputPredicate();
     addInputPredicate();
     setOutputArity(1);
-  }
-
-  virtual void retrieve(const Query& query, Answer& answer)
-  {
-	assert(false);	// this method should never be called
-
-	// find relevant input
-	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-
-	std::vector<Tuple> tuples1;
-	std::vector<Tuple> tuples2;
-	while (en < en_end){
-
-		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		Tuple tu;
-		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
-			tu.push_back(atom.tuple[i]);
-		}
-		if (atom.tuple[0] == query.input[0]){
-			tuples1.push_back(tu);
-		}
-		if (atom.tuple[0] == query.input[1]){
-			tuples2.push_back(tu);
-		}
-		en++;
-	}
-	BOOST_FOREACH (Tuple t, tuples1){
-		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
-			answer.get().push_back(t);
-		}
-	}
   }
 
   virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
@@ -2319,7 +2240,6 @@ public:
   }
 
 
-// If there is a finstion with nogoods then the one without nogoods should never be called 
 // function that evaluates external atom with learning
 // input parameters: 
 // 1. Query is a class, defined in PluginInterface.h (struct DLVHEX_EXPORT Query)
@@ -2394,6 +2314,42 @@ public:
   }
 };
 
+class TestGen2Atom:      // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestGen2Atom(std::string name, int arity):
+    PluginAtom(name, false)
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    for (int i = 0; i < arity; ++i) addInputConstant();
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	OrdinaryAtom myat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+	myat.tuple = query.input;
+
+        // find relevant input
+	bool match = false;
+        bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+        while (en < en_end){
+
+                if (getRegistry()->ogatoms.getByAddress(*en).unifiesWith(myat)){
+			match = true;
+			break;
+		}
+		en++;
+        }
+        Tuple tu;
+        if (match) answer.get().push_back(tu);
+  }
+};
+
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2444,6 +2400,9 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestDLSimulatorAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestCautiousQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestBraveQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen1", 1), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen2", 2), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen3", 3), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

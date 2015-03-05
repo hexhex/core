@@ -44,6 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/** \brief Lookup table for predicates. */
 class PredicateTable:
 	public Table<
 		// value type is symbol struct
@@ -71,27 +72,40 @@ public:
 
 // methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct for Term.Predicate
-  // assert that ID exists
+  /** \brief Retrieve by ID.
+    *
+    * Assert that id.kind is correct for Term.Predicate.
+    * Assert that ID exists.
+    * @param id ID of the predicate to retrieve.
+    * @return Predicate corresponding to \p id. */
   inline const Predicate& getByID(ID id) const throw ();
 
-  // change the arity of a specific predicate with ID id 	
+  /** Change the arity of a specific predicate with ID \p id.
+    * @param id ID of a predicate in the table.
+    * @param arity the new arity of predicate \p id. */
   inline void setArity(ID id, int arity);
 
-  // given string, look if already stored
-  // if no, return ID_FAIL, otherwise return ID
+  /** Given string, look if already stored.
+    * @param str String representation of a predicate.
+    * @return Return ID_FAIL if \p str is not stored as a predicate, otherwise return ID. */
   inline ID getIDByString(const std::string& str) const throw();
 
-  // get the Predicate by predicate name
+  /** \brief Get the Predicate by predicate name.
+    * @param str String representation of a predicate.
+    * @return Predicate corresponding to \p str. */
   inline const Predicate& getByString(const std::string& str) const throw();
 
-  // store symbol, assuming it does not exist
-  // assert that symbol did not exist
+  /** \brief Store symbol, assuming it does not exist.
+    *
+    * Assert that symbol did not exist.
+    * @param symb Predicate to store.
+    * @return ID of the stored Predicate. */
   inline ID storeAndGetID(const Predicate& symb) throw();
 
-  // get range over all atoms sorted by address
-  // NOTE: you may need to lock the mutex also while iterating!
+  /** \brief Get range over all atoms sorted by address.
+    *
+    * NOTE: you may need to lock the mutex also while iterating!
+    * @return Pair of begin and end iterator representing all predicates in this table. */
   inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 

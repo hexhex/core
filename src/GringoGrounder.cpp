@@ -23,10 +23,10 @@
  */
 
 /**
- * @file ClaspSolver.cpp
+ * @file GringoGrounder.cpp
  * @author Christoph Redl
  *
- * @brief Interface to genuine gringo 4.3.0-based grounder.
+ * @brief Interface to genuine gringo 4.4.0-based grounder.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -122,12 +122,11 @@ void GringoGrounder::Printer::printRule(ID id){
 	}
 	if( !r.body.empty() )
 	{
-		out << " :- ";
 		bool first = true;
 		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
-			// body contains also the head guard at the end, which needs to be skipped here
-			if (litIndex == r.body.size() - r.headGuard.size()) break;
+//			// body contains also the head guard at the end, which needs to be skipped here
+//			if (litIndex == r.body.size() - r.headGuard.size()) break;
 
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms
@@ -144,14 +143,22 @@ void GringoGrounder::Printer::printRule(ID id){
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
 					bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
-					if (!first) out << ", ";
+					if (first) {
+						out << " :- ";
+					}else{
+						out << ", ";
+					}
 					first = false;
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
 					continue;
 				}
 			}
 
-			if (!first) out << ", ";
+			if (first) {
+				out << " :- ";
+			}else{
+				out << ", ";
+			}
 			first = false;
 			print(b);
 
@@ -262,8 +269,8 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, bool incAdd)
-	: Gringo::Output::PlainLparseOutputter(emptyStream), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, ID unsatPred, bool incAdd)
+	: Gringo::Output::PlainLparseOutputter(emptyStream), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred), unsatPred(unsatPred){
 
 	// Note: We do NOT use shifting but ground disjunctive rules as they are.
 	//       Shifting is instead done in ClaspSolver (as clasp does not support disjunctions)
@@ -285,20 +292,18 @@ void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
 	if (indexToGroundAtomID.find(symbol) != indexToGroundAtomID.end()){
 		// nothing to do
 	}else{
-		// this is static because the name needs to be unique only wrt. the whole dlvhex instance (also if we have nested HEX programs)
-		static ID tid = anonymousPred;
-		assert(tid != ID_FAIL);
-		assert(!tid.isVariableTerm());
+		assert(anonymousPred != ID_FAIL);
+		assert(!anonymousPred.isVariableTerm());
 
 		// create a propositional atom with this name
 		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_HIDDEN);
 		std::stringstream name;
-		name << ctx.registry()->terms.getByID(tid).symbol << "(" << symbol << ")";
+		name << ctx.registry()->terms.getByID(anonymousPred).symbol << "(" << symbol << ")";
 		ogatom.text = name.str();
-		if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-		if( tid.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
-		if( tid.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-		ogatom.tuple.push_back(tid);
+		if( anonymousPred.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+		if( anonymousPred.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
+		if( anonymousPred.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
+		ogatom.tuple.push_back(anonymousPred);
 		ogatom.tuple.push_back(ID::termFromInteger(symbol));
 		ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
 		if (aid == ID_FAIL){
@@ -342,18 +347,12 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 					// facts
 					if (lpr.head[0] == false_){
 						// special case: unsatisfiable rule:  F :- T
-						// set some (arbitrary) atom A and make a constraint :- A
+						// make a constraint :- not unsat, where unsat is not defined elsewhere
 
 						OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-						ogatom.text = "sat";
-						Term term(ID::MAINKIND_TERM, "sat");	// it is no problem if this term does already exist
-						ID tid = ctx.registry()->storeTerm(term);
-						assert(tid != ID_FAIL);
-						assert(!tid.isVariableTerm());
-						if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-						if( tid.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
-						if( tid.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-						ogatom.tuple.push_back(tid);
+						ogatom.text = ctx.registry()->terms.getByID(unsatPred).symbol;
+						ogatom.kind |= ID::PROPERTY_AUX;
+						ogatom.tuple.push_back(unsatPred);
 						ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
 						if (aid == ID_FAIL){
 							aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
@@ -361,11 +360,10 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 						assert(aid != ID_FAIL);
 
 						r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
-						r.body.push_back(aid);
+						r.body.push_back(ID::nafLiteralFromAtom(aid));
 						ID rid = ctx.registry()->storeRule(r);
-						GPDBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
+						GPDBGLOG(DBG, "Adding rule " << rid << " to enforce inconsistency");
 						groundProgram.idb.push_back(rid);
-						edb->setFact(aid.address);
 					}else{
 						// make sure that the fact is in the symbol table
 						addSymbol(lpr.head[0]);
@@ -458,69 +456,50 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbol(unsigned atomUid, Grin
 	v.print(ss);
 	std::string str = ss.str();
 
-	OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, str);
-
 	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(str);
 	if( dlvhexId == ID_FAIL )
 	{
+    OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, str);
+
 		// parse groundatom, register and store
 		GPDBGLOG(DBG,"parsing gringo ground atom '" << ogatom.text << "'");
 		{
-			// create ogatom.tuple
-			std::string pred;
-			std::string args;
-			int predlen;
-			if ((predlen = str.find("(")) == std::string::npos){
-				// propositional atom
-				pred = str;
-				args = "";
-			}else{
-				// has arguments
-				pred = str.substr(0, predlen);
-				args = str.substr(predlen + 1, str.length() - predlen - 2);
+			// parse atom as nested term
+			Term dummyTerm(ID::MAINKIND_TERM, ogatom.text);
+			dummyTerm.analyzeTerm(ctx.registry());
+
+			// extract the predicate
+			ID id;
+			if (dummyTerm.arguments.empty()) {
+				// the predicate is exactly this term which is a constant
+				// we need to get its ID and probably register it
+				id = ctx.registry()->storeTerm(dummyTerm);
+				ogatom.tuple.push_back(id);
+			} else {
+				// this term is hierarchical
+				// we can just use the tuple of the hierarchical dummy term
+				// then the predicate is the first argument
+				ogatom.tuple = dummyTerm.arguments;
+				id = ogatom.tuple[0];
 			}
 
-			// store predicate
-			Term term(ID::MAINKIND_TERM, pred);
-			term.analyzeTerm(ctx.registry());
-			GPDBGLOG(DBG,"got token '" << term.symbol << "'");
-			ID id = ctx.registry()->storeTerm(term);
 			assert(id != ID_FAIL);
 			assert(!id.isVariableTerm());
 			if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
 			if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
 			if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-			ogatom.tuple.push_back(id);
-
-			// store arguments
-			while (args.length() > 0){
-				int arglen = args.find(",");
-				int nextargstart = args.find(",");
-				if (arglen == std::string::npos) arglen = args.length();
-				if (nextargstart != std::string::npos) nextargstart++;
-				else nextargstart = args.length();
-
-				Term term(ID::MAINKIND_TERM, args.substr(0, arglen));
-				term.analyzeTerm(ctx.registry());
-				GPDBGLOG(DBG,"got token '" << term.symbol << "'");
-
-				// the following takes care of int vs const/string
-				ID id = ctx.registry()->storeTerm(term);
-				assert(id != ID_FAIL);
-				assert(!id.isVariableTerm());
-				if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-				if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
-				if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-				ogatom.tuple.push_back(id);
-
-				args = args.substr(nextargstart);
-			}
 		}
+		assert (ogatom.tuple.size() > 0 && "Cannot store empty atom");
 		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+
+    GPDBGLOG(DBG, "Registered atom " << str << " (arity " << (ogatom.tuple.size() - 1) << ") with tuple " << printvector(ogatom.tuple) << " and Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 	}
+  else
+  {
+    GPDBGLOG(DBG, "Found atom " << str << " with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
+  }
 
 	indexToGroundAtomID[atomUid] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atomUid << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternal(unsigned atomUid, Gringo::TruthValue e){
@@ -532,6 +511,12 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 
 GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
   ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen){
+
+  // we need a unique integer, a unique anonymous and a unique unsat predicate
+  unsatPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(0));
+  anonymousPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(1));
+  intPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(2));
+
   groundProgram.mask = nongroundProgram.mask;
   doRun();
 }
@@ -545,16 +530,6 @@ int GringoGrounder::doRun()
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgroundertime, "Grounder time");
 
 	try{
-		// we need a unique integer and a unique anonymous predicate
-		static bool first = true;
-		static unsigned int prevAtoms = 0;
-//		if (first || prevAtoms < ctx.registry()->ogatoms.getSize()){
-			prevAtoms = ctx.registry()->ogatoms.getSize();
-			intPred = ctx.registry()->getNewConstantTerm("int");
-			anonymousPred = ctx.registry()->getNewConstantTerm("anonymous");
-//		}
-		first = false;
-
 		std::stringstream* programStream = new std::stringstream();
 		Printer printer(*programStream, ctx.registry(), intPred);
 
@@ -582,7 +557,7 @@ int GringoGrounder::doRun()
 
 		// prepare
 		Gringo::Output::OutputPredicates outPreds;
-		GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred);
+		GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred, unsatPred);
 		Gringo::Output::OutputBase out(std::move(outPreds), outputter);
 		Gringo::Scripts scripts;
 		Gringo::Defines defs;
@@ -777,12 +752,11 @@ void GringoGrounder::Printer::printRule(ID id){
 	}
 	if( !r.body.empty() )
 	{
-		out << " :- ";
 		bool first = true;
 		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
-			// body contains also the head guard at the end, which needs to be skipped here
-			if (litIndex == r.body.size() - r.headGuard.size()) break;
+//			// body contains also the head guard at the end, which needs to be skipped here
+//			if (litIndex == r.body.size() - r.headGuard.size()) break;
 
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms
@@ -799,14 +773,22 @@ void GringoGrounder::Printer::printRule(ID id){
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
           bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
-					if (!first) out << ", ";
+					if (first) {
+						out << " :- ";
+					}else{
+						out << ", ";
+					}
 					first = false;
 					print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
 					continue;
 				}
 			}
 
-			if (!first) out << ", ";
+			if (first) {
+				out << " :- ";
+			}else{
+				out << ", ";
+			}
 			first = false;
 			print(b);
 
@@ -936,7 +918,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID unsatPred, ID anonymousPred) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred), unsatPred(unsatPred){
 	// Note: We do NOT use shifting but ground disjunctive rules as they are.
 	//       Shifting is instead done in ClaspSolver (as clasp does not support disjunctions)
 	//       This allows for using also other solver-backends which support disjunctive programs.
@@ -1011,18 +993,12 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					// facts
 					if (lpr.head[0] == false_){
 						// special case: unsatisfiable rule:  F :- T
-						// set some (arbitrary) atom A and make a constraint :- A
+						// make a constraint :- not unsat, where unsat is not defined elsewhere
 
 						OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-						ogatom.text = "sat";
-						Term term(ID::MAINKIND_TERM, "sat");	// it is no problem if this term does already exist
-						ID tid = ctx.registry()->storeTerm(term);
-						assert(tid != ID_FAIL);
-						assert(!tid.isVariableTerm());
-						if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-						if( tid.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
-						if( tid.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
-						ogatom.tuple.push_back(tid);
+						ogatom.text = ctx.registry()->terms.getByID(unsatPred).symbol;
+						ogatom.kind |= ID::PROPERTY_AUX;
+						ogatom.tuple.push_back(unsatPred);
 						ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
 						if (aid == ID_FAIL){
 							aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
@@ -1030,11 +1006,10 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						assert(aid != ID_FAIL);
 
 						r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
-						r.body.push_back(aid);
+						r.body.push_back(ID::nafLiteralFromAtom(aid));
 						ID rid = ctx.registry()->storeRule(r);
-						GPDBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
+						GPDBGLOG(DBG, "Adding rule " << rid << " to enforce inconsistency");
 						groundProgram.idb.push_back(rid);
-						edb->setFact(aid.address);
 					}else{
 						// make sure that the fact is in the symbol table
 						addSymbol(lpr.head[0]);
@@ -1191,7 +1166,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	}
 
 	indexToGroundAtomID[atom.first] = dlvhexId;
-	GPDBGLOG(DBG, "Got atom " << ogatom.text << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
+	GPDBGLOG(DBG, "Got atom " << ogatom.text << " (arity " << (ogatom.tuple.size() - 1) << ") with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
@@ -1201,16 +1176,22 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
 }
 
-GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p):
-  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()){
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
+  ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen){
   gringo.disjShift = false;
+
+  // we need a unique integer, a unique anonymous and a unique unsat predicate
+  unsatPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(0));
+  anonymousPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(1));
+  intPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(2));
+
   groundProgram.mask = nongroundProgram.mask;
   doRun();
 }
 
 Output *GringoGrounder::output()
 {
-	return new GroundHexProgramBuilder(ctx, groundProgram, intPred, anonymousPred);
+	return new GroundHexProgramBuilder(ctx, groundProgram, intPred, unsatPred, anonymousPred);
 }
 
 const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
@@ -1240,11 +1221,6 @@ int GringoGrounder::doRun()
 	}
 
 	try{
-		// we need a unique integer and a unique anonymous predicate
-		// note: without nested hex programs we could make the initialization static because the names only need to be unique wrt. the program
-		intPred = ctx.registry()->getNewConstantTerm("int");
-		anonymousPred = ctx.registry()->getNewConstantTerm("anonymous");
-
 		std::ostringstream programStream;
 		Printer printer(programStream, ctx.registry(), intPred);
 
@@ -1261,6 +1237,18 @@ int GringoGrounder::doRun()
 		programStream << std::endl;
 		printer.print(intPred);
 		programStream << "(0.." << ctx.maxint << ").";
+
+		if (!!frozen){
+			bm::bvector<>::enumerator en = frozen->getStorage().first();
+			bm::bvector<>::enumerator en_end = frozen->getStorage().end();
+			// declare frozen atoms as external
+			while (en < en_end){
+				programStream << "#external ";
+				printer.print(ctx.registry()->ogatoms.getIDByAddress(*en));
+				programStream << ".";
+				en++;
+			}
+		}
 
 		LOG(DBG, "Sending the following input to Gringo: {{" << programStream.str() << "}}");
 
