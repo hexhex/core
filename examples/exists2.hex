@@ -1,7 +1,0 @@
-person(joe).
-person(john).
-+Y,Z : parents(X,Y,Z) :- person(X).
-person(Y) :- parents(X,Y,Z).
-person(Z) :- parents(X,Y,Z).
-
-+Y,Z : person(X), parents(X,Y,Z) ?
