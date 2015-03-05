@@ -281,7 +281,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous)
     if (id.isVariableTerm() && (includeAnonymous || !id.isAnonymousVariable())) out.insert(id);
     if (id.isNestedTerm()){
       const Term& t = terms.getByID(id);
-      BOOST_FOREACH (ID nid, t.arguments) getVariablesInID(nid, out);
+      BOOST_FOREACH (ID nid, t.arguments) getVariablesInID(nid, out, includeAnonymous);
     }
   }
   else if (id.isLiteral() || id.isAtom()){
@@ -292,7 +292,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous)
       const OrdinaryAtom& atom = onatoms.getByID(id);
       BOOST_FOREACH(ID idt, atom.tuple)
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
     }
     else if( id.isBuiltinAtom() )
@@ -300,7 +300,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous)
       const BuiltinAtom& atom = batoms.getByID(id);
       BOOST_FOREACH(ID idt, atom.tuple)
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
     }
     else if( id.isAggregateAtom() )
@@ -309,7 +309,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous)
       // body atoms
       BOOST_FOREACH(ID idt, atom.literals)
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
       // local variables
       BOOST_FOREACH(ID idv, atom.variables)
@@ -319,16 +319,16 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous)
       // left and right term
       assert(atom.tuple.size() == 5);
       if( atom.tuple[0].isTerm() )
-        getVariablesInID(atom.tuple[0], out);
+        getVariablesInID(atom.tuple[0], out, includeAnonymous);
       if( atom.tuple[4].isTerm() )
-        getVariablesInID(atom.tuple[4], out);
+        getVariablesInID(atom.tuple[4], out, includeAnonymous);
     }
     else if( id.isExternalAtom() )	
     {
       const ExternalAtom& atom = eatoms.getByID(id);
       BOOST_FOREACH(ID idt, boost::join(atom.tuple, atom.inputs))
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
     }
   }

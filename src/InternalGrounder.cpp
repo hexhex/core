@@ -106,6 +106,7 @@ void InternalGrounder::computeDepGraph(){
 
 ID InternalGrounder::preprocessRule(ID ruleID){
 
+	DBGLOG(DBG, "Preprocessing rule " << printToString<RawPrinter>(ruleID, reg));
 	const Rule& rule = reg->rules.getByID(ruleID);
 	Rule newrule = rule;
 	newrule.body.clear();
@@ -117,7 +118,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	// find length of the longest variable name
 	std::set<ID> vars;
 	BOOST_FOREACH (ID a, rule.body){
-		reg->getVariablesInID(a, vars);
+		reg->getVariablesInID(a, vars, true);
 	}
 	int vlen = 0;
 	std::stringstream prefix;
@@ -212,7 +213,9 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 		}
 	}
 
-	return reg->storeRule(newrule);
+	ID newRuleID = reg->storeRule(newrule);
+	DBGLOG(DBG, "Preprocessed rule " << printToString<RawPrinter>(newRuleID, reg));
+	return newRuleID;
 }
 
 void InternalGrounder::computeStrata(){
