@@ -491,6 +491,25 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 			}
 		}
 
+/*
+		// variables in the positive head guard are also safe
+		if( !rule.headGuard.empty() )
+		{
+			// get positive head guard atoms
+			std::list<ID> src;
+			BOOST_FOREACH (ID id, rule.headGuard){
+				if (!id.isNaf()) src.push_back(id);
+			}
+
+			if( !src.empty() )
+			{
+				// get headGuard variables
+				Tuple headGuard(src.begin(), src.end());
+				reg->getVariablesInTuple(headGuard, safevars);
+			}
+		}
+*/
+
 		// if we are here the body is safe -> check head
 
 		// get head variables

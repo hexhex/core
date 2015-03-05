@@ -77,7 +77,6 @@
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
 #include "dlvhex2/WeakConstraintPlugin.h"
-#include "dlvhex2/ExistsPlugin.h"
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/FunctionPlugin.h"
 #ifdef HAVE_PYTHON
@@ -261,7 +260,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                                            where component indices <idx> are from '--graphviz=comp'" << std::endl
       << "                         asp:<script>     : Use asp program <script> as eval heuristic" << std::endl
       << "     --forcegc        Always use the guess and check model generator." << std::endl
-      << "     --incremental    Ground the program incrementally in order to deal with value invention." << std::endl
+//      << "     --incremental    Ground the program incrementally in order to deal with value invention." << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)." << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)." << std::endl
@@ -463,8 +462,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
   pctx.config.setOption("LiberalSafety",1);
-  pctx.config.setOption("LiberalSafetyNullFreezeCount",0);	// necessary for existential quantification, see ExistsPlugin.cpp
-  pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("WellJustified",0);
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
@@ -539,8 +536,6 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
 			PluginInterfacePtr weakConstraintPlugin(new WeakConstraintPlugin);
 			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
-			PluginInterfacePtr existsPlugin(new ExistsPlugin);
-			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 #ifdef HAVE_PYTHON

@@ -748,25 +748,15 @@ struct sem<HexGrammarSemantics::ruleVariableDisjunction>
     }
     else
     {
-      if( head.size() > 1 )
-      {
-        // disjunctive fact -> create rule
-        Tuple body;
-        body.insert(body.end(), headGuard.begin(), headGuard.end());
-        Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
-          head, body, headGuard);
-        if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
-        mgr.markExternalPropertyIfExternalBody(reg, r);
-        mgr.markModulePropertyIfModuleBody(reg, r);
-        target = reg->storeRule(r);
-      }
-      else
-      {
-        assert(head.size() == 1);
-
-        // return ID of fact
-        target = *head.begin();
-      }
+      // in order to process the head guard we need to create a rule
+      Tuple body;
+      body.insert(body.end(), headGuard.begin(), headGuard.end());
+      Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
+        head, body, headGuard);
+      if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
+      mgr.markExternalPropertyIfExternalBody(reg, r);
+      mgr.markModulePropertyIfModuleBody(reg, r);
+      target = reg->storeRule(r);
     }
   }
 };

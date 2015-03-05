@@ -132,7 +132,6 @@ libdlvhex2_aspsolver_la_SOURCES = \
 # dlvhex internal plugins
 libdlvhex2_internalplugins_la_SOURCES = \
     AggregatePlugin.cpp \
-    ExistsPlugin.cpp \
     HigherOrderPlugin.cpp \
     ManualEvalHeuristicsPlugin.cpp \
     PythonPlugin.cpp \
