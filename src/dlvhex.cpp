@@ -77,6 +77,7 @@
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
 #include "dlvhex2/WeakConstraintPlugin.h"
+#include "dlvhex2/ExistsPlugin.h"
 #include "dlvhex2/ManualEvalHeuristicsPlugin.h"
 #include "dlvhex2/FunctionPlugin.h"
 #ifdef HAVE_PYTHON
@@ -460,6 +461,8 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
   pctx.config.setOption("LiberalSafety",1);
+  pctx.config.setOption("LiberalSafetyNullFreezeCount",0);	// necessary for existential quantification, see ExistsPlugin.cpp
+  pctx.config.setOption("LiberalSafetyHomomorphismCheck",0);	// necessary for existential quantification, see ExistsPlugin.cpp
   pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("DumpStats",0);
@@ -533,6 +536,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
 			PluginInterfacePtr weakConstraintPlugin(new WeakConstraintPlugin);
 			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
+			PluginInterfacePtr existsPlugin(new ExistsPlugin);
+			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 #ifdef HAVE_PYTHON
