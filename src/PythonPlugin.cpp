@@ -145,7 +145,7 @@ PluginRewriterPtr PythonPlugin::createRewriter(ProgramCtx& ctx)
 	return PluginRewriterPtr(new PythonRewriter(ctxdata));
 }
 
-// register auxiliary printer for strong negation auxiliaries
+// register context data
 void PythonPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
 	PythonPlugin::CtxData& ctxdata = ctx.getPluginData<PythonPlugin>();
@@ -536,6 +536,7 @@ boost::python::tuple evaluateSubprogram(boost::python::tuple tup) {
 		bm::bvector<>::enumerator en = answerset->getStorage().first();
 		bm::bvector<>::enumerator en_end = answerset->getStorage().end();
 		while (en < en_end){
+			// TODO: use auxiliary mask to filter so that auxiliaries are not given to python
 			pythonAS += boost::python::make_tuple(emb_ctx->registry()->ogatoms.getIDByAddress(*en));
 			en++;
 		}
