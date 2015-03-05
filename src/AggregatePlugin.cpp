@@ -232,6 +232,14 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			DBGLOG(DBG, "Rewriting aggregate atom " << b);
 			const AggregateAtom& aatom = reg->aatoms.getByID(b);
 
+			// in the following we need to unique predicates for this aggregate
+			ID keyPredID = reg->getAuxiliaryConstantSymbol('g', ID::termFromInteger(ruleNr++));
+			ID inputPredID = reg->getAuxiliaryConstantSymbol('g', ID::termFromInteger(ruleNr++));
+
+			// for ;-separated aggregate elements from the ASP-Core 2 standard (future support), add the following:
+			// FOR ALL ;-separated aggregate elements {
+			// LET aatom.literals and aatom.variables point to the current element
+
 			// collect all variables from the conjunction of the symbolic set
 			std::set<ID> conjSymSetVars;
 			BOOST_FOREACH (ID cs, aatom.literals){
@@ -280,8 +288,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				}
 			}
 
-
-			ID keyPredID, inputPredID;
 			Rule keyRule(ID::MAINKIND_RULE);
 			Rule inputRule(ID::MAINKIND_RULE);
 			{
@@ -301,7 +307,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				// A.
 				DBGLOG(DBG, "Constructing key rule head");
 				//   1.
-				keyPredID = reg->getAuxiliaryConstantSymbol('g', ID::termFromInteger(ruleNr++));
 				oatom.tuple.push_back(keyPredID);
 				//   2.
 				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
@@ -344,7 +349,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				// A.
 				DBGLOG(DBG, "Constructing input rule head");
 				//   1.
-				inputPredID = reg->getAuxiliaryConstantSymbol('g', ID::termFromInteger(ruleNr++));
 				oatom.tuple.push_back(inputPredID);
 				//   2.
 				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
@@ -382,6 +386,8 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			DBGLOG(DBG, "Recursive call");
 			rewriteRule(ctx, idb, keyRule);
 			rewriteRule(ctx, idb, inputRule);
+
+			// LOOP END
 
 			ID valueVariable;
 			switch (ctxdata.mode){

@@ -484,7 +484,7 @@ struct sem<HexGrammarSemantics::aggregateAtom>
     HexGrammarSemantics& mgr,
     const boost::fusion::vector3<
       boost::optional<boost::fusion::vector2<ID, ID> >,
-      boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> >,
+      boost::fusion::vector3<ID, std::vector<ID>, boost::optional<std::vector<ID> > >,
       boost::optional<boost::fusion::vector2<ID, ID> >
     >& source,
     ID& target)
@@ -523,7 +523,9 @@ struct sem<HexGrammarSemantics::aggregateAtom>
     // aggregation + symbolic set
     aggFunc = boost::fusion::at_c<0>(boost::fusion::at_c<1>(source));
     aggVariables = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source));
-    aggBody = boost::fusion::at_c<2>(boost::fusion::at_c<1>(source));
+    if (!!boost::fusion::at_c<2>(boost::fusion::at_c<1>(source))){
+      aggBody =boost::fusion::at_c<2>(boost::fusion::at_c<1>(source)).get();
+    }
 
     DBGLOG(DBG,"storing aggregate atom " << aatom);
     target = mgr.ctx.registry()->aatoms.storeAndGetID(aatom);
@@ -1037,8 +1039,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | (builtinOpsTernary >> qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
       [ Sem::builtinTernaryPrefix(sem) ];
   aggregateTerm
-    = builtinOpsAgg > qi::lit('{') > terms > qi::lit(':') >
-      (bodyLiteral % qi::char_(',')) > qi::lit('}');
+    = builtinOpsAgg > qi::lit('{') > terms > -(qi::lit(':') > (bodyLiteral % qi::char_(','))) > qi::lit('}');
   aggregateAtom
     // aggregate range or only left or only right part of it
     // (the semantics handler has to rule out that no binop exists)
