@@ -491,24 +491,52 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 			}
 		}
 
-/*
 		// variables in the positive head guard are also safe
 		if( !rule.headGuard.empty() )
 		{
+			// get all head guard variables
+			std::set<ID> safeheadguardvars;
+			reg->getVariablesInTuple(rule.headGuard, safeheadguardvars);
+
 			// get positive head guard atoms
-			std::list<ID> src;
+			std::list<ID> posheadguard;
 			BOOST_FOREACH (ID id, rule.headGuard){
-				if (!id.isNaf()) src.push_back(id);
+				if (!id.isNaf()) posheadguard.push_back(id);
 			}
 
-			if( !src.empty() )
+			if( !posheadguard.empty() )
 			{
 				// get headGuard variables
-				Tuple headGuard(src.begin(), src.end());
-				reg->getVariablesInTuple(headGuard, safevars);
+				Tuple headGuard(posheadguard.begin(), posheadguard.end());
+				reg->getVariablesInTuple(rule.headGuard, safevars);
 			}
+
+			// get all head guard variables
+			std::set<ID> headguardvars;
+			Tuple headguard(rule.headGuard.begin(), rule.headGuard.end());
+			reg->getVariablesInTuple(headguard, headguardvars);
+
+			// get unsafe head guard variables
+			Tuple unsafeHeadGuardVars;
+			std::back_insert_iterator<Tuple> inserter(unsafeHeadGuardVars);
+			std::set_difference(
+					headguardvars.begin(), headguardvars.end(),
+					safevars.begin(), safevars.end(),
+					inserter);
+
+			if (!unsafeHeadGuardVars.empty()){
+				if (!throwOnUnsafeVariables) return unsafeHeadGuardVars;
+				else throw SyntaxError("Rule not safe (head guard): "
+						"'" + printToString<RawPrinter>(idrule, reg) + "': "
+						"literals not safe: " +
+						printManyToString<RawPrinter>(Tuple(rule.headGuard.begin(), rule.headGuard.end()), ", ", reg) + ", "
+						"safe variables: " +
+						printManyToString<RawPrinter>(Tuple(safeheadguardvars.begin(), safeheadguardvars.end()), ", ", reg) + ", "
+						"unsafe variables: " +
+						printManyToString<RawPrinter>(Tuple(unsafeHeadGuardVars.begin(), unsafeHeadGuardVars.end()), ", ", reg));
+			}
+
 		}
-*/
 
 		// if we are here the body is safe -> check head
 

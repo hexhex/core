@@ -735,7 +735,7 @@ struct sem<HexGrammarSemantics::ruleVariableDisjunction>
     {
       // rule -> put into IDB
       Tuple body = boost::fusion::at_c<2>(source).get();
-      body.insert(body.end(), headGuard.begin(), headGuard.end());
+//      body.insert(body.end(), headGuard.begin(), headGuard.end());
 
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body, headGuard);
       if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;
@@ -750,7 +750,7 @@ struct sem<HexGrammarSemantics::ruleVariableDisjunction>
     {
       // in order to process the head guard we need to create a rule
       Tuple body;
-      body.insert(body.end(), headGuard.begin(), headGuard.end());
+//      body.insert(body.end(), headGuard.begin(), headGuard.end());
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
         head, body, headGuard);
       if (r.headGuard.size() > 0) r.kind |= ID::PROPERTY_RULE_HEADGUARD;

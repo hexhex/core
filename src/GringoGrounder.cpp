@@ -125,8 +125,8 @@ void GringoGrounder::Printer::printRule(ID id){
 		bool first = true;
 		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
-			// body contains also the head guard at the end, which needs to be skipped here
-			if (litIndex == r.body.size() - r.headGuard.size()) break;
+//			// body contains also the head guard at the end, which needs to be skipped here
+//			if (litIndex == r.body.size() - r.headGuard.size()) break;
 
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms
@@ -751,8 +751,8 @@ void GringoGrounder::Printer::printRule(ID id){
 		bool first = true;
 		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
-			// body contains also the head guard at the end, which needs to be skipped here
-			if (litIndex == r.body.size() - r.headGuard.size()) break;
+//			// body contains also the head guard at the end, which needs to be skipped here
+//			if (litIndex == r.body.size() - r.headGuard.size()) break;
 
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms

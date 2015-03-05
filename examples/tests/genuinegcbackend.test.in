@@ -148,3 +148,6 @@ functionsymbols5.hex functionsymbols5.out --liberalsafety --solver=genuinegc --f
 functionsymbols6.hex functionsymbols6.stderr --liberalsafety --solver=genuinegc --function-maxarity=2 --function-rewrite
 non3col.hex non3col.out --solver=genuinegc
 non3col2.hex non3col2.out --solver=genuinegc
+headguard1.hex headguard1.out --solver=genuinegc
+headguard2.hex headguard2.out --solver=genuinegc
+headguard3.hex headguard3.stderr --solver=genuinegc
