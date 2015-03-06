@@ -1,1 +1,1 @@
-1 grep -q "cannot be recursive"
+1 grep -q "fails strong safety check"

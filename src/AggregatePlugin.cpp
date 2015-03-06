@@ -74,11 +74,10 @@ void AggregatePlugin::printUsage(std::ostream& o) const
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --aggregate-enable[=true,false]" << std::endl
           << "                      Enable aggregate plugin (default is enabled)." << std::endl;
-	o << "     --aggregate-mode=[ext,simplify]" << std::endl
-	  << "                         extrewrite       : Rewrite aggregates to external atoms" << std::endl
-	  << "                         simplify (default)" << std::endl
-	  << "                                          : Keep aggregates but simplify them" << std::endl
-	  << "                                            (which is necessary for gringo backend)" << std::endl;
+	o << "     --aggregate-mode=[native,ext]" << std::endl
+	  << "                         native (default) : Keep aggregates" << std::endl
+	  << "                                            (but simplify them to some basic types)" << std::endl
+	  << "                         ext              : Rewrite aggregates to external atoms" << std::endl;
 	o << "     --max-variable-share=<N>" << std::endl
           << "                      Defines the maximum number N of variables" << std::endl
 	  << "                      in an aggregate which can be shared with" << std::endl
@@ -136,7 +135,7 @@ void AggregatePlugin::processOptions(
 			std::string m = str.substr(std::string("--aggregate-mode=").length());
 			if (m == "ext"){
 				ctxdata.mode = CtxData::ExtRewrite;
-			}else if (m == "simplify"){
+			}else if (m == "native" || m == "simplify"){ // "native" was previously called "simplify" --> keep it for backwards compatibility
 				ctxdata.mode = CtxData::Simplify;
 			}else{
 				std::stringstream ss;
@@ -523,8 +522,23 @@ void AggregateRewriter::prepareRewrittenProgram(ProgramCtx& ctx)
 
 void AggregateRewriter::rewrite(ProgramCtx& ctx)
 {
-	prepareRewrittenProgram(ctx);
-	ctx.idb = newIdb;
+	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
+	if (ctxdata.enabled){
+		DBGLOG(DBG, "Aggregates are enabled -> rewrite program");
+		prepareRewrittenProgram(ctx);
+		ctx.idb = newIdb;
+	}else{
+		// plugin disabled: the program must not contain aggregates in this case
+		DBGLOG(DBG, "Aggregates are disabled -> checking if program does not contain any");
+		BOOST_FOREACH (ID ruleID, ctx.idb){
+			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
+			BOOST_FOREACH (ID b, rule.body){
+				if (b.isAggregateAtom()){
+					throw GeneralError("Aggregates have been disabled but rule\n   \"" + printToString<RawPrinter>(ruleID, ctx.registry()) + "\"\ncontains \"" + printToString<RawPrinter>(b, ctx.registry()) + "\"");
+				}
+			}
+		}
+	}
 }
 
 } // anonymous namespace
@@ -533,9 +547,10 @@ void AggregateRewriter::rewrite(ProgramCtx& ctx)
 PluginRewriterPtr AggregatePlugin::createRewriter(ProgramCtx& ctx)
 {
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
-	if( !ctxdata.enabled )
-		return PluginRewriterPtr();
+//	if( !ctxdata.enabled )
+//		return PluginRewriterPtr();
 
+	// Always create the rewriter! It will internall check if the plugin is enabled; if not, then the rewriter checks if the program does not contain aggregates.
 	return PluginRewriterPtr(new AggregateRewriter(ctxdata));
 }
 
