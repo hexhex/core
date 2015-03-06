@@ -172,16 +172,17 @@ class AggregateRewriter:
 {
 private:
 	AggregatePlugin::CtxData& ctxdata;
+	InterpretationPtr newEdb;
 	std::vector<ID> newIdb;
 	int ruleNr;
-	void rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const Rule& rule);
+	void rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std::vector<ID>& idb, const Rule& rule);
 
 	std::string aggregateFunctionToExternalAtomName(ID aggFunction);
 public:
 	AggregateRewriter(AggregatePlugin::CtxData& ctxdata) : ctxdata(ctxdata), ruleNr(0) {}
 	virtual ~AggregateRewriter() {}
 
-	virtual void prepareRewrittenProgram(ProgramCtx& ctx);
+	virtual void prepareRewrittenProgram(InterpretationPtr newEdb, ProgramCtx& ctx);
 	virtual void rewrite(ProgramCtx& ctx);
 };
 
@@ -200,7 +201,7 @@ std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunctio
 	}
 }
 
-void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const Rule& rule){
+void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std::vector<ID>& idb, const Rule& rule){
 
 	RegistryPtr reg = ctx.registry();
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
@@ -228,166 +229,190 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 	int aggIndex = 0;
 	BOOST_FOREACH (ID b, rule.body){
 		if (b.isAggregateAtom()){
-			DBGLOG(DBG, "Rewriting aggregate atom " << b);
+			DBGLOG(DBG, "Rewriting aggregate atom " << printToString<RawPrinter>(b, reg));
 			const AggregateAtom& aatom = reg->aatoms.getByID(b);
+
+			// Variables of the symbolic set which occur also in the remaining rule body
+			std::vector<ID> bodyVarsOfSymbolicSet;
 
 			// in the following we need to unique predicates for this aggregate
 			ID keyPredID = reg->getAuxiliaryConstantSymbol('g', ID::termFromInteger(ruleNr++));
 			ID inputPredID = reg->getAuxiliaryConstantSymbol('g', ID::termFromInteger(ruleNr++));
 
-			// for ;-separated aggregate elements from the ASP-Core 2 standard (future support), add the following:
-			// FOR ALL ;-separated aggregate elements {
-			// LET aatom.literals and aatom.variables point to the current element
+			// For ;-separated aggregate elements from the ASP-Core 2 standard.
+			//
+			// We need to iterate either through aatom.mvariables or, if the former is empty, through aatom.variables (resp. aatom.mliterals or aatom.literals).
+			// Trick: Iterate through aatom.mvariables plus one additional index for aatom.variables (resp. literals).
+			// If the additional index is reached and is 0, then we bind the reference to aatom.variables instead of aatom.mvariables;
+			// if it is greater than 0 we skip it because aatom.mvariables is nonempty.
+			DBGLOG(DBG, "Found " << aatom.mvariables.size() << " symbolic sets");
+			const Tuple* symsetvariables = NULL;
+			for (int symbSetIndex = 0; symbSetIndex <= aatom.mvariables.size(); ++symbSetIndex){
+				if (symbSetIndex == aatom.mvariables.size() && symbSetIndex > 0) continue;
 
-			// collect all variables from the conjunction of the symbolic set
-			std::set<ID> conjSymSetVars;
-			BOOST_FOREACH (ID cs, aatom.literals){
-				DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
-				reg->getVariablesInID(cs, conjSymSetVars);
-			}
+				DBGLOG(DBG, "Processing symbolic set number " << symbSetIndex);
+				const Tuple& curvariables = (symbSetIndex == aatom.mvariables.size() ? aatom.variables : aatom.mvariables[symbSetIndex]);
+				const Tuple& curliterals = (symbSetIndex == aatom.mliterals.size() ? aatom.literals : aatom.mliterals[symbSetIndex]);
+				symsetvariables = &curvariables; // we reuse the variables below (it does not matter from which symbolic set we copy the variables as they will be used in a new rule)
 
-			// collect all variables from the remaining body of the rule
-			std::set<ID> bodyVars;
-			BOOST_FOREACH (ID rb, rule.body){
-				if (rb != b) reg->getVariablesInID(rb, bodyVars);
-			}
-
-			// collect all variables of the symbolic set which occur also in the remaining rule body
-			std::vector<ID> bodyVarsOfSymbolicSet;
-			BOOST_FOREACH (ID c, conjSymSetVars){
-				if (std::find(bodyVars.begin(), bodyVars.end(), c) != bodyVars.end()){
-					bodyVarsOfSymbolicSet.push_back(c);
+				// collect all variables from the conjunction of the symbolic set
+				DBGLOG(DBG, "Harvesting variables in literals of the symbolic set");
+				std::set<ID> conjSymSetVars;
+				BOOST_FOREACH (ID cs, curliterals){
+					DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
+					reg->getVariablesInID(cs, conjSymSetVars);
 				}
-			}
-			// if a body literal is a builtin and shares a variable with the symbolic set, then we have to add also the other variables in this builtin
-			bool changed = true;
-			while (changed){
-				changed = false;
-				BOOST_FOREACH (ID bb, rule.body){
-					if (!bb.isBuiltinAtom()) continue;
 
-					std::set<ID> bbVars;
-					reg->getVariablesInID(bb, bbVars);
-					bool sharedVar = false;
-					BOOST_FOREACH (ID v, bbVars){
-						if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) != conjSymSetVars.end()){
-							sharedVar = true;
-							break;
+				// collect all variables from the remaining body of the rule
+				DBGLOG(DBG, "Harvesting variables in remaining rule body");
+				std::set<ID> bodyVars;
+				BOOST_FOREACH (ID rb, rule.body){
+					if (rb != b) reg->getVariablesInID(rb, bodyVars);
+				}
+
+				// collect all variables of the symbolic set which occur also in the remaining rule body
+				DBGLOG(DBG, "Harvesting variables shared between literals in symbolic set and remaining rule body");
+				std::vector<ID> bodyVarsOfSymbolicSet;
+				BOOST_FOREACH (ID c, conjSymSetVars){
+					if (std::find(bodyVars.begin(), bodyVars.end(), c) != bodyVars.end()){
+						bodyVarsOfSymbolicSet.push_back(c);
+					}
+				}
+				// if a body literal is a builtin and shares a variable with the symbolic set, then we have to add also the other variables in this builtin
+				DBGLOG(DBG, "Harvesting additional variables via builting");
+				bool changed = true;
+				while (changed){
+					changed = false;
+					BOOST_FOREACH (ID bb, rule.body){
+						if (!bb.isBuiltinAtom()) continue;
+
+						std::set<ID> bbVars;
+						reg->getVariablesInID(bb, bbVars);
+						bool sharedVar = false;
+						BOOST_FOREACH (ID v, bbVars){
+							if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) != conjSymSetVars.end()){
+								sharedVar = true;
+								break;
+							}
+						}
+						if (sharedVar) {
+							BOOST_FOREACH (ID v, bbVars){
+								if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
+									conjSymSetVars.insert(v);
+									changed = true;
+									break;
+								}
+							}
 						}
 					}
-					if (sharedVar) {
-						BOOST_FOREACH (ID v, bbVars){
-							if (std::find(conjSymSetVars.begin(), conjSymSetVars.end(), v) == conjSymSetVars.end()){
-								conjSymSetVars.insert(v);
-								changed = true;
+				}
+
+				Rule keyRule(ID::MAINKIND_RULE);
+				Rule inputRule(ID::MAINKIND_RULE);
+				{
+					// Construct the external atom key rule of the following type:
+					// A. Single head atom
+					//   1. create a unique predicate name p
+					//   2. for all variables X from the conjunction of the symbolic set:
+					//	  if X occurs also in the remaining body of the rule
+					//          add it to the tuple of p
+					// B. The body consists of:
+					//    the set of all atoms from the body of the current rule,
+					//    which share variables with the conjunction of the symbolic set
+
+					// construct the input rule
+					DBGLOG(DBG, "Constructing key rule");
+					OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
+					if (bodyVarsOfSymbolicSet.size() > 0) { oatom.kind |= ID::SUBKIND_ATOM_ORDINARYN; }else{ oatom.kind |= ID::SUBKIND_ATOM_ORDINARYG; }
+					// A.
+					DBGLOG(DBG, "Constructing key rule head");
+					//   1.
+					oatom.tuple.push_back(keyPredID);
+					//   2.
+					BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
+						oatom.tuple.push_back(var);
+					}
+					keyRule.head.push_back(reg->storeOrdinaryAtom(oatom));
+					// B.
+					DBGLOG(DBG, "Constructing key rule body");
+					BOOST_FOREACH (ID bb, rule.body){
+						if (bb == b) continue;
+
+						std::set<ID> bbVars;
+						reg->getVariablesInID(bb, bbVars);
+						BOOST_FOREACH (ID v, conjSymSetVars){
+							if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()){
+								keyRule.body.push_back(bb);
+								if (bb.isExternalAtom()) keyRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
 								break;
 							}
 						}
 					}
 				}
-			}
 
-			Rule keyRule(ID::MAINKIND_RULE);
-			Rule inputRule(ID::MAINKIND_RULE);
-			{
-				// Construct the external atom key rule of the following type:
-				// A. Single head atom
-				//   1. create a unique predicate name p
-				//   2. for all variables X from the conjunction of the symbolic set:
-				//	  if X occurs also in the remaining body of the rule
-				//          add it to the tuple of p
-				// B. The body consists of:
-				//    the set of all atoms from the body of the current rule,
-				//    which share variables with the conjunction of the symbolic set
+				{
+					// Construct the external atom predicate input by a rule of the following type:
+					// A. Single head atom
+					//   1. create a unique predicate name p
+					//   2. for all variables X from the disjunction of the symbolic set:
+					//	  if X occurs also in the remaining body of the rule
+					//          add it to the tuple of p
+					//   3. add all variables of the symbolic set to the tuple of p
+					// B. The body consists of:
+					//   1. the conjunction of the symbolic set
+					//   2. the set of all atoms from the body of the current rule,
+					//    which share variables with the conjunction of the symbolic set
 
-				// construct the input rule
-				DBGLOG(DBG, "Constructing key rule");
-				OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-				// A.
-				DBGLOG(DBG, "Constructing key rule head");
-				//   1.
-				oatom.tuple.push_back(keyPredID);
-				//   2.
-				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
-					oatom.tuple.push_back(var);
-				}
-				keyRule.head.push_back(reg->storeOrdinaryNAtom(oatom));
-				// B.
-				DBGLOG(DBG, "Constructing key rule body");
-				BOOST_FOREACH (ID bb, rule.body){
-					if (bb == b) continue;
+					// construct the input rule
+					DBGLOG(DBG, "Constructing input rule");
+					OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
+					if (bodyVarsOfSymbolicSet.size() > 0 || curvariables.size() > 0) { oatom.kind |= ID::SUBKIND_ATOM_ORDINARYN; }else{ oatom.kind |= ID::SUBKIND_ATOM_ORDINARYG; }
+					// A.
+					DBGLOG(DBG, "Constructing input rule head");
+					//   1.
+					oatom.tuple.push_back(inputPredID);
+					//   2.
+					BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
+						oatom.tuple.push_back(var);
+					}
+					//   3.
+					for (int i = 0; i < curvariables.size(); i++){
+						oatom.tuple.push_back(curvariables[i]);
+					}
+					inputRule.head.push_back(reg->storeOrdinaryAtom(oatom));
+					// B.
+					DBGLOG(DBG, "Constructing input rule body");
+					// 1.
+					inputRule.body = curliterals;
+					BOOST_FOREACH (ID l, curliterals){
+						if (l.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+					}
+					// 2.
+					BOOST_FOREACH (ID bb, rule.body){
+						if (bb == b) continue;
 
-					std::set<ID> bbVars;
-					reg->getVariablesInID(bb, bbVars);
-					BOOST_FOREACH (ID v, conjSymSetVars){
-						if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()){
-							keyRule.body.push_back(bb);
-							if (bb.isExternalAtom()) keyRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
-							break;
+						std::set<ID> bbVars;
+						reg->getVariablesInID(bb, bbVars);
+						BOOST_FOREACH (ID v, conjSymSetVars){
+							if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()){
+								DBGLOG(DBG, "Adding " << printToString<RawPrinter>(bb, reg) << " because it shares a variable with the literals in the symbolic set");
+								inputRule.body.push_back(bb);
+								if (bb.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+							}
 						}
 					}
 				}
+
+				// recursively handle aggregates in this rule
+				DBGLOG(DBG, "Recursive call for " << printToString<RawPrinter>(reg->storeRule(keyRule), reg));
+				rewriteRule(ctx, edb, idb, keyRule);
+				DBGLOG(DBG, "Recursive call for " << printToString<RawPrinter>(reg->storeRule(inputRule), reg));
+				rewriteRule(ctx, edb, idb, inputRule);
 			}
 
-			{
-				// Construct the external atom predicate input by a rule of the following type:
-				// A. Single head atom
-				//   1. create a unique predicate name p
-				//   2. for all variables X from the disjunction of the symbolic set:
-				//	  if X occurs also in the remaining body of the rule
-				//          add it to the tuple of p
-				//   3. add all variables of the symbolic set to the tuple of p in reverse order
-				// B. The body consists of:
-				//   1. the conjunction of the symbolic set
-				//   2. the set of all atoms from the body of the current rule,
-				//    which share variables with the conjunction of the symbolic set
+			assert (!!symsetvariables && "Did not find any symbolic set");
 
-				// construct the input rule
-				DBGLOG(DBG, "Constructing input rule");
-				OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-				// A.
-				DBGLOG(DBG, "Constructing input rule head");
-				//   1.
-				oatom.tuple.push_back(inputPredID);
-				//   2.
-				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
-					oatom.tuple.push_back(var);
-				}
-				//   3.
-				for (int i = aatom.variables.size() - 1; i >= 0; i--){
-					oatom.tuple.push_back(aatom.variables[i]);
-				}
-				inputRule.head.push_back(reg->storeOrdinaryNAtom(oatom));
-				// B.
-				DBGLOG(DBG, "Constructing input rule body");
-				// 1.
-				inputRule.body = aatom.literals;
-				BOOST_FOREACH (ID l, aatom.literals){
-					if (l.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
-				}
-				// 2.
-				BOOST_FOREACH (ID bb, rule.body){
-					if (bb == b) continue;
-
-					std::set<ID> bbVars;
-					reg->getVariablesInID(bb, bbVars);
-					BOOST_FOREACH (ID v, conjSymSetVars){
-						if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()){
-							DBGLOG(DBG, "Adding " << printToString<RawPrinter>(bb, reg) << " because it shares a variable with the literals in the symbolic set");
-							inputRule.body.push_back(bb);
-							if (bb.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
-						}
-					}
-				}
-			}
-
-			// recursively handle aggregates in this rule
-			DBGLOG(DBG, "Recursive call");
-			rewriteRule(ctx, idb, keyRule);
-			rewriteRule(ctx, idb, inputRule);
-
-			// LOOP END
-
+			DBGLOG(DBG, "Generating new aggregate or external atom");
 			ID valueVariable;
 			switch (ctxdata.mode){
 			case AggregatePlugin::CtxData::ExtRewrite:
@@ -456,11 +481,11 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 				oatom.tuple.push_back(inputPredID);
 				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet) oatom.tuple.push_back(var);
-				for (int i = aatom.variables.size() - 1; i >= 0; i--){
-					simplifiedaatom.variables.push_back(aatom.variables[i]);
-					oatom.tuple.push_back(aatom.variables[i]);
+				for (int i = symsetvariables->size() - 1; i >= 0; i--){
+					simplifiedaatom.variables.push_back((*symsetvariables)[i]);
+					oatom.tuple.push_back((*symsetvariables)[i]);
 				}
-				simplifiedaatom.literals.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryNAtom(oatom)));
+				simplifiedaatom.literals.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(oatom)));
 
 				newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)) : ID::posLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)));
 				}
@@ -497,16 +522,22 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 	}
 
 	// add the new rule to the IDB
-	ID newRuleID = reg->storeRule(newRule);
-	idb.push_back(newRuleID);
+	if (newRule.head.size() == 1 && newRule.body.size() == 0 && newRule.head[0].isOrdinaryGroundAtom()){
+		DBGLOG(DBG, "Adding fact " + printToString<RawPrinter>(newRule.head[0], reg));
+		edb->setFact(newRule.head[0].address);
+	}else{
+		ID newRuleID = reg->storeRule(newRule);
+		idb.push_back(newRuleID);
+		DBGLOG(DBG, "Adding rule " + printToString<RawPrinter>(newRuleID, reg));
+	}
 }
 
-void AggregateRewriter::prepareRewrittenProgram(ProgramCtx& ctx)
+void AggregateRewriter::prepareRewrittenProgram(InterpretationPtr newEdb, ProgramCtx& ctx)
 {
 	// go through all rules
 	newIdb.clear();
 	BOOST_FOREACH (ID rid, ctx.idb){
-		rewriteRule(ctx, newIdb, ctx.registry()->rules.getByID(rid));
+		rewriteRule(ctx, newEdb, newIdb, ctx.registry()->rules.getByID(rid));
 	}
 
 #ifndef NDEBUG
@@ -525,7 +556,10 @@ void AggregateRewriter::rewrite(ProgramCtx& ctx)
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
 	if (ctxdata.enabled){
 		DBGLOG(DBG, "Aggregates are enabled -> rewrite program");
-		prepareRewrittenProgram(ctx);
+		InterpretationPtr newEdb(new Interpretation(ctx.registry()));
+		if (!!ctx.edb) newEdb->add(*ctx.edb);
+		prepareRewrittenProgram(newEdb, ctx);
+		ctx.edb = newEdb;
 		ctx.idb = newIdb;
 	}else{
 		// plugin disabled: the program must not contain aggregates in this case
@@ -718,7 +752,7 @@ class MaxAtom : public AggAtom
 			*defined = false;
 			*returnValue = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue = t[t.size() - 1].address > *returnValue ? t[t.size() - 1].address : *returnValue;
+				*returnValue = t[0].address > *returnValue ? t[0].address : *returnValue;
 				*defined = true;
 			}
 		}
@@ -735,7 +769,7 @@ class MinAtom : public AggAtom
 			*defined = false;
 			*returnValue = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue = t[t.size() - 1].address < *returnValue || !(*defined) ? t[t.size() - 1].address : *returnValue;
+				*returnValue = t[0].address < *returnValue || !(*defined) ? t[0].address : *returnValue;
 				*defined = true;
 			}
 		}
@@ -752,7 +786,7 @@ class SumAtom : public AggAtom
 			*defined = true;
 			*returnValue = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue += t[t.size() - 1].address;
+				*returnValue += t[0].address;
 			}
 		}
 
@@ -768,7 +802,7 @@ class TimesAtom : public AggAtom
 			*defined = false;
 			*returnValue = 1;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue *= t[t.size() - 1].address;
+				*returnValue *= t[0].address;
 				*defined = true;
 			}
 		}
@@ -786,7 +820,7 @@ class AvgAtom : public AggAtom
 			*returnValue = 0;
 			int cnt = 0;
 			BOOST_FOREACH (Tuple t, input){
-				*returnValue += t[t.size() - 1].address;
+				*returnValue += t[0].address;
 				cnt++;
 				*defined = true;
 			}
@@ -807,75 +841,8 @@ class CountAtom : public AggAtom
 			*defined = true;
 			*returnValue = input.size();
 		}
-/*
-		class CountInputNogoodProvider : public ExternalLearningHelper::InputNogoodProvider{
-		private:
-			bool negate;
-			int arity;
-		public:
-			CountInputNogoodProvider(bool negate, int arity) : negate(negate), arity(arity) {}
 
-			Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const{
-
-				int functionValue = tuple[tuple.size() - 1].address;
-
-				// if the function does not deliver a certain value
-				if (!contained){
-					if (query.interpretation->getStorage().count() > functionValue){
-
-						// collect functionValue + 1 input atoms; then this set is a reason for the failure
-						bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-						bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
-						Nogood ng;
-						int cnt = 0;
-						while (en < en_end){
-							const OrdinaryAtom& ogatom = query.ctx->registry()->ogatoms.getByAddress(*en);
-							if (cnt > functionValue) break;
-							bool match = (ogatom.tuple[0] == query.input[1]);
-							for (int i = 0; i < tuple.size() - 1; ++i){
-								if (ogatom.tuple[1 + i] != tuple[i]){
-									match = false;
-									break;
-								}
-							}
-							if (match){
-								ng.insert(NogoodContainer::createLiteral(*en, true));
-								cnt++;
-							}
-							en++;
-						}
-						return ng;
-					}
-				}
-
-				// default: take the whole input information
-				ExternalLearningHelper::DefaultInputNogoodProvider inp(negate);
-				return inp(query, prop, contained, tuple);
-			}
-		};
-*/
 	public:
-/*
-		virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
-
-			const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
-
-			std::vector<Query> atomicQueries = splitQuery(query, prop);
-			DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
-			BOOST_FOREACH (Query atomicQuery, atomicQueries){
-				Answer atomicAnswer;
-				AggAtom::retrieve(atomicQuery, atomicAnswer);
-
-				ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, ExternalLearningHelper::InputNogoodProviderConstPtr(new CountInputNogoodProvider(true, arity)));
-				ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
-
-				// overall answer is the union of the atomic answers
-				answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
-			}
-
-			ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, ExternalLearningHelper::InputNogoodProviderConstPtr(new CountInputNogoodProvider(false, arity)));
-		}
-*/
 		CountAtom(int arity) : AggAtom("count", arity) {}
 };
 
