@@ -245,7 +245,9 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 			// Trick: Iterate through aatom.mvariables plus one additional index for aatom.variables (resp. literals).
 			// If the additional index is reached and is 0, then we bind the reference to aatom.variables instead of aatom.mvariables;
 			// if it is greater than 0 we skip it because aatom.mvariables is nonempty.
-			DBGLOG(DBG, "Found " << aatom.mvariables.size() << " symbolic sets");
+			DBGLOG(DBG, "Found " << aatom.mvariables.size() << " multi-symbolic sets");
+			
+			// first of all, analyze the aggregate and build needed sets of variables
 			const Tuple* symsetvariables = NULL;
 			for (int symbSetIndex = 0; symbSetIndex <= aatom.mvariables.size(); ++symbSetIndex){
 				if (symbSetIndex == aatom.mvariables.size() && symbSetIndex > 0) continue;
@@ -267,19 +269,27 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				DBGLOG(DBG, "Harvesting variables in remaining rule body");
 				std::set<ID> bodyVars;
 				BOOST_FOREACH (ID rb, rule.body){
-					if (rb != b) reg->getVariablesInID(rb, bodyVars);
+					if (rb != b){
+						DBGLOG(DBG, "Harvesting variables in " << printToString<RawPrinter>(rb, reg));
+						reg->getVariablesInID(rb, bodyVars);
+					}
 				}
+#ifndef NDEBUG
+				BOOST_FOREACH (ID var, bodyVars){
+					DBGLOG(DBG, "Body variable: " << printToString<RawPrinter>(var, reg));
+				}
+#endif
 
 				// collect all variables of the symbolic set which occur also in the remaining rule body
 				DBGLOG(DBG, "Harvesting variables shared between literals in symbolic set and remaining rule body");
-				std::vector<ID> bodyVarsOfSymbolicSet;
 				BOOST_FOREACH (ID c, conjSymSetVars){
 					if (std::find(bodyVars.begin(), bodyVars.end(), c) != bodyVars.end()){
+						DBGLOG(DBG, "Body variable of symbolic set: " << printToString<RawPrinter>(c, reg));
 						bodyVarsOfSymbolicSet.push_back(c);
 					}
 				}
 				// if a body literal is a builtin and shares a variable with the symbolic set, then we have to add also the other variables in this builtin
-				DBGLOG(DBG, "Harvesting additional variables via builting");
+				DBGLOG(DBG, "Harvesting additional variables via builtin");
 				bool changed = true;
 				while (changed){
 					changed = false;
@@ -305,6 +315,26 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 							}
 						}
 					}
+				}
+			}
+			assert (!!symsetvariables && "Did not find any symbolic set");
+
+			// same trick again: now construct key and input rules
+			symsetvariables = NULL;
+			for (int symbSetIndex = 0; symbSetIndex <= aatom.mvariables.size(); ++symbSetIndex){
+				if (symbSetIndex == aatom.mvariables.size() && symbSetIndex > 0) continue;
+
+				DBGLOG(DBG, "Processing symbolic set number " << symbSetIndex);
+				const Tuple& curvariables = (symbSetIndex == aatom.mvariables.size() ? aatom.variables : aatom.mvariables[symbSetIndex]);
+				const Tuple& curliterals = (symbSetIndex == aatom.mliterals.size() ? aatom.literals : aatom.mliterals[symbSetIndex]);
+				symsetvariables = &curvariables; // we reuse the variables below (it does not matter from which symbolic set we copy the variables as they will be used in a new rule)
+
+				// collect all variables from the conjunction of the symbolic set
+				DBGLOG(DBG, "Harvesting variables in literals of the symbolic set");
+				std::set<ID> conjSymSetVars;
+				BOOST_FOREACH (ID cs, curliterals){
+					DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
+					reg->getVariablesInID(cs, conjSymSetVars);
 				}
 
 				Rule keyRule(ID::MAINKIND_RULE);
@@ -410,8 +440,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				rewriteRule(ctx, edb, idb, inputRule);
 			}
 
-			assert (!!symsetvariables && "Did not find any symbolic set");
-
+			// actual rewriting
 			DBGLOG(DBG, "Generating new aggregate or external atom");
 			ID valueVariable;
 			switch (ctxdata.mode){
@@ -471,6 +500,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 					valueVariable = reg->storeVariableTerm(var.str());
 				}
 
+				DBGLOG(DBG, "Creating simplified atom");
 				AggregateAtom simplifiedaatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
 				simplifiedaatom.tuple[0] = valueVariable;
 				simplifiedaatom.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
@@ -478,15 +508,24 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				simplifiedaatom.tuple[3] = ID_FAIL;
 				simplifiedaatom.tuple[4] = ID_FAIL;
 
+				DBGLOG(DBG, "Creating aggregate literal");
 				OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 				oatom.tuple.push_back(inputPredID);
-				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet) oatom.tuple.push_back(var);
-				for (int i = symsetvariables->size() - 1; i >= 0; i--){
+				DBGLOG(DBG, "Adding body variables shared with symbolic set");
+				BOOST_FOREACH (ID var, bodyVarsOfSymbolicSet){
+					DBGLOG(DBG, "Adding body variable of symbolic set to simplified aggregate: " << printToString<RawPrinter>(var, reg));
+					oatom.tuple.push_back(var);
+				}
+				DBGLOG(DBG, "Adding variables of the symboic set");
+				for (int i = 0; i < symsetvariables->size(); i++){
+					DBGLOG(DBG, "Adding symbolic set variable to simplified aggregate: " << printToString<RawPrinter>((*symsetvariables)[i], reg));
 					simplifiedaatom.variables.push_back((*symsetvariables)[i]);
 					oatom.tuple.push_back((*symsetvariables)[i]);
 				}
+				if (simplifiedaatom.variables.empty()) simplifiedaatom.variables.push_back(ID::termFromInteger(1)); // make sure that the list of terms is non-empty
 				simplifiedaatom.literals.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(oatom)));
 
+				DBGLOG(DBG, "Adding aggregate to rule");
 				newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)) : ID::posLiteralFromAtom(reg->aatoms.storeAndGetID(simplifiedaatom)));
 				}
 				break;

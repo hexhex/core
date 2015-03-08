@@ -280,11 +280,12 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 			cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
 			cnt.tuple[3] = ID_FAIL;
 			cnt.tuple[4] = ID_FAIL;
+			ID cntID;
 			std::set<ID> vars;
 			reg->getVariablesInID(choiceAtomID, vars);
 			cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
 			cnt.literals.push_back(ID::posLiteralFromAtom(choiceAtomID));
-			ID cntID = reg->aatoms.storeAndGetID(cnt);
+			cntID = reg->aatoms.storeAndGetID(cnt);
 			DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
 			r.body.push_back(ID::posLiteralFromAtom(cntID));
 

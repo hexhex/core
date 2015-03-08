@@ -154,3 +154,5 @@ headguard2.hex headguard2.out --solver=genuinegc
 headguard3.hex headguard3.stderr --solver=genuinegc
 choicerule1.hex choicerule1.out --solver=genuinegc -N=10
 choicerule2.hex choicerule2.out --solver=genuinegc -N=10
+choiceruel3.hex choicerule3.out --solver=genuinegc -N=10
+choicerule4.hex choicerule4.out --solver=genuinegc -N=10

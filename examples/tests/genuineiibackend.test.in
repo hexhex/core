@@ -142,3 +142,7 @@ liberalsafety6.hex liberalsafety6.out --liberalsafety --solver=genuineii
 liberalsafety7.hex liberalsafety7.out --liberalsafety --solver=genuineii --heuristics=monolithic
 liberalsafety8.hex liberalsafety8.out --liberalsafety --solver=genuineii
 liberalsafety9.hex liberalsafety9.out --liberalsafety --solver=genuineii
+choicerule1.hex choicerule1.out --solver=genuineii --aggregate-mode=ext -N=10
+choicerule2.hex choicerule2.out --solver=genuineii --aggregate-mode=ext -N=10
+choiceruel3.hex choicerule3.out --solver=genuineii --aggregate-mode=ext -N=10
+choicerule4.hex choicerule4.out --solver=genuineii --aggregate-mode=ext --max-variable-share=1 -N=10
