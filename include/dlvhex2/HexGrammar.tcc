@@ -1052,7 +1052,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | (builtinOpsTernary >> qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
       [ Sem::builtinTernaryPrefix(sem) ];
   symbolicSet
-    = (terms > -(qi::lit(':') > (bodyLiteral % qi::char_(','))) > qi::eps);
+    = (terms > -(qi::lit(':') > (bodyLiteral % (qi::char_(',') | qi::char_(';')))) > qi::eps);
   aggregateTerm
     = builtinOpsAgg > qi::lit('{') > (symbolicSet % qi::lit(';')) > qi::lit('}');
   aggregateAtom
@@ -1136,7 +1136,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
         (headAtom % qi::no_skip[*ascii::space >> qi::char_('v') >> ascii::space]) >>
        -(
           qi::lit(":-") >
-          (bodyLiteral % qi::char_(','))
+          (bodyLiteral % (qi::char_(',') | qi::char_(';')))
         ) >>
         qi::lit('.')
       ) [ Sem::rule(sem) ]
@@ -1144,20 +1144,20 @@ HexGrammarBase(HexGrammarSemantics& sem):
         headAtom >> qi::lit(':') >> (bodyLiteral % qi::char_(',')) >>
        -(
           qi::lit(":-") >
-          (bodyLiteral % qi::char_(','))
+          (bodyLiteral % (qi::char_(',') | qi::char_(';')))
         ) >>
         qi::lit('.')
       ) [ Sem::ruleVariableDisjunction(sem) ];
   constraint
     = (
         qi::lit(":-") >>
-        (bodyLiteral % qi::char_(',')) >>
+        (bodyLiteral % (qi::char_(',') | qi::char_(';'))) >>
         qi::lit('.')
       ) [ Sem::constraint(sem) ];
   weakconstraint
     = (
         qi::lit(":~") >>
-        (bodyLiteral % qi::char_(',')) >>
+        (bodyLiteral % (qi::char_(',') | qi::char_(';'))) >>
         qi::lit('.') >>
         -(qi::lit("[") >> term >> qi::lit(":") >> term >> qi::lit("]"))
       ) [ Sem::weakconstraint(sem) ];

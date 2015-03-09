@@ -1,3 +1,20 @@
+2015-03-09  Christoph Redl <redl@kr.tuwien.ac.at>
+	* src/ConditionalLiteralPlugin.cpp: Implement conditional literals.
+	* include/dlvhex2/ConditionalLiteralPlugin.h: Likewise.
+
+2015-03-06  Christoph Redl <redl@kr.tuwien.ac.at>
+	* src/AggregatePlugin.cpp: Add support for aggregates with
+	multi-component symbolic sets.
+	* include/dlvhex2/AggregatePlugin.h: Likewise.
+	* include/dlvhex2/Atoms.h: Likewise.
+	* include/dlvhex2/HexGrammar.tcc: Likewise.
+	* include/dlvhex2/HexGrammar.h: Likewise.
+	* src/HexGrammar.cpp: Likewise.
+
+2015-03-05  Christoph Redl <redl@kr.tuwien.ac.at>
+	* src/ChoicePlugin.cpp: Implement choice rules.
+	* include/dlvhex2/ChoicePlugin.h: Likewise.
+
 2014-09-17  Christoph Redl <redl@kr.tuwien.ac.at>
 	* src/PythonPlugin.cpp: Add support for subprogram evaluation.
 	* include/dlvhex2/PythonPlugin.h: Likewise.

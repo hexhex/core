@@ -160,7 +160,7 @@ struct sem<ConditionalParserModuleSemantics::conditionalLieral>
     ConditionalParserModuleSemantics& mgr,
 		const boost::fusion::vector2<
 		  	dlvhex::ID,
-			boost::optional<boost::optional<std::vector<dlvhex::ID> > >
+			boost::optional<std::vector<dlvhex::ID> >
 		>& source,
     ID& target)
   {
@@ -170,49 +170,24 @@ struct sem<ConditionalParserModuleSemantics::conditionalLieral>
 
 	Rule condRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 
-	// count instances of the conditional part
-	DBGLOG(DBG, "Creating aggregate #count{ ... : condition(...) }");
-	AggregateAtom cnt1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
-	cnt1.tuple[0] = reg->getAuxiliaryVariableSymbol('l', ID::termFromInteger(mgr.varnr++));
-	cnt1.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
-	cnt1.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
-	cnt1.tuple[3] = ID_FAIL;
-	cnt1.tuple[4] = ID_FAIL;
-	ID cnt1ID;
-	std::set<ID> vars1;
-	cnt1.variables.insert(cnt1.variables.end(), vars1.begin(), vars1.end());
-	if (!!boost::fusion::at_c<1>(source) && !!boost::fusion::at_c<1>(source).get()) cnt1.literals = boost::fusion::at_c<1>(source).get().get();
-	BOOST_FOREACH (ID b, cnt1.literals) reg->getVariablesInID(b, vars1);
-	cnt1ID = reg->aatoms.storeAndGetID(cnt1);
-	DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cnt1ID, reg));
-	condRule.body.push_back(ID::posLiteralFromAtom(cnt1ID));
-
-	// count instances of the derived atom
-	DBGLOG(DBG, "Creating aggregate #count{ ... : derived(...), condition(...) }");
-	AggregateAtom cnt2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
-	cnt2.tuple[0] = reg->getAuxiliaryVariableSymbol('l', ID::termFromInteger(mgr.varnr++));
-	cnt2.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
-	cnt2.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
-	cnt2.tuple[3] = ID_FAIL;
-	cnt2.tuple[4] = ID_FAIL;
-	ID cnt2ID;
-	std::set<ID> vars2;
-	cnt2.variables.insert(cnt1.variables.end(), vars2.begin(), vars2.end());
-	if (!!boost::fusion::at_c<1>(source) && !!boost::fusion::at_c<1>(source).get()) cnt2.literals = boost::fusion::at_c<1>(source).get().get();
-	cnt2.literals.push_back(derivedAtomID);
-	BOOST_FOREACH (ID b, cnt2.literals) reg->getVariablesInID(b, vars2);
-	cnt2ID = reg->aatoms.storeAndGetID(cnt2);
-	DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cnt2ID, reg));
-	condRule.body.push_back(ID::posLiteralFromAtom(cnt2ID));
-
-	// compare the two numbers
-	BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
-	bi.tuple.push_back(ID::termFromBuiltin(ID::TERM_BUILTIN_ADD));
-	bi.tuple.push_back(cnt1.tuple[0]);
-	bi.tuple.push_back(cnt2.tuple[0]);
-	bi.tuple.push_back(reg->getAuxiliaryVariableSymbol('l', ID::termFromInteger(mgr.varnr++)));
-
-//	target = reg->storeRule(r);
+	// count instances of the conditional part which do not fulfill the derived part; this number must be 0
+	DBGLOG(DBG, "Creating aggregate #count{ ... : naf derived(...), condition(...) }");
+	AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+	cnt.tuple[0] = ID::termFromInteger(0);
+	cnt.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
+	cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
+	cnt.tuple[3] = ID_FAIL;
+	cnt.tuple[4] = ID_FAIL;
+	ID cntID;
+	std::set<ID> vars;
+	reg->getVariablesInID(derivedAtomID, vars);
+	cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
+	if (!!boost::fusion::at_c<1>(source)) cnt.literals = boost::fusion::at_c<1>(source).get();
+	cnt.literals.push_back(ID::nafLiteralFromAtom(derivedAtomID));
+	cntID = reg->aatoms.storeAndGetID(cnt);
+	DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
+	
+	target = cntID;
   }
 };
 
@@ -236,9 +211,12 @@ struct ConditionalParserModuleGrammarBase:
 		typedef ConditionalParserModuleSemantics Sem;
 
 		conditionalLieral
-			= (
-					Base::classicalAtom >> -(qi::lit(':') >> (Base::bodyLiteral % qi::lit(';'))) > qi::eps
+			=  (
+					qi::lit('[') >> Base::classicalAtom >> qi::lit(':') >> (Base::bodyLiteral % qi::lit(',')) >> qi::lit(']') > qi::eps
 				) [ Sem::conditionalLieral(sem) ];
+//			|| (
+//					Base::classicalAtom >> qi::lit('%') >> (Base::bodyLiteral % qi::lit(';')) > qi::eps
+//				) [ Sem::conditionalLieral(sem) ];
 
 		#ifdef BOOST_SPIRIT_DEBUG
 		BOOST_SPIRIT_DEBUG_NODE(conditionalLieral);
