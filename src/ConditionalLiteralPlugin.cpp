@@ -211,12 +211,32 @@ struct ConditionalParserModuleGrammarBase:
 		typedef ConditionalParserModuleSemantics Sem;
 
 		conditionalLieral
+			// The gringo syntax for conditional literals is as follows:
+			//		p(X1, ..., Xn) : l1(...), ..., ln(...)
+			// where l1, ..., ln are possibly default-negated literals.
+			// Note that the literals in the condition are comma-separated, i.e., all l1(...), ..., ln(...) belong to the condition.
+			// There overall conditional literal is terminated by semicolon.
+			// Therefore, the HEX-syntax was extended such that body literals can be separated either by comma or by semicolon,
+			// where the parser of conditional literals should greedily process literals until a semicolon appears.
+			// Examples:
+			// 1. x :- y : u, w; t.
+			//    is interpreted such that the head contains the atom x, and the body contains the conditional literal y:u,w (derived atom y, conditions u and w) and the ordinary literal t.
+			// 2. x :- r, s; t.
+			//    is interpreted such that the head contains the atom x, and the body contains literals r, s and t.
+			//    Since there is no conditional literal in the body, comma and semicolon have the same semantics and separate the literals of the body.
+			//
+			// @TODO  It would be good if we could also support this syntax. The following grammar rule should do the job,
+			//        but it does not work at the moment and gives the error "unparsed 'x :- y : u, w; t.'".
+			//        Probably, this is because conditional literals begin with an ordinary literal (before the colon) and just append additional elements.
+			//        Therefore, it seems that the parser lookahead is not sufficient.
+			//        What would be needed is to greedily apply parser modules first and apply the default rules only if none of them matches. I don't know how to implement this.
 			=  (
+					Base::classicalAtom >> qi::lit(':') >> (Base::bodyLiteral % qi::lit(',')) > qi::eps
+				) [ Sem::conditionalLieral(sem) ]
+			// @TODO: Workaround: Encapsulate conditional literals in brackets [].
+			|| (
 					qi::lit('[') >> Base::classicalAtom >> qi::lit(':') >> (Base::bodyLiteral % qi::lit(',')) >> qi::lit(']') > qi::eps
 				) [ Sem::conditionalLieral(sem) ];
-//			|| (
-//					Base::classicalAtom >> qi::lit('%') >> (Base::bodyLiteral % qi::lit(';')) > qi::eps
-//				) [ Sem::conditionalLieral(sem) ];
 
 		#ifdef BOOST_SPIRIT_DEBUG
 		BOOST_SPIRIT_DEBUG_NODE(conditionalLieral);
