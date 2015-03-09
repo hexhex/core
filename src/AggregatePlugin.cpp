@@ -264,8 +264,15 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				std::set<ID> bodyVars;
 				BOOST_FOREACH (ID rb, rule.body){
 					if (rb != b){
-						DBGLOG(DBG, "Harvesting variables in " << printToString<RawPrinter>(rb, reg));
-						reg->getVariablesInID(rb, bodyVars);
+						// exclude local variables in other aggregates but keep the bound variables thereof
+						if (rb.isAggregateAtom()){
+							const AggregateAtom& ag2 = reg->aatoms.getByID(rb);
+							if (ag2.tuple[0] != ID_FAIL) reg->getVariablesInID(ag2.tuple[0], bodyVars);
+							if (ag2.tuple[4] != ID_FAIL) reg->getVariablesInID(ag2.tuple[4], bodyVars);
+						}else{
+							DBGLOG(DBG, "Harvesting variables in " << printToString<RawPrinter>(rb, reg));
+							reg->getVariablesInID(rb, bodyVars);
+						}
 					}
 				}
 
