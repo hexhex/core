@@ -78,7 +78,7 @@ void AggregatePlugin::printUsage(std::ostream& o) const
 	  << "                         native (default) : Keep aggregates" << std::endl
 	  << "                                            (but simplify them to some basic types)" << std::endl
 	  << "                         ext              : Rewrite aggregates to external atoms" << std::endl
-	  << "     --allow-aggextcycles" << std::endl
+	  << "     --aggregate-allowaggextcycles" << std::endl
           << "                      Allows cycles which involve both aggregates and" << std::endl
           << "                      external atoms. If the option is not specified," << std::endl
           << "                      such cycles lead to abortion; if specified, only" << std::endl
@@ -134,7 +134,7 @@ void AggregatePlugin::processOptions(
 				throw PluginError(ss.str());
 			}
 			processed = true;
-		}else if( str == "--allow-aggextcycles" )
+		}else if( str == "--aggregate-allowaggextcycles" )
 		{
 			ctx.config.setOption("AllowAggExtCycles", 1);
 			processed = true;

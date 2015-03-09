@@ -64,7 +64,7 @@ ChoicePlugin::CtxData::CtxData():
 ChoicePlugin::ChoicePlugin():
 	PluginInterface()
 {
-	setNameVersion("dlvhex-ChoicePlugin[internal]", 2, 0, 0);
+	setNameVersion("dlvhex-choicePlugin[internal]", 2, 0, 0);
 }
 
 ChoicePlugin::~ChoicePlugin()

@@ -6,7 +6,7 @@ agg4.hex agg4.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mo
 agg5.hex agg5.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=native
 agg6.hex agg6.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=native
 aggextcycle1.hex aggextcycle1s.stderr --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=native
-aggextcycle1.hex aggextcycle1sa.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=native --allow-aggextcycles
+aggextcycle1.hex aggextcycle1sa.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=native --aggregate-allowaggextcycles
 aggextcycle1.hex aggextcycle1e.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=ext
 weak1.hex weak1.out --strongnegation-enable --weak-enable
 weak2.hex weak2.out --strongnegation-enable --weak-enable

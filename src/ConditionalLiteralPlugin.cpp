@@ -64,7 +64,7 @@ ConditionalLiteralPlugin::CtxData::CtxData():
 ConditionalLiteralPlugin::ConditionalLiteralPlugin():
 	PluginInterface()
 {
-	setNameVersion("dlvhex-ConditionalLiteralPlugin[internal]", 2, 0, 0);
+	setNameVersion("dlvhex-conditionalLiteralPlugin[internal]", 2, 0, 0);
 }
 
 ConditionalLiteralPlugin::~ConditionalLiteralPlugin()
