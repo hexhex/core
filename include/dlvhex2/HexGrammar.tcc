@@ -1110,12 +1110,12 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::addMLPModuleHeader(sem) ];
 
   bodyAtom
-    = classicalAtom
+    = bodyAtomExt
+    | classicalAtom
     | externalAtom
     | mlpModuleAtom
     | builtinAtom
-    | aggregateAtom
-    | bodyAtomExt;
+    | aggregateAtom;
 
   bodyLiteral
     = (
@@ -1128,8 +1128,8 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::bodyLiteral(sem) ];
 
   headAtom
-    = classicalAtom
-    | headAtomExt;
+    = headAtomExt
+    | classicalAtom;
 
   rule
     = (

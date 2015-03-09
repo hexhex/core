@@ -2,7 +2,11 @@ d(1). d(2). d(3).
 p(1). p(2). p(3).
 q(1). q(2). q(4).
 
-r :- [p(X) : d(X), not x].
-r2 :- [q(X) : d(X), p(1)].
-r3 :- [f(X) : d(X), p(1), not x].
+r :- p(X) : d(X), not x.
+r2 :- q(X) : d(X), p(1).
+r3 :- f(X) : d(X), p(1), not x.
+
+% check if distinction between atoms in the conditional part and in the remaining rule body works
+c1 :- p(X) : d(X); y. % rule does not fire because y is false
+c2 :- q(X) : d(X), y. % rule fires because y is false and thus the conditional literal is true
 
