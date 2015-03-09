@@ -26,7 +26,7 @@
  * @file ChoicePlugin.cpp
  * @author Christoph Redl
  *
- * @brief Support for existential quantifier in the head of rules.
+ * @brief Support for choice literals in rule heads.
  */
 
 #ifdef HAVE_CONFIG_H

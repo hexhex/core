@@ -75,6 +75,7 @@
 #include "dlvhex2/QueryPlugin.h"
 #include "dlvhex2/AggregatePlugin.h"
 #include "dlvhex2/ChoicePlugin.h"
+#include "dlvhex2/ConditionalLiteralPlugin.h"
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
 #include "dlvhex2/WeakConstraintPlugin.h"
@@ -538,6 +539,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
 			PluginInterfacePtr choicePlugin(new ChoicePlugin);
 			pctx.pluginContainer()->addInternalPlugin(choicePlugin);
+			PluginInterfacePtr conditionalLiteralPlugin(new ConditionalLiteralPlugin);
+			pctx.pluginContainer()->addInternalPlugin(conditionalLiteralPlugin);
 #ifdef HAVE_PYTHON
 			PluginInterfacePtr _pythonPlugin(pythonPlugin);
 			pctx.pluginContainer()->addInternalPlugin(_pythonPlugin);

@@ -23,14 +23,14 @@
  */
 
 /**
- * @file ChoicePlugin.h
+ * @file ConditionalLiteralPlugin.h
  * @author Christoph Redl
  *
- * @brief Support for choice literals in rule heads.
+ * @brief Support for conditional literals in rule bodies.
  */
 
-#ifndef CHOICE_PLUGIN__HPP_INCLUDED_
-#define CHOICE_PLUGIN__HPP_INCLUDED_
+#ifndef CONDITIONAL_PLUGIN__HPP_INCLUDED_
+#define CONDITIONAL_PLUGIN__HPP_INCLUDED_
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/PluginInterface.h"
@@ -39,11 +39,11 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Implements choice rules. */
-class ChoicePlugin:
+class ConditionalLiteralPlugin:
   public PluginInterface
 {
 public:
-  // stored in ProgramCtx, accessed using getPluginData<ChoicePlugin>()
+  // stored in ProgramCtx, accessed using getPluginData<ConditionalLiteralPlugin>()
   class CtxData:
     public PluginData
   {
@@ -57,9 +57,9 @@ public:
 
 public:
   /** \brief Constructor. */
-  ChoicePlugin();
+  ConditionalLiteralPlugin();
   /** \brief Destructor. */
-  virtual ~ChoicePlugin();
+  virtual ~ConditionalLiteralPlugin();
 
 	// output help message for this plugin
 	virtual void printUsage(std::ostream& o) const;
