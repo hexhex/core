@@ -1,0 +1,12 @@
+d(1). d(2). d(3).
+f(1). f(2). f(3).
+
+1 <= { p(X) : d(X) } :- f(X).
+
+% rewritten to
+% p(X) v c_aux(X) :- d(X), f(X).
+% :- f(X), #count{ X : p(X) } < 1.
+% constraint is further rewritten to
+% a_aux_keys(X) :- f(X).
+% a_aux_val(X,X) :- f(X), p(X).
+% :- f(X), #count{ X,X : a_aux_val(X,X) } < 1.

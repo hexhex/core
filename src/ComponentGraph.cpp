@@ -548,7 +548,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 }
 
 
-bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
+bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci) const
 {
 	DBGLOG(DBG, "calculateFixedDomain");
 
@@ -722,7 +722,7 @@ bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
 }
 
 
-bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci)
+bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci) const
 {
 	// get all head predicates
 	std::set<ID> headPredicates;
@@ -1011,8 +1011,6 @@ void ComponentGraph::computeCollapsedComponentInfos(
 		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty()))
 			ci.fixedDomain &= cio.fixedDomain;
 
-		ci.recursiveAggregates |= cio.recursiveAggregates;
-
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
     // otherwise they become inner eatoms
@@ -1036,6 +1034,7 @@ void ComponentGraph::computeCollapsedComponentInfos(
     WARNING("if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
 	}
   ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
+	ci.recursiveAggregates = computeRecursiveAggregatesInComponent(ci); // recompute if the collapsed component contains recursive aggregates; note that this is not simply the logical or of the basic components
 	calculateStratificationInfo(reg, ci);
 }
 

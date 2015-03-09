@@ -73,9 +73,6 @@ public:
   // create parser modules that extend and the basic hex grammar
   virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
-  // rewrite program by adding auxiliary constraints
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
-
   // plugin atoms
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
 
