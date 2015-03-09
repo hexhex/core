@@ -480,7 +480,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 					simplifiedaatom.variables.push_back(varID);
 					oatom.tuple.push_back(varID);
 				}
-				if (simplifiedaatom.variables.empty()) simplifiedaatom.variables.push_back(ID::termFromInteger(1)); // make sure that the list of terms is non-empty
 				simplifiedaatom.literals.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(oatom)));
 
 				DBGLOG(DBG, "Adding aggregate to rule");
