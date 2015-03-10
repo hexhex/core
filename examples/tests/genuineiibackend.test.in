@@ -5,6 +5,8 @@ agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mo
 agg4.hex agg4.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 agg5.hex agg5.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 agg6.hex agg6.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg7.hex agg7.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg8.hex agg8.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 aggextcycle1.hex aggextcycle1e.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 weak1.hex weak1.out --solver=genuineii --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=genuineii --strongnegation-enable --weak-enable
@@ -149,3 +151,4 @@ choicerule3.hex choicerule3.out --solver=genuineii --aggregate-mode=ext -N=10
 choicerule4.hex choicerule4.out --solver=genuineii --aggregate-mode=ext -N=10
 choicerule5.hex choicerule5.out --solver=genuineii --aggregate-mode=ext -N=10
 conditional1.hex conditional1.out --solver=genuinegc --aggregate-mode=ext
+conditional2.hex conditional2.out --solver=genuinegc --aggregate-mode=ext

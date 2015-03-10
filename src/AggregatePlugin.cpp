@@ -253,10 +253,11 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 
 				// collect all variables from the conjunction of the symbolic set
 				DBGLOG(DBG, "Harvesting variables in literals of the symbolic set");
-				std::set<ID> conjSymSetVars;
+				std::set<ID> symSetVars;
+				BOOST_FOREACH (ID c, currentSymbolicSetVars) { symSetVars.insert(c); }
 				BOOST_FOREACH (ID cs, currentSymbolicSetLiterals){
 					DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
-					reg->getVariablesInID(cs, conjSymSetVars);
+					reg->getVariablesInID(cs, symSetVars);
 				}
 
 				// collect all variables from the remaining body of the rule
@@ -277,8 +278,8 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				}
 
 				// collect all variables of the symbolic set which occur also in the remaining rule body
-				DBGLOG(DBG, "Harvesting variables shared between literals in symbolic set and remaining rule body");
-				BOOST_FOREACH (ID c, conjSymSetVars){
+				DBGLOG(DBG, "Harvesting variables shared between symbolic set and remaining rule body");
+				BOOST_FOREACH (ID c, symSetVars){
 					if (std::find(bodyVars.begin(), bodyVars.end(), c) != bodyVars.end()){
 						DBGLOG(DBG, "Body variable of symbolic set: " << printToString<RawPrinter>(c, reg));
 						symbolicSetVarsIntersectingRemainingBody.push_back(c);

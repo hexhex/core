@@ -306,7 +306,8 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
 
     // store togatom into workTuple if possible, otherwise bailout
     // then restore workTuple
-    assert(workTuple.size() == togatom.size());
+    if (workTuple.size() != togatom.size()) return false;	// this must be checked and cannot be asserted because multiple external atoms with the same predicate can have inputs of different sizes
+//    assert(workTuple.size() == togatom.size());
     assert(workTuple == preparedTuple);
     bool ret = true;
     for(unsigned idx = 1; idx < togatom.size(); ++idx)

@@ -201,6 +201,11 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
 
 	if (id.isLiteral() && id.isNaf()) out << "not ";
+
+	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGAVG)){
+		throw PluginError("Aggregate #avg is unsupported in Gringo backend");
+	}
+
 	if (assignment){
 		print(lowerbound);
 		out << "=";
@@ -755,7 +760,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
 	ID lowerbound, upperbound;
-  // 1. l <= #agg{...} <= u
+	// 1. l <= #agg{...} <= u
 	if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
 	    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
 		lowerbound = aatom.tuple[0];
@@ -813,9 +818,8 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
 
 	if (id.isLiteral() && id.isNaf()) out << "not ";
-  if( lowerbound != ID_FAIL )
-    print(lowerbound);
-  print(aatom.tuple[2]);
+	if (lowerbound != ID_FAIL) print(lowerbound);
+	print(aatom.tuple[2]);
 	const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
 	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
 		out << "{";
@@ -838,8 +842,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 
 		out << "]";
 	}
-  if( upperbound != ID_FAIL )
-    print(upperbound);
+	if (upperbound != ID_FAIL) print(upperbound);
 }
 
 void GringoGrounder::Printer::printInt(ID id){
