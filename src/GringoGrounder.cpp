@@ -321,6 +321,7 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 			case LParseRule::Weight:
 				r.kind |= ID::SUBKIND_RULE_WEIGHT;
 				BOOST_FOREACH (uint32_t w, lpr.weights) r.bodyWeightVector.push_back(ID::termFromInteger(w));
+				DBGLOG(DBG, "Converting a weight rule with bound " << lpr.bound);
 				r.bound = ID::termFromInteger(lpr.bound);
 				// do not break here!
 			case LParseRule::Regular:
@@ -391,7 +392,7 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 						if (r.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
 					}
 					ID rid = ctx.registry()->storeRule(r);
-					GPDBGLOG(DBG, "Adding rule " << rid);
+					DBGLOG(DBG, "Adding rule " << rid << ": " << printToString<RawPrinter>(rid, ctx.registry()));
 					groundProgram.idb.push_back(rid);
 				}
 				break;
@@ -421,7 +422,9 @@ void GringoGrounder::GroundHexProgramBuilder::printWeightRule(unsigned head, uns
 		vec.push_back(wl.first);
 		weights.push_back(wl.second);
 	}
+	DBGLOG(DBG, "Found a weight rule with bound " << bound);
 	rules.push_back(LParseRule(head, vec, weights, bound));
+	assert (rules.back().bound == bound && "storing the bound of a weight rule failed");
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printMinimizeRule(const LitWeightVec &body){

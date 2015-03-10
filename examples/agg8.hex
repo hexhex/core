@@ -10,5 +10,5 @@ res1(Z) :- Z1 = #sum{ Y : p(D1,Y) }, Z2 = #max{ Y : p(D2,Y) }, Z = Z1 + Z2, d(D1
 f(12,1). f(12,2).
 f(13,2). f(13,3).
 res2(Z) :- &testConcat[1,2](X), Z = #sum{ X : d(Y) }.		% result should be (12)
-res3(Z) :- &testConcat[1,2,""](X), Z = #sum{ Y : f(X,Y) }.	% result should be (3)
+res3(Z) :- &testConcat[1,2](X), Z = #sum{ Y : f(X,Y) }.		% result should be (3)
 res4(Z) :- Z = #sum{ X : d(Y), &testConcat[1,Y](X) }.		% result should be (23)
