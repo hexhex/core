@@ -742,7 +742,7 @@ void GringoGrounder::Printer::printRule(ID id){
 
 			// do not print the domain predicate for aggregates in constraints (this could be generalized to non-recursive aggregates!)
 			if (r.head.empty() && b.isAggregateAtom()){
-				printAggregate(b, false);
+				printAggregate(b);
 			}
 
 			print(b);

@@ -102,7 +102,6 @@
     <ClCompile Include="..\..\src\ComponentGraph.cpp" />
     <ClCompile Include="..\..\src\Configuration.cpp" />
     <ClCompile Include="..\..\src\DependencyGraph.cpp" />
-    <ClCompile Include="..\..\src\DependencyGraphFull.cpp" />
     <ClCompile Include="..\..\src\DLVProcess.cpp" />
     <ClCompile Include="..\..\src\DLVresultParserDriver.cpp" />
     <ClCompile Include="..\..\src\DumpingEvalGraphBuilder.cpp" />
@@ -149,6 +148,7 @@
     <ClCompile Include="..\..\src\Term.cpp" />
     <ClCompile Include="..\..\src\UnfoundedSetChecker.cpp" />
     <ClCompile Include="..\..\src\UnfoundedSetCheckHeuristics.cpp" />
+    <ClCompile Include="..\..\src\UnfoundedSetCheckHeuristicsInterface.cpp" />
     <ClCompile Include="..\..\src\URLBuf.cpp" />
     <ClCompile Include="..\..\src\WellfoundedModelGenerator.cpp" />
     <ClCompile Include="..\getopt.c" />
