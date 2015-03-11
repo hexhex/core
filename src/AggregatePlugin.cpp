@@ -407,7 +407,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				// Input is
 				// i1. the predicate name of the key rule generated above
 				// i2. the predicate name of the input rule generated above
-				// i3. the number of variables determined above in step A2
 				// Output is
 				// o1. the list of variables determined above in step A2
 				// o2. the function value
@@ -421,8 +420,6 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				eaReplacement.inputs.push_back(keyPredID);
 				// i2
 				eaReplacement.inputs.push_back(inputPredID);
-				// i3
-				eaReplacement.inputs.push_back(ID::termFromInteger(symbolicSetVarsIntersectingRemainingBody.size()));
 				// o1
 				BOOST_FOREACH (ID t, symbolicSetVarsIntersectingRemainingBody){
 					eaReplacement.tuple.push_back(t);
@@ -609,7 +606,6 @@ class AggAtom : public PluginAtom
 
 			addInputPredicate();
 			addInputPredicate();
-			addInputConstant();
 
 			setOutputArity(1);
 		}
