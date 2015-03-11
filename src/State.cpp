@@ -699,7 +699,7 @@ void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building component graph");
 
   ComponentGraphPtr compgraph(
-      new ComponentGraph(*ctx->depgraph, ctx->registry()));
+      new ComponentGraph(*ctx->depgraph, *ctx, ctx->registry()));
 
   if( ctx->config.getOption("DumpCompGraph") )
   {

@@ -172,6 +172,8 @@ public:
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
+  /** \brief ProgramCtx. */
+  ProgramCtx& ctx;
   /** \brief Registry used for debugging and printing. */
   RegistryPtr reg;
   #ifdef COMPGRAPH_SOURCESDEBUG
@@ -194,8 +196,9 @@ protected:
 public:
 	/** \brief Constructor to construct a component graph out of a DependencyGraph.
           * @param dp DependencyGraph used as basis for the ComponentGraph.
+	  * @param ctx ProgramCtx.
 	  * @param reg See ComponentGraph::reg. */
-	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
+	ComponentGraph(const DependencyGraph& dg, ProgramCtx& ctx, RegistryPtr reg);
 	/** \brief Destructor. */
 	virtual ~ComponentGraph();
 

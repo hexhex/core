@@ -78,6 +78,12 @@ void AggregatePlugin::printUsage(std::ostream& o) const
 	  << "                         native (default) : Keep aggregates" << std::endl
 	  << "                                            (but simplify them to some basic types)" << std::endl
 	  << "                         ext              : Rewrite aggregates to external atoms" << std::endl
+//	  << "     --aggregate-allowrecaggregates" << std::endl
+//          << "                      Allows cycles through aggregates." << std::endl
+//          << "                      Depending on the solver backend, this might lead to" << std::endl
+//          << "                      different results." << std::endl
+//          << "                      With --aggregate-mode=ext, the option is irrelevant" << std::endl
+//          << "                      as aggregates are replaced by external atoms." << std::endl
 	  << "     --aggregate-allowaggextcycles" << std::endl
           << "                      Allows cycles which involve both aggregates and" << std::endl
           << "                      external atoms. If the option is not specified," << std::endl
@@ -100,6 +106,8 @@ void AggregatePlugin::processOptions(
 	ctxdata.enabled = true;
 	ctxdata.mode = CtxData::Simplify;
 
+	ctx.config.setOption("AllowAggCycles", 1);	// we always support it
+
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
 	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
@@ -121,7 +129,8 @@ void AggregatePlugin::processOptions(
 				throw PluginError(ss.str());
 			}
 			processed = true;
-		}else if( boost::starts_with(str, "--aggregate-mode=") )
+		}
+		else if( boost::starts_with(str, "--aggregate-mode=") )
 		{
 			std::string m = str.substr(std::string("--aggregate-mode=").length());
 			if (m == "ext"){
@@ -134,7 +143,13 @@ void AggregatePlugin::processOptions(
 				throw PluginError(ss.str());
 			}
 			processed = true;
-		}else if( str == "--aggregate-allowaggextcycles" )
+		}
+//		else if( str == "--aggregate-allowrecaggregates" )
+//		{
+//			ctx.config.setOption("AllowAggCycles", 1);
+//			processed = true;
+//		}
+		else if( str == "--aggregate-allowaggextcycles" )
 		{
 			ctx.config.setOption("AllowAggExtCycles", 1);
 			processed = true;

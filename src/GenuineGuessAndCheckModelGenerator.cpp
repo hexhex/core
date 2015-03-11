@@ -248,7 +248,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 			subdepgraph->createDependencies(idbWithoutAuxRules, auxRules);
 
 			// find for each component the set of domain predicates and the sub-(xidb+gidb)
-			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx.registry()));
+			subcompgraph = ComponentGraphPtr(new ComponentGraph(*subdepgraph, factory.ctx, factory.ctx.registry()));
 			std::pair<ComponentGraph::ComponentIterator, ComponentGraph::ComponentIterator> comps = subcompgraph->getComponents();
 			int nr = 0;
 			for (ComponentGraph::ComponentIterator comp = comps.first; comp != comps.second; ++comp, ++nr){
