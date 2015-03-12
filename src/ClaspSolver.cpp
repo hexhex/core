@@ -576,8 +576,6 @@ asp.update();
 
 	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
 
-	createMinimizeConstraints(p);
-
 #ifndef NDEBUG
 	std::stringstream ss;
 	asp.write(ss);
@@ -603,7 +601,7 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 		if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
 			int level = weightAtom.tuple[2].address;
 			while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
-			minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspProgramLit(*en), weightAtom.tuple[1].address));
+			minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(*en), weightAtom.tuple[1].address));
 #ifndef NDEBUG
 			while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
 			minimizeStatementsHex[level - 1].push_back(*en);
@@ -620,7 +618,7 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 			if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
 				int level = weightAtom.tuple[2].address;
 				while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
-				minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspProgramLit(rule.head[0].address), weightAtom.tuple[1].address));
+				minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(rule.head[0].address), weightAtom.tuple[1].address));
 #ifndef NDEBUG
 				while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
 				minimizeStatementsHex[level - 1].push_back(rule.head[0].address);
@@ -647,40 +645,12 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 	minc = 0;
 	if (!!sharedMinimizeData){
 		DBGLOG(DBG, "Setting minimize mode");
-
 		sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
 
-/*
-	Var a = ctx.addVar(Var_t::atom_var);
-	Var b = ctx.addVar(Var_t::atom_var);
-	Solver& s = ctx.startAddConstraints();
-	WeightLitVec lits;
-	MinimizeBuilder builder;
-	lits.push_back(WeightLiteral(posLit(a), 1));
-	lits.push_back(WeightLiteral(posLit(b), 1));
-	builder.addRule(lits);
-	data = builder.build(ctx);
-	ctx.endInit();
-	data->setMode(MinimizeMode_t::optimize);
-	min = data->attach(s, MinimizeMode_t::opt_usc, MinimizeMode_t::usc_preprocess);
-	BasicSolve solve(s);
-	LitVec gp; gp.push_back(posLit(a));
-	solve.assume(gp);
-	gp.clear();
-*/
-
-
-		// use the current optimum as upper bound for this unit
-//		setOptimum(ctx.currentOptimum);
-	}
-}
-
-void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
-
-	if (!!sharedMinimizeData){
 		DBGLOG(DBG, "Attaching minimize constraint to clasp");
 		minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
 
+/*
 Clasp::wsum_t* o = new Clasp::wsum_t[3];
 o[0] = o[1] = o[2] = 5;
 		DBGLOG(DBG, "Setting optimum");
@@ -689,6 +659,7 @@ sharedMinimizeData->setOptimum(o);
 bool intres = minc->integrate(*claspctx.master());
 DBGLOG(DBG, "Integration result: " << intres);
 delete []o;
+*/
 
 		assert(!!minc);
 	}
@@ -770,6 +741,8 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 
 void ClaspSolver::shutdownClasp(){
 	if (!!ep.get()) ep.reset();
+	if (minc) { minc->destroy(claspctx.master(), true);  } 
+	if (sharedMinimizeData)   { sharedMinimizeData->release(); }
 	resetAndResizeClaspToHex(0);
 }
 
@@ -1048,7 +1021,7 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in ASP mode");
@@ -1077,9 +1050,9 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 		return;
 	}
 
-	addMinimizeConstraints(p);
-
 	updateSymbolTable();
+
+	createMinimizeConstraints(p);
 
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
@@ -1090,7 +1063,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in SAT mode");
@@ -1365,7 +1338,7 @@ void ClaspSolver::addNogood(Nogood ng){
 
 void ClaspSolver::setOptimum(std::vector<int>& optimum){
 	DBGLOG(DBG, "Setting new optimum in clasp");
-#if 0
+
 	if (!minc) return;
 
 	// This method helps the reasoner to eliminate non-optimal partial models in advance
@@ -1379,62 +1352,21 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 	// if it is compatible with the assignment.
 
 	// transform optimum vector to clasp-internal representation
-	int optlen = minb.numRules() < optimum.size() ? minb.numRules() : optimum.size();
-	DBGLOG(DBG, "Transforming optimum (length: " << optlen << ") to clasp-internal representation");
-	Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
-	for (int l = optlen - 1; l >= 0; --l){
-		newopt[l] = optimum[optlen - 1 - l];
-	}
-
-	// check if the new upper bound is compatible with the current assignment
-	DBGLOG(DBG, "Ensure that current assignment is compatible with the new optimum");
-	bool violated = true;
-	while (violated){
-		violated = false;
-		for (int i = 0; i < optlen; ++i){
-			if (newopt[i] > minc->sum(i)) break;
-			if (newopt[i] < minc->sum(i)){
-				violated = true;
-				break;
-			}
+	int optlen = optimum.size();
+	if (optlen > 0){
+		DBGLOG(DBG, "Transforming optimum (length: " << optlen << ") to clasp-internal representation");
+		Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+		for (int l = optlen - 1; l >= 0; --l){
+			newopt[l] = optimum[optlen - 1 - l];
 		}
-		if (!violated) break;
-
+	
+		DBGLOG(DBG, "Setting optimum");
+		sharedMinimizeData->setOptimum(newopt);
+		DBGLOG(DBG, "Integrating constraint");
+		bool intres = minc->integrate(*claspctx.master());
+		DBGLOG(DBG, "Integration result: " << intres);
 		delete []newopt;
-		return;
-
-/*
-		DBGLOG(DBG, "Backtrack because current assignment violates optimum");
-		uint32 dl = claspInstance.master()->decisionLevel();
-		if (dl == claspInstance.master()->rootLevel()){
-			DBGLOG(DBG, "Stop backtracking because root level reached");
-			claspInstance.master()->setStopConflict();
-			delete []newopt;
-			return;
-		}
-		claspInstance.master()->undoUntil(dl - 1, true);
-*/
 	}
-
-	// send the new upper bound to clasp
-	DBGLOG(DBG, "Current assignment is compatible with the new optimum");
-#ifndef NDEBUG
-	std::stringstream ss;
-	ss << "Setting optimum upper bound: ";
-#endif
-	for (int l = 0; l < optlen; ++l){
-#ifndef NDEBUG
-		ss << l << ":" << newopt[l] << " ";
-#endif
-	}
-	if (optlen > 0) sharedMinimizeData->setOptimum(newopt);	
-#ifndef NDEBUG
-	DBGLOG(DBG, ss.str());
-#endif
-	minc->restoreOptimum();
-	minc->integrate(*claspInstance.master());
-	delete []newopt;
-#endif
 }
 
 InterpretationPtr ClaspSolver::getNextModel(){

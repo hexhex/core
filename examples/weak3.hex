@@ -1,0 +1,8 @@
+a v b v c.
+:~ a. [9:1]
+:~ b.
+:~ c. [8:1]
+
+% check if incompatible models do not harm the optimum
+p(1) :- b.
+:- &id[p](X).

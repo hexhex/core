@@ -264,15 +264,10 @@ private:
 	  */
 	void sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen);
 	/**
-	  * \brief Prepares minimize constraints for optimization problems but does not yet add it to the solver.
+	  * \brief Prepares minimize constraints for optimization problems and adds it to the solver.
 	  * @param p Program to send to clasp.
 	  */
 	void createMinimizeConstraints(const AnnotatedGroundProgram& p);
-	/**
-	  * \brief Adds minimize constraints created by ClaspSolver::createMinimizeConstraints to the internal solver object.
-	  * @param p Program to send to clasp.
-	  */
-	void addMinimizeConstraints(const AnnotatedGroundProgram& p);
 	/**
 	  * \brief Sends a nogood set to clasp.
 	  * @param ns Nogood set to send to clasp.

@@ -84,7 +84,14 @@ void WeakConstraintPlugin::processOptions(
 		ProgramCtx& ctx)
 {
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
-	ctxdata.enabled = ctx.onlyBestModels = true;
+	ctxdata.enabled = true;
+
+	// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
+	ctx.config.setOption("OptimizationByDlvhex", 0);
+	ctx.config.setOption("OptimizationByBackend", 1);
+
+	// suppress non-optimal models preceeding the optimal ones
+	ctx.config.setOption("OptimizationFilterNonOptimal", 1);
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -99,7 +106,6 @@ void WeakConstraintPlugin::processOptions(
 			std::string m = str.substr(std::string("--weak-enable").length());
 			if (m == "" || m == "=true"){
 				ctxdata.enabled = true;
-				ctx.onlyBestModels = true;
 			}else if (m == "=false"){
 				ctxdata.enabled = false;
 			}else{

@@ -951,62 +951,98 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
         // cost check
         // compare the solution to the best known model
+		// 3 Options:
+		// - ctx->config.getOption("OptimizationByDlvhex"): Let dlvhex manage optimization. Setting this option to true suffices to get the correct result.
+		// - ctx->config.getOption("OptimizationFilterNonOptimal"): This option avoids that non-optimal models are printed before the best model appears; option is only relevant if "OptimizationByDlvhex" is also set.
+		// - ctx->config.getOption("OptimizationByBackend"): Let solver backends manage optimization (if the specific backends supports it). This option is optional but might prune the search space already in single units while dlvhex can optimize only after the final models have been found.
         gotModel = true;
-        if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum))
-        {
-//          ctx->currentOptimum = answerset->getWeightVector();
+		bool modelIsBetter = answerset->betterThan(ctx->currentOptimum);
+
+        // keep track of the current optimum
+        if (ctx->currentOptimum.size() == 0 || modelIsBetter){
+			ctx->currentOptimum = answerset->getWeightVector();
 #ifndef NDEBUG
-          std::stringstream ss;
-          answerset->printWeightVector(ss);
-          DBGLOG(DBG, "New global optimum: " << ss.str());
+			std::stringstream ss;
+			answerset->printWeightVector(ss);
+			DBGLOG(DBG, "New global optimum: " << ss.str());
 #endif
+		}
 
-          if (ctx->onlyBestModels)
-          {
-            // cache models and decide at the end upon optimality
+		// if dlvhex is allowed to filter, then we can skip this part for models which are known to be non-optimal
+        if (ctx->config.getOption("OptimizationByDlvhex"))
+        {
+		  // filter non-optimal models as requested
+		  if (ctx->currentOptimum.size() == 0 || modelIsBetter){
+			  // suppress non-optimal models?
+			  if (ctx->config.getOption("OptimizationFilterNonOptimal"))
+			  {
+				// yes: cache models and decide at the end upon optimality
 
-            // is the new model better than the best known one?
-            if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector()))
-            {
-                    bestModels.clear();
-                    mcount = 0;
-            }
-            bestModels.push_back(answerset);
-          }
-          else
-          {
-		    if( !didSnapshot ) {
+				// is the new model better than the best known one?
+				if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector()))
+				{
+					// new model is better than all previous ones --> clear cache
+					bestModels.clear();
+					mcount = 0;
+				}
+				bestModels.push_back(answerset);
+			  }
+			  else
+			  {
+				// we do not need to suppress non-optimal models, therefore we can output models directly
+				if( !didSnapshot ) {
 					snapShotBenchmarking(*ctx);
 					didSnapshot = true;
-			}
+				}
 
-            // process models directly
-            BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-            {
-              bool aborthere = !(*mcb)(answerset);
-              abort |= aborthere;
-              if( aborthere )
-                LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-            }
+				// process models directly
+				BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+				{
+				  bool aborthere = !(*mcb)(answerset);
+				  abort |= aborthere;
+				  if( aborthere )
+					LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+				}
+
+				if( mcountLimit != 0 && mcount >= mcountLimit )
+				{
+					LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+					break;
+				}
+			  }
+	          mcount++;
           }
-          mcount++;
+		}else{
+          // process models directly
+          BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+          {
+            bool aborthere = !(*mcb)(answerset);
+            abort |= aborthere;
+            if( aborthere )
+              LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+          }
 
-          #ifndef NDEBUG
-          //mb.printEvalGraphModelGraph(std::cerr);
-          #endif
+          // dlvhex is not allowed to optimize --> output all models
           if( mcountLimit != 0 && mcount >= mcountLimit )
           {
             LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
             break;
           }
-        }
+          mcount++;
+		}
       }
     }
     while( gotModel && !abort );
 
     // process cached models
-    if (ctx->onlyBestModels){
+    if (ctx->config.getOption("OptimizationByDlvhex") && ctx->config.getOption("OptimizationFilterNonOptimal")){
+	  int printedModels = 0;
       BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
+		// respect model count limit also for cached models
+		if (printedModels == mcountLimit){
+			mcount = mcountLimit;
+			break;
+		}
 	    if( !didSnapshot ) {
 	    		snapShotBenchmarking(*ctx);
 	    		didSnapshot = true;
@@ -1018,6 +1054,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
           if( aborthere )
             LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
         }
+		printedModels++;
       }
     }
 
