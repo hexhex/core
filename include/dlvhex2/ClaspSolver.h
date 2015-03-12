@@ -264,6 +264,16 @@ private:
 	  */
 	void sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen);
 	/**
+	  * \brief Prepares minimize constraints for optimization problems but does not yet add it to the solver.
+	  * @param p Program to send to clasp.
+	  */
+	void createMinimizeConstraints(const AnnotatedGroundProgram& p);
+	/**
+	  * \brief Adds minimize constraints created by ClaspSolver::createMinimizeConstraints to the internal solver object.
+	  * @param p Program to send to clasp.
+	  */
+	void addMinimizeConstraints(const AnnotatedGroundProgram& p);
+	/**
 	  * \brief Sends a nogood set to clasp.
 	  * @param ns Nogood set to send to clasp.
 	  * @param frozen Set of frozen variables, see ClaspSolver::freezeVariables.
@@ -402,6 +412,12 @@ protected:
 	Clasp::Asp::LogicProgram asp;
 	/** \brief Clasp SAT builder. */
 	Clasp::SatBuilder sat;
+	/** \brief Allows for constructing a minimize statement. */
+	Clasp::MinimizeBuilder minb;
+	/** \brief The minimize constraint for optimization problems. */
+	Clasp::MinimizeConstraint* minc;
+	/** \brief Data of ClaspSolver::minc. */
+	Clasp::SharedMinimizeData* sharedMinimizeData;
 	/** \brief Interpreted clasp options. */
 	ProgramOptions::ParsedOptions parsedOptions;
 	/** \brief Interpreted clasp configuration. */

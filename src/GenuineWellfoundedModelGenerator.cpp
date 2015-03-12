@@ -228,6 +228,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				GenuineSolverPtr solver = GenuineSolver::getInstance(factory.ctx, program);
 
 				// there must be either no or exactly one answer set
+				solver->setOptimum(factory.ctx.currentOptimum); // search space pruning
 				InterpretationConstPtr model = solver->getNextModel();
 
 				if( model == InterpretationPtr() )

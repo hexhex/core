@@ -265,6 +265,7 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	RegistryPtr reg = factory.ctx.registry();
 
+	solver->setOptimum(factory.ctx.currentOptimum); // search space pruning
 	InterpretationPtr modelCandidate = solver->getNextModel();
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());

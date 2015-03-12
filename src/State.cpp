@@ -954,7 +954,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
         gotModel = true;
         if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum))
         {
-          ctx->currentOptimum = answerset->getWeightVector();
+//          ctx->currentOptimum = answerset->getWeightVector();
 #ifndef NDEBUG
           std::stringstream ss;
           answerset->printWeightVector(ss);
