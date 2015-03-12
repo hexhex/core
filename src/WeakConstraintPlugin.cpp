@@ -89,7 +89,7 @@ void WeakConstraintPlugin::processOptions(
 
 	// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
 	ctx.config.setOption("OptimizationByDlvhex", 1);
-	ctx.config.setOption("OptimizationByBackend", 0);
+	ctx.config.setOption("OptimizationByBackend", 1);
 
 	// suppress non-optimal models preceeding the optimal ones
 	ctx.config.setOption("OptimizationFilterNonOptimal", 1);

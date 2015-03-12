@@ -6,6 +6,7 @@ agg4.hex agg4.out --nofacts --solver=dlv
 weak1.hex weak1.out --solver=dlv --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=dlv --strongnegation-enable --weak-enable
 weak3.hex weak3.out --solver=dlv --strongnegation-enable --heuristics=monolithic --forcegc --weak-enable
+weak4.hex weak4.out --solver=dlv --strongnegation-enable --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=dlv
 builtin_safety1.hex builtin_safety1.stderr --solver=dlv
 builtin_safety1a.hex builtin_safety1a.stderr --solver=dlv

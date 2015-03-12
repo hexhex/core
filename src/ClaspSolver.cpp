@@ -1363,13 +1363,14 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 	// if it is compatible with the assignment.
 
 	// transform optimum vector to clasp-internal representation
-	int optlen = optimum.size();
+	int optlen = optimum.size() - 1; // optimum[0] is unused, but in clasp levels start with 0
 	if (optlen > 0){
 		DBGLOG(DBG, "Transforming optimum (length: " << optlen << ") to clasp-internal representation");
 		Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
-		for (int l = optlen - 1; l >= 0; --l){
-			newopt[l] = optimum[optlen - 1 - l];
+		for (int l = 0; l < optlen; ++l){
+			newopt[l] = optimum[optlen - l];
 		}
+		newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
 	
 		DBGLOG(DBG, "Setting optimum");
 		sharedMinimizeData->setOptimum(newopt);
