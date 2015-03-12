@@ -1008,14 +1008,9 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 					LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
 				}
 
-				if( mcountLimit != 0 && mcount >= mcountLimit )
-				{
-					LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-					break;
-				}
 				mcount++;
 			}
-        }else if (modelIsBetter){
+		}else if (modelIsBetter){
           // process all models directly
           BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
           {
@@ -1025,13 +1020,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
               LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
           }
 
-          // dlvhex is not allowed to optimize --> output all models
-          if( mcountLimit != 0 && mcount >= mcountLimit )
-          {
-            LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-            break;
-          }
           mcount++;
+        }
+
+        // stop when desired model count is reached
+        if( mcountLimit != 0 && mcount >= mcountLimit )
+        {
+        LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+        break;
         }
       }
     }
