@@ -956,7 +956,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 		// - ctx->config.getOption("OptimizationFilterNonOptimal"): This option avoids that non-optimal models are printed before the best model appears; option is only relevant if "OptimizationByDlvhex" is also set.
 		// - ctx->config.getOption("OptimizationByBackend"): Let solver backends manage optimization (if the specific backends supports it). This option is optional but might prune the search space already in single units while dlvhex can optimize only after the final models have been found.
         gotModel = true;
-		bool modelIsBetter = answerset->betterThan(ctx->currentOptimum);
+        bool modelIsBetter = answerset->betterThan(ctx->currentOptimum);
 
         // keep track of the current optimum
         if (ctx->currentOptimum.size() == 0 || modelIsBetter){
@@ -1010,9 +1010,9 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 					break;
 				}
 			  }
-	          mcount++;
-          }
-		}else{
+			  mcount++;
+		  }
+        }else{
           // process models directly
           BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
           {
@@ -1029,7 +1029,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
             break;
           }
           mcount++;
-		}
+        }
       }
     }
     while( gotModel && !abort );
@@ -1039,7 +1039,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 	  int printedModels = 0;
       BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
 		// respect model count limit also for cached models
-		if (printedModels == mcountLimit){
+		if (mcountLimit != 0 && printedModels == mcountLimit){
 			mcount = mcountLimit;
 			break;
 		}

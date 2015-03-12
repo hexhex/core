@@ -83,12 +83,13 @@ void WeakConstraintPlugin::processOptions(
 		std::list<const char*>& pluginOptions,
 		ProgramCtx& ctx)
 {
+	DBGLOG(DBG, "WeakConstraintPlugin::processOptions");
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
 	ctxdata.enabled = true;
 
 	// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
 	ctx.config.setOption("OptimizationByDlvhex", 1);
-	ctx.config.setOption("OptimizationByBackend", 1);
+	ctx.config.setOption("OptimizationByBackend", 0);
 
 	// suppress non-optimal models preceeding the optimal ones
 	ctx.config.setOption("OptimizationFilterNonOptimal", 1);
@@ -216,6 +217,7 @@ void WeakRewriter::rewrite(ProgramCtx& ctx)
 PluginRewriterPtr WeakConstraintPlugin::createRewriter(ProgramCtx& ctx)
 {
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
+	DBGLOG(DBG, "WeakConstraintPlugin::createRewriter: enabled=" << ctxdata.enabled);
 	if( !ctxdata.enabled )
 		return PluginRewriterPtr();
 
@@ -226,6 +228,7 @@ PluginRewriterPtr WeakConstraintPlugin::createRewriter(ProgramCtx& ctx)
 void WeakConstraintPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
+	DBGLOG(DBG, "WeakConstraintPlugin::setupProgramCtx: enabled=" << ctxdata.enabled);
 	if( !ctxdata.enabled )
 		return;
 }

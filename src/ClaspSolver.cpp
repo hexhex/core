@@ -640,28 +640,32 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 		minb.addRule(minimizeStatements[level]);
 	}
 
-	DBGLOG(DBG, "Constructing minimize constraint");
-	sharedMinimizeData = minb.build(claspctx);
-	minc = 0;
-	if (!!sharedMinimizeData){
-		DBGLOG(DBG, "Setting minimize mode");
-		sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
+	if (minimizeStatementsHex.size() > 0){
+		DBGLOG(DBG, "Constructing minimize constraint");
+		sharedMinimizeData = minb.build(claspctx);
+		minc = 0;
+		if (!!sharedMinimizeData){
+			DBGLOG(DBG, "Setting minimize mode");
+			sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
 
-		DBGLOG(DBG, "Attaching minimize constraint to clasp");
-		minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+			DBGLOG(DBG, "Attaching minimize constraint to clasp");
+			minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
 
-/*
-Clasp::wsum_t* o = new Clasp::wsum_t[3];
-o[0] = o[1] = o[2] = 5;
-		DBGLOG(DBG, "Setting optimum");
-sharedMinimizeData->setOptimum(o);
-		DBGLOG(DBG, "Integrating constraint");
-bool intres = minc->integrate(*claspctx.master());
-DBGLOG(DBG, "Integration result: " << intres);
-delete []o;
-*/
+	/*
+	Clasp::wsum_t* o = new Clasp::wsum_t[3];
+	o[0] = o[1] = o[2] = 5;
+			DBGLOG(DBG, "Setting optimum");
+	sharedMinimizeData->setOptimum(o);
+			DBGLOG(DBG, "Integrating constraint");
+	bool intres = minc->integrate(*claspctx.master());
+	DBGLOG(DBG, "Integration result: " << intres);
+	delete []o;
+	*/
 
-		assert(!!minc);
+			assert(!!minc);
+		}
+	}else{
+		DBGLOG(DBG, "Do not need minimize constraint");
 	}
 }
 
@@ -1153,6 +1157,9 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
+#ifndef NDEBUG
+		assert ((!reg->ogatoms.getIDByAddress(*en).isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(reg->ogatoms.getIDByAddress(*en)) != 'w') && "weak constraints cannot be added incrementally");
+#endif
 		// redundancy check
 		if (convertHexToClaspSolverLit(*en).var() > 0){
 			// add fact
@@ -1167,6 +1174,10 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 		// redundancy check
 		bool redundant = false;
 		BOOST_FOREACH (ID h, reg->rules.getByID(ruleId).head){
+#ifndef NDEBUG
+			assert ((!h.isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(h) != 'w') && "weak constraints cannot be added incrementally");
+#endif
+
 			if (convertHexToClaspSolverLit(h.address).var() == 0){
 				redundant = true;
 				break;
@@ -1339,7 +1350,7 @@ void ClaspSolver::addNogood(Nogood ng){
 void ClaspSolver::setOptimum(std::vector<int>& optimum){
 	DBGLOG(DBG, "Setting new optimum in clasp");
 
-	if (!minc) return;
+	if (!minc || !sharedMinimizeData) return;
 
 	// This method helps the reasoner to eliminate non-optimal partial models in advance
 	// by setting the internal upper bound to a given value.
