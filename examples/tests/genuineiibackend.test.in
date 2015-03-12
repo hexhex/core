@@ -10,6 +10,7 @@ agg8.hex agg8.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mo
 aggextcycle1.hex aggextcycle1e.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 weak1.hex weak1.out --solver=genuineii --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=genuineii --strongnegation-enable --weak-enable
+weak3.hex weak3.out --solver=genuineii --strongnegation-enable --heuristics=monolithic --forcegc --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuineii
 builtin_safety1.hex builtin_safety1.stderr --solver=genuineii
 builtin_safety1a.hex builtin_safety1a.stderr --solver=genuineii
