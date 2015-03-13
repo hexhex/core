@@ -353,6 +353,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	do
 	{
 		LOG(DBG,"asking for next model");
+		if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum); // search space pruning
 		modelCandidate = solver->getNextModel();
 
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());

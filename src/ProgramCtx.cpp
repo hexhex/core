@@ -55,7 +55,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ProgramCtx::ProgramCtx():
-		maxint(0), onlyBestModels(false), terminationRequest(false)
+		maxint(0), terminationRequest(false)
 {
 }
 

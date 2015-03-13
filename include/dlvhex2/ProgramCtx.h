@@ -147,10 +147,9 @@ public:
 
   /** \brief Stores the weight vector of the best known model.
     *
-    * If the vector is empty, then there was no solution so far .*/
+    * If the vector is empty, then there was no solution so far.
+	* This vector will always be updated, independent of the optimization settings, and also has statistical purpose. It does not directly influence the algorithms. */
   std::vector<int> currentOptimum;
-  /** \brief If true, only optimal models will be output, otherwise optimal ones may be preceded by suboptimal ones. */
-  bool onlyBestModels;
 
   // used by plugins to store specific plugin data in ProgramCtx
   // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
