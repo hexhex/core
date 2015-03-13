@@ -179,7 +179,7 @@ EvalGraphBuilder::createEvalUnit(
       }
       else
       {
-        if( !ci.innerEatomsNonmonotonic && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
+        if( !ci.innerEatomsNonmonotonic && !ci.recursiveAggregates && !ci.negativeDependencyBetweenRules && !ci.disjunctiveHeads && !ctx.config.getOption("ForceGC") )
         {
           // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
 	  			// -> wellfounded/fixpoint model generator factory

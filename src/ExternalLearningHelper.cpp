@@ -324,6 +324,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 						if (atom.tuple[1] != query.ctx->registry()->eatoms.getByID(query.eatomID).auxInputPredicate) paramMatch = false; 
 					}
 				}
+
 				// compare other inputs
 				for (uint32_t i = 0; i < query.input.size(); i++){
 					if (atom.tuple[aux + 1 + i] != query.input[i]){
@@ -331,6 +332,9 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 						break;
 					}
 				}
+
+				// compare arity: total number of input and output elements in the replacement atom is (atom.tuple.size() - 1 - aux)
+				if ((atom.tuple.size() - 1 - aux) != query.input.size() + query.pattern.size()) paramMatch = false;
 
 				if (paramMatch){
 					// check if this tuple is _not_ in the answer

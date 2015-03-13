@@ -18,9 +18,6 @@
     <ClCompile Include="..\..\src\dlvhex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ExistsPlugin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\FunctionPlugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,12 +72,15 @@
     <ClCompile Include="..\..\src\PythonPlugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ChoicePlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ConditionalLiteralPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\dlvhex2\ExistsPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\dlvhex2\FunctionPlugin.h">
@@ -138,6 +138,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\dlvhex2\PythonPlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\dlvhex2\ChoicePlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\dlvhex2\ConditionalLiteralPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

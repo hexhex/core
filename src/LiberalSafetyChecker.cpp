@@ -929,6 +929,7 @@ void LiberalSafetyChecker::ensureOrdinarySafety(){
 			DBGLOG(DBG, "Constructing optimized rule");
 			Rule optimizedRule(rule.kind);
 			optimizedRule.head = rule.head;
+			optimizedRule.headGuard = rule.headGuard;
 			BOOST_FOREACH (ID b, rule.body){
 				if (!b.isNaf() && b.isExternalAtom() && necessaryExternalAtoms.count(b.address) == 0) continue;
 				optimizedRule.body.push_back(b);

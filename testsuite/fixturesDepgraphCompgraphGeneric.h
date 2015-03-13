@@ -64,7 +64,7 @@ struct GenericDepGraphCompGraphFixture:
 
   GenericDepGraphCompGraphFixture():
     Base(),
-    compgraph(Base::depgraph, Base::ctx.registry()) { }
+    compgraph(Base::depgraph, Base::ctx, Base::ctx.registry()) { }
   ~GenericDepGraphCompGraphFixture() {}
 };
 

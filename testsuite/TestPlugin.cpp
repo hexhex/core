@@ -57,6 +57,7 @@
 #include <boost/program_options.hpp>
 #include <boost/range.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <string>
 #include <sstream>
@@ -271,15 +272,27 @@ public:
       else
         throw PluginError("encountered unknown term type!");
     }
-    
-		Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s.str());
-		if( hasStrings )
-			resultterm.symbol = "\"" + resultterm.symbol + "\"";
-    Tuple tu;
-    tu.push_back(registry->storeTerm(resultterm));
-		// the next line would also work and be more efficient, but the above line tests more
-    //tu.push_back(registry->storeConstOrVarTerm(resultterm));
-    answer.get().push_back(tu);
+
+    // check if the result is an integer
+    try
+    {
+        int intval = boost::lexical_cast<short>(s.str());
+				Tuple tu;
+				tu.push_back(ID::termFromInteger(intval));
+				answer.get().push_back(tu);
+    }
+    catch(const boost::bad_lexical_cast &)
+    {
+			// not an integer
+			Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s.str());
+			if( hasStrings )
+				resultterm.symbol = "\"" + resultterm.symbol + "\"";
+		  Tuple tu;
+		  tu.push_back(registry->storeTerm(resultterm));
+			// the next line would also work and be more efficient, but the above line tests more
+		  //tu.push_back(registry->storeConstOrVarTerm(resultterm));
+		  answer.get().push_back(tu);
+    }
   }
 };
 #endif
@@ -310,11 +323,25 @@ public:
       en++;
     }
 
-	Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + s.str() + "\"");
-	Tuple tu;
-    tu.push_back(registry->storeTerm(resultterm));
-    answer.get().push_back(tu);
-  }
+    // check if the result is an integer
+    try
+    {
+        int intval = boost::lexical_cast<short>(s.str());
+				Tuple tu;
+				tu.push_back(ID::termFromInteger(intval));
+				answer.get().push_back(tu);
+    }
+    catch(const boost::bad_lexical_cast &)
+    {
+			// not an integer
+			Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"" + s.str() + "\"");
+		  Tuple tu;
+		  tu.push_back(registry->storeTerm(resultterm));
+			// the next line would also work and be more efficient, but the above line tests more
+		  //tu.push_back(registry->storeConstOrVarTerm(resultterm));
+		  answer.get().push_back(tu);
+    }
+	}
 };
 
 class TestListDomainAtom:

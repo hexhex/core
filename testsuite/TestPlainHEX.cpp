@@ -655,7 +655,7 @@ int main(int argn, char** argv)
   // create component graph
   LOG(INFO,"creating component graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidcompgraph, "create componentgraph");
-  dlvhex::ComponentGraph compgraph(depgraph, ctx.registry());
+  dlvhex::ComponentGraph compgraph(depgraph, ctx, ctx.registry());
   DLVHEX_BENCHMARK_STOP(sidcompgraph);
   #ifndef NDEBUG
   writeGraphViz(compgraph, fname+"PlainHEXCompGraph");
