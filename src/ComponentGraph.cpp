@@ -97,7 +97,8 @@ std::ostream& ComponentGraph::DependencyInfo::print(std::ostream& o) const
 	return o << static_cast<const DependencyGraph::DependencyInfo&>(*this);
 }
 
-ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
+ComponentGraph::ComponentGraph(const DependencyGraph& dg, ProgramCtx& ctx, RegistryPtr reg):
+  ctx(ctx),
   reg(reg),
   #ifdef COMPGRAPH_SOURCESDEBUG
   dg(dg),
@@ -468,7 +469,12 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     ci.fixedDomain = calculateFixedDomain(ci);
 
     // check, if the component contains recursive aggregates
+    // Note: this also includes aggregates which depend on predicates defined in the component, even if there is no cyclic dependency!
     ci.recursiveAggregates = computeRecursiveAggregatesInComponent(ci);
+
+    // recursive aggregates in the initial component graph are disallowed
+    // however, they might occur after collapsing components because then they are not strictly recursive (see above)
+    if (ci.recursiveAggregates && !ctx.config.getOption("AllowAggCycles")) throw GeneralError("Program contains recursive aggregates");
 
     // compute stratification of default-negated literals and predicate input parameters
     calculateStratificationInfo(reg, ci);
@@ -548,7 +554,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 }
 
 
-bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
+bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci) const
 {
 	DBGLOG(DBG, "calculateFixedDomain");
 
@@ -722,7 +728,7 @@ bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
 }
 
 
-bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci)
+bool ComponentGraph::computeRecursiveAggregatesInComponent(ComponentInfo& ci) const
 {
 	// get all head predicates
 	std::set<ID> headPredicates;
@@ -1011,8 +1017,6 @@ void ComponentGraph::computeCollapsedComponentInfos(
 		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty()))
 			ci.fixedDomain &= cio.fixedDomain;
 
-		ci.recursiveAggregates |= cio.recursiveAggregates;
-
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
     // otherwise they become inner eatoms
@@ -1036,6 +1040,7 @@ void ComponentGraph::computeCollapsedComponentInfos(
     WARNING("if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
 	}
   ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
+	ci.recursiveAggregates = computeRecursiveAggregatesInComponent(ci); // recompute if the collapsed component contains recursive aggregates; note that this is not simply the logical or of the basic components
 	calculateStratificationInfo(reg, ci);
 }
 
@@ -1246,6 +1251,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
 }
 
 ComponentGraph::ComponentGraph(const ComponentGraph& other):
+	ctx(other.ctx),
 	reg(other.reg),
   #ifdef COMPGRAPH_SOURCESDEBUG
 	dg(other.dg),

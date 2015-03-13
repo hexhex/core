@@ -951,15 +951,15 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
     // add domain predicates for all external atoms which are relevant for de-safety
     const Rule& rule = reg->rules.getByID(ruleid);
-    Rule ruleDom = rule;
-    Rule ruleExpl(rule.kind & (ID::ALL_ONES - ID::PROPERTY_RULE_EXTATOMS));
+    Rule ruleDom = rule;	// this will be the original rule, but with additional domain atoms for each external atom
+    Rule ruleExpl(rule.kind & (ID::ALL_ONES - ID::PROPERTY_RULE_EXTATOMS));	// this will be the rule used for computing the domains: it contains the domain atom in the body and a guess of the external atom in the head
     ruleExpl.head = rule.head;
     BOOST_FOREACH (ID b, rule.body){
       if (!b.isExternalAtom()){
         ruleExpl.body.push_back(b);
       }
       if (!b.isNaf() && b.isExternalAtom()){
-        const ExternalAtom& ea = reg->eatoms.getByID(b);
+          const ExternalAtom& ea = reg->eatoms.getByID(b);
 
           if (ctx.liberalSafetyChecker->isExternalAtomNecessaryForDomainExpansionSafety(b)){
 			bool isOuterEatom = (std::find(outerEatoms.begin(), outerEatoms.end(), ID::atomFromLiteral(b)) != outerEatoms.end());
@@ -985,65 +985,66 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
             DBGLOG(DBG, "External atom " << b << " is necessary for de-safety");
             deidbInnerEatoms.push_back(b);
 
-			if (isOuterEatom){
-				const ExternalAtom& eatom = reg->eatoms.getByID(b);
+          if (isOuterEatom){
+            const ExternalAtom& eatom = reg->eatoms.getByID(b);
 
-				OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
-				replacement.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', eatom.predicate));
-				if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && eatom.auxInputPredicate != ID_FAIL){
-					replacement.tuple.push_back(eatom.auxInputPredicate);
-				}
-				replacement.tuple.insert(replacement.tuple.end(), eatom.inputs.begin(), eatom.inputs.end());
-				replacement.tuple.insert(replacement.tuple.end(), eatom.tuple.begin(), eatom.tuple.end());
+            OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+            replacement.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', eatom.predicate));
 
-		        ruleExpl.body.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(replacement)));
-			}else{
-	            OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-	            OrdinaryAtom chosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-	            OrdinaryAtom notChosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
-	            domainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
-	            chosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', b));		// reuse auxiliaries for positive and negative replacements: they don't occur in the domain
-	            notChosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('n', b));	// exploration program anyway
-	            if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && ea.auxInputPredicate != ID_FAIL){
-	              domainAtom.tuple.push_back(ea.auxInputPredicate);
-	              chosenDomainAtom.tuple.push_back(ea.auxInputPredicate);
-	              notChosenDomainAtom.tuple.push_back(ea.auxInputPredicate);
-	            }
-	            BOOST_FOREACH (ID o2, ea.inputs){
-	              domainAtom.tuple.push_back(o2);
-	              chosenDomainAtom.tuple.push_back(o2);
-	              notChosenDomainAtom.tuple.push_back(o2);
-	            }
-	            BOOST_FOREACH (ID o2, ea.tuple){
-	              domainAtom.tuple.push_back(o2);
-	              chosenDomainAtom.tuple.push_back(o2);
-	              notChosenDomainAtom.tuple.push_back(o2);
-	            }
-	            ID domainAtomID = reg->storeOrdinaryNAtom(domainAtom);
-	            ID chosenDomainAtomID = reg->storeOrdinaryNAtom(chosenDomainAtom);
-	            ID notChosenDomainAtomID = reg->storeOrdinaryNAtom(notChosenDomainAtom);
-	
-	            ruleDom.body.push_back(ID::posLiteralFromAtom(domainAtomID));
-	            ruleExpl.body.push_back(ID::posLiteralFromAtom(chosenDomainAtomID));
+            if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && eatom.auxInputPredicate != ID_FAIL){
+              replacement.tuple.push_back(eatom.auxInputPredicate);
+            }
+            replacement.tuple.insert(replacement.tuple.end(), eatom.inputs.begin(), eatom.inputs.end());
+            replacement.tuple.insert(replacement.tuple.end(), eatom.tuple.begin(), eatom.tuple.end());
 
-	            // create a rule p(X) v n(X) :- d(X) for each domain atom d
-	            // this nondeterminisim is necessary to make the grounding exhaustive; otherwise the grounder may optimize the grounding too much and we are not aware of relevant atoms
-	            Rule choosingRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
-	            choosingRule.head.push_back(chosenDomainAtomID);
-	            choosingRule.head.push_back(notChosenDomainAtomID);
-	            choosingRule.body.push_back(ID::posLiteralFromAtom(domainAtomID));
-	            ID choosingRuleID = reg->storeRule(choosingRule);
-	            deidb.push_back(choosingRuleID);
-	            {
-		            std::stringstream s;
-		            RawPrinter printer(s, reg);
-		            s << "adding choosing rule ";
-		            printer.print(choosingRuleID);
-		            s << " for external atom " << b;
-		            DBGLOG(DBG, s.str());
-	            }
-			}
+            ruleExpl.body.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(replacement)));
+          }else{
+            OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            OrdinaryAtom chosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            OrdinaryAtom notChosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+            domainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
+            chosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('r', b));		// reuse auxiliaries for positive and negative replacements: they don't occur in the domain
+            notChosenDomainAtom.tuple.push_back(reg->getAuxiliaryConstantSymbol('n', b));	// exploration program anyway
+            if (ctx.config.getOption("IncludeAuxInputInAuxiliaries") && ea.auxInputPredicate != ID_FAIL){
+              domainAtom.tuple.push_back(ea.auxInputPredicate);
+              chosenDomainAtom.tuple.push_back(ea.auxInputPredicate);
+              notChosenDomainAtom.tuple.push_back(ea.auxInputPredicate);
+            }
+            BOOST_FOREACH (ID o2, ea.inputs){
+              domainAtom.tuple.push_back(o2);
+              chosenDomainAtom.tuple.push_back(o2);
+              notChosenDomainAtom.tuple.push_back(o2);
+            }
+            BOOST_FOREACH (ID o2, ea.tuple){
+              domainAtom.tuple.push_back(o2);
+              chosenDomainAtom.tuple.push_back(o2);
+              notChosenDomainAtom.tuple.push_back(o2);
+            }
+            ID domainAtomID = reg->storeOrdinaryNAtom(domainAtom);
+            ID chosenDomainAtomID = reg->storeOrdinaryNAtom(chosenDomainAtom);
+            ID notChosenDomainAtomID = reg->storeOrdinaryNAtom(notChosenDomainAtom);
+
+            ruleDom.body.push_back(ID::posLiteralFromAtom(domainAtomID));
+            ruleExpl.body.push_back(ID::posLiteralFromAtom(chosenDomainAtomID));
+
+            // create a rule p(X) v n(X) :- d(X) for each domain atom d
+            // this nondeterminisim is necessary to make the grounding exhaustive; otherwise the grounder may optimize the grounding too much and we are not aware of relevant atoms
+            Rule choosingRule(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+            choosingRule.head.push_back(chosenDomainAtomID);
+            choosingRule.head.push_back(notChosenDomainAtomID);
+            choosingRule.body.push_back(ID::posLiteralFromAtom(domainAtomID));
+            ID choosingRuleID = reg->storeRule(choosingRule);
+            deidb.push_back(choosingRuleID);
+            {
+	            std::stringstream s;
+	            RawPrinter printer(s, reg);
+	            s << "adding choosing rule ";
+	            printer.print(choosingRuleID);
+	            s << " for external atom " << b;
+	            DBGLOG(DBG, s.str());
+            }
           }
+        }
       }
     }
 

@@ -74,6 +74,8 @@
 // internal plugins
 #include "dlvhex2/QueryPlugin.h"
 #include "dlvhex2/AggregatePlugin.h"
+#include "dlvhex2/ChoicePlugin.h"
+#include "dlvhex2/ConditionalLiteralPlugin.h"
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
 #include "dlvhex2/WeakConstraintPlugin.h"
@@ -179,13 +181,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
       << "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
-#ifdef HAVE_PYTHON
-      << "     --pythonplugin=[PATH]" << std::endl
-      << "                      Add Python script \"PATH\" as new plugin." << std::endl
-      << "     --pythonmain=PATH" << std::endl
-      << "                      Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program." << std::endl
-      << "     --pythonarg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl
-#endif
 
       << std::endl << "Performance Tuning Options:" << std::endl
       << "     --extlearn[=none,iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
@@ -259,7 +254,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                                            where component indices <idx> are from '--graphviz=comp'" << std::endl
       << "                         asp:<script>     : Use asp program <script> as eval heuristic" << std::endl
       << "     --forcegc        Always use the guess and check model generator." << std::endl
-//      << "     --incremental    Ground the program incrementally in order to deal with value invention." << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)." << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)." << std::endl
@@ -485,11 +479,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
-	pctx.config.setOption("IncrementalGrounding", 0);
 	pctx.config.setStringOption("PluginDirs", "");
-#ifdef HAVE_PYTHON
-	pctx.config.setOption("HavePythonMain", 0);
-#endif
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
 	// but if we have genuinegc, take genuinegc as default
@@ -540,6 +530,10 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(existsPlugin);
 			PluginInterfacePtr functionPlugin(new FunctionPlugin);
 			pctx.pluginContainer()->addInternalPlugin(functionPlugin);
+			PluginInterfacePtr choicePlugin(new ChoicePlugin);
+			pctx.pluginContainer()->addInternalPlugin(choicePlugin);
+			PluginInterfacePtr conditionalLiteralPlugin(new ConditionalLiteralPlugin);
+			pctx.pluginContainer()->addInternalPlugin(conditionalLiteralPlugin);
 #ifdef HAVE_PYTHON
 			PluginInterfacePtr _pythonPlugin(pythonPlugin);
 			pctx.pluginContainer()->addInternalPlugin(_pythonPlugin);
@@ -826,7 +820,6 @@ void processOptionsPrePlugin(
 		{ "supportsets", no_argument, 0, 48 },
 		{ "forcegc", no_argument, 0, 49 },
 		{ "incremental", no_argument, 0, 50 },
-		{ "pythonmain", required_argument, 0, 51 },
                 { "strongsafety", no_argument, 0, 52 },
 		{ NULL, 0, NULL, 0 }
 	};
@@ -1530,12 +1523,6 @@ void processOptionsPrePlugin(
 		case 50:
 			pctx.config.setOption("IncrementalGrounding", 1);
 			break;
-#ifdef HAVE_PYTHON
-		case 51:
-			pctx.config.setStringOption("PythonMain", std::string(optarg));
-			pctx.config.setOption("HavePythonMain", 1);
-			break;
-#endif
                 case 52:
                         pctx.config.setOption("LiberalSafety", 0);
 		}

@@ -106,6 +106,7 @@ void InternalGrounder::computeDepGraph(){
 
 ID InternalGrounder::preprocessRule(ID ruleID){
 
+	DBGLOG(DBG, "Preprocessing rule " << printToString<RawPrinter>(ruleID, reg));
 	const Rule& rule = reg->rules.getByID(ruleID);
 	Rule newrule = rule;
 	newrule.body.clear();
@@ -117,7 +118,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	// find length of the longest variable name
 	std::set<ID> vars;
 	BOOST_FOREACH (ID a, rule.body){
-		reg->getVariablesInID(a, vars);
+		reg->getVariablesInID(a, vars, true);
 	}
 	int vlen = 0;
 	std::stringstream prefix;
@@ -157,6 +158,8 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 					throw GeneralError("Internal grounder cannot handle function symbols");
 				}
 			}
+		}else if (a.isNaf() && a.isBuiltinAtom()){
+			throw GeneralError("Internal grounder cannot default negated builtins");
 		}
 	}
 
@@ -165,7 +168,7 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 	BOOST_FOREACH (ID a, rule.body){
 		// check if the literals contains an anonamous variable
 		vars.clear();
-		reg->getVariablesInID(a, vars);
+		reg->getVariablesInID(a, vars, true);
 		bool av = false;
 		BOOST_FOREACH (ID v, vars){
 			if (v.isAnonymousVariable()){
@@ -209,7 +212,10 @@ ID InternalGrounder::preprocessRule(ID ruleID){
 			newrule.body.push_back(a);
 		}
 	}
-	return reg->storeRule(newrule);
+
+	ID newRuleID = reg->storeRule(newrule);
+	DBGLOG(DBG, "Preprocessed rule " << printToString<RawPrinter>(newRuleID, reg));
+	return newRuleID;
 }
 
 void InternalGrounder::computeStrata(){

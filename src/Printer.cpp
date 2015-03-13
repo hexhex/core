@@ -153,11 +153,26 @@ void RawPrinter::print(ID id)
         // aggregation function
         print(atom.tuple[2]);
         out << " { ";
-        // variables
-        printmany(atom.variables, ",");
-        out << " : ";
-        // body
-        printmany(atom.literals, ",");
+        if (atom.mvariables.size() > 0) {
+                assert(atom.mvariables.size() == atom.mliterals.size());
+                // multiple symbolic sets
+                for (int iss = 0; iss < atom.mvariables.size(); ++iss){
+                        if (iss > 0) out << "; ";
+                        // variables
+                        printmany(atom.mvariables[iss], ",");
+                        out << " : ";
+                        // body
+                        printmany(atom.mliterals[iss], ",");
+                }
+        }else{
+                // single symbolic set
+
+                // variables
+                printmany(atom.variables, ",");
+                out << " : ";
+                // body
+                printmany(atom.literals, ",");
+        }
         out << " }";
 
         // right operator (if any)

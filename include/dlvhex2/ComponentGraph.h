@@ -172,6 +172,8 @@ public:
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
+  /** \brief ProgramCtx. */
+  ProgramCtx& ctx;
   /** \brief Registry used for debugging and printing. */
   RegistryPtr reg;
   #ifdef COMPGRAPH_SOURCESDEBUG
@@ -194,8 +196,9 @@ protected:
 public:
 	/** \brief Constructor to construct a component graph out of a DependencyGraph.
           * @param dp DependencyGraph used as basis for the ComponentGraph.
+	  * @param ctx ProgramCtx.
 	  * @param reg See ComponentGraph::reg. */
-	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
+	ComponentGraph(const DependencyGraph& dg, ProgramCtx& ctx, RegistryPtr reg);
 	/** \brief Destructor. */
 	virtual ~ComponentGraph();
 
@@ -354,11 +357,11 @@ protected:
   /** \brief Checks if a given component uses value invention.
     * @param ci ComponentInfo of the component to check.
     * @return False if \p ci uses value invention and true otherwise. */
-  bool calculateFixedDomain(ComponentInfo& ci);
+  bool calculateFixedDomain(ComponentInfo& ci) const;
   /** \brief Checks if a given component uses recursive aggregates.
     * @param ci ComponentInfo of the component to check.
     * @return True if \p ci uses recursive aggregates and false otherwise. */
-  bool computeRecursiveAggregatesInComponent(ComponentInfo& ci);
+  bool computeRecursiveAggregatesInComponent(ComponentInfo& ci) const;
 
 public:
   /** \brief Computes stratification info for a component and stores it in the graph.

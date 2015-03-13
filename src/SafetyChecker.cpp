@@ -479,6 +479,13 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 						remainingbodyvars.begin(), remainingbodyvars.end(),
 						safevars.begin(), safevars.end(),
 						inserter);
+
+#ifndef NDEBUG
+				std::stringstream ss;
+				BOOST_FOREACH (ID var, unsafeBodyVars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+				DBGLOG(DBG, "Found the following set of unsafe body variables: " << ss.str());
+#endif
+
 				if (!throwOnUnsafeVariables) return unsafeBodyVars;
 				else throw SyntaxError("Rule not safe (body): "
 						"'" + printToString<RawPrinter>(idrule, reg) + "': "
@@ -491,24 +498,61 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 			}
 		}
 
-/*
 		// variables in the positive head guard are also safe
 		if( !rule.headGuard.empty() )
 		{
+			// get all head guard variables
+			std::set<ID> safeheadguardvars;
+			reg->getVariablesInTuple(rule.headGuard, safeheadguardvars);
+
 			// get positive head guard atoms
-			std::list<ID> src;
+			std::list<ID> posheadguard;
 			BOOST_FOREACH (ID id, rule.headGuard){
-				if (!id.isNaf()) src.push_back(id);
+				if (!id.isNaf()) posheadguard.push_back(id);
 			}
 
-			if( !src.empty() )
+			if( !posheadguard.empty() )
 			{
 				// get headGuard variables
-				Tuple headGuard(src.begin(), src.end());
-				reg->getVariablesInTuple(headGuard, safevars);
+				Tuple headGuard(posheadguard.begin(), posheadguard.end());
+				reg->getVariablesInTuple(rule.headGuard, safevars);
+			}
+#ifndef NDEBUG
+			std::stringstream ss;
+			BOOST_FOREACH (ID var, safevars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+			DBGLOG(DBG, "Found the following set of safe variables: " << ss.str());
+#endif
+
+			// get all head guard variables
+			std::set<ID> headguardvars;
+			Tuple headguard(rule.headGuard.begin(), rule.headGuard.end());
+			reg->getVariablesInTuple(headguard, headguardvars);
+
+			// get unsafe head guard variables
+			Tuple unsafeHeadGuardVars;
+			std::back_insert_iterator<Tuple> inserter(unsafeHeadGuardVars);
+			std::set_difference(
+					headguardvars.begin(), headguardvars.end(),
+					safevars.begin(), safevars.end(),
+					inserter);
+
+			if (!unsafeHeadGuardVars.empty()){
+#ifndef NDEBUG
+				std::stringstream ss;
+				BOOST_FOREACH (ID var, unsafeHeadGuardVars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+				DBGLOG(DBG, "Found the following set of unsafe head guard variables: " << ss.str());
+#endif
+				if (!throwOnUnsafeVariables) return unsafeHeadGuardVars;
+				else throw SyntaxError("Rule not safe (head guard): "
+						"'" + printToString<RawPrinter>(idrule, reg) + "': "
+						"literals not safe: " +
+						printManyToString<RawPrinter>(Tuple(rule.headGuard.begin(), rule.headGuard.end()), ", ", reg) + ", "
+						"safe variables: " +
+						printManyToString<RawPrinter>(Tuple(safeheadguardvars.begin(), safeheadguardvars.end()), ", ", reg) + ", "
+						"unsafe variables: " +
+						printManyToString<RawPrinter>(Tuple(unsafeHeadGuardVars.begin(), unsafeHeadGuardVars.end()), ", ", reg));
 			}
 		}
-*/
 
 		// if we are here the body is safe -> check head
 
@@ -527,6 +571,11 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 		// report unsafe if unsafe
 		if( !unsafeHeadVars.empty() )
 		{
+#ifndef NDEBUG
+			std::stringstream ss;
+			BOOST_FOREACH (ID var, unsafeHeadVars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+			DBGLOG(DBG, "Found the following set of unsafe head variables: " << ss.str());
+#endif
 			if (!throwOnUnsafeVariables) return unsafeHeadVars;
 			else throw SyntaxError("Rule not safe (head): "
 					"'" + printToString<RawPrinter>(idrule, reg) + "': "

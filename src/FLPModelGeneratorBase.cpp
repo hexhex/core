@@ -217,10 +217,15 @@ ID FLPModelGeneratorFactoryBase::createEatomGuessingRule(const ProgramCtx& ctx, 
               }
             }
           }
-          else
+          else if (lit.isAggregateAtom())
           {
-            LOG(WARNING,"TODO think about whether we need to consider "
-                "builtin or aggregate atoms here");
+            // take the aggregate iff it defines a variable to be grounded
+            const AggregateAtom& aatom = reg->aatoms.getByID(lit);
+            DBGLOG(DBG, "Checking if aggregate is included in guessing rule");
+            if ( (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ && aatom.tuple[0].isVariableTerm() && variables.find(aatom.tuple[0]) != variables.end()) || (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ && aatom.tuple[4].isVariableTerm() && variables.find(aatom.tuple[4]) != variables.end())){
+              DBGLOG(DBG, "Aggregate is included in guessing rule");
+              use = true;
+            }
           }
 
           if( use )

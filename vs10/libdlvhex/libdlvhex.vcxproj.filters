@@ -50,9 +50,6 @@
     <ClCompile Include="..\..\src\DependencyGraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\DependencyGraphFull.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\DLVProcess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -216,6 +213,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\getopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\UnfoundedSetCheckHeuristicsInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -72,6 +72,7 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is the ID of the name of the action)
  * 'd': domain predicates for liberal safety
  * 'g': aggregate input (internal AggregatePlugin)
+ * 'c': choice rules (internal ChoicePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
  * 'o': special atoms introduced by gringo (IDs of kind integer) and predicate for guard atoms (ID(0, 0))
@@ -274,13 +275,13 @@ void Registry::getExternalAtomsInTuple(
 // add these ids to out
 // (returns even local variables for aggregates)
 // id is a literal or atom
-void Registry::getVariablesInID(ID id, std::set<ID>& out) const
+void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous) const
 {
   if (id.isTerm()){
-    if (id.isVariableTerm()) out.insert(id);
+    if (id.isVariableTerm() && (includeAnonymous || !id.isAnonymousVariable())) out.insert(id);
     if (id.isNestedTerm()){
       const Term& t = terms.getByID(id);
-      BOOST_FOREACH (ID nid, t.arguments) getVariablesInID(nid, out);
+      BOOST_FOREACH (ID nid, t.arguments) getVariablesInID(nid, out, includeAnonymous);
     }
   }
   else if (id.isLiteral() || id.isAtom()){
@@ -291,7 +292,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
       const OrdinaryAtom& atom = onatoms.getByID(id);
       BOOST_FOREACH(ID idt, atom.tuple)
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
     }
     else if( id.isBuiltinAtom() )
@@ -299,7 +300,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
       const BuiltinAtom& atom = batoms.getByID(id);
       BOOST_FOREACH(ID idt, atom.tuple)
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
     }
     else if( id.isAggregateAtom() )
@@ -308,7 +309,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
       // body atoms
       BOOST_FOREACH(ID idt, atom.literals)
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
       // local variables
       BOOST_FOREACH(ID idv, atom.variables)
@@ -318,25 +319,25 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
       // left and right term
       assert(atom.tuple.size() == 5);
       if( atom.tuple[0].isTerm() )
-        getVariablesInID(atom.tuple[0], out);
+        getVariablesInID(atom.tuple[0], out, includeAnonymous);
       if( atom.tuple[4].isTerm() )
-        getVariablesInID(atom.tuple[4], out);
+        getVariablesInID(atom.tuple[4], out, includeAnonymous);
     }
     else if( id.isExternalAtom() )	
     {
       const ExternalAtom& atom = eatoms.getByID(id);
       BOOST_FOREACH(ID idt, boost::join(atom.tuple, atom.inputs))
       {
-        getVariablesInID(idt, out);
+        getVariablesInID(idt, out, includeAnonymous);
       }
     }
   }
 }
 
-void Registry::getOutVariablesInID(ID id, std::set<ID>& out) const
+void Registry::getOutVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous) const
 {
   if (id.isTerm()){
-    if (id.isVariableTerm()) out.insert(id);
+    if (id.isVariableTerm() && (includeAnonymous || !id.isAnonymousVariable())) out.insert(id);
     if (id.isNestedTerm()){
       const Term& t = terms.getByID(id);
       BOOST_FOREACH (ID nid, t.arguments) getOutVariablesInID(nid, out);
@@ -392,10 +393,10 @@ void Registry::getOutVariablesInID(ID id, std::set<ID>& out) const
   }
 }
 
-std::set<ID> Registry::getVariablesInID(const ID& id) const
+std::set<ID> Registry::getVariablesInID(const ID& id, bool includeAnonymous) const
 {
   std::set<ID> out;
-  getVariablesInID(id, out);
+  getVariablesInID(id, out, includeAnonymous);
   return out;
 }
 
@@ -403,18 +404,18 @@ std::set<ID> Registry::getVariablesInID(const ID& id) const
 // add these ids to out
 // (returns even local variables for aggregates)
 // tuple t contains IDs of literals or atoms
-void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out) const
+void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out, bool includeAnonymous) const
 {
   BOOST_FOREACH(ID id, t)
   {
-    getVariablesInID(id, out);
+    getVariablesInID(id, out, includeAnonymous);
   }
 }
 
-std::set<ID> Registry::getVariablesInTuple(const Tuple& t) const
+std::set<ID> Registry::getVariablesInTuple(const Tuple& t, bool includeAnonymous) const
 {
   std::set<ID> out;
-  getVariablesInTuple(t, out);
+  getVariablesInTuple(t, out, includeAnonymous);
   return out;
 }
 
