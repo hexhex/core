@@ -1,6 +1,0 @@
-d(a).
-d(b).
-d(c).
-d(d).
-p(X) v q(X) :- d(X).
-res(X) :- &id[p](X).
