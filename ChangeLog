@@ -1,3 +1,12 @@
+2015-03-12  Christoph Redl <redl@kr.tuwien.ac.at>
+	* src/ClaspSolver.cpp: More efficient impelemtnation of weak constraints.
+	* include/dlvhex2/ClaspSolver.h: Likewise.
+	* src/AggregatePlugin.cpp: Likewise.
+	* include/dlvhex2/AggregatePlugin.h: Likewise.
+	* src/State.cpp: Likewise.
+	* include/dlvhex2/ProgramCtx.h: Likewise.
+	* src/ProgramCtx.cpp: Likewise.
+
 2015-03-09  Christoph Redl <redl@kr.tuwien.ac.at>
 	* src/ConditionalLiteralPlugin.cpp: Implement conditional literals.
 	* include/dlvhex2/ConditionalLiteralPlugin.h: Likewise.

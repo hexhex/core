@@ -1,0 +1,7 @@
+a v b v c v d.
+
+% test solutions of the same quality
+:~ a.
+:~ b. [2:1]
+:~ c. [2:1]
+:~ d.
