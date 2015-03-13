@@ -1,0 +1,27 @@
+% This example demonstrates the incompleteness of a planned incremental solving algorithm.
+% 
+% Roughly, the idea of the algorithm is as follows:
+%   1. Ground the program only with the constants from the program only (disregarding value invention).
+%   2. Solve the program.
+%   3. For each answer set: check if the program is "closed" under this answer set, i.e., if no external atom under this interpretation introduces disrespected constants.
+%      3a. If yes, output the answer set (and record it as constraint to avoid duplication).
+%      3b. If no, expand(*) the grounding and restart solving at 2. (immediately to make use of learned knowledge, otherwise there is no advantage compared to unit-wise evaluation!).
+% 
+% (*) Expanding is actually not that simple because clasp disallows the introduction of cycles over multiple incremental steps,
+%     but the expansion can be simulated by a renaming of atoms.
+% 
+% However, this does not work as the following example demonstrates. The expected singleton answer set is { p(b), r(b) }.
+% When value invention is disregarded at 1., the initial grounding is { r1, r3 }. But this program does not have any answer sets because constraint r3
+% forbids that r(b) is false. The intuition of the idea was that:
+%   - step 3. of the algorithm will see at least a subset of all answer sets (in this case { p(b) })
+%   - it concludes that the program is not "closed" because new values are introduced (in this case &id[p](X) introduces the new value X=b)
+%   - the program expanded (in this case to { p(a) v p(b); r(b) :- &id[p](b); :- not r(b) })
+% However, this will actually not happen as step 3. will never see { p(b) } (or any other interpretation) since r3 leads to inconsistency as long as
+% an appropriate instance of r2 is missing.
+
+p(a) v p(b).          % r1
+r(X) :- &id[p](X).    % r2
+:- not r(b).          % r3
+
+% &id[p](X) is true for all values X such that p(X) is true, cf. id.py.
+

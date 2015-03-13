@@ -1,0 +1,2 @@
+p(a) v p(b).
+res(X) :- &id[p](X).

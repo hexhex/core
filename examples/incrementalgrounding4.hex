@@ -1,0 +1,19 @@
+% This program checks if the minimality check works for incrementally grounded programs.
+% Expected result: {p(a),f,t,s,x}
+%                  {p(a),ff,x}
+%                  {p(b),f,t,s,x}
+%                  {p(b),ff,x}
+
+% (1) This part can be immediately grounded:
+p(a) v p(b).
+f v ff.		% makes sure that the next two rules are not optimized away
+t :- f.
+s :- t.
+
+% (2) This part can be grounded after some model including { p(a) } was enumerated:
+x :- &id[p](X).	% is optimized away before enumeration of a model.
+t :- s, x.	% likewise
+
+% Since the cyclic dependency between s and t involves the external atom and
+% is only visible after &id[p](a) was added in the second iteration,
+% a non-incremental minimality check also produces the models {p(a),ff,x,s,t}, {p(b),ff,x,s,t} 
