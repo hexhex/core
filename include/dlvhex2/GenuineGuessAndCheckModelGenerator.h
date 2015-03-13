@@ -83,6 +83,23 @@ protected:
   /** \brief Stores for each inner external atom the cumulative atoms which potentially changes since last evaluation. */
   std::vector<InterpretationPtr> changedAtomsPerExternalAtom;
 
+  // incremental solving
+  //	sub-component management for regrounding
+  bool groundingIsComplete;
+  ComponentGraphPtr subcompgraph;
+  std::vector<PredicateMaskPtr> domainMaskPerComponent;
+  std::vector<std::vector<ID> > gxidbPerComponent;
+  //	management of resolving
+  std::vector<ID> hookAssumptions;
+  std::vector<ID> modelEliminationConstraints;
+  InterpretationPtr inputWithDomainAtoms;
+  InterpretationPtr previousInnerEatomOutputs;
+  PredicateMaskPtr innerEatomOutputs;
+  int previousRuleCount;
+  InterpretationPtr currentRules;
+  InterpretationPtr frozenHookAtoms;
+  std::map<ID, ID> hookAtoms;
+
   // heuristics
   /** \brief Heuristics to be used for evaluating external atoms for which no dedicated heuristics is provided. */
   ExternalAtomEvaluationHeuristicsPtr defaultExternalAtomEvalHeuristics;
@@ -168,6 +185,41 @@ protected:
    * @return True if \p compatibleSet is an answer set and false otherwise.
    */
   bool isModel(InterpretationConstPtr compatibleSet);
+
+  /**
+   * \brief Adds hook rules for all atoms in the annotatedGroundProgram to allow for incremental extension.
+   *
+   * The method adds for all atoms "a" in the ground program rules of type "a :- a'" where "a'" is a new atom;
+   * this allows for defining "a" in a later incremental step.
+   */
+  void addHookRules();
+
+  /**
+   * \brief Resets vector "hookAssumptions" and then adds assumptions such that all atoms in GenuineGuessAndCheckModelGenerator::frozenHookAtoms are false.
+   */
+  void buildFrozenHookAtomAssumptions();
+
+  /**
+   * \brief Checks if the domain of external atoms needs to be expanded wrt. a given compatible set.
+   *
+   * If this is the case, then the domain predicates are extended accordingly.
+   *
+   * @param expandedComponents The indices of all expanded components will be added to this vector.
+   * @param model The compatible set used for domain expansion; if no model is specified, then the program is exhaustively grounded.
+   * @return True if the domain needs to be expanded and false otherwise.
+   */
+  bool incrementalDomainExpansion(std::vector<int>& expandedComponents, InterpretationConstPtr model = InterpretationConstPtr());
+
+  /**
+   * \brief Updates the AnnotatedGroundProgram and the internal solver state wrt. extended domain predicates (if necessary).
+   * @param expandedComponents The vector of all component indices which shall be respected in the expansion; other components will be ignored.
+   */
+  void incrementalProgramExpansion(const std::vector<int>& expandedComponents);
+
+  /**
+   * Constructs the rule headAtomID :- hookAtomID.
+   */
+  ID getIncrementalHookRule(ID headAtomID, ID hookAtomID);
 
   /**
    * Makes an unfounded set check over a (possibly) partial interpretation if useful.

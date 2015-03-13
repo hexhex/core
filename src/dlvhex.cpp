@@ -253,6 +253,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                                            where component indices <idx> are from '--graphviz=comp'" << std::endl
       << "                         asp:<script>     : Use asp program <script> as eval heuristic" << std::endl
       << "     --forcegc        Always use the guess and check model generator." << std::endl
+//      << "     --incremental    Ground the program incrementally in order to deal with value invention." << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)." << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)." << std::endl
@@ -476,6 +477,7 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
 	pctx.config.setOption("SupportSets", 0);
 	pctx.config.setOption("ForceGC", 0);
+	pctx.config.setOption("IncrementalGrounding", 0);
 	pctx.config.setStringOption("PluginDirs", "");
 
 	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
