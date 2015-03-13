@@ -640,6 +640,7 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 		minb.addRule(minimizeStatements[level]);
 	}
 
+	// if we don't have minimize statements, then we don't need a minimize constraint (this is just an optimization)
 	if (minimizeStatementsHex.size() > 0){
 		DBGLOG(DBG, "Constructing minimize constraint");
 		sharedMinimizeData = minb.build(claspctx);
@@ -650,17 +651,6 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 
 			DBGLOG(DBG, "Attaching minimize constraint to clasp");
 			minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
-
-	/*
-	Clasp::wsum_t* o = new Clasp::wsum_t[3];
-	o[0] = o[1] = o[2] = 5;
-			DBGLOG(DBG, "Setting optimum");
-	sharedMinimizeData->setOptimum(o);
-			DBGLOG(DBG, "Integrating constraint");
-	bool intres = minc->integrate(*claspctx.master());
-	DBGLOG(DBG, "Integration result: " << intres);
-	delete []o;
-	*/
 
 			assert(!!minc);
 		}
@@ -976,7 +966,7 @@ void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 }
 
 Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
-//	DBGLOG(DBG, "Translating HEX address " << addr << " to clasp");
+
 	if (!isMappedToClaspLiteral(addr)){
 		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
 		Clasp::Literal clasplit(c, inverseLits);
@@ -986,9 +976,6 @@ Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool regi
 		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
 #endif
 		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-//		DBGLOG(DBG, "Creating new clasp variable " << hexToClaspSolver[addr].var() << " for HEX address " << addr);
-//	}else{
-//		DBGLOG(DBG, "Mapping to " << hexToClaspSolver[addr].var() << " already exists");
 	}
 	assert(addr < hexToClaspSolver.size());
 	assert(hexToClaspSolver[addr] != noLiteral);
@@ -1146,10 +1133,8 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	
 	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
 	if (!!ep.get()) ep.reset();
-	//if (!!ep.get()) claspctx.master()->removePost(ep.get());
 
 	// Update program
-	//inconsistent |= asp.endProgram();
 	asp.updateProgram();
 
 	// transfer added edb
@@ -1243,7 +1228,6 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
 	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
 	if (!!ep.get()) ep.reset();
 
-//	sat.updateProgram();
 	claspctx.unfreeze();
 
 	// add new variables
@@ -1383,7 +1367,6 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
 InterpretationPtr ClaspSolver::getNextModel(){
 
-//	#define ENUMALGODBG(msg) { if (problemType == SAT) { std::cerr << "(" << msg << ")"; } }
 	#define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
 
 	/*
@@ -1543,7 +1526,6 @@ InterpretationPtr ClaspSolver::getNextModel(){
 		// committing symmetric models is only necessary if some variables are frozen
 		// but we still want to get all models
 		nextSolveStep = CommitSymmetricModel;
-//		nextSolveStep = Update;
 	}else{
 		nextSolveStep = ReturnModel;	// we stay in this state until restart
 	}
