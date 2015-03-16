@@ -641,7 +641,7 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 	}
 
 	// if we don't have minimize statements, then we don't need a minimize constraint (this is just an optimization)
-	if (minimizeStatementsHex.size() > 0){
+	if (minimizeStatements.size() > 0){
 		DBGLOG(DBG, "Constructing minimize constraint");
 		sharedMinimizeData = minb.build(claspctx);
 		minc = 0;
