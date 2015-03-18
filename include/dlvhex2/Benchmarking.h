@@ -166,6 +166,8 @@ public:
     std::string name;
     /** \brief Number of calls. */
     Count count;
+    /** \brief Nesting level (1 = started once, 2 = started twice, ...) */
+    Count level;
     /** \brief Number of times the counter was printed. */
     Count prints;
     /** \brief Timestamp when the counter was started. */
@@ -426,6 +428,12 @@ void BenchmarkController::start(ID id)
   {
     st.start = boost::posix_time::microsec_clock::local_time();
     st.running = true;
+    // running once -> level 1
+    st.level = 1;
+  }
+  else {
+    // increase nesting level
+    st.level++;
   }
 }
 
@@ -437,7 +445,7 @@ void BenchmarkController::stop(ID id, bool count)
   boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
-  if( st.running )
+  if( st.running && st.level == 1 )
   {
     Duration dur = boost::posix_time::microsec_clock::local_time() - st.start;
     st.duration += dur;
@@ -447,6 +455,10 @@ void BenchmarkController::stop(ID id, bool count)
       st.count++;
 			printInformationContinous(st,dur);
 		}
+  }
+  else if( st.running ) {
+    // decrease nesting level
+    st.level--;
   }
 }
 
