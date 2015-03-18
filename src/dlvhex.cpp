@@ -471,7 +471,6 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("ClaspDeferMaxTMilliseconds",1000);
 	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
 	pctx.config.setOption("UseConstantSpace", 0); // see --help
-	pctx.config.setOption("NestedHEX", 0);
 	pctx.config.setOption("ClaspForceSingleThreaded", 0);
 	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
 	pctx.config.setOption("SupportSets", 0);

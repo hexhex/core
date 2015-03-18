@@ -237,7 +237,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bool parse){
 
 	DBGLOG(DBG, "Resetting context");
-	pc.config.setOption("NestedHEX", 1);
 	pc.state.reset();
 	pc.modelBuilder.reset();
 	pc.parser.reset();
