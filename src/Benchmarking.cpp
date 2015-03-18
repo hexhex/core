@@ -125,6 +125,10 @@ ID BenchmarkController::getInstrumentationID(const std::string& name)
 }
 
 void BenchmarkController::suspend(){
+  if( sus == 0 ) {
+    myID = getInstrumentationID("BMController suspend");
+    start(myID);
+  }
   boost::mutex::scoped_lock lock(mutex);
   sus++;
 }
@@ -132,6 +136,10 @@ void BenchmarkController::suspend(){
 void BenchmarkController::resume(){
   boost::mutex::scoped_lock lock(mutex);
   sus--;
+  if( sus == 0 ){
+    myID = getInstrumentationID("BMController suspend");
+    stop(myID);
+  }
 }
 
 std::string BenchmarkController::count(const std::string& name, int width) const
@@ -156,6 +164,17 @@ std::string BenchmarkController::duration(const std::string& name, int width) co
   std::ostringstream oss;
   printInSecs(oss, getStat(id).duration, width);
   return oss.str();
+}
+
+// stop and do not record, handle non-started id's gracefully
+void BenchmarkController::invalidate(ID id)
+{
+  if (sus > 0) return;
+  boost::mutex::scoped_lock lock(mutex);
+  Stat& st = instrumentations[id];
+
+  if( st.running )
+    st.running = false;
 }
 
 // copy data from one id to another id and call stop() on that other id
@@ -194,7 +213,7 @@ namespace nestingAware
 {
 
 NestingAwareController::Stat::Stat(const std::string& name, Duration printInterval):
-  name(name), count(0), duration(), pureDuration(),
+  name(name), count(0), duration(), pureDuration(), level(0),
   nextPrint(boost::posix_time::microsec_clock::local_time() + printInterval) {
 }
 
@@ -253,6 +272,7 @@ void NestingAwareController::setOutput(std::ostream* o)
 void NestingAwareController::setPrintInterval(Count skip)
 {
   // TODO
+  std::cerr << "not implemented NestingAwareController::setPrintInterval" << std::endl;
 }
 
 // get ID or register new one
@@ -275,13 +295,21 @@ ID NestingAwareController::getInstrumentationID(const std::string& name)
 }
 
 void NestingAwareController::suspend(){
-  myID = getInstrumentationID("BMController suspend");
-  start(myID);
+  if( sus == 0 ) {
+    myID = getInstrumentationID("BMController suspend");
+    start(myID);
+  }
+  boost::mutex::scoped_lock lock(mutex);
+  sus++;
 }
 
 void NestingAwareController::resume(){
-  myID = getInstrumentationID("BMController suspend");
-  stop(myID);
+  boost::mutex::scoped_lock lock(mutex);
+  sus--;
+  if( sus == 0 ){
+    myID = getInstrumentationID("BMController suspend");
+    stop(myID);
+  }
 }
 
 std::string NestingAwareController::count(const std::string& name, int width) const
@@ -304,6 +332,21 @@ std::string NestingAwareController::duration(const std::string& name, int width)
   std::ostringstream oss;
   printInSecs(oss, getStat(id).duration, width);
   return oss.str();
+}
+
+// stop and do not record, handle non-started id's gracefully
+void NestingAwareController::invalidate(ID id)
+{
+  if( !current.empty() && current.back().which == id ) {
+    // save start time of pure period (we do not want to lose this)
+    Time start = current.back().start;
+    // destroy current without counting it
+    current.pop_back();
+    // set start time to new top-of-stack
+    if( current.size() > 1 ) {
+      current[current.size()-2].start = start;
+    }
+  }
 }
 
 // copy data from one id to another id and call stop() on that other id
@@ -331,28 +374,6 @@ void NestingAwareController::snapshot(ID id, ID intoID)
       break;
     }
   }
-}
-
-void NestingAwareController::debug(const std::string& msg) {
-  std::cerr << msg << ": ";
-  std::set<ID> collected;
-  for(unsigned u = 0; u < current.size(); ++u) {
-    std::cerr << current[u].which << " "; //(f=" << current[u].firststart << "/s=" << current[u].start << ") ";
-    collected.insert(current[u].which);
-  }
-  std::cerr << std::endl;
-  std::cerr << msg << "[ ";
-  //for(std::set<ID>::const_iterator it = collected.begin(); it != collected.end(); ++it) {
-  //  std::cerr << *it << "(d=";
-  //  printInSecs(std::cerr, instrumentations[*it].duration, 1) << "/pd=";
-  //  printInSecs(std::cerr, instrumentations[*it].pureDuration, 1) << ") ";
-  //}
-  for(unsigned u = 0; u < maxID; ++u) {
-    std::cerr << u << "(d=";
-    printInSecs(std::cerr, instrumentations[u].duration, 1) << "/pd=";
-    printInSecs(std::cerr, instrumentations[u].pureDuration, 1) << ") ";
-  }
-  std::cerr << std::endl;
 }
 
 // print information about stat

@@ -86,11 +86,26 @@
 // #if defined(DLVHEX_BENCHMARK)
 //   dlvhex::benchmark::ID myStoredSid =
 //     dlvhex::benchmark::BenchmarkController::Instance().getInstrumentationID("my message");
+// #endif
 //
 // invalidate(sid) and INVALIDATE is used to abort instrumentations that were started but should not be counted
 // (e.g., if there is no model, we will not have a time to first model)
 // invalidating a non-running counter does nothing
-// #endif
+//
+// there are two benchmark controllers that can be used:
+// * simple: (#define DLVHEX_BENCHMARK_SIMPLE)
+//   + fast and simple
+//   - counts overlapping instrumentalizations twice
+//     (not if they have the same name)
+//   - gives less intuitive timing results
+// * nesting-aware: (#define DLVHEX_BENCHMARK_NESTINGAWARE)
+//   - a bit more complex
+//   + counts "pure" time where an instrumentalization 
+//     was the last activated one (uses a stack of instrumentalizations)
+//   + gives more intuitive timing results
+
+#define DLVHEX_BENCHMARK_SIMPLE
+//#define DLVHEX_BENCHMARK_NESTINGAWARE
 
 #if defined(DLVHEX_BENCHMARK)
 # define DLVHEX_BENCHMARK_REGISTER(sid,msg) \
@@ -184,8 +199,6 @@ public:
       * @param name See Stat::name. */
     Stat(const std::string& name);
   };
-  int sus;
-
 
 public:
   /** \brief Prints a value in seconds.
@@ -291,7 +304,7 @@ public:
     *
     * If not running, do not do anything.
     * @param id ID of the benchmark to stop. */
-  inline void invalidate(ID id); // inline for performance
+  void invalidate(ID id);
 
   /** \brief Copy data from one id to another id and call stop() on that other id.
     *
@@ -329,6 +342,8 @@ private:
 
   /** \brief Mutex for multithreading access. */
   boost::mutex mutex;
+  /** \brief Level of suspending benchmarking (0 = not suspended). */
+  unsigned sus;
 };
 
 //inline
@@ -421,8 +436,8 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
 // start timer
 void BenchmarkController::start(ID id)
 {
+  if (sus) return;
   boost::mutex::scoped_lock lock(mutex);
-  if (sus > 0) return;
   Stat& st = instrumentations[id];
   if( !st.running )
   {
@@ -441,7 +456,7 @@ void BenchmarkController::start(ID id)
 // stop and record elapsed time, print stats
 void BenchmarkController::stop(ID id, bool count)
 {
-  if (sus > 0) return;
+  if (sus) return;
   boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
@@ -462,23 +477,11 @@ void BenchmarkController::stop(ID id, bool count)
   }
 }
 
-// inline for performance
-// stop and do not record, handle non-started id's gracefully
-void BenchmarkController::invalidate(ID id)
-{
-  if (sus > 0) return;
-  boost::mutex::scoped_lock lock(mutex);
-  Stat& st = instrumentations[id];
-
-  if( st.running )
-    st.running = false;
-}
-
 // record count (no time), print stats
 // inline for performance
 void BenchmarkController::count(ID id, Count increment)
 {
-  if (sus > 0) return;
+  if (sus) return;
   boost::mutex::scoped_lock lock(mutex);
   Stat& s = instrumentations[id];
   s.count += increment;
@@ -506,6 +509,9 @@ public:
     Duration duration;
     /** \brief Sum of durations the stat was run without overlay by a subsequently started stat. */
     Duration pureDuration;
+    /** \brief Level of nesting of this benchmark (0 = not running) */
+    Count level;
+    /** \brief Timepoint after which this stats should be printed again */
     Time nextPrint;
 
     /** \brief Constructor.
@@ -513,6 +519,7 @@ public:
     Stat(const std::string& name, Duration printInterval);
   };
   struct Current {
+    /** \brief instrumentation ID of this record */
     ID which;
     /** \brief Timestamp when the counter was started first for this Current record. */
     Time firststart;
@@ -625,7 +632,7 @@ public:
     *
     * If not running, do not do anything.
     * @param id ID of the benchmark to stop. */
-  inline void invalidate(ID id); // inline for performance
+  void invalidate(ID id);
 
   /** \brief Copy data from one id to another id and call stop() on that other id.
     *
@@ -642,8 +649,6 @@ public:
   void snapshot(const std::string& fromstr, const std::string& tostr);
 
 private:
-  void debug(const std::string& msg);
-
   /** \brief Constructor.
     *
     * Init, display start of benchmarking. */
@@ -657,16 +662,18 @@ private:
   std::vector<Stat> instrumentations;
   /** \brief Map from benchmark names to IDs. */
   std::map<std::string, ID> name2id;
-  // TODO comment
+  /** \brief Stack of currently running instrumentations. */
   std::vector<Current> current;
 
+  /** \brief Interval for printing continuous benchmarks. */
   Duration printInterval;
-
   /** \brief Output stream to be used. */
   std::ostream* output;
 
   /** \brief Mutex for multithreading access. */
   boost::mutex mutex;
+  /** \brief Level of suspending benchmarking (0 = not suspended). */
+  unsigned sus;
 };
 
 //inline
@@ -710,30 +717,22 @@ std::ostream& NestingAwareController::printDuration(std::ostream& out, ID id)
 // inline for performance
 void NestingAwareController::printInformationContinous(Stat& st, const Duration& dur)
 {
-  // TODO make better continuous printing concept/criteria (based on calls + time intervals)
-  //if( st.prints >= printSkip )
-  //{
-    if( !output )
-      return;
-    Time now = boost::posix_time::microsec_clock::local_time();
-    if( now > st.nextPrint )
-    {
-      st.nextPrint = now + printInterval;
-      (*output) <<
-        "BM:" << std::setw(30) << st.name <<
-        ": count:" << std::setw(8) << st.count <<
-        " total:";
-      printInSecs(*output, st.duration, 4) << "s" <<
-        " pure:";
-      printInSecs(*output, st.pureDuration, 4) << "s" <<
-        " last:";
-      printInSecs(*output, dur, 2) << "s" << std::endl;
-    }
-  //}
-  //else
-  //{
-  //  st.prints++;
-  //}
+  if( !output )
+    return;
+  Time now = boost::posix_time::microsec_clock::local_time();
+  if( now > st.nextPrint )
+  {
+    st.nextPrint = now + printInterval;
+    (*output) <<
+      "BM:" << std::setw(30) << st.name <<
+      ": count:" << std::setw(8) << st.count <<
+      " total:";
+    printInSecs(*output, st.duration, 4) << "s" <<
+      " pure:";
+    printInSecs(*output, st.pureDuration, 4) << "s" <<
+      " last:";
+    printInSecs(*output, dur, 2) << "s" << std::endl;
+  }
 }
 
 // inline for performance
@@ -741,21 +740,16 @@ void NestingAwareController::printInformationContinous(Stat& st, const Duration&
 void NestingAwareController::start(ID id)
 {
   boost::mutex::scoped_lock lock(mutex);
-
-  //debug("strtng");
+  Stat& st = instrumentations[id];
 
   Time now = boost::posix_time::microsec_clock::local_time();
 
+  st.level++; // not running = 0, 1 = not nested
   if( !current.empty() ) {
     // suspend previously active instrumentation (and record pure time elapsed)
     Current& prevc = current.back();
     Stat& prevst = instrumentations[prevc.which];
     prevst.pureDuration += now - prevc.start;
-
-    // this finds nested calls and warns
-    //for(unsigned u = 0; u < current.size(); ++u)
-    //  if( current[u].which == id )
-    //    std::cerr << "!NESTED!" << std::endl;
   }
 
   // start new instrumentation
@@ -763,9 +757,6 @@ void NestingAwareController::start(ID id)
   Current& c = current.back();
   c.firststart = now;
   c.start = now;
-  Stat& st = instrumentations[id];
-
-  //debug("startd");
 }
 
 // inline for performance
@@ -773,15 +764,12 @@ void NestingAwareController::start(ID id)
 void NestingAwareController::stop(ID id, bool count)
 {
   boost::mutex::scoped_lock lock(mutex);
+  Stat& st = instrumentations[id];
 
-  //debug("stopng");
-
-  // note current time
   Time now = boost::posix_time::microsec_clock::local_time();
 
   // currently active instrumentation
   Current& c = current.back();
-  Stat& st = instrumentations[c.which];
   if( id != c.which )
     // warn but ignore
     std::cerr << "inconsistency: instrumentation '" << st.name <<
@@ -790,35 +778,25 @@ void NestingAwareController::stop(ID id, bool count)
 
   // update pure duration
   st.pureDuration += now - c.start;
-  // update overall duration
-  // (this will count time twice in overall duration if it is called in a nested way)
-  // (pure duration is never counted twice)
-  st.duration += now - c.firststart;
+
+  // update overall duration, but only if not nested with itself
+  // (this way neither pure nor overall duration is counted twice)
+  if( st.level == 1 )
+    st.duration += now - c.firststart;
   if( count )
     st.count++;
 
   // remove current instrumentation
   current.pop_back();
+  st.level--;
 
   // leave function if there is no higher-level instrumentation running
-  if( current.empty() ) {
-    //debug("stopp!");
+  if( current.empty() )
     return;
-  }
 
   // resume previous instrumentation
   Current& prevc = current.back();
   prevc.start = now;
-  //Stat& prevst = instrumentations[prevc.which];
-  //debug("stoppd");
-}
-
-// inline for performance
-// stop and do not record, handle non-started id's gracefully
-void NestingAwareController::invalidate(ID id)
-{
-  // TODO implement (trivial (verify id = current.id, instrumentations[current.id].count-- and current.pop_back()), but what is the use case?)
-  throw "TODO IMPLEMENT (why do we need this function?)";
 }
 
 // record count (no time), print stats
@@ -833,9 +811,13 @@ void NestingAwareController::count(ID id, Count increment)
 
 } // namespace nestingAware
 
-// use simple benchmark controller (measures nested calls multiple times)
-//typedef simple::BenchmarkController BenchmarkController;
-typedef nestingAware::NestingAwareController BenchmarkController;
+#ifdef DLVHEX_BENCHMARK_SIMPLE
+  typedef simple::BenchmarkController BenchmarkController;
+#elif DLVHEX_BENCHMARK_NESTINGAWARE
+  typedef nestingAware::NestingAwareController BenchmarkController;
+#else
+# error Benchmarking is defined but neither SIMPLE nor NESTINGAWARE is chosen!
+#endif
 
 } // namespace benchmark
 
