@@ -1,11 +1,17 @@
 3col.hex 3col.out --solver=genuineii
 agg1.hex agg1.out --solver=genuineii --aggregate-enable --aggregate-mode=ext
 agg2.hex agg2.out --solver=genuineii --aggregate-enable --aggregate-mode=ext
-agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext --strongsafety
+agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 agg4.hex agg4.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg5.hex agg5.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg6.hex agg6.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg7.hex agg7.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
+agg8.hex agg8.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 aggextcycle1.hex aggextcycle1e.out --nofacts --solver=genuineii --aggregate-enable --aggregate-mode=ext
 weak1.hex weak1.out --solver=genuineii --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=genuineii --strongnegation-enable --weak-enable
+weak3.hex weak3.out --solver=genuineii --strongnegation-enable --heuristics=monolithic --forcegc --weak-enable
+weak4.hex weak4.out --solver=genuineii --strongnegation-enable --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuineii
 builtin_safety1.hex builtin_safety1.stderr --solver=genuineii
 builtin_safety1a.hex builtin_safety1a.stderr --solver=genuineii
@@ -141,3 +147,10 @@ liberalsafety6.hex liberalsafety6.out --liberalsafety --solver=genuineii
 liberalsafety7.hex liberalsafety7.out --liberalsafety --solver=genuineii --heuristics=monolithic
 liberalsafety8.hex liberalsafety8.out --liberalsafety --solver=genuineii
 liberalsafety9.hex liberalsafety9.out --liberalsafety --solver=genuineii
+choicerule1.hex choicerule1.out --solver=genuineii --aggregate-mode=ext -N=10
+choicerule2.hex choicerule2.out --solver=genuineii --aggregate-mode=ext -N=10
+choicerule3.hex choicerule3.out --solver=genuineii --aggregate-mode=ext -N=10
+choicerule4.hex choicerule4.out --solver=genuineii --aggregate-mode=ext -N=10
+choicerule5.hex choicerule5.out --solver=genuineii --aggregate-mode=ext -N=10
+conditional1.hex conditional1.out --solver=genuinegc --aggregate-mode=ext
+conditional2.hex conditional2.out --solver=genuinegc --aggregate-mode=ext

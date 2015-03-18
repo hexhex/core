@@ -1,7 +1,7 @@
 % This program is domain-expansion safe because Z is bounded due to #maxint
 
-#maxint=100.
+#maxint=30.
 q(1).
-q(22).
-p(2).
-p(Z) :- p(S), &testConcat[S,3](Z), Z=#sum{X:q(X)}.
+q(9).
+p(1).
+p(Z) :- p(S), &testConcat[S,0](Z), Z=#sum{X:q(X)}.

@@ -483,9 +483,13 @@ struct sem<HexGrammarSemantics::aggregateAtom>
   void operator()(
     HexGrammarSemantics& mgr,
     const boost::fusion::vector3<
-      boost::optional<boost::fusion::vector2<ID, ID> >,
-      boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> >,
-      boost::optional<boost::fusion::vector2<ID, ID> >
+      boost::optional<boost::fusion::vector2<ID, ID> >,	// left term and left comparison operator
+      boost::fusion::vector2<ID,			// aggregate function
+        std::vector<					// set of symbolic sets
+          boost::fusion::vector2<std::vector<ID>, boost::optional<std::vector<ID> > >  // variables and literals of the current symbolic set
+        >
+      >,
+      boost::optional<boost::fusion::vector2<ID, ID> >	// right comparison operator and right term
     >& source,
     ID& target)
   {
@@ -493,8 +497,6 @@ struct sem<HexGrammarSemantics::aggregateAtom>
     ID& leftTerm = aatom.tuple[0];
     ID& leftComp = aatom.tuple[1];
     ID& aggFunc = aatom.tuple[2];
-    Tuple& aggVariables = aatom.variables;
-    Tuple& aggBody = aatom.literals;
     ID& rightComp = aatom.tuple[3];
     ID& rightTerm = aatom.tuple[4];
 
@@ -520,10 +522,23 @@ struct sem<HexGrammarSemantics::aggregateAtom>
     if( leftTerm == ID_FAIL && rightTerm == ID_FAIL )
       throw SyntaxError("aggregate needs at least one term + comparison operator");
 
-    // aggregation + symbolic set
+    // aggregation
     aggFunc = boost::fusion::at_c<0>(boost::fusion::at_c<1>(source));
-    aggVariables = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source));
-    aggBody = boost::fusion::at_c<2>(boost::fusion::at_c<1>(source));
+
+    // symbolic set
+    const std::vector<boost::fusion::vector2<std::vector<ID>, boost::optional<std::vector<ID> > > >& symbolicSets = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source));
+    for (int currentSymbolicSet = 0; currentSymbolicSet < symbolicSets.size(); ++currentSymbolicSet){
+      const boost::fusion::vector2<std::vector<ID>, boost::optional<std::vector<ID> > >& symbolicSet = symbolicSets[currentSymbolicSet];
+      Tuple aggVariables = boost::fusion::at_c<0>(symbolicSet);
+      Tuple aggBody = (!!boost::fusion::at_c<1>(symbolicSet) ? boost::fusion::at_c<1>(symbolicSet).get() : Tuple());
+      if (symbolicSets.size() > 1){
+        aatom.mvariables.push_back(aggVariables);
+        aatom.mliterals.push_back(aggBody);
+      }else{
+        aatom.variables = aggVariables;
+        aatom.literals = aggBody;
+      }
+    }
 
     DBGLOG(DBG,"storing aggregate atom " << aatom);
     target = mgr.ctx.registry()->aatoms.storeAndGetID(aatom);
@@ -1036,9 +1051,10 @@ HexGrammarBase(HexGrammarSemantics& sem):
       [ Sem::builtinBinaryPrefix(sem) ]
     | (builtinOpsTernary >> qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
       [ Sem::builtinTernaryPrefix(sem) ];
+  symbolicSet
+    = (terms > -(qi::lit(':') > (bodyLiteral % (qi::char_(',') | qi::char_(';')))) > qi::eps);
   aggregateTerm
-    = builtinOpsAgg > qi::lit('{') > terms > qi::lit(':') >
-      (bodyLiteral % qi::char_(',')) > qi::lit('}');
+    = builtinOpsAgg > qi::lit('{') > (symbolicSet % qi::lit(';')) > qi::lit('}');
   aggregateAtom
     // aggregate range or only left or only right part of it
     // (the semantics handler has to rule out that no binop exists)
@@ -1094,12 +1110,12 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::addMLPModuleHeader(sem) ];
 
   bodyAtom
-    = classicalAtom
+    = bodyAtomExt
+    | classicalAtom
     | externalAtom
     | mlpModuleAtom
     | builtinAtom
-    | aggregateAtom
-    | bodyAtomExt;
+    | aggregateAtom;
 
   bodyLiteral
     = (
@@ -1112,15 +1128,15 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::bodyLiteral(sem) ];
 
   headAtom
-    = classicalAtom
-    | headAtomExt;
+    = headAtomExt
+    | classicalAtom;
 
   rule
     = (
         (headAtom % qi::no_skip[*ascii::space >> qi::char_('v') >> ascii::space]) >>
        -(
           qi::lit(":-") >
-          (bodyLiteral % qi::char_(','))
+          (bodyLiteral % (qi::char_(',') | qi::char_(';')))
         ) >>
         qi::lit('.')
       ) [ Sem::rule(sem) ]
@@ -1128,20 +1144,20 @@ HexGrammarBase(HexGrammarSemantics& sem):
         headAtom >> qi::lit(':') >> (bodyLiteral % qi::char_(',')) >>
        -(
           qi::lit(":-") >
-          (bodyLiteral % qi::char_(','))
+          (bodyLiteral % (qi::char_(',') | qi::char_(';')))
         ) >>
         qi::lit('.')
       ) [ Sem::ruleVariableDisjunction(sem) ];
   constraint
     = (
         qi::lit(":-") >>
-        (bodyLiteral % qi::char_(',')) >>
+        (bodyLiteral % (qi::char_(',') | qi::char_(';'))) >>
         qi::lit('.')
       ) [ Sem::constraint(sem) ];
   weakconstraint
     = (
         qi::lit(":~") >>
-        (bodyLiteral % qi::char_(',')) >>
+        (bodyLiteral % (qi::char_(',') | qi::char_(';'))) >>
         qi::lit('.') >>
         -(qi::lit("[") >> term >> qi::lit(":") >> term >> qi::lit("]"))
       ) [ Sem::weakconstraint(sem) ];
@@ -1194,6 +1210,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtom);
   BOOST_SPIRIT_DEBUG_NODE(builtinAtom);
+  BOOST_SPIRIT_DEBUG_NODE(symbolicSet);
   BOOST_SPIRIT_DEBUG_NODE(aggregateAtom);
   BOOST_SPIRIT_DEBUG_NODE(bodyAtom);
   BOOST_SPIRIT_DEBUG_NODE(bodyLiteral);

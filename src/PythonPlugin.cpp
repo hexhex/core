@@ -76,11 +76,11 @@ PythonPlugin::~PythonPlugin()
 void PythonPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --pythonplugin=[PATH]" << std::endl
+	o << "     --python-plugin=[PATH]" << std::endl
           << "                      Add Python script \"PATH\" as new plugin." << std::endl;
-	o << "     --pythonmain=PATH" << std::endl
+	o << "     --python-main=PATH" << std::endl
           << "                      Call method \"main\" in the specified Python script (with dlvhex support) instead of evaluating a program." << std::endl;
-	o << "     --pythonarg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl;
+	o << "     --python-arg=ARG  Passes arguments to Python (sys.argv) (can be used multiple times)." << std::endl;
 }
 
 // accepted options: --pythonplugin=[PATH]
@@ -98,16 +98,39 @@ void PythonPlugin::processOptions(
 	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
 	it = pluginOptions.begin();
 
+	ctx.config.setOption("HavePythonMain", 0);
 	while( it != pluginOptions.end() )
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( boost::starts_with(str, "--pythonplugin=") )
+		if( boost::starts_with(str, "--python-plugin=") )
+		{
+			ctxdata.pythonScripts.push_back(str.substr(std::string("--python-plugin=").length()));
+			processed = true;
+		}
+		else if( boost::starts_with(str, "--pythonplugin=") )	// option renamed in order to have a consistent naming schema, keep for backwards compatibility
 		{
 			ctxdata.pythonScripts.push_back(str.substr(std::string("--pythonplugin=").length()));
 			processed = true;
 		}
-		else if( boost::starts_with(str, "--pythonarg=") )
+		else if( boost::starts_with(str, "--python-main=") )
+		{
+			ctx.config.setStringOption("PythonMain", str.substr(std::string("--python-main=").length()));
+			ctx.config.setOption("HavePythonMain", 1);
+			processed = true;
+		}
+		else if( boost::starts_with(str, "--pythonmain=") )	// option renamed in order to have a consistent naming schema, keep for backwards compatibility
+		{
+			ctx.config.setStringOption("PythonMain", str.substr(std::string("--pythonmain=").length()));
+			ctx.config.setOption("HavePythonMain", 1);
+			processed = true;
+		}
+		else if( boost::starts_with(str, "--python-arg=") )
+		{
+			ctxdata.commandlineArguments.push_back(str.substr(std::string("--python-arg=").length()));
+			processed = true;
+		}
+		else if( boost::starts_with(str, "--pythonarg=") )	// option renamed in order to have a consistent naming schema, keep for backwards compatibility
 		{
 			ctxdata.commandlineArguments.push_back(str.substr(std::string("--pythonarg=").length()));
 			processed = true;

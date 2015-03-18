@@ -5,6 +5,8 @@ agg2.hex agg2.out --solver=dlv
 agg4.hex agg4.out --nofacts --solver=dlv
 weak1.hex weak1.out --solver=dlv --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=dlv --strongnegation-enable --weak-enable
+weak3.hex weak3.out --solver=dlv --strongnegation-enable --forcegc --weak-enable
+weak4.hex weak4.out --solver=dlv --strongnegation-enable --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=dlv
 builtin_safety1.hex builtin_safety1.stderr --solver=dlv
 builtin_safety1a.hex builtin_safety1a.stderr --solver=dlv
@@ -76,7 +78,7 @@ query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious 
 query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all --solver=dlv
 query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave --solver=dlv
 query_hex_nonground1.hex no_model.out --query-enable --query-cautious --solver=dlv
-rec_agg_bug1.hex rec_agg_bug1.stderr --solver=dlv --aggregate-enable=false
+rec_agg_bug1.hex rec_agg_bug1.stderr --solver=dlv
 safety1.hex safety1.stderr --solver=dlv
 safety2.hex safety2.stderr --solver=dlv
 simple1.hex simple1.out --solver=dlv

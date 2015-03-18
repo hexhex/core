@@ -133,6 +133,7 @@ libdlvhex2_aspsolver_la_SOURCES = \
 libdlvhex2_internalplugins_la_SOURCES = \
     AggregatePlugin.cpp \
     ChoicePlugin.cpp \
+    ConditionalLiteralPlugin.cpp \
     HigherOrderPlugin.cpp \
     ManualEvalHeuristicsPlugin.cpp \
     PythonPlugin.cpp \

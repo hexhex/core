@@ -583,6 +583,82 @@ asp.update();
 #endif
 }
 
+void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
+
+	DBGLOG(DBG, "Preparing minimize constraints");
+
+	// one minimize statement for each level
+	std::vector<Clasp::WeightLitVec> minimizeStatements;
+#ifndef NDEBUG
+	std::vector<std::vector<IDAddress> > minimizeStatementsHex;
+#endif
+
+	// construct the minimize statements for each level
+	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+	while (en < en_end){
+		const OrdinaryAtom& weightAtom = reg->ogatoms.getByAddress(*en);
+		if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
+			int level = weightAtom.tuple[2].address;
+			while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
+			minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(*en), weightAtom.tuple[1].address));
+#ifndef NDEBUG
+			while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
+			minimizeStatementsHex[level - 1].push_back(*en);
+#endif
+		}
+		en++;
+	}
+	BOOST_FOREACH (ID ruleID, p.getGroundProgram().idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		// check if this is a weight rule
+		if (rule.head.size() == 1){
+			const OrdinaryAtom& weightAtom = reg->ogatoms.getByID(rule.head[0]);
+			if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
+				int level = weightAtom.tuple[2].address;
+				while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
+				minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(rule.head[0].address), weightAtom.tuple[1].address));
+#ifndef NDEBUG
+				while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
+				minimizeStatementsHex[level - 1].push_back(rule.head[0].address);
+#endif
+			}
+		}
+	}
+
+	// add the minimize statements to clasp
+	for (int level = minimizeStatements.size() - 1; level >= 0; --level){
+#ifndef NDEBUG
+		std::stringstream ss;
+		ss << "Minimize statement at level " << level << ": ";
+		for (int l = 0; l < minimizeStatementsHex[level].size(); ++l){
+			ss << (l > 0 ? ", " : "") << minimizeStatementsHex[level][l];
+		}
+		DBGLOG(DBG, ss.str());
+#endif
+		minb.addRule(minimizeStatements[level]);
+	}
+
+	// if we don't have minimize statements, then we don't need a minimize constraint (this is just an optimization)
+	if (minimizeStatements.size() > 0){
+		DBGLOG(DBG, "Constructing minimize constraint");
+		sharedMinimizeData = minb.build(claspctx);
+		minc = 0;
+		if (!!sharedMinimizeData){
+			DBGLOG(DBG, "Setting minimize mode");
+			sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
+
+			DBGLOG(DBG, "Attaching minimize constraint to clasp");
+			minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+
+			assert(!!minc);
+		}
+	}else{
+		DBGLOG(DBG, "Do not need minimize constraint");
+	}
+}
+
 void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen){
 
 	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
@@ -659,6 +735,8 @@ void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 
 void ClaspSolver::shutdownClasp(){
 	if (!!ep.get()) ep.reset();
+	if (minc) { minc->destroy(claspctx.master(), true);  } 
+	if (sharedMinimizeData)   { sharedMinimizeData->release(); }
 	resetAndResizeClaspToHex(0);
 }
 
@@ -888,7 +966,7 @@ void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 }
 
 Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
-//	DBGLOG(DBG, "Translating HEX address " << addr << " to clasp");
+
 	if (!isMappedToClaspLiteral(addr)){
 		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
 		Clasp::Literal clasplit(c, inverseLits);
@@ -898,9 +976,6 @@ Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool regi
 		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
 #endif
 		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-//		DBGLOG(DBG, "Creating new clasp variable " << hexToClaspSolver[addr].var() << " for HEX address " << addr);
-//	}else{
-//		DBGLOG(DBG, "Mapping to " << hexToClaspSolver[addr].var() << " already exists");
 	}
 	assert(addr < hexToClaspSolver.size());
 	assert(hexToClaspSolver[addr] != noLiteral);
@@ -937,7 +1012,7 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in ASP mode");
@@ -968,6 +1043,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 	updateSymbolTable();
 
+	createMinimizeConstraints(p);
+
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
 	enumerationStarted = false;
@@ -977,7 +1054,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)){
+ : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
 	reg = ctx.registry();
 
 	DBGLOG(DBG, "Configure clasp in SAT mode");
@@ -1056,10 +1133,8 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	
 	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
 	if (!!ep.get()) ep.reset();
-	//if (!!ep.get()) claspctx.master()->removePost(ep.get());
 
 	// Update program
-	//inconsistent |= asp.endProgram();
 	asp.updateProgram();
 
 	// transfer added edb
@@ -1067,6 +1142,9 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
+#ifndef NDEBUG
+		assert ((!reg->ogatoms.getIDByAddress(*en).isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(reg->ogatoms.getIDByAddress(*en)) != 'w') && "weak constraints cannot be added incrementally");
+#endif
 		// redundancy check
 		if (convertHexToClaspSolverLit(*en).var() > 0){
 			// add fact
@@ -1081,6 +1159,10 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 		// redundancy check
 		bool redundant = false;
 		BOOST_FOREACH (ID h, reg->rules.getByID(ruleId).head){
+#ifndef NDEBUG
+			assert ((!h.isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(h) != 'w') && "weak constraints cannot be added incrementally");
+#endif
+
 			if (convertHexToClaspSolverLit(h.address).var() == 0){
 				redundant = true;
 				break;
@@ -1146,7 +1228,6 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
 	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
 	if (!!ep.get()) ep.reset();
 
-//	sat.updateProgram();
 	claspctx.unfreeze();
 
 	// add new variables
@@ -1251,11 +1332,41 @@ void ClaspSolver::addNogood(Nogood ng){
 }
 
 void ClaspSolver::setOptimum(std::vector<int>& optimum){
+	DBGLOG(DBG, "Setting new optimum in clasp");
+
+	if (!minc || !sharedMinimizeData) return;
+
+	// This method helps the reasoner to eliminate non-optimal partial models in advance
+	// by setting the internal upper bound to a given value.
+	//
+	// Warning: A call of this method is just a hint for the reasoner, i.e.,
+	//          it is not guaranteed that the solver will no longer create models with higher cost.
+	//
+	// This is because clasp does not allow to decrease the upper bound if the new bound is violated
+	// by the current assignment. Therefore, the new optimum is only integrated into the clasp instance
+	// if it is compatible with the assignment.
+
+	// transform optimum vector to clasp-internal representation
+	int optlen = optimum.size() - 1; // optimum[0] is unused, but in clasp levels start with 0
+	if (optlen > 0){
+		DBGLOG(DBG, "Transforming optimum (length: " << optlen << ") to clasp-internal representation");
+		Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+		for (int l = 0; l < optlen; ++l){
+			newopt[l] = optimum[optlen - l];
+		}
+		newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
+	
+		DBGLOG(DBG, "Setting optimum");
+		sharedMinimizeData->setOptimum(newopt);
+		DBGLOG(DBG, "Integrating constraint");
+		bool intres = minc->integrate(*claspctx.master());
+		DBGLOG(DBG, "Integration result: " << intres);
+		delete []newopt;
+	}
 }
 
 InterpretationPtr ClaspSolver::getNextModel(){
 
-//	#define ENUMALGODBG(msg) { if (problemType == SAT) { std::cerr << "(" << msg << ")"; } }
 	#define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
 
 	/*
@@ -1415,7 +1526,6 @@ InterpretationPtr ClaspSolver::getNextModel(){
 		// committing symmetric models is only necessary if some variables are frozen
 		// but we still want to get all models
 		nextSolveStep = CommitSymmetricModel;
-//		nextSolveStep = Update;
 	}else{
 		nextSolveStep = ReturnModel;	// we stay in this state until restart
 	}

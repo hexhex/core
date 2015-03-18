@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
 	std::vector<ID> auxRules;
 	depgraph.createDependencies(ctx.idb, auxRules);
 
-	ComponentGraph compgraph(depgraph, ctx.registry());
+	ComponentGraph compgraph(depgraph, ctx, ctx.registry());
 
   // TODO test dependencies (will do manually with graphviz at the moment)
 
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
 BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture) 
 {
   LOG(INFO,"createing compgraph");
-  ComponentGraph compgraph(depgraph, ctx.registry());
+  ComponentGraph compgraph(depgraph, ctx, ctx.registry());
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
@@ -181,7 +181,7 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
 BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxDependencyGraphFixture) 
 {
-	ComponentGraph compgraph(depgraph, ctx.registry());
+	ComponentGraph compgraph(depgraph, ctx, ctx.registry());
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
@@ -203,7 +203,7 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedD,ProgramMCSMedEQProgramCtxDependencyGraphFixt
 {
 	//LOG_REGISTRY_PROGRAM(ctx);
 
-	ComponentGraph compgraph(depgraph, ctx.registry());
+	ComponentGraph compgraph(depgraph, ctx, ctx.registry());
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 

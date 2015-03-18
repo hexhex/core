@@ -50,9 +50,6 @@ public:
 		/** \brief Stores if plugin is enabled. */
 		bool enabled;
 
-		/** \brief Maximum input arity to external atoms (number of variables shared between aggregate function and remaining rule body). */
-		int maxArity;
-
 		/** \brief Supported plugin modes. */
 		enum Mode {
 			/** \brief Rewrting aggregates to external atoms. */

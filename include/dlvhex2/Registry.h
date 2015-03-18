@@ -404,8 +404,9 @@ public:
     * (returns even local variables for aggregates).
     * @param id Atom, literal or term ID.
     * @param out Reference to a set of IDs where all identified variables are to be added.
+    * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
     */
-  void getVariablesInID(ID id, std::set<ID>& out) const;
+  void getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous = false) const;
 
   /**
     * \brief Extracts all variable IDs from \p id.
@@ -415,8 +416,9 @@ public:
     * (returns even local variables for aggregates).
     * @param id Atom, literal or term ID.
     * @return Set of IDs with all identified variables.
+    * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
     */
-  std::set<ID> getVariablesInID(const ID& id) const;
+  std::set<ID> getVariablesInID(const ID& id, bool includeAnonymous = false) const;
 
   /**
     * \brief Retrieves variables in a term, an ordinary atom or the output list of an external atom.
@@ -427,8 +429,9 @@ public:
     * (returns even local variables for aggregates)
     * @param id Atom, literal or term ID.
     * @param out Reference to a set of IDs where all identified variables are to be added.
+    * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
     */
-  void getOutVariablesInID(ID id, std::set<ID>& out) const;
+  void getOutVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous = false) const;
 
   /**
     * \brief Applies getVariablesInID to multiple IDs.
@@ -439,8 +442,9 @@ public:
     * tuple \p t contains IDs of literals or atoms.
     * @param t Vector of IDs of atoms, literals and terms.
     * @param out Reference to the tuple where variable IDs to be added.
+    * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
     */
-  void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
+  void getVariablesInTuple(const Tuple& t, std::set<ID>& out, bool includeAnonymous = false) const;
 
   /**
     * \brief Applies getVariablesInID to multiple IDs.
@@ -451,8 +455,9 @@ public:
     * tuple \p t contains IDs of literals or atoms.
     * @param t Vector of IDs of atoms, literals and terms.
     * @return Set of IDs with all identified variables.
+    * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
     */
-  std::set<ID> getVariablesInTuple(const Tuple& t) const;
+  std::set<ID> getVariablesInTuple(const Tuple& t, bool includeAnonymous = false) const;
 
   /**
     * \brief Recursively substitutes variables in terms.

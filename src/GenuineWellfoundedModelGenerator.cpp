@@ -227,6 +227,12 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				OrdinaryASPProgram program(reg, factory.xidb, dst, factory.ctx.maxint);
 				GenuineSolverPtr solver = GenuineSolver::getInstance(factory.ctx, program);
 
+				// Search space pruning: the idea is to set the current global optimum as upper limit in the solver instance (of this unit) to eliminate interpretations with higher costs.
+				// Note that this optimization is conservative such that the algorithm remains complete even when the program is split. Because costs can be only positive,
+				// if the costs of a partial model are greater than the current global optimum then also any completion of this partial model (by combining it with other units)
+				// would be non-optimal.
+				if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
+
 				// there must be either no or exactly one answer set
 				InterpretationConstPtr model = solver->getNextModel();
 

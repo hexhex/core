@@ -208,10 +208,32 @@ struct DLVHEX_EXPORT AggregateAtom:
   public Atom,
   private ostream_printable<AggregateAtom>
 {
-  /** \brief Variables of the symbolic set (before the colon). */
+  /** \brief Variables of the symbolic set (before the colon).
+    *
+    * All internal components of dlvhex except for the parser and the AggregatePlugin work with this field,
+    * while AggregateAtom::mvariables is only used temporarily for parsing an is later rewritten by AggregatePlugin! */
   Tuple variables;
-  /** \brief Literals in the conjunction of the symbolic set (after the colon). */
+  /** \brief Literals in the conjunction of the symbolic set (after the colon).
+    *
+    * All internal components of dlvhex except for the parser and the AggregatePlugin work with this field,
+    * while AggregateAtom::mliterals is only used temporarily for parsing an is later rewritten by AggregatePlugin! */
   Tuple literals;
+
+  /** \brief Stores the variables in case of multiple symbolic sets (semicolon-separated, see ASP-Core-2 standard).
+    *
+    * Will be processed by AggrgatePlugin and rewritten to an aggregate with a single symbolic set.
+    * Is empty iff mvariables is nonempty and vice versa.
+    *
+    * All internal components of dlvhex except for the parser and the AggregatePlugin work with AggregateAtom::variables only! */
+  std::vector<Tuple> mvariables;
+
+  /** \brief Stores the literals in case of multiple symbolic sets (semicolon-separated, see ASP-Core-2 standard).
+    *
+    * Will be processed by AggrgatePlugin and rewritten to an aggregate with a single symbolic set.
+    * Is empty iff mliterals is nonempty and vice versa.
+    *
+    * All internal components of dlvhex except for the parser and the AggregatePlugin work with AggregateAtom::literals only! */
+  std::vector<Tuple> mliterals;
 
   /**
     * \brief Constructor.
@@ -222,7 +244,7 @@ struct DLVHEX_EXPORT AggregateAtom:
     variables(), literals()
     { assert(ID(kind,0).isAggregateAtom()); }
   /**
-    * \brief Constructor.
+    * \brief Constructor for a single symbolic set.
     *
     * Atom::tuple is used for outer conditions (always contains 5 elements):
     * - tuple[0] = left term or ID_FAIL
@@ -239,6 +261,26 @@ struct DLVHEX_EXPORT AggregateAtom:
     Atom(kind, tuple), variables(variables), literals(literals)
     { assert(ID(kind,0).isAggregateAtom()); assert(tuple.size() == 5);
       assert(!variables.empty()); assert(!literals.empty()); }
+  /**
+    * \brief Constructor for multiple symbolic sets.
+    *
+    * Atom::tuple is used for outer conditions (always contains 5 elements):
+    * - tuple[0] = left term or ID_FAIL
+    * - tuple[1] = left comparator or ID_FAIL
+    * - tuple[2] = aggregation function
+    * - tuple[3] = right comparator or ID_FAIL
+    * - tuple[4] = right term or ID_FAIL
+    * @param kind See Atom::kind.
+    * @param mvariables See AggregateAtom::mvariables.
+    * @param mliterals See AggregateAtom::mliterals.
+    */
+  AggregateAtom(IDKind kind,
+      const Tuple& tuple, const std::vector<Tuple>& mvariables, const std::vector<Tuple>& mliterals):
+    Atom(kind, tuple), mvariables(mvariables), mliterals(mliterals)
+    { assert(ID(kind,0).isAggregateAtom()); assert(tuple.size() == 5);
+      assert(!mvariables.empty()); assert(!mliterals.empty());
+      assert(mvariables.size() == mliterals.size());
+      for (int i = 0; i < mvariables.size(); ++i) { assert(!mvariables[i].empty() && !mliterals[i].empty() ); } }
   std::ostream& print(std::ostream& o) const
     { return o << "AggregateAtom(" << printvector(tuple) << " with vars " <<
         printvector(variables) << " and literals " << printvector(literals) << ")"; }

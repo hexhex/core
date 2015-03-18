@@ -1,0 +1,14 @@
+x.
+y :- x.
+
+d(1). d(2). d(3).
+
+% variable disjunctive heads have different semantics than choice rules
+
+% variable disjunctive head: rule provides only support for one atom
+p(X) : d(X) :- x, y.
+p(1) :- p(2).	% also check if head cycles work
+p(2) :- p(1).
+
+% choice rule: each atom can be individually true or false
+{ q(X) : d(X) } :- x, y.

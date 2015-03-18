@@ -69,6 +69,9 @@ class RuleTable:
 				  BOOST_MULTI_INDEX_MEMBER(Rule,IDKind,kind),
 				  BOOST_MULTI_INDEX_MEMBER(Rule,Tuple,head),
 				  BOOST_MULTI_INDEX_MEMBER(Rule,Tuple,body),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,Tuple,headGuard),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,Tuple,bodyWeightVector),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,ID,bound),
 				  BOOST_MULTI_INDEX_MEMBER(Rule,ID,weight),
 				  BOOST_MULTI_INDEX_MEMBER(Rule,ID,level)
 				>
@@ -156,7 +159,7 @@ ID RuleTable::getIDByElement(const Rule& rule) const throw()
 {
   ReadLock lock(mutex);
   const ElementIndex& sidx = container.get<impl::ElementTag>();
-  ElementIndex::const_iterator it = sidx.find( boost::make_tuple(rule.kind, rule.head, rule.body, rule.weight, rule.level) );
+  ElementIndex::const_iterator it = sidx.find( boost::make_tuple(rule.kind, rule.head, rule.body, rule.headGuard, rule.bodyWeightVector, rule.bound, rule.weight, rule.level) );
   if( it == sidx.end() )
     return ID_FAIL;
   else

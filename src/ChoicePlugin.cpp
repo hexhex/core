@@ -26,7 +26,7 @@
  * @file ChoicePlugin.cpp
  * @author Christoph Redl
  *
- * @brief Support for existential quantifier in the head of rules.
+ * @brief Support for choice literals in rule heads.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,7 +64,7 @@ ChoicePlugin::CtxData::CtxData():
 ChoicePlugin::ChoicePlugin():
 	PluginInterface()
 {
-	setNameVersion("dlvhex-ChoicePlugin[internal]", 2, 0, 0);
+	setNameVersion("dlvhex-choicePlugin[internal]", 2, 0, 0);
 }
 
 ChoicePlugin::~ChoicePlugin()
@@ -230,14 +230,16 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 	{
 		// left bound
 		if (!!boost::fusion::at_c<0>(source)){
-			bound1.tuple.push_back(boost::fusion::at_c<1>(boost::fusion::at_c<0>(source).get()));
+			IDAddress adr = boost::fusion::at_c<1>(boost::fusion::at_c<0>(source).get()).address;
+			bound1.tuple.push_back(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(adr))));
 			bound1.tuple.push_back(boost::fusion::at_c<0>(boost::fusion::at_c<0>(source).get()));
 			bound1.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr)));
 		}
 
 		// left right bound
 		if (!!boost::fusion::at_c<2>(source)){
-			bound2.tuple.push_back(boost::fusion::at_c<0>(boost::fusion::at_c<2>(source).get()));
+			IDAddress adr = boost::fusion::at_c<0>(boost::fusion::at_c<2>(source).get()).address;
+			bound2.tuple.push_back(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(adr))));
 			bound2.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr)));
 			bound2.tuple.push_back(boost::fusion::at_c<1>(boost::fusion::at_c<2>(source).get()));
 		}
@@ -278,11 +280,12 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 			cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
 			cnt.tuple[3] = ID_FAIL;
 			cnt.tuple[4] = ID_FAIL;
+			ID cntID;
 			std::set<ID> vars;
 			reg->getVariablesInID(choiceAtomID, vars);
 			cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
 			cnt.literals.push_back(ID::posLiteralFromAtom(choiceAtomID));
-			ID cntID = reg->aatoms.storeAndGetID(cnt);
+			cntID = reg->aatoms.storeAndGetID(cnt);
 			DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
 			r.body.push_back(ID::posLiteralFromAtom(cntID));
 
@@ -308,7 +311,7 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 		DBGLOG(DBG, "Checking bound 1");
 		ID boundID = reg->batoms.storeAndGetID(bound1);
 		DBGLOG(DBG, "Bound atom 1: " << printToString<RawPrinter>(boundID, reg));
-		r.body.push_back(ID::nafLiteralFromAtom(boundID));
+		r.body.push_back(ID::posLiteralFromAtom(boundID));
 		ID consRuleID = reg->storeRule(r);
 		DBGLOG(DBG, "Choice constraint 1: " << printToString<RawPrinter>(consRuleID, reg));
 		target.push_back(consRuleID);
@@ -318,7 +321,7 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 		DBGLOG(DBG, "Checking bound 2");
 		ID boundID = reg->batoms.storeAndGetID(bound2);
 		DBGLOG(DBG, "Bound atom 2: " << printToString<RawPrinter>(boundID, reg));
-		r.body.push_back(ID::nafLiteralFromAtom(boundID));
+		r.body.push_back(ID::posLiteralFromAtom(boundID));
 		ID consRuleID = reg->storeRule(r);
 		DBGLOG(DBG, "Choice constraint 2: " << printToString<RawPrinter>(consRuleID, reg));
 		target.push_back(consRuleID);
@@ -466,93 +469,6 @@ ChoicePlugin::createParserModules(ProgramCtx& ctx)
 	}
 
 	return ret;
-}
-
-namespace
-{
-
-typedef ChoicePlugin::CtxData CtxData;
-
-class ChoiceRewriter:
-	public PluginRewriter
-{
-private:
-	ChoicePlugin::CtxData& ctxdata;
-public:
-	ChoiceRewriter(ChoicePlugin::CtxData& ctxdata) : ctxdata(ctxdata) {}
-	virtual ~ChoiceRewriter() {}
-
-  virtual void rewrite(ProgramCtx& ctx);
-};
-
-void ChoiceRewriter::rewrite(ProgramCtx& ctx)
-{
-	RegistryPtr reg = ctx.registry();
-
-	std::vector<ID> newIdb;
-	BOOST_FOREACH (ID ruleID, ctx.idb){
-		const Rule& rule = reg->rules.getByID(ruleID);
-
-		Rule newRule(rule.kind);
-		newRule.body = rule.body;
-		bool changed = false;
-		BOOST_FOREACH (ID h, rule.head){
-/*
-			if (ctxdata.existentialAtoms.count(h) > 0){
-				changed = true;
-				const OrdinaryAtom& existsAtom = reg->lookupOrdinaryAtom(h);
-				const OrdinaryAtom& origAtom = reg->lookupOrdinaryAtom(existsAtom.tuple[1]);
-				newRule.head.push_back(existsAtom.tuple[1]);
-
-				newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
-
-				std::set<ID> existentialVariables;
-				for (uint32_t i = 2; i < existsAtom.tuple.size(); ++i){
-					existentialVariables.insert(existsAtom.tuple[i]);
-				}
-
-				// value invention: not existentially quantified variables are input, existentially quantified ones are output
-				ExternalAtom eatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
-				std::stringstream existsStr;
-				existsStr << "exists" << existentialVariables.size();
-				Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, existsStr.str());
-				eatom.predicate = reg->storeTerm(exPred);
-
-				BOOST_FOREACH (ID v, origAtom.tuple){
-					if (v.isTerm() && v.isVariableTerm() && existentialVariables.count(v) == 0){
-						eatom.inputs.push_back(v);
-					}
-					if (v.isTerm() && v.isVariableTerm() && existentialVariables.count(v) > 0){
-						eatom.tuple.push_back(v);
-					}
-				}
-				ID existsAtomID = ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eatom));
-				ctxdata.existentialSimulationAtoms.insert(existsAtomID);
-				newRule.body.push_back(existsAtomID);
-			}else{
-				newRule.head.push_back(h);
-			}
-*/
-		}
-		if (changed){
-			newIdb.push_back(reg->storeRule(newRule));
-		}else{
-			newIdb.push_back(ruleID);
-		}
-	}
-	ctx.idb = newIdb;
-}
-
-} // anonymous namespace
-
-// rewrite program by adding auxiliary query rules
-PluginRewriterPtr ChoicePlugin::createRewriter(ProgramCtx& ctx)
-{
-	ChoicePlugin::CtxData& ctxdata = ctx.getPluginData<ChoicePlugin>();
-	if( !ctxdata.enabled )
-		return PluginRewriterPtr();
-
-	return PluginRewriterPtr(new ChoiceRewriter(ctxdata));
 }
 
 std::vector<PluginAtomPtr> ChoicePlugin::createAtoms(ProgramCtx& ctx) const{

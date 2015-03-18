@@ -248,6 +248,49 @@ struct DLVHEX_EXPORT ID:
     TERM_BUILTIN_MOD,
   };
 
+  /** \brief Reverses a binary builtin operator.
+    *
+    * Example: < is converted to >, <= is converted to >=.
+    * @param op Binary TermBuiltinAddress.
+    * @return Reversed \p op; allows for swapping the operands in a builtin atom. */
+  static inline IDAddress reverseBinaryOperator(IDAddress op)
+  {
+    // reverse operator if necessary (< switches with >, <= switches with >=)
+    switch(static_cast<IDAddress>(op))
+    {
+    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GT;
+    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GE;
+    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LT;
+    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LE;
+    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_EQ;
+    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_NE;
+    default:
+      return op;
+    }
+  }
+
+  /** \brief Negates a binary builtin operator.
+    *
+    * Allows for optimizing negation away.
+    * Example: < is negated to >=, <= is converted to >.
+    * @param op Binary TermBuiltinAddress.
+    * @return Negated \p op; any atom using the original operator is true iff the one using the returned operator instead if false and vice versa. */
+  static inline IDAddress negateBinaryOperator(IDAddress op)
+  {
+    // reverse operator if necessary (< switches with >, <= switches with >=)
+    switch(static_cast<IDAddress>(op))
+    {
+    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GE;
+    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GT;
+    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LE;
+    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LT;
+    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_NE;
+    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_EQ;
+    default:
+      return op;
+    }
+  }
+
   /**
     * \brief Constructs an integer ID.
     * @param i Input integer.

@@ -479,6 +479,13 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 						remainingbodyvars.begin(), remainingbodyvars.end(),
 						safevars.begin(), safevars.end(),
 						inserter);
+
+#ifndef NDEBUG
+				std::stringstream ss;
+				BOOST_FOREACH (ID var, unsafeBodyVars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+				DBGLOG(DBG, "Found the following set of unsafe body variables: " << ss.str());
+#endif
+
 				if (!throwOnUnsafeVariables) return unsafeBodyVars;
 				else throw SyntaxError("Rule not safe (body): "
 						"'" + printToString<RawPrinter>(idrule, reg) + "': "
@@ -510,6 +517,11 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 				Tuple headGuard(posheadguard.begin(), posheadguard.end());
 				reg->getVariablesInTuple(rule.headGuard, safevars);
 			}
+#ifndef NDEBUG
+			std::stringstream ss;
+			BOOST_FOREACH (ID var, safevars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+			DBGLOG(DBG, "Found the following set of safe variables: " << ss.str());
+#endif
 
 			// get all head guard variables
 			std::set<ID> headguardvars;
@@ -525,6 +537,11 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 					inserter);
 
 			if (!unsafeHeadGuardVars.empty()){
+#ifndef NDEBUG
+				std::stringstream ss;
+				BOOST_FOREACH (ID var, unsafeHeadGuardVars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+				DBGLOG(DBG, "Found the following set of unsafe head guard variables: " << ss.str());
+#endif
 				if (!throwOnUnsafeVariables) return unsafeHeadGuardVars;
 				else throw SyntaxError("Rule not safe (head guard): "
 						"'" + printToString<RawPrinter>(idrule, reg) + "': "
@@ -535,7 +552,6 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 						"unsafe variables: " +
 						printManyToString<RawPrinter>(Tuple(unsafeHeadGuardVars.begin(), unsafeHeadGuardVars.end()), ", ", reg));
 			}
-
 		}
 
 		// if we are here the body is safe -> check head
@@ -555,6 +571,11 @@ SafetyChecker::checkSafety (bool throwOnUnsafeVariables) const throw (SyntaxErro
 		// report unsafe if unsafe
 		if( !unsafeHeadVars.empty() )
 		{
+#ifndef NDEBUG
+			std::stringstream ss;
+			BOOST_FOREACH (ID var, unsafeHeadVars) { ss << printToString<RawPrinter>(var, reg) << " "; }
+			DBGLOG(DBG, "Found the following set of unsafe head variables: " << ss.str());
+#endif
 			if (!throwOnUnsafeVariables) return unsafeHeadVars;
 			else throw SyntaxError("Rule not safe (head): "
 					"'" + printToString<RawPrinter>(idrule, reg) + "': "

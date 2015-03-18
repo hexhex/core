@@ -16,6 +16,7 @@ pkginclude_HEADERS = \
   Benchmarking.h \
   ChoicePlugin.h \
   ClaspSolver.h \
+  ConditionalLiteralPlugin.h \
   CDNLSolver.h \
   BuiltinAtomTable.h \
   CAUAlgorithms.h \

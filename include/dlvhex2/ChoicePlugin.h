@@ -26,11 +26,11 @@
  * @file ChoicePlugin.h
  * @author Christoph Redl
  *
- * @brief Support for existential quantifier in the head of rules
+ * @brief Support for choice literals in rule heads.
  */
 
-#ifndef EXISTS_PLUGIN__HPP_INCLUDED_
-#define EXISTS_PLUGIN__HPP_INCLUDED_
+#ifndef CHOICE_PLUGIN__HPP_INCLUDED_
+#define CHOICE_PLUGIN__HPP_INCLUDED_
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/PluginInterface.h"
@@ -72,9 +72,6 @@ public:
 
   // create parser modules that extend and the basic hex grammar
   virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
-
-  // rewrite program by adding auxiliary constraints
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
   // plugin atoms
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;

@@ -289,7 +289,9 @@ struct DLVHEX_EXPORT HexGrammarBase
     bodyAtom, bodyLiteral, headAtom, rule, constraint, weakconstraint;
   typename Rule<std::vector<ID> >::type
     terms, preds, predList;
-  typename Rule<boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> > >::type
+  typename Rule<boost::fusion::vector2<std::vector<ID>, boost::optional<std::vector<ID> > > >::type
+    symbolicSet;
+  typename Rule<boost::fusion::vector2<ID, std::vector<boost::fusion::vector2<std::vector<ID>, boost::optional<std::vector<ID> > > > > >::type
     aggregateTerm;
   // rules that are extended by modules
   typename Rule<ID>::type

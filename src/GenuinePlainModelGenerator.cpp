@@ -265,6 +265,11 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	RegistryPtr reg = factory.ctx.registry();
 
+	// Search space pruning: the idea is to set the current global optimum as upper limit in the solver instance (of this unit) to eliminate interpretations with higher costs.
+	// Note that this optimization is conservative such that the algorithm remains complete even when the program is split. Because costs can be only positive,
+	// if the costs of a partial model are greater than the current global optimum then also any completion of this partial model (by combining it with other units)
+	// would be non-optimal.
+	if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
 	InterpretationPtr modelCandidate = solver->getNextModel();
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());

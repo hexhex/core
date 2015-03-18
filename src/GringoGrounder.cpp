@@ -59,40 +59,6 @@ using dlvhex::ID;
 # define GPDBGLOG(a,b) do { } while(false);
 #endif
 
-namespace
-{
-  dlvhex::IDAddress reverseBinaryOperator(dlvhex::IDAddress op)
-  {
-    // reverse operator if necessary (< switches with >, <= switches with >=)
-    switch(static_cast<dlvhex::IDAddress>(op))
-    {
-    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GT;
-    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GE;
-    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LT;
-    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LE;
-    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_EQ;
-    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_NE;
-    default:
-      return op;
-    }
-  }
-  dlvhex::IDAddress negateBinaryOperator(dlvhex::IDAddress op)
-  {
-    // reverse operator if necessary (< switches with >, <= switches with >=)
-    switch(static_cast<dlvhex::IDAddress>(op))
-    {
-    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GE;
-    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GT;
-    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LE;
-    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LT;
-    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_NE;
-    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_EQ;
-    default:
-      return op;
-    }
-  }
-}
-
 DLVHEX_NAMESPACE_BEGIN
 
 void GringoGrounder::Printer::printRule(ID id){
@@ -123,11 +89,7 @@ void GringoGrounder::Printer::printRule(ID id){
 	if( !r.body.empty() )
 	{
 		bool first = true;
-		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
-//			// body contains also the head guard at the end, which needs to be skipped here
-//			if (litIndex == r.body.size() - r.headGuard.size()) break;
-
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms
 			if (b.isBuiltinAtom()){
@@ -142,7 +104,7 @@ void GringoGrounder::Printer::printRule(ID id){
 					BuiltinAtom bi2 = bi;
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
-					bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
+					bi2.tuple[0].address = ID::reverseBinaryOperator(bi2.tuple[0].address);
 					if (first) {
 						out << " :- ";
 					}else{
@@ -160,9 +122,8 @@ void GringoGrounder::Printer::printRule(ID id){
 				out << ", ";
 			}
 			first = false;
-			print(b);
 
-			litIndex++;
+			print(b);
 		}
 	}
 	out << ".";
@@ -177,6 +138,10 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	// 4. #agg{...} <= u
 	const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
+	// skipping the domain predicate is only possible when both bounds are specified and equal
+	bool assignment =	( aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+			||	( aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) );
+
 	ID lowerbound, upperbound;
 	// 1. l <= #agg{...} <= u
 	if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
@@ -184,13 +149,13 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		lowerbound = aatom.tuple[0];
 		upperbound = aatom.tuple[4];
 		// gringo expects a domain predicate: use #int
-		if (lowerbound.isVariableTerm()){
+		if (!assignment && lowerbound.isVariableTerm()){
 			print(intPred);
 			out << "(";
 			print(lowerbound);
 			out << "), ";
 		}
-		if (upperbound.isVariableTerm()){
+		if (!assignment && upperbound.isVariableTerm()){
 			print(intPred);
 			out << "(";
 			print(upperbound);
@@ -202,7 +167,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 		lowerbound = aatom.tuple[0];
 		upperbound = aatom.tuple[0];
 		// gringo expects a domain predicate: use #int
-		if (lowerbound.isVariableTerm()){
+		if (!assignment && lowerbound.isVariableTerm()){
 			print(intPred);
 			out << "(";
 			print(lowerbound);
@@ -213,7 +178,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	   	aatom.tuple[4] == ID_FAIL){
 		lowerbound = aatom.tuple[0];
 		// gringo expects a domain predicate: use #int
-		if (lowerbound.isVariableTerm()){
+		if (!assignment && lowerbound.isVariableTerm()){
 			print(intPred);
 			out << "(";
 			print(lowerbound);
@@ -224,7 +189,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	   	aatom.tuple[4] != ID_FAIL){
 		upperbound = aatom.tuple[4];
 		// gringo expects a domain predicate: use #int
-		if (upperbound.isVariableTerm()){
+		if (!assignment && upperbound.isVariableTerm()){
 			print(intPred);
 			out << "(";
 			print(upperbound);
@@ -236,14 +201,30 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
 
 	if (id.isLiteral() && id.isNaf()) out << "not ";
-	if(lowerbound != ID_FAIL) print(lowerbound);
-	print(aatom.tuple[2]);
-	out << "{";
-	printmany(aatom.variables, ",");
-	out << ":";
-	printmany(aatom.literals, ",");
-	out << "}";
-	if(upperbound != ID_FAIL) print(upperbound);
+
+	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGAVG)){
+		throw PluginError("Aggregate #avg is unsupported in Gringo backend");
+	}
+
+	if (assignment){
+		print(lowerbound);
+		out << "=";
+		print(aatom.tuple[2]);
+		out << "{";
+		printmany(aatom.variables, ",");
+		out << ":";
+		printmany(aatom.literals, ",");
+		out << "}";
+	}else{
+		if(lowerbound != ID_FAIL) print(lowerbound);
+		print(aatom.tuple[2]);
+		out << "{";
+		printmany(aatom.variables, ",");
+		out << ":";
+		printmany(aatom.literals, ",");
+		out << "}";
+		if(upperbound != ID_FAIL) print(upperbound);
+	}
 }
 
 void GringoGrounder::Printer::printInt(ID id){
@@ -262,7 +243,7 @@ void GringoGrounder::Printer::print(ID id){
 	}else if(id.isNaf() && id.isLiteral() && id.isBuiltinAtom()){
 		const BuiltinAtom& bi = registry->batoms.getByID(id);
 		print(bi.tuple[1]);
-		print(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(negateBinaryOperator(bi.tuple[0].address))));
+		print(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(bi.tuple[0].address))));
 		print(bi.tuple[2]);
 	}else{
 		Base::print(id);
@@ -340,6 +321,7 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 			case LParseRule::Weight:
 				r.kind |= ID::SUBKIND_RULE_WEIGHT;
 				BOOST_FOREACH (uint32_t w, lpr.weights) r.bodyWeightVector.push_back(ID::termFromInteger(w));
+				DBGLOG(DBG, "Converting a weight rule with bound " << lpr.bound);
 				r.bound = ID::termFromInteger(lpr.bound);
 				// do not break here!
 			case LParseRule::Regular:
@@ -410,7 +392,7 @@ void GringoGrounder::GroundHexProgramBuilder::transformRules(){
 						if (r.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
 					}
 					ID rid = ctx.registry()->storeRule(r);
-					GPDBGLOG(DBG, "Adding rule " << rid);
+					DBGLOG(DBG, "Adding rule " << rid << ": " << printToString<RawPrinter>(rid, ctx.registry()));
 					groundProgram.idb.push_back(rid);
 				}
 				break;
@@ -440,7 +422,9 @@ void GringoGrounder::GroundHexProgramBuilder::printWeightRule(unsigned head, uns
 		vec.push_back(wl.first);
 		weights.push_back(wl.second);
 	}
+	DBGLOG(DBG, "Found a weight rule with bound " << bound);
 	rules.push_back(LParseRule(head, vec, weights, bound));
+	assert (rules.back().bound == bound && "storing the bound of a weight rule failed");
 }
 
 void GringoGrounder::GroundHexProgramBuilder::printMinimizeRule(const LitWeightVec &body){
@@ -690,37 +674,6 @@ namespace
 		out = "file";
 		return true;
 	}
-
-  dlvhex::IDAddress reverseBinaryOperator(dlvhex::IDAddress op)
-  {
-    // reverse operator if necessary (< switches with >, <= switches with >=)
-    switch(static_cast<dlvhex::IDAddress>(op))
-    {
-    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GT;
-    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GE;
-    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LT;
-    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LE;
-    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_EQ;
-    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_NE;
-    default:
-      return op;
-    }
-  }
-  dlvhex::IDAddress negateBinaryOperator(dlvhex::IDAddress op)
-  {
-    // reverse operator if necessary (< switches with >, <= switches with >=)
-    switch(static_cast<dlvhex::IDAddress>(op))
-    {
-    case ID::TERM_BUILTIN_LT: return ID::TERM_BUILTIN_GE;
-    case ID::TERM_BUILTIN_LE: return ID::TERM_BUILTIN_GT;
-    case ID::TERM_BUILTIN_GT: return ID::TERM_BUILTIN_LE;
-    case ID::TERM_BUILTIN_GE: return ID::TERM_BUILTIN_LT;
-    case ID::TERM_BUILTIN_EQ: return ID::TERM_BUILTIN_NE;
-    case ID::TERM_BUILTIN_NE: return ID::TERM_BUILTIN_EQ;
-    default:
-      return op;
-    }
-  }
 }
 
 DLVHEX_NAMESPACE_BEGIN
@@ -753,11 +706,7 @@ void GringoGrounder::Printer::printRule(ID id){
 	if( !r.body.empty() )
 	{
 		bool first = true;
-		int litIndex = 0;
 		BOOST_FOREACH (ID b, r.body){
-//			// body contains also the head guard at the end, which needs to be skipped here
-//			if (litIndex == r.body.size() - r.headGuard.size()) break;
-
 			// gringo does not accept equalities of type constant=Variable, so reverse them
 			// also remove equlities between equal ground terms
 			if (b.isBuiltinAtom()){
@@ -772,7 +721,7 @@ void GringoGrounder::Printer::printRule(ID id){
 					BuiltinAtom bi2 = bi;
 					bi2.tuple[1] = bi.tuple[2];
 					bi2.tuple[2] = bi.tuple[1];
-          bi2.tuple[0].address = reverseBinaryOperator(bi2.tuple[0].address);
+					bi2.tuple[0].address = ID::reverseBinaryOperator(bi2.tuple[0].address);
 					if (first) {
 						out << " :- ";
 					}else{
@@ -790,15 +739,21 @@ void GringoGrounder::Printer::printRule(ID id){
 				out << ", ";
 			}
 			first = false;
-			print(b);
 
-			litIndex++;
+			// do not print the domain predicate for aggregates in constraints (this could be generalized to non-recursive aggregates!)
+			if (r.head.empty() && b.isAggregateAtom()){
+				printAggregate(b);
+			}
+
+			print(b);
 		}
 	}
 	out << ".";
 }
 
 void GringoGrounder::Printer::printAggregate(ID id){
+
+	// gringo 3 does not support ASP-Core-2 standard, thus we cannot do direct assignments and always need domain predicates!
 
 	// we support aggregates of one of the four kinds:
 	// 1. l <= #agg{...} <= u
@@ -808,7 +763,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
 	ID lowerbound, upperbound;
-  // 1. l <= #agg{...} <= u
+	// 1. l <= #agg{...} <= u
 	if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
 	    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)){
 		lowerbound = aatom.tuple[0];
@@ -866,9 +821,8 @@ void GringoGrounder::Printer::printAggregate(ID id){
 	if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
 
 	if (id.isLiteral() && id.isNaf()) out << "not ";
-  if( lowerbound != ID_FAIL )
-    print(lowerbound);
-  print(aatom.tuple[2]);
+	if (lowerbound != ID_FAIL) print(lowerbound);
+	print(aatom.tuple[2]);
 	const OrdinaryAtom& oatom = registry->lookupOrdinaryAtom(aatom.literals[0]);
 	if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT)){
 		out << "{";
@@ -891,8 +845,7 @@ void GringoGrounder::Printer::printAggregate(ID id){
 
 		out << "]";
 	}
-  if( upperbound != ID_FAIL )
-    print(upperbound);
+	if (upperbound != ID_FAIL) print(upperbound);
 }
 
 void GringoGrounder::Printer::printInt(ID id){
@@ -911,7 +864,7 @@ void GringoGrounder::Printer::print(ID id){
 	}else if(id.isNaf() && id.isLiteral() && id.isBuiltinAtom()){
 		const BuiltinAtom& bi = registry->batoms.getByID(id);
 		print(bi.tuple[1]);
-		print(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(negateBinaryOperator(bi.tuple[0].address))));
+		print(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(bi.tuple[0].address))));
 		print(bi.tuple[2]);
 	}else{
 		Base::print(id);
