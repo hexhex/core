@@ -39,11 +39,15 @@
 #include "dlvhex2/Benchmarking.h"
 #include <boost/foreach.hpp>
 #include <iostream>
+#include <set>
 #include <boost/thread/mutex.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
 namespace benchmark
+{
+
+namespace simple
 {
 
 BenchmarkController::Stat::Stat(const std::string& name):
@@ -183,6 +187,205 @@ void BenchmarkController::snapshot(const std::string& fromstr, const std::string
 	ID idto = getInstrumentationID(tostr);
 	snapshot(idfrom, idto);
 }
+
+} // namespace simple
+
+namespace nestingAware
+{
+
+NestingAwareController::Stat::Stat(const std::string& name, Duration printInterval):
+  name(name), count(0), duration(), pureDuration(),
+  nextPrint(boost::posix_time::microsec_clock::local_time() + printInterval) {
+}
+
+NestingAwareController::Current::Current(ID which):
+  which(which), firststart(), start() {}
+
+// init, display start of benchmarking
+NestingAwareController::NestingAwareController():
+  myID(0), maxID(0), instrumentations(), name2id(), current(), output(&(std::cerr)),
+  printInterval(boost::posix_time::seconds(10.0)) // print continuously all 10 seconds
+{
+  myID = getInstrumentationID("BenchmarkController lifetime");
+  start(myID);
+}
+
+// destruct, output benchmark results
+NestingAwareController::~NestingAwareController()
+{
+  stop(myID);
+  if( !current.empty() && output )
+    // better not throw from destructor
+    (*output) << "destructing NestingAwareController but current is not empty!" << std::endl;
+
+  BOOST_FOREACH(const Stat& st, instrumentations)
+  {
+    printInformation(st);
+  }
+}
+
+namespace
+{
+NestingAwareController* instance = 0;
+}
+
+void NestingAwareController::finish()
+{
+  if( instance )
+    delete instance;
+  instance = 0;
+}
+
+NestingAwareController& NestingAwareController::Instance()
+{
+  if( instance == 0 )
+    instance = new NestingAwareController;
+  return *instance;
+}
+
+// output stream
+void NestingAwareController::setOutput(std::ostream* o)
+{
+  output = o;
+}
+
+// amount of accumulated output (default: each call)
+void NestingAwareController::setPrintInterval(Count skip)
+{
+  // TODO
+}
+
+// get ID or register new one
+ID NestingAwareController::getInstrumentationID(const std::string& name)
+{
+  boost::mutex::scoped_lock lock(mutex);
+  std::map<std::string, ID>::const_iterator it = name2id.find(name);
+  if( it == name2id.end() )
+  {
+    ID newid = maxID;
+    instrumentations.push_back(Stat(name, printInterval));
+    name2id[name] = newid;
+    maxID++;
+    return newid;
+  }
+  else
+  {
+    return it->second;
+  }
+}
+
+void NestingAwareController::suspend(){
+  myID = getInstrumentationID("BMController suspend");
+  start(myID);
+}
+
+void NestingAwareController::resume(){
+  myID = getInstrumentationID("BMController suspend");
+  stop(myID);
+}
+
+std::string NestingAwareController::count(const std::string& name, int width) const
+{
+  std::map<std::string, ID>::const_iterator it = name2id.find(name);
+  if( it == name2id.end() )
+    return "-";
+  benchmark::ID id = it->second;
+  std::ostringstream oss;
+  oss << std::setw(width) << getStat(id).count;
+  return oss.str();
+}
+
+std::string NestingAwareController::duration(const std::string& name, int width) const
+{
+  std::map<std::string, ID>::const_iterator it = name2id.find(name);
+  if( it == name2id.end() )
+    return "-";
+  benchmark::ID id = it->second;
+  std::ostringstream oss;
+  printInSecs(oss, getStat(id).duration, width);
+  return oss.str();
+}
+
+// copy data from one id to another id and call stop() on that other id
+// e.g. do this for several interesting benchmarks at first model
+void NestingAwareController::snapshot(ID id, ID intoID)
+{
+  boost::mutex::scoped_lock lock(mutex);
+  Stat& st = instrumentations[id];
+  Stat& intost = instrumentations[intoID];
+
+  // copy (overwrites old snapshot!)
+
+  Time now = boost::posix_time::microsec_clock::local_time();
+  intost.count = st.count;
+  intost.duration = st.duration;
+  intost.pureDuration = st.pureDuration;
+  if( current.back().which == id ) {
+    // if top level entry in current has which=id then add to pureDuration
+    intost.pureDuration += now - current.back().start;
+  }
+  // find bottom-most level entry in current where which=id and add to duration (if exists)
+  for(unsigned u = 0; u < current.size(); ++u) {
+    if( current[u].which == id ) {
+      intost.duration += now - current[u].firststart;
+      break;
+    }
+  }
+}
+
+void NestingAwareController::debug(const std::string& msg) {
+  std::cerr << msg << ": ";
+  std::set<ID> collected;
+  for(unsigned u = 0; u < current.size(); ++u) {
+    std::cerr << current[u].which << " "; //(f=" << current[u].firststart << "/s=" << current[u].start << ") ";
+    collected.insert(current[u].which);
+  }
+  std::cerr << std::endl;
+  std::cerr << msg << "[ ";
+  //for(std::set<ID>::const_iterator it = collected.begin(); it != collected.end(); ++it) {
+  //  std::cerr << *it << "(d=";
+  //  printInSecs(std::cerr, instrumentations[*it].duration, 1) << "/pd=";
+  //  printInSecs(std::cerr, instrumentations[*it].pureDuration, 1) << ") ";
+  //}
+  for(unsigned u = 0; u < maxID; ++u) {
+    std::cerr << u << "(d=";
+    printInSecs(std::cerr, instrumentations[u].duration, 1) << "/pd=";
+    printInSecs(std::cerr, instrumentations[u].pureDuration, 1) << ") ";
+  }
+  std::cerr << std::endl;
+}
+
+// print information about stat
+void NestingAwareController::printInformation(const Stat& st)
+{
+  if( output )
+  {
+    (*output) <<
+      "BM:" << std::setw(2) << int(&st-instrumentations.data()) << " " << std::setw(30) << st.name <<
+      ": count:" << std::setw(8) << st.count;
+		(*output) << " total:";
+    printInSecs(*output, st.duration, 4) << "s pure:";
+    printInSecs(*output, st.pureDuration, 4) << "s avg:";
+		if( st.count > 0 )
+		{
+			printInSecs(*output, st.duration/st.count, 4) << "s";
+		}
+		else
+		{
+			(*output) << "  -.---s";
+		}
+    (*output) << std::endl;
+  }
+}
+
+void NestingAwareController::snapshot(const std::string& fromstr, const std::string& tostr)
+{
+	ID idfrom = getInstrumentationID(fromstr);
+	ID idto = getInstrumentationID(tostr);
+	snapshot(idfrom, idto);
+}
+
+} // namespace simple
 
 } // namespace benchmark
 
