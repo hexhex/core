@@ -236,12 +236,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bool parse){
 
-	benchmark::BenchmarkController& ctr =
-			benchmark::BenchmarkController::Instance();
-	ctr.suspend();
-
 	DBGLOG(DBG, "Resetting context");
-	pc.config.setOption("NestedHEX", 1);
 	pc.state.reset();
 	pc.modelBuilder.reset();
 	pc.parser.reset();
@@ -312,8 +307,6 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	BOOST_FOREACH (InterpretationPtr intr, spasc->answersets){
 		result.push_back(intr);
 	}
-
-	ctr.resume();
 
 	return result;
 }

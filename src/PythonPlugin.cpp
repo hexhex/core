@@ -575,7 +575,6 @@ boost::python::tuple loadSubprogram(std::string filename) {
 	ip.reset();
 
 	DBGLOG(DBG, "Resetting context");
-	pc.config.setOption("NestedHEX", 1);
 	pc.state.reset();
 	pc.modelBuilder.reset();
 	pc.parser.reset();
