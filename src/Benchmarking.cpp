@@ -1,7 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
- * Copyright (C) 2009, 2010 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schüller
  * Copyright (C) 2011, 2012, 2013 Christoph Redl
  * 
  * This file is part of dlvhex.
@@ -236,6 +236,15 @@ NestingAwareController::~NestingAwareController()
   if( !current.empty() && output )
     // better not throw from destructor
     (*output) << "destructing NestingAwareController but current is not empty!" << std::endl;
+
+  // sort by pure duration, descending
+  class PureSortPredicate {
+    public:
+      static bool isHigher(const Stat& s1, const Stat& s2) {
+        return s1.pureDuration > s2.pureDuration;
+      }
+  };
+  std::sort(instrumentations.begin(), instrumentations.end(), PureSortPredicate::isHigher);
 
   Duration total;
   BOOST_FOREACH(const Stat& st, instrumentations)
