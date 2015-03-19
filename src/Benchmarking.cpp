@@ -246,8 +246,10 @@ NestingAwareController::~NestingAwareController()
   }
   #ifndef NDEBUG
   // to verify if all partial times sum up to the total runtime
-  (*output) << "Sum of pure durations = ";
-  printInSecs(std::cerr, total) << "s." << std::endl;
+  if( output ) {
+    (*output) << "Sum of pure durations = ";
+    printInSecs(std::cerr, total) << "s." << std::endl;
+  }
   #endif
 }
 
