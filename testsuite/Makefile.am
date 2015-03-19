@@ -28,6 +28,7 @@ check-examples:
 	fi
 
 AUTOMATED_TEST_PROGS = \
+  TestBenchmarking \
   TestEvalHeuristic \
   TestComponentGraph \
   TestDependencyGraph \
@@ -141,6 +142,10 @@ TestDependencyGraph_LDADD = $(LDADD_BASE)
 
 TestHexParser_SOURCES = TestHexParser.cpp
 TestHexParser_LDADD = $(LDADD_BASE)
+
+TestBenchmarking_SOURCES = TestBenchmarking.cpp
+TestBenchmarking_CPPFLAGS = -DDLVHEX_BENCHMARK
+TestBenchmarking_LDADD = $(LDADD_BASE)
 
 # TODO why do we need MLP here?
 TestHexParserModule_SOURCES = TestHexParserModule.cpp
