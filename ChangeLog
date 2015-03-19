@@ -1,3 +1,16 @@
+2015-03-19  Peter Schueller <peter.schuller@marmara.edu.tr>
+	* include/dlvhex2/Benchmarking.h: Implementation of nesting-aware
+	benchmarking, which will not measure "pure" times that do not contain
+	any time twice, even if called in nested function calls.
+	* src/Benchmarking.cpp: Likewise.
+	* src/ProgramCtx.cpp: Deactivating suspend of BenchmarkController which
+	is no longer required due to nesting-aware new controller.
+
+2015-03-18  Peter Schueller <peter.schuller@marmara.edu.tr>
+	* src/ProgramCtx.cpp: Removing unused (only-write) "NestedHEX" option.
+	* src/PythonPlugin.cpp: Likewise.
+	* src/dlvhex.cpp: Likewise.
+
 2015-03-12  Christoph Redl <redl@kr.tuwien.ac.at>
 	* src/ClaspSolver.cpp: More efficient implmentation of weak constraints.
 	* include/dlvhex2/ClaspSolver.h: Likewise.
@@ -23,6 +36,21 @@
 2015-03-05  Christoph Redl <redl@kr.tuwien.ac.at>
 	* src/ChoicePlugin.cpp: Implement choice rules.
 	* include/dlvhex2/ChoicePlugin.h: Likewise.
+
+2015-02-15  Peter Schueller <peter.schuller@marmara.edu.tr>
+	* src/PythonPlugin.cpp: Making resetCacheOfPlugins() usable from Python.
+	* src/ProgramCtx.cpp: Likewise.
+	* include/dlvhex2/PythonPlugin.h: Likewise.
+	* include/dlvhex2/ProgramCtx.h: Likewise.
+
+2015-01-28  Peter Schueller <peter.schuller@marmara.edu.tr>
+	* src/PythonPlugin.cpp: Making sys.argv usable in python 3.
+
+2014-11-21  Peter Schueller <peter.schuller@marmara.edu.tr>
+	* src/PythonPlugin.cpp: Making sys.argv usable in python 2.
+
+2014-11-10  Peter Schueller <peter.schuller@marmara.edu.tr>
+	* include/dlvhex2/HexGrammar.tcc: Allowing \" to escape " in strings.
 
 2014-09-17  Christoph Redl <redl@kr.tuwien.ac.at>
 	* src/PythonPlugin.cpp: Add support for subprogram evaluation.
