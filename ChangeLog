@@ -1,5 +1,5 @@
 2015-03-12  Christoph Redl <redl@kr.tuwien.ac.at>
-	* src/ClaspSolver.cpp: More efficient impelemtnation of weak constraints.
+	* src/ClaspSolver.cpp: More efficient implmentation of weak constraints.
 	* include/dlvhex2/ClaspSolver.h: Likewise.
 	* src/AggregatePlugin.cpp: Likewise.
 	* include/dlvhex2/AggregatePlugin.h: Likewise.
