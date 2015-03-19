@@ -237,10 +237,18 @@ NestingAwareController::~NestingAwareController()
     // better not throw from destructor
     (*output) << "destructing NestingAwareController but current is not empty!" << std::endl;
 
+  Duration total;
   BOOST_FOREACH(const Stat& st, instrumentations)
   {
     printInformation(st);
+    if( st.count != 0 ) // this way we do not count snapshot "... to first model" pure durations
+      total += st.pureDuration;
   }
+  #ifndef NDEBUG
+  // to verify if all partial times sum up to the total runtime
+  (*output) << "Sum of pure durations = ";
+  printInSecs(std::cerr, total) << "s." << std::endl;
+  #endif
 }
 
 namespace
@@ -382,7 +390,8 @@ void NestingAwareController::printInformation(const Stat& st)
   if( output )
   {
     (*output) <<
-      "BM:" << std::setw(2) << int(&st-instrumentations.data()) << " " << std::setw(30) << st.name <<
+      "BM:" << // std::setw(2) << int(&st-instrumentations.data()) << " " <<
+      std::setw(30) << st.name <<
       ": count:" << std::setw(8) << st.count;
 		(*output) << " total:";
     printInSecs(*output, st.duration, 4) << "s pure:";

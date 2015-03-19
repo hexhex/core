@@ -104,8 +104,8 @@
 //     was the last activated one (uses a stack of instrumentalizations)
 //   + gives more intuitive timing results
 
-#define DLVHEX_BENCHMARK_SIMPLE
-//#define DLVHEX_BENCHMARK_NESTINGAWARE
+//#define DLVHEX_BENCHMARK_SIMPLE
+#define DLVHEX_BENCHMARK_NESTINGAWARE
 
 #if defined(DLVHEX_BENCHMARK)
 # define DLVHEX_BENCHMARK_REGISTER(sid,msg) \
@@ -781,10 +781,17 @@ void NestingAwareController::stop(ID id, bool count)
 
   // update overall duration, but only if not nested with itself
   // (this way neither pure nor overall duration is counted twice)
-  if( st.level == 1 )
-    st.duration += now - c.firststart;
-  if( count )
+  Duration thisDuration;
+  if( st.level == 1 ) {
+    // the continuously logged duration must be non-pure, otherwise we need
+    // to separately accumulate pureDuration since most recent start()
+    thisDuration = now - c.firststart;
+    st.duration += thisDuration;
+  }
+  if( count ) {
     st.count++;
+    printInformationContinous(st, thisDuration);
+  }
 
   // remove current instrumentation
   current.pop_back();
@@ -811,9 +818,9 @@ void NestingAwareController::count(ID id, Count increment)
 
 } // namespace nestingAware
 
-#ifdef DLVHEX_BENCHMARK_SIMPLE
+#if defined(DLVHEX_BENCHMARK_SIMPLE)
   typedef simple::BenchmarkController BenchmarkController;
-#elif DLVHEX_BENCHMARK_NESTINGAWARE
+#elif defined(DLVHEX_BENCHMARK_NESTINGAWARE)
   typedef nestingAware::NestingAwareController BenchmarkController;
 #else
 # error Benchmarking is defined but neither SIMPLE nor NESTINGAWARE is chosen!
