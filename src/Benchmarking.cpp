@@ -349,7 +349,8 @@ std::string NestingAwareController::duration(const std::string& name, int width)
     return "-";
   benchmark::ID id = it->second;
   std::ostringstream oss;
-  printInSecs(oss, getStat(id).duration, width);
+  // we return pure duration as it is the purpose of NestingAwareController
+  printInSecs(oss, getStat(id).pureDuration, width);
   return oss.str();
 }
 
