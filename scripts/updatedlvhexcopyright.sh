@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ $# -le 2 ]
 then
@@ -13,8 +13,11 @@ do
 	echo $file
 	mod=1
 	IFS=$'\n'
+	echo "" > tmp
 	cat $file | while read -r line
 	do
+		echo "$line"
+
 		if [ $mod -eq 1 ]
 		then
 			echo $line | grep -q " * Copyright (C)"
