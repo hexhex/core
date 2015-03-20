@@ -1165,16 +1165,16 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = (qi::lit("#maxint") > qi::lit('=') > qi::ulong_ >> qi::lit('.') > qi::eps)
         [ Sem::maxint(sem) ];
   toplevel
-    = (rule > qi::eps)
+    = (toplevelExt > qi::eps)
+        [ Sem::ignoreAndWarnIfNotFail(sem) ]
+    | (rule > qi::eps)
         [ Sem::add(sem) ]
     | (constraint > qi::eps)
         [ Sem::add(sem) ]
     | (weakconstraint > qi::eps)
         [ Sem::add(sem) ]
     | (mlpModuleHeader > qi::eps)
-    | (toplevelBuiltin > qi::eps)
-    | (toplevelExt > qi::eps)
-        [ Sem::ignoreAndWarnIfNotFail(sem) ];
+    | (toplevelBuiltin > qi::eps);
   // the root rule
   start
     = *(toplevel);
