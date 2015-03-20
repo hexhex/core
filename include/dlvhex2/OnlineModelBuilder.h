@@ -36,7 +36,6 @@
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ModelGenerator.h"
 #include "dlvhex2/ModelBuilder.h"
-#include "dlvhex2/AsynchronousModelGenerator.h"
 
 #include <iomanip>
 
@@ -791,9 +790,7 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
     // mgf is of type ModelGeneratorFactory::Ptr
     LOG(MODELB,"creating model generator");
     mbprops.currentmg =
-//      BaseModelGenerator::Ptr(new AsynchronousModelGenerator(input, 
         eg.propsOf(u).mgf->createModelGenerator(input)
-//      ))
       ;
   }
 

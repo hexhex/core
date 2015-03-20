@@ -49,7 +49,6 @@ libdlvhex2_base_la_SOURCES = \
     AnnotatedGroundProgram.cpp \
     AnswerSetPrinterCallback.cpp \
     ASPSolverManager.cpp \
-    AsynchronousModelGenerator.cpp \
     Atoms.cpp \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
