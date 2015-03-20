@@ -13,11 +13,9 @@ do
 	echo $file
 	mod=1
 	IFS=$'\n'
-	echo "" > tmp
+	rm tmp 2>/dev/null
 	cat $file | while read -r line
 	do
-		echo "$line"
-
 		if [ $mod -eq 1 ]
 		then
 			echo $line | grep -q " * Copyright (C)"

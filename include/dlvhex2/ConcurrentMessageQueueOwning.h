@@ -1,5 +1,5 @@
 /* DMCS -- Distributed Nonmonotonic Multi-Context Systems.
- * Copyright (C) 2009, 2010 Minh Dao-Tran, Thomas Krennwallner
+ * Copyright (C) 2006-2015 Thomas Krennwallner
  * 
  * This file is part of DMCS.
  *
