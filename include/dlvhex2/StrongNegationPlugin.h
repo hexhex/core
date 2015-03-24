@@ -34,6 +34,7 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/PluginInterface.h"
+#include <set>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -50,8 +51,8 @@ public:
     /** \brief Stores if plugin is enabled. */
     bool enabled;
 
-    // predicate constants which were encountered in negative form and their arity
-    typedef std::map<ID,unsigned> PredicateArityMap;
+    // predicate constants which were encountered in negative form and their arities (the same predicate may occur with multiple arities)
+    typedef std::map<ID,std::set<unsigned> > PredicateArityMap;
     /** \brief Stores for each predicate its arity. */
     PredicateArityMap negPredicateArities;
 

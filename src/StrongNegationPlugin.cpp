@@ -217,27 +217,15 @@ struct sem<StrongNegationParserModuleSemantics::stronglyNegatedPrefixAtom>
 		// store predicate with arity (ensure each predicate is used with only one arity)
 		PredicateArityMap::const_iterator it =
 			mgr.ctxdata.negPredicateArities.find(idpred);
-		if( it != mgr.ctxdata.negPredicateArities.end() )
-		{
-			// verify
-			if( it->second != atom.tuple.size() - 1 )
-			{
-				LOG(ERROR,"strongly negated predicate '" <<
-						printToString<RawPrinter>(idpred, reg) <<
-						"' encountered with arity " << it->second <<
-						" before and with arity " << (atom.tuple.size()-1) << " now");
-				throw FatalError("got strongly negated predicate with multiple arities");
-			}
-		}
-		else
+		if( it == mgr.ctxdata.negPredicateArities.end() )
 		{
 			// store as new
-			mgr.ctxdata.negPredicateArities[idpred] = atom.tuple.size() - 1;
 			mgr.ctxdata.negToPos[idnegpred] = idpred;
-			DBGLOG(DBG,"got strongly negated predicate " <<
-					printToString<RawPrinter>(idpred, reg) << "/" <<
-					idpred << " with arity " << atom.tuple.size() - 1);
 		}
+		DBGLOG(DBG,"got strongly negated predicate " <<
+				printToString<RawPrinter>(idpred, reg) << "/" <<
+				idpred << " with arity " << atom.tuple.size() - 1);
+		mgr.ctxdata.negPredicateArities[idpred].insert(atom.tuple.size() - 1);
 
 		// create atom
 		createAtom(reg, atom, target);
@@ -382,77 +370,78 @@ void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 
 		// create atoms
 		const ID idpred = it->first;
-		const unsigned arity = it->second;
-		DBGLOG(DBG,"processing predicate '" <<
-				printToString<RawPrinter>(idpred, reg) << "'/" << idpred <<
-				" with arity " << arity);
+		BOOST_FOREACH (unsigned arity, it->second){
+			DBGLOG(DBG,"processing predicate '" <<
+					printToString<RawPrinter>(idpred, reg) << "'/" << idpred <<
+					" with arity " << arity);
 
-		const ID idnegpred = reg->getAuxiliaryConstantSymbol('s', idpred);
-		ID idatom;
-		ID idnegatom;
-		if( arity == 0 )
-		{
-			// ground atoms
-			OrdinaryAtom predAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYG);
-			predAtom.tuple.push_back(idpred);
-			OrdinaryAtom negpredAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYG |
-					ID::PROPERTY_AUX);
-			negpredAtom.tuple.push_back(idnegpred);
-			idatom = reg->storeOrdinaryGAtom(predAtom);
-			idnegatom = reg->storeOrdinaryGAtom(negpredAtom);
-		}
-		else
-		{
-			// nonground atoms
-			OrdinaryAtom predAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYN);
-			predAtom.tuple.push_back(idpred);
-			OrdinaryAtom negpredAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYN |
-					ID::PROPERTY_AUX);
-			negpredAtom.tuple.push_back(idnegpred);
-
-			// add variables
-			for(unsigned i = 0; i < arity; ++i)
+			const ID idnegpred = reg->getAuxiliaryConstantSymbol('s', idpred);
+			ID idatom;
+			ID idnegatom;
+			if( arity == 0 )
 			{
-				// create variable
-				std::ostringstream s;
-				s << "X" << i;
-				Term var(
-						ID::MAINKIND_TERM |
-						ID::SUBKIND_TERM_VARIABLE |
-						ID::PROPERTY_AUX,
-						s.str());
-				const ID idvar = reg->storeConstOrVarTerm(var);
-				predAtom.tuple.push_back(idvar);
-				negpredAtom.tuple.push_back(idvar);
+				// ground atoms
+				OrdinaryAtom predAtom(
+						ID::MAINKIND_ATOM |
+						ID::SUBKIND_ATOM_ORDINARYG);
+				predAtom.tuple.push_back(idpred);
+				OrdinaryAtom negpredAtom(
+						ID::MAINKIND_ATOM |
+						ID::SUBKIND_ATOM_ORDINARYG |
+						ID::PROPERTY_AUX);
+				negpredAtom.tuple.push_back(idnegpred);
+				idatom = reg->storeOrdinaryGAtom(predAtom);
+				idnegatom = reg->storeOrdinaryGAtom(negpredAtom);
+			}
+			else
+			{
+				// nonground atoms
+				OrdinaryAtom predAtom(
+						ID::MAINKIND_ATOM |
+						ID::SUBKIND_ATOM_ORDINARYN);
+				predAtom.tuple.push_back(idpred);
+				OrdinaryAtom negpredAtom(
+						ID::MAINKIND_ATOM |
+						ID::SUBKIND_ATOM_ORDINARYN |
+						ID::PROPERTY_AUX);
+				negpredAtom.tuple.push_back(idnegpred);
+
+				// add variables
+				for(unsigned i = 0; i < arity; ++i)
+				{
+					// create variable
+					std::ostringstream s;
+					s << "X" << i;
+					Term var(
+							ID::MAINKIND_TERM |
+							ID::SUBKIND_TERM_VARIABLE |
+							ID::PROPERTY_AUX,
+							s.str());
+					const ID idvar = reg->storeConstOrVarTerm(var);
+					predAtom.tuple.push_back(idvar);
+					negpredAtom.tuple.push_back(idvar);
+				}
+
+				DBGLOG(DBG,"storing auxiliary atom " << predAtom);
+				idatom = reg->storeOrdinaryNAtom(predAtom);
+				DBGLOG(DBG,"storing auxiliary negative atom " << negpredAtom);
+				idnegatom = reg->storeOrdinaryNAtom(negpredAtom);
 			}
 
-			DBGLOG(DBG,"storing auxiliary atom " << predAtom);
-			idatom = reg->storeOrdinaryNAtom(predAtom);
-			DBGLOG(DBG,"storing auxiliary negative atom " << negpredAtom);
-			idnegatom = reg->storeOrdinaryNAtom(negpredAtom);
+			// create constraint
+			Rule r(
+					ID::MAINKIND_RULE |
+					ID::SUBKIND_RULE_CONSTRAINT |
+					ID::PROPERTY_AUX);
+
+			r.body.push_back(ID::posLiteralFromAtom(idatom));
+			r.body.push_back(ID::posLiteralFromAtom(idnegatom));
+
+			ID idcon = reg->storeRule(r);
+			ctx.idb.push_back(idcon);
+			DBGLOG(DBG,"created aux constraint '" <<
+					printToString<RawPrinter>(idcon, reg) << "'");
 		}
-
-		// create constraint
-		Rule r(
-				ID::MAINKIND_RULE |
-				ID::SUBKIND_RULE_CONSTRAINT |
-				ID::PROPERTY_AUX);
-
-		r.body.push_back(ID::posLiteralFromAtom(idatom));
-		r.body.push_back(ID::posLiteralFromAtom(idnegatom));
-
-		ID idcon = reg->storeRule(r);
-		ctx.idb.push_back(idcon);
-		DBGLOG(DBG,"created aux constraint '" <<
-				printToString<RawPrinter>(idcon, reg) << "'");
 	}
 }
 
