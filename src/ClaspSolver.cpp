@@ -1452,12 +1452,15 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				// Note: currentIntr does not necessarily coincide with the last model because clasp
 				// possibly has already continued the search at this point
 				model = InterpretationPtr(new Interpretation(reg));
-				for (Clasp::SymbolTable::const_iterator it = claspctx.symbolTable().begin(); it != claspctx.symbolTable().end(); ++it) {
-					if (modelEnumerator->lastModel().isTrue(it->second.lit) && !it->second.name.empty()) {
-						BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
-							model->setFact(adr);
-						}
-					}
+				// go over all clasp variables
+				for(unsigned claspIndex = 0; claspIndex < claspToHex.size(); ++claspIndex) {
+				  // check if they are true
+				  if( modelEnumerator->lastModel().isTrue(Clasp::Literal::fromIndex(claspIndex)) ) {
+				    // set all corresponding bits
+				    BOOST_FOREACH(IDAddress adr, *claspToHex[claspIndex]){
+				      model->setFact(adr);
+				    }
+				  }
 				}
 				outputProject(model);
 				modelCount++;
