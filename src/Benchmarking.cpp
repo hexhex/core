@@ -233,7 +233,10 @@ NestingAwareController::NestingAwareController():
 NestingAwareController::~NestingAwareController()
 {
   stop(myID);
-  if( !current.empty() && output )
+  if( !output )
+    return;
+
+  if( !current.empty() )
     // better not throw from destructor
     (*output) << "destructing NestingAwareController but current is not empty!" << std::endl;
 
@@ -246,13 +249,36 @@ NestingAwareController::~NestingAwareController()
   };
   std::sort(instrumentations.begin(), instrumentations.end(), PureSortPredicate::isHigher);
 
+  // compute total pure duration
+  // (this is necessary to compute relative durations; relative durations are useful
+  //  in ASP applications with user interaction where no two runs are the same)
   Duration total;
   BOOST_FOREACH(const Stat& st, instrumentations)
   {
-    printInformation(st);
     if( st.count != 0 ) // this way we do not count snapshot "... to first model" pure durations
       total += st.pureDuration;
   }
+
+  // print sorted summary
+  BOOST_FOREACH(const Stat& st, instrumentations)
+  {
+    (*output) <<
+      "BM:" << // std::setw(2) << int(&st-instrumentations.data()) << " " <<
+      std::setw(30) << st.name <<
+      ": count:" << std::setw(8) << st.count;
+    (*output) << " total:";
+    printInSecs(*output, st.duration, 4) << "s pure:";
+    printInSecs(*output, st.pureDuration, 4) << "s";
+    if( st.count > 0 )
+    {
+      float ratio = (1000L * st.pureDuration.total_milliseconds() / total.total_milliseconds())/1000.0;
+      (*output) << " (" << std::setw(4) << std::setprecision(1) << std::fixed << (100.0*ratio) << "%)" << 
+      " avg:";
+      printInSecs(*output, st.duration/st.count, 4) << "s";
+    }
+    (*output) << std::endl;
+  }
+
   #ifndef NDEBUG
   // to verify if all partial times sum up to the total runtime
   if( output ) {
