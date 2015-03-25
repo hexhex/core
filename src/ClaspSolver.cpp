@@ -151,6 +151,8 @@ void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
 
 void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp:callHEXProps");
+
 	DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
 #ifndef NDEBUG
 	// extract model and compare with the incrementally extracted one
@@ -1366,6 +1368,8 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 }
 
 InterpretationPtr ClaspSolver::getNextModel(){
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM (getNextModel)");
 
 	#define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
 
