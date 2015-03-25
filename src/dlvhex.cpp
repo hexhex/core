@@ -43,6 +43,85 @@
  * You will look into the documentation of dlvhex most likely to implement a
  * plugin. In this case, please continue with the \ref pluginframework
  * "Plugin Interface Module (for C++)" or the \ref pythonpluginframework "Python Plugin Interface Module", which contains all necessary information.
+ *
+ * If you are interested in the implementation of the dlvhex core itself, have a look at the \ref systemarchitecture for an overview.
+ *
+ * \defgroup systemarchitecture System Architecture
+ *
+ * This section describes the general dlvhex system architecture.
+ * The following figure gives an overview, the numbers in the decription below refer to the numbers in this figure.
+ * The arcs model both control and data flow within the system.
+ * 
+ * \image html systemarchitecture.png
+ * \image latex systemarchitecture.png
+ *
+ * The evaluation of a HEX-program works as follows.
+ * First, the input program is read from the file system or from standard input
+ * and passed to the <em>evaluation framework</em> (1).
+ * The evaluation framework creates then a <em>generalized evaluation graph</em> depending on the chosen evaluation heuristics,
+ * see EvalGraphBuilder and EvalHeuristicBase.
+ * This results in a number of interconnected <em>generalized evaluation units</em> (see EvalGraph). While the interplay of the units
+ * is managed by the evaluation framework, the individual units are handeled by <em>model generators</em> (see ModelGeneratorBase and FLPModelGeneratorBase)
+ * of different kinds.
+ *
+ * dlvhex historically supports two interfaces for model generators. The legacy non-genuine interface is formed by the classes ASPSolver
+ * and ASPSolverManager. Model generators built on top of this interface do not see the internals of the ordinary ASP solver but communicate
+ * with them only as black boxes. This gives them little room for optimization, but can be used even for ordinary ASP solvers which come in binary format only.
+ * Currently, the interface is used for DLV, which is run in a separate process and communication works via pipes (see Process, DLVProcess, and DLVResultParser).
+ * The more modern genuine interface is mainly formed by the base classes GenuineSolver, GenuineGroundSolver and GenuineGrounder, and
+ * allows for a much tighter coupling of dlvhex with ordinary ASP solvers and lets dlvhex access the solver internals.
+ * This is usually much more efficient due to several possible optimizations.
+ *
+ * Besides the distintion between the non-genuine and genuine interface, there are also multiple model generators for different syntactic fragments of the HEX language.
+ * All types of model generators are implemented for both interfaces.
+ * General program components use a guess-and-check algorithm (see GuessAndCheckModelGenerator and GenuineGuessAndCheckModelGenerator),
+ * while monotonic program components may use a more efficient fixpoint iteration (see WellfoundedModelGenerator and GenuineWellfoundedModelGenerator).
+ * Programs without any cyclic external atoms can use the even simpler PlainModelGenerator or GenuinePlainModelGenerator.
+ * This is realized as different model generators. Each instance of a model generator takes care of a single evaluation unit,
+ * receives <em>input interpretations</em> from the framework (which are either output by predecessor units
+ * or come from the input facts for leaf units), and sends output interpretations back to the framework (2),
+ * which manages the integration of these interpretations to final answer sets.
+
+ * Internally, the model generators make use of a <em>grounder</em> and a <em>solver</em> for ordinary ASP programs. The architecture of
+ * our system is flexible and supports multiple concrete backends which can be plugged in. Currently it supports DLV, Gringo and clasp,
+ * and an internal grounder (see InternalGrounder) and a solver (see InternalGroundASPSolver and InternalGroundDASPSolver) which do not depend on third-party software (mainly for testing purposes);
+ * they use basically the same core algorithms as Gringo and clasp, but without any kind of optimizations.
+ * The reasoner backends Gringo (see GringoGrounder) and clasp (see ClaspSolver) are statically linked to our system, thus no interprocess communication is necessary.
+ * The model generator within the dlvhex core sends a non-ground program to the HEX-grounder,
+ * and receives a ground program (3). The HEX-grounder in turn uses
+ * an ordinary ASP grounder as submodule (4) and accesses external sources to handle value invention (5).
+ * The ground-program is then sent to the solver and answer sets of the ground program (i.e. candidate compatible sets) are returned (6).
+ * Note that the grounder and the solver are separated and communicate only through the model generator, which is in contrast
+ * to previous implementations of dlvhex where the external grounder and solver were used as a single unit (i.e., the
+ * non-ground program was sent and the answer sets were retrieved).
+ * Separating the two units became necessary because the dlvhex core needs access to the ground-program. Otherwise
+ * important structural information, such as cyclicity would be hidden.
+
+ * For genuine solvers, the solver backend makes callbacks to the dlvhex core (where they are caught by a so-called <em>post propagator</em>) once a model has been found
+ * or after unit and unfounded set propagation has been finished.
+ * Once a complete or partial model candidate has arrived at the post propagator,
+ * the dlvhex core performs two operations: <em>compatibility checking with learning</em> (driven by a heuristics, see ExternalAtomEvaluationHeuristics)
+ * and <em>unfounded set detection</em> (also driven by a heuristics, see UnfoundedSetCheckHeuristics).
+ *
+ * Compatibility checks determine whether the guesses of the external atom replacements by the ordinary ASP solver coincide with the actual
+ * semantics of the external source. This check also requires calls to the <em>plugins</em> (see PluginInterface), which implement the external sources.
+ * The input list is sent to the external source and the truth values are returned
+ * to the dlvhex core (9).
+ * Additionally, the external source can use the current complete or partial interpretation
+ * to create new learned nogoods in the sense of conflict-driven learning (see Nogood, NogoodContainer and PluginAtom::retrieve with learning functionality)
+ * in order to enforce early backtracking in case of conflicts or guide the further search; these nogoods are sent back to the post propagator and to the ordinary ASP solver (7).
+ *
+ * <em>Unfounded set checking</em> is used
+ * to find unfounded sets which are not detected by the ordinary ASP solver, i.e., unfounded sets caused by external sources (see UnfoundedSetChecker and UnfoundedSetCheckerManager).
+ * For this purpose, the UFS checker employs a SAT solver (11) (see SATSolver), which can either be clasp or an internal SAT solver (see CDNLSolver).
+ * The UFS checker possibly returns nogoods learned from unfounded sets to the post propagator (8).
+ * UFS detection also needs to call the external sources for guess verification.
+ * The post propagator sends all learned nogoods
+ * (either directly from external sources or from unfounded sets) back to the ordinary ASP solver.
+ * This makes sure that eventually only valid answer sets arrive at the model generator (6).
+
+ * Finally, after the evaluation framework has built the final answer sets from the output interpretations
+ * of the individual evaluation units, they are output to the user (12).
  */
 
 #ifdef HAVE_CONFIG_H
@@ -240,7 +319,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --modelqueuesize=N" << std::endl
       << "                      Size of the model queue, i.e. number of models which can be computed in parallel." << std::endl
       << "                      Default value is 5. The option is only useful for clasp solver." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of dlv, dlvdb, libdlv, libclingo, genuineii, genuinegi, genuineic, genuinegc" << std::endl
       << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
       << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)." << std::endl
       << "     --claspconfig=C  If clasp is used, configure it with C where C is parsed by clasp config parser, or " << std::endl
