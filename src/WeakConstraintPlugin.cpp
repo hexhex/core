@@ -87,13 +87,6 @@ void WeakConstraintPlugin::processOptions(
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
 	ctxdata.enabled = true;
 
-	// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
-	ctx.config.setOption("OptimizationByDlvhex", 1);
-	ctx.config.setOption("OptimizationByBackend", 1);
-
-	// suppress non-optimal models preceeding the optimal ones
-	ctx.config.setOption("OptimizationFilterNonOptimal", 1);
-
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
 	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
@@ -188,6 +181,13 @@ void WeakRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, ID ruleID)
 		// add the new rule to the IDB
 		ID newRuleID = reg->storeRule(newRule);
 		idb.push_back(newRuleID);
+
+		// we have at least one weak constraint --> enable optimization! (for performance reasons, do not enable it if not necessary!)
+		// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
+		ctx.config.setOption("OptimizationByDlvhex", 1);
+		ctx.config.setOption("OptimizationByBackend", 1);
+		// suppress non-optimal models preceeding the optimal ones
+		ctx.config.setOption("OptimizationFilterNonOptimal", 1);
 	}else{
 		idb.push_back(ruleID);
 	}
