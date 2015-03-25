@@ -353,7 +353,7 @@ private:
 	  * @param inverseLits Negates all clasp literals (for backwards compatibility for some benchmarks, as this might influence heuristics).
 	  * @return Clasp solver literal assigned to \p addr.
 	  */
-	Clasp::Literal convertHexToClaspSolverLit(IDAddress addr, bool registerVar = false, bool inverseLits = false);
+	inline Clasp::Literal convertHexToClaspSolverLit(IDAddress addr, bool registerVar = false, bool inverseLits = false);
 	/**
 	  * \brief Translates a HEX ground atom to the corresponding clasp program literal.
 	  * @param addr IDAddress of a HEX ground atom ID.
@@ -361,7 +361,7 @@ private:
 	  * @param inverseLits Negates all clasp literals (for backwards compatibility for some benchmarks, as this might influence heuristics).
 	  * @return Clasp program literal assigned to \p addr.
 	  */
-	Clasp::Literal convertHexToClaspProgramLit(IDAddress addr, bool registerVar = false, bool inverseLits = false);
+	inline Clasp::Literal convertHexToClaspProgramLit(IDAddress addr, bool registerVar = false, bool inverseLits = false);
 	/**
 	  * \brief Translates a clasp solver literal to ground HEX atoms.
 	  *
@@ -369,7 +369,7 @@ private:
 	  * @param index Index of the clasp solver literal.
 	  * @return Pointer to a vector of all HEX atoms mapped to this solver literal.
 	  */
-	const AddressVector* convertClaspSolverLitToHex(int index);
+	inline const AddressVector* convertClaspSolverLitToHex(int index);
 
 	/**
 	  * \brief Output filtering (works on given interpretation and modifies it).

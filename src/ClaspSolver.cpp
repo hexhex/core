@@ -1457,7 +1457,7 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				  // check if they are true
 				  if( modelEnumerator->lastModel().isTrue(Clasp::Literal::fromIndex(claspIndex)) ) {
 				    // set all corresponding bits
-				    BOOST_FOREACH(IDAddress adr, *claspToHex[claspIndex]){
+				    BOOST_FOREACH(IDAddress adr, *convertClaspSolverLitToHex(claspIndex)){
 				      model->setFact(adr);
 				    }
 				  }
