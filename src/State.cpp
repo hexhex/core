@@ -960,75 +960,73 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
         // keep track of the current optimum
         if (modelIsBetter){
-			ctx->currentOptimum = answerset->getWeightVector();
+		ctx->currentOptimum = answerset->getWeightVector();
 #ifndef NDEBUG
-			std::stringstream ss;
-			answerset->printWeightVector(ss);
-			DBGLOG(DBG, "New global optimum: " << ss.str());
+		std::stringstream ss;
+		answerset->printWeightVector(ss);
+		DBGLOG(DBG, "New global optimum: " << ss.str());
 #endif
+	}
+
+	// if dlvhex is allowed to filter, then we can skip this part for models which are known to be non-optimal
+	if (ctx->config.getOption("OptimizationByDlvhex") && modelIsBetter)
+	{
+		// in this block we do not need to count models as we need to enumerate all of them; only afterwards the requested number of best models can be output
+
+		// suppress non-optimal models?
+		if (ctx->config.getOption("OptimizationFilterNonOptimal"))
+		{
+			// yes: cache models and decide at the end upon optimality
+
+			// is there a previous model and the new model is (strictly!) better than the best known one?
+			if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector()))
+			{
+				// new model is better than all previous ones --> clear cache
+				bestModels.clear();
+				bestModels.push_back(answerset);
+
+			// is the model at least not worse?
+			}else if (modelIsBetter){
+				// keep it in addition
+				bestModels.push_back(answerset);
+			}
 		}
-
-		// if dlvhex is allowed to filter, then we can skip this part for models which are known to be non-optimal
-        if (ctx->config.getOption("OptimizationByDlvhex") && modelIsBetter)
-        {
-			// suppress non-optimal models?
-			if (ctx->config.getOption("OptimizationFilterNonOptimal"))
-			{
-				// yes: cache models and decide at the end upon optimality
-
-				// is there a previous model and the new model is (strictly!) better than the best known one?
-				if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector()))
-				{
-					// new model is better than all previous ones --> clear cache
-					bestModels.clear();
-					bestModels.push_back(answerset);
-					mcount = 1;
-
-				// is the model at least not worse?
-				}else if (modelIsBetter){
-					// keep it in addition
-					bestModels.push_back(answerset);
-					mcount++;
-				}
+		else
+		{
+			// we do not need to suppress non-optimal models, therefore we can output models directly
+			if( !didSnapshot ) {
+				snapShotBenchmarking(*ctx);
+				didSnapshot = true;
 			}
-			else
+
+			// process all models directly
+			BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
 			{
-				// we do not need to suppress non-optimal models, therefore we can output models directly
-				if( !didSnapshot ) {
-					snapShotBenchmarking(*ctx);
-					didSnapshot = true;
-				}
-
-				// process all models directly
-				BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-				{
-					bool aborthere = !(*mcb)(answerset);
-					abort |= aborthere;
-					if( aborthere )
-					LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-				}
-
-				mcount++;
+				bool aborthere = !(*mcb)(answerset);
+				abort |= aborthere;
+				if( aborthere )
+				LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
 			}
-		}else if (modelIsBetter){
-          // process all models directly
-          BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-          {
-            bool aborthere = !(*mcb)(answerset);
-            abort |= aborthere;
-            if( aborthere )
-              LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-          }
+		}
+	}else if (modelIsBetter){
+		// we do not optimize here: process all models directly
+		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+		{
+			bool aborthere = !(*mcb)(answerset);
+			abort |= aborthere;
+			if( aborthere )
+			LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+		}
+		mcount++;
+	}
 
-          mcount++;
-        }
+	// if we do not optimize here: stop when desired model count is reached (if we optimize, we cannot abort since the first n models are not necessarily among the best models)
+	if( !ctx->config.getOption("OptimizationByDlvhex") && mcountLimit != 0 && mcount >= mcountLimit )
+	{
+		LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+		break;
+	}
 
-        // stop when desired model count is reached
-        if( mcountLimit != 0 && mcount >= mcountLimit )
-        {
-        LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-        break;
-        }
       }
     }
     while( gotModel && !abort );
@@ -1036,23 +1034,23 @@ EvaluateState::evaluate(ProgramCtx* ctx)
     // process cached models
     if (ctx->config.getOption("OptimizationByDlvhex") && ctx->config.getOption("OptimizationFilterNonOptimal")){
 	  int printedModels = 0;
-      BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
+	  BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
 		// respect model count limit also for cached models
 		if (mcountLimit != 0 && printedModels == mcountLimit){
 			mcount = mcountLimit;
 			break;
 		}
-	    if( !didSnapshot ) {
-	    		snapShotBenchmarking(*ctx);
-	    		didSnapshot = true;
-	    }
-        BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-        {
-          bool aborthere = !(*mcb)(answerset);
-          abort |= aborthere;
-          if( aborthere )
-            LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-        }
+		if( !didSnapshot ) {
+			snapShotBenchmarking(*ctx);
+			didSnapshot = true;
+		}
+		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+		{
+			bool aborthere = !(*mcb)(answerset);
+			abort |= aborthere;
+			if( aborthere )
+			LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+		}
 		printedModels++;
       }
     }
