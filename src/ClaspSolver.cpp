@@ -1430,11 +1430,15 @@ InterpretationPtr ClaspSolver::getNextModel(){
 			case Solve:
 				ENUMALGODBG("sol");
 				DBGLOG(DBG, "Solve for next model");
+				{
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM sol");
+
 				if (solve->solve() == Clasp::value_true){
 					nextSolveStep = CommitModel;
 				}else{
 					model = InterpretationPtr();
 					nextSolveStep = ReturnModel;
+				}
 				}
 				break;
 
@@ -1453,6 +1457,8 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				ENUMALGODBG("ext");
 				DBGLOG(DBG, "Extract model model");
 
+				{
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM ext");
 				// Note: currentIntr does not necessarily coincide with the last model because clasp
 				// possibly has already continued the search at this point
 				model = InterpretationPtr(new Interpretation(reg));
@@ -1466,7 +1472,10 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				    }
 				  }
 				}
+				}
+
 				outputProject(model);
+
 				modelCount++;
 
 #ifndef NDEBUG
