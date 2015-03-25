@@ -162,12 +162,12 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
 	const OrdinaryASPProgram* gprog;
 	GenuineGrounderPtr grounder;
 	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineSolver ctor)");
 		grounder = GenuineGrounder::getInstance(ctx, p, frozen);
 		gprog = &grounder->getGroundProgram();
 	}
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver ctor)");
 	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
@@ -185,7 +185,7 @@ void GenuineSolver::setOptimum(std::vector<int>& optimum){
 }
 
 InterpretationPtr GenuineSolver::getNextModel(){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver gNM)");
 	return solver->getNextModel();
 }
 

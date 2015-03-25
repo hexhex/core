@@ -214,7 +214,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
     {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder out EA GenGnCMG");
 		
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
@@ -244,7 +244,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		// append gidb to xidb
 		program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder GuessPr GenGnCMG");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
 		OrdinaryASPProgram gp = grounder->getGroundProgram();
 
@@ -347,7 +347,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
 	// now we have postprocessed input in postprocessedInput
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "genuine guess and check loop");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (gNM GenGnC)");
 
 	InterpretationPtr modelCandidate;
 	do
