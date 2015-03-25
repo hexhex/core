@@ -243,6 +243,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
       << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
       << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)." << std::endl
+      << "     --claspconfig=C  If clasp is used, configure it with C where C is parsed by clasp config parser, or " << std::endl
+      << "                      C is one of the predefined strings frumpy, jumpy, handy, crafty, or trendy." << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
       << "                         old              : Old dlvhex behavior" << std::endl
       << "                         trivial          : Use component graph as eval graph (much overhead)" << std::endl
