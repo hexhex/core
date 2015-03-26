@@ -262,7 +262,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	if (parse){
 		pc.changeState(StatePtr(new ConvertState));
 	}else{
-		pc.changeState(StatePtr(new SafetyCheckState));
+		pc.changeState(StatePtr(new RewriteEDBIDBState));
 	}
 
 	if (parse){
@@ -274,6 +274,11 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
 	DBGLOG(DBG, "Associate PluginAtom instances with ExternalAtom instances");
 	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
+	if( pc.terminationRequest ) throw GeneralError("associateExtAtomsWithPluginAtoms(1) for subprogram failed");
+	pc.rewriteEDBIDB();
+	if( pc.terminationRequest ) throw GeneralError("rewrite EDBIDB for subprogram failed");
+	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
+	if( pc.terminationRequest ) throw GeneralError("associateExtAtomsWithPluginAtoms(2) for subprogram failed");
 	pc.safetyCheck();
 	if( pc.terminationRequest ) throw GeneralError("Safety check for subprogram failed");
 	pc.liberalSafetyCheck();
