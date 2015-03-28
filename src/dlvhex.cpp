@@ -243,7 +243,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --nofacts        Do not output EDB facts." << std::endl
       << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
       << " -N, --maxint=<num>   Set maximum integer (#maxint in the program takes precedence over the parameter)." << std::endl
-      << " -a, --allmodels      Display all models also under weak constraints." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
       << "     --strongsafety   Applies traditional strong safety criteria (default)." << std::endl
       << "     --liberalsafety  Uses more liberal safety conditions than strong safety." << std::endl
@@ -514,7 +513,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ModelQueueSize", 5);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
-  pctx.config.setOption("WeakAllModels", 0);
   pctx.config.setOption("UseExtAtomCache",1);
   pctx.config.setOption("KeepNamespacePrefix",0);
   pctx.config.setOption("DumpDepGraph",0);
@@ -847,7 +845,6 @@ void processOptionsPrePlugin(
 		{ "verbose", optional_argument, 0, 'v' },
 		{ "filter", required_argument, 0, 'f' },
 		{ "plugindir", required_argument, 0, 'p' },
-		{ "allmodels", no_argument, 0, 'a' },
 		{ "reverse", no_argument, 0, 'r' },
 		{ "heuristics", required_argument, 0, 'e' },
 		{ "modelbuilder", required_argument, 0, 'm' },
@@ -959,10 +956,6 @@ void processOptionsPrePlugin(
 		case 'p':
 			config.optionPlugindir = std::string(optarg);
 			pctx.config.setStringOption("PluginDirs", std::string(optarg));
-			break;
-
-		case 'a':
-			pctx.config.setOption("AllModels", 1);
 			break;
 
 		case 'r':

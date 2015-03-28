@@ -50,6 +50,9 @@ public:
 		/** \brief Stores if plugin is enabled. */
 		bool enabled;
 
+		/** \brief Set to true in order to display all (also non-optimal) models even under weak constraints. */
+		bool allmodels;
+
 		CtxData();
 		virtual ~CtxData() {};
 	};

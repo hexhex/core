@@ -72,7 +72,8 @@ void WeakConstraintPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --weak-enable[=true,false]" << std::endl
-	  << "                      Enable or disable weak constraint plugin (default is enabled).";
+	  << "                      Enable or disable weak constraint plugin (default is enabled)."
+	  << "     --weak-allmodels Display all models also under weak constraints.";
 }
 
 // accepted options: --weak-enable
@@ -86,6 +87,7 @@ void WeakConstraintPlugin::processOptions(
 	DBGLOG(DBG, "WeakConstraintPlugin::processOptions");
 	WeakConstraintPlugin::CtxData& ctxdata = ctx.getPluginData<WeakConstraintPlugin>();
 	ctxdata.enabled = true;
+	ctxdata.allmodels = false;
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -107,6 +109,10 @@ void WeakConstraintPlugin::processOptions(
 				ss << "Unknown --weak-enable option: " << m;
 				throw PluginError(ss.str());
 			}
+			processed = true;
+		}else if( str == "--weak-allmodels" || str == "--allmodels" )	// --allmodels is for backwards compatibility (option was renamed)
+		{
+			ctxdata.allmodels = true;
 			processed = true;
 		}
 
@@ -184,10 +190,10 @@ void WeakRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, ID ruleID)
 
 		// we have at least one weak constraint --> enable optimization! (for performance reasons, do not enable it if not necessary!)
 		// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
-		ctx.config.setOption("OptimizationByDlvhex", 1);
-		ctx.config.setOption("OptimizationByBackend", 1);
+		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationByDlvhex", 1);
+		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationByBackend", 1);
 		// suppress non-optimal models preceeding the optimal ones
-		ctx.config.setOption("OptimizationFilterNonOptimal", 1);
+		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationFilterNonOptimal", 1);
 	}else{
 		idb.push_back(ruleID);
 	}
