@@ -72,36 +72,11 @@ DLVHEX_NAMESPACE_BEGIN
 // ============================== ClauseListenerHeuristic ==============================
 
 void ClaspSolver::ClauseListenerHeuristic::newConstraint(const Clasp::Solver&, const Clasp::Literal* first, Clasp::LitVec::size_type size, Clasp::ConstraintType t){
-	std::stringstream ss;
-	ss << "Learned nogood of type " << t << " and size " << size << ": {";
+	Clasp::LitVec vec;
 	for (int i = 0; i < size; ++i){
-		ss << (i > 0 ? ", " : " ") << (first[i].sign() ? "" : "-") << first[i].var();
+		vec.push_back(first[i]);
 	}
-	ss << " }" << std::endl;
-	ss << "(translations to HEX: {";
-	for (int i = 0; i < size; ++i){
-		ss << (i > 0 ? ", " : " ");
-		ss << "[";
-		std::vector<int> posAndNegLit;
-		posAndNegLit.push_back(first[i].index());
-		Clasp::Literal negLiteral(first[i].var(), !first[i].sign());
-		posAndNegLit.push_back(negLiteral.index());
-		bool firstout = true;
-		bool positive = true;
-		BOOST_FOREACH (int litindex, posAndNegLit){
-			const AddressVector& hexatoms = *cs.convertClaspSolverLitToHex(litindex);
-			BOOST_FOREACH (IDAddress adr, hexatoms){
-				ss << (firstout ? "" : ",");
-				firstout = false;
-				ID litID = (positive ? ID::posLiteralFromAtom(cs.reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(cs.reg->ogatoms.getIDByAddress(adr)));
-				ss << printToString<RawPrinter>(litID, cs.reg);
-			}
-			positive = false;
-		}
-		ss << "]";
-	}
-	ss << " }";
-	std::cout << ss.str() << std::endl;
+	cs.claspClauseToHexNogoods(vec);
 }
 
 // ============================== ExternalPropagator ==============================
@@ -1046,6 +1021,43 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 	}
 }
 
+std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& lits){
+
+	std::stringstream ss;
+	ss << "Extracted nogood of size " << lits.size() << ": {";
+	for (int i = 0; i < lits.size(); ++i){
+		ss << (i > 0 ? ", " : " ") << (lits[i].sign() ? "" : "-") << lits[i].var();
+	}
+	ss << " }" << std::endl;
+	ss << "(translations to HEX: {";
+	for (int i = 0; i < lits.size(); ++i){
+		ss << (i > 0 ? ", " : " ");
+		ss << "[";
+		std::vector<int> posAndNegLit;
+		posAndNegLit.push_back(lits[i].index());
+		Clasp::Literal negLiteral(lits[i].var(), !lits[i].sign());
+		posAndNegLit.push_back(negLiteral.index());
+		bool firstout = true;
+		bool positive = true;
+		BOOST_FOREACH (int litindex, posAndNegLit){
+			const AddressVector& hexatoms = *convertClaspSolverLitToHex(litindex);
+			BOOST_FOREACH (IDAddress adr, hexatoms){
+				ss << (firstout ? "" : ",");
+				firstout = false;
+				ID litID = (positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
+				ss << printToString<RawPrinter>(litID, cs.reg);
+			}
+			positive = false;
+		}
+		ss << "]";
+	}
+	ss << " }";
+	std::cout << ss.str() << std::endl;
+
+	// TODO
+	return std::vector<Nogood>();
+}
+
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
  : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
 	reg = ctx.registry();
@@ -1429,6 +1441,8 @@ InterpretationPtr ClaspSolver::getNextModel(){
 
 	// ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
 	while (nextSolveStep != ReturnModel) {
+		std::cout << "Last conflict";
+		claspClauseToHexNogoods(claspctx.master()->conflictClause());
 		switch (nextSolveStep){
 			case Restart:
 				ENUMALGODBG("ini");

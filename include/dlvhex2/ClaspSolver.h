@@ -403,6 +403,13 @@ protected:
 	/** \brief Type of the current instance. */
 	ProblemType problemType;
 
+	/** \brief Transforms a clasp clause into all corresponding HEX-nogoods.
+	  *
+	  * Note that this translation is in general not unique as multiple HEX-atoms may be mapped to the same clasp literal.
+	  * @param lits Clasp clause to be translated.
+	  * @return All HEX-nogoods corresponding to \p lits. */
+	std::vector<Nogood> claspClauseToHexNogoods(const Clasp::LitVec& lits);
+
 	/** \brief Delegates the call to another heuristics but allows for listening to learned clauses. */
 	class ClauseListenerHeuristic : public Clasp::DecisionHeuristic{
 	private:
