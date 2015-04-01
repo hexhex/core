@@ -76,7 +76,7 @@ void ClaspSolver::ClauseListenerHeuristic::newConstraint(const Clasp::Solver&, c
 	for (int i = 0; i < size; ++i){
 		vec.push_back(first[i]);
 	}
-	cs.claspClauseToHexNogoods(vec);
+//	cs.claspClauseToHexNogoods(vec);
 }
 
 // ============================== ExternalPropagator ==============================
@@ -1441,8 +1441,10 @@ InterpretationPtr ClaspSolver::getNextModel(){
 
 	// ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
 	while (nextSolveStep != ReturnModel) {
-		std::cout << "Last conflict";
-		claspClauseToHexNogoods(claspctx.master()->conflictClause());
+		if (claspctx.master()->conflictClause().size() > 0){
+			std::cout << "Last conflict";
+			claspClauseToHexNogoods(claspctx.master()->conflictClause());
+		}
 		switch (nextSolveStep){
 			case Restart:
 				ENUMALGODBG("ini");
