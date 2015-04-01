@@ -1045,7 +1045,7 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
 				ss << (firstout ? "" : ",");
 				firstout = false;
 				ID litID = (positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
-				ss << printToString<RawPrinter>(litID, cs.reg);
+				ss << printToString<RawPrinter>(litID, reg);
 			}
 			positive = false;
 		}
