@@ -73,6 +73,7 @@
 #include "clasp/clasp_facade.h"
 #include "clasp/model_enumerators.h"
 #include "clasp/solve_algorithms.h"
+#include "clasp/solver.h"
 #include "clasp/cli/clasp_options.h"
 #include "program_opts/program_options.h"
 
@@ -401,6 +402,59 @@ protected:
 		SAT };
 	/** \brief Type of the current instance. */
 	ProblemType problemType;
+
+	/** \brief Delegates the call to another heuristics but allows for listening to learned clauses. */
+	class ClauseListenerHeuristic : public Clasp::DecisionHeuristic{
+	private:
+		ClaspSolver& cs;
+		Clasp::DecisionHeuristic* heur;
+	public:
+		/** \brief Constructor.
+		  * @param cs Reference to the solver object.
+		  * @param heur The heuristics to delegate all methods to. */
+		ClauseListenerHeuristic(ClaspSolver& cs, DecisionHeuristic* heur) : cs(cs), heur(heur) {}
+		/** \brief Destructor. */
+		virtual ~ClauseListenerHeuristic() { delete heur; }
+
+		/** \brief See clasp documentation. */
+		virtual inline void startInit(const Clasp::Solver& s) { heur->startInit(s); }  
+
+		/** \brief See clasp documentation. */
+		virtual inline void endInit(Clasp::Solver& s) { heur->endInit(s); }
+
+		/** \brief See clasp documentation. */
+		virtual inline void detach(Clasp::Solver& s) { heur->detach(s); }
+	
+		/** \brief See clasp documentation. */
+		virtual inline void updateVar(const Clasp::Solver& s, Clasp::Var v, uint32 n) { heur->updateVar(s, v, n); }
+	
+		/** \brief See clasp documentation. */
+		virtual inline void simplify(const Clasp::Solver& s, Clasp::LitVec::size_type st) { heur->simplify(s, st); }
+	
+		/** \brief See clasp documentation. */
+		virtual inline void undoUntil(const Clasp::Solver& s, Clasp::LitVec::size_type st) { heur->undoUntil(s, st); }
+	
+		/** \brief Allows for accessing added constraints.
+		  *
+		  * The parameters are described in the clasp documentation. */
+		virtual void newConstraint(const Clasp::Solver&, const Clasp::Literal* first, Clasp::LitVec::size_type size, Clasp::ConstraintType t);
+	
+		/** \brief See clasp documentation. */
+		virtual inline void updateReason(const Clasp::Solver& s, const Clasp::LitVec& lits, Clasp::Literal resolveLit) { heur->updateReason(s, lits, resolveLit); }
+
+		/** \brief See clasp documentation. */
+		virtual inline bool bump(const Clasp::Solver& s, const Clasp::WeightLitVec& lits, double adj) { heur->bump(s, lits, adj); }
+	
+		/** \brief See clasp documentation. */
+		virtual inline Clasp::Literal doSelect(Clasp::Solver& s) { heur->doSelect(s); }
+
+		/** \brief See clasp documentation. */
+		virtual inline Clasp::Literal selectRange(Clasp::Solver& s, const Clasp::Literal* first, const Clasp::Literal* last) { heur->selectRange(s, first, last); }
+
+	private:
+		ClauseListenerHeuristic(const ClauseListenerHeuristic&);
+		ClauseListenerHeuristic& operator=(const ClauseListenerHeuristic&);
+	};
 
 	// interface to clasp internals
 	/** \brief Clasp ASP builder. */

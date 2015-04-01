@@ -69,6 +69,41 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// ============================== ClauseListenerHeuristic ==============================
+
+void ClaspSolver::ClauseListenerHeuristic::newConstraint(const Clasp::Solver&, const Clasp::Literal* first, Clasp::LitVec::size_type size, Clasp::ConstraintType t){
+	std::stringstream ss;
+	ss << "Learned nogood of type " << t << " and size " << size << ": {";
+	for (int i = 0; i < size; ++i){
+		ss << (i > 0 ? ", " : " ") << (first[i].sign() ? "" : "-") << first[i].var();
+	}
+	ss << " }" << std::endl;
+	ss << "(translations to HEX: {";
+	for (int i = 0; i < size; ++i){
+		ss << (i > 0 ? ", " : " ");
+		ss << "[";
+		std::vector<int> posAndNegLit;
+		posAndNegLit.push_back(first[i].index());
+		Clasp::Literal negLiteral(first[i].var(), !first[i].sign());
+		posAndNegLit.push_back(negLiteral.index());
+		bool firstout = true;
+		bool positive = true;
+		BOOST_FOREACH (int litindex, posAndNegLit){
+			const AddressVector& hexatoms = *cs.convertClaspSolverLitToHex(litindex);
+			BOOST_FOREACH (IDAddress adr, hexatoms){
+				ss << (firstout ? "" : ",");
+				firstout = false;
+				ID litID = (positive ? ID::posLiteralFromAtom(cs.reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(cs.reg->ogatoms.getIDByAddress(adr)));
+				ss << printToString<RawPrinter>(litID, cs.reg);
+			}
+			positive = false;
+		}
+		ss << "]";
+	}
+	ss << " }";
+	std::cout << ss.str() << std::endl;
+}
+
 // ============================== ExternalPropagator ==============================
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
@@ -1048,6 +1083,9 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 	DBGLOG(DBG, "Prepare solver object");
 	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
 	enumerationStarted = false;
+
+	DBGLOG(DBG, "Intercepting heuristics for added constraints");
+	claspctx.master()->setHeuristic(new ClauseListenerHeuristic(*this, claspctx.master()->releaseHeuristic(true)));
 
 	DBGLOG(DBG, "Adding post propagator");
 	ep.reset(new ExternalPropagator(*this));
