@@ -185,7 +185,7 @@ void GenuineSolver::setOptimum(std::vector<int>& optimum){
 }
 
 InterpretationPtr GenuineSolver::getNextModel(){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver gNM)");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver (GenuineSolver gNM)");
 	return solver->getNextModel();
 }
 
