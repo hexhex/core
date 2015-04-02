@@ -1023,16 +1023,20 @@ void ClaspSolver::outputProject(InterpretationPtr intr){
 
 std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& lits){
 
+#ifndef NDEBUG
 	std::stringstream ss;
-	ss << "Extracted nogood of size " << lits.size() << ": {";
+	ss << "{";
 	for (int i = 0; i < lits.size(); ++i){
-		ss << (i > 0 ? ", " : " ") << (lits[i].sign() ? "" : "-") << lits[i].var();
+		ss << (i > 0 ? ", " : " ") << (lits[i].sign() ? "!" : "") << lits[i].var();
 	}
-	ss << " }" << std::endl;
-	ss << "(translations to HEX: {";
+	ss << " }";
+	DBGLOG(DBG, "Translating extracted clasp clause of size " << lits.size() << ": " << ss.str());
+#endif
+
+	// all nogoods have the size of the outer vector, where each element can independently replaced by each element in the inner vector at that position
+	std::vector<std::vector<ID> > protoNogoods;
 	for (int i = 0; i < lits.size(); ++i){
-		ss << (i > 0 ? ", " : " ");
-		ss << "[";
+		std::vector<ID> currVec;
 		std::vector<int> posAndNegLit;
 		posAndNegLit.push_back(lits[i].index());
 		Clasp::Literal negLiteral(lits[i].var(), !lits[i].sign());
@@ -1042,20 +1046,53 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
 		BOOST_FOREACH (int litindex, posAndNegLit){
 			const AddressVector& hexatoms = *convertClaspSolverLitToHex(litindex);
 			BOOST_FOREACH (IDAddress adr, hexatoms){
-				ss << (firstout ? "" : ",");
 				firstout = false;
-				ID litID = (positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
-				ss << printToString<RawPrinter>(litID, reg);
+				// Note: negate all literals because clasp provides a clause but we want a nogood!
+				ID litID = (!positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
+				currVec.push_back(litID);
 			}
 			positive = false;
 		}
-		ss << "]";
+		protoNogoods.push_back(currVec);
 	}
-	ss << " }";
-	std::cout << ss.str() << std::endl;
 
-	// TODO
-	return std::vector<Nogood>();
+	// now unfold the nogoods
+	std::vector<Nogood> nogoods;
+	if (protoNogoods.size() == 0) return nogoods;
+
+	// store the index of the next element for each set-element of the proto-nogood
+	std::vector<int> ind(protoNogoods.size());
+	for (int i = 0; i < protoNogoods.size(); ++i) ind[i] = 0;
+
+	// while more element in the first set-element
+	while (ind[0] < protoNogoods[0].size()){
+
+		// translate
+		Nogood ng;
+		for (int i = 0; i < protoNogoods.size(); ++i){
+			ng.insert(protoNogoods[i][ind[i]]);
+		}
+
+		DBGLOG(DBG, "Extracted nogood: " << ng.getStringRepresentation(reg));
+		nogoods.push_back(ng);
+
+		// goto next element in the last set-element
+		int k = protoNogoods.size() - 1;
+		ind[k]++;
+
+		// while element in set-element k are exhauses, reset set-element k and goto set-element k-1
+		while (ind[k] >= protoNogoods[k].size()){
+			if (k > 0){
+				ind[k] = 0;
+				k--;
+				ind[k]++;
+			}else{
+				break;
+			}
+		}
+	}
+
+	return nogoods;
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
@@ -1442,7 +1479,6 @@ InterpretationPtr ClaspSolver::getNextModel(){
 	// ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
 	while (nextSolveStep != ReturnModel) {
 		if (claspctx.master()->conflictClause().size() > 0){
-			std::cout << "Last conflict";
 			claspClauseToHexNogoods(claspctx.master()->conflictClause());
 		}
 		switch (nextSolveStep){
