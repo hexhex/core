@@ -424,6 +424,9 @@ void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& 
 namespace
 {
   ProgramCtx* exeCtx = NULL;
+#ifdef HAVE_PYTHON
+  PythonPlugin* pythonPlugin = NULL;
+#endif
 }
 
 void signal_handler(int signum)
@@ -436,6 +439,11 @@ void signal_handler(int signum)
 #endif
 
   benchmark::BenchmarkController::finish();
+
+#ifdef HAVE_PYTHON
+  if( pythonPlugin != NULL )
+    pythonPlugin->terminateHard();
+#endif
 
   // hard exit
   // (otherwise ctrl+c does not work for many situations, which is annoying!)
@@ -581,7 +589,7 @@ int main(int argc, char *argv[])
 		processOptionsPrePlugin(argc, argv, config, pctx);
 
 #ifdef HAVE_PYTHON
-		PythonPlugin* pythonPlugin = new PythonPlugin();
+		pythonPlugin = new PythonPlugin();
 #endif
 
 		// initialize internal plugins

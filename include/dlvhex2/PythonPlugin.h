@@ -326,6 +326,10 @@ public:
 	  * @param filename Name of a Python script. */
 	void runPythonMain(std::string filename);
 
+  /** \brief Causes python to shutdown (CTRL+C).
+    */
+  void terminateHard();
+
 	// no atoms!
 };
 

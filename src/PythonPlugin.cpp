@@ -1003,6 +1003,15 @@ void PythonPlugin::runPythonMain(std::string filename){
 	}
 }
 
+void PythonPlugin::terminateHard() {
+	LOG(ERROR,"PythonPlugin::terminateHard() invoked");
+	try {
+		boost::python::exec("import os ; os._exit(2)", PythonAPI::dict, PythonAPI::dict);
+	} catch(boost::python::error_already_set& e) {
+		PyErr_Print();
+	}
+}
+
 DLVHEX_NAMESPACE_END
 
 #endif
