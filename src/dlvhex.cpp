@@ -430,12 +430,16 @@ void signal_handler(int signum)
 {
   // perform benchmarking shutdown to obtain benchmark output
 #ifdef POSIX
-  LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal!");
+  LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal " << signum << "!");
 #else
-  LOG(ERROR,"dlvhex2 with pid " << GetCurrentProcessId() << " got termination signal!");
+  LOG(ERROR,"dlvhex2 with pid " << GetCurrentProcessId() << " got termination signal" << signum << "!");
 #endif
-  if( exeCtx != NULL )
-    exeCtx->terminationRequest = true;
+
+  benchmark::BenchmarkController::finish();
+
+  // hard exit
+  // (otherwise ctrl+c does not work for many situations, which is annoying!)
+  exit(2);
 }
 
 int main(int argc, char *argv[])
@@ -565,15 +569,8 @@ int main(int argc, char *argv[])
 	// defaults of main
 	Config config;
 
-	// deconstruct benchmarking (= output results) at scope exit 
-	int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
-	BOOST_SCOPE_EXIT( (dummy) ) {
-  	(void)dummy;
-		benchmark::BenchmarkController::finish();
-	}
-	BOOST_SCOPE_EXIT_END
-
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
+	int returnCode = 0;
 	try
 	{
 		// default logging priority = errors + warnings
@@ -788,6 +785,9 @@ int main(int argc, char *argv[])
 		// finalization plugin/dlvhex hooks (for accumulating model processing)
 		// (accumulated model output/query answering should happen here)
 		pctx.postProcess();
+
+		// no error
+		returnCode = 0;
 	}
   catch(const UsageError &ue)
 	{
@@ -795,22 +795,22 @@ int main(int argc, char *argv[])
 		printUsage(std::cerr, whoAmI, true);
 		if( !!pctx.pluginContainer() )
 			pctx.pluginContainer()->printUsage(std::cerr);
-		return 1;
 	}
   catch(const GeneralError &ge)
 	{
 pctx.modelBuilder.reset();
 		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
-		return 1;
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << "Exception: " << e.what() << std::endl << std::endl;
-		return 1;
 	}
 
+	// display benchmark output
+	benchmark::BenchmarkController::finish();
+
 	// regular exit
-	return 0;
+	return returnCode;
 }
 
 void configurePluginPath(std::string& userPlugindir);

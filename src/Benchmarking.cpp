@@ -66,7 +66,16 @@ BenchmarkController::BenchmarkController():
 // destruct, output benchmark results
 BenchmarkController::~BenchmarkController()
 {
-  stop(myID);
+  // stop only my ID
+  // (do not call stop() as the mutex might hang)
+  // (this code must succeed at any time!)
+  Stat& st = instrumentations[myID];
+  // ignore level
+  if( st.running ) {
+    st.duration += boost::posix_time::microsec_clock::local_time() - st.start;
+    st.running = false;
+    st.count ++;
+  }
 
   BOOST_FOREACH(const Stat& st, instrumentations)
   {
@@ -232,13 +241,31 @@ NestingAwareController::NestingAwareController():
 // destruct, output benchmark results
 NestingAwareController::~NestingAwareController()
 {
-  stop(myID);
   if( !output )
     return;
 
-  if( !current.empty() )
-    // better not throw from destructor
-    (*output) << "destructing NestingAwareController but current is not empty!" << std::endl;
+  // stop only my ID
+  // (do not call stop() as the mutex might hang)
+  // (this code must succeed at any time!)
+  Stat& st = instrumentations[myID];
+  Time now = boost::posix_time::microsec_clock::local_time();
+  if( !current.empty() && current.back().which == myID ) {
+    // this is a very clean exit indeed!
+    // (we are running)
+    st.pureDuration += now - current.back().start;
+    st.duration += now - current.back().firststart;
+    st.count ++;
+    current.pop_back();
+  } else {
+    // not sure what happened, we are somewhere
+    // -> take the furst current record
+    //    (this is the usual use case for myID)
+    if( !current.empty() ) { // to be absolutely sure we will not segfault/throw here
+      st.duration = now - current[0].firststart;
+      st.pureDuration = now - current[0].start; // TODO maybe this is bad
+      st.count ++;
+    }
+  }
 
   // sort by pure duration, descending
   class PureSortPredicate {
