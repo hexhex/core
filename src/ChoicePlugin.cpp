@@ -253,7 +253,19 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 	}
 
 	// Step 2: compute V1 as the sum of all counts of choice elements
+	ID cntVarID = reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr));
+	DBGLOG(DBG, "Creating aggregate cntVarID=#count{ ChoiceAtom(...) : ChoiceCondition(...) }");
+	AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+	cnt.tuple[0] = cntVarID;
+	cnt.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
+	cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
+	cnt.tuple[3] = ID_FAIL;
+	cnt.tuple[4] = ID_FAIL;
+	varnr += 1;	// one variable was used
+
+	// create count atom
 	if (!!boost::fusion::at_c<1>(source)){
+		int elementNr = 0;
 		BOOST_FOREACH (ID choiceElement, boost::fusion::at_c<1>(source).get()){
 			// copy choice rule
 			target.push_back(choiceElement);
@@ -261,50 +273,22 @@ struct sem<ChoiceParserModuleSemantics::choiceHead>
 			// extract choice atom as first element of the rule's head
 			ID choiceAtomID = reg->rules.getByID(choiceElement).head[0];
 
-			// construct a builtin of kind: V[i] = V[i+1] + V[i+2]
-			DBGLOG(DBG, "Creating builtin V[i] = V[i+1] + V[i+2]");
-			BuiltinAtom bia(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
-			bia.tuple.push_back(ID::termFromBuiltin(ID::TERM_BUILTIN_ADD));
-			bia.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr + 1)));
-			bia.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr + 2)));
-			bia.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr)));
-			ID biaID = reg->batoms.storeAndGetID(bia);
-			DBGLOG(DBG, "Result: " << printToString<RawPrinter>(biaID, reg));
-			r.body.push_back(ID::posLiteralFromAtom(biaID));
-
 			// constructor an aggregate of kind: V[i+1]=#count{ ChoiceAtom(...) : ChoiceCondition(...) }
-			DBGLOG(DBG, "Creating aggregate V[i+1]=#count{ ChoiceAtom(...) : ChoiceCondition(...) }");
-			AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
-			cnt.tuple[0] = reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr + 1));
-			cnt.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
-			cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
-			cnt.tuple[3] = ID_FAIL;
-			cnt.tuple[4] = ID_FAIL;
 			ID cntID;
 			std::set<ID> vars;
 			reg->getVariablesInID(choiceAtomID, vars);
-			cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
-			cnt.literals.push_back(ID::posLiteralFromAtom(choiceAtomID));
-			cntID = reg->aatoms.storeAndGetID(cnt);
-			DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
-			r.body.push_back(ID::posLiteralFromAtom(cntID));
-
-			// 2 variables were used
-			varnr += 2;
+			Tuple curVarVector;
+			curVarVector.insert(curVarVector.end(), vars.begin(), vars.end());
+			curVarVector.push_back(ID::termFromInteger(elementNr++));
+			cnt.mvariables.push_back(curVarVector);
+			Tuple curLitVector;
+			curLitVector.push_back(ID::posLiteralFromAtom(choiceAtomID));
+			cnt.mliterals.push_back(curLitVector);
 		}
 	}
-
-	// Step 3: define last variable
-	{
-		DBGLOG(DBG, "Creating bulitin V[i]=0");
-		BuiltinAtom bia(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
-		bia.tuple.push_back(ID::termFromBuiltin(ID::TERM_BUILTIN_EQ));
-		bia.tuple.push_back(reg->getAuxiliaryVariableSymbol('c', ID::termFromInteger(varnr)));
-		bia.tuple.push_back(ID::termFromInteger(0));
-		ID biaID = reg->batoms.storeAndGetID(bia);
-		r.body.push_back(ID::posLiteralFromAtom(biaID));
-		DBGLOG(DBG, "Result: " << printToString<RawPrinter>(biaID, reg));
-	}
+	ID cntID = reg->aatoms.storeAndGetID(cnt);
+	DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
+	r.body.push_back(ID::posLiteralFromAtom(cntID));
 
 	// Add up to two choice constraints. Note: The rule body of the original choice rule is still missing!
 	if (bound1.tuple.size() > 0){
