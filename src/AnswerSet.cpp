@@ -34,11 +34,13 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/AnswerSet.h"
+#include "dlvhex2/Benchmarking.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
 
 void AnswerSet::computeWeightVector(){
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::computeWeightVector");
 
 	weightVector = std::vector<int>();
 	weightVector.push_back(0);
@@ -73,6 +75,7 @@ std::vector<int>& AnswerSet::getWeightVector(){
 }
 
 bool AnswerSet::betterThan(std::vector<int>& cwv){
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::betterThan");
 
 	// check if one of the vectors has cost values on higher levels
 	if (weightVector.size() < cwv.size()){
@@ -97,6 +100,8 @@ bool AnswerSet::betterThan(std::vector<int>& cwv){
 }
 
 std::ostream& AnswerSet::printWeightVector(std::ostream& o) const{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::printWeightVector");
+
   if (weightVector.size() > 0){
 	bool first = true;
 	for (uint32_t level = 0; level < weightVector.size(); ++level){
@@ -113,6 +118,8 @@ std::ostream& AnswerSet::printWeightVector(std::ostream& o) const{
 
 std::ostream& AnswerSet::print(std::ostream& o) const
 {
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::print");
+
   // use ", " with space here! (compatibility)
   interpretation->print(o, "{", ", ", "}");
   if (weightVector.size() > 0){

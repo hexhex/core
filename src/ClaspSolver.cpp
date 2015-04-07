@@ -151,6 +151,8 @@ void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
 
 void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp:callHEXProps");
+
 	DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
 #ifndef NDEBUG
 	// extract model and compare with the incrementally extracted one
@@ -1367,6 +1369,8 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
 InterpretationPtr ClaspSolver::getNextModel(){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM (getNextModel)");
+
 	#define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
 
 	/*
@@ -1426,11 +1430,15 @@ InterpretationPtr ClaspSolver::getNextModel(){
 			case Solve:
 				ENUMALGODBG("sol");
 				DBGLOG(DBG, "Solve for next model");
+				{
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM sol");
+
 				if (solve->solve() == Clasp::value_true){
 					nextSolveStep = CommitModel;
 				}else{
 					model = InterpretationPtr();
 					nextSolveStep = ReturnModel;
+				}
 				}
 				break;
 
@@ -1449,6 +1457,8 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				ENUMALGODBG("ext");
 				DBGLOG(DBG, "Extract model model");
 
+				{
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM ext");
 				// Note: currentIntr does not necessarily coincide with the last model because clasp
 				// possibly has already continued the search at this point
 				model = InterpretationPtr(new Interpretation(reg));
@@ -1462,7 +1472,10 @@ InterpretationPtr ClaspSolver::getNextModel(){
 				    }
 				  }
 				}
+				}
+
 				outputProject(model);
+
 				modelCount++;
 
 #ifndef NDEBUG

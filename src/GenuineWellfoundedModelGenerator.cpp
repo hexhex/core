@@ -167,7 +167,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 		// manage outer external atoms
 		if( !factory.outerEatoms.empty() )
 		{
-			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineWfMG)");
 			// augment input with result of external atom evaluation
 			// use newint as input and as output interpretation
 			IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
@@ -215,7 +215,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			// evaluate inner external atoms
 			IntegrateExternalAnswerIntoInterpretationCB cb(dst);
 			{
-				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (inner EAs GenuineWfMG)");
 				evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
 			}
 			DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
@@ -248,7 +248,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 
 				// cheap exchange -> thisret1 will then be free'd
 				{
-					DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+					DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (cp mdl GenuineWfMG)");
 					dst->getStorage() = model->getStorage();
 				}
 				DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
@@ -262,7 +262,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			// error if new one is smaller (i.e., fixpoint is not allowed)
 			// (TODO do this error check, and do it only in debug mode)
 			{
-				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (fp check GenuineWfMG)");
 				int cmpresult = dst->getStorage().compare(src->getStorage());
 				if( cmpresult == 0 )
 				{
@@ -291,7 +291,7 @@ reg->freezeNullTerms(ints[1]);
 			DBGLOG(DBG,"leaving loop with result 'inconsistent'");
 			return InterpretationPtr();
 		}else{
-			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (make result GenuineWfMG)");
 			// does not matter which one we take, they are equal
 			InterpretationPtr result = ints[0];
 			DBGLOG(DBG,"leaving loop with result " << *result);

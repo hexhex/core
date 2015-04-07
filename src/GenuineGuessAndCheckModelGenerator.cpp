@@ -214,7 +214,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
     {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder out EA GenGnCMG");
 		
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
@@ -244,7 +244,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		// append gidb to xidb
 		program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder GuessPr GenGnCMG");
 		grounder = GenuineGrounder::getInstance(factory.ctx, program);
 		OrdinaryASPProgram gp = grounder->getGroundProgram();
 
@@ -347,7 +347,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
 	// now we have postprocessed input in postprocessedInput
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "genuine guess and check loop");
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (gNM GenGnC)");
 
 	InterpretationPtr modelCandidate;
 	do
@@ -385,10 +385,13 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		}
 
 		// remove edb and the guess (from here we don't need the guess anymore)
+		{
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "GenuineGnCMG::gNM postproc");
 		DBGLOG(DBG, "Got a model, removing replacement atoms");
 		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
 		modelCandidate->getStorage() -= factory.gnMask.mask()->getStorage();
 		modelCandidate->getStorage() -= mask->getStorage();
+		}
 
 		LOG(DBG,"returning model without guess: " << *modelCandidate);
 
@@ -559,6 +562,7 @@ void GenuineGuessAndCheckModelGenerator::updateEANogoods(
 
 bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationConstPtr modelCandidate){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "GenuineGnCMG: finalCompat");
 	// did we already verify during model construction or do we have to do the verification now?
 	bool compatible;
 
@@ -592,6 +596,7 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatibleSet){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "GenuineGnCMG: isModel");
 	// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
 	if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 &&
 	    factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")){
