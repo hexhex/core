@@ -219,7 +219,11 @@ inline print_container* printptr(const T* const t)
   * @param open Begin character.
   * @param sep Character to be printed between the objects in \p r.
   * @param close End character.
-  * @return print_container pointer for \p r. */
+  * @return print_container pointer for \p r.
+  *
+  * Example:
+  * std::cerr << ... << printrange(Range r) << ...;
+  */
 template<typename Range>
 inline print_container* printrange(Range r,
 		const char* open="<", const char* sep=",", const char* close=">")
@@ -244,7 +248,11 @@ inline print_container* printrange(Range r,
   * @param open Begin character.
   * @param sep Character to be printed between the objects in \p r.
   * @param close End character.
-  * @return print_container pointer for \p r. */
+  * @return print_container pointer for \p r.
+  *
+  * Example:
+  * std::cerr << ... << printset(std::set<T>) << ...;
+  */
 template<typename T>
 inline print_container* printset(const std::set<T>& t,
 		const char* open="{", const char* sep=",", const char* close="}")
@@ -257,13 +265,18 @@ inline print_container* printset(const std::set<T>& t,
   * @param open Begin character.
   * @param sep Character to be printed between the objects in \p r.
   * @param close End character.
-  * @return print_container pointer for \p r. */
+  * @return print_container pointer for \p r.
+  *
+  * Example:
+  * std::cerr << ... << printvector(std::vector<T>) << ...;
+  */
 template<typename T>
 inline print_container* printvector(const std::vector<T>& t,
 		const char* open="[", const char* sep=",", const char* close="]")
 {
   return printrange(t, open, sep, close);
 }
+
 
 #endif // PRINTHELPERS_HPP_INCLUDED__11122011
 
