@@ -43,6 +43,7 @@
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/Printhelpers.h"
 #include "dlvhex2/Set.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/AnnotatedGroundProgram.h"
@@ -587,6 +588,8 @@ asp.update();
 
 void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::createMinimizeConstraints");
+
 	DBGLOG(DBG, "Preparing minimize constraints");
 
 	// one minimize statement for each level
@@ -644,20 +647,20 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 
 	// if we don't have minimize statements, then we don't need a minimize constraint (this is just an optimization)
 	if (minimizeStatements.size() > 0){
-		DBGLOG(DBG, "Constructing minimize constraint");
+		LOG(DBG, "Constructing minimize constraint");
 		sharedMinimizeData = minb.build(claspctx);
 		minc = 0;
 		if (!!sharedMinimizeData){
 			DBGLOG(DBG, "Setting minimize mode");
 			sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
 
-			DBGLOG(DBG, "Attaching minimize constraint to clasp");
+			LOG(DBG, "Attaching minimize constraint to clasp");
 			minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
 
 			assert(!!minc);
 		}
 	}else{
-		DBGLOG(DBG, "Do not need minimize constraint");
+		LOG(DBG, "Do not need minimize constraint");
 	}
 }
 
@@ -1351,18 +1354,18 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 	// transform optimum vector to clasp-internal representation
 	int optlen = optimum.size() - 1; // optimum[0] is unused, but in clasp levels start with 0
 	if (optlen > 0){
-		DBGLOG(DBG, "Transforming optimum (length: " << optlen << ") to clasp-internal representation");
+		LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
 		Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
 		for (int l = 0; l < optlen; ++l){
 			newopt[l] = optimum[optlen - l];
 		}
 		newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
 	
-		DBGLOG(DBG, "Setting optimum");
+		LOG(DBG, "Setting optimum to representation " << printvector(std::vector<int>(&newopt[0], &newopt[optlen])));
 		sharedMinimizeData->setOptimum(newopt);
-		DBGLOG(DBG, "Integrating constraint");
+		LOG(DBG, "Integrating constraint");
 		bool intres = minc->integrate(*claspctx.master());
-		DBGLOG(DBG, "Integration result: " << intres);
+		LOG(DBG, "Integration result: " << intres);
 		delete []newopt;
 	}
 }
