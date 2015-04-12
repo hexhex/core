@@ -1133,10 +1133,12 @@ void processOptionsPrePlugin(
 							else if( token == "model" )
 							{
 								pctx.config.setOption("DumpModelGraph",1);
+								throw std::runtime_error("DumpModelGraph not implemented!");
 							}
 							else if( token == "imodel" )
 							{
 								pctx.config.setOption("DumpIModelGraph",1);
+								throw std::runtime_error("DumpIModelGraph not implemented!");
 							}
 							else if( token == "attr" )
 							{
