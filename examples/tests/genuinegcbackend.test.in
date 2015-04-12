@@ -14,6 +14,8 @@ weak1.hex weak1.out --solver=genuinegc --strongnegation-enable --weak-enable
 weak2.hex weak2.out --solver=genuinegc --strongnegation-enable --weak-enable
 weak3.hex weak3.out --solver=genuinegc --strongnegation-enable --heuristics=monolithic --forcegc --weak-enable
 weak4.hex weak4.out --solver=genuinegc --strongnegation-enable --weak-enable
+weak_bench_small.hex weak_bench_small.out --solver=genuinegc --weak-enable --heuristics=monolithic
+weak_bench_small.hex weak_bench_small.out --solver=genuinegc --weak-enable
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuinegc
 builtin_safety1.hex builtin_safety1.stderr --solver=genuinegc
 builtin_safety1a.hex builtin_safety1a.stderr --solver=genuinegc

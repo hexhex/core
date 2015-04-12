@@ -1,0 +1,13 @@
+% for debugging
+%#maxint=2.
+% as a testcase
+#maxint=5.
+% for benchmarking (2.5 GB RAM without --heuristics=monolithic)
+%#maxint=10.
+
+something(X) :- #int(X).
+
+1 <= { foo(X) ; bar(X) ; baz(X) } <= 1 :- something(X).
+
+nbr(N) :- N = #count { X : foo(X) }.
+:~ nbr(N), NN=N+1. [NN:1]
