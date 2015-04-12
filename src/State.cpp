@@ -921,10 +921,13 @@ namespace
 				// only afterwards the requested number of best models can be output
 
 				// is there a previous model and the new model is (strictly!) better than the best known one?
-				if( !bestModels.empty() && !bestModels.front()->betterThan(answerset->getWeightVector()) )
+				if( !bestModels.empty() && !bestModels.front()->betterThan(answerset->getWeightVector()) ) {
 					// new model is better than all previous ones --> clear cache
+					LOG(DBG, "clearing bestModels because new model is strictly better");
 					bestModels.clear();
+				}
 				// store this one in cache
+				LOG(DBG, "recording answer set in bestModels: " << *answerset);
 				bestModels.push_back(answerset);
 
 				// also show some non-optimal models?
