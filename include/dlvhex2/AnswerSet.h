@@ -67,7 +67,7 @@ public:
     */
   std::vector<int>& getWeightVector();
   /**
-    * \brief Compares the weight vector of this answer set to that of another one.
+    * \brief Compares the weight vector of this answer set to that of another one. (<=)
     *
     * If the maximal level where this vector has costs > 0 is greater then that of \p cwv, false is returned.
     * Conversely, if the maximal level where vector \cwv has costs > 0 is greater then that of this vector, true is returned.
@@ -82,6 +82,12 @@ public:
     * @return True if this weight vector is better than or of equal quality as \p cwv.
     */
   bool betterThan(std::vector<int>& cwv);
+  /**
+	* \brief Compares weight vector of this answer set to that of another one. (<)
+	*
+	* See betterThan.
+	*/
+  bool strictlyBetterThan(std::vector<int>& cwv);
   /**
     * \brief Prints the vector in dlv syntax.
     *
