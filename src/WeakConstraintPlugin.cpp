@@ -197,6 +197,10 @@ void WeakRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, ID ruleID)
 		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationByBackend", 1);
 		// suppress non-optimal models preceeding the optimal ones
 		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationFilterNonOptimal", 1);
+		if( ctx.config.getOption("OptimizationTwoStep") == 0 ) 
+			LOG(WARNING,"optimization might be slow because it cannot be done in a strictly decreasing manner"
+					"(TODO perhaps it could be done but we currently cannot detect if weight constraints are in single unit)");
+		LOG(INFO,"WeakRewriter activated Optimization");
 	}else{
 		idb.push_back(ruleID);
 	}

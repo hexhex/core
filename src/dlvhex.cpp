@@ -1565,6 +1565,13 @@ void processOptionsPrePlugin(
 		pctx.config.setOption("ExternalLearning", 0);
 	
 	}
+	bool usingClaspBackend = (pctx.config.getOption("GenuineSolver") == 3 || pctx.config.getOption("GenuineSolver") == 4);
+	if( heuristicMonolithic && usingClaspBackend ) {
+		// we can use this in a safe way if we use a monolithic evaluation unit
+		// we can use this with the clasp backend (the other solver does not honor setOptimum() calls)
+		// TODO we can also use this if we have all weight constraints in one evaluation unit, this can be detected automatically
+		pctx.config.setOption("OptimizationTwoStep", 1);
+	}
 
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);
@@ -1683,7 +1690,7 @@ void configurePluginPath(std::string& userPlugindir)
 #endif
 }
 
-/* vim: set noexpandtab sw=8 ts=8 tw=80: */
+// vim:noexpandtab:sw=8:ts=8:
 
 // Local Variables:
 // mode: C++

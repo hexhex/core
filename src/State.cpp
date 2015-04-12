@@ -678,8 +678,18 @@ MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
 
 namespace
 {
+	typedef ModelBuilder<FinalEvalGraph>::Model Model;
+	typedef ModelBuilder<FinalEvalGraph>::OptionalModel OptionalModel;
+	typedef ModelBuilder<FinalEvalGraph>::MyModelGraph MyModelGraph;
+
 	void snapShotBenchmarking(ProgramCtx& ctx)
 	{
+		static bool alreadyDidIt = false;
+
+		// do this really only once in the lifetime of a dlvhex binary
+		if( alreadyDidIt ) return;
+		alreadyDidIt = true;
+
 		std::map<std::string, std::string>::const_iterator snapit;
 		for(snapit = ctx.benchmarksToSnapshotAtFirstModel.begin();
 			snapit != ctx.benchmarksToSnapshotAtFirstModel.end(); ++snapit)
@@ -687,19 +697,9 @@ namespace
 			dlvhex::benchmark::BenchmarkController::Instance().snapshot(snapit->first, snapit->second);
 		}
 	}
-}
 
-void
-EvaluateState::evaluate(ProgramCtx* ctx)
-{
-	typedef ModelBuilder<FinalEvalGraph>::Model Model;
-	typedef ModelBuilder<FinalEvalGraph>::OptionalModel OptionalModel;
-	typedef ModelBuilder<FinalEvalGraph>::MyModelGraph MyModelGraph;
 
-	bool didSnapshot = false;
-
-	do
-	{
+	ModelBuilder<FinalEvalGraph>& createModelBuilder(ProgramCtx* ctx) {
 		LOG(INFO,"creating model builder");
 		{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
@@ -708,23 +708,100 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 			cfg.constantSpace = ctx->config.getOption("UseConstantSpace") == 1;
 			ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(cfg));
 		}
-		ModelBuilder<FinalEvalGraph>& mb = *ctx->modelBuilder;
+		return *ctx->modelBuilder;
+	}
 
-		// get model and call all callbacks
-		// abort if one callback returns false
+	bool callModelCallbacks(ProgramCtx* ctx, AnswerSetPtr answerset) {
+		// process all answer sets via callback mechanism
+		// processing a model this way gives it as a result, so we snapshot the first model here
+		snapShotBenchmarking(*ctx);
+
+		bool abort = false;
+		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+		{
+			bool aborthere = !(*mcb)(answerset);
+			abort |= aborthere;
+			if( aborthere )
+				LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort");
+		}
+		return abort;
+	}
+
+	// evaluate the hex program to find the optimum
+	// (this will only be used for OptimizationTwoStep because in other cases it might not yield correct results)
+	// * enumerate models better than current cost
+	// * ignore model limits/callbacks
+	// * remember last found model and its cost
+	// * when not finding model, set current cost to last found model
+	// returns the first optimal answer set or NULL if there is no answer set
+	AnswerSetPtr evaluateFindOptimum(ProgramCtx* ctx) {
+
+		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "evaluateFindOptimum");
+		DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluateFindOptimum::gNM");
+
+		assert(ctx->config.getOption("OptimizationTwoStep") == 1);
+		AnswerSetPtr lastAnswerSet;
+		ModelBuilder<FinalEvalGraph>& mb = createModelBuilder(ctx);
+		OptionalModel om;
+		do {
+			DBGLOG(DBG,"requesting omodel");
+			{
+				DLVHEX_BENCHMARK_SCOPE(sidgetnextmodel);
+				om = mb.getNextIModel(ctx->ufinal);
+			}
+			if( !!om ) {
+				Model m = om.get();
+				InterpretationConstPtr interpretation =
+					mb.getModelGraph().propsOf(m).interpretation;
+
+				// if the program is empty, we may get a NULL interpretation
+				if( !interpretation ) {
+					assert(mb.getModelGraph().propsOf(m).dummy == true);
+					interpretation.reset(new Interpretation(ctx->registry()));
+				}
+
+			    AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
+				// copy interpretation! (we and callbacks might modify it after returning from this method)
+				answerset->interpretation->getStorage() = interpretation->getStorage();
+				answerset->computeWeightVector();
+				LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()));
+				assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
+				ctx->currentOptimum = answerset->getWeightVector();
+				lastAnswerSet = answerset;
+			}
+		} while( !!om );
+		// we got no model so we left the loop:
+		// * either there never was any model with any weight
+		// * or we got models and found the optimum (ctx->currentOptimum) and lastAnswerSet is the first optimal one
+		// our caller will handle these cases
+		return lastAnswerSet;
+	}
+
+	// evaluate the hex program
+	// * enumerate models
+	// * honor model limits
+	// * including model callbacks
+	// * including final callbacks
+	void evaluateOnce(ProgramCtx* ctx) {
+
 		DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+
+		// this implementation requires that there is no optimization OR
+		// that the optimal cost has been found and set and that we use two-stop optimization mode
+		assert(ctx->config.getOption("Optimization") == 0 ||
+				(!ctx->currentOptimum.empty() && ctx->config.getOption("OptimizationTwoStep") == 2));
+
+		ModelBuilder<FinalEvalGraph>& mb = createModelBuilder(ctx);
 		unsigned mcount = 0;
 		bool abort = false;
-		bool gotModel;
-		unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
-		std::vector<AnswerSetPtr> bestModels;	// model cache for weight minimization
-		do
-		{
-			gotModel = false;
+		const unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
+		OptionalModel om;
+		do {
 			DBGLOG(DBG,"requesting imodel");
-			DLVHEX_BENCHMARK_START(sidgetnextmodel);
-			OptionalModel om = mb.getNextIModel(ctx->ufinal);
-			DLVHEX_BENCHMARK_STOP(sidgetnextmodel);
+			{
+				DLVHEX_BENCHMARK_SCOPE(sidgetnextmodel);
+				om = mb.getNextIModel(ctx->ufinal);
+			}
 			if( !!om )
 			{
 				Model m = om.get();
@@ -732,170 +809,193 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 					mb.getModelGraph().propsOf(m).interpretation;
 
 				// if the program is empty, we may get a NULL interpretation
-				if( !interpretation )
-				{
+				if( !interpretation ) {
 					assert(mb.getModelGraph().propsOf(m).dummy == true);
 					interpretation.reset(new Interpretation(ctx->registry()));
 				}
 
-				if( ctx->config.getOption("DumpIModelGraph") ) throw std::runtime_error("DumpIModelGraph	not implemented!");
 				DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
 
 				// model callbacks
 				AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
-				// copy interpretation! (callbacks can modify it)
+				// copy interpretation! (we and callbacks might modify it)
 				answerset->interpretation->getStorage() = interpretation->getStorage();
 				answerset->computeWeightVector();
 				LOG(DBG, "weight vector of this answer set: " << printvector(answerset->getWeightVector()));
 
 				// add EDB if configured that way
 				if( !ctx->config.getOption("NoFacts") )
-				{
-					answerset->interpretation->getStorage() |=
-						ctx->edb->getStorage();
+					answerset->interpretation->getStorage() |= ctx->edb->getStorage();
+			
+				abort |= callModelCallbacks(ctx, answerset);
+				mcount++;
+			}
+		} while( !!om && !abort && (mcountLimit == 0 || mcount < mcountLimit) );
+
+		LOG(INFO,"got " << mcount << " models");
+		if( abort ) {
+			LOG(INFO,"model building was aborted by callback");
+		} else {
+			if( mcountLimit == 0 ) {
+				LOG(INFO,"model building finished after enumerating all models");
+			} else {
+				LOG(INFO,"model building finished after a maximum of " << mcountLimit << " models");
+			}
+		}
+	}
+
+	// evaluate the hex program using naive optimization
+	// * enumerate all models of a certain cost or better
+	//   store all models of the currently known best cost
+	//   until no more models are found, then output
+	// * during output:
+	//   * honor model limits
+	//   * call model callbacks
+	// * then call  final callbacks
+	void evaluateOnceExpspace(ProgramCtx* ctx) {
+
+		DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+
+		// this implementation should only be used for naive optimization
+		assert(ctx->config.getOption("Optimization") == 1 &&
+				ctx->config.getOption("OptimizationTwoStep") == 0 &&
+				ctx->config.getOption("OptimizationByDlvhex") == 1);
+		ModelBuilder<FinalEvalGraph>& mb = createModelBuilder(ctx);
+		const unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
+		unsigned mcount = 0;
+		bool abort = false;
+		std::list<AnswerSetPtr> bestModels;
+		OptionalModel om;
+		do
+		{
+			DBGLOG(DBG,"requesting imodel");
+			{
+				DLVHEX_BENCHMARK_SCOPE(sidgetnextmodel);
+				om = mb.getNextIModel(ctx->ufinal);
+			}
+			if( !!om )
+			{
+				Model m = om.get();
+				InterpretationConstPtr interpretation =
+					mb.getModelGraph().propsOf(m).interpretation;
+				// if the program is empty, we may get a NULL interpretation
+				if( !interpretation ) {
+					assert(mb.getModelGraph().propsOf(m).dummy == true);
+					interpretation.reset(new Interpretation(ctx->registry()));
 				}
+
+				DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
+
+				// model callbacks
+				AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
+				// copy interpretation! (we and callbacks might modify it)
+				answerset->interpretation->getStorage() = interpretation->getStorage();
+				answerset->computeWeightVector();
+				LOG(DBG, "weight vector of this answer set: " << printvector(answerset->getWeightVector()));
+
+				// add EDB if configured that way
+				if( !ctx->config.getOption("NoFacts") )
+					answerset->interpretation->getStorage() |= ctx->edb->getStorage();
 
 				// cost check
 				// compare the solution to the best known model
 				// 3 Options:
-				// - ctx->config.getOption("OptimizationByDlvhex"): Let dlvhex manage optimization. Setting this option to true suffices to get the correct result.
-				// - ctx->config.getOption("OptimizationFilterNonOptimal"): This option avoids that non-optimal models are printed before the best model appears; option is only relevant if "OptimizationByDlvhex" is also set.
-				// - ctx->config.getOption("OptimizationByBackend"): Let solver backends manage optimization (if the specific backends supports it). This option is optional but might prune the search space already in single units while dlvhex can optimize only after the final models have been found.
-				gotModel = true;
-				bool modelIsBetter = (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum));	// betterThan does not necessarily mean strictly better, i.e., it includes solutions of the same quality!
+				// - ctx->config.getOption("OptimizationByDlvhex"):
+				//   Let dlvhex manage optimization. Setting this option to true suffices to get the correct result.
+				// - ctx->config.getOption("OptimizationFilterNonOptimal"):
+				//   Avoid that non-optimal models are printed before the best model appears; option is only relevant if "OptimizationByDlvhex" is also set.
+				// - ctx->config.getOption("OptimizationByBackend"):
+				//   Let solver backends manage optimization (if the specific backends supports it).
+				//   This option is optional but might prune the search space already in single units while dlvhex can optimize only after the final models have been found.
+				bool equalOrBetter = (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum));	// betterThan does not necessarily mean strictly better, i.e., it includes solutions of the same quality!
 			
-				// keep track of the current optimum
-				if (modelIsBetter){
-					ctx->currentOptimum = answerset->getWeightVector();
-					LOG(DBG, "New global optimum (modelIsBetter = True): " << printvector(answerset->getWeightVector()));
-				}
-			
-				// if dlvhex is allowed to filter, then we can skip this part for models which are known to be non-optimal
-				if (ctx->config.getOption("OptimizationByDlvhex") && modelIsBetter)
-				{
-					// in this block we do not need to count models as we need to enumerate all of them; only afterwards the requested number of best models can be output
-			
-					// suppress non-optimal models?
-					if (ctx->config.getOption("OptimizationFilterNonOptimal"))
-					{
-						// yes: cache models and decide at the end upon optimality
-			
-						// is there a previous model and the new model is (strictly!) better than the best known one?
-						if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector()))
-						{
-							// new model is better than all previous ones --> clear cache
-							bestModels.clear();
-							bestModels.push_back(answerset);
-			
-						// is the model at least not worse?
-						}else if (modelIsBetter){
-							// keep it in addition
-							bestModels.push_back(answerset);
-						}
-					}
-					else
-					{
-						// we do not need to suppress non-optimal models, therefore we can output models directly
-						if( !didSnapshot ) {
-							snapShotBenchmarking(*ctx);
-							didSnapshot = true;
-						}
-			
-						// process all models directly
-						BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-						{
-							bool aborthere = !(*mcb)(answerset);
-							abort |= aborthere;
-							if( aborthere )
-							LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-						}
-					}
-				}else if (modelIsBetter){
-					// we do not optimize here: process all models directly
-					BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-					{
-						bool aborthere = !(*mcb)(answerset);
-						abort |= aborthere;
-						if( aborthere )
-						LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-					}
-					mcount++;
-				}
-			
-				// if we do not optimize here: stop when desired model count is reached (if we optimize, we cannot abort since the first n models are not necessarily among the best models)
-				if( !ctx->config.getOption("OptimizationByDlvhex") && mcountLimit != 0 && mcount >= mcountLimit )
-				{
-					LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-					break;
-				}
+				// if the model is not equal or better, ignore it and try to get the next model
+				if( !equalOrBetter )
+					continue;
 
+				// keep track of the current optimum
+				ctx->currentOptimum = answerset->getWeightVector();
+				LOG(DBG, "Current global optimum (equalOrBetter = True): " << printvector(answerset->getWeightVector()));
+			
+				// in this block we do not need to count models as we need to enumerate all of them
+				// only afterwards the requested number of best models can be output
+
+				// is there a previous model and the new model is (strictly!) better than the best known one?
+				if( !bestModels.empty() && !bestModels.front()->betterThan(answerset->getWeightVector()) )
+					// new model is better than all previous ones --> clear cache
+					bestModels.clear();
+				// store this one in cache
+				bestModels.push_back(answerset);
+
+				// also show some non-optimal models?
+				if( ctx->config.getOption("OptimizationFilterNonOptimal") == 0 )
+					// yes: cache models and decide at the end upon optimality
+					abort |= callModelCallbacks(ctx, answerset);
 			}
 		}
-		while( gotModel && !abort );
+		while( !!om && !abort );
 
 		// process cached models
-		if (ctx->config.getOption("OptimizationByDlvhex") && ctx->config.getOption("OptimizationFilterNonOptimal")){
-		int printedModels = 0;
-		BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
-		// respect model count limit also for cached models
-		if (mcountLimit != 0 && printedModels == mcountLimit){
-			mcount = mcountLimit;
-			break;
-		}
-		if( !didSnapshot ) {
-			snapShotBenchmarking(*ctx);
-			didSnapshot = true;
-		}
-		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-		{
-			bool aborthere = !(*mcb)(answerset);
-			abort |= aborthere;
-			if( aborthere )
-			LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-		}
-		printedModels++;
-			}
+		BOOST_FOREACH(AnswerSetPtr answerset, bestModels) {
+			mcount ++;
+			abort |= callModelCallbacks(ctx, answerset);
+			// respect model count limit for cached models
+			if( abort || (mcountLimit != 0 && mcount >= mcountLimit) )
+				break;
 		}
 
 		LOG(INFO,"got " << mcount << " models");
-		if( abort )
-		{
+		if( abort ) {
 			LOG(INFO,"model building was aborted by callback");
-		}
-		else
-		{
-			if( mcountLimit == 0 )
-			{
+		} else {
+			if( mcountLimit == 0 ) {
 				LOG(INFO,"model building finished after enumerating all models");
-			}
-			else
-			{
-				LOG(INFO,"model building finished after enumerating " << mcountLimit << " models");
+			} else {
+				LOG(INFO,"model building finished after enumerating a maximum of " << mcountLimit << " models");
 			}
 		}
+	}
+}
 
-		if( ctx->config.getOption("DumpModelGraph") ) throw std::runtime_error("DumpModelGraph	not implemented!");
+void
+EvaluateState::evaluate(ProgramCtx* ctx)
+{
+	do {
+		if( ctx->config.getOption("Optimization") ) {
+			if( ctx->config.getOption("OptimizationTwoStep") > 0 ) {
+				// special optimization method (see dlvhex.cpp)
+				AnswerSetPtr firstBest = evaluateFindOptimum(ctx);
+				if( !!firstBest ) {
+					LOG(INFO,"first optimal answer set: " << *firstBest);
+					// enumerate all answer sets equal to previously found optimum
+					// TODO if we just want to find one answer set, do not call evaluateOnce but directly use firstBest
+					ctx->config.setOption("OptimizationTwoStep", 2);
+					evaluateOnce(ctx);
+				}
+			} else {
+				evaluateOnceExpspace(ctx);
+			}
+		} else {
+			// no optimization required
+			evaluateOnce(ctx);
+		}
 
 		// call final callbacks
-		BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks)
-		{
+		BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks) {
 			DBGLOG(DBG,"calling final callback " << printptr(fcb));
 			(*fcb)();
 		}
 
+		// TODO this repetition business should be solved in a more state-machine-ish way
 		// if repetition counter is set, decrease it and repeat
+		// this value might change in model/final callbacks, so we need to load it again here
 		unsigned repeatEvaluation = ctx->config.getOption("RepeatEvaluation");
-		if( repeatEvaluation > 0 )
-		{
+		if( repeatEvaluation > 0 ) {
 			LOG(INFO,"repeating evaluation because RepeatEvaluation=" << repeatEvaluation);
 			ctx->config.setOption("RepeatEvaluation", repeatEvaluation-1);
-			continue;
-		}
-
-		// default: do not repeat
-		break;
-	}
-	while(true);
+		} else
+			break;
+	} while(true);
 
 	//mb.printEvalGraphModelGraph(std::cerr);
 

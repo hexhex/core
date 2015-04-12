@@ -588,6 +588,12 @@ asp.update();
 
 void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 
+	// just do something if we need to optimize something
+  	if( ctx.config.getOption("Optimization") == 0 ) {
+	  LOG(DBG, "Do not need minimize constraint");
+	  return;
+	}
+
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::createMinimizeConstraints");
 
 	DBGLOG(DBG, "Preparing minimize constraints");
@@ -645,22 +651,17 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 		minb.addRule(minimizeStatements[level]);
 	}
 
-	// if we don't have minimize statements, then we don't need a minimize constraint (this is just an optimization)
-	if (minimizeStatements.size() > 0){
-		LOG(DBG, "Constructing minimize constraint");
-		sharedMinimizeData = minb.build(claspctx);
-		minc = 0;
-		if (!!sharedMinimizeData){
-			DBGLOG(DBG, "Setting minimize mode");
-			sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
+	LOG(DBG, "Constructing minimize constraint");
+	sharedMinimizeData = minb.build(claspctx);
+	minc = 0;
+	if (!!sharedMinimizeData){
+		DBGLOG(DBG, "Setting minimize mode");
+		sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
 
-			LOG(DBG, "Attaching minimize constraint to clasp");
-			minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+		LOG(DBG, "Attaching minimize constraint to clasp");
+		minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
 
-			assert(!!minc);
-		}
-	}else{
-		LOG(DBG, "Do not need minimize constraint");
+		assert(!!minc);
 	}
 }
 
@@ -1336,10 +1337,12 @@ void ClaspSolver::addNogood(Nogood ng){
 	nogoods.push_back(ng);
 }
 
+// this method is called before asking for the next model
+// therefore it can be called with the same optimum multiple times
 void ClaspSolver::setOptimum(std::vector<int>& optimum){
-	DBGLOG(DBG, "Setting new optimum in clasp");
-
+	LOG(DBG, "Setting optimum in clasp");
 	if (!minc || !sharedMinimizeData) return;
+	if (optimum.empty()) return;
 
 	// This method helps the reasoner to eliminate non-optimal partial models in advance
 	// by setting the internal upper bound to a given value.
@@ -1353,21 +1356,52 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
 	// transform optimum vector to clasp-internal representation
 	int optlen = optimum.size() - 1; // optimum[0] is unused, but in clasp levels start with 0
-	if (optlen > 0){
-		LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
-		Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
-		for (int l = 0; l < optlen; ++l){
-			newopt[l] = optimum[optlen - l];
-		}
-		newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
-	
-		LOG(DBG, "Setting optimum to representation " << printvector(std::vector<int>(&newopt[0], &newopt[optlen])));
-		sharedMinimizeData->setOptimum(newopt);
-		LOG(DBG, "Integrating constraint");
-		bool intres = minc->integrate(*claspctx.master());
-		LOG(DBG, "Integration result: " << intres);
-		delete []newopt;
+
+	LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
+	Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+	for (int l = 0; l < optlen; ++l)
+	    newopt[l] = optimum[optlen - l];
+
+	Clasp::MinimizeMode newMode;
+	bool markAsOptimal;
+
+	switch( ctx.config.getOption("OptimizationTwoStep") ) {
+	case 0:
+	  // enumeration shall find models of same quality or better (the safe option)
+	  // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is increased by 1 on the least significant level
+	  newMode = Clasp::MinimizeMode_t::optimize;
+	  newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
+	  markAsOptimal = false;
+	  break;
+	case 1:
+	  // enumeration must find a better model (works only if this solver solves the single monolithic evaluation unit)
+	  // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is used as it is
+	  newMode = Clasp::MinimizeMode_t::optimize;
+	  markAsOptimal = false;
+	  break;
+	case 2:
+	  // enumeration finds all models of equal quality
+	  // clasp MinimizeMode_t::Mode::enumOpt and pctx.currentOptimum is used as it is and we mark it as optimum
+	  newMode = Clasp::MinimizeMode_t::enumOpt;
+	  markAsOptimal = true;
+	  break;
+	default:
+	  throw std::runtime_error("OptimizationTwoStep: unexpected value");
+	  break;
 	}
+
+	LOG(DBG, "Setting sharedMinimizeData mode to " << static_cast<int>(newMode));
+	// TODO do we need to call resetBounds if we go from optimize to enumOpt?
+	sharedMinimizeData->setMode(newMode);
+	LOG(DBG, "Setting optimum to " << printvector(std::vector<int>(&newopt[0], &newopt[optlen])));
+	sharedMinimizeData->setOptimum(newopt);
+	if( markAsOptimal ) {
+	  LOG(DBG, "Marking this optimum as optimal");
+	  sharedMinimizeData->markOptimal();
+	}
+	bool intres = minc->integrate(*claspctx.master());
+	LOG(DBG, "Integration constraint gave result result: " << intres);
+	delete []newopt;
 }
 
 InterpretationPtr ClaspSolver::getNextModel(){
