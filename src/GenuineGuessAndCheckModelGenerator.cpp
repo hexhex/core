@@ -358,7 +358,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		// Note that this optimization is conservative such that the algorithm remains complete even when the program is split. Because costs can be only positive,
 		// if the costs of a partial model are greater than the current global optimum then also any completion of this partial model (by combining it with other units)
 		// would be non-optimal.
-		if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
+		if (factory.ctx.config.getOption("Optimization")) solver->setOptimum(factory.ctx.currentOptimum);
 		modelCandidate = solver->getNextModel();
 
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
