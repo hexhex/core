@@ -914,23 +914,8 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 					interpretation.reset(new Interpretation(ctx->registry()));
 				}
 
-				if( ctx->config.getOption("DumpIModelGraph") )
-				{
-					throw std::runtime_error("DumpIModelGraph	not implemented!");
-					WARNING("TODO individual eval/model graphviz output")
-				}
-				#ifndef NDEBUG
+				if( ctx->config.getOption("DumpIModelGraph") ) throw std::runtime_error("DumpIModelGraph	not implemented!");
 				DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
-				/*
-				std::set<Model> onlyFor;
-				onlyFor.insert(m.get());
-				GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
-						true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), onlyFor);
-				std::stringstream smodel;
-				smodel << fname << "PlainHEXOnlineModel" << mcount;
-				writeGraphVizFunctors(func, func, smodel.str());
-				*/
-				#endif
 
 				// model callbacks
 				AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
@@ -1065,11 +1050,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 			}
 		}
 
-		if( ctx->config.getOption("DumpModelGraph") )
-		{
-			throw std::runtime_error("DumpModelGraph	not implemented!");
-			WARNING("TODO overall eval/model graphviz output")
-		}
+		if( ctx->config.getOption("DumpModelGraph") ) throw std::runtime_error("DumpModelGraph	not implemented!");
 
 		// call final callbacks
 		BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks)
@@ -1092,84 +1073,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 	}
 	while(true);
 
-	#if 0
-	#ifndef NDEBUG
-	mb.printEvalGraphModelGraph(std::cerr);
-	#endif
-	#ifndef NDEBUG
-	GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
-			true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
-	writeGraphVizFunctors(func, func, fname+"PlainHEXOnlineEgMg");
-	#endif
-	#endif
-	//std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
-
-
-	#if 0
-
-	//
-	// We don't have a depedency graph, so just dump the program to an
-	// OrdinaryModelGenerator and see what happens
-	//
-
-	std::vector<AtomSet> models;
-
-	OrdinaryModelGenerator omg(*ctx);
-
-	//
-	// The GraphProcessor starts its computation with the program's ground
-	// facts as input.
-	// But only if the original EDB is consistent, otherwise, we can skip it
-	// anyway.
-	//
-	if (ctx->getEDB()->isConsistent())
-		{
-			omg.compute(*ctx->getIDB(), *ctx->getEDB(), models);
-		}
-
-	///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
-
-	//
-	// prepare result container
-	//
-	// if we had any weak constraints, we have to tell the result container the
-	// prefix in order to be able to compute each asnwer set's costs!
-	//
-	std::string wcprefix;
-
-	if (ctx->getIDB()->getWeakConstraints().size() > 0)
-		{
-			wcprefix = "wch__";
-		}
-
-	ResultContainer* result = new ResultContainer(wcprefix);
-	ctx->setResultContainer(result);
-
-	//
-	// put GraphProcessor result into ResultContainer
-	///@todo we can do better, for sure
-	//
-	for (std::vector<AtomSet>::const_iterator it = models.begin();
-			 it != models.end(); ++it)
-		{
-			ctx->getResultContainer()->addSet(*it);
-		}
-
-	#endif
-
-	WARNING("TODO dlt was here")
-	///@todo quick hack for dlt
-	//	 if (optiondlt)
-	//		 {
-	//			 ctx->getResultContainer()->filterOutDLT();
-	//		 }
-
-
-	#if 0
-		std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
-			ctx->evalgraph.countEvalUnits() << " evalunits " << ctx->evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
-		benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << std::endl;
-	#endif
+	//mb.printEvalGraphModelGraph(std::cerr);
 
 	StatePtr next(new PostProcessState);
 	changeState(ctx, next);
