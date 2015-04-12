@@ -907,6 +907,7 @@ void InternalGroundASPSolver::removePropagator(PropagatorCallback* pb){
 
 void InternalGroundASPSolver::setOptimum(std::vector<int>& optimum){
 	// not supported: ignore the call
+  LOG(INFO,"InternalGroundASPSolver::setOptimum not supported!");
 }
 
 InterpretationPtr InternalGroundASPSolver::getNextModel(){
