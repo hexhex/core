@@ -57,6 +57,93 @@ DLVHEX_NAMESPACE_BEGIN
 ProgramCtx::ProgramCtx():
 		maxint(0), terminationRequest(false)
 {
+  config.setOption("FLPDecisionCriterionHead", 1);
+  config.setOption("FLPDecisionCriterionE", 1);
+  config.setOption("FLPCheck", 0);
+  config.setOption("UFSCheck", 1);
+  config.setOption("UFSCheckMonolithic", 0);
+  config.setOption("UFSCheckAssumptionBased", 1);
+  config.setOption("GenuineSolver", 0);
+  config.setOption("ExternalLearning", 1);
+  config.setOption("UFSLearning", 1);
+  config.setOption("UFSLearnStrategy", 2);
+  config.setOption("ExternalLearningIOBehavior", 1);
+  config.setOption("ExternalLearningMonotonicity", 1);
+  config.setOption("ExternalLearningFunctionality", 1);
+  config.setOption("ExternalLearningLinearity", 1);
+  config.setOption("ExternalLearningNeg", 1);
+  config.setOption("ExternalLearningUser", 1);
+  config.setOption("ExternalLearningGeneralize", 0);
+  config.setOption("AlwaysEvaluateAllExternalAtoms", 0);
+  config.setOption("NongroundNogoodInstantiation", 0);
+  config.setOption("UFSCheckHeuristics", 0);
+  config.setOption("ModelQueueSize", 5);
+  config.setOption("Silent", 0);
+  config.setOption("Verbose", 0);
+  config.setOption("UseExtAtomCache",1);
+  config.setOption("KeepNamespacePrefix",0);
+  config.setOption("DumpDepGraph",0);
+  config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
+  config.setOption("DumpCompGraph",0);
+  config.setOption("DumpEvalGraph",0);
+  config.setOption("DumpModelGraph",0);
+  config.setOption("DumpIModelGraph",0);
+  config.setOption("DumpAttrGraph",0);
+  config.setOption("KeepAuxiliaryPredicates",0);
+  config.setOption("NoFacts",0);
+  config.setOption("NumberOfModels",0);
+  config.setOption("RepeatEvaluation",0);
+  config.setOption("LegacyECycleDetection",0);
+  config.setOption("NMLP", 0);
+  config.setOption("MLP", 0);
+  config.setOption("Forget", 0);
+  config.setOption("Split", 0);
+  config.setOption("SkipStrongSafetyCheck",0);
+  config.setOption("LiberalSafety",1);
+  config.setOption("IncludeAuxInputInAuxiliaries",0);
+  config.setOption("DumpEvaluationPlan",0);
+  config.setOption("DumpStats",0);
+  config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
+  config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
+  config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
+  // frumpy is the name of the failsafe clasp config option
+  config.setStringOption("ClaspConfiguration","frumpy");
+  config.setOption("ClaspIncrementalInterpretationExtraction",1);
+  config.setOption("ClaspSingletonLoopNogoods",0);
+  config.setOption("ClaspInverseLiterals", 0);
+  // propagate at least once per second, but also propagate all 10000 times we can propagate 
+  // TODO we should experiment with these
+  config.setOption("ClaspDeferNPropagations", 10000);
+  config.setOption("ClaspDeferMaxTMilliseconds",1000);
+  config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
+  config.setOption("UseConstantSpace", 0); // see --help
+  config.setOption("ClaspForceSingleThreaded", 0);
+  config.setOption("LazyUFSCheckerInitialization", 0);
+  config.setOption("SupportSets", 0);
+  config.setOption("ForceGC", 0);
+  config.setStringOption("PluginDirs", "");
+  
+  // options related to WeakConstraintPlugin (we need to support this in the core for efficiency)
+  config.setOption("Optimization", 0); // whether we handle answer set weights
+  // whether we first find the optimum and then enumerate all optimal answer sets
+  // this setting is used by the model builders:
+  // if it is 0, enumeration finds models of same quality or better (the safe option)
+  //   (clasp MinimizeMode_t::Mode::optimize and currentOptimum is decreased by 1)
+  // if it is 1, enumeration must find a better model
+  //   (clasp MinimizeMode_t::Mode::optimize and currentOptimum is used as it is)
+  // if it is 2, enumeration finds all models of equal quality
+  //   (clasp MinimizeMode_t::Mode::enumOpt and currentOptimum is used as it is)
+  // (if we use two step optimization, we use it with 1 to find the optimum and with 2 to enumerate optimal models)
+  config.setOption("OptimizationTwoStep", 0);
+  config.setOption("OptimizationByDlvhex", 0);
+  config.setOption("OptimizationByBackend", 0);
+  config.setOption("OptimizationFilterNonOptimal", 0);
+  
+  #warning "TODO cleanup the setASPSoftware vs nGenuineSolver thing"
+  // but if we have genuinegc, take genuinegc as default
+  #if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+  config.setOption("GenuineSolver", 4);
+  #endif
 }
 
 
