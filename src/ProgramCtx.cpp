@@ -57,6 +57,7 @@ DLVHEX_NAMESPACE_BEGIN
 ProgramCtx::ProgramCtx():
 		maxint(0), terminationRequest(false)
 {
+  config.setOption("AllowAggExtCycles",0);
   config.setOption("FLPDecisionCriterionHead", 1);
   config.setOption("FLPDecisionCriterionE", 1);
   config.setOption("FLPCheck", 0);
@@ -122,6 +123,7 @@ ProgramCtx::ProgramCtx():
   config.setOption("SupportSets", 0);
   config.setOption("ForceGC", 0);
   config.setStringOption("PluginDirs", "");
+  config.setOption("IncrementalGrounding", 0);
   
   // options related to WeakConstraintPlugin (we need to support this in the core for efficiency)
   config.setOption("Optimization", 0); // whether we handle answer set weights
@@ -137,7 +139,7 @@ ProgramCtx::ProgramCtx():
   config.setOption("OptimizationTwoStep", 0);
   config.setOption("OptimizationByDlvhex", 0);
   config.setOption("OptimizationByBackend", 0);
-  config.setOption("OptimizationFilterNonOptimal", 0);
+  config.setOption("OptimizationFilterNonOptimal", 1); // if 1 then we only show optimal results, otherwise before getting optimal results we might get nonoptimal ones
   
   #warning "TODO cleanup the setASPSoftware vs nGenuineSolver thing"
   // but if we have genuinegc, take genuinegc as default
