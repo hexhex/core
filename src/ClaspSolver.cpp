@@ -1369,7 +1369,7 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 	case 0:
 	  // enumeration shall find models of same quality or better (the safe option)
 	  // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is increased by 1 on the least significant level
-	  newMode = Clasp::MinimizeMode_t::optimize;
+	  newMode = Clasp::MinimizeMode_t::enumerate;
 	  newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
 	  markAsOptimal = false;
 	  break;
