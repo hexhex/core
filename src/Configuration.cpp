@@ -79,8 +79,9 @@ Configuration::Configuration()
 unsigned
 Configuration::getOption(const std::string& option) const
 {
-    return optionMap.find(option) != optionMap.end() ? optionMap.at(option) : 0;
-//    return optionMap[option];
+  if( optionMap.find(option) == optionMap.end() )
+    throw std::runtime_error("requested non-existing/unset option '"+option+"'");
+  return optionMap.at(option);
 }
 
 bool
