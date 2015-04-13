@@ -242,7 +242,7 @@ struct ExtSourceProperties
     /**
      * \brief Checks if the external source is linear on the atom level.
      *
-     * Linearity on atom level means that for for input atoms a1, ..., an
+     * Linearity on atom level means that for input atoms a1, ..., an
      * queries can be split such that for each atom a1, ..., an forms an independent sub-query
      * and the union of the results to these sub-queries correspond to the result to the overall query.
      * @return Linearity on atom level.
