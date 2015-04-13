@@ -47,6 +47,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/unordered_set.hpp>
 
 #include <fstream>
 
@@ -505,6 +506,18 @@ bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   return true;
 }
 
+namespace {
+  void warnTupleMismatch(const ExternalAtom& eatom, const Tuple& t) { 
+    static boost::unordered_set<void*> warned;
+    void *p = reinterpret_cast<void*>(eatom.pluginAtom);
+    if( warned.count(p) == 0 ) {
+      warned.insert(p);
+      LOG(WARNING,"external atom " << eatom << " returned tuple " <<
+          printrange(t) << " which does not match output pattern (skipping, suppressing future warnings)");
+    }
+  }
+}
+
 bool BaseModelGenerator::evaluateExternalAtomQuery(
 		PluginAtom::Query& query,
 	       	ExternalAnswerTupleCallback& cb,
@@ -550,8 +563,7 @@ bool BaseModelGenerator::evaluateExternalAtomQuery(
       LOG(PLUGIN,"got answer tuple " << printManyToString<RawPrinter>(t, ",", reg));
       if( !verifyEAtomAnswerTuple(reg, eatom, t) )
       {
-        LOG(WARNING,"external atom " << eatom << " returned tuple " <<
-            printrange(t) << " which does not match output pattern (skipping)");
+        warnTupleMismatch(eatom, t);
         continue;
       }
 

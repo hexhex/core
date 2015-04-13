@@ -941,6 +941,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
         // copy interpretation! (callbacks can modify it)
         answerset->interpretation->getStorage() = interpretation->getStorage();
         answerset->computeWeightVector();
+        LOG(DBG, "weight vector of this answer set: " << printvector(answerset->getWeightVector()));
 
         // add EDB if configured that way
         if( !ctx->config.getOption("NoFacts") )
@@ -961,11 +962,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
         // keep track of the current optimum
         if (modelIsBetter){
 		ctx->currentOptimum = answerset->getWeightVector();
-#ifndef NDEBUG
-		std::stringstream ss;
-		answerset->printWeightVector(ss);
-		DBGLOG(DBG, "New global optimum: " << ss.str());
-#endif
+		LOG(DBG, "New global optimum (modelIsBetter = True): " << printvector(answerset->getWeightVector()));
 	}
 
 	// if dlvhex is allowed to filter, then we can skip this part for models which are known to be non-optimal

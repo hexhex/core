@@ -570,7 +570,7 @@ int main(int argc, char *argv[])
 	Config config;
 
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
-	int returnCode = 0;
+	int returnCode = 1;
 	try
 	{
 		// default logging priority = errors + warnings

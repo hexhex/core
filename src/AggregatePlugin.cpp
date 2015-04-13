@@ -207,6 +207,18 @@ std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunctio
 	}
 }
 
+namespace {
+	void warnMaxint(const ProgramCtx& ctx, ID term) {
+		static bool warned = false;
+		//LOG(WARNING,"AggregatePlugin term is " << term);
+		if( !warned && term.isIntegerTerm() &&
+				(ctx.maxint == ID_FAIL || term.address > ctx.maxint) ) {
+			LOG(WARNING,"AggregatePlugin requires --maxint or -N to be set to a sufficiently high value! (" << term.address << "/" << ctx.maxint << ")");
+			warned = true;
+		}
+	}
+}
+
 void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std::vector<ID>& idb, const Rule& rule){
 
 	RegistryPtr reg = ctx.registry();
@@ -506,6 +518,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
 				bi.tuple.push_back(aatom.tuple[1]);
 				bi.tuple.push_back(aatom.tuple[0]);
+				warnMaxint(ctx, aatom.tuple[0]);
 				bi.tuple.push_back(valueVariable);
 				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
 			}
@@ -514,8 +527,10 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, InterpretationPtr edb, std:
 				bi.tuple.push_back(aatom.tuple[3]);
 				bi.tuple.push_back(valueVariable);
 				bi.tuple.push_back(aatom.tuple[4]);
+				warnMaxint(ctx, aatom.tuple[4]);
 				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
 			}
+
 		}else{
 			// take it as it is
 			newRule.body.push_back(b);
