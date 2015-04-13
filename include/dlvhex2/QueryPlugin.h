@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -39,84 +39,84 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Implements brave and cautious queries by rewriting them to answer set computation and postprocessind. */
 class QueryPlugin:
-  public PluginInterface
+public PluginInterface
 {
-public:
-  // stored in ProgramCtx, accessed using getPluginData<QueryPlugin>()
-  class CtxData:
+    public:
+        // stored in ProgramCtx, accessed using getPluginData<QueryPlugin>()
+        class CtxData:
     public PluginData
-  {
-  public:
-    /** \brief Stores if plugin is enabled. */
-    bool enabled;
+    {
+        public:
+            /** \brief Stores if plugin is enabled. */
+            bool enabled;
 
-    /** Available reasoning modes.
-      *
-      * at the moment DEFAULT triggers an error,
-      * so the user _must_ choose a reasoning mode. */
-    enum Mode {
-	DEFAULT,
-	/** \brief Brave reasoning. */
-	BRAVE,
-	/** \brief Cautious reasoning. */
-	CAUTIOUS
-	};
-    /** \brief Selected reasoning mode. */
-    Mode mode;
+            /** Available reasoning modes.
+             *
+             * at the moment DEFAULT triggers an error,
+             * so the user _must_ choose a reasoning mode. */
+            enum Mode
+            {
+                DEFAULT,
+                /** \brief Brave reasoning. */
+                BRAVE,
+                /** \brief Cautious reasoning. */
+                CAUTIOUS
+            };
+            /** \brief Selected reasoning mode. */
+            Mode mode;
 
-    /** \brief True for ground queries, false for nonground. */
-    bool ground;
+            /** \brief True for ground queries, false for nonground. */
+            bool ground;
 
-    /** \brief The query (contains body literals).
-      *
-      * This is not directly stored into IDB or EDB. */
-    Tuple query;
+            /** \brief The query (contains body literals).
+             *
+             * This is not directly stored into IDB or EDB. */
+            Tuple query;
 
-    /** \brief Auxiliary predicate symbols for nonground query evaluation. */
-    ID varAuxPred;
-    /** \brief Auxiliary predicate symbols for ground query evaluation. */
-    ID novarAuxPred;
+            /** \brief Auxiliary predicate symbols for nonground query evaluation. */
+            ID varAuxPred;
+            /** \brief Auxiliary predicate symbols for ground query evaluation. */
+            ID novarAuxPred;
 
-    /** \brief IDs of variables as they occur in auxiliary nonground predicate. */
-    Tuple variableIDs;
+            /** \brief IDs of variables as they occur in auxiliary nonground predicate. */
+            Tuple variableIDs;
 
-    /** \brief Whether to display all witnesses for ground queries.
-      *
-      * Positive witnesses for brave and negative for cautious reasoning. */
-    bool allWitnesses;
+            /** \brief Whether to display all witnesses for ground queries.
+             *
+             * Positive witnesses for brave and negative for cautious reasoning. */
+            bool allWitnesses;
 
-    CtxData();
-    virtual ~CtxData() {};
-  };
+            CtxData();
+            virtual ~CtxData() {};
+    };
 
-public:
-  /** \brief Constructor. */
-  QueryPlugin();
-  /** \brief Destructor. */
-  virtual ~QueryPlugin();
+    public:
+        /** \brief Constructor. */
+        QueryPlugin();
+        /** \brief Destructor. */
+        virtual ~QueryPlugin();
 
-	// output help message for this plugin
-	virtual void printUsage(std::ostream& o) const;
+        // output help message for this plugin
+        virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --query-enable --query-brave --query-cautious
-  //
-	// processes options for this plugin, and removes recognized options from pluginOptions
-  // (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+        // accepted options: --query-enable --query-brave --query-cautious
+        //
+        // processes options for this plugin, and removes recognized options from pluginOptions
+        // (do not free the pointers, the const char* directly come from argv)
+        virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // create parser modules that extend and the basic hex grammar
-  // this parser also stores the query information into the plugin
-  virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
+        // create parser modules that extend and the basic hex grammar
+        // this parser also stores the query information into the plugin
+        virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
-  // rewrite program by adding auxiliary query rules
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+        // rewrite program by adding auxiliary query rules
+        virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-  // change model callback and register final callback
-  virtual void setupProgramCtx(ProgramCtx&);
+        // change model callback and register final callback
+        virtual void setupProgramCtx(ProgramCtx&);
 
-  // no atoms!
+        // no atoms!
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif

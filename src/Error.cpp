@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,39 +22,38 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   Error.cpp
  * @author Roman Schindlauer
  * @date   Fri Mar  3 11:40:24 CET 2006
- * 
+ *
  * @brief  Exception classes.
- * 
- * 
+ *
+ *
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/Error.h"
 
 #include <sstream>
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 GeneralError::GeneralError(const std::string& msg)
-    : std::runtime_error(msg)
+: std::runtime_error(msg)
 {
 }
 
+
 SyntaxError::SyntaxError(const std::string& msg,
-                         const unsigned l,
-                         const std::string& f)
-    : GeneralError(msg),
-      line(l),
-      file(f)
+const unsigned l,
+const std::string& f)
+: GeneralError(msg),
+line(l),
+file(f)
 {
 }
 
@@ -68,10 +67,10 @@ SyntaxError::getErrorMsg() const
 
     if (!file.empty())
         err << " in " << file;
-    
+
     if (line != 0)
         err << ", line " << line;
-    
+
     err << ": " << this->what();
 
     return err.str();
@@ -92,18 +91,16 @@ SyntaxError::setFile(const std::string& f)
 }
 
 
-
 FatalError::FatalError(const std::string& msg)
-    : GeneralError("Fatal: " + msg)
+: GeneralError("Fatal: " + msg)
 {
 }
 
 
 PluginError::PluginError(const std::string& msg)
-    : GeneralError(msg)
+: GeneralError(msg)
 {
 }
-
 
 
 void
@@ -122,11 +119,12 @@ PluginError::getErrorMsg() const
 
     if (!context.empty())
         err << " in " << context;
-    
+
     err << ": " << this->what();
 
     return err.str();
 }
+
 
 DLVHEX_NAMESPACE_END
 

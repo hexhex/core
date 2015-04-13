@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  */
-
 
 /**
  * @file InputProvider.h
@@ -48,47 +47,46 @@ DLVHEX_NAMESPACE_BEGIN
 /** \brief Abstractly provides input to dlvhex from various sources. */
 class DLVHEX_EXPORT InputProvider
 {
-public:
-  /** \brief Constructor. */
-  InputProvider();
-  /** \brief Destructor. */
-  ~InputProvider();
+    public:
+        /** \brief Constructor. */
+        InputProvider();
+        /** \brief Destructor. */
+        ~InputProvider();
 
-	/** \brief Add input from a stream.
-	  * @param i Stream to read from.
-	  * @param contentname Unique name for this input. */
-	void addStreamInput(std::istream& i, const std::string& contentname);
-	/** \brief Add input from a string.
-	  * @param content String to read from.
-	  * @param contentname Unique name for this input. */
-	void addStringInput(const std::string& content, const std::string& contentname);
-	/** \brief Add input from a file.
-	  * @param filename File to read from.
-	  * @param contentname Unique name for this input. */
-	void addFileInput(const std::string& filename);
-#ifdef HAVE_CURL
-	/** \brief Add input from a URL.
-	  * @param url URL to read from.
-	  * @param contentname Unique name for this input. */
-	void addURLInput(const std::string& url);
-#endif
-	/** \brief Checks if there is at least one input.
-	  * @return True if there is at least one input and false otherwise. */
-	bool hasContent() const;
-	/** \brief Returns the list of input names.
-	  * @return Vector of input names. */
-	const std::vector<std::string>& contentNames() const;
+        /** \brief Add input from a stream.
+         * @param i Stream to read from.
+         * @param contentname Unique name for this input. */
+        void addStreamInput(std::istream& i, const std::string& contentname);
+        /** \brief Add input from a string.
+         * @param content String to read from.
+         * @param contentname Unique name for this input. */
+        void addStringInput(const std::string& content, const std::string& contentname);
+        /** \brief Add input from a file.
+         * @param filename File to read from.
+         * @param contentname Unique name for this input. */
+        void addFileInput(const std::string& filename);
+    #ifdef HAVE_CURL
+        /** \brief Add input from a URL.
+         * @param url URL to read from.
+         * @param contentname Unique name for this input. */
+        void addURLInput(const std::string& url);
+    #endif
+        /** \brief Checks if there is at least one input.
+         * @return True if there is at least one input and false otherwise. */
+        bool hasContent() const;
+        /** \brief Returns the list of input names.
+         * @return Vector of input names. */
+        const std::vector<std::string>& contentNames() const;
 
-	/** \brief Get input as a single stream.
-	  * @return Input stream. */
-	std::istream& getAsStream();
+        /** \brief Get input as a single stream.
+         * @return Input stream. */
+        std::istream& getAsStream();
 
-private:
-  class Impl;
-  boost::scoped_ptr<Impl> pimpl;
+    private:
+        class Impl;
+        boost::scoped_ptr<Impl> pimpl;
 };
 typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 
 DLVHEX_NAMESPACE_END
-
-#endif // INPUT_PROVIDER_HPP_INCLUDED_14012011
+#endif                           // INPUT_PROVIDER_HPP_INCLUDED_14012011

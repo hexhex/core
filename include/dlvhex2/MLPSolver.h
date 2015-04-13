@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   MLPSolver.h
  * @author Tri Kurniawan Wijaya
  * @date   Tue Jan 18 19:44:00 CET 2011
- * 
+ *
  * @brief  Solve the ic-stratified MLP
  */
 
-/** 
+/**
  * update 2011.03.19: can solve i-stratified MLP?
  * TODO
  * 31.03.2011
@@ -82,49 +81,51 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Solver for logic programs with modules.
-  *
-  * @todo Documentation of this class is missing. */
-class DLVHEX_EXPORT MLPSolver{
+ *
+ * @todo Documentation of this class is missing. */
+class DLVHEX_EXPORT MLPSolver
+{
 
     typedef Interpretation InterpretationType;
 
     // to store/index S
     typedef boost::multi_index_container<
-      InterpretationType,
-      boost::multi_index::indexed_by<
+        InterpretationType,
+        boost::multi_index::indexed_by<
         boost::multi_index::random_access<boost::multi_index::tag<impl::AddressTag> >,
         boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<InterpretationType> >
-      > 
-    > InterpretationTable; 
+        >
+        > InterpretationTable;
     typedef InterpretationTable::index<impl::AddressTag>::type ITAddressIndex;
     typedef InterpretationTable::index<impl::ElementTag>::type ITElementIndex;
 
     InterpretationTable sTable;
 
     // to store/index module instantiation = to store complete Pi[S]
-    struct ModuleInst{
-      int idxModule;
-      int idxS;
-      ModuleInst(
-        int idxModule,
-        int idxS):
+    struct ModuleInst
+    {
+        int idxModule;
+        int idxS;
+        ModuleInst(
+            int idxModule,
+            int idxS):
         idxModule(idxModule),idxS(idxS)
-      {}
+            {}
     };
 
     typedef boost::multi_index_container<
-      ModuleInst, 
-      boost::multi_index::indexed_by<
+        ModuleInst,
+        boost::multi_index::indexed_by<
         boost::multi_index::random_access<boost::multi_index::tag<impl::AddressTag> >,
-        boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, 
-            boost::multi_index::composite_key<
-              ModuleInst, 
-              boost::multi_index::member<ModuleInst, int, &ModuleInst::idxModule>,
-              boost::multi_index::member<ModuleInst, int, &ModuleInst::idxS>
-            >
+        boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>,
+        boost::multi_index::composite_key<
+        ModuleInst,
+        boost::multi_index::member<ModuleInst, int, &ModuleInst::idxModule>,
+        boost::multi_index::member<ModuleInst, int, &ModuleInst::idxS>
         >
-      > 
-    > ModuleInstTable; 
+        >
+        >
+        > ModuleInstTable;
     typedef ModuleInstTable::index<impl::AddressTag>::type MIAddressIndex;
     typedef ModuleInstTable::index<impl::ElementTag>::type MIElementIndex;
 
@@ -132,40 +133,39 @@ class DLVHEX_EXPORT MLPSolver{
 
     // to store/index value calls = to store C
     typedef boost::multi_index_container<
-      int, // index to the ModuleInstTable
-      boost::multi_index::indexed_by<
+        int,                     // index to the ModuleInstTable
+        boost::multi_index::indexed_by<
         boost::multi_index::random_access<boost::multi_index::tag<impl::AddressTag> >,
         boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<int> >
-      > 
-    > ValueCallsType; 
+        >
+        > ValueCallsType;
     typedef ValueCallsType::index<impl::AddressTag>::type VCAddressIndex;
     typedef ValueCallsType::index<impl::ElementTag>::type VCElementIndex;
-   
+
     // to store/index ID
     typedef boost::multi_index_container<
-      ID, 
-      boost::multi_index::indexed_by<
+        ID,
+        boost::multi_index::indexed_by<
         boost::multi_index::random_access<boost::multi_index::tag<impl::AddressTag> >,
         boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<ID> >
-      > 
-    > IDSet; 
+        >
+        > IDSet;
     typedef IDSet::index<impl::AddressTag>::type IDSAddressIndex;
     typedef IDSet::index<impl::ElementTag>::type IDSElementIndex;
     // vector of IDTable, the index of the i/S should match with the index in tableInst
     std::vector<IDSet> A;
-    std::vector<IDSet> Top; // to store top rules (in instantiation splitting mode)
-    
+    std::vector<IDSet> Top;      // to store top rules (in instantiation splitting mode)
+
     // type for the Mi/S
     typedef std::vector<InterpretationType> VectorOfInterpretation;
     // vector of Interpretation, the index of the i/S should match with the index in tableInst
     InterpretationPtr M;
-    
 
     // all about graph here:
     //typedef boost::property<boost::edge_name_t, std::string> EdgeNameProperty;
     //typedef boost::property<boost::vertex_name_t, std::string> VertexNameProperty;
     //typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, VertexNameProperty, EdgeNameProperty> Graph;
-    
+
     typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, int, int> Graph;
     typedef boost::graph_traits<Graph> Traits;
 
@@ -235,7 +235,7 @@ class DLVHEX_EXPORT MLPSolver{
 
     // for instantiation - ogatoms indexing
     std::vector<std::vector<ID> > instOgatoms;
-    int totalSizeInstOgatoms;       
+    int totalSizeInstOgatoms;
     const Tuple& getOgatomsInInst(int instIdx);
 
     std::ofstream ofsGraph;
@@ -259,7 +259,7 @@ class DLVHEX_EXPORT MLPSolver{
     int countB;
     int countC;
 
-    void printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const; 
+    void printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const;
     void printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const;
     void printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const;
     void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
@@ -268,26 +268,22 @@ class DLVHEX_EXPORT MLPSolver{
     void printIdb(const RegistryPtr& reg1, const Tuple& idb);
     void printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
     void printProgram(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
-    
-    double startTime; // in miliseconds
 
-  public:
-    int ctrAS;
-    int ctrASFromDLV;
-    int ctrCallToDLV;
-    MLPSolver(ProgramCtx& ctx1);
-    void setNASReturned(int n);
-    void setForget(int n);
-    void setInstSplitting(int n);
-    void setPrintLevel(int level);
-    bool solve(); // return false if the program is not ic-stratified
+    double startTime;            // in miliseconds
 
-  
+    public:
+        int ctrAS;
+        int ctrASFromDLV;
+        int ctrCallToDLV;
+        MLPSolver(ProgramCtx& ctx1);
+        void setNASReturned(int n);
+        void setForget(int n);
+        void setInstSplitting(int n);
+        void setPrintLevel(int level);
+        bool solve();            // return false if the program is not ic-stratified
 
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif /* _DLVHEX_MLPSOLVER_H */
-
+#endif                           /* _DLVHEX_MLPSOLVER_H */
 #endif

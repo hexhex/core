@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @file EvalHeuristicShared.h
- * @author Peter Schüller
+ * @author Peter Schller
  *
  * @brief Code used in multiple evaluation heuristics.
  */
@@ -43,62 +43,60 @@ DLVHEX_NAMESPACE_BEGIN
 namespace evalheur
 {
 
-typedef ComponentGraph::Component Component;
-typedef ComponentGraph::ComponentIterator ComponentIterator;
-typedef std::vector<Component> ComponentContainer;
-typedef std::set<Component> ComponentSet;
+    typedef ComponentGraph::Component Component;
+    typedef ComponentGraph::ComponentIterator ComponentIterator;
+    typedef std::vector<Component> ComponentContainer;
+    typedef std::set<Component> ComponentSet;
 
-/** \brief Topological sort of all components in graph into vector.
-  *
-  * @param cg Either internal component graph or component graph rest.
-  * @param out Container for the result. */
-template<typename ComponentGraphIntOrRest, typename Sequence>
-void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out);
+    /** \brief Topological sort of all components in graph into vector.
+     *
+     * @param cg Either internal component graph or component graph rest.
+     * @param out Container for the result. */
+    template<typename ComponentGraphIntOrRest, typename Sequence>
+        void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out);
 
-/** \brief Defines which components to collapse and which components to share among units. */
-struct BuildCommand
-{
-	/** \brief Components to collapse to unit. */
-	ComponentContainer collapse;
-	/** \brief Components to share into unit (constraint components). */
-	ComponentContainer share;
-};
-typedef std::vector<BuildCommand> CommandVector;
+    /** \brief Defines which components to collapse and which components to share among units. */
+    struct BuildCommand
+    {
+        /** \brief Components to collapse to unit. */
+        ComponentContainer collapse;
+        /** \brief Components to share into unit (constraint components). */
+        ComponentContainer share;
+    };
+    typedef std::vector<BuildCommand> CommandVector;
 
-/** \brief Executes the commands in a vector.
-  * @param commands Commands to execute, see BuildCommand.
-  * @param builder EvalGraphBuilder. */
-void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder);
+    /** \brief Executes the commands in a vector.
+     * @param commands Commands to execute, see BuildCommand.
+     * @param builder EvalGraphBuilder. */
+    void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder);
 
-// template implementation
-template<typename ComponentGraphIntOrRest, typename Sequence>
-void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out)
-{
-	// we need a hash map, as component graph is no graph with vecS-storage
-	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+    // template implementation
+    template<typename ComponentGraphIntOrRest, typename Sequence>
+    void topologicalSortComponents(const ComponentGraphIntOrRest& cg, Sequence& out) {
+        // we need a hash map, as component graph is no graph with vecS-storage
+        typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+        typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
 
-	// create white hash map for topological sort
-	CompColorHashMap ccWhiteHashMap;
-	{
-		typename boost::graph_traits<ComponentGraphIntOrRest>::vertex_iterator cit, cit_end;
-		for(boost::tie(cit, cit_end) = boost::vertices(cg);
-		    cit != cit_end; ++cit)
-		{
-			ccWhiteHashMap[*cit] = boost::white_color;
-		}
-	}
+        // create white hash map for topological sort
+        CompColorHashMap ccWhiteHashMap;
+        {
+            typename boost::graph_traits<ComponentGraphIntOrRest>::vertex_iterator cit, cit_end;
+            for(boost::tie(cit, cit_end) = boost::vertices(cg);
+            cit != cit_end; ++cit) {
+                ccWhiteHashMap[*cit] = boost::white_color;
+            }
+        }
 
-	assert(out.empty());
-	typename std::back_insert_iterator<Sequence> compinserter(out);
-	boost::topological_sort(
-		cg,
-		compinserter,
-		boost::color_map(CompColorMap(ccWhiteHashMap)));
-}
+        assert(out.empty());
+        typename std::back_insert_iterator<Sequence> compinserter(out);
+        boost::topological_sort(
+            cg,
+            compinserter,
+            boost::color_map(CompColorMap(ccWhiteHashMap)));
+    }
 
 }
+
 
 DLVHEX_NAMESPACE_END
-
-#endif // EVAL_HEURISTIC_SHARED_HPP_INCLUDED__30112011
+#endif                           // EVAL_HEURISTIC_SHARED_HPP_INCLUDED__30112011

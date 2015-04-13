@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,19 +22,18 @@
  * 02110-1301 USA
  */
 
-
 /**
  * @file   Configuration.cpp
  * @author Roman Schindlauer, Peter Schueller
  * @date   Sat Nov  5 15:26:18 CET 2005
- * 
+ *
  * @brief  configuration container (previously global variables)
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/Configuration.h"
 
@@ -43,35 +42,34 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-
 Configuration::Configuration()
 {
-	//
-	// program analysis
-	//
+    //
+    // program analysis
+    //
     verboseLevel[DUMP_PARSED_PROGRAM] = 1;
     verboseLevel[DUMP_DEPENDENCY_GRAPH] = 1;
     verboseLevel[SAFETY_ANALYSIS] = 1;
 
-	//
-	// plugin processing
-	//
+    //
+    // plugin processing
+    //
     verboseLevel[DUMP_CONVERTED_PROGRAM] = 2;
     verboseLevel[DUMP_REWRITTEN_PROGRAM] = 2;
     verboseLevel[DUMP_OPTIMIZED_PROGRAM] = 2;
     verboseLevel[PLUGIN_LOADING] = 4;
 
-	//
-	// intermediate model generation
-	//
+    //
+    // intermediate model generation
+    //
     verboseLevel[COMPONENT_EVALUATION] = 4;
     verboseLevel[MODEL_GENERATOR] = 4;
     verboseLevel[GRAPH_PROCESSOR] = 4;
     verboseLevel[DUMP_OUTPUT] = 4;
 
-	//
-	// time benchmarking
-	//
+    //
+    // time benchmarking
+    //
     verboseLevel[PROFILING] = 8;
 }
 
@@ -79,17 +77,18 @@ Configuration::Configuration()
 unsigned
 Configuration::getOption(const std::string& option) const
 {
-  if( optionMap.find(option) == optionMap.end() )
-    throw std::runtime_error("requested non-existing/unset option '"+option+"'");
-  return optionMap.at(option);
+    if( optionMap.find(option) == optionMap.end() )
+        throw std::runtime_error("requested non-existing/unset option '"+option+"'");
+    return optionMap.at(option);
 }
+
 
 bool
 Configuration::doVerbose(verboseAction_t va)
 {
-	//
-	// bitwise and
-	//
+    //
+    // bitwise and
+    //
     return (this->getOption("Verbose") & verboseLevel[va]) != 0;
 }
 
@@ -114,21 +113,24 @@ Configuration::getFilters() const
     return optionFilter;
 }
 
+
 const std::string&
 Configuration::getStringOption(
-		const std::string& key) const
+const std::string& key) const
 {
-	std::map<std::string, std::string>::const_iterator it =
-		stringOptionMap.find(key);
-	assert(it != stringOptionMap.end());
-	return it->second;
+    std::map<std::string, std::string>::const_iterator it =
+        stringOptionMap.find(key);
+    assert(it != stringOptionMap.end());
+    return it->second;
 }
 
+
 void Configuration::setStringOption(
-		const std::string& key, const std::string& value)
+const std::string& key, const std::string& value)
 {
-	stringOptionMap[key] = value;
+    stringOptionMap[key] = value;
 }
+
 
 DLVHEX_NAMESPACE_END
 

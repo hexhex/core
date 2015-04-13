@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 
 /**
  * @file EvalHeuristicTrivial.cpp
- * @author Peter Schüller
+ * @author Peter Schller
  *
  * @brief Implementation of a trivial evaluation heuristic.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/EvalHeuristicTrivial.h"
 #include "dlvhex2/EvalHeuristicShared.h"
@@ -40,13 +40,15 @@
 DLVHEX_NAMESPACE_BEGIN
 
 EvalHeuristicTrivial::EvalHeuristicTrivial():
-  Base()
+Base()
 {
 }
+
 
 EvalHeuristicTrivial::~EvalHeuristicTrivial()
 {
 }
+
 
 typedef ComponentGraph::Component Component;
 typedef ComponentGraph::ComponentIterator ComponentIterator;
@@ -57,20 +59,20 @@ typedef std::vector<Component> ComponentContainer;
 // build eval units in that order
 void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
 {
-  const ComponentGraph& compgraph = builder.getComponentGraph();
+    const ComponentGraph& compgraph = builder.getComponentGraph();
 
-  ComponentContainer comps;
-  evalheur::topologicalSortComponents(compgraph.getInternalGraph(), comps);
+    ComponentContainer comps;
+    evalheur::topologicalSortComponents(compgraph.getInternalGraph(), comps);
 
-  for(ComponentContainer::const_iterator it = comps.begin();
-      it != comps.end(); ++it)
-  {
-		std::list<Component> comps, ccomps;
-		comps.push_back(*it);
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
-    LOG(ANALYZE,"component " << *it << " became eval unit " << u);
-  }
+    for(ComponentContainer::const_iterator it = comps.begin();
+    it != comps.end(); ++it) {
+        std::list<Component> comps, ccomps;
+        comps.push_back(*it);
+        EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+        LOG(ANALYZE,"component " << *it << " became eval unit " << u);
+    }
 }
+
 
 DLVHEX_NAMESPACE_END
 

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,121 +24,130 @@
 
 /**
  * @file AnswerSet.cpp
- * @author Roman Schindlauer, Peter Schüller
+ * @author Roman Schindlauer, Peter Schller
  *
  * @brief AnswerSet class.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/AnswerSet.h"
 #include "dlvhex2/Benchmarking.h"
 
-
 DLVHEX_NAMESPACE_BEGIN
 
-void AnswerSet::computeWeightVector(){
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::computeWeightVector");
+void AnswerSet::computeWeightVector()
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::computeWeightVector");
 
-	weightVector = std::vector<int>();
-	weightVector.push_back(0);
+    weightVector = std::vector<int>();
+    weightVector.push_back(0);
 
-	RegistryPtr reg = interpretation->getRegistry();
+    RegistryPtr reg = interpretation->getRegistry();
 
-	// go through all atoms
-	bm::bvector<>::enumerator en = interpretation->getStorage().first();
-	bm::bvector<>::enumerator en_end = interpretation->getStorage().end();
+    // go through all atoms
+    bm::bvector<>::enumerator en = interpretation->getStorage().first();
+    bm::bvector<>::enumerator en_end = interpretation->getStorage().end();
 
-	while (en < en_end){
-		ID id = reg->ogatoms.getIDByAddress(*en);
-		const OrdinaryAtom oatom = reg->ogatoms.getByAddress(*en);
-		if (id.isAuxiliary()){
-			if (reg->getTypeByAuxiliaryConstantSymbol(oatom.tuple[0]) == 'w'){
-				// tuple[1] and tuple[2] encode weight and level
-				assert (oatom.tuple[1].isIntegerTerm());
-				assert (oatom.tuple[2].isIntegerTerm());
+    while (en < en_end) {
+        ID id = reg->ogatoms.getIDByAddress(*en);
+        const OrdinaryAtom oatom = reg->ogatoms.getByAddress(*en);
+        if (id.isAuxiliary()) {
+            if (reg->getTypeByAuxiliaryConstantSymbol(oatom.tuple[0]) == 'w') {
+                // tuple[1] and tuple[2] encode weight and level
+                assert (oatom.tuple[1].isIntegerTerm());
+                assert (oatom.tuple[2].isIntegerTerm());
 
-				// make sure that the weight vector is long enough
-				while (weightVector.size() < oatom.tuple[2].address + 1 || weightVector.size() == 0) weightVector.push_back(0);
+                // make sure that the weight vector is long enough
+                while (weightVector.size() < oatom.tuple[2].address + 1 || weightVector.size() == 0) weightVector.push_back(0);
 
-				weightVector[oatom.tuple[2].address] += oatom.tuple[1].address;
-			}
-		}
-		en++;
-	}
+                weightVector[oatom.tuple[2].address] += oatom.tuple[1].address;
+            }
+        }
+        en++;
+    }
 }
 
-std::vector<int>& AnswerSet::getWeightVector(){
-	return weightVector;
+
+std::vector<int>& AnswerSet::getWeightVector()
+{
+    return weightVector;
 }
 
-bool AnswerSet::betterThan(std::vector<int>& cwv){
-  return weightVector == cwv || strictlyBetterThan(cwv);
+
+bool AnswerSet::betterThan(std::vector<int>& cwv)
+{
+    return weightVector == cwv || strictlyBetterThan(cwv);
 }
 
-bool AnswerSet::strictlyBetterThan(std::vector<int>& cwv){
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::strictlyBetterThan");
 
-	// check if one of the vectors has cost values on higher levels
-	if (weightVector.size() < cwv.size()){
-		for (uint32_t j = weightVector.size(); j < cwv.size(); ++j)
-			if (cwv[j] > 0) return true;
-	}
-	if (cwv.size() < weightVector.size()){
-		for (uint32_t j = cwv.size(); j < weightVector.size(); ++j)
-			if (weightVector[j] > 0) return false;
-	}
+bool AnswerSet::strictlyBetterThan(std::vector<int>& cwv)
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::strictlyBetterThan");
 
-	// compare the costs on all levels which are present in both weight vectors
-	int i = (weightVector.size() < cwv.size() ? weightVector.size() : cwv.size()) - 1;
-	while (i >= 0){
-		if (weightVector[i] < cwv[i]) return true;
-		if (cwv[i] < weightVector[i]) return false;
-		i--;
-	}
+    // check if one of the vectors has cost values on higher levels
+    if (weightVector.size() < cwv.size()) {
+        for (uint32_t j = weightVector.size(); j < cwv.size(); ++j)
+            if (cwv[j] > 0) return true;
+    }
+    if (cwv.size() < weightVector.size()) {
+        for (uint32_t j = cwv.size(); j < weightVector.size(); ++j)
+            if (weightVector[j] > 0) return false;
+    }
 
-	// same solution quality
-	return false;
+    // compare the costs on all levels which are present in both weight vectors
+    int i = (weightVector.size() < cwv.size() ? weightVector.size() : cwv.size()) - 1;
+    while (i >= 0) {
+        if (weightVector[i] < cwv[i]) return true;
+        if (cwv[i] < weightVector[i]) return false;
+        i--;
+    }
+
+    // same solution quality
+    return false;
 }
 
-std::ostream& AnswerSet::printWeightVector(std::ostream& o) const{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::printWeightVector");
 
-  if (weightVector.size() > 0){
-	bool first = true;
-	for (uint32_t level = 0; level < weightVector.size(); ++level){
-		if (weightVector[level] > 0){
-			o << (first ? " <" : ",");
-			o << "[" << weightVector[level] << ":" << level << "]";
-			first = false;
-		}
-	}
-	if (!first) o << ">";
-  }
-  return o;
+std::ostream& AnswerSet::printWeightVector(std::ostream& o) const
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::printWeightVector");
+
+    if (weightVector.size() > 0) {
+        bool first = true;
+        for (uint32_t level = 0; level < weightVector.size(); ++level) {
+            if (weightVector[level] > 0) {
+                o << (first ? " <" : ",");
+                o << "[" << weightVector[level] << ":" << level << "]";
+                first = false;
+            }
+        }
+        if (!first) o << ">";
+    }
+    return o;
 }
+
 
 std::ostream& AnswerSet::print(std::ostream& o) const
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::print");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::print");
 
-  // use ", " with space here! (compatibility)
-  interpretation->print(o, "{", ", ", "}");
-  if (weightVector.size() > 0){
-	printWeightVector(o);
-  }
-  return o;
+    // use ", " with space here! (compatibility)
+    interpretation->print(o, "{", ", ", "}");
+    if (weightVector.size() > 0) {
+        printWeightVector(o);
+    }
+    return o;
 }
+
 
 #if 0
 unsigned AnswerSet::maxLevel = 1;
 unsigned AnswerSet::maxWeight = 0;
 
-
 AnswerSet::AnswerSet(const std::string& wcpr)
-    : WCprefix(wcpr)
+: WCprefix(wcpr)
 {
 }
 
@@ -146,54 +155,48 @@ AnswerSet::AnswerSet(const std::string& wcpr)
 void
 AnswerSet::setSet(const AtomSet& atomset)
 {
-  // set atoms
-  this->atoms = atomset.atoms;
+    // set atoms
+    this->atoms = atomset.atoms;
 
-  // check if we have a prefix for weak constraints
-  if (!this->WCprefix.empty())
-    {
-      AtomSet wcatoms;
-    
-      for (AtomSet::const_iterator asit = this->atoms.begin();
-	   asit != this->atoms.end();
-	   ++asit)
-	{
-	  if (asit->getPredicate().getString().substr(0, WCprefix.length()) == WCprefix)
-	    {
-	      AtomPtr wca(new Atom(*asit));
-	      wcatoms.insert(wca);
-	    }
-	}
+    // check if we have a prefix for weak constraints
+    if (!this->WCprefix.empty()) {
+        AtomSet wcatoms;
 
-      //
-      // this answer set has no weight atoms
-      //
-      if (wcatoms.size() == 0)
-	{
-	  this->weights.push_back(0);
-	}
-      else
-	{
-	  for (AtomSet::const_iterator asit = wcatoms.begin(); asit != wcatoms.end(); ++asit)
-	    {
-	      Tuple args = asit->getArguments();
-	      
-	      Term tlevel(*(args.end() - 1));
-	      Term tweight(*(args.end() - 2));
-	      
-	      if (!tlevel.isInt())
-		throw GeneralError("Weak constraint level instantiated with non-integer!");
+        for (AtomSet::const_iterator asit = this->atoms.begin();
+            asit != this->atoms.end();
+        ++asit) {
+            if (asit->getPredicate().getString().substr(0, WCprefix.length()) == WCprefix) {
+                AtomPtr wca(new Atom(*asit));
+                wcatoms.insert(wca);
+            }
+        }
 
-	      unsigned l = tlevel.getInt();
-	      
-	      if (!tweight.isInt())
-		throw GeneralError("Weak constraint weight instantiated with non-integer!");
-	      
-	      unsigned w = tweight.getInt();
-	      
-	      this->addWeight(w, l);
-	    }
-	}
+        //
+        // this answer set has no weight atoms
+        //
+        if (wcatoms.size() == 0) {
+            this->weights.push_back(0);
+        }
+        else {
+            for (AtomSet::const_iterator asit = wcatoms.begin(); asit != wcatoms.end(); ++asit) {
+                Tuple args = asit->getArguments();
+
+                Term tlevel(*(args.end() - 1));
+                Term tweight(*(args.end() - 2));
+
+                if (!tlevel.isInt())
+                    throw GeneralError("Weak constraint level instantiated with non-integer!");
+
+                unsigned l = tlevel.getInt();
+
+                if (!tweight.isInt())
+                    throw GeneralError("Weak constraint weight instantiated with non-integer!");
+
+                unsigned w = tweight.getInt();
+
+                this->addWeight(w, l);
+            }
+        }
     }
 }
 
@@ -201,20 +204,20 @@ AnswerSet::setSet(const AtomSet& atomset)
 bool
 AnswerSet::hasWeights() const
 {
-  return !this->WCprefix.empty();
+    return !this->WCprefix.empty();
 }
 
 
 unsigned
 AnswerSet::getWeightLevels() const
 {
-  return this->weights.size();
+    return this->weights.size();
 }
 
 
 void
 AnswerSet::addWeight(unsigned weight,
-                     unsigned level)
+unsigned level)
 {
     assert(level > 0);
 
@@ -223,8 +226,7 @@ AnswerSet::addWeight(unsigned weight,
     //
     // create new levels if necessary
     //
-    if (this->weights.size() < level)
-    {
+    if (this->weights.size() < level) {
         for (unsigned ws = this->weights.size(); ws < level; ++ws)
             this->weights.push_back(0);
     }
@@ -258,7 +260,7 @@ AnswerSet::cheaperThan(const AnswerSet& answerset2) const
     int ret = 0;
 
     unsigned maxlevel = this->weights.size();
-    
+
     if (answerset2.weights.size() > maxlevel)
         maxlevel = answerset2.weights.size();
 
@@ -266,19 +268,16 @@ AnswerSet::cheaperThan(const AnswerSet& answerset2) const
     // higher levels have higher priority
     //
     //for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
-    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
-    {
-        if (this->getWeight(currlevel) < answerset2.getWeight(currlevel))
-        {
+    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel) {
+        if (this->getWeight(currlevel) < answerset2.getWeight(currlevel)) {
             ret = !Globals::Instance()->getOption("ReverseOrder");
             break;
         }
 
-        if (this->getWeight(currlevel) > answerset2.getWeight(currlevel))
-		{
+        if (this->getWeight(currlevel) > answerset2.getWeight(currlevel)) {
             ret = Globals::Instance()->getOption("ReverseOrder");
             break;
-		}
+        }
     }
 
     return ret;
@@ -295,7 +294,7 @@ AnswerSet::moreExpensiveThan(const weights_t& weights) const
     //int ret = Globals::Instance()->getOption("ReverseOrder");
 
     unsigned maxlevel = this->weights.size();
-    
+
     //
     // find out the maximum of both levels
     //
@@ -306,8 +305,7 @@ AnswerSet::moreExpensiveThan(const weights_t& weights) const
     // go through all levels
     //
     //for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
-    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
-    {
+    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel) {
         unsigned w = 0;
 
         //
@@ -323,8 +321,7 @@ AnswerSet::moreExpensiveThan(const weights_t& weights) const
         // if *this weighs more than the specified vector, it is more expensive,
         // return 1
         //
-        if (this->getWeight(currlevel) > w)
-        {
+        if (this->getWeight(currlevel) > w) {
             ret = !Globals::Instance()->getOption("ReverseOrder");
             break;
         }
@@ -333,11 +330,10 @@ AnswerSet::moreExpensiveThan(const weights_t& weights) const
         // if this weighs less than the specified vector, it is cheaper, return
         // 0
         //
-        if (this->getWeight(currlevel) < w)
-		{
+        if (this->getWeight(currlevel) < w) {
             ret = Globals::Instance()->getOption("ReverseOrder");
             break;
-		}
+        }
     }
 
     //
@@ -356,15 +352,14 @@ AnswerSet::operator< (const AnswerSet& answerset2) const
     // with weak constraints, we order the AnswerSets according to their
     // weights
     //
-    if (!WCprefix.empty())
-    {
-		bool isCheaper(1);
+    if (!WCprefix.empty()) {
+        bool isCheaper(1);
 
-		//
-		// if we use reverse order, we simply toggle the return value:
-		//
-		//if (Globals::Instance()->getOption("ReverseOrder"))
-		//	isCheaper = 0;
+        //
+        // if we use reverse order, we simply toggle the return value:
+        //
+        //if (Globals::Instance()->getOption("ReverseOrder"))
+        //	isCheaper = 0;
 
         if (this->cheaperThan(answerset2))
             return isCheaper;
@@ -413,7 +408,6 @@ operator<< (std::ostream& out, const AnswerSet& atomset)
     return out;
 }
 #endif
-
 
 DLVHEX_NAMESPACE_END
 

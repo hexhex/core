@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   PluginContainer.h
  * @author Roman Schindlauer
  * @author Peter Schueller
  * @date   Thu Sep 1 17:21:53 2005
- * 
+ *
  * @brief  Container class for plugins.
- * 
- * 
+ *
+ *
  */
 
 #if !defined(_DLVHEX_PLUGINCONTAINER_H)
@@ -65,80 +64,78 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT PluginContainer
 {
-private:
-  /** \brief Copy-constructor.
-   *
-   * Must not be used, would duplicate library unloads.
-   * @param c Other PluginContainer.
-   */
-  PluginContainer(const PluginContainer& p);
+    private:
+        /** \brief Copy-constructor.
+         *
+         * Must not be used, would duplicate library unloads.
+         * @param c Other PluginContainer.
+         */
+        PluginContainer(const PluginContainer& p);
 
-public:
-  /** \brief Constructor. */
-  PluginContainer();
+    public:
+        /** \brief Constructor. */
+        PluginContainer();
 
-  /** \brief Destructor.
-    *
-    * Unloads shared libraries (if shared_ptr reference counts are ok). */
-  ~PluginContainer();
+        /** \brief Destructor.
+         *
+         * Unloads shared libraries (if shared_ptr reference counts are ok). */
+        ~PluginContainer();
 
-  //
-  // loading and accessing
-  //
+        //
+        // loading and accessing
+        //
 
-	/** \brief Search for plugins in searchpath and open those that are plugins.
-	  *
-	  * May be called multiple times with different paths.
-	  * Paths may be separated by ":" just like LD_LIBRARY_PATH.
-	  * @param searchpath Path(es) to search. */
-	void loadPlugins(const std::string& searchpath="");
+        /** \brief Search for plugins in searchpath and open those that are plugins.
+         *
+         * May be called multiple times with different paths.
+         * Paths may be separated by ":" just like LD_LIBRARY_PATH.
+         * @param searchpath Path(es) to search. */
+        void loadPlugins(const std::string& searchpath="");
 
-  /** \brief Add a PluginInterface to the container.
-    *
-    * The smart pointer will not be reconfigured, so if you need to use a
-    * custom "deleter", do it before you call this method.
-    * @param plugin Pointer to an internal plugin. */
-  void addInternalPlugin(PluginInterfacePtr plugin);
+        /** \brief Add a PluginInterface to the container.
+         *
+         * The smart pointer will not be reconfigured, so if you need to use a
+         * custom "deleter", do it before you call this method.
+         * @param plugin Pointer to an internal plugin. */
+        void addInternalPlugin(PluginInterfacePtr plugin);
 
-  /** \brief Get container with plugins loaded so far.
-    * @return Vector of plugins loaded so far. */
-  const std::vector<PluginInterfacePtr>& getPlugins() const
-  { return pluginInterfaces; }
+        /** \brief Get container with plugins loaded so far.
+         * @return Vector of plugins loaded so far. */
+        const std::vector<PluginInterfacePtr>& getPlugins() const
+            { return pluginInterfaces; }
 
-  //
-  // batch operations on all plugins
-  //
+        //
+        // batch operations on all plugins
+        //
 
-	/** \brief Calls printUsage for each loaded plugin.
-	  * @param o Stream to print the output to. */
-	void printUsage(std::ostream& o);
+        /** \brief Calls printUsage for each loaded plugin.
+         * @param o Stream to print the output to. */
+        void printUsage(std::ostream& o);
 
-public:
-  struct LoadedPlugin;
-  typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
-  typedef std::vector<LoadedPluginPtr> LoadedPluginVector;
-  typedef std::vector<PluginInterfacePtr> PluginInterfaceVector;
-  
-private:
-  /** \brief Add loaded plugin (do not extract plugin atoms).
-    * @param lplugin Pointer to the loaded plugin. */
-  void addInternalPlugin(LoadedPluginPtr lplugin);
+    public:
+        struct LoadedPlugin;
+        typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
+        typedef std::vector<LoadedPluginPtr> LoadedPluginVector;
+        typedef std::vector<PluginInterfacePtr> PluginInterfaceVector;
 
-	/** \brief Current search path. */
-	std::string searchPath;
+    private:
+        /** \brief Add loaded plugin (do not extract plugin atoms).
+         * @param lplugin Pointer to the loaded plugin. */
+        void addInternalPlugin(LoadedPluginPtr lplugin);
 
-  /** \brief Loaded plugins. */
-  LoadedPluginVector plugins;
+        /** \brief Current search path. */
+        std::string searchPath;
 
-  /** \brief Loaded plugins (interface ptrs). */
-  PluginInterfaceVector pluginInterfaces;
+        /** \brief Loaded plugins. */
+        LoadedPluginVector plugins;
+
+        /** \brief Loaded plugins (interface ptrs). */
+        PluginInterfaceVector pluginInterfaces;
 };
 typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 
 DLVHEX_NAMESPACE_END
-
-#endif /* _DLVHEX_PLUGINCONTAINER_H */
-
+#endif                           /* _DLVHEX_PLUGINCONTAINER_H */
 
 // Local Variables:
 // mode: C++

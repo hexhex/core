@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file ASPSolverManager.cpp
- * @author Peter Schüller
+ * @author Peter Schller
  * @date Tue Jul 13 2010
  *
  * @brief ASP Solver Manager
@@ -44,9 +43,10 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ASPSolverManager::GenericOptions::GenericOptions():
-  includeFacts(true)
+includeFacts(true)
 {
 }
+
 
 ASPSolverManager::GenericOptions::~GenericOptions()
 {
@@ -57,148 +57,160 @@ ASPSolverManager::ASPSolverManager()
 {
 }
 
+
 //! solve idb/edb and get result provider
 ASPSolverManager::ResultsPtr ASPSolverManager::solve(
-    const SoftwareConfigurationBase& solver,
-    const OrdinaryASPProgram& program) throw (FatalError)
+const SoftwareConfigurationBase& solver,
+const OrdinaryASPProgram& program) throw (FatalError)
 {
-  DelegatePtr delegate = solver.createDelegate();
-  delegate->useASTInput(program);
-  return delegate->getResults();
+    DelegatePtr delegate = solver.createDelegate();
+    delegate->useASTInput(program);
+    return delegate->getResults();
 }
+
 
 //! solve program from input provider (i.e., an input stream)
 ASPSolverManager::ResultsPtr ASPSolverManager::solve(
-    const SoftwareConfigurationBase& solver,
-    InputProvider& input,
-    RegistryPtr reg) throw (FatalError)
+const SoftwareConfigurationBase& solver,
+InputProvider& input,
+RegistryPtr reg) throw (FatalError)
 {
-  DelegatePtr delegate = solver.createDelegate();
-  delegate->useInputProviderInput(input, reg);
-  return delegate->getResults();
+    DelegatePtr delegate = solver.createDelegate();
+    delegate->useInputProviderInput(input, reg);
+    return delegate->getResults();
 }
+
 
 #if 0
 // solve string program and add to result
 void ASPSolverManager::solveString(
-    const SoftwareConfigurationBase& solver,
-    const std::string& program,
-    std::vector<AtomSet>& result) throw (FatalError)
+const SoftwareConfigurationBase& solver,
+const std::string& program,
+std::vector<AtomSet>& result) throw (FatalError)
 {
-  DelegatePtr delegate = solver.createDelegate();
-  delegate->useStringInput(program);
-  delegate->getOutput(result);
+    DelegatePtr delegate = solver.createDelegate();
+    delegate->useStringInput(program);
+    delegate->getOutput(result);
 }
+
 
 // solve program in file and add to result
 void ASPSolverManager::solveFile(
-    const SoftwareConfigurationBase& solver,
-    const std::string& filename,
-    std::vector<AtomSet>& result) throw (FatalError)
+const SoftwareConfigurationBase& solver,
+const std::string& filename,
+std::vector<AtomSet>& result) throw (FatalError)
 {
-  DelegatePtr delegate = solver.createDelegate();
-  delegate->useFileInput(filename);
-  delegate->getOutput(result);
+    DelegatePtr delegate = solver.createDelegate();
+    delegate->useFileInput(filename);
+    delegate->getOutput(result);
 }
 #endif
 
 PreparedResults::PreparedResults():
-  resetCurrent(true),
-  current()
+resetCurrent(true),
+current()
 {
 }
 
+
 PreparedResults::PreparedResults(const Storage& storage):
-  answersets(storage),
-  resetCurrent(storage.empty()),
-  current(answersets.begin())
+answersets(storage),
+resetCurrent(storage.empty()),
+current(answersets.begin())
 {
 }
+
 
 PreparedResults::~PreparedResults()
 {
 }
 
+
 // add further result (this must be done before getNextAnswerSet()
 // has been called the first time)
 void PreparedResults::add(AnswerSet::Ptr as)
 {
-  answersets.push_back(as);
+    answersets.push_back(as);
 
-  // we do this because I'm not sure if a begin()==end() iterator
-  // becomes begin() or end() after insertion of the first element
-  // (this is the failsafe version)
-  if( resetCurrent )
-  {
-    current = answersets.begin();
-    resetCurrent = false;
-  }
+    // we do this because I'm not sure if a begin()==end() iterator
+    // becomes begin() or end() after insertion of the first element
+    // (this is the failsafe version)
+    if( resetCurrent ) {
+        current = answersets.begin();
+        resetCurrent = false;
+    }
 }
+
 
 AnswerSet::Ptr PreparedResults::getNextAnswerSet()
 {
-  // if no answer set was ever added, or we reached the end
-  if( (resetCurrent == true) ||
-      (current == answersets.end()) )
-  {
-    return AnswerSet::Ptr();
-  }
-  else
-  {
-    Storage::const_iterator ret = current;
-    current++;
-    return *ret;
-  }
+    // if no answer set was ever added, or we reached the end
+    if( (resetCurrent == true) ||
+    (current == answersets.end()) ) {
+        return AnswerSet::Ptr();
+    }
+    else {
+        Storage::const_iterator ret = current;
+        current++;
+        return *ret;
+    }
 }
 
+
 ConcurrentQueueResults::ConcurrentQueueResults():
-  queue(new AnswerSetQueue)
+queue(new AnswerSetQueue)
 {
-  DBGLOG(DBG,"ConcurrentQueueResults()" << this);
+    DBGLOG(DBG,"ConcurrentQueueResults()" << this);
 }
+
 
 ConcurrentQueueResults::~ConcurrentQueueResults()
 {
-  DBGLOG(DBG,"~ConcurrentQueueResults()" << this);
+    DBGLOG(DBG,"~ConcurrentQueueResults()" << this);
 }
+
 
 WARNING("in this case we could really just store structs and not pointers in the queue")
 void ConcurrentQueueResults::enqueueAnswerset(AnswerSetPtr answerset)
 {
-  assert(!!queue);
-  queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(answerset, "")), 0);
+    assert(!!queue);
+    queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(answerset, "")), 0);
 }
+
 
 void ConcurrentQueueResults::enqueueException(const std::string& error)
 {
-  assert(!!queue);
-  // if there is an exception we immediately queue it
-  queue->flush();
-  queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(AnswerSetPtr(), error)), 0);
+    assert(!!queue);
+    // if there is an exception we immediately queue it
+    queue->flush();
+    queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(AnswerSetPtr(), error)), 0);
 }
+
 
 void ConcurrentQueueResults::enqueueEnd()
 {
-  assert(!!queue);
-  queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(AnswerSetPtr(), "")), 0);
+    assert(!!queue);
+    queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(AnswerSetPtr(), "")), 0);
 }
+
 
 // gets next answer set or throws exception on error condition
 // returns AnswerSetPtr() on end of queue
 AnswerSetPtr ConcurrentQueueResults::getNextAnswerSet()
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ConcurrentQueueRes:getNextAS");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ConcurrentQueueRes:getNextAS");
 
-  assert(!!queue);
-  AnswerSetQueueElementPtr qe;
-  unsigned u = 0;
-  queue->receive(qe,u);
-  assert(!!qe);
-  if( qe->error.empty() )
-    return qe->answerset;
-  else
-    throw FatalError("ConcurrentQueueResults error:" + qe->error);
+    assert(!!queue);
+    AnswerSetQueueElementPtr qe;
+    unsigned u = 0;
+    queue->receive(qe,u);
+    assert(!!qe);
+    if( qe->error.empty() )
+        return qe->answerset;
+    else
+        throw FatalError("ConcurrentQueueResults error:" + qe->error);
 }
+
 
 DLVHEX_NAMESPACE_END
 

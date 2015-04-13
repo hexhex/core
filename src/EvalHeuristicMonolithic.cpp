@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/EvalHeuristicMonolithic.h"
 #include "dlvhex2/Logger.h"
@@ -39,25 +39,28 @@
 DLVHEX_NAMESPACE_BEGIN
 
 EvalHeuristicMonolithic::EvalHeuristicMonolithic():
-  Base()
+Base()
 {
 }
+
 
 EvalHeuristicMonolithic::~EvalHeuristicMonolithic()
 {
 }
+
 
 // trivial strategy:
 // do a topological sort of the tree
 // build eval units in that order
 void EvalHeuristicMonolithic::build(EvalGraphBuilder& builder)
 {
-  typedef ComponentGraph::Component Component;
-  const ComponentGraph& compgraph = builder.getComponentGraph();
-  std::list<Component> comps(compgraph.getComponents().first, compgraph.getComponents().second), constraintcomps;
-  EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, constraintcomps);
-  LOG(ANALYZE,"got since eval unit " << u);
+    typedef ComponentGraph::Component Component;
+    const ComponentGraph& compgraph = builder.getComponentGraph();
+    std::list<Component> comps(compgraph.getComponents().first, compgraph.getComponents().second), constraintcomps;
+    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, constraintcomps);
+    LOG(ANALYZE,"got since eval unit " << u);
 }
+
 
 DLVHEX_NAMESPACE_END
 

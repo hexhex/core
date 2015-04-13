@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  *
  * @brief Supports Python-implemented plugins.
  */
-
-
 
 /**
  * \defgroup pythonpluginframework The Python Plugin Framework
@@ -91,7 +89,7 @@
  * A third category called Tuple exists, which is a meta category standing for
  * an arbitrary mount of Constant input parameters. This is useful, e.g.,
  * for &concat[s1,s2,...](Out).
- * 
+ *
  * A parameter of type "Constant" is not related to the interpretation at all,
  * like in the previous example of the RDF-atom. A parameter is of type
  * "Predicate" means that all facts in the interpretation with this predicate
@@ -156,7 +154,7 @@
  *
  * In addition to the actual semantics of an external atom, the Python API can also be used for defining custom learning techniques (described in the following list).
  * Advanced plugin features, such as providing converters, rewriters and dependency graph optimizations. are, however, only possible with the \ref pluginframework "C++ API".
- * 
+ *
  * In more detail, the \em dlvhex Python module provides the methods described in the following paragraphs.
  *
  * <b>Management of dlvhex IDs</b>
@@ -174,7 +172,7 @@
  *   <li>\code{.txt}void addAtom(name, args, ar, [prop])\endcode Add external atom \em name with arguments \em args (see above), output arity \em ar and external source properties \em prop ("prop" is optional).</li>
  *   <li>\code{.txt}void storeExternalAtom(pred, input, output)\endcode Stores an external atom with predicate \em pred, input parameters \em input and output parameters \em output (can be terms or their IDs) and returns its ID.</li>
  * </ul>
- * 
+ *
  * <b>Basic Plugin Functionality</b>
  * <ul>
  *   <li>\code{.txt}void output(args)\endcode Adds a tuple of IDs or values \em args to the external source output.</li>
@@ -188,9 +186,9 @@
  *   <li>\code{.txt}bool isFalse(id)\endcode Checks if an input atom identified by ID \em id is assigned to false.</li>
  *   <li>\code{.txt}void resetCacheOfPlugins()\endcode Empties all caches of external atom evaluation results and all cached nogoods from external learning.</li>
  * </ul>
- * 
+ *
  * <b>Conflict-driven Learning</b><br/>
- * 
+ *
  * Usually, learned nogoods consist of 1. a set of positive or negated input atoms, and 2. a <em>negative</em> output atom, where 1. is the justification for the (positive) output atom to be true.
  * Note that a nogood is a set of atoms which must not be all simultanously true.
  * Therefore, this encodes that whenever all atoms from 1. are true, then the output atom <em>must not be false</em> (this is why the negative output atom is added).
@@ -199,7 +197,7 @@
  *   <li>\code{.txt}ID storeOutputAtom(args, [sign])\endcode Constructs an external atom output atom from IDs or values \em args (for learning purposes) and its sign, where true (default) means positive and false means negative, and returns its ID.</li>
  * </ul>
  * For instance, the nogood <em>{ p(a), -q(a), -&diff[p,q](a) }</em> encodes that whenever the atom <em>p(a)</em> is true and the atom <em>q(a)</em> is false, then the atom &diff[p,q](a) must be true (i.e. must not be false) since constant <em>a</em> will be in the output of the set difference of <em>p</em> and <em>q</em>.
- * 
+ *
  * <b>Inremental External Query Answering</b>
  * <ul>
  *   <li>\code{.txt}bool isAssignmentComplete()\endcode Returns true if the external source is evaluated over an interpretation which is complete for sure (if it returns false, then the assignment is \em possibly partial but it might still be complete).</li>
@@ -207,7 +205,7 @@
  *   <li>\code{.txt}bool hasChanged(id)\endcode Provided that the source declared that it is interested in this property (cf. setCaresAboutChanged), the method checks if an input atom has \em possibly changes since the last call (if the method returns false, then it has not changed for sure).</li>
  *   <li>\code{.txt}ID storeRule(head, pbody, nbody)\endcode Stores a rule with head atoms \em head, positive body atoms \em pbody and negative body atoms \em nbody and returns its ID; all parameters need to be a tuples of IDs.</li>
  * </ul>
- * 
+ *
  * <b>Subprogram Evaluation</b>
  * <ul>
  *   <li>\code{.txt}tuple evaluateSubprogram(tup)\endcode Evaluates the subprogram specified by a tuple \code{.txt}facts, rules\endcode consisting of facts \em facts (tuple of IDs of ground atoms) and rules \em rules (tuple of rule IDs) and returns the number of answer sets; the result is a tuple of answer sets, where each answer set is again a tuple of the ground atom IDs which are true in the respective answer set.</li>
@@ -215,7 +213,7 @@
  * </ul>
  *
  * <b>External Source Properties Declaration</b><br/>
- * 
+ *
  * An instance of <em>dlvhex.ExtSourceProperties</em> can be passed to the <em>addAtom</em> method as last parameter to specify properties of the external atom,
  * which might help the reasoner to speed up evaluation. The structure can be configured using the following methods:
  * <ul>
@@ -238,7 +236,7 @@
  *   <li>\code{.txt}void prop.addWellorderingStrlen(index1, index2)\endcode Declare that output argument \em index1 has a string length wellordering wrt. input argument \em index2.</li>
  *   <li>\code{.txt}void prop.addWellorderingNatural(index1, index2)\endcode Declare that output argument \em index1 has a natural wellordering wrt. input argument \em index2.</li>
  * </ul>
- * 
+ *
  * Moreover, for an ID object \em id, there are the following shortcuts:
  * <ul>
  *   <li><em>id.value()</em> for <em>dlvhex.getValue(id)</em></li>
@@ -253,9 +251,9 @@
  *   <li><em>id.isTrue()</em> for <em>dlvhex.isTrue(id)</em></li>
  *   <li><em>id.isFalse()</em> for <em>dlvhex.isFalse(id)</em></li>
  * </ul>
- * 
+ *
  * \section pyusage Using a Python Plugin
- * 
+ *
  * In order to load a Python-implemented plugin stored in file PATH,
  * pass the additional option \code --pythonplugin=PATH \endcode to dlvhex.
  */
@@ -264,7 +262,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/PluginInterface.h"
@@ -280,58 +278,55 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Implements a meta-plugin which allows for loading other plugins implemented in Python. */
 class PythonPlugin:
-  public PluginInterface
+public PluginInterface
 {
-public:
-	// stored in ProgramCtx, accessed using getPluginData<PythonPlugin>()
-	class CtxData:
-	public PluginData
-	{
-		public:
-		/** \brief List of Python scripts to load. */
-		std::vector<std::string> pythonScripts;
-		/** \brief List of commandline arguments to be passed to python. */
-		std::vector<std::string> commandlineArguments;
+    public:
+        // stored in ProgramCtx, accessed using getPluginData<PythonPlugin>()
+        class CtxData:
+    public PluginData
+    {
+        public:
+            /** \brief List of Python scripts to load. */
+            std::vector<std::string> pythonScripts;
+            /** \brief List of commandline arguments to be passed to python. */
+            std::vector<std::string> commandlineArguments;
 
-		/** \brief Constructor. */
-		CtxData();
-		/** \brief Destructor. */
-		virtual ~CtxData() {}
-	};
+            /** \brief Constructor. */
+            CtxData();
+            /** \brief Destructor. */
+            virtual ~CtxData() {}
+    };
 
-public:
-	/** \brief Constructor. */
-	PythonPlugin();
-	/** \brief Destructor. */
-	virtual ~PythonPlugin();
+    public:
+        /** \brief Constructor. */
+        PythonPlugin();
+        /** \brief Destructor. */
+        virtual ~PythonPlugin();
 
-	// output help message for this plugin
-	virtual void printUsage(std::ostream& o) const;
+        // output help message for this plugin
+        virtual void printUsage(std::ostream& o) const;
 
-	// accepted options: --aggregate-enable
-	//
-	// processes options for this plugin, and removes recognized options from pluginOptions
-	// (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+        // accepted options: --aggregate-enable
+        //
+        // processes options for this plugin, and removes recognized options from pluginOptions
+        // (do not free the pointers, the const char* directly come from argv)
+        virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-	// rewrite program: rewrite aggregate atoms to external atoms
-	virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+        // rewrite program: rewrite aggregate atoms to external atoms
+        virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-	// register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
-	virtual void setupProgramCtx(ProgramCtx&);
+        // register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
+        virtual void setupProgramCtx(ProgramCtx&);
 
-	virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
+        virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
 
-	/** \brief Runs the main method from a Python script.
-	  * @param filename Name of a Python script. */
-	void runPythonMain(std::string filename);
+        /** \brief Runs the main method from a Python script.
+         * @param filename Name of a Python script. */
+        void runPythonMain(std::string filename);
 
-	// no atoms!
+        // no atoms!
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif
-
 #endif
-

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 /**
  * @file InputProvider.h
  * @author Peter Schueller
- * @date 
+ * @date
  *
  * @brief Input stream provider (collects input sources)
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/InputProvider.h"
 #include "dlvhex2/URLBuf.h"
@@ -48,87 +48,91 @@ WARNING("TODO use boost::iostream::chain or something similar to create real str
 
 class InputProvider::Impl
 {
-public:
-  std::stringstream stream;
-  std::vector<std::string> contentNames;
+    public:
+        std::stringstream stream;
+        std::vector<std::string> contentNames;
 
-public:
-  Impl()
-  {
-  }
+    public:
+        Impl() {
+        }
 };
 
 InputProvider::InputProvider():
-  pimpl(new Impl)
+pimpl(new Impl)
 {
 }
+
 
 InputProvider::~InputProvider()
 {
 }
 
+
 void InputProvider::addStreamInput(std::istream& i, const std::string& contentname)
 {
-  pimpl->stream << i.rdbuf();
-  pimpl->contentNames.push_back(contentname);
+    pimpl->stream << i.rdbuf();
+    pimpl->contentNames.push_back(contentname);
 }
+
 
 void InputProvider::addStringInput(const std::string& content, const std::string& contentname)
 {
-  pimpl->stream << content;
-  pimpl->contentNames.push_back(contentname);
+    pimpl->stream << content;
+    pimpl->contentNames.push_back(contentname);
 }
+
 
 void InputProvider::addFileInput(const std::string& filename)
 {
-  std::ifstream ifs;
-  ifs.open(filename.c_str());
+    std::ifstream ifs;
+    ifs.open(filename.c_str());
 
-  if (!ifs.is_open())
-    {
-      throw GeneralError("File " + filename + " not found");
+    if (!ifs.is_open()) {
+        throw GeneralError("File " + filename + " not found");
     }
 
-  pimpl->stream << ifs.rdbuf();
-  ifs.close();
-  pimpl->contentNames.push_back(filename);
+    pimpl->stream << ifs.rdbuf();
+    ifs.close();
+    pimpl->contentNames.push_back(filename);
 }
+
 
 #ifdef HAVE_CURL
 void InputProvider::addURLInput(const std::string& url)
 {
-  assert(url.find("http://") == 0 && "currently only processing http:// URLs");
+    assert(url.find("http://") == 0 && "currently only processing http:// URLs");
 
-  URLBuf ubuf;
-  ubuf.open(url);
-  std::istream is(&ubuf);
+    URLBuf ubuf;
+    ubuf.open(url);
+    std::istream is(&ubuf);
 
-  pimpl->stream << is.rdbuf();
+    pimpl->stream << is.rdbuf();
 
-  if (ubuf.responsecode() == 404)
-    {
-      throw GeneralError("Requested URL " + url + " was not found");
+    if (ubuf.responsecode() == 404) {
+        throw GeneralError("Requested URL " + url + " was not found");
     }
 
-  pimpl->contentNames.push_back(url);
+    pimpl->contentNames.push_back(url);
 }
 #endif
 
 bool InputProvider::hasContent() const
 {
-  return !pimpl->contentNames.empty();
+    return !pimpl->contentNames.empty();
 }
+
 
 const std::vector<std::string>& InputProvider::contentNames() const
 {
-  return pimpl->contentNames;
+    return pimpl->contentNames;
 }
+
 
 std::istream& InputProvider::getAsStream()
 {
-  assert(hasContent() && "should have gotten some content before using content");
-  return pimpl->stream;
+    assert(hasContent() && "should have gotten some content before using content");
+    return pimpl->stream;
 }
 
-DLVHEX_NAMESPACE_END
 
+DLVHEX_NAMESPACE_END

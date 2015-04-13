@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 
 /**
  * @file EvalHeuristicShared.cpp
- * @author Peter Schüller
+ * @author Peter Schller
  *
  * @brief Implementation of shared evaluation heuristic functionality.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/EvalHeuristicShared.h"
 
@@ -40,24 +40,23 @@ DLVHEX_NAMESPACE_BEGIN
 namespace evalheur
 {
 
-void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder)
-{
-  const ComponentGraph& compgraph = builder.getComponentGraph();
+    void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& builder) {
+        const ComponentGraph& compgraph = builder.getComponentGraph();
 
-  // collapse according to commands
-  BOOST_FOREACH(const BuildCommand& cmd, commands)
-  {
-    LOG(ANALYZE,"BuildCommand collapses components " <<
-				printvector(cmd.collapse) <<
-				" and shared components " << printvector(cmd.share));
-		std::list<Component> comps(cmd.collapse.begin(), cmd.collapse.end());
-		std::list<Component> ccomps(cmd.share.begin(), cmd.share.end());
-		EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
-		LOG(ANALYZE,"yields eval unit " << u);
-  }
-}
+        // collapse according to commands
+        BOOST_FOREACH(const BuildCommand& cmd, commands) {
+            LOG(ANALYZE,"BuildCommand collapses components " <<
+                printvector(cmd.collapse) <<
+                " and shared components " << printvector(cmd.share));
+            std::list<Component> comps(cmd.collapse.begin(), cmd.collapse.end());
+            std::list<Component> ccomps(cmd.share.begin(), cmd.share.end());
+            EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+            LOG(ANALYZE,"yields eval unit " << u);
+        }
+    }
 
 }
+
 
 DLVHEX_NAMESPACE_END
 

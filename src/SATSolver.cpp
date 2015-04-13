@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   SATSolver.cpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Interface to (genuine) SAT solvers.
  */
 
@@ -40,30 +40,32 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns, InterpretationConstPtr frozen){
+SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns, InterpretationConstPtr frozen)
+{
 
-	switch (ctx.config.getOption("GenuineSolver")){
-	case 3: case 4:	// internal grounder or Gringo + clasp
-#ifdef HAVE_LIBCLASP
-		{
-		DBGLOG(DBG, "Instantiating genuine sat solver with clasp");
-		SATSolverPtr ptr = SATSolverPtr(new ClaspSolver(ctx, ns, frozen));
-		return ptr;
-		}
-#else
-		throw GeneralError("No support for clasp compiled into this binary");
-#endif // HAVE_LIBCLINGO
-		break;
-	case 1: case 2:	// internal grounder or Gringo + internal solver
-	default:	// translation solver
-		{
-		DBGLOG(DBG, "Instantiating genuine sat solver with internal solver");
-		SATSolverPtr ptr = SATSolverPtr(new CDNLSolver(ctx, ns));	// this solver does not implement optimizations, thus all variables are always frozen
-		return ptr;
-		}
-		break;
-	}
+    switch (ctx.config.getOption("GenuineSolver")) {
+        case 3: case 4:          // internal grounder or Gringo + clasp
+        #ifdef HAVE_LIBCLASP
+            {
+                DBGLOG(DBG, "Instantiating genuine sat solver with clasp");
+                SATSolverPtr ptr = SATSolverPtr(new ClaspSolver(ctx, ns, frozen));
+                return ptr;
+            }
+        #else
+            throw GeneralError("No support for clasp compiled into this binary");
+        #endif                   // HAVE_LIBCLINGO
+            break;
+        case 1: case 2:          // internal grounder or Gringo + internal solver
+        default:                 // translation solver
+        {
+            DBGLOG(DBG, "Instantiating genuine sat solver with internal solver");
+                                 // this solver does not implement optimizations, thus all variables are always frozen
+            SATSolverPtr ptr = SATSolverPtr(new CDNLSolver(ctx, ns));
+            return ptr;
+        }
+        break;
+    }
 }
 
-DLVHEX_NAMESPACE_END
 
+DLVHEX_NAMESPACE_END

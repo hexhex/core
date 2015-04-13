@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -60,10 +60,8 @@
 #include "program_opts/program_options.h"
 #include "program_opts/application.h"
 
-
-// activate this for detailed benchmarking in this file 
+// activate this for detailed benchmarking in this file
 #undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-
 
 // @clasp examples: Run the following command to use the Makefile in clasp/libclasp/examples:
 //   export CXXFLAGS="-DWITH_THREADS=0 -I $PWD/../ -I $PWD/../../libprogram_opts/"
@@ -72,1533 +70,1643 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ExternalPropagator ==============================
 
-ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
+ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs)
+{
 
-	cs.claspctx.master()->addPost(this);
-	startAssignmentExtraction();
+    cs.claspctx.master()->addPost(this);
+    startAssignmentExtraction();
 
-	// initialize propagation deferring
-	lastPropagation = boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time());
-	int deferMS = cs.ctx.config.getOption("ClaspDeferMaxTMilliseconds");
-	skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000);
+    // initialize propagation deferring
+    lastPropagation = boost::posix_time::ptime(boost::posix_time::microsec_clock::local_time());
+    int deferMS = cs.ctx.config.getOption("ClaspDeferMaxTMilliseconds");
+    skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000);
 
-	skipAmount = cs.ctx.config.getOption("ClaspDeferNPropagations");
-	skipCounter = 0;
+    skipAmount = cs.ctx.config.getOption("ClaspDeferNPropagations");
+    skipCounter = 0;
 }
 
-ClaspSolver::ExternalPropagator::~ExternalPropagator(){
-	stopAssignmentExtraction();
-	cs.claspctx.master()->removePost(this);
+
+ClaspSolver::ExternalPropagator::~ExternalPropagator()
+{
+    stopAssignmentExtraction();
+    cs.claspctx.master()->removePost(this);
 }
 
-void ClaspSolver::ExternalPropagator::startAssignmentExtraction(){
 
-	DBGLOG(DBG, "Initializing assignment extraction");
-	currentIntr = InterpretationPtr(new Interpretation(cs.reg));
-	currentAssigned = InterpretationPtr(new Interpretation(cs.reg));
-	currentChanged = InterpretationPtr(new Interpretation(cs.reg));
+void ClaspSolver::ExternalPropagator::startAssignmentExtraction()
+{
 
-	// we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
-	DBGLOG(DBG, "Extracting full interpretation from clasp");
-	cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
+    DBGLOG(DBG, "Initializing assignment extraction");
+    currentIntr = InterpretationPtr(new Interpretation(cs.reg));
+    currentAssigned = InterpretationPtr(new Interpretation(cs.reg));
+    currentChanged = InterpretationPtr(new Interpretation(cs.reg));
 
-	// add watches for all literals and decision levels
-	for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
-		// skip eliminated variables
-		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+    // we need to extract the full assignment (only this time), to make sure that we did not miss any updates before initialization of this extractor
+    DBGLOG(DBG, "Extracting full interpretation from clasp");
+    cs.extractClaspInterpretation(*cs.claspctx.master(), currentIntr, currentAssigned, currentChanged);
 
-		uint32_t level = cs.claspctx.master()->level(it->second.lit.var());
-		if (cs.claspToHex.size() > it->second.lit.index()){
-			BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(it->second.lit.index())){
-				// add the variable to the undo watch for the decision level on which it was assigned
-				while (assignmentsOnDecisionLevel.size() < level + 1){
-					assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
-					DBGLOG(DBG, "Adding undo watch to level " << level);
-					if (level > 0) cs.claspctx.master()->addUndoWatch(level, this);
-				}
-			}
-		}
+    // add watches for all literals and decision levels
+    for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
+        // skip eliminated variables
+        if (cs.claspctx.eliminated(it->second.lit.var())) continue;
 
-		DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
-		cs.claspctx.master()->addWatch(it->second.lit, this);
-		cs.claspctx.master()->addWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
-	}
+        uint32_t level = cs.claspctx.master()->level(it->second.lit.var());
+        if (cs.claspToHex.size() > it->second.lit.index()) {
+            BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(it->second.lit.index())) {
+                // add the variable to the undo watch for the decision level on which it was assigned
+                while (assignmentsOnDecisionLevel.size() < level + 1) {
+                    assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
+                    DBGLOG(DBG, "Adding undo watch to level " << level);
+                    if (level > 0) cs.claspctx.master()->addUndoWatch(level, this);
+                }
+            }
+        }
+
+        DBGLOG(DBG, "Adding watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
+        cs.claspctx.master()->addWatch(it->second.lit, this);
+        cs.claspctx.master()->addWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
+    }
 }
 
-void ClaspSolver::ExternalPropagator::stopAssignmentExtraction(){
 
-	// remove watches for all literals
-	for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
-		// skip eliminated variables
-		if (cs.claspctx.eliminated(it->second.lit.var())) continue;
+void ClaspSolver::ExternalPropagator::stopAssignmentExtraction()
+{
 
-		DBGLOG(DBG, "Removing watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
-		cs.claspctx.master()->removeWatch(it->second.lit, this);
-		cs.claspctx.master()->removeWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
-	}
+    // remove watches for all literals
+    for (Clasp::SymbolTable::const_iterator it = cs.claspctx.master()->symbolTable().begin(); it != cs.claspctx.master()->symbolTable().end(); ++it) {
+        // skip eliminated variables
+        if (cs.claspctx.eliminated(it->second.lit.var())) continue;
 
-	// remove watches for all decision levels
-	for (uint32_t i = 1; i < assignmentsOnDecisionLevel.size(); i++){
-		//if (cs.claspctx.master()->validLevel(i)){
-			DBGLOG(DBG, "Removing watch for decision level " << i);
-			cs.claspctx.master()->removeUndoWatch(i, this);
-		//}
-	}
+        DBGLOG(DBG, "Removing watch for literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << " and its negation");
+        cs.claspctx.master()->removeWatch(it->second.lit, this);
+        cs.claspctx.master()->removeWatch(Clasp::Literal(it->second.lit.var(), !it->second.lit.sign()), this);
+    }
 
-	currentIntr.reset();
-	currentAssigned.reset();
-	currentChanged.reset();
+    // remove watches for all decision levels
+    for (uint32_t i = 1; i < assignmentsOnDecisionLevel.size(); i++) {
+        //if (cs.claspctx.master()->validLevel(i)){
+        DBGLOG(DBG, "Removing watch for decision level " << i);
+        cs.claspctx.master()->removeUndoWatch(i, this);
+        //}
+    }
+
+    currentIntr.reset();
+    currentAssigned.reset();
+    currentChanged.reset();
 }
 
-void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp:callHEXProps");
+void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s)
+{
 
-	DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
-#ifndef NDEBUG
-	// extract model and compare with the incrementally extracted one
-	InterpretationPtr fullyExtractedCurrentIntr = InterpretationPtr(new Interpretation(cs.reg));
-	InterpretationPtr fullyExtractedCurrentAssigned = InterpretationPtr(new Interpretation(cs.reg));
-	cs.extractClaspInterpretation(s, fullyExtractedCurrentIntr, fullyExtractedCurrentAssigned, InterpretationPtr());
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp:callHEXProps");
 
-	std::stringstream ss;
-	ss << "Partial assignment: " << *fullyExtractedCurrentIntr << " (assigned: " << *fullyExtractedCurrentAssigned << ")" << std::endl;
-	ss << "Incrementally extracted partial assignment: " << *currentIntr << " (assigned: " << *currentAssigned << ")" << std::endl;
-	ss << "Changed atoms: " << *currentChanged;
-	DBGLOG(DBG, ss.str());
-	assert (fullyExtractedCurrentIntr->getStorage() == currentIntr->getStorage() && fullyExtractedCurrentAssigned->getStorage() == currentAssigned->getStorage());
+    DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
+    #ifndef NDEBUG
+    // extract model and compare with the incrementally extracted one
+    InterpretationPtr fullyExtractedCurrentIntr = InterpretationPtr(new Interpretation(cs.reg));
+    InterpretationPtr fullyExtractedCurrentAssigned = InterpretationPtr(new Interpretation(cs.reg));
+    cs.extractClaspInterpretation(s, fullyExtractedCurrentIntr, fullyExtractedCurrentAssigned, InterpretationPtr());
 
-	int propNr = 0;
-#endif
+    std::stringstream ss;
+    ss << "Partial assignment: " << *fullyExtractedCurrentIntr << " (assigned: " << *fullyExtractedCurrentAssigned << ")" << std::endl;
+    ss << "Incrementally extracted partial assignment: " << *currentIntr << " (assigned: " << *currentAssigned << ")" << std::endl;
+    ss << "Changed atoms: " << *currentChanged;
+    DBGLOG(DBG, ss.str());
+    assert (fullyExtractedCurrentIntr->getStorage() == currentIntr->getStorage() && fullyExtractedCurrentAssigned->getStorage() == currentAssigned->getStorage());
 
-	// call HEX propagators
-	DBGLOG(DBG, "Need to call " << cs.propagators.size() << " propagators");
-	BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators){
-		DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator #" << (++propNr));
-		propagator->propagate(currentIntr, currentAssigned, currentChanged);
-	}
-	currentChanged->clear();
+    int propNr = 0;
+    #endif
+
+    // call HEX propagators
+    DBGLOG(DBG, "Need to call " << cs.propagators.size() << " propagators");
+    BOOST_FOREACH (PropagatorCallback* propagator, cs.propagators) {
+        DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator #" << (++propNr));
+        propagator->propagate(currentIntr, currentAssigned, currentChanged);
+    }
+    currentChanged->clear();
 }
 
-bool ClaspSolver::ExternalPropagator::addNewNogoodsToClasp(Clasp::Solver& s){
 
-	assert (!s.hasConflict() && "tried to add new nogoods while solver is in conflict");
+bool ClaspSolver::ExternalPropagator::addNewNogoodsToClasp(Clasp::Solver& s)
+{
 
-	// add new clauses to clasp
-	DBGLOG(DBG, "ExternalPropagator: Adding new clauses to clasp (" << cs.nogoods.size() << " were prepared)");
-	bool inconsistent = false;
-	Clasp::ClauseCreator cc(cs.claspctx.master());
-	std::list<Nogood>::iterator ngIt = cs.nogoods.begin();
-	while (ngIt != cs.nogoods.end()){
-		const Nogood& ng = *ngIt;
+    assert (!s.hasConflict() && "tried to add new nogoods while solver is in conflict");
 
-		TransformNogoodToClaspResult ngClasp = cs.nogoodToClaspClause(ng);
-		if (!ngClasp.tautological && !ngClasp.outOfDomain){
-			DBGLOG(DBG, "Adding learned nogood " << ng.getStringRepresentation(cs.reg) << " to clasp");
-			cc.start(Clasp::Constraint_t::learnt_other);
-			BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
-				cc.add(lit);
-			}
+    // add new clauses to clasp
+    DBGLOG(DBG, "ExternalPropagator: Adding new clauses to clasp (" << cs.nogoods.size() << " were prepared)");
+    bool inconsistent = false;
+    Clasp::ClauseCreator cc(cs.claspctx.master());
+    std::list<Nogood>::iterator ngIt = cs.nogoods.begin();
+    while (ngIt != cs.nogoods.end()) {
+        const Nogood& ng = *ngIt;
 
-			Clasp::ClauseInfo ci(Clasp::Constraint_t::learnt_other);
-			assert (!s.hasConflict() && (s.decisionLevel() == 0 || ci.learnt()));
-			Clasp::ClauseCreator::Result res = cc.create(s, cc.lits(), 0, ci);
-			DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
+        TransformNogoodToClaspResult ngClasp = cs.nogoodToClaspClause(ng);
+        if (!ngClasp.tautological && !ngClasp.outOfDomain) {
+            DBGLOG(DBG, "Adding learned nogood " << ng.getStringRepresentation(cs.reg) << " to clasp");
+            cc.start(Clasp::Constraint_t::learnt_other);
+            BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause) {
+                cc.add(lit);
+            }
 
-			if (!res.ok()){
-				inconsistent = true;
-				break;
-			}
-		}
-		ngIt++;
-	}
+            Clasp::ClauseInfo ci(Clasp::Constraint_t::learnt_other);
+            assert (!s.hasConflict() && (s.decisionLevel() == 0 || ci.learnt()));
+            Clasp::ClauseCreator::Result res = cc.create(s, cc.lits(), 0, ci);
+            DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
 
-	// remove all processed nogoods
-	cs.nogoods.erase(cs.nogoods.begin(), ngIt);
-	assert(!inconsistent || s.hasConflict());
-	return inconsistent;
+            if (!res.ok()) {
+                inconsistent = true;
+                break;
+            }
+        }
+        ngIt++;
+    }
+
+    // remove all processed nogoods
+    cs.nogoods.erase(cs.nogoods.begin(), ngIt);
+    assert(!inconsistent || s.hasConflict());
+    return inconsistent;
 }
 
-bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp::PostPropagator* ctx){
 
-	DBGLOG(DBG, "ExternalPropagator::propagateFixpoint");
+bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp::PostPropagator* ctx)
+{
 
-	// check if we shall propagate
-	bool hexPropagate = false;
-	boost::posix_time::ptime now(boost::posix_time::microsec_clock::local_time());
-	if(now - lastPropagation > skipMaxDuration){
-		DBGLOG(DBG,"we shall propagate to HEX because skipMaxDuration=" << skipMaxDuration <<
-		           " < time of last propgation, now=" << now << ", lastPropagation=" << lastPropagation);
-		lastPropagation = now;
-		skipCounter = 0;
-		hexPropagate = true;
-	}else{
-		if(skipCounter >= skipAmount){
-			DBGLOG(DBG,"we shall propagate to HEX because skipCounter=" << skipCounter <<
-				   " >= skipAmount=" << skipAmount);
-			lastPropagation = now;
-			skipCounter = 0;
-			hexPropagate = true;
-		}
-	}
-	DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
+    DBGLOG(DBG, "ExternalPropagator::propagateFixpoint");
 
-	for (;;){
-		if (hexPropagate) callHexPropagators(s);
-		if (addNewNogoodsToClasp(s)){
-			DBGLOG(DBG, "Propagation led to conflict");
-			assert(s.queueSize() == 0 || s.hasConflict());
-			return false;
-		}
-		if (s.queueSize() == 0){
-			DBGLOG(DBG, "Nothing more to propagate");
-			assert(s.queueSize() == 0 || s.hasConflict());
-			return true;
-		}
-		if (!s.propagateUntil(this)){
-			DBGLOG(DBG, "Propagated something, rescheduling previous propagators");
-			assert(s.queueSize() == 0 || s.hasConflict());
-			return false;
-		}
-	}
+    // check if we shall propagate
+    bool hexPropagate = false;
+    boost::posix_time::ptime now(boost::posix_time::microsec_clock::local_time());
+    if(now - lastPropagation > skipMaxDuration) {
+        DBGLOG(DBG,"we shall propagate to HEX because skipMaxDuration=" << skipMaxDuration <<
+            " < time of last propgation, now=" << now << ", lastPropagation=" << lastPropagation);
+        lastPropagation = now;
+        skipCounter = 0;
+        hexPropagate = true;
+    }
+    else {
+        if(skipCounter >= skipAmount) {
+            DBGLOG(DBG,"we shall propagate to HEX because skipCounter=" << skipCounter <<
+                " >= skipAmount=" << skipAmount);
+            lastPropagation = now;
+            skipCounter = 0;
+            hexPropagate = true;
+        }
+    }
+    DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
+
+    for (;;) {
+        if (hexPropagate) callHexPropagators(s);
+        if (addNewNogoodsToClasp(s)) {
+            DBGLOG(DBG, "Propagation led to conflict");
+            assert(s.queueSize() == 0 || s.hasConflict());
+            return false;
+        }
+        if (s.queueSize() == 0) {
+            DBGLOG(DBG, "Nothing more to propagate");
+            assert(s.queueSize() == 0 || s.hasConflict());
+            return true;
+        }
+        if (!s.propagateUntil(this)) {
+            DBGLOG(DBG, "Propagated something, rescheduling previous propagators");
+            assert(s.queueSize() == 0 || s.hasConflict());
+            return false;
+        }
+    }
 }
 
-bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 
-	DBGLOG(DBG, "ExternalPropagator::isModel");
+bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s)
+{
 
-	// here we must call the HEX propagators to make sure that the verification status of external atoms is correct
-	// after this method returns
-	DBGLOG(DBG, "Must propagate to HEX");
-	callHexPropagators(s);
-	if (addNewNogoodsToClasp(s)) return false;
-	return s.numFreeVars() == 0 && !s.hasConflict();
+    DBGLOG(DBG, "ExternalPropagator::isModel");
+
+    // here we must call the HEX propagators to make sure that the verification status of external atoms is correct
+    // after this method returns
+    DBGLOG(DBG, "Must propagate to HEX");
+    callHexPropagators(s);
+    if (addNewNogoodsToClasp(s)) return false;
+    return s.numFreeVars() == 0 && !s.hasConflict();
 }
 
-uint32_t ClaspSolver::ExternalPropagator::priority() const{
-	return Clasp::PostPropagator::priority_class_general;
+
+uint32_t ClaspSolver::ExternalPropagator::priority() const
+{
+    return Clasp::PostPropagator::priority_class_general;
 }
 
-Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s, Clasp::Literal p, uint32& data){
 
-	DBGLOG(DBG, "ExternalPropagator::propagate");
-	Clasp::Literal pneg(p.var(), !p.sign());
+Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s, Clasp::Literal p, uint32& data)
+{
 
-	assert(s.isTrue(p) && s.isFalse(pneg));
+    DBGLOG(DBG, "ExternalPropagator::propagate");
+    Clasp::Literal pneg(p.var(), !p.sign());
 
-	uint32_t level = s.level(p.var());
+    assert(s.isTrue(p) && s.isFalse(pneg));
 
-	DBGLOG(DBG, "Clasp notified about literal C:" << p.index() << "/" << (p.sign() ? "!" : "") << p.var() << " becoming true on dl " << level);
-	if (cs.claspToHex.size() > p.index()){
-		BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(p.index())){
-			DBGLOG(DBG, "Assigning H:" << adr << " to true");
-			currentIntr->setFact(adr);
-			currentAssigned->setFact(adr);
-			currentChanged->setFact(adr);
+    uint32_t level = s.level(p.var());
 
-			// add the variable to the undo watch for the decision level on which it was assigned
-			while (assignmentsOnDecisionLevel.size() < level + 1){
-				if(assignmentsOnDecisionLevel.size() > 0){
-					DBGLOG(DBG, "Adding undo watch to level " << assignmentsOnDecisionLevel.size());
-					cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
-				}
-				assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
-			}
-			assignmentsOnDecisionLevel[level].push_back(adr);
-		}
-	}
+    DBGLOG(DBG, "Clasp notified about literal C:" << p.index() << "/" << (p.sign() ? "!" : "") << p.var() << " becoming true on dl " << level);
+    if (cs.claspToHex.size() > p.index()) {
+        BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(p.index())) {
+            DBGLOG(DBG, "Assigning H:" << adr << " to true");
+            currentIntr->setFact(adr);
+            currentAssigned->setFact(adr);
+            currentChanged->setFact(adr);
 
-	DBGLOG(DBG, "This implies that literal C:" << pneg.index() << "/" << (pneg.sign() ? "!" : "") << p.var() << " becomes false on dl " << level);
-	if (cs.claspToHex.size() > pneg.index()){
-		BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(pneg.index())){
-			DBGLOG(DBG, "Assigning H:" << adr << " to false");
-			currentIntr->clearFact(adr);
-			currentAssigned->setFact(adr);
-			currentChanged->setFact(adr);
+            // add the variable to the undo watch for the decision level on which it was assigned
+            while (assignmentsOnDecisionLevel.size() < level + 1) {
+                if(assignmentsOnDecisionLevel.size() > 0) {
+                    DBGLOG(DBG, "Adding undo watch to level " << assignmentsOnDecisionLevel.size());
+                    cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
+                }
+                assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
+            }
+            assignmentsOnDecisionLevel[level].push_back(adr);
+        }
+    }
 
-			// add the variable to the undo watch for the decision level on which it was assigned
-			while (assignmentsOnDecisionLevel.size() < level + 1){
-				if(assignmentsOnDecisionLevel.size() > 0) cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
-				assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
-			}
-			assignmentsOnDecisionLevel[level].push_back(adr);
-		}
-	}
-	DBGLOG(DBG, "ExternalPropagator::propagate finished");
-	return PropResult();
+    DBGLOG(DBG, "This implies that literal C:" << pneg.index() << "/" << (pneg.sign() ? "!" : "") << p.var() << " becomes false on dl " << level);
+    if (cs.claspToHex.size() > pneg.index()) {
+        BOOST_FOREACH (IDAddress adr, *cs.convertClaspSolverLitToHex(pneg.index())) {
+            DBGLOG(DBG, "Assigning H:" << adr << " to false");
+            currentIntr->clearFact(adr);
+            currentAssigned->setFact(adr);
+            currentChanged->setFact(adr);
+
+            // add the variable to the undo watch for the decision level on which it was assigned
+            while (assignmentsOnDecisionLevel.size() < level + 1) {
+                if(assignmentsOnDecisionLevel.size() > 0) cs.claspctx.master()->addUndoWatch(assignmentsOnDecisionLevel.size(), this);
+                assignmentsOnDecisionLevel.push_back(std::vector<IDAddress>());
+            }
+            assignmentsOnDecisionLevel[level].push_back(adr);
+        }
+    }
+    DBGLOG(DBG, "ExternalPropagator::propagate finished");
+    return PropResult();
 }
 
-void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s){
 
-	DBGLOG(DBG, "Backtracking to decision level " << s.decisionLevel());
-	for (uint32_t i = s.decisionLevel(); i < assignmentsOnDecisionLevel.size(); i++){
-		DBGLOG(DBG, "Undoing decision level " << i);
-		BOOST_FOREACH (IDAddress adr, assignmentsOnDecisionLevel[i]){
-			DBGLOG(DBG, "Unassigning H:" << adr);
-			currentIntr->clearFact(adr);
-			currentAssigned->clearFact(adr);
-			currentChanged->setFact(adr);
-		}
-	}
-	assignmentsOnDecisionLevel.erase(assignmentsOnDecisionLevel.begin() + s.decisionLevel(), assignmentsOnDecisionLevel.end());
+void ClaspSolver::ExternalPropagator::undoLevel(Clasp::Solver& s)
+{
+
+    DBGLOG(DBG, "Backtracking to decision level " << s.decisionLevel());
+    for (uint32_t i = s.decisionLevel(); i < assignmentsOnDecisionLevel.size(); i++) {
+        DBGLOG(DBG, "Undoing decision level " << i);
+        BOOST_FOREACH (IDAddress adr, assignmentsOnDecisionLevel[i]) {
+            DBGLOG(DBG, "Unassigning H:" << adr);
+            currentIntr->clearFact(adr);
+            currentAssigned->clearFact(adr);
+            currentChanged->setFact(adr);
+        }
+    }
+    assignmentsOnDecisionLevel.erase(assignmentsOnDecisionLevel.begin() + s.decisionLevel(), assignmentsOnDecisionLevel.end());
 }
+
 
 // ============================== ClaspSolver ==============================
 
-std::string ClaspSolver::idAddressToString(IDAddress adr){
-	std::stringstream ss;
-	ss << adr;
-	return ss.str();
+std::string ClaspSolver::idAddressToString(IDAddress adr)
+{
+    std::stringstream ss;
+    ss << adr;
+    return ss.str();
 }
 
-IDAddress ClaspSolver::stringToIDAddress(std::string str){
-#ifndef NDEBUG
-	if (str.find(":") != std::string::npos){
-		str = str.substr(0, str.find(":"));
-	}
-#endif
-	return atoi(str.c_str());
+
+IDAddress ClaspSolver::stringToIDAddress(std::string str)
+{
+    #ifndef NDEBUG
+    if (str.find(":") != std::string::npos) {
+        str = str.substr(0, str.find(":"));
+    }
+    #endif
+    return atoi(str.c_str());
 }
 
-void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, InterpretationPtr extractCurrentIntr, InterpretationPtr extractCurrentAssigned, InterpretationPtr extractCurrentChanged){
 
-	DBGLOG(DBG, "Extracting clasp interpretation");
-	if (!!extractCurrentIntr) extractCurrentIntr->clear();
-	if (!!extractCurrentAssigned) extractCurrentAssigned->clear();
-	for (Clasp::SymbolTable::const_iterator it = solver.symbolTable().begin(); it != solver.symbolTable().end(); ++it) {
-		// skip eliminated variables
-		if (claspctx.eliminated(it->second.lit.var())) continue;
+void ClaspSolver::extractClaspInterpretation(Clasp::Solver& solver, InterpretationPtr extractCurrentIntr, InterpretationPtr extractCurrentAssigned, InterpretationPtr extractCurrentChanged)
+{
 
-		if (solver.isTrue(it->second.lit) && !it->second.name.empty()) {
-			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
-			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
-			BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
-				if (!!extractCurrentIntr) extractCurrentIntr->setFact(adr);
-				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
-				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
-			}
-		}
-		if (solver.isFalse(it->second.lit) && !it->second.name.empty()) {
-			DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
-			             solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is false");
-			BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())){
-				if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
-				if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
-			}
-		}
-	}
+    DBGLOG(DBG, "Extracting clasp interpretation");
+    if (!!extractCurrentIntr) extractCurrentIntr->clear();
+    if (!!extractCurrentAssigned) extractCurrentAssigned->clear();
+    for (Clasp::SymbolTable::const_iterator it = solver.symbolTable().begin(); it != solver.symbolTable().end(); ++it) {
+        // skip eliminated variables
+        if (claspctx.eliminated(it->second.lit.var())) continue;
+
+        if (solver.isTrue(it->second.lit) && !it->second.name.empty()) {
+            DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
+                solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is true");
+            BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())) {
+                if (!!extractCurrentIntr) extractCurrentIntr->setFact(adr);
+                if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
+                if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
+            }
+        }
+        if (solver.isFalse(it->second.lit) && !it->second.name.empty()) {
+            DBGLOG(DBG, "Literal C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var() << "@" <<
+                solver.level(it->second.lit.var()) << (claspctx.eliminated(it->second.lit.var()) ? "(elim)" : "") << ",H:" << it->second.name.c_str() << " is false");
+            BOOST_FOREACH (IDAddress adr, *convertClaspSolverLitToHex(it->second.lit.index())) {
+                if (!!extractCurrentAssigned) extractCurrentAssigned->setFact(adr);
+                if (!!extractCurrentChanged) extractCurrentChanged->setFact(adr);
+            }
+        }
+    }
 }
+
 
 // freezes all variables in "frozen"; if the pointer is 0, then all variables are frozen
-void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDefault){
+void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDefault)
+{
 
-	if (!!frozen){
-		DBGLOG(DBG, "Setting selected variables to frozen: " << *frozen);
+    if (!!frozen) {
+        DBGLOG(DBG, "Setting selected variables to frozen: " << *frozen);
 
-#ifndef NDEBUG
-		int cntFrozen = 0;
-		std::set<int> alreadyFrozen;
-#endif
-		bm::bvector<>::enumerator en = frozen->getStorage().first();
-		bm::bvector<>::enumerator en_end = frozen->getStorage().end();
-		while (en < en_end){
-			if (isMappedToClaspLiteral(*en)){
-#ifndef NDEBUG
-				if (alreadyFrozen.count(hexToClaspSolver[*en].var()) == 0){
-					cntFrozen++;
-					alreadyFrozen.insert(hexToClaspSolver[*en].var());
-				}
-#endif
-				switch (problemType) {
-					case ASP:
-						// Note: (1) asp.free() does more than (2) claspctx.setFrozen().
-						// (2) prevents the internal solver variable from being eliminated due to optimization
-						// (1) does in addition prevent Clark's completion an loop clauses for these variables from being added (now), which
-						//     allows for defining them in later incremental steps
-						asp.freeze(convertHexToClaspProgramLit(*en).var(), Clasp::value_false);
-						break;
-					case SAT:
-						claspctx.setFrozen(convertHexToClaspSolverLit(*en).var(), true);
-						break;
-					default:
-						assert(false && "unknown problem type");
-				}
-			}
-			en++;
-		}
-#ifndef NDEBUG
-		DBGLOG(DBG, "Setting " << cntFrozen << " out of " << claspctx.numVars() << " variables to frozen");
-#endif
-	}else{
-		if (freezeByDefault){
-			DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
-			for (uint32_t i = 1; i <= claspctx.numVars(); i++){
+        #ifndef NDEBUG
+        int cntFrozen = 0;
+        std::set<int> alreadyFrozen;
+        #endif
+        bm::bvector<>::enumerator en = frozen->getStorage().first();
+        bm::bvector<>::enumerator en_end = frozen->getStorage().end();
+        while (en < en_end) {
+            if (isMappedToClaspLiteral(*en)) {
+                #ifndef NDEBUG
+                if (alreadyFrozen.count(hexToClaspSolver[*en].var()) == 0) {
+                    cntFrozen++;
+                    alreadyFrozen.insert(hexToClaspSolver[*en].var());
+                }
+                #endif
+                switch (problemType) {
+                    case ASP:
+                        // Note: (1) asp.free() does more than (2) claspctx.setFrozen().
+                        // (2) prevents the internal solver variable from being eliminated due to optimization
+                        // (1) does in addition prevent Clark's completion an loop clauses for these variables from being added (now), which
+                        //     allows for defining them in later incremental steps
+                        asp.freeze(convertHexToClaspProgramLit(*en).var(), Clasp::value_false);
+                        break;
+                    case SAT:
+                        claspctx.setFrozen(convertHexToClaspSolverLit(*en).var(), true);
+                        break;
+                    default:
+                        assert(false && "unknown problem type");
+                }
+            }
+            en++;
+        }
+        #ifndef NDEBUG
+        DBGLOG(DBG, "Setting " << cntFrozen << " out of " << claspctx.numVars() << " variables to frozen");
+        #endif
+    }
+    else {
+        if (freezeByDefault) {
+            DBGLOG(DBG, "Setting all " << claspctx.numVars() << " variables to frozen");
+            for (uint32_t i = 1; i <= claspctx.numVars(); i++) {
 
-				switch (problemType) {
-					case ASP:
-						asp.freeze(i, Clasp::value_false);
-						break;
-					case SAT:
-						claspctx.setFrozen(i, true);
-						break;
-					default:
-						assert(false && "unknown problem type");
-				}
-			}
-		}
-	}
+                switch (problemType) {
+                    case ASP:
+                        asp.freeze(i, Clasp::value_false);
+                        break;
+                    case SAT:
+                        claspctx.setFrozen(i, true);
+                        break;
+                    default:
+                        assert(false && "unknown problem type");
+                }
+            }
+        }
+    }
 }
 
-void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
-	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendWeightRuleTC");
-	#endif
 
-	const Rule& rule = reg->rules.getByID(ruleId);
-	asp.startRule(Clasp::Asp::WEIGHTRULE, rule.bound.address);
-	assert(rule.head.size() != 0);
-	BOOST_FOREACH (ID h, rule.head){
-		// add literal to head
-		DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
-		asp.addHead(convertHexToClaspProgramLit(h.address).var());
-	}
-	for (uint32_t i = 0; i < rule.body.size(); ++i){
-		// add literal to body
-		DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << convertHexToClaspProgramLit(rule.body[i].address).var());
-		asp.addToBody(convertHexToClaspProgramLit(rule.body[i].address).var(), !(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
-	}
-	asp.endRule();
+void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId)
+{
+    #ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendWeightRuleTC");
+    #endif
+
+    const Rule& rule = reg->rules.getByID(ruleId);
+    asp.startRule(Clasp::Asp::WEIGHTRULE, rule.bound.address);
+    assert(rule.head.size() != 0);
+    BOOST_FOREACH (ID h, rule.head) {
+        // add literal to head
+        DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+        asp.addHead(convertHexToClaspProgramLit(h.address).var());
+    }
+    for (uint32_t i = 0; i < rule.body.size(); ++i) {
+        // add literal to body
+        DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << convertHexToClaspProgramLit(rule.body[i].address).var());
+        asp.addToBody(convertHexToClaspProgramLit(rule.body[i].address).var(), !(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
+    }
+    asp.endRule();
 }
 
-void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
-	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendOrdinaryRuleTC");
-	#endif
 
-	const Rule& rule = reg->rules.getByID(ruleId);
-	asp.startRule(rule.head.size() > 1 ? Clasp::Asp::DISJUNCTIVERULE : Clasp::Asp::BASICRULE);
-	if (rule.head.size() == 0){
-		asp.addHead(false_);
-	}
-	BOOST_FOREACH (ID h, rule.head){
-		// add literal to head
-		DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
-		asp.addHead(convertHexToClaspProgramLit(h.address).var());
-	}
-	BOOST_FOREACH (ID b, rule.body){
-		// add literal to body
-		DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()) ? "" : "!") << convertHexToClaspProgramLit(b.address).var());
-		asp.addToBody(convertHexToClaspProgramLit(b.address).var(), !(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()));
-	}
-	asp.endRule();
+void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId)
+{
+    #ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendOrdinaryRuleTC");
+    #endif
+
+    const Rule& rule = reg->rules.getByID(ruleId);
+    asp.startRule(rule.head.size() > 1 ? Clasp::Asp::DISJUNCTIVERULE : Clasp::Asp::BASICRULE);
+    if (rule.head.size() == 0) {
+        asp.addHead(false_);
+    }
+    BOOST_FOREACH (ID h, rule.head) {
+        // add literal to head
+        DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+        asp.addHead(convertHexToClaspProgramLit(h.address).var());
+    }
+    BOOST_FOREACH (ID b, rule.body) {
+        // add literal to body
+        DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()) ? "" : "!") << convertHexToClaspProgramLit(b.address).var());
+        asp.addToBody(convertHexToClaspProgramLit(b.address).var(), !(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()));
+    }
+    asp.endRule();
 }
 
-void ClaspSolver::sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendRuleTC");
-	const Rule& rule = reg->rules.getByID(ruleId);
 
-	if (ID(rule.kind, 0).isWeakConstraint()) throw GeneralError("clasp-based solver does not support weak constraints");
+void ClaspSolver::sendRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId)
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendRuleTC");
+    const Rule& rule = reg->rules.getByID(ruleId);
 
-	DBGLOG(DBG, "sendRuleToClasp " << printToString<RawPrinter>(ruleId, reg));
+    if (ID(rule.kind, 0).isWeakConstraint()) throw GeneralError("clasp-based solver does not support weak constraints");
 
-	// distinct by the type of the rule
-	if (ID(rule.kind, 0).isWeightRule()){
-		sendWeightRuleToClasp(asp, ruleId);
-	}else{
-		sendOrdinaryRuleToClasp(asp, ruleId);
-	}
+    DBGLOG(DBG, "sendRuleToClasp " << printToString<RawPrinter>(ruleId, reg));
+
+    // distinct by the type of the rule
+    if (ID(rule.kind, 0).isWeightRule()) {
+        sendWeightRuleToClasp(asp, ruleId);
+    }
+    else {
+        sendOrdinaryRuleToClasp(asp, ruleId);
+    }
 }
 
-void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
-	asp.start(claspctx, config.asp);
-	asp.setNonHcfConfiguration(config.testerConfig());
+void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendProgramTC");
 
-	// The following two lines allow for defining the program incrementally
-	// Note: If the program is to be defined incrementally, then updateProgram() must be called before each extension, even for the first one
-	asp.updateProgram();
+    asp.start(claspctx, config.asp);
+    asp.setNonHcfConfiguration(config.testerConfig());
 
-	false_ = nextVar++;
-	asp.setCompute(false_, false);
+    // The following two lines allow for defining the program incrementally
+    // Note: If the program is to be defined incrementally, then updateProgram() must be called before each extension, even for the first one
+    asp.updateProgram();
 
-	// transfer edb
-	DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
-	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
-	while (en < en_end){
-		// add fact
-		asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
-		en++;
-	}
+    false_ = nextVar++;
+    asp.setCompute(false_, false);
 
-	// transfer idb
-	DBGLOG(DBG, "Sending IDB to clasp");
-	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
+    // transfer edb
+    DBGLOG(DBG, "Sending EDB to clasp: " << *p.getGroundProgram().edb);
+    bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+    bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+    while (en < en_end) {
+        // add fact
+        asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
+        en++;
+    }
 
-/*
-//Incremental Solving:
+    // transfer idb
+    DBGLOG(DBG, "Sending IDB to clasp");
+    BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb) {
 
-inconsistent = !asp.endProgram();
+        /*
+        //Incremental Solving:
 
-DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
-DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
+        inconsistent = !asp.endProgram();
 
-if (inconsistent){
-	DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-	inconsistent = true;
-	return;
+        DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+        DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
+
+        if (inconsistent){
+          DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+          inconsistent = true;
+          return;
+        }
+
+        DBGLOG(DBG, "Prepare new model enumerator");
+        modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+        modelEnumerator->init(claspctx, 0, config.solve.numModels);
+
+        DBGLOG(DBG, "Finalizing reinitialization");
+        if (!claspctx.endInit()){
+          DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+          inconsistent = true;
+          return;
+        }
+
+        DBGLOG(DBG, "Resetting solver object");
+        solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+        enumerationStarted = false;
+
+        asp.update();
+        */
+
+        sendRuleToClasp(asp, ruleId);
+    }
+
+    freezeVariables(frozen, false /* do not freeze variables by default */);
+
+    inconsistent = !asp.endProgram();
+
+    DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
+
+    DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+
+    #ifndef NDEBUG
+    std::stringstream ss;
+    asp.write(ss);
+    DBGLOG(DBG, "Program in LParse format: " << ss.str());
+    #endif
 }
 
-DBGLOG(DBG, "Prepare new model enumerator");
-modelEnumerator.reset(config.solve.createEnumerator(config.solve));
-modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
-DBGLOG(DBG, "Finalizing reinitialization");
-if (!claspctx.endInit()){
-	DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-	inconsistent = true;
-	return;
+void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p)
+{
+
+    // just do something if we need to optimize something
+    if( ctx.config.getOption("Optimization") == 0 ) {
+        LOG(DBG, "Do not need minimize constraint");
+        return;
+    }
+
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::createMinimizeConstraints");
+
+    DBGLOG(DBG, "Preparing minimize constraints");
+
+    // one minimize statement for each level
+    std::vector<Clasp::WeightLitVec> minimizeStatements;
+    #ifndef NDEBUG
+    std::vector<std::vector<IDAddress> > minimizeStatementsHex;
+    #endif
+
+    // construct the minimize statements for each level
+    bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+    bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+    while (en < en_end) {
+        const OrdinaryAtom& weightAtom = reg->ogatoms.getByAddress(*en);
+        if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w') {
+            int level = weightAtom.tuple[2].address;
+            while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
+            minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(*en), weightAtom.tuple[1].address));
+            #ifndef NDEBUG
+            while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
+            minimizeStatementsHex[level - 1].push_back(*en);
+            #endif
+        }
+        en++;
+    }
+    BOOST_FOREACH (ID ruleID, p.getGroundProgram().idb) {
+        const Rule& rule = reg->rules.getByID(ruleID);
+
+        // check if this is a weight rule
+        if (rule.head.size() == 1) {
+            const OrdinaryAtom& weightAtom = reg->ogatoms.getByID(rule.head[0]);
+            if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w') {
+                int level = weightAtom.tuple[2].address;
+                while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
+                minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(rule.head[0].address), weightAtom.tuple[1].address));
+                #ifndef NDEBUG
+                while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
+                minimizeStatementsHex[level - 1].push_back(rule.head[0].address);
+                #endif
+            }
+        }
+    }
+
+    // add the minimize statements to clasp
+    for (int level = minimizeStatements.size() - 1; level >= 0; --level) {
+        #ifndef NDEBUG
+        std::stringstream ss;
+        ss << "Minimize statement at level " << level << ": ";
+        for (int l = 0; l < minimizeStatementsHex[level].size(); ++l) {
+            ss << (l > 0 ? ", " : "") << minimizeStatementsHex[level][l];
+        }
+        DBGLOG(DBG, ss.str());
+        #endif
+        minb.addRule(minimizeStatements[level]);
+    }
+
+    LOG(DBG, "Constructing minimize constraint");
+    sharedMinimizeData = minb.build(claspctx);
+    minc = 0;
+    if (!!sharedMinimizeData) {
+        DBGLOG(DBG, "Setting minimize mode");
+                                 // optimum is set by setOptimum
+        sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize);
+
+        LOG(DBG, "Attaching minimize constraint to clasp");
+        minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+
+        assert(!!minc);
+    }
 }
 
-DBGLOG(DBG, "Resetting solver object");
-solve.reset(new Clasp::BasicSolve(*claspctx.master()));
-enumerationStarted = false;
 
-asp.update();
-*/
+void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen)
+{
 
-		sendRuleToClasp(asp, ruleId);
-	}
+    #ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
+    #endif
 
-	freezeVariables(frozen, false /* do not freeze variables by default */);
+    DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
 
-	inconsistent = !asp.endProgram();
+    sat.startProgram(claspctx);
 
-	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
+    prepareProblem(sat, ns);
+    updateSymbolTable();
 
-	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+    for (int i = 0; i < ns.getNogoodCount(); i++) {
+        const Nogood& ng = ns.getNogood(i);
+        TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
+        assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
+        if (!ngClasp.tautological) {
+            DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
 
-#ifndef NDEBUG
-	std::stringstream ss;
-	asp.write(ss);
-	DBGLOG(DBG, "Program in LParse format: " << ss.str());
-#endif
+            sat.addClause(ngClasp.clause);
+        }
+        else {
+            DBGLOG(DBG, "Skipping tautological nogood");
+        }
+    }
+
+    inconsistent = !sat.endProgram();
+    DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+
+    DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
+
+    freezeVariables(frozen, true /* freeze variables by default */);
 }
 
-void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p){
 
-	// just do something if we need to optimize something
-  	if( ctx.config.getOption("Optimization") == 0 ) {
-	  LOG(DBG, "Do not need minimize constraint");
-	  return;
-	}
+void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type)
+{
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::createMinimizeConstraints");
+    DBGLOG(DBG, "Interpreting clasp command-line");
 
-	DBGLOG(DBG, "Preparing minimize constraints");
+    std::string claspconfigstr = ctx.config.getStringOption("ClaspConfiguration");
+    if( claspconfigstr == "none" ) claspconfigstr = "";
+    if( claspconfigstr == "frumpy"
+        || claspconfigstr == "jumpy"
+        || claspconfigstr == "handy"
+        || claspconfigstr == "crafty"
+        || claspconfigstr == "trendy") claspconfigstr = "--configuration=" + claspconfigstr;
+    // otherwise let the config string itself be parsed by clasp
 
-	// one minimize statement for each level
-	std::vector<Clasp::WeightLitVec> minimizeStatements;
-#ifndef NDEBUG
-	std::vector<std::vector<IDAddress> > minimizeStatementsHex;
-#endif
+    DBGLOG(DBG, "Found configuration: " << claspconfigstr);
+    try
+    {
+        // options found in command-line
+        allOpts = std::auto_ptr<ProgramOptions::OptionContext>(new ProgramOptions::OptionContext("<clasp_dlvhex>"));
+        DBGLOG(DBG, "Configuring options");
+        config.reset();
+        config.addOptions(*allOpts);
+        DBGLOG(DBG, "Parsing command-line");
+        parsedValues = std::auto_ptr<ProgramOptions::ParsedValues>(new ProgramOptions::ParsedValues(*allOpts));
+        *parsedValues = ProgramOptions::parseCommandString(claspconfigstr, *allOpts);
+        DBGLOG(DBG, "Assigning specified values");
+        parsedOptions.assign(*parsedValues);
+        DBGLOG(DBG, "Assigning defaults");
+        allOpts->assignDefaults(parsedOptions);
 
-	// construct the minimize statements for each level
-	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
-	while (en < en_end){
-		const OrdinaryAtom& weightAtom = reg->ogatoms.getByAddress(*en);
-		if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
-			int level = weightAtom.tuple[2].address;
-			while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
-			minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(*en), weightAtom.tuple[1].address));
-#ifndef NDEBUG
-			while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
-			minimizeStatementsHex[level - 1].push_back(*en);
-#endif
-		}
-		en++;
-	}
-	BOOST_FOREACH (ID ruleID, p.getGroundProgram().idb){
-		const Rule& rule = reg->rules.getByID(ruleID);
+        DBGLOG(DBG, "Applying options");
+        config.finalize(parsedOptions, type, true);
+        config.solve.numModels = 0;
+        claspctx.setConfiguration(&config, false);
 
-		// check if this is a weight rule
-		if (rule.head.size() == 1){
-			const OrdinaryAtom& weightAtom = reg->ogatoms.getByID(rule.head[0]);
-			if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
-				int level = weightAtom.tuple[2].address;
-				while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
-				minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(rule.head[0].address), weightAtom.tuple[1].address));
-#ifndef NDEBUG
-				while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
-				minimizeStatementsHex[level - 1].push_back(rule.head[0].address);
-#endif
-			}
-		}
-	}
-
-	// add the minimize statements to clasp
-	for (int level = minimizeStatements.size() - 1; level >= 0; --level){
-#ifndef NDEBUG
-		std::stringstream ss;
-		ss << "Minimize statement at level " << level << ": ";
-		for (int l = 0; l < minimizeStatementsHex[level].size(); ++l){
-			ss << (l > 0 ? ", " : "") << minimizeStatementsHex[level][l];
-		}
-		DBGLOG(DBG, ss.str());
-#endif
-		minb.addRule(minimizeStatements[level]);
-	}
-
-	LOG(DBG, "Constructing minimize constraint");
-	sharedMinimizeData = minb.build(claspctx);
-	minc = 0;
-	if (!!sharedMinimizeData){
-		DBGLOG(DBG, "Setting minimize mode");
-		sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize); // optimum is set by setOptimum
-
-		LOG(DBG, "Attaching minimize constraint to clasp");
-		minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
-
-		assert(!!minc);
-	}
+        DBGLOG(DBG, "Finished option parsing");
+    }
+    catch(...) {
+        DBGLOG(DBG, "Could not parse clasp options: " + claspconfigstr);
+        throw;
+    }
 }
 
-void ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns, InterpretationConstPtr frozen){
 
-	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendNogoodSetTC");
-	#endif
-
-	DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
-
-	sat.startProgram(claspctx);
-
-	prepareProblem(sat, ns);
-	updateSymbolTable();
-
-	for (int i = 0; i < ns.getNogoodCount(); i++){
-		const Nogood& ng = ns.getNogood(i);
-		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
-		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
-		if (!ngClasp.tautological){
-			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
-
-			sat.addClause(ngClasp.clause);
-		}else{
-			DBGLOG(DBG, "Skipping tautological nogood");
-		}
-	}
-
-	inconsistent = !sat.endProgram();
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
-
-	DBGLOG(DBG, "Instance is " << (inconsistent ? "" : "not ") << "inconsistent");
-
-	freezeVariables(frozen, true /* freeze variables by default */);
+void ClaspSolver::shutdownClasp()
+{
+    if (!!ep.get()) ep.reset();
+    if (minc) { minc->destroy(claspctx.master(), true);  }
+    if (sharedMinimizeData)   { sharedMinimizeData->release(); }
+    resetAndResizeClaspToHex(0);
 }
 
-void ClaspSolver::interpretClaspCommandline(Clasp::Problem_t::Type type){
 
-	DBGLOG(DBG, "Interpreting clasp command-line");
+ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const Nogood& ng, bool extendDomainIfNecessary)
+{
 
-	std::string claspconfigstr = ctx.config.getStringOption("ClaspConfiguration");
-	if( claspconfigstr == "none" ) claspconfigstr = "";
-	if( claspconfigstr == "frumpy"
-	 || claspconfigstr == "jumpy"
-	 || claspconfigstr == "handy"
-	 || claspconfigstr == "crafty"
-	 || claspconfigstr == "trendy") claspconfigstr = "--configuration=" + claspconfigstr;
-	// otherwise let the config string itself be parsed by clasp
+    #ifndef NDEBUG
+    DBGLOG(DBG, "Translating nogood " << ng.getStringRepresentation(reg) << " to clasp");
+    std::stringstream ss;
+    ss << "{ ";
+    bool first = true;
+    #endif
 
-	DBGLOG(DBG, "Found configuration: " << claspconfigstr);
-	try{
-		// options found in command-line
-		allOpts = std::auto_ptr<ProgramOptions::OptionContext>(new ProgramOptions::OptionContext("<clasp_dlvhex>"));
-		DBGLOG(DBG, "Configuring options");
-		config.reset();
-		config.addOptions(*allOpts);
-		DBGLOG(DBG, "Parsing command-line");
-		parsedValues = std::auto_ptr<ProgramOptions::ParsedValues>(new ProgramOptions::ParsedValues(*allOpts));
-		*parsedValues = ProgramOptions::parseCommandString(claspconfigstr, *allOpts);
-		DBGLOG(DBG, "Assigning specified values");
-		parsedOptions.assign(*parsedValues);
-		DBGLOG(DBG, "Assigning defaults");
-		allOpts->assignDefaults(parsedOptions);
+    // translate dlvhex::Nogood to clasp clause
+    Set<uint32> pos;
+    Set<uint32> neg;
+    Clasp::LitVec clause;
+    bool taut = false;
+    BOOST_FOREACH (ID lit, ng) {
 
-		DBGLOG(DBG, "Applying options");
-		config.finalize(parsedOptions, type, true);
-		config.solve.numModels = 0;
-		claspctx.setConfiguration(&config, false);
+        // only nogoods are relevant where all variables occur in this clasp instance
+        if (!isMappedToClaspLiteral(lit.address) && !extendDomainIfNecessary) {
+            DBGLOG(DBG, "some literal was not properly mapped to clasp");
+            return TransformNogoodToClaspResult(Clasp::LitVec(), false, true);
+        }
 
-		DBGLOG(DBG, "Finished option parsing");
-	}catch(...){
-		DBGLOG(DBG, "Could not parse clasp options: " + claspconfigstr);
-		throw;
-	}
+        // mclit = mapped clasp literal
+        const Clasp::Literal mclit = convertHexToClaspSolverLit(lit.address, extendDomainIfNecessary);
+        if (claspctx.eliminated(mclit.var())) {
+            DBGLOG(DBG, "some literal was eliminated");
+            return TransformNogoodToClaspResult(clause, false, true);
+        }
+
+        // avoid duplicate literals
+        // if the literal was already added with the same sign, skip it
+        // if it was added with different sign, cancel adding the clause
+        if (!(mclit.sign() ^ lit.isNaf())) {
+            if (pos.contains(mclit.var())) {
+                continue;
+            }
+            else if (neg.contains(mclit.var())) {
+                taut = true;
+            }
+            pos.insert(mclit.var());
+        }
+        else {
+            if (neg.contains(mclit.var())) {
+                continue;
+            }
+            else if (pos.contains(mclit.var())) {
+                taut = true;
+            }
+            neg.insert(mclit.var());
+        }
+
+        // 1. cs.hexToClaspSolver maps hex-atoms to clasp-literals
+        // 2. the sign must be changed if the hex-atom was default-negated (xor ^)
+        // 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
+        Clasp::Literal clit = Clasp::Literal(mclit.var(), !(mclit.sign() ^ lit.isNaf()));
+        clause.push_back(clit);
+        #ifndef NDEBUG
+        if (!first) ss << ", ";
+        first = false;
+        ss << (clit.sign() ? "!" : "") << clit.var();
+        #endif
+    }
+
+    #ifndef NDEBUG
+    ss << " } (" << (taut ? "" : "not ") << "tautological)";
+    DBGLOG(DBG, "Clasp clause is: " << ss.str());
+    #endif
+
+    return TransformNogoodToClaspResult(clause, taut, false);
 }
 
-void ClaspSolver::shutdownClasp(){
-	if (!!ep.get()) ep.reset();
-	if (minc) { minc->destroy(claspctx.master(), true);  } 
-	if (sharedMinimizeData)   { sharedMinimizeData->release(); }
-	resetAndResizeClaspToHex(0);
+
+void ClaspSolver::prepareProblem(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p)
+{
+
+    assert(false && "Deprecated. Due to use of Clasp::LogicProgram for initialization, this method does not need to be called anymore");
+
+    #ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::prepareProblem P pb");
+    #endif
+
+    DBGLOG(DBG, "Building atom index");
+
+    // edb
+    bm::bvector<>::enumerator en = p.edb->getStorage().first();
+    bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
+    while (en < en_end) {
+        if (!isMappedToClaspLiteral(*en)) {
+            uint32_t c = *en + 2;
+            DBGLOG(DBG, "Clasp index of atom H:" << *en << " is " << c);
+
+            // create positive literal -> false
+            storeHexToClasp(*en, Clasp::Literal(c, false));
+
+            std::string str = idAddressToString(*en);
+            asp.setAtomName(c, str.c_str());
+        }
+        en++;
+    }
+
+    // idb
+    BOOST_FOREACH (ID ruleId, p.idb) {
+        const Rule& rule = reg->rules.getByID(ruleId);
+        BOOST_FOREACH (ID h, rule.head) {
+            if (!isMappedToClaspLiteral(h.address)) {
+                uint32_t c = h.address + 2;
+                DBGLOG(DBG, "Clasp index of atom H:" << h.address << " is C:" << c);
+
+                // create positive literal -> false
+                storeHexToClasp(h.address, Clasp::Literal(c, false));
+
+                std::string str = idAddressToString(h.address);
+                asp.setAtomName(c, str.c_str());
+            }
+        }
+        BOOST_FOREACH (ID b, rule.body) {
+            if (!isMappedToClaspLiteral(b.address)) {
+                uint32_t c = b.address + 2;
+                DBGLOG(DBG, "Clasp index of atom H:" << b.address << " is C:" << c);
+
+                // create positive literal -> false
+                storeHexToClasp(b.address, Clasp::Literal(c, false));
+
+                std::string str = idAddressToString(b.address);
+                asp.setAtomName(c, str.c_str());
+            }
+        }
+    }
 }
 
-ClaspSolver::TransformNogoodToClaspResult ClaspSolver::nogoodToClaspClause(const Nogood& ng, bool extendDomainIfNecessary) {
 
-#ifndef NDEBUG
-	DBGLOG(DBG, "Translating nogood " << ng.getStringRepresentation(reg) << " to clasp");
-	std::stringstream ss;
-	ss << "{ ";
-	bool first = true;
-#endif
+void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns)
+{
+    #ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::prepareProblem ns");
+    #endif
 
-	// translate dlvhex::Nogood to clasp clause
-	Set<uint32> pos;
-	Set<uint32> neg;
-	Clasp::LitVec clause;
-	bool taut = false;
-	BOOST_FOREACH (ID lit, ng){
+    DBGLOG(DBG, "Building atom index");
+    DBGLOG(DBG, "symbol table has " << claspctx.symbolTable().size() << " entries");
 
-		// only nogoods are relevant where all variables occur in this clasp instance
-		if (!isMappedToClaspLiteral(lit.address) && !extendDomainIfNecessary){
-			DBGLOG(DBG, "some literal was not properly mapped to clasp");
-			return TransformNogoodToClaspResult(Clasp::LitVec(), false, true);
-		}
+    bool inverselits = (ctx.config.getOption("ClaspInverseLiterals") != 0);
 
-		// mclit = mapped clasp literal
-		const Clasp::Literal mclit = convertHexToClaspSolverLit(lit.address, extendDomainIfNecessary);
-		if (claspctx.eliminated(mclit.var())){
-			DBGLOG(DBG, "some literal was eliminated");
-			return TransformNogoodToClaspResult(clause, false, true);
-		}
+    assert(hexToClaspSolver.empty());
+    hexToClaspSolver.reserve(reg->ogatoms.getSize());
 
-		// avoid duplicate literals
-		// if the literal was already added with the same sign, skip it
-		// if it was added with different sign, cancel adding the clause
-		if (!(mclit.sign() ^ lit.isNaf())){
-			if (pos.contains(mclit.var())){
-				continue;
-			}else if (neg.contains(mclit.var())){
-				taut = true;
-			}
-			pos.insert(mclit.var());
-		}else{
-			if (neg.contains(mclit.var())){
-				continue;
-			}else if (pos.contains(mclit.var())){
-				taut = true;
-			}
-			neg.insert(mclit.var());
-		}
-
-		// 1. cs.hexToClaspSolver maps hex-atoms to clasp-literals
-		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
-		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
-		Clasp::Literal clit = Clasp::Literal(mclit.var(), !(mclit.sign() ^ lit.isNaf()));
-		clause.push_back(clit);
-#ifndef NDEBUG
-		if (!first) ss << ", ";
-		first = false;
-		ss << (clit.sign() ? "!" : "") << clit.var();
-#endif
-	}
-
-#ifndef NDEBUG
-	ss << " } (" << (taut ? "" : "not ") << "tautological)";
-	DBGLOG(DBG, "Clasp clause is: " << ss.str());
-#endif
-
-	return TransformNogoodToClaspResult(clause, taut, false);
+    // build symbol table and hexToClaspSolver
+    claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
+    unsigned largestIdx = 0;
+    unsigned varCnt = 0;
+    for (int i = 0; i < ns.getNogoodCount(); i++) {
+        const Nogood& ng = ns.getNogood(i);
+        BOOST_FOREACH (ID lit, ng) {
+            Clasp::Literal clasplit = convertHexToClaspSolverLit(lit.address, true, inverselits);
+            if (clasplit.index() > largestIdx) largestIdx = clasplit.index();
+        }
+    }
+    claspctx.symbolTable().endInit();
+    sat.prepareProblem(claspctx.numVars());
+    updateSymbolTable();
 }
 
-void ClaspSolver::prepareProblem(Clasp::Asp::LogicProgram& asp, const OrdinaryASPProgram& p){
 
-	assert(false && "Deprecated. Due to use of Clasp::LogicProgram for initialization, this method does not need to be called anymore");
+void ClaspSolver::updateSymbolTable()
+{
 
-	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::prepareProblem P pb");
-	#endif
+    #ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::updateSymbolTable");
+    #endif
 
-	DBGLOG(DBG, "Building atom index");
+    hexToClaspSolver.clear();
+    hexToClaspSolver.reserve(reg->ogatoms.getSize());
 
-	// edb
-	bm::bvector<>::enumerator en = p.edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
-	while (en < en_end){
-		if (!isMappedToClaspLiteral(*en)){
-			uint32_t c = *en + 2;
-			DBGLOG(DBG, "Clasp index of atom H:" << *en << " is " << c);
+    // go through clasp symbol table
+    const Clasp::SymbolTable& symTab = claspctx.symbolTable();
 
-			// create positive literal -> false
-			storeHexToClasp(*en, Clasp::Literal(c, false));
+    // each variable can be a positive or negative literal, literals are (var << 1 | sign)
+    // build empty set of NULL-pointers to vectors
+    // (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
+    #ifndef NDEBUG
+    if (problemType == ASP) {
+        DBGLOG(DBG, "ASP problem has " << claspctx.numVars() << " variables");
+    }
+    else if (problemType == SAT) {
+        DBGLOG(DBG, "SAT problem has " << claspctx.numVars() << " variables");
+    }
+    #endif
+                                 // the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
+    resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1 + 1);
 
-			std::string str = idAddressToString(*en);
-			asp.setAtomName(c, str.c_str());
-		}
-		en++;
-	}
+    LOG(DBG, "Symbol table of optimized program:");
+    for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+        std::string ss(it->second.name.c_str());
+        IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
+        storeHexToClasp(hexAdr, it->second.lit);
+        DBGLOG(DBG, "H:" << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
+            "C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var());
+        assert(it->second.lit.index() < claspToHex.size());
+        AddressVector* &c2h = claspToHex[it->second.lit.index()];
+        c2h->push_back(hexAdr);
+    }
 
-	// idb
-	BOOST_FOREACH (ID ruleId, p.idb){
-		const Rule& rule = reg->rules.getByID(ruleId);
-		BOOST_FOREACH (ID h, rule.head){
-			if (!isMappedToClaspLiteral(h.address)){
-				uint32_t c = h.address + 2;
-				DBGLOG(DBG, "Clasp index of atom H:" << h.address << " is C:" << c);
-
-				// create positive literal -> false
-				storeHexToClasp(h.address, Clasp::Literal(c, false));
-
-				std::string str = idAddressToString(h.address);
-				asp.setAtomName(c, str.c_str());
-			}
-		}
-		BOOST_FOREACH (ID b, rule.body){
-			if (!isMappedToClaspLiteral(b.address)){
-				uint32_t c = b.address + 2;
-				DBGLOG(DBG, "Clasp index of atom H:" << b.address << " is C:" << c);
-
-				// create positive literal -> false
-				storeHexToClasp(b.address, Clasp::Literal(c, false));
-
-				std::string str = idAddressToString(b.address);
-				asp.setAtomName(c, str.c_str());
-			}
-		}
-	}
+    DBGLOG(DBG, "hexToClaspSolver.size()=" << hexToClaspSolver.size() << ", symTab.size()=" << symTab.size());
 }
 
-void ClaspSolver::prepareProblem(Clasp::SatBuilder& sat, const NogoodSet& ns){
-	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::prepareProblem ns");
-	#endif
 
-	DBGLOG(DBG, "Building atom index");
-	DBGLOG(DBG, "symbol table has " << claspctx.symbolTable().size() << " entries");
+void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized)
+{
 
-	bool inverselits = (ctx.config.getOption("ClaspInverseLiterals") != 0);
+    if(addr >= hexToClaspSolver.size()) {
+        hexToClaspSolver.resize(addr + 1, noLiteral);
+    }
+    hexToClaspSolver[addr] = lit;
 
-	assert(hexToClaspSolver.empty());
-	hexToClaspSolver.reserve(reg->ogatoms.getSize());
-
-	// build symbol table and hexToClaspSolver
-	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
-	unsigned largestIdx = 0;
-	unsigned varCnt = 0;
-	for (int i = 0; i < ns.getNogoodCount(); i++){
-		const Nogood& ng = ns.getNogood(i);
-		BOOST_FOREACH (ID lit, ng){
-			Clasp::Literal clasplit = convertHexToClaspSolverLit(lit.address, true, inverselits);
-			if (clasplit.index() > largestIdx) largestIdx = clasplit.index();
-		}
-	}
-	claspctx.symbolTable().endInit();
-	sat.prepareProblem(claspctx.numVars());
-	updateSymbolTable();
+    if (alsoStoreNonoptimized) {
+        if(addr >= hexToClaspProgram.size()) {
+            hexToClaspProgram.resize(addr + 1, noLiteral);
+        }
+        hexToClaspProgram[addr] = lit;
+    }
 }
 
-void ClaspSolver::updateSymbolTable(){
-
-	#ifdef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::updateSymbolTable");
-	#endif
-
-	hexToClaspSolver.clear();
-	hexToClaspSolver.reserve(reg->ogatoms.getSize());
-
-	// go through clasp symbol table
-	const Clasp::SymbolTable& symTab = claspctx.symbolTable();
-
-	// each variable can be a positive or negative literal, literals are (var << 1 | sign)
-	// build empty set of NULL-pointers to vectors
-	// (literals which are internal variables and have no HEX equivalent do not show up in symbol table)
-#ifndef NDEBUG
-	if (problemType == ASP){
-		DBGLOG(DBG, "ASP problem has " << claspctx.numVars() << " variables");
-	}else if (problemType == SAT){
-		DBGLOG(DBG, "SAT problem has " << claspctx.numVars() << " variables");
-	}
-#endif
-	resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1 + 1);	// the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
-
-	LOG(DBG, "Symbol table of optimized program:");
-	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-		std::string ss(it->second.name.c_str());
-		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
-		storeHexToClasp(hexAdr, it->second.lit);
-		DBGLOG(DBG, "H:" << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
-		            "C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var());
-		assert(it->second.lit.index() < claspToHex.size());
-		AddressVector* &c2h = claspToHex[it->second.lit.index()];
-		c2h->push_back(hexAdr);
-	}
-
-	DBGLOG(DBG, "hexToClaspSolver.size()=" << hexToClaspSolver.size() << ", symTab.size()=" << symTab.size());
-}
-
-void ClaspSolver::storeHexToClasp(IDAddress addr, Clasp::Literal lit, bool alsoStoreNonoptimized){
-
-	if(addr >= hexToClaspSolver.size()){
-		hexToClaspSolver.resize(addr + 1, noLiteral);
-	}
-	hexToClaspSolver[addr] = lit;
-
-	if (alsoStoreNonoptimized){
-		if(addr >= hexToClaspProgram.size()){
-			hexToClaspProgram.resize(addr + 1, noLiteral);
-		}
-		hexToClaspProgram[addr] = lit;
-	}
-}
 
 void ClaspSolver::resetAndResizeClaspToHex(unsigned size)
 {
-	DBGLOG(DBG, "resetAndResizeClaspToHex: current size is " << claspToHex.size());
-	for(unsigned u = 0; u < claspToHex.size(); ++u)
-	{
-		if(claspToHex[u]){
-			delete claspToHex[u];
-			claspToHex[u] = NULL;
-		}
-	}
-	DBGLOG(DBG, "resetAndResizeClaspToHex: resizing to " << size);
-	claspToHex.resize(size, NULL);
-	for(unsigned u = 0; u < claspToHex.size(); ++u) {
-		claspToHex[u] = new AddressVector;
-	}
+    DBGLOG(DBG, "resetAndResizeClaspToHex: current size is " << claspToHex.size());
+    for(unsigned u = 0; u < claspToHex.size(); ++u) {
+        if(claspToHex[u]) {
+            delete claspToHex[u];
+            claspToHex[u] = NULL;
+        }
+    }
+    DBGLOG(DBG, "resetAndResizeClaspToHex: resizing to " << size);
+    claspToHex.resize(size, NULL);
+    for(unsigned u = 0; u < claspToHex.size(); ++u) {
+        claspToHex[u] = new AddressVector;
+    }
 }
 
-Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits) {
 
-	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
-		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit, true);
-		std::string str = idAddressToString(addr);
-#ifndef NDEBUG
-		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
-#endif
-		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-	}
-	assert(addr < hexToClaspSolver.size());
-	assert(hexToClaspSolver[addr] != noLiteral);
-	return hexToClaspSolver[addr];
+Clasp::Literal ClaspSolver::convertHexToClaspSolverLit(IDAddress addr, bool registerVar, bool inverseLits)
+{
+
+    if (!isMappedToClaspLiteral(addr)) {
+        uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+        Clasp::Literal clasplit(c, inverseLits);
+        storeHexToClasp(addr, clasplit, true);
+        std::string str = idAddressToString(addr);
+        #ifndef NDEBUG
+        str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+        #endif
+        claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+    }
+    assert(addr < hexToClaspSolver.size());
+    assert(hexToClaspSolver[addr] != noLiteral);
+    return hexToClaspSolver[addr];
 }
 
-Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool registerVar, bool inverseLits) {
-	if (!isMappedToClaspLiteral(addr)){
-		uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
-		Clasp::Literal clasplit(c, inverseLits);
-		storeHexToClasp(addr, clasplit, true);
-		std::string str = idAddressToString(addr);
-#ifndef NDEBUG
-		str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
-#endif
-		claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
-	}
-	assert(addr < hexToClaspSolver.size());
-	assert(hexToClaspSolver[addr] != noLiteral);
-	return hexToClaspProgram[addr];
+
+Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool registerVar, bool inverseLits)
+{
+    if (!isMappedToClaspLiteral(addr)) {
+        uint32_t c = (registerVar ? claspctx.addVar(Clasp::Var_t::atom_var) : nextVar++);
+        Clasp::Literal clasplit(c, inverseLits);
+        storeHexToClasp(addr, clasplit, true);
+        std::string str = idAddressToString(addr);
+        #ifndef NDEBUG
+        str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
+        #endif
+        claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+    }
+    assert(addr < hexToClaspSolver.size());
+    assert(hexToClaspSolver[addr] != noLiteral);
+    return hexToClaspProgram[addr];
 }
 
-const ClaspSolver::AddressVector* ClaspSolver::convertClaspSolverLitToHex(int index){
-	return claspToHex[index];
+
+const ClaspSolver::AddressVector* ClaspSolver::convertClaspSolverLitToHex(int index)
+{
+    return claspToHex[index];
 }
 
-void ClaspSolver::outputProject(InterpretationPtr intr){
-	if( !!intr && !!projectionMask )
-	{
-		DBGLOG(DBG, "Projecting " << *intr);
-		intr->getStorage() -= projectionMask->getStorage();
-		DBGLOG(DBG, "Projected to " << *intr);
-	}
+
+void ClaspSolver::outputProject(InterpretationPtr intr)
+{
+    if( !!intr && !!projectionMask ) {
+        DBGLOG(DBG, "Projecting " << *intr);
+        intr->getStorage() -= projectionMask->getStorage();
+        DBGLOG(DBG, "Projected to " << *intr);
+    }
 }
+
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
-	reg = ctx.registry();
+: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
+{
+    reg = ctx.registry();
 
-	DBGLOG(DBG, "Configure clasp in ASP mode");
-	problemType = ASP;
-	config.reset();
-	interpretClaspCommandline(Clasp::Problem_t::ASP);
-	nextSolveStep = Restart;
+    DBGLOG(DBG, "Configure clasp in ASP mode");
+    problemType = ASP;
+    config.reset();
+    interpretClaspCommandline(Clasp::Problem_t::ASP);
+    nextSolveStep = Restart;
 
-	claspctx.requestStepVar();
-	sendProgramToClasp(p, frozen);
+    claspctx.requestStepVar();
+    sendProgramToClasp(p, frozen);
 
-	if (inconsistent){
-		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-		inconsistent = true;
-		return;
-	}
+    if (inconsistent) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
 
-	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
-	modelEnumerator->init(claspctx, 0, config.solve.numModels);
+    DBGLOG(DBG, "Prepare model enumerator");
+    modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+    modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
-	DBGLOG(DBG, "Finalizing initialization");
-	if (!claspctx.endInit()){
-		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-		inconsistent = true;
-		return;
-	}
+    DBGLOG(DBG, "Finalizing initialization");
+    if (!claspctx.endInit()) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
 
-	updateSymbolTable();
+    updateSymbolTable();
 
-	createMinimizeConstraints(p);
+    createMinimizeConstraints(p);
 
-	DBGLOG(DBG, "Prepare solver object");
-	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
-	enumerationStarted = false;
+    DBGLOG(DBG, "Prepare solver object");
+    solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+    enumerationStarted = false;
 
-	DBGLOG(DBG, "Adding post propagator");
-	ep.reset(new ExternalPropagator(*this));
+    DBGLOG(DBG, "Adding post propagator");
+    ep.reset(new ExternalPropagator(*this));
 }
+
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
- : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0){
-	reg = ctx.registry();
+: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
+{
+    reg = ctx.registry();
 
-	DBGLOG(DBG, "Configure clasp in SAT mode");
-	problemType = SAT;
-	config.reset();
-	interpretClaspCommandline(Clasp::Problem_t::SAT);
-	nextSolveStep = Restart;
+    DBGLOG(DBG, "Configure clasp in SAT mode");
+    problemType = SAT;
+    config.reset();
+    interpretClaspCommandline(Clasp::Problem_t::SAT);
+    nextSolveStep = Restart;
 
-	claspctx.requestStepVar();
-	sendNogoodSetToClasp(ns, frozen);
+    claspctx.requestStepVar();
+    sendNogoodSetToClasp(ns, frozen);
 
-	if (inconsistent){
-		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-		inconsistent = true;
-		return;
-	}
+    if (inconsistent) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
 
-	DBGLOG(DBG, "Prepare model enumerator");
-	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
-	modelEnumerator->init(claspctx, 0, config.solve.numModels);
+    DBGLOG(DBG, "Prepare model enumerator");
+    modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+    modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
-	DBGLOG(DBG, "Finalizing initialization");
-	if (!claspctx.endInit()){
-		DBGLOG(DBG, "SAT instance is unsatisfiable");
-		inconsistent = true;
-		return;
-	}
+    DBGLOG(DBG, "Finalizing initialization");
+    if (!claspctx.endInit()) {
+        DBGLOG(DBG, "SAT instance is unsatisfiable");
+        inconsistent = true;
+        return;
+    }
 
-	updateSymbolTable();
+    updateSymbolTable();
 
-#ifndef NDEBUG
-	std::stringstream ss;
-	InterpretationPtr vars = InterpretationPtr(new Interpretation(reg));
-	for (int ngi = 0; ngi < ns.getNogoodCount(); ++ngi){
-		const Nogood& ng = ns.getNogood(ngi);
-		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng);		
-		bool first = true;
-		ss << ":- ";
-		for (uint32_t i = 0; i < ngClasp.clause.size(); ++i){
-			Clasp::Literal lit = ngClasp.clause[i];
-			if (!first) ss << ", ";
-			first = false;
-			ss << (lit.sign() ? "-" : "") << "a" << lit.var();
-			vars->setFact(lit.var());
-		}
-		if (!first) ss << "." << std::endl;
-	}
-	bm::bvector<>::enumerator en = vars->getStorage().first();
-	bm::bvector<>::enumerator en_end = vars->getStorage().end();
-	while (en < en_end){
-		ss << "a" << *en << " v -a" << *en << "." << std::endl;
-		en++;
-	}
+    #ifndef NDEBUG
+    std::stringstream ss;
+    InterpretationPtr vars = InterpretationPtr(new Interpretation(reg));
+    for (int ngi = 0; ngi < ns.getNogoodCount(); ++ngi) {
+        const Nogood& ng = ns.getNogood(ngi);
+        TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng);
+        bool first = true;
+        ss << ":- ";
+        for (uint32_t i = 0; i < ngClasp.clause.size(); ++i) {
+            Clasp::Literal lit = ngClasp.clause[i];
+            if (!first) ss << ", ";
+            first = false;
+            ss << (lit.sign() ? "-" : "") << "a" << lit.var();
+            vars->setFact(lit.var());
+        }
+        if (!first) ss << "." << std::endl;
+    }
+    bm::bvector<>::enumerator en = vars->getStorage().first();
+    bm::bvector<>::enumerator en_end = vars->getStorage().end();
+    while (en < en_end) {
+        ss << "a" << *en << " v -a" << *en << "." << std::endl;
+        en++;
+    }
 
-	DBGLOG(DBG, "SAT instance in ASP format:" << std::endl << ss.str());
-#endif
+    DBGLOG(DBG, "SAT instance in ASP format:" << std::endl << ss.str());
+    #endif
 
-	DBGLOG(DBG, "Prepare solver object");
-	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
-	enumerationStarted = false;
+    DBGLOG(DBG, "Prepare solver object");
+    solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+    enumerationStarted = false;
 
-	DBGLOG(DBG, "Adding post propagator");
-	ep.reset(new ExternalPropagator(*this));
+    DBGLOG(DBG, "Adding post propagator");
+    ep.reset(new ExternalPropagator(*this));
 }
 
-ClaspSolver::~ClaspSolver(){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::~ClaspSolver");
-	shutdownClasp();
+
+ClaspSolver::~ClaspSolver()
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::~ClaspSolver");
+    shutdownClasp();
 }
 
-void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen){
 
-	assert(problemType == ASP && "programs can only be added in ASP mode");
-	DBGLOG(DBG, "Adding program component incrementally");
-	nextSolveStep = Restart;
-	
-	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
-	if (!!ep.get()) ep.reset();
+void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
+{
 
-	// Update program
-	asp.updateProgram();
+    assert(problemType == ASP && "programs can only be added in ASP mode");
+    DBGLOG(DBG, "Adding program component incrementally");
+    nextSolveStep = Restart;
 
-	// transfer added edb
-	DBGLOG(DBG, "Sending added EDB to clasp: " << *p.getGroundProgram().edb);
-	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
-	while (en < en_end){
-#ifndef NDEBUG
-		assert ((!reg->ogatoms.getIDByAddress(*en).isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(reg->ogatoms.getIDByAddress(*en)) != 'w') && "weak constraints cannot be added incrementally");
-#endif
-		// redundancy check
-		if (convertHexToClaspSolverLit(*en).var() > 0){
-			// add fact
-			asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspSolverLit(*en).var()).endRule();
-		}
-		en++;
-	}
+    // remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
+    if (!!ep.get()) ep.reset();
 
-	// transfer added idb
-	DBGLOG(DBG, "Sending added IDB to clasp");
-	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
-		// redundancy check
-		bool redundant = false;
-		BOOST_FOREACH (ID h, reg->rules.getByID(ruleId).head){
-#ifndef NDEBUG
-			assert ((!h.isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(h) != 'w') && "weak constraints cannot be added incrementally");
-#endif
+    // Update program
+    asp.updateProgram();
 
-			if (convertHexToClaspSolverLit(h.address).var() == 0){
-				redundant = true;
-				break;
-			}
-		}
+    // transfer added edb
+    DBGLOG(DBG, "Sending added EDB to clasp: " << *p.getGroundProgram().edb);
+    bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+    bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+    while (en < en_end) {
+        #ifndef NDEBUG
+        assert ((!reg->ogatoms.getIDByAddress(*en).isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(reg->ogatoms.getIDByAddress(*en)) != 'w') && "weak constraints cannot be added incrementally");
+        #endif
+        // redundancy check
+        if (convertHexToClaspSolverLit(*en).var() > 0) {
+            // add fact
+            asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspSolverLit(*en).var()).endRule();
+        }
+        en++;
+    }
 
-		if (!redundant) sendRuleToClasp(asp, ruleId);
-	}
+    // transfer added idb
+    DBGLOG(DBG, "Sending added IDB to clasp");
+    BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb) {
+        // redundancy check
+        bool redundant = false;
+        BOOST_FOREACH (ID h, reg->rules.getByID(ruleId).head) {
+            #ifndef NDEBUG
+            assert ((!h.isAuxiliary() || reg->getTypeByAuxiliaryConstantSymbol(h) != 'w') && "weak constraints cannot be added incrementally");
+            #endif
 
-	// finalize update
-	freezeVariables(frozen, false /* do not freeze variables by default */);
-	inconsistent = !asp.endProgram();
-	DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
-	DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
+            if (convertHexToClaspSolverLit(h.address).var() == 0) {
+                redundant = true;
+                break;
+            }
+        }
 
-	// update projection
-	if (!!p.getGroundProgram().mask){
-		InterpretationPtr pm = InterpretationPtr(new Interpretation(reg));
-		if (!!projectionMask) pm->add(*projectionMask);
-		DBGLOG(DBG, "Adding to program mask:" << *p.getGroundProgram().mask);
-		pm->add(*p.getGroundProgram().mask);
-		projectionMask = pm;
-	}
+        if (!redundant) sendRuleToClasp(asp, ruleId);
+    }
 
-	if (inconsistent){
-		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-		inconsistent = true;
-		return;
-	}
+    // finalize update
+    freezeVariables(frozen, false /* do not freeze variables by default */);
+    inconsistent = !asp.endProgram();
+    DBGLOG(DBG, "ASP instance has " << claspctx.numVars() << " variables");
+    DBGLOG(DBG, "Instance is now " << (inconsistent ? "" : "not ") << "inconsistent");
 
-	DBGLOG(DBG, "Prepare new model enumerator");
-	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
-	modelEnumerator->init(claspctx, 0, config.solve.numModels);
+    // update projection
+    if (!!p.getGroundProgram().mask) {
+        InterpretationPtr pm = InterpretationPtr(new Interpretation(reg));
+        if (!!projectionMask) pm->add(*projectionMask);
+        DBGLOG(DBG, "Adding to program mask:" << *p.getGroundProgram().mask);
+        pm->add(*p.getGroundProgram().mask);
+        projectionMask = pm;
+    }
 
-	DBGLOG(DBG, "Finalizing reinitialization");
-	if (!claspctx.endInit()){
-		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-		inconsistent = true;
-		return;
-	}
+    if (inconsistent) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
 
-	updateSymbolTable();
+    DBGLOG(DBG, "Prepare new model enumerator");
+    modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+    modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
-	DBGLOG(DBG, "Resetting solver object");
-	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
-	nextSolveStep = Restart;
+    DBGLOG(DBG, "Finalizing reinitialization");
+    if (!claspctx.endInit()) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
 
-	DBGLOG(DBG, "Resetting post propagator");
-	ep.reset(new ExternalPropagator(*this));
+    updateSymbolTable();
 
-#ifndef NDEBUG
-	std::stringstream ss;
-	asp.write(ss);
-	DBGLOG(DBG, "Updated program in LParse format: " << ss.str());
-#endif
+    DBGLOG(DBG, "Resetting solver object");
+    solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+    nextSolveStep = Restart;
+
+    DBGLOG(DBG, "Resetting post propagator");
+    ep.reset(new ExternalPropagator(*this));
+
+    #ifndef NDEBUG
+    std::stringstream ss;
+    asp.write(ss);
+    DBGLOG(DBG, "Updated program in LParse format: " << ss.str());
+    #endif
 }
 
-void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
 
-	assert(problemType == SAT && "programs can only be added in SAT mode");
-	DBGLOG(DBG, "Adding set of nogoods incrementally");
-	
-	// remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
-	if (!!ep.get()) ep.reset();
+void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
+{
 
-	claspctx.unfreeze();
+    assert(problemType == SAT && "programs can only be added in SAT mode");
+    DBGLOG(DBG, "Adding set of nogoods incrementally");
 
-	// add new variables
-	claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
-	for (int i = 0; i < ns.getNogoodCount(); ++i){
-		const Nogood ng = ns.getNogood(i);
-		BOOST_FOREACH (ID id, ng){
-			// this will register the variable if not already available
-			convertHexToClaspProgramLit(id.address, true);
-			assert(isMappedToClaspLiteral(id.address) && "new variable was not properly mapped to clasp");
-		}
-	}
-	claspctx.symbolTable().endInit();
+    // remove post propagator to avoid that it tries the extract the assignment before the symbol table is updated
+    if (!!ep.get()) ep.reset();
 
-	// add the new constraints
-	// (SATBuilder does not currently not support this, so we need to do it my hand!)
-	claspctx.startAddConstraints();
-	Clasp::ClauseCreator cc(claspctx.master());
-	for (int i = 0; i < ns.getNogoodCount(); i++){
-		const Nogood& ng = ns.getNogood(i);
-		TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
-		assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
-		if (!ngClasp.tautological){
-			DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
-			cc.start(Clasp::Constraint_t::learnt_other);
-			BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause){
-				cc.add(lit);
-			}
+    claspctx.unfreeze();
 
-			Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
-			assert (!claspctx.master()->hasConflict() && (claspctx.master()->decisionLevel() == 0 || ci.learnt()));
-			Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
-			DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
+    // add new variables
+    claspctx.symbolTable().startInit(Clasp::SymbolTable::map_indirect);
+    for (int i = 0; i < ns.getNogoodCount(); ++i) {
+        const Nogood ng = ns.getNogood(i);
+        BOOST_FOREACH (ID id, ng) {
+            // this will register the variable if not already available
+            convertHexToClaspProgramLit(id.address, true);
+            assert(isMappedToClaspLiteral(id.address) && "new variable was not properly mapped to clasp");
+        }
+    }
+    claspctx.symbolTable().endInit();
 
-			if (!res.ok()){
-				inconsistent = true;
-				break;
-			}
-		}else{
-			DBGLOG(DBG, "Skipping tautological nogood");
-		}
-	}
+    // add the new constraints
+    // (SATBuilder does not currently not support this, so we need to do it my hand!)
+    claspctx.startAddConstraints();
+    Clasp::ClauseCreator cc(claspctx.master());
+    for (int i = 0; i < ns.getNogoodCount(); i++) {
+        const Nogood& ng = ns.getNogood(i);
+        TransformNogoodToClaspResult ngClasp = nogoodToClaspClause(ng, true);
+        assert (!ngClasp.outOfDomain && "literals were not properly mapped to clasp");
+        if (!ngClasp.tautological) {
+            DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause");
+            cc.start(Clasp::Constraint_t::learnt_other);
+            BOOST_FOREACH (Clasp::Literal lit, ngClasp.clause) {
+                cc.add(lit);
+            }
 
-	DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
+            Clasp::ClauseInfo ci(Clasp::Constraint_t::static_constraint);
+            assert (!claspctx.master()->hasConflict() && (claspctx.master()->decisionLevel() == 0 || ci.learnt()));
+            Clasp::ClauseCreator::Result res = cc.create(*claspctx.master(), cc.lits(), 0, ci);
+            DBGLOG(DBG, "Assignment is " << (res.ok() ? "not " : "") << "conflicting, new clause is " << (res.unit() ? "" : "not ") << "unit");
 
-	freezeVariables(frozen, true /* freeze variables by default */);
+            if (!res.ok()) {
+                inconsistent = true;
+                break;
+            }
+        }
+        else {
+            DBGLOG(DBG, "Skipping tautological nogood");
+        }
+    }
 
-	DBGLOG(DBG, "Prepare new model enumerator");
-	modelEnumerator.reset(config.solve.createEnumerator(config.solve));
-	modelEnumerator->init(claspctx, 0, config.solve.numModels);
+    DBGLOG(DBG, "SAT instance has " << claspctx.numVars() << " variables");
 
-	DBGLOG(DBG, "Finalizing reinitialization");
-	if (!claspctx.endInit()){
-		DBGLOG(DBG, "Program is inconsistent, aborting initialization");
-		inconsistent = true;
-		return;
-	}
+    freezeVariables(frozen, true /* freeze variables by default */);
 
-	updateSymbolTable();
+    DBGLOG(DBG, "Prepare new model enumerator");
+    modelEnumerator.reset(config.solve.createEnumerator(config.solve));
+    modelEnumerator->init(claspctx, 0, config.solve.numModels);
 
-	DBGLOG(DBG, "Resetting solver object");
-	solve.reset(new Clasp::BasicSolve(*claspctx.master()));
-	nextSolveStep = Restart;
+    DBGLOG(DBG, "Finalizing reinitialization");
+    if (!claspctx.endInit()) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
 
-	DBGLOG(DBG, "Resetting post propagator");
-	ep.reset(new ExternalPropagator(*this));
+    updateSymbolTable();
+
+    DBGLOG(DBG, "Resetting solver object");
+    solve.reset(new Clasp::BasicSolve(*claspctx.master()));
+    nextSolveStep = Restart;
+
+    DBGLOG(DBG, "Resetting post propagator");
+    ep.reset(new ExternalPropagator(*this));
 }
 
-void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
-	DBGLOG(DBG, "Restarting search");
+void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
+{
 
-	if (inconsistent){
-		DBGLOG(DBG, "Program is unconditionally inconsistent, ignoring assumptions");
-		return;
-	}
+    DBGLOG(DBG, "Restarting search");
 
-	DBGLOG(DBG, "Setting new assumptions");
-	this->assumptions.clear();
-	BOOST_FOREACH (ID a, assumptions){
-		if (isMappedToClaspLiteral(a.address)){
-			DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << convertHexToClaspSolverLit(a.address).index() << "/" << (convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf() ? "!" : "") << convertHexToClaspSolverLit(a.address).var() << ")");
-			Clasp::Literal al = Clasp::Literal(convertHexToClaspSolverLit(a.address).var(), convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf());
-			this->assumptions.push_back(al);
-		}else{
-			DBGLOG(DBG, "Ignoring assumption H:" << RawPrinter::toString(reg, a));
-		}
-	}
-	nextSolveStep = Restart;
+    if (inconsistent) {
+        DBGLOG(DBG, "Program is unconditionally inconsistent, ignoring assumptions");
+        return;
+    }
+
+    DBGLOG(DBG, "Setting new assumptions");
+    this->assumptions.clear();
+    BOOST_FOREACH (ID a, assumptions) {
+        if (isMappedToClaspLiteral(a.address)) {
+            DBGLOG(DBG, "Setting assumption H:" << RawPrinter::toString(reg, a) << " (clasp: C:" << convertHexToClaspSolverLit(a.address).index() << "/" << (convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf() ? "!" : "") << convertHexToClaspSolverLit(a.address).var() << ")");
+            Clasp::Literal al = Clasp::Literal(convertHexToClaspSolverLit(a.address).var(), convertHexToClaspSolverLit(a.address).sign() ^ a.isNaf());
+            this->assumptions.push_back(al);
+        }
+        else {
+            DBGLOG(DBG, "Ignoring assumption H:" << RawPrinter::toString(reg, a));
+        }
+    }
+    nextSolveStep = Restart;
 }
 
-void ClaspSolver::addPropagator(PropagatorCallback* pb){
-	propagators.insert(pb);
+
+void ClaspSolver::addPropagator(PropagatorCallback* pb)
+{
+    propagators.insert(pb);
 }
 
-void ClaspSolver::removePropagator(PropagatorCallback* pb){
-	propagators.erase(pb);
+
+void ClaspSolver::removePropagator(PropagatorCallback* pb)
+{
+    propagators.erase(pb);
 }
 
-void ClaspSolver::addNogood(Nogood ng){
-	nogoods.push_back(ng);
+
+void ClaspSolver::addNogood(Nogood ng)
+{
+    nogoods.push_back(ng);
 }
+
 
 // this method is called before asking for the next model
 // therefore it can be called with the same optimum multiple times
-void ClaspSolver::setOptimum(std::vector<int>& optimum){
-	LOG(DBG, "Setting optimum in clasp");
-	if (!minc || !sharedMinimizeData) return;
-	if (optimum.empty()) return;
+void ClaspSolver::setOptimum(std::vector<int>& optimum)
+{
+    LOG(DBG, "Setting optimum in clasp");
+    if (!minc || !sharedMinimizeData) return;
+    if (optimum.empty()) return;
 
-	// This method helps the reasoner to eliminate non-optimal partial models in advance
-	// by setting the internal upper bound to a given value.
-	//
-	// Warning: A call of this method is just a hint for the reasoner, i.e.,
-	//          it is not guaranteed that the solver will no longer create models with higher cost.
-	//
-	// This is because clasp does not allow to decrease the upper bound if the new bound is violated
-	// by the current assignment. Therefore, the new optimum is only integrated into the clasp instance
-	// if it is compatible with the assignment.
+    // This method helps the reasoner to eliminate non-optimal partial models in advance
+    // by setting the internal upper bound to a given value.
+    //
+    // Warning: A call of this method is just a hint for the reasoner, i.e.,
+    //          it is not guaranteed that the solver will no longer create models with higher cost.
+    //
+    // This is because clasp does not allow to decrease the upper bound if the new bound is violated
+    // by the current assignment. Therefore, the new optimum is only integrated into the clasp instance
+    // if it is compatible with the assignment.
 
-	// transform optimum vector to clasp-internal representation
-	int optlen = optimum.size() - 1; // optimum[0] is unused, but in clasp levels start with 0
+    // transform optimum vector to clasp-internal representation
+                                 // optimum[0] is unused, but in clasp levels start with 0
+    int optlen = optimum.size() - 1;
 
-	LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
-	Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
-	for (int l = 0; l < optlen; ++l)
-	    newopt[l] = optimum[optlen - l];
+    LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
+    Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+    for (int l = 0; l < optlen; ++l)
+        newopt[l] = optimum[optlen - l];
 
-	Clasp::MinimizeMode newMode;
-	bool markAsOptimal;
+    Clasp::MinimizeMode newMode;
+    bool markAsOptimal;
 
-	switch( ctx.config.getOption("OptimizationTwoStep") ) {
-	case 0:
-	  // enumeration shall find models of same quality or better (the safe option)
-	  // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is increased by 1 on the least significant level
-	  newMode = Clasp::MinimizeMode_t::enumerate;
-	  newopt[optlen - 1]++;	// add one on the least significant level to make sure that more solutions of the same quality are found
-	  markAsOptimal = false;
-	  break;
-	case 1:
-	  // enumeration must find a better model (works only if this solver solves the single monolithic evaluation unit)
-	  // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is used as it is
-	  newMode = Clasp::MinimizeMode_t::optimize;
-	  markAsOptimal = false;
-	  break;
-	case 2:
-	  // enumeration finds all models of equal quality
-	  // clasp MinimizeMode_t::Mode::enumOpt and pctx.currentOptimum is used as it is and we mark it as optimum
-	  newMode = Clasp::MinimizeMode_t::enumOpt;
-	  markAsOptimal = true;
-	  break;
-	default:
-	  throw std::runtime_error("OptimizationTwoStep: unexpected value");
-	  break;
-	}
+    switch( ctx.config.getOption("OptimizationTwoStep") ) {
+        case 0:
+            // enumeration shall find models of same quality or better (the safe option)
+            // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is increased by 1 on the least significant level
+            newMode = Clasp::MinimizeMode_t::enumerate;
+            newopt[optlen - 1]++;// add one on the least significant level to make sure that more solutions of the same quality are found
+            markAsOptimal = false;
+            break;
+        case 1:
+            // enumeration must find a better model (works only if this solver solves the single monolithic evaluation unit)
+            // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is used as it is
+            newMode = Clasp::MinimizeMode_t::optimize;
+            markAsOptimal = false;
+            break;
+        case 2:
+            // enumeration finds all models of equal quality
+            // clasp MinimizeMode_t::Mode::enumOpt and pctx.currentOptimum is used as it is and we mark it as optimum
+            newMode = Clasp::MinimizeMode_t::enumOpt;
+            markAsOptimal = true;
+            break;
+        default:
+            throw std::runtime_error("OptimizationTwoStep: unexpected value");
+            break;
+    }
 
-	LOG(DBG, "Setting sharedMinimizeData mode to " << static_cast<int>(newMode));
-	// TODO do we need to call resetBounds if we go from optimize to enumOpt?
-	sharedMinimizeData->setMode(newMode);
-	LOG(DBG, "Setting optimum to " << printvector(std::vector<int>(&newopt[0], &newopt[optlen])));
-	sharedMinimizeData->setOptimum(newopt);
-	if( markAsOptimal ) {
-	  LOG(DBG, "Marking this optimum as optimal");
-	  sharedMinimizeData->markOptimal();
-	}
-	bool intres = minc->integrate(*claspctx.master());
-	LOG(DBG, "Integration constraint gave result result: " << intres);
-	delete []newopt;
+    LOG(DBG, "Setting sharedMinimizeData mode to " << static_cast<int>(newMode));
+    // TODO do we need to call resetBounds if we go from optimize to enumOpt?
+    sharedMinimizeData->setMode(newMode);
+    LOG(DBG, "Setting optimum to " << printvector(std::vector<int>(&newopt[0], &newopt[optlen])));
+    sharedMinimizeData->setOptimum(newopt);
+    if( markAsOptimal ) {
+        LOG(DBG, "Marking this optimum as optimal");
+        sharedMinimizeData->markOptimal();
+    }
+    bool intres = minc->integrate(*claspctx.master());
+    LOG(DBG, "Integration constraint gave result result: " << intres);
+    delete []newopt;
 }
 
-InterpretationPtr ClaspSolver::getNextModel(){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM (getNextModel)");
+InterpretationPtr ClaspSolver::getNextModel()
+{
 
-	#define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM (getNextModel)");
 
-	/*
-		This method essentially implements the following algorithm:
+    #define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
 
-											[Restart]
-		while (solve.solve() == Clasp::value_true) {				[Solve]
-			if (e->commitModel(solve.solver())) {				[CommitModel]
-			   do {
-				 onModel(e->lastModel());				[ExtractModel] & [ReturnModel]
-			   } while (e->commitSymmetric(solve.solver()));		[CommitSymmetricModel]
-			}
-			e->update(solve.solver());					[Update]
-		}
+    /*
+      This method essentially implements the following algorithm:
 
-		However, the onModel-call is actually a return.
-		The algorithm is then continued with the next call of the method.
-		The enum type NextSolveStep is used to keep track of the current state of the algorithm.
-	*/
+                        [Restart]
+      while (solve.solve() == Clasp::value_true) {				[Solve]
+        if (e->commitModel(solve.solver())) {				[CommitModel]
+           do {
+           onModel(e->lastModel());				[ExtractModel] & [ReturnModel]
+           } while (e->commitSymmetric(solve.solver()));		[CommitSymmetricModel]
+        }
+        e->update(solve.solver());					[Update]
+      }
 
-	DBGLOG(DBG, "ClaspSolver::getNextModel");
+      However, the onModel-call is actually a return.
+      The algorithm is then continued with the next call of the method.
+      The enum type NextSolveStep is used to keep track of the current state of the algorithm.
+    */
 
-	// ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
-	while (nextSolveStep != ReturnModel) {
-		switch (nextSolveStep){
-			case Restart:
-				ENUMALGODBG("ini");
-				DBGLOG(DBG, "Starting new search");
+    DBGLOG(DBG, "ClaspSolver::getNextModel");
 
-				if (inconsistent){
-					model = InterpretationPtr();
-					nextSolveStep = ReturnModel;
-				}else{
-					DBGLOG(DBG, "Adding step literal to assumptions");
-					assumptions.push_back(claspctx.stepLiteral());
+    // ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
+    while (nextSolveStep != ReturnModel) {
+        switch (nextSolveStep) {
+            case Restart:
+                ENUMALGODBG("ini");
+                DBGLOG(DBG, "Starting new search");
 
-					DBGLOG(DBG, "Starting enumerator with " << assumptions.size() << " assumptions (including step literal)");
-					assert(!!modelEnumerator.get() && !!solve.get());
-					if (enumerationStarted){
-						modelEnumerator->end(solve->solver());
-					}
-					enumerationStarted = true;
+                if (inconsistent) {
+                    model = InterpretationPtr();
+                    nextSolveStep = ReturnModel;
+                }
+                else {
+                    DBGLOG(DBG, "Adding step literal to assumptions");
+                    assumptions.push_back(claspctx.stepLiteral());
 
-					if (modelEnumerator->start(solve->solver(), assumptions)){
-						ENUMALGODBG("sat");
-						DBGLOG(DBG, "Instance is satisfiable wrt. assumptions");
-						nextSolveStep = Solve;
-					}else{
-						ENUMALGODBG("ust");
-						DBGLOG(DBG, "Instance is unsatisfiable wrt. assumptions");
-						model = InterpretationPtr();
-						nextSolveStep = ReturnModel;
-					}
-				}
-				break;
+                    DBGLOG(DBG, "Starting enumerator with " << assumptions.size() << " assumptions (including step literal)");
+                    assert(!!modelEnumerator.get() && !!solve.get());
+                    if (enumerationStarted) {
+                        modelEnumerator->end(solve->solver());
+                    }
+                    enumerationStarted = true;
 
-			case Solve:
-				ENUMALGODBG("sol");
-				DBGLOG(DBG, "Solve for next model");
-				{
-				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM sol");
+                    if (modelEnumerator->start(solve->solver(), assumptions)) {
+                        ENUMALGODBG("sat");
+                        DBGLOG(DBG, "Instance is satisfiable wrt. assumptions");
+                        nextSolveStep = Solve;
+                    }
+                    else {
+                        ENUMALGODBG("ust");
+                        DBGLOG(DBG, "Instance is unsatisfiable wrt. assumptions");
+                        model = InterpretationPtr();
+                        nextSolveStep = ReturnModel;
+                    }
+                }
+                break;
 
-				if (solve->solve() == Clasp::value_true){
-					nextSolveStep = CommitModel;
-				}else{
-					model = InterpretationPtr();
-					nextSolveStep = ReturnModel;
-				}
-				}
-				break;
+            case Solve:
+                ENUMALGODBG("sol");
+                DBGLOG(DBG, "Solve for next model");
+                {
+                    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM sol");
 
-			case CommitModel:
-				ENUMALGODBG("com");
-				DBGLOG(DBG, "Committing model");
+                    if (solve->solve() == Clasp::value_true) {
+                        nextSolveStep = CommitModel;
+                    }
+                    else {
+                        model = InterpretationPtr();
+                        nextSolveStep = ReturnModel;
+                    }
+                }
+                break;
 
-				if (modelEnumerator->commitModel(solve->solver())){
-					nextSolveStep = ExtractModel;
-				}else{
-					nextSolveStep = Update;
-				}
-				break;
+            case CommitModel:
+                ENUMALGODBG("com");
+                DBGLOG(DBG, "Committing model");
 
-			case ExtractModel:
-				ENUMALGODBG("ext");
-				DBGLOG(DBG, "Extract model model");
+                if (modelEnumerator->commitModel(solve->solver())) {
+                    nextSolveStep = ExtractModel;
+                }
+                else {
+                    nextSolveStep = Update;
+                }
+                break;
 
-				{
-				DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM ext");
-				// Note: currentIntr does not necessarily coincide with the last model because clasp
-				// possibly has already continued the search at this point
-				model = InterpretationPtr(new Interpretation(reg));
-				// go over all clasp variables
-				for(unsigned claspIndex = 0; claspIndex < claspToHex.size(); ++claspIndex) {
-				  // check if they are true
-				  if( modelEnumerator->lastModel().isTrue(Clasp::Literal::fromIndex(claspIndex)) ) {
-				    // set all corresponding bits
-				    BOOST_FOREACH(IDAddress adr, *convertClaspSolverLitToHex(claspIndex)){
-				      model->setFact(adr);
-				    }
-				  }
-				}
-				}
+            case ExtractModel:
+                ENUMALGODBG("ext");
+                DBGLOG(DBG, "Extract model model");
 
-				outputProject(model);
+                {
+                    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM ext");
+                    // Note: currentIntr does not necessarily coincide with the last model because clasp
+                    // possibly has already continued the search at this point
+                    model = InterpretationPtr(new Interpretation(reg));
+                    // go over all clasp variables
+                    for(unsigned claspIndex = 0; claspIndex < claspToHex.size(); ++claspIndex) {
+                        // check if they are true
+                        if( modelEnumerator->lastModel().isTrue(Clasp::Literal::fromIndex(claspIndex)) ) {
+                            // set all corresponding bits
+                            BOOST_FOREACH(IDAddress adr, *convertClaspSolverLitToHex(claspIndex)) {
+                                model->setFact(adr);
+                            }
+                        }
+                    }
+                }
 
-				modelCount++;
+                outputProject(model);
 
-#ifndef NDEBUG
-				if (!!model){
-					BOOST_FOREACH (Clasp::Literal lit, assumptions){
-						if (lit != claspctx.stepLiteral() && !modelEnumerator->lastModel().isTrue(lit)){
-							assert(false && "Model contradicts assumptions");
-						}
-					}
-				}
-#endif
+                modelCount++;
 
-				nextSolveStep = ReturnModel;
-				break;
+            #ifndef NDEBUG
+                if (!!model) {
+                    BOOST_FOREACH (Clasp::Literal lit, assumptions) {
+                        if (lit != claspctx.stepLiteral() && !modelEnumerator->lastModel().isTrue(lit)) {
+                            assert(false && "Model contradicts assumptions");
+                        }
+                    }
+                }
+            #endif
 
-			case CommitSymmetricModel:
-				ENUMALGODBG("cos");
-				DBGLOG(DBG, "Committing symmetric model");
-				if (modelEnumerator->commitSymmetric(solve->solver())){
-					DBGLOG(DBG, "Found more symmetric models, going back to extraction");
-					nextSolveStep = ExtractModel;
-				}else{
-					DBGLOG(DBG, "No more symmetric models, going to update");
-					nextSolveStep = Update;
-				}
-				break;
+                nextSolveStep = ReturnModel;
+                break;
 
-			case Update:
-				ENUMALGODBG("upd");
+            case CommitSymmetricModel:
+                ENUMALGODBG("cos");
+                DBGLOG(DBG, "Committing symmetric model");
+                if (modelEnumerator->commitSymmetric(solve->solver())) {
+                    DBGLOG(DBG, "Found more symmetric models, going back to extraction");
+                    nextSolveStep = ExtractModel;
+                }
+                else {
+                    DBGLOG(DBG, "No more symmetric models, going to update");
+                    nextSolveStep = Update;
+                }
+                break;
 
-				bool optContinue;
-				if (modelEnumerator->optimize()){
-					DBGLOG(DBG, "Committing unsat (for optimization problems)");
-					optContinue = modelEnumerator->commitUnsat(solve->solver());
-				}
+            case Update:
+                ENUMALGODBG("upd");
 
-				DBGLOG(DBG, "Updating enumerator");
-				modelEnumerator->update(solve->solver());
+                bool optContinue;
+                if (modelEnumerator->optimize()) {
+                    DBGLOG(DBG, "Committing unsat (for optimization problems)");
+                    optContinue = modelEnumerator->commitUnsat(solve->solver());
+                }
 
-				if (modelEnumerator->optimize()){
-					DBGLOG(DBG, "Committing complete (for optimization problems)");
-					if (optContinue) optContinue = modelEnumerator->commitComplete();
-				}
+                DBGLOG(DBG, "Updating enumerator");
+                modelEnumerator->update(solve->solver());
 
-				nextSolveStep = Solve;
-				break;
-			default:
-				assert (false && "invalid state");
-		}
-	}
+                if (modelEnumerator->optimize()) {
+                    DBGLOG(DBG, "Committing complete (for optimization problems)");
+                    if (optContinue) optContinue = modelEnumerator->commitComplete();
+                }
 
-	assert (nextSolveStep == ReturnModel);
+                nextSolveStep = Solve;
+                break;
+            default:
+                assert (false && "invalid state");
+        }
+    }
 
-	assert (!(inconsistent && !!model) && "algorithm produced a model although instance is inconsistent");
-	// Note: !(!inconsistent && model) can *not* be asserted since an instance can be consistent but still
-	//       produce an empty model because if
-	//       (1) end of models; or
-	//       (2) because the instance is inconsistent wrt. the *current* assumptions
-	//           (variable "inconsistent" means that the instance is inconsistent wrt. *any* assumptions).
+    assert (nextSolveStep == ReturnModel);
 
-	ENUMALGODBG("ret");
-	DBGLOG(DBG, "Returning " << (!model ? "empty " :"") << "model");
-	if (!!model){
-		// committing symmetric models is only necessary if some variables are frozen
-		// but we still want to get all models
-		nextSolveStep = CommitSymmetricModel;
-	}else{
-		nextSolveStep = ReturnModel;	// we stay in this state until restart
-	}
-	return model;
+    assert (!(inconsistent && !!model) && "algorithm produced a model although instance is inconsistent");
+    // Note: !(!inconsistent && model) can *not* be asserted since an instance can be consistent but still
+    //       produce an empty model because if
+    //       (1) end of models; or
+    //       (2) because the instance is inconsistent wrt. the *current* assumptions
+    //           (variable "inconsistent" means that the instance is inconsistent wrt. *any* assumptions).
+
+    ENUMALGODBG("ret");
+    DBGLOG(DBG, "Returning " << (!model ? "empty " :"") << "model");
+    if (!!model) {
+        // committing symmetric models is only necessary if some variables are frozen
+        // but we still want to get all models
+        nextSolveStep = CommitSymmetricModel;
+    }
+    else {
+                                 // we stay in this state until restart
+        nextSolveStep = ReturnModel;
+    }
+    return model;
 }
 
-int ClaspSolver::getModelCount(){
-	return modelCount;
+
+int ClaspSolver::getModelCount()
+{
+    return modelCount;
 }
 
-std::string ClaspSolver::getStatistics(){
-	std::stringstream ss;
-	ss <<	"Guesses: " << claspctx.master()->stats.choices << std::endl <<
-		"Conflicts: " << claspctx.master()->stats.conflicts << std::endl <<
-		"Models: " << modelCount;
-	return ss.str();
+
+std::string ClaspSolver::getStatistics()
+{
+    std::stringstream ss;
+    ss << "Guesses: " << claspctx.master()->stats.choices << std::endl <<
+        "Conflicts: " << claspctx.master()->stats.conflicts << std::endl <<
+        "Models: " << modelCount;
+    return ss.str();
 }
+
 
 DLVHEX_NAMESPACE_END
-
 #endif
 
 // vim:noexpandtab:ts=8:

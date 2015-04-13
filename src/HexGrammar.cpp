@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 /**
  * @file   HexGrammar.cpp
- * @author Peter Schüller
- * 
+ * @author Peter Schller
+ *
  * @brief  Template Instantiations for HexGrammar.h
  *
  * This file is intended to contain mainly template instantiations.
@@ -33,7 +33,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 // spirit parser node debugging
 //#define BOOST_SPIRIT_DEBUG
@@ -57,32 +57,32 @@ template struct HexGrammar<HexParserIterator, HexParserSkipper>;
 
 // HEX grammar semantic action processor
 HexGrammarSemantics::HexGrammarSemantics(ProgramCtx& ctx):
-  ctx(ctx)
+ctx(ctx)
 {
-	mlpMode=0;
+    mlpMode=0;
 }
 
+
 void HexGrammarSemantics::markExternalPropertyIfExternalBody(
-    RegistryPtr registry, Rule& r)
+RegistryPtr registry, Rule& r)
 {
-  Tuple eatoms;
-  registry->getExternalAtomsInTuple(r.body, eatoms);
-  if( !eatoms.empty() )
-    r.kind |= ID::PROPERTY_RULE_EXTATOMS;
+    Tuple eatoms;
+    registry->getExternalAtomsInTuple(r.body, eatoms);
+    if( !eatoms.empty() )
+        r.kind |= ID::PROPERTY_RULE_EXTATOMS;
 }
 
 
 void HexGrammarSemantics::markModulePropertyIfModuleBody(
-    RegistryPtr registry, Rule& r)
+RegistryPtr registry, Rule& r)
 {
-  for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
-    {
-      if( itt->isModuleAtom() )
-        {             
-          r.kind |= ID::PROPERTY_RULE_MODATOMS;
-          return;
+    for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt) {
+        if( itt->isModuleAtom() ) {
+            r.kind |= ID::PROPERTY_RULE_MODATOMS;
+            return;
         }
     }
 }
+
 
 DLVHEX_NAMESPACE_END

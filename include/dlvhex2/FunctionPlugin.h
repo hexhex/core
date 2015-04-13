@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -40,51 +40,50 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Implements function symbols either by native handling or by rewriting to external atoms. */
 class FunctionPlugin:
-  public PluginInterface
+public PluginInterface
 {
-public:
-  // stored in ProgramCtx, accessed using getPluginData<ExistsPlugin>()
-  class CtxData:
+    public:
+        // stored in ProgramCtx, accessed using getPluginData<ExistsPlugin>()
+        class CtxData:
     public PluginData
-  {
-  public:
-    /** \brief Maximal input arity for external atoms which handle functional terms. */
-    int maxArity;
+    {
+        public:
+            /** \brief Maximal input arity for external atoms which handle functional terms. */
+            int maxArity;
 
-    /** \brief True to rewrite function symbols to external atoms and false to handle them natively. */
-    bool rewrite;
+            /** \brief True to rewrite function symbols to external atoms and false to handle them natively. */
+            bool rewrite;
 
-    CtxData();
-    virtual ~CtxData() {};
-  };
+            CtxData();
+            virtual ~CtxData() {};
+    };
 
-public:
-  /** \brief Constructor. */
-  FunctionPlugin();
-  /** \brief Destructor. */
-  virtual ~FunctionPlugin();
+    public:
+        /** \brief Constructor. */
+        FunctionPlugin();
+        /** \brief Destructor. */
+        virtual ~FunctionPlugin();
 
-	// output help message for this plugin
-	virtual void printUsage(std::ostream& o) const;
+        // output help message for this plugin
+        virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --exists-enable  --exists-maxarity=<N>
-  //
-	// processes options for this plugin, and removes recognized options from pluginOptions
-  // (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+        // accepted options: --exists-enable  --exists-maxarity=<N>
+        //
+        // processes options for this plugin, and removes recognized options from pluginOptions
+        // (do not free the pointers, the const char* directly come from argv)
+        virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // rewrite program by adding auxiliary constraints
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+        // rewrite program by adding auxiliary constraints
+        virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-  // plugin atoms
-  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
+        // plugin atoms
+        virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
 
-  // change model callback (print auxiliaries as negative atoms)
-  virtual void setupProgramCtx(ProgramCtx&);
+        // change model callback (print auxiliaries as negative atoms)
+        virtual void setupProgramCtx(ProgramCtx&);
 
-  // no atoms!
+        // no atoms!
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif

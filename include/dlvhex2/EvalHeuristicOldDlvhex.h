@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   EvalHeuristicOldDlvhex.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Evaluation heuristic corresponding to old DLVHEX strategy.
  */
 
@@ -39,21 +39,20 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Creates evaluation units as maximal bottoms as in dlvhex 1.x. */
 class EvalHeuristicOldDlvhex:
-  public EvalHeuristicBase<EvalGraphBuilder>
+public EvalHeuristicBase<EvalGraphBuilder>
 {
-  // types
-public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+    // types
+    public:
+        typedef EvalHeuristicBase<EvalGraphBuilder> Base;
 
-  // methods
-public:
-  /** \brief Constructor. */
-  EvalHeuristicOldDlvhex();
-  /** \brief Destructor. */
-  virtual ~EvalHeuristicOldDlvhex();
-  virtual void build(EvalGraphBuilder& builder);
+        // methods
+    public:
+        /** \brief Constructor. */
+        EvalHeuristicOldDlvhex();
+        /** \brief Destructor. */
+        virtual ~EvalHeuristicOldDlvhex();
+        virtual void build(EvalGraphBuilder& builder);
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010
+#endif                           // EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010

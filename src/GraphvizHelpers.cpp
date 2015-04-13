@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/GraphvizHelpers.h"
 
@@ -41,33 +41,31 @@ DLVHEX_NAMESPACE_BEGIN
 namespace graphviz
 {
 
-void escape(std::ostream& o, const std::string& s)
-{
-	for(std::string::const_iterator c = s.begin();
-			c != s.end(); ++c)
-	{
-		// escape " into \"
-		// escape < into \<
-		// escape > into \>
-		// escape # into \#
-		// escape { into \{
-		// escape } into \}
-		// escape \n into \\n
-		switch( *c )
-		{
-			case '"': o << "\\\""; break;
-			case '<': o << "\\<"; break;
-			case '>': o << "\\>"; break;
-			case '#': o << "\\#"; break;
-			case '{': o << "\\{"; break;
-			case '}': o << "\\}"; break;
-			case '\n': o << "\\n"; break;
-			default: o << *c; break;
-		}
-	}
-}
+    void escape(std::ostream& o, const std::string& s) {
+        for(std::string::const_iterator c = s.begin();
+        c != s.end(); ++c) {
+            // escape " into \"
+            // escape < into \<
+            // escape > into \>
+            // escape # into \#
+            // escape { into \{
+            // escape } into \}
+            // escape \n into \\n
+            switch( *c ) {
+                case '"': o << "\\\""; break;
+                case '<': o << "\\<"; break;
+                case '>': o << "\\>"; break;
+                case '#': o << "\\#"; break;
+                case '{': o << "\\{"; break;
+                case '}': o << "\\}"; break;
+                case '\n': o << "\\n"; break;
+                default: o << *c; break;
+            }
+        }
+    }
 
 }
+
 
 DLVHEX_NAMESPACE_END
 

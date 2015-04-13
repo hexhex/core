@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -50,796 +50,882 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ---------- Class CDNLSolver ----------
 
-bool CDNLSolver::unitPropagation(Nogood& violatedNogood){
+bool CDNLSolver::unitPropagation(Nogood& violatedNogood)
+{
 
-	DBGLOG(DBG, "Unit propagation starts");
-	int nogoodNr;
-	while (unitNogoods.size() > 0){
-		nogoodNr = *(unitNogoods.begin());
-		const Nogood& nextUnitNogood = nogoodset.getNogood(nogoodNr);
-		unitNogoods.erase(unitNogoods.begin());
+    DBGLOG(DBG, "Unit propagation starts");
+    int nogoodNr;
+    while (unitNogoods.size() > 0) {
+        nogoodNr = *(unitNogoods.begin());
+        const Nogood& nextUnitNogood = nogoodset.getNogood(nogoodNr);
+        unitNogoods.erase(unitNogoods.begin());
 
-		// find propagation DL
-		int propDL = 0;
-		BOOST_FOREACH (ID lit, nextUnitNogood){
-			if (assigned(lit.address) && decisionlevel[lit.address] > propDL){
-				propDL = decisionlevel[lit.address];
-			}
-		}
+        // find propagation DL
+        int propDL = 0;
+        BOOST_FOREACH (ID lit, nextUnitNogood) {
+            if (assigned(lit.address) && decisionlevel[lit.address] > propDL) {
+                propDL = decisionlevel[lit.address];
+            }
+        }
 
-		// as the nogood is unit, it has a single watched literal
-		// its negation is the propagated one
-		ID propagatedLit = negation(*(watchedLiteralsOfNogood[nogoodNr].begin()));
-		setFact(propagatedLit, propDL, nogoodNr);
-	}
+        // as the nogood is unit, it has a single watched literal
+        // its negation is the propagated one
+        ID propagatedLit = negation(*(watchedLiteralsOfNogood[nogoodNr].begin()));
+        setFact(propagatedLit, propDL, nogoodNr);
+    }
 
-	if (contradictoryNogoods.size() > 0){
-		violatedNogood = nogoodset.getNogood(*(contradictoryNogoods.begin()));
-		DBGLOG(DBG, "Unit propagation finished with detected contradiction " << violatedNogood);
-		return false;
-	}
+    if (contradictoryNogoods.size() > 0) {
+        violatedNogood = nogoodset.getNogood(*(contradictoryNogoods.begin()));
+        DBGLOG(DBG, "Unit propagation finished with detected contradiction " << violatedNogood);
+        return false;
+    }
 
-	DBGLOG(DBG, "Unit propagation finished successfully");
-	return true;
-}
-
-void CDNLSolver::loadAddedNogoods(){
-	for (int i = 0; i < nogoodsToAdd.getNogoodCount(); ++i){
-		addNogoodAndUpdateWatchingStructures(nogoodsToAdd.getNogood(i));
-
-	}
-	nogoodsToAdd.clear();
-}
-
-void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& backtrackDL){
-
-	DBGLOG(DBG,"Conflict detected, violated nogood: " << violatedNogood);
-
-#ifndef NDEBUG
-	++cntDetectedConflicts;
-#endif
-
-	// decision heuristic metric update
-	touchVarsInNogood(violatedNogood);
-
-	// check how many literals were assigned at top decision level
-	// if there is more than one, resolve the nogood with the cause of one of the implied literals
-	learnedNogood = violatedNogood;
-	int count;
-	int resSteps = 0;
-	int latestDL;
-	IDAddress impliedLit;
-	long litAssignmentOrderIndex;
-	ID latestLit;
-	long latestLitAssignmentOrderIndex;
-	int bt = 0;
-	do{
-		bool foundImpliedLit = false;
-		count = 0;
-		impliedLit = ID::ALL_ONES;
-		latestLit = ID_FAIL;
-		latestLitAssignmentOrderIndex = -1;
-		BOOST_FOREACH (ID lit, learnedNogood){
-			litAssignmentOrderIndex = getAssignmentOrderIndex(lit.address);
-			if (litAssignmentOrderIndex > latestLitAssignmentOrderIndex){
-				latestLit = lit;
-				latestLitAssignmentOrderIndex = getAssignmentOrderIndex(latestLit.address);
-			}
-		}
-		latestDL = decisionlevel[latestLit.address];
-
-		BOOST_FOREACH (ID lit, learnedNogood){
-			// compute number of literals on latest dl
-			if (decisionlevel[lit.address] == latestDL){
-				count++;
-				if (!isDecisionLiteral(lit.address)){
-					impliedLit = lit.address;
-					foundImpliedLit = true;
-				}
-			}
-
-			// backtrack to the second-highest decision level
-			if (decisionlevel[lit.address] > bt && lit.address != latestLit.address && decisionlevel[lit.address] < latestDL){
-				bt = decisionlevel[lit.address];
-			}
-		}
-
-		if (count > 1){
-			// resolve the clause with multiple literals on top level
-			// with the cause of one of the implied literals
-
-			// at DL=0 we might have multiple literals without a cause (they are only spurious decision literals, actually they are facts)
-			if (!foundImpliedLit && latestDL == 0){
-				break;
-			}else{
-				assert(foundImpliedLit);
-				Nogood& c = nogoodset.getNogood(cause[impliedLit]);
-				touchVarsInNogood(c);
-				learnedNogood = resolve(learnedNogood, c, impliedLit);
-			}
-#ifndef NDEBUG
-	++cntResSteps;
-#endif
-			++resSteps;
-		}
-	}while(count > 1);
-
-	if (resSteps > 0){
-		// if resSteps == 0, then learnedNogood == violatedNogood, which was already touched
-		touchVarsInNogood(learnedNogood);
-	}
-
-	DBGLOG(DBG, "Learned conflict nogood: " << learnedNogood << " (after " << resSteps << " resolution steps)");
-	DBGLOG(DBG, "Backtrack-DL: " << bt);
-	backtrackDL = bt;
-
-	// decision heuristic metric update
-	++conflicts;
-	if (conflicts >= 255){
-		DBGLOG(DBG, "Maximum conflicts count: dividing all counters by 2");
-		BOOST_FOREACH (IDAddress litadr, allFacts){
-			varCounterPos[litadr] /= 2;
-			varCounterNeg[litadr] /= 2;
-		}
-		conflicts = 0;
-	}
-}
-
-Nogood CDNLSolver::resolve(Nogood& ng1, Nogood& ng2, IDAddress litadr){
-	// resolvent = union of ng1 and ng2 minus both polarities of the resolved literal
-	Nogood resolvent = ng1;
-	resolvent.insert(ng2.begin(), ng2.end());
-	resolvent.erase(createLiteral(litadr));
-	resolvent.erase(negation(createLiteral(litadr)));
-	DBGLOG(DBG, "Resolution " << ng1 << " with " << ng2 << ": " << resolvent);
-
-#ifndef NDEBUG
-	++cntResSteps;
-#endif
-	return resolvent;
+    DBGLOG(DBG, "Unit propagation finished successfully");
+    return true;
 }
 
 
-void CDNLSolver::setFact(ID fact, int dl, int c = -1){
+void CDNLSolver::loadAddedNogoods()
+{
+    for (int i = 0; i < nogoodsToAdd.getNogoodCount(); ++i) {
+        addNogoodAndUpdateWatchingStructures(nogoodsToAdd.getNogood(i));
 
-	if (c > -1){
-		DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << nogoodset.getNogood(c));
-	}else{
-		DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl);
-	}
-	factWasSet->setFact(fact.address);			// fact was set
-	changed->setFact(fact.address);
-	decisionlevel[fact.address] = dl;			// store decision level
-	//if (c > -1)
-	cause[fact.address] = c;				// store cause
-	if (fact.isNaf()){					// store truth value
-		interpretation->clearFact(fact.address);
-	}else{
-		interpretation->setFact(fact.address);
-	}
-	assignmentOrder.insert(fact.address);
-	factsOnDecisionLevel[dl].push_back(fact.address);
-
-	updateWatchingStructuresAfterSetFact(fact);
-
-#ifndef NDEBUG
-	++cntAssignments;
-#endif
+    }
+    nogoodsToAdd.clear();
 }
 
-void CDNLSolver::clearFact(IDAddress litadr){
-	DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
-	factWasSet->clearFact(litadr);
-	changed->setFact(litadr);
-	cause[litadr] = -1;
-	assignmentOrder.erase(litadr);
 
-	// getFact will return the truth value which was just cleared
-	// (truth value remains until it is overridden by a new one)
-	updateWatchingStructuresAfterClearFact(createLiteral(litadr, interpretation->getFact(litadr)));
+void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& backtrackDL)
+{
+
+    DBGLOG(DBG,"Conflict detected, violated nogood: " << violatedNogood);
+
+    #ifndef NDEBUG
+    ++cntDetectedConflicts;
+    #endif
+
+    // decision heuristic metric update
+    touchVarsInNogood(violatedNogood);
+
+    // check how many literals were assigned at top decision level
+    // if there is more than one, resolve the nogood with the cause of one of the implied literals
+    learnedNogood = violatedNogood;
+    int count;
+    int resSteps = 0;
+    int latestDL;
+    IDAddress impliedLit;
+    long litAssignmentOrderIndex;
+    ID latestLit;
+    long latestLitAssignmentOrderIndex;
+    int bt = 0;
+    do {
+        bool foundImpliedLit = false;
+        count = 0;
+        impliedLit = ID::ALL_ONES;
+        latestLit = ID_FAIL;
+        latestLitAssignmentOrderIndex = -1;
+        BOOST_FOREACH (ID lit, learnedNogood) {
+            litAssignmentOrderIndex = getAssignmentOrderIndex(lit.address);
+            if (litAssignmentOrderIndex > latestLitAssignmentOrderIndex) {
+                latestLit = lit;
+                latestLitAssignmentOrderIndex = getAssignmentOrderIndex(latestLit.address);
+            }
+        }
+        latestDL = decisionlevel[latestLit.address];
+
+        BOOST_FOREACH (ID lit, learnedNogood) {
+            // compute number of literals on latest dl
+            if (decisionlevel[lit.address] == latestDL) {
+                count++;
+                if (!isDecisionLiteral(lit.address)) {
+                    impliedLit = lit.address;
+                    foundImpliedLit = true;
+                }
+            }
+
+            // backtrack to the second-highest decision level
+            if (decisionlevel[lit.address] > bt && lit.address != latestLit.address && decisionlevel[lit.address] < latestDL) {
+                bt = decisionlevel[lit.address];
+            }
+        }
+
+        if (count > 1) {
+            // resolve the clause with multiple literals on top level
+            // with the cause of one of the implied literals
+
+            // at DL=0 we might have multiple literals without a cause (they are only spurious decision literals, actually they are facts)
+            if (!foundImpliedLit && latestDL == 0) {
+                break;
+            }
+            else {
+                assert(foundImpliedLit);
+                Nogood& c = nogoodset.getNogood(cause[impliedLit]);
+                touchVarsInNogood(c);
+                learnedNogood = resolve(learnedNogood, c, impliedLit);
+            }
+            #ifndef NDEBUG
+            ++cntResSteps;
+            #endif
+            ++resSteps;
+        }
+    }while(count > 1);
+
+    if (resSteps > 0) {
+        // if resSteps == 0, then learnedNogood == violatedNogood, which was already touched
+        touchVarsInNogood(learnedNogood);
+    }
+
+    DBGLOG(DBG, "Learned conflict nogood: " << learnedNogood << " (after " << resSteps << " resolution steps)");
+    DBGLOG(DBG, "Backtrack-DL: " << bt);
+    backtrackDL = bt;
+
+    // decision heuristic metric update
+    ++conflicts;
+    if (conflicts >= 255) {
+        DBGLOG(DBG, "Maximum conflicts count: dividing all counters by 2");
+        BOOST_FOREACH (IDAddress litadr, allFacts) {
+            varCounterPos[litadr] /= 2;
+            varCounterNeg[litadr] /= 2;
+        }
+        conflicts = 0;
+    }
 }
 
-void CDNLSolver::backtrack(int dl){
 
-	for (uint32_t i = dl + 1; i < factsOnDecisionLevel.size(); ++i){
-		BOOST_FOREACH (IDAddress f, factsOnDecisionLevel[i]){
-			clearFact(f);
-		}
-		factsOnDecisionLevel[i].clear();
-	}
+Nogood CDNLSolver::resolve(Nogood& ng1, Nogood& ng2, IDAddress litadr)
+{
+    // resolvent = union of ng1 and ng2 minus both polarities of the resolved literal
+    Nogood resolvent = ng1;
+    resolvent.insert(ng2.begin(), ng2.end());
+    resolvent.erase(createLiteral(litadr));
+    resolvent.erase(negation(createLiteral(litadr)));
+    DBGLOG(DBG, "Resolution " << ng1 << " with " << ng2 << ": " << resolvent);
 
-#ifndef NDEBUG
-	++cntBacktracks;
-#endif
+    #ifndef NDEBUG
+    ++cntResSteps;
+    #endif
+    return resolvent;
 }
 
-ID CDNLSolver::getGuess(){
 
-	assert (!complete());
+void CDNLSolver::setFact(ID fact, int dl, int c = -1)
+{
 
-#ifndef NDEBUG
-	++cntGuesses;
-#endif
+    if (c > -1) {
+        DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << nogoodset.getNogood(c));
+    }
+    else {
+        DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl);
+    }
+                                 // fact was set
+    factWasSet->setFact(fact.address);
+    changed->setFact(fact.address);
+                                 // store decision level
+    decisionlevel[fact.address] = dl;
+    //if (c > -1)
+    cause[fact.address] = c;     // store cause
+    if (fact.isNaf()) {          // store truth value
+        interpretation->clearFact(fact.address);
+    }
+    else {
+        interpretation->setFact(fact.address);
+    }
+    assignmentOrder.insert(fact.address);
+    factsOnDecisionLevel[dl].push_back(fact.address);
 
-	// simple heuristic: guess the next unassigned literal
-	/*
-	for (std::set<IDAddress>::reverse_iterator rit = allFacts.rbegin(); rit != allFacts.rend(); ++rit){
-		if (!assigned(*rit)){
-			return createLiteral(*rit);
-		}
-	}
-	return ID_FAIL;
-	*/
+    updateWatchingStructuresAfterSetFact(fact);
 
-	/*
-	BOOST_FOREACH (IDAddress litadr, allFacts){
-		if (!assigned(litadr)){
-			return createLiteral(litadr);
-		}
-	}
-	return ID_FAIL;
-	*/
-
-	DBGLOG(DBG, "Have " << allFacts.size() << " atoms; " << factWasSet->getStorage().count() << " are assigned");
-
-	// iterate over recent conflicts, beginning at the most recent conflict
-	for (std::vector<int>::reverse_iterator rit = recentConflicts.rbegin(); rit != recentConflicts.rend(); ++rit){
-		Nogood& ng = nogoodset.getNogood(*rit);
-
-		// skip satisfied and contraditory nogoods
-		if (watchedLiteralsOfNogood[*rit].size() == 0){
-			continue;
-		}
-
-		// find most active unassigned variable in this nogood
-		ID mostActive = ID_FAIL;
-		BOOST_FOREACH (ID lit, ng){
-			if (!assigned(lit.address)){
-				if (mostActive == ID_FAIL ||
-				   (varCounterPos[lit.address] + varCounterNeg[lit.address]) > (varCounterPos[mostActive.address] + varCounterNeg[mostActive.address])){
-					mostActive = varCounterPos[lit.address] > varCounterNeg[lit.address] ? negation(createLiteral(lit.address)) : createLiteral(lit.address);
-				}
-			}
-		}
-
-		// if the nogood has no unassigned variable, it must be either satisfied or contradictory and the if above applies
-		assert(mostActive != ID_FAIL);
-
-		DBGLOG(DBG, "Guessing " << litToString(mostActive) << " because it occurs in recent conflicts");
-		return mostActive;
-	}
-
-	// no recent conflicts;
-	// use alternative heuristic: choose globally most active literal
-	ID mostActive = ID_FAIL;
-	BOOST_FOREACH (IDAddress litadr, allFacts){
-		if (!assigned(litadr)){
-			if (mostActive == ID_FAIL ||
-			   (varCounterPos[litadr] + varCounterNeg[litadr]) > (varCounterPos[mostActive.address] + varCounterNeg[mostActive.address])){
-				mostActive = varCounterPos[litadr] > varCounterNeg[litadr] ? negation(createLiteral(litadr)) : createLiteral(litadr);
-			}
-		}
-	}
-
-	DBGLOG(DBG, "Guessing " << litToString(mostActive) << " because it is globally active");
-	return mostActive;
+    #ifndef NDEBUG
+    ++cntAssignments;
+    #endif
 }
 
-void CDNLSolver::initWatchingStructures(){
 
-	// reset lazy data structures
-	watchedLiteralsOfNogood = std::vector<Set<ID> >(nogoodset.getNogoodCount());
-	watchingNogoodsOfPosLiteral.clear();
-	watchingNogoodsOfNegLiteral.clear();
-	nogoodsOfPosLiteral.clear();
-	nogoodsOfNegLiteral.clear();
+void CDNLSolver::clearFact(IDAddress litadr)
+{
+    DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
+    factWasSet->clearFact(litadr);
+    changed->setFact(litadr);
+    cause[litadr] = -1;
+    assignmentOrder.erase(litadr);
 
-	// reset unit and contradictory nogoods
-	unitNogoods.clear();
-	contradictoryNogoods.clear();
-
-	// each nogood watches (at most) two of its literals
-	for (int nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
-		updateWatchingStructuresAfterAddNogood(nogoodNr);
-	}
+    // getFact will return the truth value which was just cleared
+    // (truth value remains until it is overridden by a new one)
+    updateWatchingStructuresAfterClearFact(createLiteral(litadr, interpretation->getFact(litadr)));
 }
 
-void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 
-	DBGLOGD(DBG, "updateWatchingStructuresAfterAddNogood after adding nogood " << index);
-	const Nogood& ng = nogoodset.getNogood(index);
+void CDNLSolver::backtrack(int dl)
+{
 
-	// remember for all literals in the nogood that they are contained in this nogood
-	BOOST_FOREACH (ID lit, ng){
-		if (!lit.isNaf()){
-			nogoodsOfPosLiteral[lit.address].insert(index);
-		}else{
-			nogoodsOfNegLiteral[lit.address].insert(index);
-		}
-	}
+    for (uint32_t i = dl + 1; i < factsOnDecisionLevel.size(); ++i) {
+        BOOST_FOREACH (IDAddress f, factsOnDecisionLevel[i]) {
+            clearFact(f);
+        }
+        factsOnDecisionLevel[i].clear();
+    }
 
-	// search for up to two unassigned literals to watch
-	bool inactive = false;
-	tmpWatched.clear();
-	BOOST_FOREACH (ID lit, ng){
-		if (!assigned(lit.address) && tmpWatched.size() < 2){
-			tmpWatched.insert(createLiteral(lit));
-		}else if(falsified(lit)){
-			inactive = true;
-		}
-	}
-
-	// remember watches
-	if (!inactive){
-		BOOST_FOREACH (ID lit, tmpWatched){
-			startWatching(index, createLiteral(lit));
-		}
-	}
-
-	if (inactive){
-		DBGLOGD(DBG, "Nogood " << index << " is inactive");
-	}else if (tmpWatched.size() == 1){
-		DBGLOGD(DBG, "Nogood " << index << " is unit");
-		unitNogoods.insert(index);
-	}else if (tmpWatched.size() == 0){
-		DBGLOGD(DBG, "Nogood " << index << " is contradictory");
-		contradictoryNogoods.insert(index);
-	}
+    #ifndef NDEBUG
+    ++cntBacktracks;
+    #endif
 }
 
-void CDNLSolver::updateWatchingStructuresAfterRemoveNogood(int index){
-	const Nogood& ng = nogoodset.getNogood(index);
 
-	// remove the nogood from all literal lists
-	BOOST_FOREACH (ID lit, ng){
-		nogoodsOfPosLiteral[lit.address].erase(index);
-		nogoodsOfNegLiteral[lit.address].erase(index);
-	}
+ID CDNLSolver::getGuess()
+{
 
-	// remove all watched literals
-	Set<ID>& watched = watchedLiteralsOfNogood[index];
-	BOOST_FOREACH (ID lit, watched){
-		stopWatching(index, lit);
-	}
+    assert (!complete());
+
+    #ifndef NDEBUG
+    ++cntGuesses;
+    #endif
+
+    // simple heuristic: guess the next unassigned literal
+    /*
+    for (std::set<IDAddress>::reverse_iterator rit = allFacts.rbegin(); rit != allFacts.rend(); ++rit){
+      if (!assigned(*rit)){
+        return createLiteral(*rit);
+      }
+    }
+    return ID_FAIL;
+    */
+
+    /*
+    BOOST_FOREACH (IDAddress litadr, allFacts){
+      if (!assigned(litadr)){
+        return createLiteral(litadr);
+      }
+    }
+    return ID_FAIL;
+    */
+
+    DBGLOG(DBG, "Have " << allFacts.size() << " atoms; " << factWasSet->getStorage().count() << " are assigned");
+
+    // iterate over recent conflicts, beginning at the most recent conflict
+    for (std::vector<int>::reverse_iterator rit = recentConflicts.rbegin(); rit != recentConflicts.rend(); ++rit) {
+        Nogood& ng = nogoodset.getNogood(*rit);
+
+        // skip satisfied and contraditory nogoods
+        if (watchedLiteralsOfNogood[*rit].size() == 0) {
+            continue;
+        }
+
+        // find most active unassigned variable in this nogood
+        ID mostActive = ID_FAIL;
+        BOOST_FOREACH (ID lit, ng) {
+            if (!assigned(lit.address)) {
+                if (mostActive == ID_FAIL ||
+                (varCounterPos[lit.address] + varCounterNeg[lit.address]) > (varCounterPos[mostActive.address] + varCounterNeg[mostActive.address])) {
+                    mostActive = varCounterPos[lit.address] > varCounterNeg[lit.address] ? negation(createLiteral(lit.address)) : createLiteral(lit.address);
+                }
+            }
+        }
+
+        // if the nogood has no unassigned variable, it must be either satisfied or contradictory and the if above applies
+        assert(mostActive != ID_FAIL);
+
+        DBGLOG(DBG, "Guessing " << litToString(mostActive) << " because it occurs in recent conflicts");
+        return mostActive;
+    }
+
+    // no recent conflicts;
+    // use alternative heuristic: choose globally most active literal
+    ID mostActive = ID_FAIL;
+    BOOST_FOREACH (IDAddress litadr, allFacts) {
+        if (!assigned(litadr)) {
+            if (mostActive == ID_FAIL ||
+            (varCounterPos[litadr] + varCounterNeg[litadr]) > (varCounterPos[mostActive.address] + varCounterNeg[mostActive.address])) {
+                mostActive = varCounterPos[litadr] > varCounterNeg[litadr] ? negation(createLiteral(litadr)) : createLiteral(litadr);
+            }
+        }
+    }
+
+    DBGLOG(DBG, "Guessing " << litToString(mostActive) << " because it is globally active");
+    return mostActive;
 }
 
-void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 
-	DBGLOGD(DBG, "updateWatchingStructuresAfterSetFact after " << litToString(lit) << " was set");
-	bool changed;
+void CDNLSolver::initWatchingStructures()
+{
 
-	// go through all nogoods which watch this literal negatively and inactivate them
-	if ((lit.isNaf() && watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()) ||
-	    (!lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())){
-		do{
-			changed = false;
-			BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfPosLiteral[lit.address] : watchingNogoodsOfNegLiteral[lit.address]){
-				inactivateNogood(nogoodNr);
-				changed = true;
-				break;
-			}
-		}while(changed);
-	}
+    // reset lazy data structures
+    watchedLiteralsOfNogood = std::vector<Set<ID> >(nogoodset.getNogoodCount());
+    watchingNogoodsOfPosLiteral.clear();
+    watchingNogoodsOfNegLiteral.clear();
+    nogoodsOfPosLiteral.clear();
+    nogoodsOfNegLiteral.clear();
 
-	// go through all nogoods which watch this literal positively and find a new watched literal
-//	if (watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()){
-	if ((!lit.isNaf() && watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()) ||
-	    (lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())){
-		do{
-			changed = false;
+    // reset unit and contradictory nogoods
+    unitNogoods.clear();
+    contradictoryNogoods.clear();
 
-			BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfNegLiteral[lit.address] : watchingNogoodsOfPosLiteral[lit.address]){
-				const Nogood& ng = nogoodset.getNogood(nogoodNr);
-
-				// stop watching lit
-				stopWatching(nogoodNr, lit);
-
-				// search for a new literal which is
-				// 1. not assigned yet
-				// 2. currently not watched
-				bool inactive = false;
-				BOOST_FOREACH (ID nglit, ng){
-					if ((watchedLiteralsOfNogood[nogoodNr].size() < 2) && !assigned(nglit.address) && (watchedLiteralsOfNogood[nogoodNr].count(nglit) == 0)){
-						// watch it
-						startWatching(nogoodNr, createLiteral(nglit));
-					}else if (falsified(nglit)){
-						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now inactive");
-						inactivateNogood(nogoodNr);
-						inactive = true;
-						break;
-					}
-				}
-				if (!inactive){
-					// nogood might have become unit or contradictory
-					if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
-						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
-						unitNogoods.insert(nogoodNr);
-					}else if (watchedLiteralsOfNogood[nogoodNr].size() == 0){
-						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now contradictory");
-						contradictoryNogoods.insert(nogoodNr);
-						unitNogoods.erase(nogoodNr);
-					}
-				}
-
-				changed = true;
-				break;
-			}
-		}while(changed);
-	}
+    // each nogood watches (at most) two of its literals
+    for (int nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr) {
+        updateWatchingStructuresAfterAddNogood(nogoodNr);
+    }
 }
 
-void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 
-	// nogoods which watch the literal negatively were inactive before
-	// 	they can now either (i) still be inactive, or (ii) have at least one unassigned literal
+void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index)
+{
 
-	// nogoods which watch the literal positively were either active or inconsistent before
-	//	if they were active, they can now (i) have more watched literals (if they had only one before); or
-	//					 (ii) have as many watched literals as before (if they had already two)
-	//	if they were inconsistent before, they have at least one watched literal
+    DBGLOGD(DBG, "updateWatchingStructuresAfterAddNogood after adding nogood " << index);
+    const Nogood& ng = nogoodset.getNogood(index);
 
-	DBGLOGD(DBG, "updateWatchingStructuresAfterClearFact after " << litToString(literal) << " was cleared");
+    // remember for all literals in the nogood that they are contained in this nogood
+    BOOST_FOREACH (ID lit, ng) {
+        if (!lit.isNaf()) {
+            nogoodsOfPosLiteral[lit.address].insert(index);
+        }
+        else {
+            nogoodsOfNegLiteral[lit.address].insert(index);
+        }
+    }
 
-	// go through all nogoods which contain this literal either positively or negatively
-	for (int positiveAndNegativeLiteral = 1; positiveAndNegativeLiteral <= 2; ++positiveAndNegativeLiteral){
+    // search for up to two unassigned literals to watch
+    bool inactive = false;
+    tmpWatched.clear();
+    BOOST_FOREACH (ID lit, ng) {
+        if (!assigned(lit.address) && tmpWatched.size() < 2) {
+            tmpWatched.insert(createLiteral(lit));
+        }
+        else if(falsified(lit)) {
+            inactive = true;
+        }
+    }
 
-		if ((positiveAndNegativeLiteral == 1 && nogoodsOfPosLiteral.find(literal.address) != nogoodsOfPosLiteral.end()) ||
-		    (positiveAndNegativeLiteral == 2 && nogoodsOfNegLiteral.find(literal.address) != nogoodsOfNegLiteral.end())){
-			BOOST_FOREACH (int nogoodNr, positiveAndNegativeLiteral == 1 ? nogoodsOfPosLiteral[literal.address] : nogoodsOfNegLiteral[literal.address]){
-				DBGLOG(DBG, "Updating nogood " << nogoodNr);
+    // remember watches
+    if (!inactive) {
+        BOOST_FOREACH (ID lit, tmpWatched) {
+            startWatching(index, createLiteral(lit));
+        }
+    }
 
-				const Nogood& ng = nogoodset.getNogood(nogoodNr);
-
-				bool stillInactive = false;
-
-				// check the number of currently watched literals
-				int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
-				switch(watchedNum){
-					case 0:		// nogood was inactive or contradictory before
-						// nogood can:
-						// 1. still be inactive
-						// 2. have one unassigned literal
-						// 3. have multiple unassigned literals
-						// it cannot be contraditory anymore because at least one literal is unassigned!
-						tmpWatched.clear();
-						BOOST_FOREACH (ID lit, ng){
-							if (falsified(lit)){
-								stillInactive = true;
-								break;
-							}
-							// collect up to 2 watched literals
-							if (!assigned(lit.address) && tmpWatched.size() < 2){
-								tmpWatched.insert(lit);
-							}
-						}
-						if (!stillInactive){
-							DBGLOG(DBG, "Nogood " << nogoodNr << " is reactivated");
-							BOOST_FOREACH (ID lit, tmpWatched){
-								startWatching(nogoodNr, createLiteral(lit));
-							}
-
-							if (tmpWatched.size() == 1){
-								DBGLOGD(DBG, "Nogood " << nogoodNr << " becomes unit");
-								unitNogoods.insert(nogoodNr);
-							}
-
-							// nogood is (for sure) not contradictory anymore
-							contradictoryNogoods.erase(nogoodNr);
-						}
-						break;
-					case 1:		// nogood was unit before
-						// watch litadr
-						startWatching(nogoodNr, createLiteral(literal));
-
-						// nogood is not unit anymore
-						DBGLOGD(DBG, "Nogood " << nogoodNr << " is not unit anymore");
-						unitNogoods.erase(nogoodNr);
-						break;
-					default:	// nogood has more than one watched literal
-						// number of unassigned literals has possibly even increased
-						// nothing to do
-						break;
-				}
-			}
-		}
-	}
+    if (inactive) {
+        DBGLOGD(DBG, "Nogood " << index << " is inactive");
+    }
+    else if (tmpWatched.size() == 1) {
+        DBGLOGD(DBG, "Nogood " << index << " is unit");
+        unitNogoods.insert(index);
+    }
+    else if (tmpWatched.size() == 0) {
+        DBGLOGD(DBG, "Nogood " << index << " is contradictory");
+        contradictoryNogoods.insert(index);
+    }
 }
 
-void CDNLSolver::inactivateNogood(int nogoodNr){
-	DBGLOGD(DBG, "Nogood " << nogoodNr << " gets inactive");
 
-	BOOST_FOREACH (ID lit, watchedLiteralsOfNogood[nogoodNr]){
-		watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
-		watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
-	}
-	watchedLiteralsOfNogood[nogoodNr].clear();
+void CDNLSolver::updateWatchingStructuresAfterRemoveNogood(int index)
+{
+    const Nogood& ng = nogoodset.getNogood(index);
 
-	unitNogoods.erase(nogoodNr);
-	contradictoryNogoods.erase(nogoodNr);
+    // remove the nogood from all literal lists
+    BOOST_FOREACH (ID lit, ng) {
+        nogoodsOfPosLiteral[lit.address].erase(index);
+        nogoodsOfNegLiteral[lit.address].erase(index);
+    }
+
+    // remove all watched literals
+    Set<ID>& watched = watchedLiteralsOfNogood[index];
+    BOOST_FOREACH (ID lit, watched) {
+        stopWatching(index, lit);
+    }
 }
 
-void CDNLSolver::stopWatching(int nogoodNr, ID lit){
-	DBGLOGD(DBG, "Nogood " << nogoodNr << " stops watching " << litToString(lit) << " (" << createLiteral(lit) << ")");
-	if (!lit.isNaf()){
-		watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
-	}else{
-		watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
-	}
-	watchedLiteralsOfNogood[nogoodNr].erase(createLiteral(lit));
+
+void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit)
+{
+
+    DBGLOGD(DBG, "updateWatchingStructuresAfterSetFact after " << litToString(lit) << " was set");
+    bool changed;
+
+    // go through all nogoods which watch this literal negatively and inactivate them
+    if ((lit.isNaf() && watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()) ||
+    (!lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())) {
+        do {
+            changed = false;
+            BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfPosLiteral[lit.address] : watchingNogoodsOfNegLiteral[lit.address]) {
+                inactivateNogood(nogoodNr);
+                changed = true;
+                break;
+            }
+        }while(changed);
+    }
+
+    // go through all nogoods which watch this literal positively and find a new watched literal
+    //	if (watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()){
+    if ((!lit.isNaf() && watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()) ||
+    (lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())) {
+        do {
+            changed = false;
+
+            BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfNegLiteral[lit.address] : watchingNogoodsOfPosLiteral[lit.address]) {
+                const Nogood& ng = nogoodset.getNogood(nogoodNr);
+
+                // stop watching lit
+                stopWatching(nogoodNr, lit);
+
+                // search for a new literal which is
+                // 1. not assigned yet
+                // 2. currently not watched
+                bool inactive = false;
+                BOOST_FOREACH (ID nglit, ng) {
+                    if ((watchedLiteralsOfNogood[nogoodNr].size() < 2) && !assigned(nglit.address) && (watchedLiteralsOfNogood[nogoodNr].count(nglit) == 0)) {
+                        // watch it
+                        startWatching(nogoodNr, createLiteral(nglit));
+                    }
+                    else if (falsified(nglit)) {
+                        DBGLOGD(DBG, "Nogood " << nogoodNr << " is now inactive");
+                        inactivateNogood(nogoodNr);
+                        inactive = true;
+                        break;
+                    }
+                }
+                if (!inactive) {
+                    // nogood might have become unit or contradictory
+                    if (watchedLiteralsOfNogood[nogoodNr].size() == 1) {
+                        DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
+                        unitNogoods.insert(nogoodNr);
+                    }
+                    else if (watchedLiteralsOfNogood[nogoodNr].size() == 0) {
+                        DBGLOGD(DBG, "Nogood " << nogoodNr << " is now contradictory");
+                        contradictoryNogoods.insert(nogoodNr);
+                        unitNogoods.erase(nogoodNr);
+                    }
+                }
+
+                changed = true;
+                break;
+            }
+        }while(changed);
+    }
 }
 
-void CDNLSolver::startWatching(int nogoodNr, ID lit){
-	DBGLOGD(DBG, "Nogood " << nogoodNr << " starts watching " << litToString(lit) << " (" << createLiteral(lit) << ")");
-	watchedLiteralsOfNogood[nogoodNr].insert(createLiteral(lit));
-	if (!lit.isNaf()){
-		watchingNogoodsOfPosLiteral[lit.address].insert(nogoodNr);
-	}else{
-		watchingNogoodsOfNegLiteral[lit.address].insert(nogoodNr);
-	}
+
+void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal)
+{
+
+    // nogoods which watch the literal negatively were inactive before
+    // 	they can now either (i) still be inactive, or (ii) have at least one unassigned literal
+
+    // nogoods which watch the literal positively were either active or inconsistent before
+    //	if they were active, they can now (i) have more watched literals (if they had only one before); or
+    //					 (ii) have as many watched literals as before (if they had already two)
+    //	if they were inconsistent before, they have at least one watched literal
+
+    DBGLOGD(DBG, "updateWatchingStructuresAfterClearFact after " << litToString(literal) << " was cleared");
+
+    // go through all nogoods which contain this literal either positively or negatively
+    for (int positiveAndNegativeLiteral = 1; positiveAndNegativeLiteral <= 2; ++positiveAndNegativeLiteral) {
+
+        if ((positiveAndNegativeLiteral == 1 && nogoodsOfPosLiteral.find(literal.address) != nogoodsOfPosLiteral.end()) ||
+        (positiveAndNegativeLiteral == 2 && nogoodsOfNegLiteral.find(literal.address) != nogoodsOfNegLiteral.end())) {
+            BOOST_FOREACH (int nogoodNr, positiveAndNegativeLiteral == 1 ? nogoodsOfPosLiteral[literal.address] : nogoodsOfNegLiteral[literal.address]) {
+                DBGLOG(DBG, "Updating nogood " << nogoodNr);
+
+                const Nogood& ng = nogoodset.getNogood(nogoodNr);
+
+                bool stillInactive = false;
+
+                // check the number of currently watched literals
+                int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
+                switch(watchedNum) {
+                    case 0:      // nogood was inactive or contradictory before
+                        // nogood can:
+                        // 1. still be inactive
+                        // 2. have one unassigned literal
+                        // 3. have multiple unassigned literals
+                        // it cannot be contraditory anymore because at least one literal is unassigned!
+                        tmpWatched.clear();
+                        BOOST_FOREACH (ID lit, ng) {
+                            if (falsified(lit)) {
+                                stillInactive = true;
+                                break;
+                            }
+                            // collect up to 2 watched literals
+                            if (!assigned(lit.address) && tmpWatched.size() < 2) {
+                                tmpWatched.insert(lit);
+                            }
+                        }
+                        if (!stillInactive) {
+                            DBGLOG(DBG, "Nogood " << nogoodNr << " is reactivated");
+                            BOOST_FOREACH (ID lit, tmpWatched) {
+                                startWatching(nogoodNr, createLiteral(lit));
+                            }
+
+                            if (tmpWatched.size() == 1) {
+                                DBGLOGD(DBG, "Nogood " << nogoodNr << " becomes unit");
+                                unitNogoods.insert(nogoodNr);
+                            }
+
+                            // nogood is (for sure) not contradictory anymore
+                            contradictoryNogoods.erase(nogoodNr);
+                        }
+                        break;
+                    case 1:      // nogood was unit before
+                        // watch litadr
+                        startWatching(nogoodNr, createLiteral(literal));
+
+                        // nogood is not unit anymore
+                        DBGLOGD(DBG, "Nogood " << nogoodNr << " is not unit anymore");
+                        unitNogoods.erase(nogoodNr);
+                        break;
+                    default:     // nogood has more than one watched literal
+                        // number of unassigned literals has possibly even increased
+                        // nothing to do
+                        break;
+                }
+            }
+        }
+    }
 }
 
-void CDNLSolver::touchVarsInNogood(Nogood& ng){
-	BOOST_FOREACH (ID lit, ng){
-		if (lit.isNaf()){
-			varCounterNeg[lit.address]++;
-		}else{
-			varCounterPos[lit.address]++;
-		}
-	}
+
+void CDNLSolver::inactivateNogood(int nogoodNr)
+{
+    DBGLOGD(DBG, "Nogood " << nogoodNr << " gets inactive");
+
+    BOOST_FOREACH (ID lit, watchedLiteralsOfNogood[nogoodNr]) {
+        watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
+        watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
+    }
+    watchedLiteralsOfNogood[nogoodNr].clear();
+
+    unitNogoods.erase(nogoodNr);
+    contradictoryNogoods.erase(nogoodNr);
 }
 
-void CDNLSolver::initListOfAllFacts(){
 
-	// build a list of all literals which need to be assigned
-	// go through all nogoods
-	for (int i = 0; i < nogoodset.getNogoodCount(); ++i){
-		const Nogood& ng = nogoodset.getNogood(i);
-		// go through all literals of the nogood
-		for (Nogood::const_iterator lIt = ng.begin(); lIt != ng.end(); ++lIt){
-			if (lIt->isOrdinaryNongroundAtom()) throw GeneralError("Got nonground atom in SAT instance");
-			allFacts.insert(lIt->address);
-		}
-	}
+void CDNLSolver::stopWatching(int nogoodNr, ID lit)
+{
+    DBGLOGD(DBG, "Nogood " << nogoodNr << " stops watching " << litToString(lit) << " (" << createLiteral(lit) << ")");
+    if (!lit.isNaf()) {
+        watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
+    }
+    else {
+        watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
+    }
+    watchedLiteralsOfNogood[nogoodNr].erase(createLiteral(lit));
 }
 
-void CDNLSolver::resizeVectors(){
 
-	unsigned atomNamespaceSize = ctx.registry()->ogatoms.getSize();
-	DBGLOG(DBG, "Resizing vectors to ground-atom namespace of size: " << atomNamespaceSize);
-	assignmentOrder.resize(atomNamespaceSize);
+void CDNLSolver::startWatching(int nogoodNr, ID lit)
+{
+    DBGLOGD(DBG, "Nogood " << nogoodNr << " starts watching " << litToString(lit) << " (" << createLiteral(lit) << ")");
+    watchedLiteralsOfNogood[nogoodNr].insert(createLiteral(lit));
+    if (!lit.isNaf()) {
+        watchingNogoodsOfPosLiteral[lit.address].insert(nogoodNr);
+    }
+    else {
+        watchingNogoodsOfNegLiteral[lit.address].insert(nogoodNr);
+    }
 }
 
-std::string CDNLSolver::litToString(ID lit){
-	std::stringstream ss;
-	ss << (lit.isNaf() ? std::string("-") : std::string("")) << lit.address;
-	return ss.str();
+
+void CDNLSolver::touchVarsInNogood(Nogood& ng)
+{
+    BOOST_FOREACH (ID lit, ng) {
+        if (lit.isNaf()) {
+            varCounterNeg[lit.address]++;
+        }
+        else {
+            varCounterPos[lit.address]++;
+        }
+    }
 }
 
-int CDNLSolver::addNogoodAndUpdateWatchingStructures(Nogood ng){
 
-	assert(ng.isGround());
+void CDNLSolver::initListOfAllFacts()
+{
 
-	// do not add nogoods which expand the domain
-	BOOST_FOREACH (ID lit, ng){
-		if (!allFacts.contains(lit.address)) return 0;
-	}
-
-	int index = nogoodset.addNogood(ng);
-	DBGLOG(DBG, "Adding nogood " << ng << " with index " << index);
-	if ((int)watchedLiteralsOfNogood.size() <= index){
-		watchedLiteralsOfNogood.push_back(Set<ID>(2, 1));
-	}
-	updateWatchingStructuresAfterAddNogood(index);
-
-	return index;
+    // build a list of all literals which need to be assigned
+    // go through all nogoods
+    for (int i = 0; i < nogoodset.getNogoodCount(); ++i) {
+        const Nogood& ng = nogoodset.getNogood(i);
+        // go through all literals of the nogood
+        for (Nogood::const_iterator lIt = ng.begin(); lIt != ng.end(); ++lIt) {
+            if (lIt->isOrdinaryNongroundAtom()) throw GeneralError("Got nonground atom in SAT instance");
+            allFacts.insert(lIt->address);
+        }
+    }
 }
 
-std::string CDNLSolver::getStatistics(){
 
-#ifndef NDEBUG
-	std::stringstream ss;
-	ss	<< "Assignments: " << cntAssignments << std::endl
-		<< "Guesses: " << cntGuesses << std::endl
-		<< "Backtracks: " << cntBacktracks << std::endl
-		<< "Resolution steps: " << cntResSteps << std::endl
-		<< "Conflicts: " << cntDetectedConflicts;
-	return ss.str();
-#else
-	std::stringstream ss;
-	ss << "Only available in debug mode";
-	return ss.str();
-#endif
+void CDNLSolver::resizeVectors()
+{
+
+    unsigned atomNamespaceSize = ctx.registry()->ogatoms.getSize();
+    DBGLOG(DBG, "Resizing vectors to ground-atom namespace of size: " << atomNamespaceSize);
+    assignmentOrder.resize(atomNamespaceSize);
 }
 
-CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1){
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
-	resizeVectors();
-	initListOfAllFacts();
+std::string CDNLSolver::litToString(ID lit)
+{
+    std::stringstream ss;
+    ss << (lit.isNaf() ? std::string("-") : std::string("")) << lit.address;
+    return ss.str();
+}
 
-	// create an interpretation and a storage for assigned facts (we need 3 values)
-	interpretation.reset(new Interpretation(ctx.registry()));
-	factWasSet.reset(new Interpretation(ctx.registry()));
-	changed.reset(new Interpretation(ctx.registry()));
-	currentDL = 0;
-	exhaustedDL = 0;
 
-	initWatchingStructures();
+int CDNLSolver::addNogoodAndUpdateWatchingStructures(Nogood ng)
+{
+
+    assert(ng.isGround());
+
+    // do not add nogoods which expand the domain
+    BOOST_FOREACH (ID lit, ng) {
+        if (!allFacts.contains(lit.address)) return 0;
+    }
+
+    int index = nogoodset.addNogood(ng);
+    DBGLOG(DBG, "Adding nogood " << ng << " with index " << index);
+    if ((int)watchedLiteralsOfNogood.size() <= index) {
+        watchedLiteralsOfNogood.push_back(Set<ID>(2, 1));
+    }
+    updateWatchingStructuresAfterAddNogood(index);
+
+    return index;
+}
+
+
+std::string CDNLSolver::getStatistics()
+{
+
+    #ifndef NDEBUG
+    std::stringstream ss;
+    ss  << "Assignments: " << cntAssignments << std::endl
+        << "Guesses: " << cntGuesses << std::endl
+        << "Backtracks: " << cntBacktracks << std::endl
+        << "Resolution steps: " << cntResSteps << std::endl
+        << "Conflicts: " << cntDetectedConflicts;
+    return ss.str();
+    #else
+    std::stringstream ss;
+    ss << "Only available in debug mode";
+    return ss.str();
+    #endif
+}
+
+
+CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1)
+{
+
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+    resizeVectors();
+    initListOfAllFacts();
+
+    // create an interpretation and a storage for assigned facts (we need 3 values)
+    interpretation.reset(new Interpretation(ctx.registry()));
+    factWasSet.reset(new Interpretation(ctx.registry()));
+    changed.reset(new Interpretation(ctx.registry()));
+    currentDL = 0;
+    exhaustedDL = 0;
+
+    initWatchingStructures();
 };
 
-void CDNLSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
-	throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
+void CDNLSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
+{
+    throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
 }
 
-void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
-	// reset
-	DBGLOG(DBG, "Resetting solver");
+void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
+{
 
-	interpretation.reset(new Interpretation(ctx.registry()));
-	factWasSet.reset(new Interpretation(ctx.registry()));
-	changed.reset(new Interpretation(ctx.registry()));
-	cause.clear();
-	assignmentOrder = OrderedSet<IDAddress, SimpleHashIDAddress>();
-	factsOnDecisionLevel.clear();
-	decisionLiteralOfDecisionLevel.clear();
+    // reset
+    DBGLOG(DBG, "Resetting solver");
 
-	conflicts = 0;
-	currentDL = 0;
-	exhaustedDL = 0;
+    interpretation.reset(new Interpretation(ctx.registry()));
+    factWasSet.reset(new Interpretation(ctx.registry()));
+    changed.reset(new Interpretation(ctx.registry()));
+    cause.clear();
+    assignmentOrder = OrderedSet<IDAddress, SimpleHashIDAddress>();
+    factsOnDecisionLevel.clear();
+    decisionLiteralOfDecisionLevel.clear();
 
-	initWatchingStructures();
+    conflicts = 0;
+    currentDL = 0;
+    exhaustedDL = 0;
 
-	// set assumptions at DL=0
-	DBGLOG(DBG, "Setting assumptions");
-	BOOST_FOREACH (ID a, assumptions){
-		setFact(createLiteral(a.address, !a.isNaf()), 0);
-	}
+    initWatchingStructures();
+
+    // set assumptions at DL=0
+    DBGLOG(DBG, "Setting assumptions");
+    BOOST_FOREACH (ID a, assumptions) {
+        setFact(createLiteral(a.address, !a.isNaf()), 0);
+    }
 }
 
-void CDNLSolver::addPropagator(PropagatorCallback* pb){
-	propagator.insert(pb);
+
+void CDNLSolver::addPropagator(PropagatorCallback* pb)
+{
+    propagator.insert(pb);
 }
 
-void CDNLSolver::removePropagator(PropagatorCallback* pb){
-	propagator.erase(pb);
+
+void CDNLSolver::removePropagator(PropagatorCallback* pb)
+{
+    propagator.erase(pb);
 }
 
-bool CDNLSolver::handlePreviousModel(){
 
-	// is there a previous model?
-	if (complete()){
-		if (currentDL == 0){
-			return false;
-		}else{
-			// add model as nogood to get another one
-			// a restriction to the decision literals suffices
-			Nogood modelNogood;
-			BOOST_FOREACH (IDAddress fact, allFacts){
-				if (isDecisionLiteral(fact)){
-					modelNogood.insert(createLiteral(fact, interpretation->getFact(fact)));
-				}
-			}
-			addNogoodAndUpdateWatchingStructures(modelNogood);
-			DBGLOG(DBG, "Found previous model. Adding model as nogood " << (nogoodset.getNogoodCount() - 1) << ": " << modelNogood);
+bool CDNLSolver::handlePreviousModel()
+{
 
-			// the new nogood is for sure contraditory
-			Nogood learnedNogood;
-			analysis(modelNogood, learnedNogood, currentDL);
-			recentConflicts.push_back(addNogoodAndUpdateWatchingStructures(learnedNogood));
-			DBGLOG(DBG, "Backtrack");
-			backtrack(currentDL);
-			return true;
-		}
-	}
-	return true;
+    // is there a previous model?
+    if (complete()) {
+        if (currentDL == 0) {
+            return false;
+        }
+        else {
+            // add model as nogood to get another one
+            // a restriction to the decision literals suffices
+            Nogood modelNogood;
+            BOOST_FOREACH (IDAddress fact, allFacts) {
+                if (isDecisionLiteral(fact)) {
+                    modelNogood.insert(createLiteral(fact, interpretation->getFact(fact)));
+                }
+            }
+            addNogoodAndUpdateWatchingStructures(modelNogood);
+            DBGLOG(DBG, "Found previous model. Adding model as nogood " << (nogoodset.getNogoodCount() - 1) << ": " << modelNogood);
+
+            // the new nogood is for sure contraditory
+            Nogood learnedNogood;
+            analysis(modelNogood, learnedNogood, currentDL);
+            recentConflicts.push_back(addNogoodAndUpdateWatchingStructures(learnedNogood));
+            DBGLOG(DBG, "Backtrack");
+            backtrack(currentDL);
+            return true;
+        }
+    }
+    return true;
 }
 
-void CDNLSolver::flipDecisionLiteral(){
 
-	// find decision literal dLit of current decision level
-	ID dLit = decisionLiteralOfDecisionLevel[currentDL];
-	currentDL--;
-	exhaustedDL = currentDL;
+void CDNLSolver::flipDecisionLiteral()
+{
 
-	// goto previous decision level
-	DBGLOG(DBG, "Backtrack to DL " << currentDL);
-	backtrack(currentDL);
+    // find decision literal dLit of current decision level
+    ID dLit = decisionLiteralOfDecisionLevel[currentDL];
+    currentDL--;
+    exhaustedDL = currentDL;
 
-	// flip dLit, but now on the previous decision level!
-	DBGLOG(DBG, "Flipping decision literal: " << litToString(negation(dLit)));
-	setFact(negation(dLit), currentDL);
+    // goto previous decision level
+    DBGLOG(DBG, "Backtrack to DL " << currentDL);
+    backtrack(currentDL);
+
+    // flip dLit, but now on the previous decision level!
+    DBGLOG(DBG, "Flipping decision literal: " << litToString(negation(dLit)));
+    setFact(negation(dLit), currentDL);
 }
 
-InterpretationPtr CDNLSolver::getNextModel(){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 
-	Nogood violatedNogood;
+InterpretationPtr CDNLSolver::getNextModel()
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 
-	// handle previous model
-	if (complete()){
-		if (currentDL == 0){
-			DBGLOG(DBG, "No more models");
-			return InterpretationPtr();
-		}else{
-			flipDecisionLiteral();
-		}
-	}
+    Nogood violatedNogood;
 
-	bool anotherIterationEvenIfComplete = false;	// if set to true, the loop will run even if the interpretation is already complete
-							// (needed to check if newly added nogood (e.g. by external learners) are satisfied)
-	while (!complete()){
-		anotherIterationEvenIfComplete = false;
-		DBGLOG(DBG, "Unit propagation");
-		if (!unitPropagation(violatedNogood)){
-			if (currentDL == 0){
-				// no answer set
-				return InterpretationPtr();
-			}else{
-				if (currentDL > exhaustedDL){
-					// backtrack
-					Nogood learnedNogood;
-					int k = currentDL;
-					analysis(violatedNogood, learnedNogood, k);
-					recentConflicts.push_back(addNogoodAndUpdateWatchingStructures(learnedNogood));
-					currentDL = k > exhaustedDL ? k : exhaustedDL;	// do not jump below exhausted level, this could lead to regeneration of models
-					backtrack(currentDL);
-				}else{
-					flipDecisionLiteral();
-				}
-			}
-		}else{
-			DBGLOG(DBG, "Calling external learner");
-			int nogoodCount = nogoodset.getNogoodCount();
-			BOOST_FOREACH (PropagatorCallback* cb, propagator){
-				DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-				cb->propagate(interpretation, factWasSet, changed);
-			}
-			// add new nogoods
-			int ngc = nogoodset.getNogoodCount();
-			loadAddedNogoods();
-			if (ngc != nogoodset.getNogoodCount()) anotherIterationEvenIfComplete = true;
-			changed->clear();
+    // handle previous model
+    if (complete()) {
+        if (currentDL == 0) {
+            DBGLOG(DBG, "No more models");
+            return InterpretationPtr();
+        }
+        else {
+            flipDecisionLiteral();
+        }
+    }
 
-			if (nogoodset.getNogoodCount() != nogoodCount){
-				DBGLOG(DBG, "Learned something");
-			}else{
-				DBGLOG(DBG, "Did not learn anything");
+                                 // if set to true, the loop will run even if the interpretation is already complete
+    bool anotherIterationEvenIfComplete = false;
+    // (needed to check if newly added nogood (e.g. by external learners) are satisfied)
+    while (!complete()) {
+        anotherIterationEvenIfComplete = false;
+        DBGLOG(DBG, "Unit propagation");
+        if (!unitPropagation(violatedNogood)) {
+            if (currentDL == 0) {
+                // no answer set
+                return InterpretationPtr();
+            }
+            else {
+                if (currentDL > exhaustedDL) {
+                    // backtrack
+                    Nogood learnedNogood;
+                    int k = currentDL;
+                    analysis(violatedNogood, learnedNogood, k);
+                    recentConflicts.push_back(addNogoodAndUpdateWatchingStructures(learnedNogood));
+                                 // do not jump below exhausted level, this could lead to regeneration of models
+                    currentDL = k > exhaustedDL ? k : exhaustedDL;
+                    backtrack(currentDL);
+                }
+                else {
+                    flipDecisionLiteral();
+                }
+            }
+        }
+        else {
+            DBGLOG(DBG, "Calling external learner");
+            int nogoodCount = nogoodset.getNogoodCount();
+            BOOST_FOREACH (PropagatorCallback* cb, propagator) {
+                DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
+                cb->propagate(interpretation, factWasSet, changed);
+            }
+            // add new nogoods
+            int ngc = nogoodset.getNogoodCount();
+            loadAddedNogoods();
+            if (ngc != nogoodset.getNogoodCount()) anotherIterationEvenIfComplete = true;
+            changed->clear();
 
-				if (!complete()){
-					// guess
-					currentDL++;
-					ID guess = getGuess();
-					DBGLOG(DBG, "Guess: " << litToString(guess));
-					decisionLiteralOfDecisionLevel[currentDL] = guess;
-					setFact(guess, currentDL);
-				}
-			}
-		}
-		// add new nogoods
-		loadAddedNogoods();
-	}
-	DBGLOG(DBG, "Got model");
+            if (nogoodset.getNogoodCount() != nogoodCount) {
+                DBGLOG(DBG, "Learned something");
+            }
+            else {
+                DBGLOG(DBG, "Did not learn anything");
 
-	InterpretationPtr icp(new Interpretation(*interpretation));
-	return icp;
+                if (!complete()) {
+                    // guess
+                    currentDL++;
+                    ID guess = getGuess();
+                    DBGLOG(DBG, "Guess: " << litToString(guess));
+                    decisionLiteralOfDecisionLevel[currentDL] = guess;
+                    setFact(guess, currentDL);
+                }
+            }
+        }
+        // add new nogoods
+        loadAddedNogoods();
+    }
+    DBGLOG(DBG, "Got model");
+
+    InterpretationPtr icp(new Interpretation(*interpretation));
+    return icp;
 }
 
-void CDNLSolver::addNogood(Nogood ng){
-	nogoodsToAdd.addNogood(ng);
+
+void CDNLSolver::addNogood(Nogood ng)
+{
+    nogoodsToAdd.addNogood(ng);
 }
 
-std::vector<Nogood> CDNLSolver::getContradictoryNogoods(){
 
-	std::vector<Nogood> ngg;
-	BOOST_FOREACH (int idx, contradictoryNogoods){
-		ngg.push_back(nogoodset.getNogood(idx));
-	}
-	return ngg;
+std::vector<Nogood> CDNLSolver::getContradictoryNogoods()
+{
+
+    std::vector<Nogood> ngg;
+    BOOST_FOREACH (int idx, contradictoryNogoods) {
+        ngg.push_back(nogoodset.getNogood(idx));
+    }
+    return ngg;
 }
 
-Nogood CDNLSolver::getCause(IDAddress adr){
-	return nogoodset.getNogood(cause[adr]);
+
+Nogood CDNLSolver::getCause(IDAddress adr)
+{
+    return nogoodset.getNogood(cause[adr]);
 }
+
 
 DLVHEX_NAMESPACE_END

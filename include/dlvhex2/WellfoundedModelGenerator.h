@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   WellfoundedModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Model generator for eval units that allow a fixpoint calculation.
  *
  * Those units may contain external atoms at the input,
@@ -47,97 +47,96 @@ DLVHEX_NAMESPACE_BEGIN
 class WellfoundedModelGeneratorFactory;
 
 class WellfoundedModelGenerator:
-  public BaseModelGenerator,
-  public ostream_printable<WellfoundedModelGenerator>
+public BaseModelGenerator,
+public ostream_printable<WellfoundedModelGenerator>
 {
-  // types
-public:
-  typedef WellfoundedModelGeneratorFactory Factory;
+    // types
+    public:
+        typedef WellfoundedModelGeneratorFactory Factory;
 
-  // storage
-protected:
-  /** \brief Reference to the factory which created this model generator. */
-  Factory& factory;
+        // storage
+    protected:
+        /** \brief Reference to the factory which created this model generator. */
+        Factory& factory;
 
-  /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
-  ASPSolverManager::ResultsPtr currentResults;
+        /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
+        ASPSolverManager::ResultsPtr currentResults;
 
-  // members
-public:
-  /**
-   * \brief Constructor.
-   * @param factory Reference to the factory which created this model generator.
-   * @param input Input interpretation to this model generator.
-   */
-  WellfoundedModelGenerator(Factory& factory, InterpretationConstPtr input);
+        // members
+    public:
+        /**
+         * \brief Constructor.
+         * @param factory Reference to the factory which created this model generator.
+         * @param input Input interpretation to this model generator.
+         */
+        WellfoundedModelGenerator(Factory& factory, InterpretationConstPtr input);
 
-  /**
-   * \brief Destuctor.
-   */
-  virtual ~WellfoundedModelGenerator() {}
+        /**
+         * \brief Destuctor.
+         */
+        virtual ~WellfoundedModelGenerator() {}
 
-  // generate and return next model, return null after last model
-  virtual InterpretationPtr generateNextModel();
+        // generate and return next model, return null after last model
+        virtual InterpretationPtr generateNextModel();
 };
 
 /** \brief Factory for the WellfoundedModelGenerator. */
 class WellfoundedModelGeneratorFactory:
-  public BaseModelGeneratorFactory,
-  public ostream_printable<WellfoundedModelGeneratorFactory>
+public BaseModelGeneratorFactory,
+public ostream_printable<WellfoundedModelGeneratorFactory>
 {
-  // types
-public:
-  friend class WellfoundedModelGenerator;
-  typedef ComponentGraph::ComponentInfo ComponentInfo;
+    // types
+    public:
+        friend class WellfoundedModelGenerator;
+        typedef ComponentGraph::ComponentInfo ComponentInfo;
 
-  // storage
-protected:
-  /** \brief Defines the solver to be used for external evaluation. */
-  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-  /** \brief ProgramCtx. */
-  ProgramCtx& ctx;
-  /** \brief Outer eatoms of the component. */
-  std::vector<ID> outerEatoms;
-  /** \brief Inner eatoms of the component. */
-  std::vector<ID> innerEatoms;
-  /** \brief Original IDB containing eatoms where all inputs are known.
-    *
-    * Auxiliary input rules of these eatoms must be in predecessor unit!
-    */
-  std::vector<ID> idb;
-  /** \brief Rewritten IDB (containing replacements for eatoms).
-    *
-    * x stands for transformed. */
-  std::vector<ID> xidb;
+        // storage
+    protected:
+        /** \brief Defines the solver to be used for external evaluation. */
+        ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+        /** \brief ProgramCtx. */
+        ProgramCtx& ctx;
+        /** \brief Outer eatoms of the component. */
+        std::vector<ID> outerEatoms;
+        /** \brief Inner eatoms of the component. */
+        std::vector<ID> innerEatoms;
+        /** \brief Original IDB containing eatoms where all inputs are known.
+         *
+         * Auxiliary input rules of these eatoms must be in predecessor unit!
+         */
+        std::vector<ID> idb;
+        /** \brief Rewritten IDB (containing replacements for eatoms).
+         *
+         * x stands for transformed. */
+        std::vector<ID> xidb;
 
-  // methods
-public:
-  /** \brief Constructor.
-    *
-    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
-    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
-    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
-    */
-  WellfoundedModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  /** \brief Destructor. */
-  virtual ~WellfoundedModelGeneratorFactory() {}
+        // methods
+    public:
+        /** \brief Constructor.
+         *
+         * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+         * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+         * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+         */
+        WellfoundedModelGeneratorFactory(
+            ProgramCtx& ctx, const ComponentInfo& ci,
+            ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+        /** \brief Destructor. */
+        virtual ~WellfoundedModelGeneratorFactory() {}
 
-  /**
-   * \brief Instantiates a model generator for the current component.
-   * @param input Input interpretation to this model generator.
-   * @return Model generator.
-   */
-  virtual ModelGeneratorPtr createModelGenerator(
-    InterpretationConstPtr input)
-    { return ModelGeneratorPtr(new WellfoundedModelGenerator(*this, input)); }
+        /**
+         * \brief Instantiates a model generator for the current component.
+         * @param input Input interpretation to this model generator.
+         * @return Model generator.
+         */
+        virtual ModelGeneratorPtr createModelGenerator(
+            InterpretationConstPtr input)
+            { return ModelGeneratorPtr(new WellfoundedModelGenerator(*this, input)); }
 
-  /** \brief Prints information about the model generator for debugging purposes.
-    * @param o Stream to print to. */
-  virtual std::ostream& print(std::ostream& o) const;
+        /** \brief Prints information about the model generator for debugging purposes.
+         * @param o Stream to print to. */
+        virtual std::ostream& print(std::ostream& o) const;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // WELLFOUNDED_MODEL_GENERATOR_HPP_INCLUDED__09112010
+#endif                           // WELLFOUNDED_MODEL_GENERATOR_HPP_INCLUDED__09112010

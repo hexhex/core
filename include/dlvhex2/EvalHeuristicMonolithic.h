@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   EvalHeuristicMonolithic.h
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Implementation of a trivial evaluation heuristic which puts everything into one unit.
  */
 
@@ -39,21 +39,20 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Creates a single evaluation unit for the whole program. */
 class EvalHeuristicMonolithic:
-  public EvalHeuristicBase<EvalGraphBuilder>
+public EvalHeuristicBase<EvalGraphBuilder>
 {
-  // types
-public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+    // types
+    public:
+        typedef EvalHeuristicBase<EvalGraphBuilder> Base;
 
-  // methods
-public:
-  /** \brief Constructor. */
-  EvalHeuristicMonolithic();
-  /** \brief Destructor. */
-  virtual ~EvalHeuristicMonolithic();
-  virtual void build(EvalGraphBuilder& builder);
+        // methods
+    public:
+        /** \brief Constructor. */
+        EvalHeuristicMonolithic();
+        /** \brief Destructor. */
+        virtual ~EvalHeuristicMonolithic();
+        virtual void build(EvalGraphBuilder& builder);
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // EVAL_HEURISTIC_TRIVIAL_HPP_INCLUDED__15112010
+#endif                           // EVAL_HEURISTIC_TRIVIAL_HPP_INCLUDED__15112010

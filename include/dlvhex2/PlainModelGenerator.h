@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   PlainModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Model generator for the "Plain" type of components.
  */
 
@@ -54,97 +54,96 @@ class PlainModelGeneratorFactory;
 
 /** \brief A model generator for components without inner (i.e. non-cyclic) external atoms (outer external atoms are allowed). */
 class PlainModelGenerator:
-  public BaseModelGenerator,
-  public ostream_printable<PlainModelGenerator>
+public BaseModelGenerator,
+public ostream_printable<PlainModelGenerator>
 {
-  // types
-public:
-  typedef PlainModelGeneratorFactory Factory;
+    // types
+    public:
+        typedef PlainModelGeneratorFactory Factory;
 
-  // storage
-protected:
-  /** \brief Reference to the factory which created this model generator. */
-  Factory& factory;
+        // storage
+    protected:
+        /** \brief Reference to the factory which created this model generator. */
+        Factory& factory;
 
-  /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
-  InterpretationConstPtr postprocessedInput;
-  /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
-  ASPSolverManager::ResultsPtr currentResults;
+        /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
+        InterpretationConstPtr postprocessedInput;
+        /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
+        ASPSolverManager::ResultsPtr currentResults;
 
-  // members
-public:
-  /**
-   * \brief Constructor.
-   * @param factory Reference to the factory which created this model generator.
-   * @param input Input interpretation to this model generator.
-   */
-  PlainModelGenerator(Factory& factory, InterpretationConstPtr input);
+        // members
+    public:
+        /**
+         * \brief Constructor.
+         * @param factory Reference to the factory which created this model generator.
+         * @param input Input interpretation to this model generator.
+         */
+        PlainModelGenerator(Factory& factory, InterpretationConstPtr input);
 
-  /**
-   * \brief Destuctor.
-   */
-  virtual ~PlainModelGenerator() {}
+        /**
+         * \brief Destuctor.
+         */
+        virtual ~PlainModelGenerator() {}
 
-  // generate and return next model, return null after last model
-  virtual InterpretationPtr generateNextModel();
+        // generate and return next model, return null after last model
+        virtual InterpretationPtr generateNextModel();
 };
 
 /** \brief Factory for the PlainModelGenerator. */
 class PlainModelGeneratorFactory:
-  public BaseModelGeneratorFactory,
-  public ostream_printable<PlainModelGeneratorFactory>
+public BaseModelGeneratorFactory,
+public ostream_printable<PlainModelGeneratorFactory>
 {
-  // types
-public:
-  friend class PlainModelGenerator;
-  typedef ComponentGraph::ComponentInfo ComponentInfo;
+    // types
+    public:
+        friend class PlainModelGenerator;
+        typedef ComponentGraph::ComponentInfo ComponentInfo;
 
-  // storage
-protected:
-  /** \brief Defines the solver to be used for external evaluation. */
-  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-  /** \brief ProgramCtx. */
-  ProgramCtx& ctx;
-  /** \brief All external atoms of the component. */
-  std::vector<ID> eatoms;
-  /** \brief Original IDB containing eatoms where all inputs are known.
-    *
-    * Auxiliary input rules of these eatoms must be in predecessor unit!
-    */
-  std::vector<ID> idb;
-  /** \brief Rewritten idb (containing replacements for eatoms).
-    *
-    * x stands for transformed. */
-  std::vector<ID> xidb;
+        // storage
+    protected:
+        /** \brief Defines the solver to be used for external evaluation. */
+        ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+        /** \brief ProgramCtx. */
+        ProgramCtx& ctx;
+        /** \brief All external atoms of the component. */
+        std::vector<ID> eatoms;
+        /** \brief Original IDB containing eatoms where all inputs are known.
+         *
+         * Auxiliary input rules of these eatoms must be in predecessor unit!
+         */
+        std::vector<ID> idb;
+        /** \brief Rewritten idb (containing replacements for eatoms).
+         *
+         * x stands for transformed. */
+        std::vector<ID> xidb;
 
-  // methods
-public:
-  /** \brief Constructor.
-    *
-    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
-    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
-    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
-    */
-  PlainModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  /** \brief Destructor. */
-  virtual ~PlainModelGeneratorFactory() {}
+        // methods
+    public:
+        /** \brief Constructor.
+         *
+         * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+         * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+         * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+         */
+        PlainModelGeneratorFactory(
+            ProgramCtx& ctx, const ComponentInfo& ci,
+            ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+        /** \brief Destructor. */
+        virtual ~PlainModelGeneratorFactory() {}
 
-  /**
-   * \brief Instantiates a model generator for the current component.
-   * @param input Input interpretation to this model generator.
-   * @return Model generator.
-   */
-  virtual ModelGeneratorPtr createModelGenerator(
-  InterpretationConstPtr input)
-    { return ModelGeneratorPtr(new PlainModelGenerator(*this, input)); }
+        /**
+         * \brief Instantiates a model generator for the current component.
+         * @param input Input interpretation to this model generator.
+         * @return Model generator.
+         */
+        virtual ModelGeneratorPtr createModelGenerator(
+            InterpretationConstPtr input)
+            { return ModelGeneratorPtr(new PlainModelGenerator(*this, input)); }
 
-  /** \brief Prints information about the model generator for debugging purposes.
-    * @param o Stream to print to. */
-  virtual std::ostream& print(std::ostream& o) const;
+        /** \brief Prints information about the model generator for debugging purposes.
+         * @param o Stream to print to. */
+        virtual std::ostream& print(std::ostream& o) const;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
+#endif                           // PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010

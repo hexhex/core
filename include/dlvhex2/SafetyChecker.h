@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file SafetyChecker.h
  * @author Roman Schindlauer
@@ -33,7 +32,6 @@
  *
  *
  */
-
 
 #ifndef _DLVHEX_SAFETYCHECKER_H
 #define _DLVHEX_SAFETYCHECKER_H
@@ -49,65 +47,60 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT SafetyCheckerBase
 {
-protected:
-  /** \brief ProgramCtx. */
-  const ProgramCtx& ctx;
-  
-public:
-  /** \brief Constructor.
-    * @param ctx See SafetyCheckerBase::ctx. */
-  SafetyCheckerBase(const ProgramCtx& ctx);
-  /** \brief Destructor. */
-  virtual ~SafetyCheckerBase();
+    protected:
+        /** \brief ProgramCtx. */
+        const ProgramCtx& ctx;
 
-public:
-  
-  /** \brief operator() does the safety check. */
-  virtual void
-  operator() () const throw (SyntaxError) = 0;
+    public:
+        /** \brief Constructor.
+         * @param ctx See SafetyCheckerBase::ctx. */
+        SafetyCheckerBase(const ProgramCtx& ctx);
+        /** \brief Destructor. */
+        virtual ~SafetyCheckerBase();
+
+    public:
+
+        /** \brief operator() does the safety check. */
+        virtual void
+            operator() () const throw (SyntaxError) = 0;
 };
-
 
 /**
  * @brief Ordinary safety checker class.
  */
 class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
 {
-public:
-  /** \brief Constructor.
-    * @param ctx See SafetyCheckerBase::ctx. */
-  SafetyChecker(const ProgramCtx& ctx);
-  /** \brief Destructor. */
-  virtual ~SafetyChecker();
+    public:
+        /** \brief Constructor.
+         * @param ctx See SafetyCheckerBase::ctx. */
+        SafetyChecker(const ProgramCtx& ctx);
+        /** \brief Destructor. */
+        virtual ~SafetyChecker();
 
-  virtual void
-  operator() () const throw (SyntaxError);
+        virtual void
+            operator() () const throw (SyntaxError);
 
-  Tuple checkSafety(bool throwOnUnsafeVariables) const throw (SyntaxError);
+        Tuple checkSafety(bool throwOnUnsafeVariables) const throw (SyntaxError);
 };
-
 
 /**
  * @brief Strong safety checker class.
  */
 class DLVHEX_EXPORT StrongSafetyChecker : public SafetyCheckerBase
 {
-public:
-  /** \brief Constructor.
-    * @param ctx See SafetyCheckerBase::ctx. */
-  StrongSafetyChecker(const ProgramCtx& ctx);
-  /** \brief Destructor. */
-  virtual ~StrongSafetyChecker();
-  
-  virtual void
-  operator() () const throw (SyntaxError);
+    public:
+        /** \brief Constructor.
+         * @param ctx See SafetyCheckerBase::ctx. */
+        StrongSafetyChecker(const ProgramCtx& ctx);
+        /** \brief Destructor. */
+        virtual ~StrongSafetyChecker();
+
+        virtual void
+            operator() () const throw (SyntaxError);
 };
 
-
 DLVHEX_NAMESPACE_END
-
-#endif /* _DLVHEX_SAFETYCHECKER_H_ */
-
+#endif                           /* _DLVHEX_SAFETYCHECKER_H_ */
 
 // Local Variables:
 // mode: C++

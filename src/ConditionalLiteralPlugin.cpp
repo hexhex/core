@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 //#define BOOST_SPIRIT_DEBUG
 
@@ -57,265 +57,265 @@ namespace spirit = boost::spirit;
 namespace qi = boost::spirit::qi;
 
 ConditionalLiteralPlugin::CtxData::CtxData():
-	enabled(false)
+enabled(false)
 {
 }
 
+
 ConditionalLiteralPlugin::ConditionalLiteralPlugin():
-	PluginInterface()
+PluginInterface()
 {
-	setNameVersion("dlvhex-conditionalLiteralPlugin[internal]", 2, 0, 0);
+    setNameVersion("dlvhex-conditionalLiteralPlugin[internal]", 2, 0, 0);
 }
+
 
 ConditionalLiteralPlugin::~ConditionalLiteralPlugin()
 {
 }
 
+
 // output help message for this plugin
 void ConditionalLiteralPlugin::printUsage(std::ostream& o) const
 {
-  //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --conditinal-enable[=true,false]" << std::endl
-          << "                      Enable conditional literals (default is enabled)." << std::endl;
+    //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+    o << "     --conditinal-enable[=true,false]" << std::endl
+        << "                      Enable conditional literals (default is enabled)." << std::endl;
 }
+
 
 // accepted options: --choice-enable
 //
 // processes options for this plugin, and removes recognized options from pluginOptions
 // (do not free the pointers, the const char* directly come from argv)
 void ConditionalLiteralPlugin::processOptions(
-		std::list<const char*>& pluginOptions,
-		ProgramCtx& ctx)
+std::list<const char*>& pluginOptions,
+ProgramCtx& ctx)
 {
-	ConditionalLiteralPlugin::CtxData& ctxdata = ctx.getPluginData<ConditionalLiteralPlugin>();
-	ctxdata.enabled = true;
+    ConditionalLiteralPlugin::CtxData& ctxdata = ctx.getPluginData<ConditionalLiteralPlugin>();
+    ctxdata.enabled = true;
 
-	typedef std::list<const char*>::iterator Iterator;
-	Iterator it;
-	WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
-	it = pluginOptions.begin();
-	while( it != pluginOptions.end() )
-	{
-		bool processed = false;
-		const std::string str(*it);
-		if( boost::starts_with(str, "--conditional-enable" ) )
-		{
-			std::string m = str.substr(std::string("--conditional-enable").length());
-			if (m == "" || m == "=true"){
-				ctxdata.enabled = true;
-			}else if (m == "=false"){
-				ctxdata.enabled = false;
-			}else{
-				std::stringstream ss;
-				ss << "Unknown --conditional-enable option: " << m;
-				throw PluginError(ss.str());
-			}
-			processed = true;
-		}
+    typedef std::list<const char*>::iterator Iterator;
+    Iterator it;
+    WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
+        it = pluginOptions.begin();
+    while( it != pluginOptions.end() ) {
+        bool processed = false;
+        const std::string str(*it);
+        if( boost::starts_with(str, "--conditional-enable" ) ) {
+            std::string m = str.substr(std::string("--conditional-enable").length());
+            if (m == "" || m == "=true") {
+                ctxdata.enabled = true;
+            }
+            else if (m == "=false") {
+                ctxdata.enabled = false;
+            }
+            else {
+                std::stringstream ss;
+                ss << "Unknown --conditional-enable option: " << m;
+                throw PluginError(ss.str());
+            }
+            processed = true;
+        }
 
-		if( processed )
-		{
-			// return value of erase: element after it, maybe end()
-			DBGLOG(DBG,"ConditionalLiteralPlugin successfully processed option " << str);
-			it = pluginOptions.erase(it);
-		}
-		else
-		{
-			it++;
-		}
-	}
+        if( processed ) {
+            // return value of erase: element after it, maybe end()
+            DBGLOG(DBG,"ConditionalLiteralPlugin successfully processed option " << str);
+            it = pluginOptions.erase(it);
+        }
+        else {
+            it++;
+        }
+    }
 }
-	
+
+
 class ConditionalParserModuleSemantics:
-	public HexGrammarSemantics
+public HexGrammarSemantics
 {
-public:
-	int varnr;
-	ConditionalLiteralPlugin::CtxData& ctxdata;
+    public:
+        int varnr;
+        ConditionalLiteralPlugin::CtxData& ctxdata;
 
-public:
-	ConditionalParserModuleSemantics(ProgramCtx& ctx):
-		HexGrammarSemantics(ctx),
-		varnr(0),
-		ctxdata(ctx.getPluginData<ConditionalLiteralPlugin>())
-	{
-	}
+    public:
+        ConditionalParserModuleSemantics(ProgramCtx& ctx):
+        HexGrammarSemantics(ctx),
+            varnr(0),
+        ctxdata(ctx.getPluginData<ConditionalLiteralPlugin>()) {
+        }
 
-	// use SemanticActionBase to redirect semantic action call into globally
-	// specializable sem<T> struct space
-	struct conditionalLieral:
-		SemanticActionBase<ConditionalParserModuleSemantics, ID, conditionalLieral>
-	{
-		conditionalLieral(ConditionalParserModuleSemantics& mgr):
-			conditionalLieral::base_type(mgr)
-		{
-		}
-	};
+        // use SemanticActionBase to redirect semantic action call into globally
+        // specializable sem<T> struct space
+        struct conditionalLieral:
+        SemanticActionBase<ConditionalParserModuleSemantics, ID, conditionalLieral>
+        {
+            conditionalLieral(ConditionalParserModuleSemantics& mgr):
+            conditionalLieral::base_type(mgr) {
+            }
+        };
 };
 
 template<>
 struct sem<ConditionalParserModuleSemantics::conditionalLieral>
 {
-  void operator()(
-    ConditionalParserModuleSemantics& mgr,
-		const boost::fusion::vector2<
-		  	dlvhex::ID,
-			boost::optional<std::vector<dlvhex::ID> >
-		>& source,
-    ID& target)
-  {
-	RegistryPtr reg = mgr.ctx.registry();
+    void operator()(
+        ConditionalParserModuleSemantics& mgr,
+        const boost::fusion::vector2<
+        dlvhex::ID,
+        boost::optional<std::vector<dlvhex::ID> >
+        >& source,
+    ID& target) {
+        RegistryPtr reg = mgr.ctx.registry();
 
-	ID derivedAtomID = boost::fusion::at_c<0>(source);
+        ID derivedAtomID = boost::fusion::at_c<0>(source);
 
-	Rule condRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+        Rule condRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 
-	// count instances of the conditional part which do not fulfill the derived part; this number must be 0
-	DBGLOG(DBG, "Creating aggregate #count{ ... : naf derived(...), condition(...) }");
-	AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
-	cnt.tuple[0] = ID::termFromInteger(0);
-	cnt.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
-	cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
-	cnt.tuple[3] = ID_FAIL;
-	cnt.tuple[4] = ID_FAIL;
-	ID cntID;
-	std::set<ID> vars;
-	reg->getVariablesInID(derivedAtomID, vars);
-	cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
-	if (!!boost::fusion::at_c<1>(source)) cnt.literals = boost::fusion::at_c<1>(source).get();
-	cnt.literals.push_back(ID::nafLiteralFromAtom(derivedAtomID));
-	cntID = reg->aatoms.storeAndGetID(cnt);
-	DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
-	
-	target = cntID;
-  }
+        // count instances of the conditional part which do not fulfill the derived part; this number must be 0
+        DBGLOG(DBG, "Creating aggregate #count{ ... : naf derived(...), condition(...) }");
+        AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+        cnt.tuple[0] = ID::termFromInteger(0);
+        cnt.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
+        cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
+        cnt.tuple[3] = ID_FAIL;
+        cnt.tuple[4] = ID_FAIL;
+        ID cntID;
+        std::set<ID> vars;
+        reg->getVariablesInID(derivedAtomID, vars);
+        cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
+        if (!!boost::fusion::at_c<1>(source)) cnt.literals = boost::fusion::at_c<1>(source).get();
+        cnt.literals.push_back(ID::nafLiteralFromAtom(derivedAtomID));
+        cntID = reg->aatoms.storeAndGetID(cnt);
+        DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
+
+        target = cntID;
+    }
 };
 
 namespace
 {
 
-template<typename Iterator, typename Skipper>
-struct ConditionalParserModuleGrammarBase:
-	// we derive from the original hex grammar
-	// -> we can reuse its rules
-	public HexGrammarBase<Iterator, Skipper>
-{
-	typedef HexGrammarBase<Iterator, Skipper> Base;
+    template<typename Iterator, typename Skipper>
+        struct ConditionalParserModuleGrammarBase:
+    // we derive from the original hex grammar
+    // -> we can reuse its rules
+    public HexGrammarBase<Iterator, Skipper>
+    {
+        typedef HexGrammarBase<Iterator, Skipper> Base;
 
-	ConditionalParserModuleSemantics& sem;
+        ConditionalParserModuleSemantics& sem;
 
-	ConditionalParserModuleGrammarBase(ConditionalParserModuleSemantics& sem):
-		Base(sem),
-		sem(sem)
-	{
-		typedef ConditionalParserModuleSemantics Sem;
+        ConditionalParserModuleGrammarBase(ConditionalParserModuleSemantics& sem):
+        Base(sem),
+        sem(sem) {
+            typedef ConditionalParserModuleSemantics Sem;
 
-		conditionalLieral
-			// The gringo syntax for conditional literals is as follows:
-			//		p(X1, ..., Xn) : l1(...), ..., ln(...)
-			// where l1, ..., ln are possibly default-negated literals.
-			// Note that the literals in the condition are comma-separated, i.e., all l1(...), ..., ln(...) belong to the condition.
-			// There overall conditional literal is terminated by semicolon.
-			// Therefore, the HEX-syntax was extended such that body literals can be separated either by comma or by semicolon,
-			// where the parser of conditional literals should greedily process literals until a semicolon appears.
-			// Examples:
-			// 1. x :- y : u, w; t.
-			//    is interpreted such that the head contains the atom x, and the body contains the conditional literal y:u,w (derived atom y, conditions u and w) and the ordinary literal t.
-			// 2. x :- r, s; t.
-			//    is interpreted such that the head contains the atom x, and the body contains literals r, s and t.
-			//    Since there is no conditional literal in the body, comma and semicolon have the same semantics and separate the literals of the body.
-			=  (
-					Base::classicalAtom >> qi::lit(':') >> (Base::bodyLiteral % qi::lit(',')) > qi::eps
-				) [ Sem::conditionalLieral(sem) ];
+            conditionalLieral
+            // The gringo syntax for conditional literals is as follows:
+            //		p(X1, ..., Xn) : l1(...), ..., ln(...)
+            // where l1, ..., ln are possibly default-negated literals.
+            // Note that the literals in the condition are comma-separated, i.e., all l1(...), ..., ln(...) belong to the condition.
+            // There overall conditional literal is terminated by semicolon.
+            // Therefore, the HEX-syntax was extended such that body literals can be separated either by comma or by semicolon,
+            // where the parser of conditional literals should greedily process literals until a semicolon appears.
+            // Examples:
+            // 1. x :- y : u, w; t.
+            //    is interpreted such that the head contains the atom x, and the body contains the conditional literal y:u,w (derived atom y, conditions u and w) and the ordinary literal t.
+            // 2. x :- r, s; t.
+            //    is interpreted such that the head contains the atom x, and the body contains literals r, s and t.
+            //    Since there is no conditional literal in the body, comma and semicolon have the same semantics and separate the literals of the body.
+                =  (
+                Base::classicalAtom >> qi::lit(':') >> (Base::bodyLiteral % qi::lit(',')) > qi::eps
+                ) [ Sem::conditionalLieral(sem) ];
 
-		#ifdef BOOST_SPIRIT_DEBUG
-		BOOST_SPIRIT_DEBUG_NODE(conditionalLieral);
-		#endif
-	}
+            #ifdef BOOST_SPIRIT_DEBUG
+            BOOST_SPIRIT_DEBUG_NODE(conditionalLieral);
+            #endif
+        }
 
-	qi::rule<Iterator, ID(), Skipper> conditionalLieral;
-};
+        qi::rule<Iterator, ID(), Skipper> conditionalLieral;
+    };
 
-struct ConditionalParserModuleGrammar:
-  ConditionalParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
-	// required for interface
-  // note: HexParserModuleGrammar =
-	//       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
-	HexParserModuleGrammar
-{
-	typedef ConditionalParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
-  typedef HexParserModuleGrammar QiBase;
+    struct ConditionalParserModuleGrammar:
+    ConditionalParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
+    // required for interface
+    // note: HexParserModuleGrammar =
+    //       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
+        HexParserModuleGrammar
+    {
+        typedef ConditionalParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
+        typedef HexParserModuleGrammar QiBase;
 
-  ConditionalParserModuleGrammar(ConditionalParserModuleSemantics& sem):
-    GrammarBase(sem),
-    QiBase(GrammarBase::conditionalLieral)
-  {
-  }
-};
-typedef boost::shared_ptr<ConditionalParserModuleGrammar>
-	ConditionalParserModuleGrammarPtr;
+        ConditionalParserModuleGrammar(ConditionalParserModuleSemantics& sem):
+        GrammarBase(sem),
+        QiBase(GrammarBase::conditionalLieral) {
+        }
+    };
+    typedef boost::shared_ptr<ConditionalParserModuleGrammar>
+        ConditionalParserModuleGrammarPtr;
 
-// moduletype = HexParserModule::BODYATOM
-template<enum HexParserModule::Type moduletype>
-class ConditionalParserModule:
-	public HexParserModule
-{
-public:
-	// the semantics manager is stored/owned by this module!
-	ConditionalParserModuleSemantics sem;
-	// we also keep a shared ptr to the grammar module here
-	ConditionalParserModuleGrammarPtr grammarModule;
+    // moduletype = HexParserModule::BODYATOM
+    template<enum HexParserModule::Type moduletype>
+    class ConditionalParserModule:
+    public HexParserModule
+    {
+        public:
+            // the semantics manager is stored/owned by this module!
+            ConditionalParserModuleSemantics sem;
+            // we also keep a shared ptr to the grammar module here
+            ConditionalParserModuleGrammarPtr grammarModule;
 
-	ConditionalParserModule(ProgramCtx& ctx):
-		HexParserModule(moduletype),
-		sem(ctx)
-	{
-		LOG(INFO,"constructed ConditionalParserModule");
-	}
+            ConditionalParserModule(ProgramCtx& ctx):
+            HexParserModule(moduletype),
+            sem(ctx) {
+                LOG(INFO,"constructed ConditionalParserModule");
+            }
 
-	virtual HexParserModuleGrammarPtr createGrammarModule()
-	{
-		assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
-		grammarModule.reset(new ConditionalParserModuleGrammar(sem));
-		LOG(INFO,"created ConditionalParserModuleGrammar");
-		return grammarModule;
-	}
-};
+            virtual HexParserModuleGrammarPtr createGrammarModule() {
+                assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
+                grammarModule.reset(new ConditionalParserModuleGrammar(sem));
+                LOG(INFO,"created ConditionalParserModuleGrammar");
+                return grammarModule;
+            }
+    };
 
-} // anonymous namespace
+}                                // anonymous namespace
+
 
 // create parser modules that extend and the basic hex grammar
 // this parser also stores the query information into the plugin
 std::vector<HexParserModulePtr>
 ConditionalLiteralPlugin::createParserModules(ProgramCtx& ctx)
 {
-	DBGLOG(DBG,"ConditionalLiteralPlugin::createParserModules()");
-	std::vector<HexParserModulePtr> ret;
+    DBGLOG(DBG,"ConditionalLiteralPlugin::createParserModules()");
+    std::vector<HexParserModulePtr> ret;
 
-	ConditionalLiteralPlugin::CtxData& ctxdata = ctx.getPluginData<ConditionalLiteralPlugin>();
-	if( ctxdata.enabled )
-	{
-		ret.push_back(HexParserModulePtr(
-					new ConditionalParserModule<HexParserModule::BODYATOM>(ctx)));
-	}
+    ConditionalLiteralPlugin::CtxData& ctxdata = ctx.getPluginData<ConditionalLiteralPlugin>();
+    if( ctxdata.enabled ) {
+        ret.push_back(HexParserModulePtr(
+            new ConditionalParserModule<HexParserModule::BODYATOM>(ctx)));
+    }
 
-	return ret;
+    return ret;
 }
 
-std::vector<PluginAtomPtr> ConditionalLiteralPlugin::createAtoms(ProgramCtx& ctx) const{
-	std::vector<PluginAtomPtr> ret;
-	// we don't have external atoms, only a parer plugin and a rewriter
-	return ret;
+
+std::vector<PluginAtomPtr> ConditionalLiteralPlugin::createAtoms(ProgramCtx& ctx) const
+{
+    std::vector<PluginAtomPtr> ret;
+    // we don't have external atoms, only a parer plugin and a rewriter
+    return ret;
 }
+
 
 void ConditionalLiteralPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
-	ConditionalLiteralPlugin::CtxData& ctxdata = ctx.getPluginData<ConditionalLiteralPlugin>();
-	if( !ctxdata.enabled )
-		return;
+    ConditionalLiteralPlugin::CtxData& ctxdata = ctx.getPluginData<ConditionalLiteralPlugin>();
+    if( !ctxdata.enabled )
+        return;
 
-	RegistryPtr reg = ctx.registry();
+    RegistryPtr reg = ctx.registry();
 }
+
 
 DLVHEX_NAMESPACE_END
 
@@ -328,9 +328,8 @@ ConditionalLiteralPlugin theConditionalLiteralPlugin;
 extern "C"
 void * PLUGINIMPORTFUNCTION()
 {
-	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theConditionalLiteralPlugin);
+    return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theConditionalLiteralPlugin);
 }
-
 #endif
 /* vim: set noet sw=2 ts=2 tw=80: */
 

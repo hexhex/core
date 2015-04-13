@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   PlainAuxPrinter.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Helper for printing auxiliary objects for the user.
  */
 
@@ -39,25 +39,23 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Prints auxiliary atoms in a generic fashion of kind aux_XXX(...). */
 class PlainAuxPrinter:
-  public AuxPrinter
+public AuxPrinter
 {
-public:
-  /** \brief Constructor.
-    * @param reg Registry to use for resolving IDs. */
-  PlainAuxPrinter(RegistryPtr reg);
+    public:
+        /** \brief Constructor.
+         * @param reg Registry to use for resolving IDs. */
+        PlainAuxPrinter(RegistryPtr reg);
 
-  /** \brief Print an ID.
-    * @param out Stream to print \p id to.
-    * @param id ID of an auxiliary atom.
-    * @param prefix String to print before \p id.
-    * @return True. */
-  virtual bool print(std::ostream& out, ID id, const std::string& prefix) const;
-protected:
-  /** \brief reg Registry to use for resolving IDs. */
-  RegistryPtr reg;
+        /** \brief Print an ID.
+         * @param out Stream to print \p id to.
+         * @param id ID of an auxiliary atom.
+         * @param prefix String to print before \p id.
+         * @return True. */
+        virtual bool print(std::ostream& out, ID id, const std::string& prefix) const;
+    protected:
+        /** \brief reg Registry to use for resolving IDs. */
+        RegistryPtr reg;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
-
+#endif                           // PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011

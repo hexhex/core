@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -40,64 +40,63 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Implements strong negation by rewriting it to dedicated auxiliary predicates. */
 class StrongNegationPlugin:
-  public PluginInterface
+public PluginInterface
 {
-public:
-  // stored in ProgramCtx, accessed using getPluginData<StrongNegationPlugin>()
-  class CtxData:
+    public:
+        // stored in ProgramCtx, accessed using getPluginData<StrongNegationPlugin>()
+        class CtxData:
     public PluginData
-  {
-  public:
-    /** \brief Stores if plugin is enabled. */
-    bool enabled;
+    {
+        public:
+            /** \brief Stores if plugin is enabled. */
+            bool enabled;
 
-    // predicate constants which were encountered in negative form and their arities (the same predicate may occur with multiple arities)
-    typedef std::map<ID,std::set<unsigned> > PredicateArityMap;
-    /** \brief Stores for each predicate its arity. */
-    PredicateArityMap negPredicateArities;
+            // predicate constants which were encountered in negative form and their arities (the same predicate may occur with multiple arities)
+            typedef std::map<ID,std::set<unsigned> > PredicateArityMap;
+            /** \brief Stores for each predicate its arity. */
+            PredicateArityMap negPredicateArities;
 
-    // aux predicate constants and their positive counterparts
-    typedef std::map<ID,ID> NegToPosMap;
-    /** \brief Stores for each strong negation auxiliary its positive counterpart. */
-    NegToPosMap negToPos;
-    
-    /** \brief Masks all strong negation auxiliary atoms.
-      *
-      * For fast detection whether an ID is this plugin's responsitility to display.
-      */
-    PredicateMask myAuxiliaryPredicateMask;
+            // aux predicate constants and their positive counterparts
+            typedef std::map<ID,ID> NegToPosMap;
+            /** \brief Stores for each strong negation auxiliary its positive counterpart. */
+            NegToPosMap negToPos;
 
-    CtxData();
-    virtual ~CtxData() {};
-  };
+            /** \brief Masks all strong negation auxiliary atoms.
+             *
+             * For fast detection whether an ID is this plugin's responsitility to display.
+             */
+            PredicateMask myAuxiliaryPredicateMask;
 
-public:
-  /** \brief Constructor. */
-  StrongNegationPlugin();
-  /** \brief Destructor. */
-  virtual ~StrongNegationPlugin();
+            CtxData();
+            virtual ~CtxData() {};
+    };
 
-	// output help message for this plugin
-	virtual void printUsage(std::ostream& o) const;
+    public:
+        /** \brief Constructor. */
+        StrongNegationPlugin();
+        /** \brief Destructor. */
+        virtual ~StrongNegationPlugin();
 
-  // accepted options: --strongnegation-enable
-  //
-	// processes options for this plugin, and removes recognized options from pluginOptions
-  // (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+        // output help message for this plugin
+        virtual void printUsage(std::ostream& o) const;
 
-  // create parser modules that extend and the basic hex grammar
-  virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
+        // accepted options: --strongnegation-enable
+        //
+        // processes options for this plugin, and removes recognized options from pluginOptions
+        // (do not free the pointers, the const char* directly come from argv)
+        virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // rewrite program by adding auxiliary constraints
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+        // create parser modules that extend and the basic hex grammar
+        virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
-  // change model callback (print auxiliaries as negative atoms)
-  virtual void setupProgramCtx(ProgramCtx&);
+        // rewrite program by adding auxiliary constraints
+        virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-  // no atoms!
+        // change model callback (print auxiliaries as negative atoms)
+        virtual void setupProgramCtx(ProgramCtx&);
+
+        // no atoms!
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif

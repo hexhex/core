@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   EvalHeuristicFromFile.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Evaluation heuristic that uses collapse commands from given file.
  */
 
@@ -39,27 +39,26 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Creates an evaluation graph based on a specification in a file. */
 class EvalHeuristicFromFile:
-  public EvalHeuristicBase<EvalGraphBuilder>
+public EvalHeuristicBase<EvalGraphBuilder>
 {
-  // types
-public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+    // types
+    public:
+        typedef EvalHeuristicBase<EvalGraphBuilder> Base;
 
-  // methods
-public:
-  /** \brief Constructor.
-    * @param fname File to read the evaluation graph from. */
-  EvalHeuristicFromFile(const std::string& fname);
-  /** \brief Destructor. */
-  virtual ~EvalHeuristicFromFile();
-  virtual void build(EvalGraphBuilder& builder);
+        // methods
+    public:
+        /** \brief Constructor.
+         * @param fname File to read the evaluation graph from. */
+        EvalHeuristicFromFile(const std::string& fname);
+        /** \brief Destructor. */
+        virtual ~EvalHeuristicFromFile();
+        virtual void build(EvalGraphBuilder& builder);
 
-  // data
-protected:
-  /** \brief Filename the evaluation graph was read from. */
-  std::string fname;
+        // data
+    protected:
+        /** \brief Filename the evaluation graph was read from. */
+        std::string fname;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // EVAL_HEURISTIC_EASY_HPP_INCLUDED__16112010
+#endif                           // EVAL_HEURISTIC_EASY_HPP_INCLUDED__16112010

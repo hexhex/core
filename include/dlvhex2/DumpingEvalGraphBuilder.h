@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   DumpingEvalGraphBuilder.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Evaluation Graph builder that dumps its evaluation plan.
  */
 
@@ -39,36 +39,35 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Evaluation Graph builder that dumps its evaluation plan. */
 class DumpingEvalGraphBuilder:
-	public EvalGraphBuilder
+public EvalGraphBuilder
 {
-protected:
-	/** \brief Stream where the EvaluationGraph is dumped to. */
-	std::ofstream output;
-	/** \brief Assignment of unique indexes to components. */
-  std::map<ComponentGraph::Component, unsigned> componentidx;
+    protected:
+        /** \brief Stream where the EvaluationGraph is dumped to. */
+        std::ofstream output;
+        /** \brief Assignment of unique indexes to components. */
+        std::map<ComponentGraph::Component, unsigned> componentidx;
 
-  //////////////////////////////////////////////////////////////////////////////
-  // methods
-  //////////////////////////////////////////////////////////////////////////////
-public:
-	/** \brief Constructor.
-	  * @param ctx See EvalGraphBuilder::ctx.
-	  * @param cg See EvalGraphBuilder::cg.
-	  * @param eg Evaluation graph to write the result to.
-	  * @param externalEvalConfig See ASPSolverManager::SoftwareConfiguration.
-	  * @param outputfilename Name of the file where the evaluation graph is written to. */
-	DumpingEvalGraphBuilder(
-      ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig,
-			const std::string& outputfilename);
-	/** \brief Destructor. */
-	virtual ~DumpingEvalGraphBuilder();
+        //////////////////////////////////////////////////////////////////////////////
+        // methods
+        //////////////////////////////////////////////////////////////////////////////
+    public:
+        /** \brief Constructor.
+         * @param ctx See EvalGraphBuilder::ctx.
+         * @param cg See EvalGraphBuilder::cg.
+         * @param eg Evaluation graph to write the result to.
+         * @param externalEvalConfig See ASPSolverManager::SoftwareConfiguration.
+         * @param outputfilename Name of the file where the evaluation graph is written to. */
+        DumpingEvalGraphBuilder(
+            ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg,
+            ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig,
+            const std::string& outputfilename);
+        /** \brief Destructor. */
+        virtual ~DumpingEvalGraphBuilder();
 
-	// write to file how eval units were created
-  virtual EvalUnit createEvalUnit(
-			const std::list<Component>& comps, const std::list<Component>& ccomps);
+        // write to file how eval units were created
+        virtual EvalUnit createEvalUnit(
+            const std::list<Component>& comps, const std::list<Component>& ccomps);
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif

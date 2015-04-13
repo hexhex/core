@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,17 +22,15 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   DLVProcess.h
  * @author Thomas Krennwallner
- * @date   
- * 
+ * @date
+ *
  * @brief  Process interface to DLV programs.
- * 
- * 
+ *
+ *
  */
-
 
 #if !defined(_DLVHEX_DLVPROCESS_H)
 #define _DLVHEX_DLVPROCESS_H
@@ -47,7 +45,6 @@
 #include <string>
 #include <cassert>
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 /**
@@ -56,70 +53,69 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT DLVProcess : public Process
 {
- protected:
-  //** \brief Communication buffer. */
-  ProcessBuf proc;
-  
-  /// iostreams to the dlv process
-  /** \brief Input pipe. */
-  std::istream* ipipe;
-  /** \brief Output pipe. */
-  std::ostream* opipe;
-  
-  /** \brief Executable path/name. */
-  std::string executable;
+    protected:
+        //** \brief Communication buffer. */
+        ProcessBuf proc;
 
-  /** \brief Command line options. */
-  std::vector<std::string> argv;
+        /// iostreams to the dlv process
+        /** \brief Input pipe. */
+        std::istream* ipipe;
+        /** \brief Output pipe. */
+        std::ostream* opipe;
 
-  /** \brief Initialize in/out streams. */
-  void
-  setupStreams();
-  
- public:
-  /** \brief Constructor. */
-  DLVProcess();
+        /** \brief Executable path/name. */
+        std::string executable;
 
-  /** \brief Destructor. */
-  virtual
-  ~DLVProcess();
+        /** \brief Command line options. */
+        std::vector<std::string> argv;
 
-  virtual void
-  addOption(const std::string&);
+        /** \brief Initialize in/out streams. */
+        void
+            setupStreams();
 
-  virtual void
-  setPath(const std::string&);
+    public:
+        /** \brief Constructor. */
+        DLVProcess();
 
-  virtual std::string
-  path() const;
+        /** \brief Destructor. */
+        virtual
+            ~DLVProcess();
 
-  virtual std::vector<std::string>
-  commandline() const;
+        virtual void
+            addOption(const std::string&);
 
-  virtual void
-  spawn();
+        virtual void
+            setPath(const std::string&);
 
-  virtual void
-  spawn(const std::vector<std::string>&);
+        virtual std::string
+            path() const;
 
-  virtual void
-  endoffile();
+        virtual std::vector<std::string>
+            commandline() const;
 
-  // wait for end of process
-  // if kill is true, kill if not already ended
-  virtual int
-  close(bool kill=false);
+        virtual void
+            spawn();
 
-  virtual std::ostream&
-  getOutput();
+        virtual void
+            spawn(const std::vector<std::string>&);
 
-  virtual std::istream&
-  getInput();
+        virtual void
+            endoffile();
+
+        // wait for end of process
+        // if kill is true, kill if not already ended
+        virtual int
+            close(bool kill=false);
+
+        virtual std::ostream&
+            getOutput();
+
+        virtual std::istream&
+            getInput();
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // _DLVHEX_DLVPROCESS_H
+#endif                           // _DLVHEX_DLVPROCESS_H
 
 // Local Variables:
 // mode: C++

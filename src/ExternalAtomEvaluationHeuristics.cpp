@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -39,71 +39,96 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Always ==============================
 
-ExternalAtomEvaluationHeuristicsAlways::ExternalAtomEvaluationHeuristicsAlways(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg){
+ExternalAtomEvaluationHeuristicsAlways::ExternalAtomEvaluationHeuristicsAlways(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg)
+{
 }
 
-bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-	return true;
+
+bool ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    return true;
 }
 
-bool ExternalAtomEvaluationHeuristicsAlways::frequent(){
-	return true;
+
+bool ExternalAtomEvaluationHeuristicsAlways::frequent()
+{
+    return true;
 }
 
-ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsAlwaysFactory::createHeuristics(RegistryPtr reg){
-	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsAlways(reg));
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsAlwaysFactory::createHeuristics(RegistryPtr reg)
+{
+    return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsAlways(reg));
 }
+
 
 // ============================== InputComplete ==============================
 
-ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsInputComplete(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg){
+ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsInputComplete(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg)
+{
 }
 
-bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
-	eatom.updatePredicateInputMask();
+bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
 
-	bool aux = true;
-	if (eatom.auxInputPredicate != ID_FAIL){
-		aux = (eatom.getAuxInputMask()->getStorage() & programMask->getStorage() & assigned->getStorage()).count() == (eatom.getAuxInputMask()->getStorage() & programMask->getStorage()).count();
-	}
+    eatom.updatePredicateInputMask();
 
-	return !assigned ||
-		(eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & assigned->getStorage()).count() == (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count() &&
-		aux;
+    bool aux = true;
+    if (eatom.auxInputPredicate != ID_FAIL) {
+        aux = (eatom.getAuxInputMask()->getStorage() & programMask->getStorage() & assigned->getStorage()).count() == (eatom.getAuxInputMask()->getStorage() & programMask->getStorage()).count();
+    }
+
+    return !assigned ||
+        (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & assigned->getStorage()).count() == (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count() &&
+        aux;
 }
 
-ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsInputCompleteFactory::createHeuristics(RegistryPtr reg){
-	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsInputComplete(reg));
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsInputCompleteFactory::createHeuristics(RegistryPtr reg)
+{
+    return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsInputComplete(reg));
 }
+
 
 // ============================== EAComplete ==============================
 
-ExternalAtomEvaluationHeuristicsEAComplete::ExternalAtomEvaluationHeuristicsEAComplete(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg){
+ExternalAtomEvaluationHeuristicsEAComplete::ExternalAtomEvaluationHeuristicsEAComplete(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg)
+{
 }
 
-bool ExternalAtomEvaluationHeuristicsEAComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
 
-	return !assigned ||
-		!bm::any_sub(eatomMask->getStorage() & programMask->getStorage(), assigned->getStorage() & programMask->getStorage());
+bool ExternalAtomEvaluationHeuristicsEAComplete::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+
+    return !assigned ||
+        !bm::any_sub(eatomMask->getStorage() & programMask->getStorage(), assigned->getStorage() & programMask->getStorage());
 }
 
-ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsEACompleteFactory::createHeuristics(RegistryPtr reg){
-	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsEAComplete(reg));
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsEACompleteFactory::createHeuristics(RegistryPtr reg)
+{
+    return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsEAComplete(reg));
 }
+
 
 // ============================== Never ==============================
 
-ExternalAtomEvaluationHeuristicsNever::ExternalAtomEvaluationHeuristicsNever(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg){
+ExternalAtomEvaluationHeuristicsNever::ExternalAtomEvaluationHeuristicsNever(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg)
+{
 }
 
-bool ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-	return false;
+
+bool ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    return false;
 }
 
-ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsNeverFactory::createHeuristics(RegistryPtr reg){
-	return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsNever(reg));
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsNeverFactory::createHeuristics(RegistryPtr reg)
+{
+    return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsNever(reg));
 }
+
 
 DLVHEX_NAMESPACE_END
-

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   EvalHeuristicASP.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Evaluation heuristic that uses ASP to plan hex evaluation.
  */
 
@@ -39,26 +39,25 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Creates an evaluation graph specified by an ASP program. */
 class EvalHeuristicASP:
-  public EvalHeuristicBase<EvalGraphBuilder>
+public EvalHeuristicBase<EvalGraphBuilder>
 {
-  // types
-public:
-  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
+    // types
+    public:
+        typedef EvalHeuristicBase<EvalGraphBuilder> Base;
 
-  // methods
-public:
-  /** \brief Constructor. */
-  EvalHeuristicASP(const std::string& scriptname);
-  /** \brief Destructor. */
-  virtual ~EvalHeuristicASP();
-  virtual void build(EvalGraphBuilder& builder);
+        // methods
+    public:
+        /** \brief Constructor. */
+        EvalHeuristicASP(const std::string& scriptname);
+        /** \brief Destructor. */
+        virtual ~EvalHeuristicASP();
+        virtual void build(EvalGraphBuilder& builder);
 
-  // data
-protected:
-  /** \brief ASP program to be used for contructing the evaluation graph. */
-  std::string scriptname;
+        // data
+    protected:
+        /** \brief ASP program to be used for contructing the evaluation graph. */
+        std::string scriptname;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011
+#endif                           // EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011

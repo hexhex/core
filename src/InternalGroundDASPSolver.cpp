@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -47,29 +47,32 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p) : InternalGroundASPSolver(ctx, p), ufscm(ctx, program){
+InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p) : InternalGroundASPSolver(ctx, p), ufscm(ctx, program)
+{
 }
 
-InterpretationPtr InternalGroundDASPSolver::getNextModel(){
 
-	InterpretationPtr model = InternalGroundASPSolver::getNextModel();
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
+InterpretationPtr InternalGroundDASPSolver::getNextModel()
+{
 
-	bool ufsFound = true;
-	while (model && ufsFound){
-		ufsFound = false;
+    InterpretationPtr model = InternalGroundASPSolver::getNextModel();
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 
-		std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
+    bool ufsFound = true;
+    while (model && ufsFound) {
+        ufsFound = false;
 
-		if (ufs.size() > 0){
-			Nogood ng = ufscm.getLastUFSNogood();
-			addNogood(ng);
-			ufsFound = true;
-			model = InternalGroundASPSolver::getNextModel();
-		}
-	}
-	return model;
+        std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
+
+        if (ufs.size() > 0) {
+            Nogood ng = ufscm.getLastUFSNogood();
+            addNogood(ng);
+            ufsFound = true;
+            model = InternalGroundASPSolver::getNextModel();
+        }
+    }
+    return model;
 }
+
 
 DLVHEX_NAMESPACE_END
-

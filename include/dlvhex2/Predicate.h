@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   Predicate.h
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
- * 
+ *
  * @brief  Predicate structure: stores predicate and its arity.
  *
  */
@@ -41,31 +41,30 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Predicate structure, used in PredicateTable.h. */
 struct Predicate:
-  private ostream_printable<Predicate>
+private ostream_printable<Predicate>
 {
-  /** \brief The kind part of the ID of this symbol. */
-  IDKind kind;
-  /** \brief The actual predicate as string. */
-  std::string symbol;
-  /** \brief The arity of the predicate. */
-  int arity;
+    /** \brief The kind part of the ID of this symbol. */
+    IDKind kind;
+    /** \brief The actual predicate as string. */
+    std::string symbol;
+    /** \brief The arity of the predicate. */
+    int arity;
 
-  /** \brief Constructor.
-    * @param kind See Predicate::kind.
-    * @param symbol See Predicate::symbol.
-    * @param arity See Predicate::arity. */
-  Predicate(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
-		{ assert(ID(kind,0).isTerm()); }
-  /** \brief Writes the predicate p and its arity a as string of kind "Predicate(p,a)" to stream \p o.
-    * @param o The output stream to write to.
-    * @return \p o. */
-  std::ostream& print(std::ostream& o) const
-    { return o << "Predicate(" << symbol << " / " << arity << ")"; }
+    /** \brief Constructor.
+     * @param kind See Predicate::kind.
+     * @param symbol See Predicate::symbol.
+     * @param arity See Predicate::arity. */
+    Predicate(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
+        { assert(ID(kind,0).isTerm()); }
+    /** \brief Writes the predicate p and its arity a as string of kind "Predicate(p,a)" to stream \p o.
+     * @param o The output stream to write to.
+     * @return \p o. */
+    std::ostream& print(std::ostream& o) const
+        { return o << "Predicate(" << symbol << " / " << arity << ")"; }
 };
 
 WARNING("see warning in PredicateTable.h")
 const Predicate PREDICATE_FAIL(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, "", -1);
 
 DLVHEX_NAMESPACE_END
-
-#endif // PREDICATE_HPP_INCLUDED__20122010
+#endif                           // PREDICATE_HPP_INCLUDED__20122010

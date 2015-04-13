@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 /**
  * @file   HexParser.h
- * @author Peter Schüller
- * 
+ * @author Peter Schller
+ *
  * @brief  HEX parser interface and the basic HEX parser
  */
 
@@ -44,13 +44,13 @@ DLVHEX_NAMESPACE_BEGIN
 /** \brief Implements the parser for HEX-programs. */
 class DLVHEX_EXPORT HexParser
 {
-public:
-  /** \brief Destructor. */
-  virtual ~HexParser();
-  /** \brief Parses \p in into \p out.
-    * @param in InputProvider to parse from.
-    * @param out ProgramCtx to receive EDB and IDB of the parsed program. */
-  virtual void parse(InputProviderPtr in, ProgramCtx& out) = 0;
+    public:
+        /** \brief Destructor. */
+        virtual ~HexParser();
+        /** \brief Parses \p in into \p out.
+         * @param in InputProvider to parse from.
+         * @param out ProgramCtx to receive EDB and IDB of the parsed program. */
+        virtual void parse(InputProviderPtr in, ProgramCtx& out) = 0;
 };
 typedef boost::shared_ptr<HexParser> HexParserPtr;
 
@@ -58,31 +58,30 @@ typedef boost::shared_ptr<HexParser> HexParserPtr;
  * @brief Parses HEX-programs, extendable by parser modules.
  */
 class DLVHEX_EXPORT ModuleHexParser:
-  public HexParser
+public HexParser
 {
-public:
-  /** \brief Adds an additional module the the parser.
-    *
-    * Modules are used to parse special non-standard HEX-syntax as
-    * supported e.g. by plugins.
-    * @param module ParserModule to add. */
-  virtual void registerModule(HexParserModulePtr module);
+    public:
+        /** \brief Adds an additional module the the parser.
+         *
+         * Modules are used to parse special non-standard HEX-syntax as
+         * supported e.g. by plugins.
+         * @param module ParserModule to add. */
+        virtual void registerModule(HexParserModulePtr module);
 
-public:
-  /** \brief Parses \p in into \p out using the registered modules.
-    * @param in InputProvider to parse from.
-    * @param out ProgramCtx to receive EDB and IDB of the parsed program. */
-  virtual void parse(InputProviderPtr in, ProgramCtx& out);
+    public:
+        /** \brief Parses \p in into \p out using the registered modules.
+         * @param in InputProvider to parse from.
+         * @param out ProgramCtx to receive EDB and IDB of the parsed program. */
+        virtual void parse(InputProviderPtr in, ProgramCtx& out);
 
-protected:
-  /** \brief Currently registered modules. */
-  std::vector<HexParserModulePtr> modules;
+    protected:
+        /** \brief Currently registered modules. */
+        std::vector<HexParserModulePtr> modules;
 };
 typedef boost::shared_ptr<ModuleHexParser> ModuleHexParserPtr;
 
 DLVHEX_NAMESPACE_END
-
-#endif // HEXPARSER_HPP_INCLUDED__14102010
+#endif                           // HEXPARSER_HPP_INCLUDED__14102010
 
 // Local Variables:
 // mode: C++

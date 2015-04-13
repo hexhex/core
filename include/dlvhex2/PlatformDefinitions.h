@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   PlatformDefinitions.h
  * @author Thomas Krennwallner
@@ -38,12 +37,12 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #define DLVHEX_NAMESPACE_BEGIN namespace dlvhex {
 #define DLVHEX_NAMESPACE_END   }
 #define DLVHEX_NAMESPACE_USE   using namespace dlvhex;
-#define DLVHEX_NAMESPACE       dlvhex:: 
+#define DLVHEX_NAMESPACE       dlvhex::
 
 // by default we build for POSIX systems
 #ifndef WIN32
@@ -53,42 +52,39 @@
 #endif
 
 #ifdef DLLEXPORT
-	#define DLVHEX_EXPORT __declspec(dllexport)
+#define DLVHEX_EXPORT __declspec(dllexport)
 #else
-	#ifdef DLLIMPORT
-		#define DLVHEX_EXPORT __declspec(dllimport)
-	#else
-		#define DLVHEX_EXPORT
-	#endif
-#endif /* DLLEXPORT/IMPORT */
+#ifdef DLLIMPORT
+#define DLVHEX_EXPORT __declspec(dllimport)
+#else
+#define DLVHEX_EXPORT
+#endif
+#endif                           /* DLLEXPORT/IMPORT */
 
 #ifdef DLVHEXPLUGIN
-	#define DLVHEX_PLUGINEXPORT __declspec(dllexport)
+#define DLVHEX_PLUGINEXPORT __declspec(dllexport)
 #else
-	#define DLVHEX_PLUGINEXPORT
+#define DLVHEX_PLUGINEXPORT
 #endif
 
 #ifdef _MSC_VER
-	#define WARNING(msg) __pragma (message(msg))
+#define WARNING(msg) __pragma (message(msg))
 #else
-	// GCC does not expand macros in #warning pragmas, thus we use messages
-	#define _WARNING(x) _Pragma (#x)
-	#define WARNING(msg) _WARNING(message (#msg))
+// GCC does not expand macros in #warning pragmas, thus we use messages
+#define _WARNING(x) _Pragma (#x)
+#define WARNING(msg) _WARNING(message (#msg))
 #endif
 
 // on Windows we need to export the relevant part of the STL instantiation
 #ifdef WIN32
-	#include <stdexcept>
-	class DLVHEX_EXPORT std::runtime_error;
+#include <stdexcept>
+class DLVHEX_EXPORT std::runtime_error;
 #endif
 
-
 #include <boost/cstdint.hpp>
-
-#endif /* _DLVHEX_PLATFORMDEFINITIONS_H */
+#endif                           /* _DLVHEX_PLATFORMDEFINITIONS_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
-
 
 // Local Variables:
 // mode: C++

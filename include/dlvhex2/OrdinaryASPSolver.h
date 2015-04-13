@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   OrdinaryASPSolver.hpp
  * @author Peter Schueller
- * 
+ *
  * @brief  Abstract interface to nonground disjunctive ASP Grounder and Solver.
  */
 
@@ -41,27 +41,26 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
-  * \brief Abstract base class to capture ASP solvers.
-  */
+ * \brief Abstract base class to capture ASP solvers.
+ */
 class OrdinaryASPSolver
 {
-public:
-	// instantiate (implement for each derived class)
-	// static OrdinaryASPSolverPtr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
+    public:
+        // instantiate (implement for each derived class)
+        // static OrdinaryASPSolverPtr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
 
-	/**
-	  * \brief Returns the next model.
-	  * 
-	  * This will also trigger callbacks to the propagators, see addPropagator.
-	  * @return The next model or a NULL-pointer of no more models exist.
-	  */
-	virtual InterpretationPtr getNextModel() = 0;
+        /**
+         * \brief Returns the next model.
+         *
+         * This will also trigger callbacks to the propagators, see addPropagator.
+         * @return The next model or a NULL-pointer of no more models exist.
+         */
+        virtual InterpretationPtr getNextModel() = 0;
 };
 typedef boost::shared_ptr<OrdinaryASPSolver> OrdinaryASPSolverPtr;
 
 DLVHEX_NAMESPACE_END
-
-#endif // _DLVHEX_ORDINARYASPSOLVER_HPP
+#endif                           // _DLVHEX_ORDINARYASPSOLVER_HPP
 
 // Local Variables:
 // mode: C++

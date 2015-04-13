@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   Literal.cpp
  * @author Roman Schindlauer
  * @date   Sun Sep 4 12:52:05 2005
- * 
+ *
  * @brief  Literal class.
- * 
- * 
+ *
+ *
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/Literal.h"
 #include "dlvhex2/BaseVisitor.h"
@@ -45,7 +44,6 @@ DLVHEX_NAMESPACE_BEGIN
 
 Literal::Literal()
 { }
-
 
 Literal::~Literal()
 {
@@ -62,9 +60,10 @@ Literal::operator=(const Literal& lit2)
     return *this;
 }
 
+
 Literal::Literal(const AtomPtr at, bool naf)
-    : atom(at),
-      isWeaklyNegated(naf)
+: atom(at),
+isWeaklyNegated(naf)
 {
 }
 
@@ -81,6 +80,7 @@ Literal::isNAF() const
 {
     return isWeaklyNegated;
 }
+
 
 bool
 Literal::isHigherOrder() const
@@ -112,37 +112,38 @@ Literal::operator!= (const Literal& lit2) const
 bool
 Literal::operator< (const Literal& lit2) const
 {
-	if (!this->isNAF() && lit2.isNAF())
-		return 1;
-	if (this->isNAF() && !lit2.isNAF())
-		return 0;
+    if (!this->isNAF() && lit2.isNAF())
+        return 1;
+    if (this->isNAF() && !lit2.isNAF())
+        return 0;
 
-	return (this->getAtom() < lit2.getAtom());
+    return (this->getAtom() < lit2.getAtom());
 }
 
 
 void
 Literal::accept(BaseVisitor& v) const
 {
-  v.visit(this);
+    v.visit(this);
 }
 
 
 std::ostream&
 operator<<(std::ostream& o, const Literal& l)
 {
-  RawPrintVisitor rpv(o);
-  const_cast<Literal*>(&l)->accept(rpv);
-  return o;
+    RawPrintVisitor rpv(o);
+    const_cast<Literal*>(&l)->accept(rpv);
+    return o;
 }
 
 
 bool
 operator< (const RuleBody_t& body1, const RuleBody_t& body2)
 {
-  return std::lexicographical_compare(body1.begin(), body1.end(),
-				      body2.begin(), body2.end());
+    return std::lexicographical_compare(body1.begin(), body1.end(),
+        body2.begin(), body2.end());
 }
+
 
 DLVHEX_NAMESPACE_END
 

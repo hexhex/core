@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -39,56 +39,57 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Implements aggregate functions both by native handling or by rewriting them to external atoms. */
 class AggregatePlugin:
-  public PluginInterface
+public PluginInterface
 {
-public:
-	// stored in ProgramCtx, accessed using getPluginData<HigherOrderPlugin>()
-	class CtxData:
-	public PluginData
-	{
-		public:
-		/** \brief Stores if plugin is enabled. */
-		bool enabled;
+    public:
+        // stored in ProgramCtx, accessed using getPluginData<HigherOrderPlugin>()
+        class CtxData:
+    public PluginData
+    {
+        public:
+            /** \brief Stores if plugin is enabled. */
+            bool enabled;
 
-		/** \brief Supported plugin modes. */
-		enum Mode {
-			/** \brief Rewrting aggregates to external atoms. */
-			ExtRewrite,
-			/** \brief Simplify them such that they can be natively handled. */
-			Simplify };
-		/** \brief Selected mode. */
-		Mode mode;
+            /** \brief Supported plugin modes. */
+            enum Mode
+            {
+                /** \brief Rewrting aggregates to external atoms. */
+                ExtRewrite,
+                /** \brief Simplify them such that they can be natively handled. */
+                Simplify
+            };
+            /** \brief Selected mode. */
+            Mode mode;
 
-		CtxData();
-		virtual ~CtxData() {};
-	};
+            CtxData();
+            virtual ~CtxData() {};
+    };
 
-public:
-	/** \brief Constructor. */
-	AggregatePlugin();
-	/** \brief Destructor. */
-	virtual ~AggregatePlugin();
+    public:
+        /** \brief Constructor. */
+        AggregatePlugin();
+        /** \brief Destructor. */
+        virtual ~AggregatePlugin();
 
-	// output help message for this plugin
-	virtual void printUsage(std::ostream& o) const;
+        // output help message for this plugin
+        virtual void printUsage(std::ostream& o) const;
 
-	// accepted options: --aggregate-enable
-	//
-	// processes options for this plugin, and removes recognized options from pluginOptions
-	// (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+        // accepted options: --aggregate-enable
+        //
+        // processes options for this plugin, and removes recognized options from pluginOptions
+        // (do not free the pointers, the const char* directly come from argv)
+        virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-	// rewrite program: rewrite aggregate atoms to external atoms
-	virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+        // rewrite program: rewrite aggregate atoms to external atoms
+        virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-	// register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
-	virtual void setupProgramCtx(ProgramCtx&);
+        // register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
+        virtual void setupProgramCtx(ProgramCtx&);
 
-	virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
+        virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
 
-	// no atoms!
+        // no atoms!
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   EvalHeuristicBase.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Evaluation heuristic base class.
  */
 
@@ -45,17 +45,16 @@ DLVHEX_NAMESPACE_BEGIN
 template<typename EvalGraphBuilderT>
 class EvalHeuristicBase
 {
-public:
-  /** \brief Constructor. */
-  EvalHeuristicBase() {}
-  /** \brief Destructor. */
-  virtual ~EvalHeuristicBase() {}
-  /** \brief Constructs the evaluation graph.
-    *
-    * @param builder EvalGraphBuilder to be used for constructing the evaluation graph. */
-  virtual void build(EvalGraphBuilderT& builder) = 0;
+    public:
+        /** \brief Constructor. */
+        EvalHeuristicBase() {}
+        /** \brief Destructor. */
+        virtual ~EvalHeuristicBase() {}
+        /** \brief Constructs the evaluation graph.
+         *
+         * @param builder EvalGraphBuilder to be used for constructing the evaluation graph. */
+        virtual void build(EvalGraphBuilderT& builder) = 0;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // EVAL_HEURISTICBASEX_HPP_INCLUDED__03112010
+#endif                           // EVAL_HEURISTICBASEX_HPP_INCLUDED__03112010

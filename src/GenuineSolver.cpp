@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  * @brief  Interface to genuine nonground disjunctive ASP Solvers
  *         powered by clingo or internal solver
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,158 +64,188 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen){
+GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen)
+{
 
-	switch(ctx.config.getOption("GenuineSolver")){
-	case 1: case 3:	// internal grounder + internal solver or clasp
-		{
-		if (!!frozen){
-			throw GeneralError("Internal grounder does not support frozen atoms");
-		}
-		DBGLOG(DBG, "Instantiating genuine grounder with internal grounder");
-		GenuineGrounderPtr ptr(new InternalGrounder(ctx, p));
-		return ptr;
-		}
-		break;
-	case 2: case 4:	// Gringo + internal solver or clasp
-#ifdef HAVE_LIBGRINGO
-		{
-		DBGLOG(DBG, "Instantiating genuine grounder with gringo");
-#ifndef GRINGO3	// GRINGO4
-		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
-#else	// GRINGO3
-//		if (!!frozen){
-//			throw GeneralError("Gringo 3 does not support frozen atoms");
-//		}
-		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
-#endif
-		return ptr;
-		}
-#else
-		throw GeneralError("No support for gringo compiled into this binary");
-#endif // HAVE_LIBGRINGO
-		break;
-	default:
-		assert(false);
-		return GenuineGrounderPtr();
-	}
+    switch(ctx.config.getOption("GenuineSolver")) {
+        case 1: case 3:          // internal grounder + internal solver or clasp
+        {
+            if (!!frozen) {
+                throw GeneralError("Internal grounder does not support frozen atoms");
+            }
+            DBGLOG(DBG, "Instantiating genuine grounder with internal grounder");
+            GenuineGrounderPtr ptr(new InternalGrounder(ctx, p));
+            return ptr;
+        }
+        break;
+        case 2: case 4:          // Gringo + internal solver or clasp
+        #ifdef HAVE_LIBGRINGO
+            {
+                DBGLOG(DBG, "Instantiating genuine grounder with gringo");
+            #ifndef GRINGO3      // GRINGO4
+                GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
+            #else                // GRINGO3
+                //		if (!!frozen){
+                //			throw GeneralError("Gringo 3 does not support frozen atoms");
+                //		}
+                GenuineGrounderPtr ptr(new GringoGrounder(ctx, p, frozen));
+            #endif
+                return ptr;
+            }
+        #else
+            throw GeneralError("No support for gringo compiled into this binary");
+        #endif                   // HAVE_LIBGRINGO
+            break;
+        default:
+            assert(false);
+            return GenuineGrounderPtr();
+    }
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen, bool minCheck){
 
-	switch (ctx.config.getOption("GenuineSolver")){
-	case 1: case 2:	// internal grounder or Gringo + internal solver
-		{
-		DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
-		return ptr;
-		}
-		break;
-	case 3: case 4:	// internal grounder or Gringo + clasp
-#ifdef HAVE_LIBCLASP
-		{
-		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		// clasp 3 is always disjunctive
-		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, frozen));
-		return ptr;
-		}
-#else
-		throw GeneralError("No support for clasp compiled into this binary");
-#endif // HAVE_LIBCLASP
-		break;
-	default:
-		assert(false);
-		return GenuineGroundSolverPtr();
-	}
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen, bool minCheck)
+{
+
+    switch (ctx.config.getOption("GenuineSolver")) {
+        case 1: case 2:          // internal grounder or Gringo + internal solver
+        {
+            DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
+            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
+            return ptr;
+        }
+        break;
+        case 3: case 4:          // internal grounder or Gringo + clasp
+        #ifdef HAVE_LIBCLASP
+            {
+                DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
+                // clasp 3 is always disjunctive
+                GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, frozen));
+                return ptr;
+            }
+        #else
+            throw GeneralError("No support for clasp compiled into this binary");
+        #endif                   // HAVE_LIBCLASP
+            break;
+        default:
+            assert(false);
+            return GenuineGroundSolverPtr();
+    }
 }
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck){
-  //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "grounding (GenuineGroundS.::getInst)");
 
-	switch (ctx.config.getOption("GenuineSolver")){
-	case 1: case 2:	// internal grounder or Gringo + internal solver
-		{
-		DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p)) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p)));
-		return ptr;
-		}
-		break;
-	case 3: case 4:	// internal grounder or Gringo + clasp
-#ifdef HAVE_LIBCLASP
-		{
-		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
-		// clasp 3 is always disjunctive
-		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen));
-		return ptr;
-		}
-#else
-		throw GeneralError("No support for clasp compiled into this binary");
-#endif // HAVE_LIBCLASP
-		break;
-	default:
-		assert(false);
-		return GenuineGroundSolverPtr();
-	}
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck)
+{
+    //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "grounding (GenuineGroundS.::getInst)");
+
+    switch (ctx.config.getOption("GenuineSolver")) {
+        case 1: case 2:          // internal grounder or Gringo + internal solver
+        {
+            DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
+            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p)) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p)));
+            return ptr;
+        }
+        break;
+        case 3: case 4:          // internal grounder or Gringo + clasp
+        #ifdef HAVE_LIBCLASP
+            {
+                DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
+                // clasp 3 is always disjunctive
+                GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen));
+                return ptr;
+            }
+        #else
+            throw GeneralError("No support for clasp compiled into this binary");
+        #endif                   // HAVE_LIBCLASP
+            break;
+        default:
+            assert(false);
+            return GenuineGroundSolverPtr();
+    }
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck){
-	const OrdinaryASPProgram* gprog;
-	GenuineGrounderPtr grounder;
-	{
-		DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineSolver ctor)");
-		grounder = GenuineGrounder::getInstance(ctx, p, frozen);
-		gprog = &grounder->getGroundProgram();
-	}
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver ctor)");
-	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
-	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen, bool minCheck)
+{
+    const OrdinaryASPProgram* gprog;
+    GenuineGrounderPtr grounder;
+    {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineSolver ctor)");
+        grounder = GenuineGrounder::getInstance(ctx, p, frozen);
+        gprog = &grounder->getGroundProgram();
+    }
+
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver ctor)");
+    GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
+    return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
 
-std::string GenuineSolver::getStatistics(){
-	return solver->getStatistics();
+
+std::string GenuineSolver::getStatistics()
+{
+    return solver->getStatistics();
 }
 
-const OrdinaryASPProgram& GenuineSolver::getGroundProgram(){
-	return gprog;
+
+const OrdinaryASPProgram& GenuineSolver::getGroundProgram()
+{
+    return gprog;
 }
 
-void GenuineSolver::setOptimum(std::vector<int>& optimum){
-	solver->setOptimum(optimum);
+
+void GenuineSolver::setOptimum(std::vector<int>& optimum)
+{
+    solver->setOptimum(optimum);
 }
 
-InterpretationPtr GenuineSolver::getNextModel(){
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver (GenuineSolver gNM)");
-	return solver->getNextModel();
+
+InterpretationPtr GenuineSolver::getNextModel()
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver (GenuineSolver gNM)");
+    return solver->getNextModel();
 }
 
-int GenuineSolver::getModelCount(){
-	return solver->getModelCount();
+
+int GenuineSolver::getModelCount()
+{
+    return solver->getModelCount();
 }
 
-void GenuineSolver::addNogood(Nogood ng){
-	solver->addNogood(ng);
+
+void GenuineSolver::addNogood(Nogood ng)
+{
+    solver->addNogood(ng);
 }
 
-void GenuineSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
-	solver->restartWithAssumptions(assumptions);
+
+void GenuineSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
+{
+    solver->restartWithAssumptions(assumptions);
 }
 
-void GenuineSolver::addPropagator(PropagatorCallback* pb){
-	solver->addPropagator(pb);
+
+void GenuineSolver::addPropagator(PropagatorCallback* pb)
+{
+    solver->addPropagator(pb);
 }
 
-void GenuineSolver::removePropagator(PropagatorCallback* pb){
-	solver->removePropagator(pb);
+
+void GenuineSolver::removePropagator(PropagatorCallback* pb)
+{
+    solver->removePropagator(pb);
 }
 
-void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen){
-	solver->addProgram(program, frozen);
+
+void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen)
+{
+    solver->addProgram(program, frozen);
 }
 
-void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen){
-	solver->addNogoodSet(ns, frozen);
+
+void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
+{
+    solver->addNogoodSet(ns, frozen);
 }
+
 
 DLVHEX_NAMESPACE_END
 

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   AnswerSetPrinterCallback.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Helpers for printing objects to streams.
  */
 
@@ -40,26 +40,24 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Base class for customized answer set printers. */
 class AnswerSetPrinterCallback:
-  public ModelCallback
+public ModelCallback
 {
-public:
-  /** \brief Constructor.
-    * @param ctx ProgramCtx. */
-  AnswerSetPrinterCallback(ProgramCtx& ctx);
-  /**
-   * \brief Method called for each answer set of the program.
-   * 
-   * @param model Pointer to the current answer set.
-   * @return True continues the model generation process, false stops the model generation process.
-   */
-  virtual bool operator()(AnswerSetPtr model);
+    public:
+        /** \brief Constructor.
+         * @param ctx ProgramCtx. */
+        AnswerSetPrinterCallback(ProgramCtx& ctx);
+        /**
+         * \brief Method called for each answer set of the program.
+         *
+         * @param model Pointer to the current answer set.
+         * @return True continues the model generation process, false stops the model generation process.
+         */
+        virtual bool operator()(AnswerSetPtr model);
 
-protected:
-  /** \brief Mask representing the set of all atoms to be included in the output; might be NULL to represent that all atoms shall be output. */
-  PredicateMaskPtr filterpm;
+    protected:
+        /** \brief Mask representing the set of all atoms to be included in the output; might be NULL to represent that all atoms shall be output. */
+        PredicateMaskPtr filterpm;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
-
+#endif                           // ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011

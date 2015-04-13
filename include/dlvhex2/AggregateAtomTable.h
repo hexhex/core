@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   AggregateAtomTable.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Table for storing Aggregate Atoms
  */
 
@@ -40,38 +40,38 @@ DLVHEX_NAMESPACE_BEGIN
 
 /** \brief Lookup table for aggregate atoms. */
 class AggregateAtomTable:
-	public Table<
-		// value type is symbol struct
-		AggregateAtom,
-		// index is
-		boost::multi_index::indexed_by<
-			// address = running ID for constant access
-			boost::multi_index::random_access<
-				boost::multi_index::tag<impl::AddressTag>
-			>
-		>
-	>
+public Table<
+// value type is symbol struct
+AggregateAtom,
+// index is
+boost::multi_index::indexed_by<
+// address = running ID for constant access
+boost::multi_index::random_access<
+boost::multi_index::tag<impl::AddressTag>
+>
+>
+>
 {
-	// types
-public:
-  typedef Container::index<impl::AddressTag>::type AddressIndex;
-  //typedef Container::index<impl::KindTag>::type KindIndex;
-	//typedef Container::index<impl::TupleTag>::type TupleIndex;
+    // types
+    public:
+        typedef Container::index<impl::AddressTag>::type AddressIndex;
+        //typedef Container::index<impl::KindTag>::type KindIndex;
+        //typedef Container::index<impl::TupleTag>::type TupleIndex;
 
-	// methods
-public:
-  /** \brief Retrieve by ID.
-    *
-    * Assert that id.kind is correct.
-    * Assert that ID exists in table.
-    * @param id ID of an aggregate atom.
-    * @return AggregateAtom corresponding to \p id. */
-	inline const AggregateAtom& getByID(ID id) const throw ();
+        // methods
+    public:
+        /** \brief Retrieve by ID.
+         *
+         * Assert that id.kind is correct.
+         * Assert that ID exists in table.
+         * @param id ID of an aggregate atom.
+         * @return AggregateAtom corresponding to \p id. */
+        inline const AggregateAtom& getByID(ID id) const throw ();
 
-	/** \brief Store atom, assuming it does not exist.
-	  * @param atom AggregateAtom to store.
-	  * @return ID of the stored SggregateAtom. */
-	inline ID storeAndGetID(const AggregateAtom& atom) throw();
+        /** \brief Store atom, assuming it does not exist.
+         * @param atom AggregateAtom to store.
+         * @return ID of the stored SggregateAtom. */
+        inline ID storeAndGetID(const AggregateAtom& atom) throw();
 };
 
 // retrieve by ID
@@ -79,41 +79,43 @@ public:
 // assert that ID exists
 const AggregateAtom&
 AggregateAtomTable::getByID(
-  ID id) const throw ()
+ID id) const throw ()
 {
-	assert(id.isAtom() || id.isLiteral());
-	assert(id.isAggregateAtom());
+    assert(id.isAtom() || id.isLiteral());
+    assert(id.isAggregateAtom());
 
-  ReadLock lock(mutex);
-  const AddressIndex& idx = container.get<impl::AddressTag>();
-  // the following check only works for random access indices, but here it is ok
-  assert( id.address < idx.size() );
-  return idx.at(id.address);
+    ReadLock lock(mutex);
+    const AddressIndex& idx = container.get<impl::AddressTag>();
+    // the following check only works for random access indices, but here it is ok
+    assert( id.address < idx.size() );
+    return idx.at(id.address);
 }
+
 
 // store symbol, assuming it does not exist (this is only asserted)
 ID AggregateAtomTable::storeAndGetID(
-		const AggregateAtom& atm) throw()
+const AggregateAtom& atm) throw()
 {
-	assert(ID(atm.kind,0).isAtom());
-	assert(ID(atm.kind,0).isAggregateAtom());
-	assert(!atm.tuple.empty());
+    assert(ID(atm.kind,0).isAtom());
+    assert(ID(atm.kind,0).isAggregateAtom());
+    assert(!atm.tuple.empty());
 
-	AddressIndex::const_iterator it;
-	bool success;
+    AddressIndex::const_iterator it;
+    bool success;
 
-  WriteLock lock(mutex);
-	AddressIndex& idx = container.get<impl::AddressTag>();
-  boost::tie(it, success) = idx.push_back(atm);
-	(void)success;
-	assert(success);
+    WriteLock lock(mutex);
+    AddressIndex& idx = container.get<impl::AddressTag>();
+    boost::tie(it, success) = idx.push_back(atm);
+    (void)success;
+    assert(success);
 
-	return ID(
-			atm.kind, // kind
-			container.project<impl::AddressTag>(it) - idx.begin() // address
-			);
+    return ID(
+        atm.kind,                // kind
+                                 // address
+        container.project<impl::AddressTag>(it) - idx.begin()
+        );
 }
 
-DLVHEX_NAMESPACE_END
 
-#endif // AGGREGATEATOMTABLE_HPP_INCLUDED__12102010
+DLVHEX_NAMESPACE_END
+#endif                           // AGGREGATEATOMTABLE_HPP_INCLUDED__12102010

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 /**
  * @file   PlainAuxPrinter.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Helper for printing auxiliary objects for the user.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif // HAVE_CONFIG_H
+#endif                           // HAVE_CONFIG_H
 
 #include "dlvhex2/PlainAuxPrinter.h"
 #include "dlvhex2/Printer.h"
@@ -39,20 +39,21 @@
 DLVHEX_NAMESPACE_BEGIN
 
 PlainAuxPrinter::PlainAuxPrinter(RegistryPtr reg):
-  reg(reg)
+reg(reg)
 {
 }
+
 
 // print an ID and return true,
 // or do not print it and return false
 bool PlainAuxPrinter::print(
-    std::ostream& out, ID id, const std::string& prefix) const
+std::ostream& out, ID id, const std::string& prefix) const
 {
-  // simply print all IDs
-  assert(id.isOrdinaryGroundAtom() && id.isAuxiliary());
-  out << prefix << reg->ogatoms.getByAddress(id.address).text;
-  return true;
+    // simply print all IDs
+    assert(id.isOrdinaryGroundAtom() && id.isAuxiliary());
+    out << prefix << reg->ogatoms.getByAddress(id.address).text;
+    return true;
 }
 
-DLVHEX_NAMESPACE_END
 
+DLVHEX_NAMESPACE_END

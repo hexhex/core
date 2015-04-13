@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   UnfoundedSetCheckHeuristics.h
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Base class and concrete classes with heuristics for
  *         unfounded set checks in genuine G&C model generators.
  */
@@ -57,17 +57,19 @@ DLVHEX_NAMESPACE_BEGIN
 /**
  * \brief Performs UFS checks only over complete interpretations.
  */
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
-public:
-	UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics
+{
+    public:
+        UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
+        virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 /**
  * \brief Factory for UnfoundedSetCheckHeuristicsPost.
  */
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSetCheckHeuristicsFactory{
-	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSetCheckHeuristicsFactory
+{
+    virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 // ============================== Max ==============================
@@ -75,17 +77,19 @@ class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPostFactory : public UnfoundedSet
 /**
  * \brief Performs UFS checks whenever deterministic reasoning cannot derive further atoms.
  */
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
-public:
-	UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics
+{
+    public:
+        UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
+        virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 /**
  * \brief Factory for UnfoundedSetCheckHeuristicsMax.
  */
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMaxFactory : public UnfoundedSetCheckHeuristicsFactory{
-	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMaxFactory : public UnfoundedSetCheckHeuristicsFactory
+{
+    virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 // ============================== Periodic ==============================
@@ -93,24 +97,24 @@ class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsMaxFactory : public UnfoundedSetC
 /**
  * \brief Performs UFS checks periodically.
  */
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax{
-private:
-	/** Counts the number of calls in order to periodically perform the UFS check. */
-	int counter;
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax
+{
+    private:
+        /** Counts the number of calls in order to periodically perform the UFS check. */
+        int counter;
 
-public:
-	UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
-	virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+    public:
+        UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
+        virtual bool doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
 };
 
 /**
  * \brief Factory for UnfoundedSetCheckHeuristicsPeriodic.
  */
-class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodicFactory : public UnfoundedSetCheckHeuristicsFactory{
-	virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
+class DLVHEX_EXPORT UnfoundedSetCheckHeuristicsPeriodicFactory : public UnfoundedSetCheckHeuristicsFactory
+{
+    virtual UnfoundedSetCheckHeuristicsPtr createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg);
 };
 
 DLVHEX_NAMESPACE_END
-
 #endif
-

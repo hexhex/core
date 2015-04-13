@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -40,50 +40,67 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Post ==============================
 
-UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristics(groundProgram, reg){
+UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristics(groundProgram, reg)
+{
 }
 
-bool UnfoundedSetCheckHeuristicsPost::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-	return false;
+
+bool UnfoundedSetCheckHeuristicsPost::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    return false;
 }
 
-UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPostFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg){
-	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPost(groundProgram, reg));
+
+UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPostFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg)
+{
+    return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPost(groundProgram, reg));
 }
 
 
 // ============================== Max ==============================
 
-UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristics(groundProgram, reg){
+UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristics(groundProgram, reg)
+{
 }
 
-bool UnfoundedSetCheckHeuristicsMax::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-	return true;
+
+bool UnfoundedSetCheckHeuristicsMax::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    return true;
 }
 
-UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsMaxFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg){
-	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsMax(groundProgram, reg));
+
+UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsMaxFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg)
+{
+    return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsMax(groundProgram, reg));
 }
+
 
 // ============================== Periodic ==============================
 
-UnfoundedSetCheckHeuristicsPeriodic::UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristicsMax(groundProgram, reg), counter(0){
+UnfoundedSetCheckHeuristicsPeriodic::UnfoundedSetCheckHeuristicsPeriodic(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : UnfoundedSetCheckHeuristicsMax(groundProgram, reg), counter(0)
+{
 }
 
-bool UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed){
-	static std::set<ID> emptySkipProgram;
-	counter++;
-	if (counter >= 10){
-		counter = 0;
-		return UnfoundedSetCheckHeuristicsMax::doUFSCheck(verifiedAuxes, partialAssignment, assigned, changed);
-	}else{
-		return false;
-	}
+
+bool UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(InterpretationConstPtr verifiedAuxes, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    static std::set<ID> emptySkipProgram;
+    counter++;
+    if (counter >= 10) {
+        counter = 0;
+        return UnfoundedSetCheckHeuristicsMax::doUFSCheck(verifiedAuxes, partialAssignment, assigned, changed);
+    }
+    else {
+        return false;
+    }
 }
 
-UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPeriodicFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg){
-	return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPeriodic(groundProgram, reg));
+
+UnfoundedSetCheckHeuristicsPtr UnfoundedSetCheckHeuristicsPeriodicFactory::createHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg)
+{
+    return UnfoundedSetCheckHeuristicsPtr(new UnfoundedSetCheckHeuristicsPeriodic(groundProgram, reg));
 }
+
 
 DLVHEX_NAMESPACE_END
-

@@ -1,9 +1,9 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005-2007 Roman Schindlauer
  * Copyright (C) 2006-2015 Thomas Krennwallner
- * Copyright (C) 2009-2015 Peter Schüller
+ * Copyright (C) 2009-2015 Peter Schller
  * Copyright (C) 2011-2015 Christoph Redl
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @file   GenuinePlainModelGenerator.hpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
- * 
+ *
  * @brief  Model generator for the "Plain" type of components using CDNL.
  */
 
@@ -57,101 +57,100 @@ class GenuinePlainModelGeneratorFactory;
 
 /** \brief A model generator for components without inner (i.e. non-cyclic) external atoms (outer external atoms are allowed). */
 class GenuinePlainModelGenerator:
-  public BaseModelGenerator,
-  public ostream_printable<GenuinePlainModelGenerator>
+public BaseModelGenerator,
+public ostream_printable<GenuinePlainModelGenerator>
 {
-  // types
-public:
-  typedef GenuinePlainModelGeneratorFactory Factory;
+    // types
+    public:
+        typedef GenuinePlainModelGeneratorFactory Factory;
 
-  // storage
-protected:
-  /** \brief Reference to the factory which created this model generator. */
-  Factory& factory;
+        // storage
+    protected:
+        /** \brief Reference to the factory which created this model generator. */
+        Factory& factory;
 
-  /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
-  InterpretationConstPtr postprocessedInput;
-  /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
-  ASPSolverManager::ResultsPtr currentResults;
+        /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
+        InterpretationConstPtr postprocessedInput;
+        /** \brief Result handle for asp solver evaluation, using externallyAugmentedInput. */
+        ASPSolverManager::ResultsPtr currentResults;
 
-  /** \brief Solver instance. */
-  GenuineSolverPtr solver;
+        /** \brief Solver instance. */
+        GenuineSolverPtr solver;
 
-  // members
+        // members
 
-public:
-  /**
-   * \brief Constructor.
-   * @param factory Reference to the factory which created this model generator.
-   * @param input Input interpretation to this model generator.
-   */
-  GenuinePlainModelGenerator(Factory& factory, InterpretationConstPtr input);
-  /** \brief Destructor. */
-  virtual ~GenuinePlainModelGenerator();
+    public:
+        /**
+         * \brief Constructor.
+         * @param factory Reference to the factory which created this model generator.
+         * @param input Input interpretation to this model generator.
+         */
+        GenuinePlainModelGenerator(Factory& factory, InterpretationConstPtr input);
+        /** \brief Destructor. */
+        virtual ~GenuinePlainModelGenerator();
 
-  // generate and return next model, return null after last model
-  virtual InterpretationPtr generateNextModel();
+        // generate and return next model, return null after last model
+        virtual InterpretationPtr generateNextModel();
 };
 
 /** \brief Factory for the GenuinePlainModelGenerator. */
 class GenuinePlainModelGeneratorFactory:
-  public BaseModelGeneratorFactory,
-  public ostream_printable<GenuinePlainModelGeneratorFactory>
+public BaseModelGeneratorFactory,
+public ostream_printable<GenuinePlainModelGeneratorFactory>
 {
-  // types
-public:
-  friend class GenuinePlainModelGenerator;
-  typedef ComponentGraph::ComponentInfo ComponentInfo;
+    // types
+    public:
+        friend class GenuinePlainModelGenerator;
+        typedef ComponentGraph::ComponentInfo ComponentInfo;
 
-  // storage
-protected:
-  /** \brief Defines the solver to be used for external evaluation. */
-  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-  /** \brief ProgramCtx. */
-  ProgramCtx& ctx;
-  /** ComponentInfo of the component to be solved by the model generators instantiated by this factory. */
-  ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
+        // storage
+    protected:
+        /** \brief Defines the solver to be used for external evaluation. */
+        ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+        /** \brief ProgramCtx. */
+        ProgramCtx& ctx;
+        /** ComponentInfo of the component to be solved by the model generators instantiated by this factory. */
+        ComponentInfo ci;        // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
 
-  /** \brief All external atoms of the component. */
-  std::vector<ID> eatoms;
+        /** \brief All external atoms of the component. */
+        std::vector<ID> eatoms;
 
-  /** \brief Original IDB containing eatoms where all inputs are known.
-    *
-    * Auxiliary input rules of these eatoms must be in predecessor unit! */
-  std::vector<ID> idb;
-  /** \brief Rewritten IDB (containing replacements for eatoms).
-    *
-    * x stands for transformed. */
-  std::vector<ID> xidb;
+        /** \brief Original IDB containing eatoms where all inputs are known.
+         *
+         * Auxiliary input rules of these eatoms must be in predecessor unit! */
+        std::vector<ID> idb;
+        /** \brief Rewritten IDB (containing replacements for eatoms).
+         *
+         * x stands for transformed. */
+        std::vector<ID> xidb;
 
-  // methods
-public:
-  /** \brief Constructor.
-    *
-    * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
-    * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
-    * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
-    */
-  GenuinePlainModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  /** \brief Destructor. */
-  virtual ~GenuinePlainModelGeneratorFactory() {}
+        // methods
+    public:
+        /** \brief Constructor.
+         *
+         * @param ctx See GenuineGuessAndCheckModelGeneratorFactory::ctx.
+         * @param ci See GenuineGuessAndCheckModelGeneratorFactory::ci.
+         * @param externalEvalConfig See GenuineGuessAndCheckModelGeneratorFactory::externalEvalConfig.
+         */
+        GenuinePlainModelGeneratorFactory(
+            ProgramCtx& ctx, const ComponentInfo& ci,
+            ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+        /** \brief Destructor. */
+        virtual ~GenuinePlainModelGeneratorFactory() {}
 
-  /**
-   * \brief Instantiates a model generator for the current component.
-   * @param input Input interpretation to this model generator.
-   * @return Model generator.
-   */
-  virtual ModelGeneratorPtr createModelGenerator(
-    InterpretationConstPtr input)
-    { return ModelGeneratorPtr(new GenuinePlainModelGenerator(*this, input)); }
+        /**
+         * \brief Instantiates a model generator for the current component.
+         * @param input Input interpretation to this model generator.
+         * @return Model generator.
+         */
+        virtual ModelGeneratorPtr createModelGenerator(
+            InterpretationConstPtr input)
+            { return ModelGeneratorPtr(new GenuinePlainModelGenerator(*this, input)); }
 
-  /** \brief Prints information about the model generator for debugging purposes.
-    * @param o Stream to print to. */
-  virtual std::ostream& print(std::ostream& o) const;
+        /** \brief Prints information about the model generator for debugging purposes.
+         * @param o Stream to print to. */
+        virtual std::ostream& print(std::ostream& o) const;
 };
 
 DLVHEX_NAMESPACE_END
-
-#endif // PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
+#endif                           // PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
