@@ -151,19 +151,19 @@ public:
 
 void WeakRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, ID ruleID){
 
-	RegistryPtr reg = ctx.registry();
-	const Rule& rule = reg->rules.getByID(ruleID);
-
-	// take the rule as it is, but change the rule type
-	Rule newRule = rule;
-	newRule.kind &= (ID::ALL_ONES ^ ID::SUBKIND_RULE_WEAKCONSTRAINT);
-	newRule.kind |= ID::SUBKIND_RULE_REGULAR;
-//	newRule.kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR;
-//	if (ruleID.doesRuleContainExtatoms()) newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
-//	if (ruleID.doesRuleContainModatoms()) newRule.kind |= ID::PROPERTY_RULE_MODATOMS;
-
 	// if it is a weak constraint, add a head atom
 	if (ruleID.isWeakConstraint()){
+		RegistryPtr reg = ctx.registry();
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		// take the rule as it is, but change the rule type
+		Rule newRule = rule;
+		newRule.kind &= (ID::ALL_ONES ^ ID::SUBKIND_RULE_WEAKCONSTRAINT);
+		newRule.kind |= ID::SUBKIND_RULE_REGULAR;
+		//	newRule.kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR;
+		//	if (ruleID.doesRuleContainExtatoms()) newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+		//	if (ruleID.doesRuleContainModatoms()) newRule.kind |= ID::PROPERTY_RULE_MODATOMS;
+
 		std::set<ID> bodyVars;
 		BOOST_FOREACH (ID b, rule.body){
 			reg->getVariablesInID(b, bodyVars);
@@ -190,10 +190,17 @@ void WeakRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, ID ruleID)
 
 		// we have at least one weak constraint --> enable optimization! (for performance reasons, do not enable it if not necessary!)
 		// let both dlvhex and the solver backend optimize (dlvhex is required for soundness wrt. minimality semantics, backend is for efficiency reasons)
+
+		// note that we need to do some kind of optimization (influences EvaluateState)
+		ctx.config.setOption("Optimization", 1);
 		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationByDlvhex", 1);
 		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationByBackend", 1);
 		// suppress non-optimal models preceeding the optimal ones
 		if (!ctxdata.allmodels) ctx.config.setOption("OptimizationFilterNonOptimal", 1);
+		if( ctx.config.getOption("OptimizationTwoStep") == 0 ) 
+			LOG(WARNING,"optimization might be slow because it cannot be done in a strictly decreasing manner"
+					"(TODO perhaps it could be done but we currently cannot detect if weight constraints are in single unit)");
+		LOG(INFO,"WeakRewriter activated Optimization");
 	}else{
 		idb.push_back(ruleID);
 	}

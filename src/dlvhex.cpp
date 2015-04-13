@@ -494,78 +494,6 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
-  pctx.config.setOption("FLPDecisionCriterionHead", 1);
-  pctx.config.setOption("FLPDecisionCriterionE", 1);
-  pctx.config.setOption("FLPCheck", 0);
-  pctx.config.setOption("UFSCheck", 1);
-  pctx.config.setOption("UFSCheckMonolithic", 0);
-  pctx.config.setOption("UFSCheckAssumptionBased", 1);
-  pctx.config.setOption("GenuineSolver", 0);
-  pctx.config.setOption("ExternalLearning", 1);
-  pctx.config.setOption("UFSLearning", 1);
-  pctx.config.setOption("UFSLearnStrategy", 2);
-  pctx.config.setOption("ExternalLearningIOBehavior", 1);
-  pctx.config.setOption("ExternalLearningMonotonicity", 1);
-  pctx.config.setOption("ExternalLearningFunctionality", 1);
-  pctx.config.setOption("ExternalLearningLinearity", 1);
-  pctx.config.setOption("ExternalLearningNeg", 1);
-  pctx.config.setOption("ExternalLearningUser", 1);
-  pctx.config.setOption("ExternalLearningGeneralize", 0);
-  pctx.config.setOption("AlwaysEvaluateAllExternalAtoms", 0);
-  pctx.config.setOption("NongroundNogoodInstantiation", 0);
-  pctx.config.setOption("UFSCheckHeuristics", 0);
-  pctx.config.setOption("ModelQueueSize", 5);
-  pctx.config.setOption("Silent", 0);
-  pctx.config.setOption("Verbose", 0);
-  pctx.config.setOption("UseExtAtomCache",1);
-  pctx.config.setOption("KeepNamespacePrefix",0);
-  pctx.config.setOption("DumpDepGraph",0);
-  pctx.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
-  pctx.config.setOption("DumpCompGraph",0);
-  pctx.config.setOption("DumpEvalGraph",0);
-  pctx.config.setOption("DumpModelGraph",0);
-  pctx.config.setOption("DumpIModelGraph",0);
-  pctx.config.setOption("DumpAttrGraph",0);
-  pctx.config.setOption("KeepAuxiliaryPredicates",0);
-  pctx.config.setOption("NoFacts",0);
-  pctx.config.setOption("NumberOfModels",0);
-  pctx.config.setOption("RepeatEvaluation",0);
-  pctx.config.setOption("LegacyECycleDetection",0);
-  pctx.config.setOption("NMLP", 0);
-  pctx.config.setOption("MLP", 0);
-  pctx.config.setOption("Forget", 0);
-  pctx.config.setOption("Split", 0);
-  pctx.config.setOption("SkipStrongSafetyCheck",0);
-  pctx.config.setOption("LiberalSafety",1);
-  pctx.config.setOption("IncludeAuxInputInAuxiliaries",0);
-	pctx.config.setOption("DumpEvaluationPlan",0);
-	pctx.config.setOption("DumpStats",0);
-	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
-	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
-	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
-	// frumpy is the name of the failsafe clasp config option
-	pctx.config.setStringOption("ClaspConfiguration","frumpy");
-	pctx.config.setOption("ClaspIncrementalInterpretationExtraction",1);
-	pctx.config.setOption("ClaspSingletonLoopNogoods",0);
-	pctx.config.setOption("ClaspInverseLiterals", 0);
-  // propagate at least once per second, but also propagate all 10000 times we can propagate 
-  // TODO we should experiment with these
-  pctx.config.setOption("ClaspDeferNPropagations", 10000);
-	pctx.config.setOption("ClaspDeferMaxTMilliseconds",1000);
-	pctx.config.setOption("NoPropagator", 0); // if 1, model generators will not register propagators for external atoms
-	pctx.config.setOption("UseConstantSpace", 0); // see --help
-	pctx.config.setOption("ClaspForceSingleThreaded", 0);
-	pctx.config.setOption("LazyUFSCheckerInitialization", 0);
-	pctx.config.setOption("SupportSets", 0);
-	pctx.config.setOption("ForceGC", 0);
-	pctx.config.setStringOption("PluginDirs", "");
-
-	WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
-	// but if we have genuinegc, take genuinegc as default
-	#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
-	pctx.config.setOption("GenuineSolver", 4);
-	#endif
-
 	// defaults of main
 	Config config;
 
@@ -1205,10 +1133,12 @@ void processOptionsPrePlugin(
 							else if( token == "model" )
 							{
 								pctx.config.setOption("DumpModelGraph",1);
+								throw std::runtime_error("DumpModelGraph not implemented!");
 							}
 							else if( token == "imodel" )
 							{
 								pctx.config.setOption("DumpIModelGraph",1);
+								throw std::runtime_error("DumpIModelGraph not implemented!");
 							}
 							else if( token == "attr" )
 							{
@@ -1635,6 +1565,13 @@ void processOptionsPrePlugin(
 		pctx.config.setOption("ExternalLearning", 0);
 	
 	}
+	bool usingClaspBackend = (pctx.config.getOption("GenuineSolver") == 3 || pctx.config.getOption("GenuineSolver") == 4);
+	if( heuristicMonolithic && usingClaspBackend ) {
+		// we can use this in a safe way if we use a monolithic evaluation unit
+		// we can use this with the clasp backend (the other solver does not honor setOptimum() calls)
+		// TODO we can also use this if we have all weight constraints in one evaluation unit, this can be detected automatically
+		pctx.config.setOption("OptimizationTwoStep", 1);
+	}
 
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);
@@ -1753,7 +1690,7 @@ void configurePluginPath(std::string& userPlugindir)
 #endif
 }
 
-/* vim: set noexpandtab sw=8 ts=8 tw=80: */
+// vim:noexpandtab:sw=8:ts=8:
 
 // Local Variables:
 // mode: C++

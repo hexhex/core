@@ -75,7 +75,11 @@ std::vector<int>& AnswerSet::getWeightVector(){
 }
 
 bool AnswerSet::betterThan(std::vector<int>& cwv){
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::betterThan");
+  return weightVector == cwv || strictlyBetterThan(cwv);
+}
+
+bool AnswerSet::strictlyBetterThan(std::vector<int>& cwv){
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSet::strictlyBetterThan");
 
 	// check if one of the vectors has cost values on higher levels
 	if (weightVector.size() < cwv.size()){
@@ -96,7 +100,7 @@ bool AnswerSet::betterThan(std::vector<int>& cwv){
 	}
 
 	// same solution quality
-	return true;
+	return false;
 }
 
 std::ostream& AnswerSet::printWeightVector(std::ostream& o) const{
