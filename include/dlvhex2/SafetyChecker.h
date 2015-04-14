@@ -102,6 +102,6 @@ class DLVHEX_EXPORT StrongSafetyChecker : public SafetyCheckerBase
 DLVHEX_NAMESPACE_END
 #endif                           /* _DLVHEX_SAFETYCHECKER_H_ */
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

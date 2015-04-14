@@ -250,6 +250,6 @@ void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr fro
 DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=2 ts=8 tw=80: */
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -179,7 +179,6 @@ DLVProcess::getInput()
 
 DLVHEX_NAMESPACE_END
 
-// vim:se ts=8:
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -159,6 +159,6 @@ DLVHEX_NAMESPACE_END
 
 // vim: noet ts=8 sw=4 tw=80
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

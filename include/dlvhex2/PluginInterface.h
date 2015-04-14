@@ -1530,7 +1530,6 @@ struct PluginPtrNOPDeleter
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_PLUGININTERFACE_H
 
-// vim:ts=4:tw=75:
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -312,7 +312,6 @@ namespace dlvhex
 }                                // namespace dlvhex
 #endif                           // _CONCURRENT_MESSAGE_QUEUE_H
 
-// vim:ts=8:
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

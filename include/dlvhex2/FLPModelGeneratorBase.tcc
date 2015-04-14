@@ -288,6 +288,6 @@ SimpleNogoodContainerPtr ngc)
 DLVHEX_NAMESPACE_END
 #endif                           // DLVHEX_FLPMODELGENERATORBASE_TCC_INCLUDED
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

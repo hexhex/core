@@ -264,6 +264,6 @@ typedef GenuineSolver::ConstPtr GenuineSolverConstPtr;
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_GENUINESOLVER_H
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

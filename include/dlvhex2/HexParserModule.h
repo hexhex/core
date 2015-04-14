@@ -84,6 +84,6 @@ class HexParserModule
 DLVHEX_NAMESPACE_END
 #endif                           // DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

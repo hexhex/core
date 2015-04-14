@@ -1057,6 +1057,6 @@ void * PLUGINIMPORTFUNCTION()
 #endif
 /* vim: set noet sw=2 ts=2 tw=80: */
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

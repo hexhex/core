@@ -157,6 +157,6 @@ URLBuf::underflow()
 DLVHEX_NAMESPACE_END
 #endif
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

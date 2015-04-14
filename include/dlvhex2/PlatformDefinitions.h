@@ -86,6 +86,6 @@ class DLVHEX_EXPORT std::runtime_error;
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

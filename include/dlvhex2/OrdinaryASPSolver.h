@@ -62,6 +62,6 @@ typedef boost::shared_ptr<OrdinaryASPSolver> OrdinaryASPSolverPtr;
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_ORDINARYASPSOLVER_HPP
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

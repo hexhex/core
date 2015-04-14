@@ -459,6 +459,6 @@ namespace benchmark
 
 DLVHEX_NAMESPACE_END
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

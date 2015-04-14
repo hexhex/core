@@ -783,7 +783,6 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 
 DLVHEX_NAMESPACE_END
 
-// vim:ts=2:noet:sw=2:
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

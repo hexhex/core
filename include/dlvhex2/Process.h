@@ -100,6 +100,6 @@ class DLVHEX_EXPORT Process
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_PROCESS_H
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

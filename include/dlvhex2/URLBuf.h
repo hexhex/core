@@ -117,6 +117,6 @@ DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_URLBUF_H
 #endif
 
-// Local Variables:
+// vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
