@@ -469,7 +469,7 @@ namespace ASPSolver
 DLVHEX_NAMESPACE_END
 #endif                           // HAVE_LIBCLINGO
 
-/* vim: set noet sw=2 ts=8 tw=80: */
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

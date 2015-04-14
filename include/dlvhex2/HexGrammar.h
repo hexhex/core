@@ -332,6 +332,7 @@ boost::spirit::qi::grammar<Iterator, Skipper>
 DLVHEX_NAMESPACE_END
 #endif                           // DLVHEX_HEX_GRAMMAR_H_INCLUDED
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -117,6 +117,7 @@ class DLVHEX_EXPORT DLVProcess : public Process
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_DLVPROCESS_H
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

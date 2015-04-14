@@ -151,6 +151,7 @@ class DLVHEX_EXPORT ProcessBuf : public std::streambuf
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_PROCESSBUF_H
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

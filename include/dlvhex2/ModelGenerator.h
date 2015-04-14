@@ -169,6 +169,7 @@ public ostream_printable<EvalUnitModelGeneratorFactoryProperties<InterpretationT
 
 DLVHEX_NAMESPACE_END
 #endif                           //MODEL_GENERATOR_HPP_INCLUDED__30082010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

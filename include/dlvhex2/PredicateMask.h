@@ -149,6 +149,7 @@ class DLVHEX_EXPORT ExternalAtomMask : public PredicateMask
 
 DLVHEX_NAMESPACE_END
 #endif                           // PREDICATEMASK_HPP_INCLUDED__27012011
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

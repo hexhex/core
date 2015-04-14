@@ -312,6 +312,7 @@ namespace dlvhex
 }                                // namespace dlvhex
 #endif                           // _CONCURRENT_MESSAGE_QUEUE_H
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

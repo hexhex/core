@@ -537,6 +537,7 @@ DependencyGraph::Node DependencyGraph::createNode(ID id)
 
 DLVHEX_NAMESPACE_END
 #endif                           // DEPENDENCY_GRAPH_HPP_INCLUDED__18102010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

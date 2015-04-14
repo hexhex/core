@@ -364,6 +364,7 @@ EvalUnit u)
 
 DLVHEX_NAMESPACE_END
 #endif                           // OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -1214,6 +1214,7 @@ HexParserModuleGrammarPtr module)
 DLVHEX_NAMESPACE_END
 #endif                           // DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

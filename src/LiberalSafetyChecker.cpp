@@ -1218,6 +1218,7 @@ std::size_t hash_value(const LiberalSafetyChecker::VariableLocation& vl)
 
 
 DLVHEX_NAMESPACE_END
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

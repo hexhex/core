@@ -1043,6 +1043,7 @@ DLVHEX_NAMESPACE_END
 
 // vim:tabstop=4:shiftwidth=4:noexpandtab:
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -134,6 +134,7 @@ const Tuple& ids, const std::string& separator, RegistryPtr reg)
 
 DLVHEX_NAMESPACE_END
 #endif                           // PRINTER_HPP_INCLUDED_14012011
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

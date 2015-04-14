@@ -90,6 +90,7 @@ typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 
 DLVHEX_NAMESPACE_END
 #endif                           // INPUT_PROVIDER_HPP_INCLUDED_14012011
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

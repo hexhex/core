@@ -269,6 +269,7 @@ typedef boost::shared_ptr<ConcurrentQueueResults> ConcurrentQueueResultsPtr;
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_ASPSOLVER_MANAGER_H
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

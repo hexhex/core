@@ -26,6 +26,7 @@ do
 		# append new modline
 		newfile=$(mktemp)
 		cp $file $newfile
+		echo "" >> $newfile
 		cat $newmodline >> $newfile
 
 		# move new file back to original file

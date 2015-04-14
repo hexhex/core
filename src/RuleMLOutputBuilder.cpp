@@ -124,7 +124,7 @@ RuleMLOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fa
 DLVHEX_NAMESPACE_END
 #endif
 
-/* vim: set noet sw=4 ts=4 tw=80: */
+
 
 // vim:expandtab:ts=4:sw=4:
 // mode: C++

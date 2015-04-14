@@ -140,6 +140,7 @@ public ostream_printable<WellfoundedModelGeneratorFactory>
 
 DLVHEX_NAMESPACE_END
 #endif                           // WELLFOUNDED_MODEL_GENERATOR_HPP_INCLUDED__09112010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

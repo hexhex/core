@@ -285,6 +285,7 @@ const char* open="[", const char* sep=",", const char* close="]")
     return printrange(t, open, sep, close);
 }
 #endif                           // PRINTHELPERS_HPP_INCLUDED__11122011
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

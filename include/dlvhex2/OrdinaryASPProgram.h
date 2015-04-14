@@ -92,6 +92,7 @@ struct OrdinaryASPProgram
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_ORDINARYASPPROGRAM_HPP
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -84,7 +84,7 @@ class DLVHEX_EXPORT std::runtime_error;
 #include <boost/cstdint.hpp>
 #endif                           /* _DLVHEX_PLATFORMDEFINITIONS_H */
 
-/* vim: set noet sw=4 ts=4 tw=80: */
+
 
 // vim:expandtab:ts=4:sw=4:
 // mode: C++

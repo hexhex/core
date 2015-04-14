@@ -433,6 +433,7 @@ public ModelGeneratorBase<Interpretation>
 
 DLVHEX_NAMESPACE_END
 #endif                           // BASE_MODEL_GENERATOR_HPP_INCLUDED__09112010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

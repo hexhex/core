@@ -238,6 +238,7 @@ RuleTable::getAllByAddress() const throw()
 
 DLVHEX_NAMESPACE_END
 #endif                           // RULETABLE_HPP_INCLUDED__12102010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

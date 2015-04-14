@@ -134,6 +134,7 @@ typedef boost::shared_ptr<State> StatePtr;
 
 DLVHEX_NAMESPACE_END
 #endif                           // FWD_HPP_INCLUDED_14012011
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

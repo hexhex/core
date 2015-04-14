@@ -288,6 +288,7 @@ class DLVHEX_EXPORT Logger
 #  define DBGLOG_VSCOPE(level,name,val,msg) do { } while(false)
 #endif
 #endif                           // LOGGER_HPP_INCLUDED__17092010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

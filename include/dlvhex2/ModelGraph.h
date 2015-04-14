@@ -731,6 +731,7 @@ const std::vector<typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepProp
 
 DLVHEX_NAMESPACE_END
 #endif                           // MODEL_GRAPH_HPP_INCLUDED__29082010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

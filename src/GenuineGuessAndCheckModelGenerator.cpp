@@ -1020,7 +1020,7 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 
 DLVHEX_NAMESPACE_END
 
-// vi:ts=8:noexpandtab:
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

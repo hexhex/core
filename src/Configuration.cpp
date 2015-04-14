@@ -134,6 +134,7 @@ const std::string& key, const std::string& value)
 
 DLVHEX_NAMESPACE_END
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

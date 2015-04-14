@@ -340,6 +340,7 @@ class DLVHEX_EXPORT AnnotatedGroundProgram
 DLVHEX_NAMESPACE_END
 #endif                           // _DLVHEX_ANNOTATEDGROUNDPPROGRAM_HPP_
 
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

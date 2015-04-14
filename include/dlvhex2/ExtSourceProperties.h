@@ -387,6 +387,7 @@ struct ExtSourceProperties
 
 DLVHEX_NAMESPACE_END
 #endif
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

@@ -321,7 +321,7 @@ AtomSet::operator< (const AtomSet& atomset2) const
 
 DLVHEX_NAMESPACE_END
 
-/* vim: set noet sw=4 ts=4 tw=80: */
+
 
 // vim:expandtab:ts=4:sw=4:
 // mode: C++

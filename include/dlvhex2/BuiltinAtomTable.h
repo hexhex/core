@@ -118,6 +118,7 @@ const BuiltinAtom& atm) throw()
 
 DLVHEX_NAMESPACE_END
 #endif                           // BUILTINATOMTABLE_HPP_INCLUDED__12102010
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:

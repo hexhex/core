@@ -608,7 +608,7 @@ public PluginAtom
 DLVHEX_NAMESPACE_END
 #endif                           // COMFORT_PLUGIN_INTERFACE_HPP_INCLUDED_19012011
 
-// vi:ts=4:tw=75:
+
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
