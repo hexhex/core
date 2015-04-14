@@ -743,7 +743,7 @@ namespace
                 // copy interpretation! (we and callbacks might modify it after returning from this method)
                 answerset->interpretation->getStorage() = interpretation->getStorage();
                 answerset->computeWeightVector();
-                LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()));
+                LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()) << ", old best: " << printvector(ctx->currentOptimum));
                 assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
                 ctx->currentOptimum = answerset->getWeightVector();
                 lastAnswerSet = answerset;
@@ -753,6 +753,7 @@ namespace
         // * either there never was any model with any weight
         // * or we got models and found the optimum (ctx->currentOptimum) and lastAnswerSet is the first optimal one
         // our caller will handle these cases
+        DBGLOG(DBG,"returning answer set " << reinterpret_cast<void*>(lastAnswerSet.get()));
         return lastAnswerSet;
     }
 
