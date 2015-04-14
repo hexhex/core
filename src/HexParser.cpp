@@ -161,10 +161,6 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
 
 DLVHEX_NAMESPACE_END
 
-// Local Variables:
-// mode: C++
-// End:
-
 #if 0
 void
 HexParserDriver::parse(std::istream& is,
@@ -223,3 +219,7 @@ AtomSet& EDB) throw (SyntaxError)
     ifs.close();
 }
 #endif
+
+// Local Variables:
+// mode: C++
+// End:
