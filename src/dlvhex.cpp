@@ -616,6 +616,8 @@ int main(int argc, char *argv[])
         #ifdef HAVE_PYTHON
         if (pctx.config.getOption("HavePythonMain")) {
             pythonPlugin->runPythonMain(pctx.config.getStringOption("PythonMain"));
+            // display benchmark output
+            benchmark::BenchmarkController::finish();
             return 1;
         }
         #endif
@@ -1644,7 +1646,7 @@ void configurePluginPath(std::string& userPlugindir)
 }
 
 
-// vim:noexpandtab:sw=8:ts=8:
+// vim:expandtab:sw=4:ts=4:
 
 // Local Variables:
 // mode: C++
