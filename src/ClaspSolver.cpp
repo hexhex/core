@@ -1525,7 +1525,7 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum)
         sharedMinimizeData->markOptimal();
     }
     bool intres = minc->integrate(*claspctx.master());
-    LOG(DBG, "Integration constraint gave result result: " << intres);
+    LOG(DBG, "Integrating constraint gave result " << intres);
     delete []newopt;
 }
 
