@@ -689,6 +689,8 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p)
         DBGLOG(DBG, "Minimize statement at level " << level << ": " << printvector(minimizeStatementsHex[level]));
         minb.addRule(minimizeStatements[level]);
     }
+    ctx.currentOptimumRelevantLevels = minimizeStatements.size();
+
 
     LOG(DBG, "Constructing minimize constraint");
     sharedMinimizeData = minb.build(claspctx);
@@ -1433,9 +1435,8 @@ void ClaspSolver::addNogood(Nogood ng)
 // therefore it can be called with the same optimum multiple times
 void ClaspSolver::setOptimum(std::vector<int>& optimum)
 {
-    LOG(DBG, "Setting optimum in clasp");
+    LOG(DBG, "Setting optimum " << printvector(optimum) << " in clasp");
     if (!minc || !sharedMinimizeData) return;
-    if (optimum.empty()) return;
 
     // This method helps the reasoner to eliminate non-optimal partial models in advance
     // by setting the internal upper bound to a given value.
@@ -1446,32 +1447,24 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum)
     // This is because clasp does not allow to decrease the upper bound if the new bound is violated
     // by the current assignment. Therefore, the new optimum is only integrated into the clasp instance
     // if it is compatible with the assignment.
-
-    // transform optimum vector to clasp-internal representation
-                                 // optimum[0] is unused, but in clasp levels start with 0
-    int optlen = optimum.size() - 1;
-
-    LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
-    Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
-    for (int l = 0; l < optlen; ++l)
-        newopt[l] = optimum[optlen - l];
+    //
+    // PS: I am not sure if the above is true.
 
     Clasp::MinimizeMode newMode;
-    bool markAsOptimal;
+    bool markAsOptimal = false;
+    bool increaseLeastSignificant = false;
 
     switch( ctx.config.getOption("OptimizationTwoStep") ) {
         case 0:
             // enumeration shall find models of same quality or better (the safe option)
             // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is increased by 1 on the least significant level
             newMode = Clasp::MinimizeMode_t::enumerate;
-            newopt[optlen - 1]++;// add one on the least significant level to make sure that more solutions of the same quality are found
-            markAsOptimal = false;
+            increaseLeastSignificant = true;
             break;
         case 1:
             // enumeration must find a better model (works only if this solver solves the single monolithic evaluation unit)
             // clasp MinimizeMode_t::Mode::optimize and pctx.currentOptimum is used as it is
             newMode = Clasp::MinimizeMode_t::optimize;
-            markAsOptimal = false;
             break;
         case 2:
             // enumeration finds all models of equal quality
@@ -1483,6 +1476,36 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum)
             throw std::runtime_error("OptimizationTwoStep: unexpected value");
             break;
     }
+
+    if (markAsOptimal) {
+        // for marking optimal: if we have no weight vector we must extend the optimum
+        // to ctx.currentOptimumRelevantLevels by the best possible value (cost 0)
+        while (optimum.size() < (ctx.currentOptimumRelevantLevels+1))
+            optimum.push_back(0);
+    }
+    else {
+        // in all other cases we can abort if we have no weights stored (optimum[0] is unused)
+        if (optimum.size() <= 1) return;
+        // but if we have at least one weight we need to complete the vector
+        // in order to obtain bounds for all levels
+        while (optimum.size() < (ctx.currentOptimumRelevantLevels+1))
+            optimum.push_back(0);
+    }
+
+    // transform optimum vector to clasp-internal representation
+    // optimum[0] is unused, but in clasp levels start with 0
+    int optlen = optimum.size() - 1;
+    assert(optlen == ctx.currentOptimumRelevantLevels);
+
+    LOG(DBG, "Transforming optimum " << printvector(optimum) << " (length: " << optlen << ") to clasp-internal representation");
+    Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+    for (int l = 0; l < optlen; ++l)
+        newopt[l] = optimum[optlen - l];
+
+
+    if( increaseLeastSignificant )
+        // add one on the least significant level to make sure that more solutions of the same quality are found
+        newopt[optlen - 1]++;
 
     LOG(DBG, "Setting sharedMinimizeData mode to " << static_cast<int>(newMode));
     // TODO do we need to call resetBounds if we go from optimize to enumOpt?
