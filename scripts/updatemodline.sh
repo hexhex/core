@@ -43,7 +43,6 @@ do
 		bloc=$eloc
 		iscomment=1
 
-
 		while [[ $iscomment -eq 1 ]]; do
 
 			i=$(($bloc - 1))
