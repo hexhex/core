@@ -517,3 +517,6 @@ typedef boost::shared_ptr<Registry> RegistryPtr;
 
 DLVHEX_NAMESPACE_END
 #endif                           // REGISTRY_HPP_INCLUDED_14012011
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

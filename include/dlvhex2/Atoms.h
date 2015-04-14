@@ -506,3 +506,6 @@ const std::string MODULEINSTSEPARATOR="___";
 
 DLVHEX_NAMESPACE_END
 #endif                           // ATOMS_HPP_INCLUDED__14102010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

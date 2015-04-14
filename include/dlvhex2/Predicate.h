@@ -68,3 +68,6 @@ const Predicate PREDICATE_FAIL(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, "
 
 DLVHEX_NAMESPACE_END
 #endif                           // PREDICATE_HPP_INCLUDED__20122010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

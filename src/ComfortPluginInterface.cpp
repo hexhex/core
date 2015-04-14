@@ -405,3 +405,6 @@ void ComfortPluginAtom::retrieve(const Query& query, Answer& answer)
 
 
 DLVHEX_NAMESPACE_END
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

@@ -298,3 +298,6 @@ namespace CAUAlgorithms
 
 }                                // namespace CAUAlgorithms
 #endif                           // CAUALGORITHMS_HPP_INCLUDED__28092010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

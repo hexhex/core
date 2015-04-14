@@ -100,3 +100,6 @@ namespace evalheur
 
 DLVHEX_NAMESPACE_END
 #endif                           // EVAL_HEURISTIC_SHARED_HPP_INCLUDED__30112011
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

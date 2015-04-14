@@ -561,3 +561,6 @@ typedef std::vector<ID> Tuple;
 
 DLVHEX_NAMESPACE_END
 #endif                           // ID_HPP_INCLUDED__08102010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

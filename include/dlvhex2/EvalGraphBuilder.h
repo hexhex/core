@@ -262,3 +262,6 @@ typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 
 DLVHEX_NAMESPACE_END
 #endif                           // EVAL_GRAPH_BUILDER_HPP_INCLUDED__03112010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

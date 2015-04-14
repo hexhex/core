@@ -59,3 +59,6 @@ public AuxPrinter
 
 DLVHEX_NAMESPACE_END
 #endif                           // PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

@@ -51,3 +51,6 @@ namespace graphviz
 
 DLVHEX_NAMESPACE_END
 #endif                           // GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

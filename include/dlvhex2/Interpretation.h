@@ -268,3 +268,6 @@ DLVHEX_EXPORT std::size_t hash_value(const Interpretation& intr);
 
 DLVHEX_NAMESPACE_END
 #endif                           // INTERPRETATION_HPP_INCLUDED__08112010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

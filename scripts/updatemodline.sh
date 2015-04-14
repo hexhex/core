@@ -22,6 +22,14 @@ do
 	linecnt2=$(($linecnt - 10))
 	if [[ "$eloc" == "" ]]; then
 		echo "File $file has $linecnt lines and 'End:' does not occurs"
+
+		# append new modline
+		newfile=$(mktemp)
+		cp $file $newfile
+		cat $newmodline >> $newfile
+
+		# move new file back to original file
+		mv $newfile $file
 	elif [[ $eloc -lt $linecnt2 ]]; then
 		echo "Warning: File $file has $linecnt lines and 'End:' occurs in line $eloc, which is far from end of file"
 		echo "         Will skip file; please check manually"

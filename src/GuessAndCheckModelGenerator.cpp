@@ -362,3 +362,6 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 DLVHEX_NAMESPACE_END
 
 // vim:ts=2:
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

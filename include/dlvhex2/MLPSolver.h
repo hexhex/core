@@ -287,3 +287,6 @@ class DLVHEX_EXPORT MLPSolver
 DLVHEX_NAMESPACE_END
 #endif                           /* _DLVHEX_MLPSOLVER_H */
 #endif
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

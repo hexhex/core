@@ -61,3 +61,6 @@ public EvalHeuristicBase<EvalGraphBuilder>
 
 DLVHEX_NAMESPACE_END
 #endif                           // EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

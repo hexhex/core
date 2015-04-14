@@ -84,3 +84,6 @@ const Module MODULE_FAIL("", -1, -1, -1);
 
 DLVHEX_NAMESPACE_END
 #endif                           // MODULE_HPP_INCLUDED__20122010
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:

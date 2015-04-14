@@ -1710,3 +1710,6 @@ DLVHEX_NAMESPACE_END
 #endif
 
 // vim:noexpandtab:ts=8:
+// vim:expandtab:ts=4:sw=4:
+// mode: C++
+// End:
