@@ -736,11 +736,12 @@ struct sem<HexGrammarSemantics::weakconstraint>
     void operator()(
         HexGrammarSemantics& mgr,
         const boost::fusion::vector2<
-        const std::vector<dlvhex::ID>&,
-        const boost::optional<boost::fusion::vector2<ID, ID> >& >& source,
+            const std::vector<dlvhex::ID>&,
+            const boost::optional<boost::fusion::vector2<ID, ID> >& >& source,
     ID& target) {
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT);
         r.body = boost::fusion::at_c<0>(source);
+        r.weakconstraintVector.push_back(ID_FAIL); // DLV-style
         if (!!boost::fusion::at_c<1>(source)) {
             r.weight = boost::fusion::at_c<0>(boost::fusion::at_c<1>(source).get());
             r.level = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source).get());
@@ -749,6 +750,44 @@ struct sem<HexGrammarSemantics::weakconstraint>
             r.weight = ID::termFromInteger(1);
             r.level = ID::termFromInteger(1);
         }
+        mgr.markExternalPropertyIfExternalBody(mgr.ctx.registry(), r);
+        mgr.markModulePropertyIfModuleBody(mgr.ctx.registry(), r);
+        ID existing = mgr.ctx.registry()->rules.getIDByElement(r);
+        if( existing == ID_FAIL ) {
+            target = mgr.ctx.registry()->storeRule(r);
+            DBGLOG(DBG,"created weak constraint " << r << " with id " << target);
+        }
+        else
+            target = existing;   // ID_FAIL;
+    }
+};
+
+template<>
+struct sem<HexGrammarSemantics::weakconstraintaspcore2>
+{
+    void operator()(
+        HexGrammarSemantics& mgr,
+        const boost::fusion::vector4<
+            const std::vector<dlvhex::ID>&,
+            const ID&,
+            const boost::optional<ID>&,
+            const boost::optional<std::vector<ID> > >& source,
+    ID& target) {
+
+        Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT);
+        r.body = boost::fusion::at_c<0>(source);
+        r.weight = boost::fusion::at_c<1>(source);
+        if (!!boost::fusion::at_c<2>(source)){
+            r.level = boost::fusion::at_c<2>(source).get();
+        }else{
+            r.level = ID::termFromInteger(1);
+        }
+
+        // ASP-Core-2-style
+        if (!!boost::fusion::at_c<3>(source)) {
+            r.weakconstraintVector = boost::fusion::at_c<3>(source).get();
+        }
+
         mgr.markExternalPropertyIfExternalBody(mgr.ctx.registry(), r);
         mgr.markModulePropertyIfModuleBody(mgr.ctx.registry(), r);
         ID existing = mgr.ctx.registry()->rules.getIDByElement(r);
@@ -1079,6 +1118,12 @@ sem(sem)
         ) [ Sem::constraint(sem) ];
     weakconstraint
         = (
+        qi::lit(":~") >>
+        (bodyLiteral % (qi::char_(',') | qi::char_(';'))) >>
+        qi::lit('.') >>
+        qi::lit("[") >> term >> -(qi::lit("@") >> term) >> -(qi::lit(',') >> (term % qi::char_(','))) >> qi::lit("]")
+        ) [ Sem::weakconstraintaspcore2(sem) ]
+        | (
         qi::lit(":~") >>
         (bodyLiteral % (qi::char_(',') | qi::char_(';'))) >>
         qi::lit('.') >>

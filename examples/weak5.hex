@@ -1,0 +1,9 @@
+p(a).
+p(b).
+p(c).
+
+q(x).
+q(y).
+
+% 6 instances, but only 2 different values for Y, therefore costs should be 2@1
+:~ p(X), q(Y). [1@1,Y]

@@ -181,8 +181,16 @@ namespace
             // add weight and level
             oatom.tuple.push_back(rule.weight);
             oatom.tuple.push_back(rule.level);
-            BOOST_FOREACH (ID v, bodyVars) {
-                oatom.tuple.push_back(v);
+            if (rule.weakconstraintVector.size() > 0 && rule.weakconstraintVector[0] == ID_FAIL){
+                // DLV-style
+                BOOST_FOREACH (ID v, bodyVars) {
+                    oatom.tuple.push_back(v);
+                }
+            }else{
+                // ASP-Core-2-style
+                BOOST_FOREACH (ID v, rule.weakconstraintVector) {
+                    oatom.tuple.push_back(v);
+                }
             }
 
             ID hid = ground ? reg->storeOrdinaryGAtom(oatom) : reg->storeOrdinaryNAtom(oatom);

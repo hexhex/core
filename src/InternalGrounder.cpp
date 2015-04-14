@@ -629,7 +629,7 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
     }
     else {
         // build rule
-        Rule groundedRule(kind, groundedHead, groundedBody, rule.weight, rule.level);
+        Rule groundedRule(kind, groundedHead, groundedBody, rule.weight, rule.level, Tuple());
 
         // avoid duplicate entries (they cause the registry to crash)
         ID id = reg->rules.getIDByElement(groundedRule);

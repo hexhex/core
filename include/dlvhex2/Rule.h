@@ -68,6 +68,12 @@ private ostream_printable<Rule>
     /** \brief Integer level value for weak constraints (ID_FAIL if unused). */
     ID level;
 
+    /** \brief Vector of terms in the weak constraint vector according to ASP-Core-2 standard.
+      *
+      * Might contain ID_FAIL as single element to denote DLV semantics.
+      */
+    Tuple weakconstraintVector;
+
     /** \brief Constructor.
      * @param kind Specifies the type of the rule. */
     Rule(IDKind kind):
@@ -102,9 +108,10 @@ private ostream_printable<Rule>
      * @param body Vector of the IDs of literals in the rule body; the IDs must by of type literal rather than atom!
      * @param weight For weight rules.
      * @param level For weight rules.
+     * @param weakconstraintVector Vector of terms in the weak constraint according to ASP-Core-2 standard; ID_FAIL as single element denotes a DLV-style weak constraint.
      */
-    Rule(IDKind kind, const Tuple& head, const Tuple& body, ID weight, ID level):
-    kind(kind), head(head), body(body), headGuard(), bound(ID_FAIL), weight(weight), level(level)
+    Rule(IDKind kind, const Tuple& head, const Tuple& body, ID weight, ID level, Tuple weakconstraintVector):
+    kind(kind), head(head), body(body), headGuard(), bound(ID_FAIL), weight(weight), level(level), weakconstraintVector(weakconstraintVector)
         { assert(ID(kind,0).isRule()); }
 
     /**
@@ -115,9 +122,10 @@ private ostream_printable<Rule>
      * @param headGuard Vector of IDs of atoms or literals in the head guard (for disjunctions of arbitrary length).
      * @param weight For weak constraints.
      * @param level For weak constraints.
+     * @param weakconstraintVector Vector of terms in the weak constraint according to ASP-Core-2 standard; ID_FAIL as single element denotes a DLV-style weak constraint.
      */
-    Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& headGuard, ID weight, ID level):
-    kind(kind), head(head), body(body), headGuard(headGuard), bound(ID_FAIL), weight(weight), level(level)
+    Rule(IDKind kind, const Tuple& head, const Tuple& body, const Tuple& headGuard, ID weight, ID level, Tuple weakconstraintVector):
+    kind(kind), head(head), body(body), headGuard(headGuard), bound(ID_FAIL), weight(weight), level(level), weakconstraintVector(weakconstraintVector)
         { assert(ID(kind,0).isRule()); }
 
     /**
@@ -125,9 +133,10 @@ private ostream_printable<Rule>
      * @param kind Specifies the type of the rule.
      * @param weight For weak constraints.
      * @param level For weak constraints.
+     * @param weakconstraintVector Vector of terms in the weak constraint according to ASP-Core-2 standard; ID_FAIL as single element denotes a DLV-style weak constraint.
      */
-    Rule(IDKind kind, ID weight, ID level):
-    kind(kind), head(), body(), headGuard(), bound(ID_FAIL), weight(weight), level(level)
+    Rule(IDKind kind, ID weight, ID level, Tuple weakconstraintVector):
+    kind(kind), head(), body(), headGuard(), bound(ID_FAIL), weight(weight), level(level), weakconstraintVector(weakconstraintVector)
         { assert(ID(kind,0).isRule()); }
 
     /**
