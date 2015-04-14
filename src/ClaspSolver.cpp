@@ -1508,8 +1508,16 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum)
         newopt[optlen - 1]++;
 
     LOG(DBG, "Setting sharedMinimizeData mode to " << static_cast<int>(newMode));
-    // TODO do we need to call resetBounds if we go from optimize to enumOpt?
-    sharedMinimizeData->setMode(newMode);
+    Clasp::MinimizeMode oldMode = sharedMinimizeData->mode();
+    if( oldMode != newMode ) {
+        LOG(DBG, "Changing sharedMinimizeData mode from " << static_cast<int>(oldMode) << " to " << static_cast<int>(newMode));
+        sharedMinimizeData->setMode(newMode);
+        // TODO do we need to call resetBounds if we go from optimize to enumOpt?
+        if( oldMode == Clasp::MinimizeMode_t::optimize && newMode == Clasp::MinimizeMode_t::enumOpt ) {
+            LOG(DBG, "also calling resetBounds()");
+            sharedMinimizeData->resetBounds();
+        }
+    }
     LOG(DBG, "Setting optimum to " << printvector(std::vector<int>(&newopt[0], &newopt[optlen])));
     sharedMinimizeData->setOptimum(newopt);
     if( markAsOptimal ) {
