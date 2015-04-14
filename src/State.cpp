@@ -716,6 +716,7 @@ namespace
 
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "evaluateFindOptimum");
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluateFindOptimum::gNM");
+        DBGLOG_SCOPE(DBG,"eFO","evaluateFindOptimum");
 
         assert(ctx->config.getOption("OptimizationTwoStep") == 1);
         AnswerSetPtr lastAnswerSet;
