@@ -485,6 +485,7 @@ void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendWeightRuleTC");
     #endif
 
+    DBGLOG(DBG, "Sending weight rule to clasp: " << printToString<RawPrinter>(ruleId, reg));
     const Rule& rule = reg->rules.getByID(ruleId);
     asp.startRule(Clasp::Asp::WEIGHTRULE, rule.bound.address);
     assert(rule.head.size() != 0);
@@ -508,6 +509,7 @@ void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID rule
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::sendOrdinaryRuleTC");
     #endif
 
+    DBGLOG(DBG, "Sending ordinary rule to clasp: " << printToString<RawPrinter>(ruleId, reg));
     const Rule& rule = reg->rules.getByID(ruleId);
     asp.startRule(rule.head.size() > 1 ? Clasp::Asp::DISJUNCTIVERULE : Clasp::Asp::BASICRULE);
     if (rule.head.size() == 0) {
@@ -653,6 +655,8 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p)
             int level = weightAtom.tuple[2].address;
             while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
             minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(*en), weightAtom.tuple[1].address));
+            DBGLOG(DBG, "EDB Clasp::WeightLiteral on level " << (level-1) << " for atom " <<
+                printToString<RawPrinter>(weightAtom.tuple[1], reg) << "(IDAddress=" << *en << ")");
             #ifndef NDEBUG
             while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
             minimizeStatementsHex[level - 1].push_back(*en);
@@ -670,6 +674,8 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p)
                 int level = weightAtom.tuple[2].address;
                 while (minimizeStatements.size() < level) minimizeStatements.push_back(Clasp::WeightLitVec());
                 minimizeStatements[level - 1].push_back(Clasp::WeightLiteral(convertHexToClaspSolverLit(rule.head[0].address), weightAtom.tuple[1].address));
+                DBGLOG(DBG, "IDB Clasp::WeightLiteral on level " << (level-1) << " for atom " <<
+                    printToString<RawPrinter>(weightAtom.tuple[1], reg) << "(IDAddress=" << *en << ")");
                 #ifndef NDEBUG
                 while (minimizeStatementsHex.size() < level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
                 minimizeStatementsHex[level - 1].push_back(rule.head[0].address);
@@ -680,14 +686,7 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p)
 
     // add the minimize statements to clasp
     for (int level = minimizeStatements.size() - 1; level >= 0; --level) {
-        #ifndef NDEBUG
-        std::stringstream ss;
-        ss << "Minimize statement at level " << level << ": ";
-        for (int l = 0; l < minimizeStatementsHex[level].size(); ++l) {
-            ss << (l > 0 ? ", " : "") << minimizeStatementsHex[level][l];
-        }
-        DBGLOG(DBG, ss.str());
-        #endif
+        DBGLOG(DBG, "Minimize statement at level " << level << ": " << printvector(minimizeStatementsHex[level]));
         minb.addRule(minimizeStatements[level]);
     }
 
