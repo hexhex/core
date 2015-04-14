@@ -746,8 +746,16 @@ namespace
                 LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()) << ", old best: " << printvector(ctx->currentOptimum));
                 assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
                 ctx->currentOptimum = answerset->getWeightVector();
+                // if we have at least one weight we need to complete the vector
+                // in order to obtain bounds for all levels
+                // (if we do not do this, clasp will not set a boud if we find a cost-free model)
+                // TODO set currentOptimumRelevantLevels not in ClaspSolver but in WeakPlugin during rewriting (should be possible!)
+                while (ctx->currentOptimum.size() < (ctx->currentOptimumRelevantLevels+1))
+                    ctx->currentOptimum.push_back(0);
                 lastAnswerSet = answerset;
             }
+            // exit if we get no model
+            // if we get a model with zero cost, the next iteration will set 0 as bound in clasp, so no further model will be found
         } while( !!om );
         // we got no model so we left the loop:
         // * either there never was any model with any weight
@@ -801,6 +809,8 @@ namespace
                 answerset->interpretation->getStorage() = interpretation->getStorage();
                 answerset->computeWeightVector();
                 LOG(DBG, "weight vector of this answer set: " << printvector(answerset->getWeightVector()));
+                // TODO this assertion should be done, but only if optimizing and perhaps even then we might have vector length difference problems
+                //assert( ctx->currentOptimum == answerset->getWeightVector() );
 
                 // add EDB if configured that way
                 if( !ctx->config.getOption("NoFacts") )
