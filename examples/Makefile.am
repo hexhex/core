@@ -85,6 +85,12 @@ EXTRA_DIST = \
     variable_predicate_inputs.hex \
     weak1.hex \
     weak2.hex \
+    weak3.hex \
+    weak4.hex \
+    weak5a.hex \
+    weak5b.hex \
+    weak5c.hex \
+    weak_bench_small.hex \
     maxint.hex \
     naftest.hex \
     nonmoncycle.hex \
@@ -220,6 +226,11 @@ EXTRA_DIST = \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \
+    tests/weak3.out \
+    tests/weak5a.out \
+    tests/weak5b.out \
+    tests/weak5c.out \
+    tests/weak_bench_small.out \
     tests/maxint.out \
     tests/naftest.out \
     tests/no_model.out \
