@@ -385,7 +385,14 @@ namespace PythonAPI
         if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.getTuple: Parameter must an atom or literal ID");
         const OrdinaryAtom& ogatom = emb_ctx->registry()->lookupOrdinaryAtom(id);
         boost::python::tuple t;
-        BOOST_FOREACH (ID term, ogatom.tuple) t += boost::python::make_tuple(getValue(term));
+        BOOST_FOREACH(ID term, ogatom.tuple) {
+            if (term.isIntegerTerm()) {
+                t += boost::python::make_tuple(getIntValue(term));
+            }
+            else {
+                t += boost::python::make_tuple(getValue(term));
+            }
+        }
         return t;
     }
 
