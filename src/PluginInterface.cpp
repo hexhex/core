@@ -79,7 +79,7 @@ bool PluginAtom::Query::operator==(const Query& other) const
         // Equivalence of the predicateInputMask in the current and the cached query is required for the reason described in method retrieveCached.
         // Because for the same external atom the mask can only increase over time (when new ground atoms are added to registry) but never decrease,
         // comparing the number of atoms suffices.
-        (predicateInputMask->storage().count == other.predicateInputMask->storage().count);
+        (predicateInputMask->getStorage().count == other.predicateInputMask->getStorage().count);
         );
 }
 
