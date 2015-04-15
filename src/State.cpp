@@ -716,7 +716,8 @@ namespace
 
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "evaluateFindOptimum");
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluateFindOptimum::gNM");
-        DBGLOG_SCOPE(DBG,"eFO","evaluateFindOptimum");
+        DBGLOG_SCOPE(DBG,"eFO",false);
+        DBGLOG(DBG,"eFO = evaluateFindOptimum");
 
         assert(ctx->config.getOption("OptimizationTwoStep") == 1);
         AnswerSetPtr lastAnswerSet;
@@ -773,6 +774,8 @@ namespace
     void evaluateOnce(ProgramCtx* ctx) {
 
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+        DBGLOG_SCOPE(DBG,"eO",false);
+        DBGLOG(DBG,"eO = evaluateOnce");
 
         // this implementation requires that there is no optimization OR
         // that the optimal cost has been found and set and that we use two-stop optimization mode
@@ -846,6 +849,8 @@ namespace
     void evaluateOnceExpspace(ProgramCtx* ctx) {
 
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+        DBGLOG_SCOPE(DBG,"eOE",false);
+        DBGLOG(DBG,"eOE = evaluateOnceExpspace");
 
         // this implementation should only be used for naive optimization
         assert(ctx->config.getOption("Optimization") == 1 &&
