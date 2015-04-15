@@ -113,6 +113,7 @@ struct sem<HexGrammarSemantics::termFromInteger>
 {
     void operator()(HexGrammarSemantics& mgr, unsigned int source, ID& target) {
         target = ID::termFromInteger(source);
+        if (source > mgr.ctx.maxint) mgr.ctx.maxint = source; // by default, set maxint to the largest number in the input
     }
 };
 
