@@ -438,14 +438,12 @@ InterpretationConstPtr assigned,
 InterpretationConstPtr changed,
 bool* fromCache) const
 {
-    LOG_SCOPE(PLUGIN,"eEA",false);
-    DBGLOG(DBG,"= evaluateExternalAtom for " << eatomID <<
-        " with input interpretation " << *inputi);
-
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
-    const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(eatomID);
-
+    LOG_SCOPE(PLUGIN,"eEA",false);
     RegistryPtr reg = ctx.registry();
+    DBGLOG(DBG,"eEA = evaluateExternalAtom for " << printToString<RawPrinter>(eatomID, reg) << "/" << eatomID);
+
+    const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
 
     // build input interpretation
     // for each input tuple (multiple auxiliary inputs possible)
@@ -462,6 +460,7 @@ bool* fromCache) const
     // project interpretation for predicate inputs
     InterpretationConstPtr eatominp =
         projectEAtomInputInterpretation(ctx.registry(), eatom, inputi);
+    DBGLOG(DBG,"projected input interpretation = " << *eatominp);
 
     InterpretationConstPtr eatomassigned;
     if (assigned) eatomassigned = projectEAtomInputInterpretation(ctx.registry(), eatom, assigned);
@@ -476,7 +475,7 @@ bool* fromCache) const
 
         // prepare callback for evaluation of this eatom
         if( !cb.eatom(eatom) ) {
-            LOG(DBG,"callback aborted for eatom " << eatom);
+            LOG(DBG,"callback aborted for eatom " << printToString<RawPrinter>(eatomID, reg));
             return false;
         }
 
@@ -508,7 +507,7 @@ bool* fromCache) const
         if( bit != bit_end ) {
             // we have an input atom, so we tell the callback that we will process it
             if( !cb.eatom(eatom) ) {
-                LOG(DBG,"callback aborted for eatom " << eatom);
+                LOG(DBG,"callback aborted for eatom " << printToString<RawPrinter>(eatomID, reg));
                 return false;
             }
 
