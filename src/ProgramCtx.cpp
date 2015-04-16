@@ -54,7 +54,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ProgramCtx::ProgramCtx():
-maxint(0), terminationRequest(false)
+maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
 {
     config.setOption("AllowAggExtCycles",0);
     config.setOption("FLPDecisionCriterionHead", 1);
@@ -321,6 +321,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationCons
     pc.idb = idb;
     pc.edb = InterpretationPtr(new Interpretation(*edb));
     pc.currentOptimum.clear();
+    pc.currentOptimumRelevantLevels = 0;
     return evaluateSubprogram(pc, false);
 }
 
@@ -332,6 +333,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
     pc.idb.clear();
     pc.edb = InterpretationPtr(new Interpretation(this->registry()));
     pc.currentOptimum.clear();
+    pc.currentOptimumRelevantLevels = 0;
     pc.config.setOption("NumberOfModels",0);
     if( !!addFacts )
         pc.edb->getStorage() |= addFacts->getStorage();

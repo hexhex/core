@@ -148,6 +148,12 @@ class DLVHEX_EXPORT ProgramCtx
          * If the vector is empty, then there was no solution so far.
          * This vector will always be updated, independent of the optimization settings, and also has statistical purpose. It does not directly influence the algorithms. */
         std::vector<int> currentOptimum;
+        /** \brief Stores how many weight/optimization levels are present in weak constraints.
+         *
+         * We need to know this because in case some of these constraints are never violated
+         * while searching for the first model, we never see the respective level and cannot
+         * set a weight bound for enumeration. */
+        unsigned currentOptimumRelevantLevels;
 
         // used by plugins to store specific plugin data in ProgramCtx
         // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
