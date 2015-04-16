@@ -87,9 +87,9 @@ EXTRA_DIST = \
     weak2.hex \
     weak3.hex \
     weak4.hex \
-    weak5a.hex \
-    weak5b.hex \
-    weak5c.hex \
+    weak6a.hex \
+    weak6b.hex \
+    weak6c.hex \
     weak_bench_small.hex \
     maxint.hex \
     naftest.hex \
@@ -227,9 +227,9 @@ EXTRA_DIST = \
     tests/weak1r.out \
     tests/weak2.out \
     tests/weak3.out \
-    tests/weak5a.out \
-    tests/weak5b.out \
-    tests/weak5c.out \
+    tests/weak6a.out \
+    tests/weak6b.out \
+    tests/weak6c.out \
     tests/weak_bench_small.out \
     tests/maxint.out \
     tests/naftest.out \

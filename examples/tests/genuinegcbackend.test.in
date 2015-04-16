@@ -17,14 +17,14 @@ weak2.hex weak2.out --solver=genuinegc --strongnegation-enable --weak-enable --h
 weak3.hex weak3.out --solver=genuinegc --strongnegation-enable --heuristics=monolithic --forcegc --weak-enable
 weak4.hex weak4.out --solver=genuinegc --strongnegation-enable --weak-enable
 weak4.hex weak4.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
-weak5a.hex weak5a.out --solver=genuinegc --strongnegation-enable --weak-enable
-weak5a.hex weak5a.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
-weak5b.hex weak5b.out --solver=genuinegc --strongnegation-enable --weak-enable
-weak5b.hex weak5b.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
-weak5c.hex weak5c.out --solver=genuinegc --strongnegation-enable --weak-enable
-weak5c.hex weak5c.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
 weak_bench_small.hex weak_bench_small.out --solver=genuinegc --weak-enable
 weak_bench_small.hex weak_bench_small.out --solver=genuinegc --weak-enable --heuristics=monolithic
+weak6a.hex weak6a.out --solver=genuinegc --strongnegation-enable --weak-enable
+weak6a.hex weak6a.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
+weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable
+weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
+weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable
+weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuinegc
 builtin_safety1.hex builtin_safety1.stderr --solver=genuinegc
 builtin_safety1a.hex builtin_safety1a.stderr --solver=genuinegc
