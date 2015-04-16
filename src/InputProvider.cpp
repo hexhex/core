@@ -70,7 +70,10 @@ InputProvider::~InputProvider()
 
 void InputProvider::addStreamInput(std::istream& i, const std::string& contentname)
 {
-    pimpl->stream << i.rdbuf();
+    // read the input before adding it to pimpl->stream (otherwise empty input seems to make the overall stream corrupt)
+    std::stringstream inp;
+    inp << i.rdbuf();
+    pimpl->stream << inp.str();
     pimpl->contentNames.push_back(contentname);
 }
 
