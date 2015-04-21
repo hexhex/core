@@ -1261,7 +1261,13 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
             en++;
         }
         herbrandBase->getStorage() |= domintr->getStorage();
-        DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
+        if (Logger::Instance().shallPrint(Logger::DBG)) {
+            DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
+            InterpretationPtr hbincrease(new Interpretation(reg));
+            hbincrease->getStorage() |= herbrandBase->getStorage();
+            hbincrease->getStorage() -= oldherbrandBase->getStorage();
+            LOG(DBG,"Last iteration extended Herbrand base by " << *hbincrease);
+        }
     }while(herbrandBase->getStorage().count() != oldherbrandBase->getStorage().count());
 
     domintr->getStorage() -= edb->getStorage();
