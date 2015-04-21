@@ -64,11 +64,14 @@
 #include "dlvhex2/MLPSolver.h"
 
 #include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <vector>
+
+#include <unistd.h>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -542,6 +545,20 @@ void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 
 MANDATORY_STATE_CONSTRUCTOR(CreateEvalGraphState);
 
+namespace {
+    std::string createNonexistingDumpFilename(const std::string& prefix, const std::string& suffix) {
+        unsigned nbr = 0;
+        std::string out;
+        do {
+            std::stringstream s;
+            s << static_cast<unsigned>(getpid()) << "_" << prefix << "_" << nbr << "_" << suffix;
+            out = s.str();
+            nbr++;
+        } while( boost::filesystem::exists(out) );
+        return out;
+    }
+}
+
 void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 {
     assert(!!ctx->compgraph &&
@@ -564,12 +581,12 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
     // dump component graph again, this time the cloned version
     // (it has different addresses which we might need for debugging)
     if( ctx->config.getOption("DumpCompGraph") ) {
-        std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_ClonedCompGraphVerbose.dot";
+        std::string fnamev = createNonexistingDumpFilename(ctx->config.getStringOption("DebugPrefix"), "ClonedCompGraphVerbose.dot");
         LOG(INFO,"dumping verbose cloned component graph to " << fnamev);
         std::ofstream filev(fnamev.c_str());
         egbuilder->getComponentGraph().writeGraphViz(filev, true);
 
-        std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_ClonedCompGraphTerse.dot";
+        std::string fnamet = createNonexistingDumpFilename(ctx->config.getStringOption("DebugPrefix"), "ClonedCompGraphTerse.dot");
         LOG(INFO,"dumping terse cloned component graph to " << fnamet);
         std::ofstream filet(fnamet.c_str());
         egbuilder->getComponentGraph().writeGraphViz(filet, false);
@@ -607,12 +624,12 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
     ctx->evalgraph = evalgraph;
 
     if( ctx->config.getOption("DumpEvalGraph") ) {
-        std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_EvalGraphVerbose.dot";
+        std::string fnamev = createNonexistingDumpFilename(ctx->config.getStringOption("DebugPrefix"), "EvalGraphVerbose.dot");
         LOG(INFO,"dumping verbose eval graph to " << fnamev);
         std::ofstream filev(fnamev.c_str());
         ctx->evalgraph->writeGraphViz(filev, true);
 
-        std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_EvalGraphTerse.dot";
+        std::string fnamet = createNonexistingDumpFilename(ctx->config.getStringOption("DebugPrefix"), "EvalGraphTerse.dot");
         LOG(INFO,"dumping terse eval graph to " << fnamet);
         std::ofstream filet(fnamet.c_str());
         ctx->evalgraph->writeGraphViz(filet, false);

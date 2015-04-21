@@ -357,13 +357,14 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
     pc.compgraph.reset();
     pc.depgraph.reset();
 
-    pc.config.setOption("DumpDepGraph",0);
-    pc.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
-    pc.config.setOption("DumpCompGraph",0);
-    pc.config.setOption("DumpEvalGraph",0);
-    pc.config.setOption("DumpModelGraph",0);
-    pc.config.setOption("DumpIModelGraph",0);
-    pc.config.setOption("DumpAttrGraph",0);
+    // sometimes we need these!
+    //pc.config.setOption("DumpDepGraph",0);
+    //pc.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
+    //pc.config.setOption("DumpCompGraph",0);
+    //pc.config.setOption("DumpEvalGraph",0);
+    //pc.config.setOption("DumpModelGraph",0);
+    //pc.config.setOption("DumpIModelGraph",0);
+    //pc.config.setOption("DumpAttrGraph",0);
 
     if( !pc.evalHeuristic ) {
         assert(false);
