@@ -152,6 +152,8 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     #if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
     config.setOption("GenuineSolver", 4);
     #endif
+
+    config.setStringOption("DebugPrefix","");
 }
 
 
