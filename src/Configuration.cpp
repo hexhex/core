@@ -120,7 +120,8 @@ const std::string& key) const
 {
     std::map<std::string, std::string>::const_iterator it =
         stringOptionMap.find(key);
-    assert(it != stringOptionMap.end());
+    if( it == stringOptionMap.end() )
+        throw std::runtime_error("requested non-existing/unset string option '"+key+"'");
     return it->second;
 }
 
