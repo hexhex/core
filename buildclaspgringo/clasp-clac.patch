@@ -1,0 +1,42 @@
+Index: libclasp/clasp/solver.h
+===================================================================
+--- libclasp/clasp/solver.h	(revision 5216)
++++ libclasp/clasp/solver.h	(working copy)
+@@ -104,6 +104,19 @@
+ 	bool endInit();
+ 	bool endStep(uint32 top);
+ 	//@}
++
++	// DLVHEX EXTENSION BEGIN
++public:
++	class ClauseAddCallback{
++	public:
++		// is called when a new clause is added to the clasp solver object
++		virtual void addedClause(const ClauseRep& c, bool isNew) = 0;
++	};
++private:
++	std::vector<ClauseAddCallback*> clauseAddCallbacks;
++public:
++	void addClauseAddCallback(ClauseAddCallback* clac) { clauseAddCallbacks.push_back(clac); }
++	// DLVHEX EXTENSION END
+ public:
+ 	typedef SolverStrategies::SearchStrategy SearchMode;
+ 	typedef SolverStrategies::UpdateMode     UpdateMode;
+Index: libclasp/src/solver.cpp
+===================================================================
+--- libclasp/src/solver.cpp	(revision 5216)
++++ libclasp/src/solver.cpp	(working copy)
+@@ -292,6 +292,13 @@
+ 	constraints_.push_back(c);
+ }
+ bool Solver::add(const ClauseRep& c, bool isNew) {
++
++	// DLVHEX EXTENSION BEGIN
++	for (unsigned i = 0; i < clauseAddCallbacks.size(); ++i) {
++		clauseAddCallbacks[i]->addedClause(c, isNew);
++	}
++	// DLVHEX EXTENSION END
++
+ 	typedef ShortImplicationsGraph::ImpType ImpType;
+ 	if (c.prep == 0) {
+ 		return ClauseCreator::create(*this, c, ClauseCreator::clause_force_simplify).ok();

@@ -11,6 +11,8 @@ else
 	echo "unpacking clasp"
 	tar xzf ${TOP_SRCDIR}/clasp-3.1.1-source.tar.gz
 	mv clasp-3.1.1 clasp
+	patch -d clasp -p0 < clasp-clac.patch ||
+		{ echo "clasp patching failed!"; exit -1; }
 
 	echo "configuring clasp"
 	mkdir -p clasp/build/fpic
