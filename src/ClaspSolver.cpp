@@ -1113,75 +1113,76 @@ void ClaspSolver::outputProject(InterpretationPtr intr)
 std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& lits){
 
 #ifndef NDEBUG
-	std::stringstream ss;
-	ss << "{";
-	for (int i = 0; i < lits.size(); ++i){
-		ss << (i > 0 ? ", " : " ") << (lits[i].sign() ? "!" : "") << lits[i].var();
-	}
-	ss << " }";
-	DBGLOG(DBG, "Translating extracted clasp clause of size " << lits.size() << ": " << ss.str());
+    std::stringstream ss;
+    ss << "{";
+    for (int i = 0; i < lits.size(); ++i){
+        ss << (i > 0 ? ", " : " ") << (lits[i].sign() ? "!" : "") << lits[i].var();
+    }
+    ss << " }";
+    DBGLOG(DBG, "Translating extracted clasp clause of size " << lits.size() << ": " << ss.str());
 #endif
 
-	// all nogoods have the size of the outer vector, where each element can independently replaced by each element in the inner vector at that position
-	std::vector<std::vector<ID> > protoNogoods;
-	for (int i = 0; i < lits.size(); ++i){
-		std::vector<ID> currVec;
-		std::vector<int> posAndNegLit;
-		posAndNegLit.push_back(lits[i].index());
-		Clasp::Literal negLiteral(lits[i].var(), !lits[i].sign());
-		posAndNegLit.push_back(negLiteral.index());
-		bool firstout = true;
-		bool positive = true;
-		BOOST_FOREACH (int litindex, posAndNegLit){
-			const AddressVector& hexatoms = *convertClaspSolverLitToHex(litindex);
-			BOOST_FOREACH (IDAddress adr, hexatoms){
-				firstout = false;
-				// Note: negate all literals because clasp provides a clause but we want a nogood!
-				ID litID = (!positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
-				currVec.push_back(litID);
-			}
-			positive = false;
-		}
-		protoNogoods.push_back(currVec);
-	}
+    // all nogoods have the size of the outer vector, where each element can independently replaced by each element in the inner vector at that position
+    std::vector<std::vector<ID> > protoNogoods;
+    for (int i = 0; i < lits.size(); ++i){
+        std::vector<ID> currVec;
+        std::vector<int> posAndNegLit;
+        posAndNegLit.push_back(lits[i].index());
+        Clasp::Literal negLiteral(lits[i].var(), !lits[i].sign());
+        posAndNegLit.push_back(negLiteral.index());
+        bool firstout = true;
+        bool positive = true;
+        BOOST_FOREACH (int litindex, posAndNegLit){
+            const AddressVector& hexatoms = *convertClaspSolverLitToHex(litindex);
+            BOOST_FOREACH (IDAddress adr, hexatoms){
+                firstout = false;
+                // Note: negate all literals because clasp provides a clause but we want a nogood!
+                ID litID = (!positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
+                currVec.push_back(litID);
+            }
+            positive = false;
+        }
+        protoNogoods.push_back(currVec);
+    }
 
-	// now unfold the nogoods
-	std::vector<Nogood> nogoods;
-	if (protoNogoods.size() == 0) return nogoods;
+    // now unfold the nogoods
+    DBGLOG(DBG, "Unfolding protonogood");
+    std::vector<Nogood> nogoods;
+    if (protoNogoods.size() == 0) return nogoods;
 
-	// store the index of the next element for each set-element of the proto-nogood
-	std::vector<int> ind(protoNogoods.size());
-	for (int i = 0; i < protoNogoods.size(); ++i) ind[i] = 0;
+    // store the index of the next element for each set-element of the proto-nogood
+    std::vector<int> ind(protoNogoods.size());
+    for (int i = 0; i < protoNogoods.size(); ++i) ind[i] = 0;
 
-	// while more element in the first set-element
-	while (ind[0] < protoNogoods[0].size()){
+    // while more element in the first set-element
+    while (ind[0] < protoNogoods[0].size()){
 
-		// translate
-		Nogood ng;
-		for (int i = 0; i < protoNogoods.size(); ++i){
-			ng.insert(protoNogoods[i][ind[i]]);
-		}
+        // translate
+        Nogood ng;
+        for (int i = 0; i < protoNogoods.size(); ++i){
+            ng.insert(protoNogoods[i][ind[i]]);
+        }
 
-		DBGLOG(DBG, "Extracted nogood: " << ng.getStringRepresentation(reg));
-		nogoods.push_back(ng);
+        DBGLOG(DBG, "Extracted nogood: " << ng.getStringRepresentation(reg));
+        nogoods.push_back(ng);
 
-		// goto next element in the last set-element
-		int k = protoNogoods.size() - 1;
-		ind[k]++;
+        // goto next element in the last set-element
+        int k = protoNogoods.size() - 1;
+        ind[k]++;
 
-		// while element in set-element k are exhauses, reset set-element k and goto set-element k-1
-		while (ind[k] >= protoNogoods[k].size()){
-			if (k > 0){
-				ind[k] = 0;
-				k--;
-				ind[k]++;
-			}else{
-				break;
-			}
-		}
-	}
+        // while element in set-element k are exhauses, reset set-element k and goto set-element k-1
+        while (ind[k] >= protoNogoods[k].size()){
+            if (k > 0){
+                ind[k] = 0;
+                k--;
+                ind[k]++;
+            }else{
+                break;
+            }
+        }
+    }
 
-	return nogoods;
+    return nogoods;
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
