@@ -68,6 +68,23 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// ============================== ClauseAddCallback ==============================
+
+ClaspSolver::ClauseAddCallback::ClauseAddCallback(ClaspSolver& cs) : cs(cs) {}
+
+void ClaspSolver::ClauseAddCallback::addedClause(const Clasp::ClauseRep& c, bool isNew) {
+    Clasp::LitVec lv;
+    for (int i = 0; i < c.size; ++i){
+        lv.push_back(c.lits[i]);
+    }
+    std::cout << "Got clause of size " << c.size << std::endl;
+    std::vector<Nogood> nogoods = cs.claspClauseToHexNogoods(lv);
+    std::cout << "Got " << nogoods.size() << " dlvhex nogoods:" << std::endl;
+    BOOST_FOREACH (Nogood ng, nogoods){
+        std::cout << ng.getStringRepresentation(cs.reg) << std::endl;
+    }
+}
+
 // ============================== ExternalPropagator ==============================
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs)
@@ -1090,20 +1107,6 @@ void ClaspSolver::outputProject(InterpretationPtr intr)
     }
 }
 
-namespace{
-
-class ClauseAddCallback : public Clasp::Solver::ClauseAddCallback{
-
-    void addedClause(const Clasp::ClauseRep& c, bool isNew) {
-        std::cout << "Got clause of size " << c.size << std::endl;
-    }
-
-};
-
-ClauseAddCallback clac;
-
-}
-
 std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& lits){
 
 #ifndef NDEBUG
@@ -1179,7 +1182,7 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
-: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
+: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0), clac(*this)
 {
     reg = ctx.registry();
 
@@ -1224,7 +1227,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
-: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
+: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0), clac(*this)
 {
     reg = ctx.registry();
 

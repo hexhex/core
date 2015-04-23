@@ -120,6 +120,22 @@ class PropagatorCallback;
 class ClaspSolver : public GenuineGroundSolver, public SATSolver
 {
     private:
+        /**  \brief Callback added to clasp which gets informed about newly added clauses. */
+        class ClauseAddCallback : public Clasp::Solver::ClauseAddCallback {
+        private:
+            /** \brief Reference to the ClaspSolver object. */
+            ClaspSolver& cs;
+
+        public:
+            /** \brief Constructor.
+              * @param cs See ClauseAddCallback::cs. */
+            ClauseAddCallback(ClaspSolver& cs);
+            /** \brief Callback method called for every newly added clasp clause.
+              * @param c Added clause, see clasp documentation.
+              * @param isNew See clasp documentation. */
+            void addedClause(const Clasp::ClauseRep& c, bool isNew);
+        };
+
         /**
          * \brief Propagator for external behavior learning.
          */
@@ -468,6 +484,9 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
         // statistics
         /** \brief Counts the model enumerated so far. */
         int modelCount;
+
+        /** \brief Singleton instance of ClauseAddCallback. */
+        ClauseAddCallback clac;
 
 	    /** \brief Transforms a clasp clause into all corresponding HEX-nogoods.
 	      *
