@@ -70,9 +70,12 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ClauseAddCallback ==============================
 
-ClaspSolver::ClauseAddCallback::ClauseAddCallback(ClaspSolver& cs) : cs(cs) {}
+ClaspSolver::DlvhexClauseAddCallback::DlvhexClauseAddCallback(ClaspSolver& cs) : cs(cs)
+{
+}
 
-void ClaspSolver::ClauseAddCallback::addedClause(const Clasp::ClauseRep& c, bool isNew) {
+void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c, bool isNew)
+{
     Clasp::LitVec lv;
     for (int i = 0; i < c.size; ++i){
         lv.push_back(c.lits[i]);

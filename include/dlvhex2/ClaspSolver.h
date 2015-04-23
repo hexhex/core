@@ -74,6 +74,7 @@
 #include "clasp/model_enumerators.h"
 #include "clasp/solve_algorithms.h"
 #include "clasp/cli/clasp_options.h"
+#include "clasp/solver.h"
 #include "program_opts/program_options.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -121,15 +122,17 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
 {
     private:
         /**  \brief Callback added to clasp which gets informed about newly added clauses. */
-        class ClauseAddCallback : public Clasp::Solver::ClauseAddCallback {
+        class DlvhexClauseAddCallback : public Clasp::Solver::ClauseAddCallback
+        {
         private:
             /** \brief Reference to the ClaspSolver object. */
             ClaspSolver& cs;
 
         public:
             /** \brief Constructor.
-              * @param cs See ClauseAddCallback::cs. */
-            ClauseAddCallback(ClaspSolver& cs);
+              * @param cs See DlvhexClauseAddCallback::cs. */
+            DlvhexClauseAddCallback(ClaspSolver& cs);
+
             /** \brief Callback method called for every newly added clasp clause.
               * @param c Added clause, see clasp documentation.
               * @param isNew See clasp documentation. */
@@ -486,7 +489,7 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
         int modelCount;
 
         /** \brief Singleton instance of ClauseAddCallback. */
-        ClauseAddCallback clac;
+        DlvhexClauseAddCallback clac;
 
 	    /** \brief Transforms a clasp clause into all corresponding HEX-nogoods.
 	      *

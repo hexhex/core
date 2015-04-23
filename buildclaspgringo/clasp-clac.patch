@@ -9,7 +9,7 @@ Index: libclasp/clasp/solver.h
 +
 +	// DLVHEX EXTENSION BEGIN
 +public:
-+	class ClauseAddCallback{
++	class ClauseAddCallback {
 +	public:
 +		// is called when a new clause is added to the clasp solver object
 +		virtual void addedClause(const ClauseRep& c, bool isNew) = 0;
