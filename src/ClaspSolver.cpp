@@ -1133,6 +1133,7 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
         bool firstout = true;
         bool positive = true;
         BOOST_FOREACH (int litindex, posAndNegLit){
+            DBGLOG(DBG, "Converting clasp solver literal " << litindex << " to HEX");
             const AddressVector& hexatoms = *convertClaspSolverLitToHex(litindex);
             BOOST_FOREACH (IDAddress adr, hexatoms){
                 firstout = false;
