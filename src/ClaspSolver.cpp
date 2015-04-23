@@ -1090,6 +1090,19 @@ void ClaspSolver::outputProject(InterpretationPtr intr)
     }
 }
 
+namespace{
+
+class ClauseAddCallback : public Clasp::Solver::ClauseAddCallback{
+
+    void addedClause(const ClauseRep& c, bool isNew) {
+        std::cout << "Got clause of size " << c.size << std::endl;
+    }
+
+};
+
+ClauseAddCallback clac;
+
+}
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
 : ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
@@ -1102,6 +1115,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
     interpretClaspCommandline(Clasp::Problem_t::ASP);
     nextSolveStep = Restart;
 
+    claspctx.master()->addClauseAddCallback(&clac);
     claspctx.requestStepVar();
     sendProgramToClasp(p, frozen);
 
