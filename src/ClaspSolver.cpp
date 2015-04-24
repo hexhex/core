@@ -70,7 +70,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== ClauseAddCallback ==============================
 
-ClaspSolver::DlvhexClauseAddCallback::DlvhexClauseAddCallback(ClaspSolver& cs) : cs(cs)
+ClaspSolver::DlvhexClauseAddCallback::DlvhexClauseAddCallback(ClaspSolver& cs) : cs(cs), symbolTableReady(false)
 {
 }
 
@@ -79,17 +79,31 @@ void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c
     Clasp::LitVec lv;
 #ifndef NDEBUG
     std::stringstream ss;
+    ss << "{";
 #endif
     for (int i = 0; i < c.size; ++i){
 #ifndef NDEBUG
-        ss << c.lits[i].index() << "/" << (c.lits[i].sign() ? "-" : "") << c.lits[i].var() << " ";
+        ss << (i > 0 ? ", " : " ") << c.lits[i].index() << "/" << (c.lits[i].sign() ? "!" : "") << c.lits[i].var() << " ";
 #endif
         lv.push_back(c.lits[i]);
     }
 #ifndef NDEBUG
-    DBGLOG(DBG, "Added clasp clause: " << ss.str());
+    ss << " }";
 #endif
-    DBGLOG(DBG,"Got clause of size " << c.size);
+
+    DBGLOG(DBG, "Retrieved clasp clause of size " << c.size << ": " << ss.str() << "; " << (symbolTableReady ? "will translate immediately" : "will cache for later translation"));
+    if (symbolTableReady) {
+        translateClause(lv);
+    }else{
+        clauseCache.push_back(lv);
+    }
+}
+
+void ClaspSolver::DlvhexClauseAddCallback::translateClause(const Clasp::LitVec& lv)
+{
+#ifndef NDEBUG
+    DBGLOG(DBG, "Translating clasp clause of size " << lv.size());
+#endif
     std::vector<Nogood> nogoods = cs.claspClauseToHexNogoods(lv);
     DBGLOG(DBG, "Got " << nogoods.size() << " dlvhex nogoods:");
     BOOST_FOREACH (Nogood ng, nogoods){
@@ -98,8 +112,20 @@ void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c
     }
 }
 
-const NogoodSet& ClaspSolver::DlvhexClauseAddCallback::getNogoods() const{
+const NogoodSet& ClaspSolver::DlvhexClauseAddCallback::getNogoods() const
+{
     return nogoodset;
+}
+
+void ClaspSolver::DlvhexClauseAddCallback::symbolTableIsReady()
+{
+    if (!symbolTableReady){
+        BOOST_FOREACH (Clasp::LitVec lv, clauseCache){
+            translateClause(lv);
+        }
+    }
+    clauseCache.clear();
+    symbolTableReady = true;
 }
 
 // ============================== ExternalPropagator ==============================
@@ -1119,12 +1145,12 @@ Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool reg
         #endif
         claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
 
-        // temporarily map clasplit back to addr (this mapping will be redefined after the optimization, cf. updateSymbolTable)
-        while (clasplit.index() >= claspToHex.size()){
-            claspToHex.push_back(new AddressVector);
-        }
-        DBGLOG(DBG, "Temporary mapping: C:" << clasplit.index() << "/" << (clasplit.sign() ? "-" : "") << clasplit.var() << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg));
-        claspToHex[clasplit.index()]->push_back(addr);
+//        // temporarily map hexToClaspSolver[addr] back to addr (this mapping will be redefined after the optimization, cf. updateSymbolTable)
+//        while (hexToClaspSolver[addr].index() >= claspToHex.size()){
+//            claspToHex.push_back(new AddressVector);
+//        }
+//        DBGLOG(DBG, "Temporary mapping: C:" << hexToClaspSolver[addr].index() << "/" << (hexToClaspSolver[addr].sign() ? "!" : "") << hexToClaspSolver[addr].var() << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg));
+//        claspToHex[hexToClaspSolver[addr].index()]->push_back(addr);
     }
     assert(addr < hexToClaspSolver.size());
     assert(hexToClaspSolver[addr] != noLiteral);
@@ -1157,11 +1183,24 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
     }
     ss << " }";
     DBGLOG(DBG, "Translating extracted clasp clause of size " << lits.size() << ": " << ss.str());
+
+    std::stringstream protongss;
+    protongss << "{";
 #endif
 
+    // Since each variable in clasp can be mapped to multiple HEX-atoms, each clause in clasp may be translated to multiple nogoods in HEX.
+    // Therefore we first compute a proto-nogood as a set S = { S_1, ..., S_n } of sets S_i of literals (for all 1 <= i <= n).
+    // Intuitively, S has the same size as the original clause C = { c_1, ..., c_n } in clasp, and each S_i contains all negated*) HEX literals mapped to clasp literal c_i (for all 1 <= i <= n).
+    // S represents then the set of nogoods { { l_1, ..., l_n } | l_i \in S_i for all 1 <= i <= n }, i.e., each inner set is independently replaced by one of its elements.
+    //
+    // *) The negation is necessary because clasp delivers a clause and we need a nogood.
+
     // all nogoods have the size of the outer vector, where each element can independently replaced by each element in the inner vector at that position
-    std::vector<std::vector<ID> > protoNogoods;
+    std::vector<std::vector<ID> > protoNogood;
     for (int i = 0; i < lits.size(); ++i){
+#ifndef NDEBUG
+        protongss << (i > 0 ? ", " : " ") << "{";
+#endif
         std::vector<ID> currVec;
         std::vector<int> posAndNegLit;
         posAndNegLit.push_back(lits[i].index());
@@ -1174,54 +1213,64 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
             const AddressVector& hexatoms = *convertClaspSolverLitToHex(litindex);
             DBGLOG(DBG, "Iterating through corresponding HEX atoms");
             BOOST_FOREACH (IDAddress adr, hexatoms){
-                firstout = false;
                 // Note: negate all literals because clasp provides a clause but we want a nogood!
                 ID litID = (!positive ? ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)) : ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(adr)));
                 currVec.push_back(litID);
+#ifndef NDEBUG
+                protongss << (firstout ? " " : ", ") << (litID.isNaf() ? "-" : "") << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg);
+#endif
+                firstout = false;
             }
             positive = false;
         }
-        protoNogoods.push_back(currVec);
+#ifndef NDEBUG
+        protongss << " }";
+#endif
+        protoNogood.push_back(currVec);
     }
 
+#ifndef NDEBUG
+    protongss << " }";
+#endif
+
     // now unfold the nogoods
-    DBGLOG(DBG, "Unfolding protonogood");
+    DBGLOG(DBG, "Unfolding proto-nogood: " << protongss.str());
     std::vector<Nogood> nogoods;
-    if (protoNogoods.size() == 0){
-        DBGLOG(DBG, "Protonogood is empty");
+    if (protoNogood.size() == 0){
+        DBGLOG(DBG, "Proto-nogood is empty");
         return nogoods;
     }
 
     // store the index of the next element for each set-element of the proto-nogood
-    std::vector<int> ind(protoNogoods.size());
-    for (int i = 0; i < protoNogoods.size(); ++i) {
-        if (protoNogoods[i].size() == 0){
-            DBGLOG(DBG, "Element of protonogood is empty");
+    std::vector<int> ind(protoNogood.size());
+    for (int i = 0; i < protoNogood.size(); ++i) {
+        if (protoNogood[i].size() == 0){
+            DBGLOG(DBG, "Element " << i << " of proto-nogood is empty");
             return nogoods;
         }
         ind[i] = 0;
     }
 
     // while more element in the first set-element
-    DBGLOG(DBG, "Unfolding loop");
-    while (ind[0] < protoNogoods[0].size()){
+    DBGLOG(DBG, "Starting unfolding loop");
+    while (ind[0] < protoNogood[0].size()){
 
         // translate
-        DBGLOG(DBG, "Translating");
+        DBGLOG(DBG, "Translating current instance");
         Nogood ng;
-        for (int i = 0; i < protoNogoods.size(); ++i){
-            ng.insert(protoNogoods[i][ind[i]]);
+        for (int i = 0; i < protoNogood.size(); ++i){
+            ng.insert(protoNogood[i][ind[i]]);
         }
 
         DBGLOG(DBG, "Extracted nogood: " << ng.getStringRepresentation(reg));
         nogoods.push_back(ng);
 
         // goto next element in the last set-element
-        int k = protoNogoods.size() - 1;
+        int k = protoNogood.size() - 1;
         ind[k]++;
 
         // while element in set-element k are exhauses, reset set-element k and goto set-element k-1
-        while (ind[k] >= protoNogoods[k].size()){
+        while (ind[k] >= protoNogood[k].size()){
             if (k > 0){
                 ind[k] = 0;
                 k--;
@@ -1268,6 +1317,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
     }
 
     updateSymbolTable();
+    clac.symbolTableIsReady();
 
     createMinimizeConstraints(p);
 
@@ -1312,6 +1362,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
     }
 
     updateSymbolTable();
+    clac.symbolTableIsReady();
 
     #ifndef NDEBUG
     std::stringstream ss;
@@ -1325,7 +1376,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
             Clasp::Literal lit = ngClasp.clause[i];
             if (!first) ss << ", ";
             first = false;
-            ss << (lit.sign() ? "-" : "") << "a" << lit.var();
+            ss << (lit.sign() ? "!" : "") << "a" << lit.var();
             vars->setFact(lit.var());
         }
         if (!first) ss << "." << std::endl;

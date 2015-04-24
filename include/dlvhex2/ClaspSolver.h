@@ -130,15 +130,36 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
 
             /** \brief Extracted nogoods. */
             NogoodSet nogoodset;
+
+            /** \brief Cache of clasp clauses to be translated. */
+            std::vector<Clasp::LitVec> clauseCache;
+
+            /** \brief Current state of the symbol table. */
+            bool symbolTableReady;
         public:
             /** \brief Constructor.
-              * @param cs See DlvhexClauseAddCallback::cs. */
+              * @param cs See ClaspSolver::DlvhexClauseAddCallback::cs. */
             DlvhexClauseAddCallback(ClaspSolver& cs);
 
             /** \brief Callback method called for every newly added clasp clause.
+              *
+              * The method translates the clause immediately if the symbol table is already ready, and caches it otherwise (cf. ClaspSolver::DlvhexClauseAddCallback::symbolTableIsReady).
               * @param c Added clause, see clasp documentation.
               * @param isNew See clasp documentation. */
             void addedClause(const Clasp::ClauseRep& c, bool isNew);
+
+            /** \brief Translates a clause to HEX and stores it in ClaspSolver::DlvhexClauseAddCallback::nogoodset;
+              * @param lv Added clasp clause. */
+            void translateClause(const Clasp::LitVec& lv);
+
+	        /**
+	          * \brief Informs the callback that clasp's symbol table has been fully initialized. This triggers the translation of cached clasp nogoods to HEX.
+	          *
+	          * The translation of clasp clauses to HEX is only possible after the symbol table of clasp has been finalized for the optimized program.
+	          * However, some nogoods (in particular from Clark's completion) may arrive even before that point. To overcome this problem, one could update the symbol table
+	          * before nogoods are handled. But as this is costly, we simply cache all clasp nogoods and translate them when the callback is informed that the symbol table is finalized.
+	          */
+	        void symbolTableIsReady();
 
             /**
               * \brief Returns the full set of extracted nogoods in HEX format.
