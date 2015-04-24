@@ -115,3 +115,4 @@ module-Hanoi.mlp module-Hanoi.out --mlp --solver=dlv
 module-Complex.mlp module-Complex.out --mlp --solver=dlv
 module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=dlv
 module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=dlv
+nogoodextraction1.hex nogoodextraction1.out --solver=dlv

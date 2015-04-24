@@ -1,0 +1,11 @@
+node(a).
+node(b).
+node(c).
+node(d).
+node(e).
+node(f).
+node(g).
+
+in(X) v out(X) :- node(X).
+c(X) :- &id[in](X).  % &nonmonid is an identity function but declared to be nonmonotonic
+:- &countext[c](C), C > 2.

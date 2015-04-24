@@ -153,5 +153,6 @@ choicerule2.hex choicerule2.out --solver=genuineii --aggregate-mode=ext -N=10
 choicerule3.hex choicerule3.out --solver=genuineii --aggregate-mode=ext -N=10
 choicerule4.hex choicerule4.out --solver=genuineii --aggregate-mode=ext -N=10
 choicerule5.hex choicerule5.out --solver=genuineii --aggregate-mode=ext -N=10
-conditional1.hex conditional1.out --solver=genuinegc --aggregate-mode=ext
-conditional2.hex conditional2.out --solver=genuinegc --aggregate-mode=ext
+conditional1.hex conditional1.out --solver=genuineii --aggregate-mode=ext
+conditional2.hex conditional2.out --solver=genuineii --aggregate-mode=ext
+nogoodextraction1.hex nogoodextraction1.out --solver=genuineii

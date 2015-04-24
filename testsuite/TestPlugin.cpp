@@ -1266,7 +1266,7 @@ class TestIdAtom:	// tests user-defined external learning
 {
 public:
   TestIdAtom():
-    PluginAtom("id", false) // monotonic
+    PluginAtom("id", false) // it is actually monotonic, but in this test case we declare it as nonmonotonic
   {
     WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
     addInputPredicate();
@@ -1296,7 +1296,7 @@ class TestIdcAtom:	// tests user-defined external learning
 {
 public:
   TestIdcAtom():
-    PluginAtom("idc", false) // monotonic, and no predicate inputs anyway
+    PluginAtom("idc", false) // it is actually monotonic (no predicate inputs anyway), but in this test case we declare it as nonmonotonic
   {
     addInputConstant();
     WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
@@ -1428,6 +1428,35 @@ public:
 		{
 			// fail by returning no tuple
 		}
+  }
+};
+
+class TestCountAtom:
+  public PluginAtom
+{
+public:
+  TestCountAtom():
+    PluginAtom("countext", false) // nonmonotonic
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+  int cnt = 0;
+	while (en < en_end){
+    cnt++;
+		en++;
+	}
+  Tuple tu;
+  tu.push_back(ID::termFromInteger(cnt));
+  answer.get().push_back(tu);
   }
 };
 
@@ -2414,6 +2443,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestCountAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestLessThanAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEqualAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTransitiveClosureAtom, PluginPtrDeleter<PluginAtom>()));

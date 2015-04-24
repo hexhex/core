@@ -178,3 +178,4 @@ choicerule5.hex choicerule5.out --solver=genuinegc -N=10
 choicerule6.hex choicerule6.out --solver=genuinegc -N=10
 conditional1.hex conditional1.out --solver=genuinegc
 conditional2.hex conditional2.out --solver=genuinegc
+nogoodextraction1.hex nogoodextraction1.out --solver=genuinegc
