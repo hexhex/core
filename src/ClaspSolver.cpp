@@ -1318,9 +1318,20 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
 
         DBGLOG(DBG, "Trying to extract reason for inconsistency");
-        claspctx.endInit();
-        updateSymbolTable();
-        clac.symbolTableIsReady();
+
+        if (claspctx.master()->conflict().size() > 0){
+			
+            claspctx.endInit();
+            updateSymbolTable();
+
+            DBGLOG(DBG, "Got a clasp conflict clause of size " << claspctx.master()->conflict().size());
+            std::vector<Nogood> conflictNogoods = claspClauseToHexNogoods(claspctx.master()->conflict());
+            BOOST_FOREACH (Nogood ng,conflictNogoods){
+                DBGLOG(DBG, "Found HEX conflict nogood: " << ng.getStringRepresentation(reg));
+            }
+        }
+
+        //clac.symbolTableIsReady();
         DBGLOG(DBG, "Final abortion");
 
         inconsistent = true;
