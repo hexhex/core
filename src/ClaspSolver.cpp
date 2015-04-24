@@ -525,12 +525,20 @@ void ClaspSolver::sendWeightRuleToClasp(Clasp::Asp::LogicProgram& asp, ID ruleId
     assert(rule.head.size() != 0);
     BOOST_FOREACH (ID h, rule.head) {
         // add literal to head
-        DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+#ifndef NDEBUG
+        std::stringstream ss;
+        ss << "Adding to head: " << convertHexToClaspProgramLit(h.address).var();
+        DBGLOG(DBG, ss.str());
+#endif
         asp.addHead(convertHexToClaspProgramLit(h.address).var());
     }
     for (uint32_t i = 0; i < rule.body.size(); ++i) {
         // add literal to body
-        DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << convertHexToClaspProgramLit(rule.body[i].address).var());
+#ifndef NDEBUG
+        std::stringstream ss;
+        ss << "Adding to body: " << (!(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()) ? "" : "!") << convertHexToClaspProgramLit(rule.body[i].address).var();
+        DBGLOG(DBG, ss.str());
+#endif
         asp.addToBody(convertHexToClaspProgramLit(rule.body[i].address).var(), !(convertHexToClaspProgramLit(rule.body[i].address).sign() ^ rule.body[i].isNaf()), rule.bodyWeightVector[i].address);
     }
     asp.endRule();
@@ -551,12 +559,20 @@ void ClaspSolver::sendOrdinaryRuleToClasp(Clasp::Asp::LogicProgram& asp, ID rule
     }
     BOOST_FOREACH (ID h, rule.head) {
         // add literal to head
-        DBGLOG(DBG, "Adding to head: " << convertHexToClaspProgramLit(h.address).var());
+#ifndef NDEBUG
+        std::stringstream ss;
+        ss << "Adding to head: " << convertHexToClaspProgramLit(h.address).var();
+        DBGLOG(DBG, ss.str());
+#endif
         asp.addHead(convertHexToClaspProgramLit(h.address).var());
     }
     BOOST_FOREACH (ID b, rule.body) {
         // add literal to body
-        DBGLOG(DBG, "Adding to body: " << (!(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()) ? "" : "!") << convertHexToClaspProgramLit(b.address).var());
+#ifndef NDEBUG
+        std::stringstream ss;
+        ss << "Adding to body: " << (!(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()) ? "" : "!") << convertHexToClaspProgramLit(b.address).var();
+        DBGLOG(DBG, ss.str());
+#endif
         asp.addToBody(convertHexToClaspProgramLit(b.address).var(), !(convertHexToClaspProgramLit(b.address).sign() ^ b.isNaf()));
     }
     asp.endRule();
@@ -1107,8 +1123,7 @@ Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool reg
         while (clasplit.index() >= claspToHex.size()){
             claspToHex.push_back(new AddressVector);
         }
-//        DBGLOG(DBG, "Temporary mapping: " << (clasplit.sign() ? "-" : "") << clasplit.var() << " <--> " << addr);
-std::cerr << "Temporary mapping: C:" << (clasplit.sign() ? "-" : "") << clasplit.var() << "(" << clasplit.index() << ")" << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg) << std::endl;
+        DBGLOG(DBG, "Temporary mapping: C:" << (clasplit.sign() ? "-" : "") << clasplit.var() << "(" << clasplit.index() << ")" << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg));
         claspToHex[clasplit.index()]->push_back(addr);
     }
     assert(addr < hexToClaspSolver.size());
