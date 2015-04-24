@@ -128,6 +128,8 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
             /** \brief Reference to the ClaspSolver object. */
             ClaspSolver& cs;
 
+            /** \brief Extracted nogoods. */
+            NogoodSet nogoodset;
         public:
             /** \brief Constructor.
               * @param cs See DlvhexClauseAddCallback::cs. */
@@ -137,6 +139,11 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
               * @param c Added clause, see clasp documentation.
               * @param isNew See clasp documentation. */
             void addedClause(const Clasp::ClauseRep& c, bool isNew);
+
+            /**
+              * \brief Returns the full set of extracted nogoods in HEX format.
+              * @return The instance of the clasp solver as a set of nogoods. */
+            const NogoodSet& getNogoods() const;
         };
 
         /**
@@ -506,6 +513,7 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
         virtual ~ClaspSolver();
         virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen);
+        virtual const NogoodSet& getNogoods() const;
 
         // search control
         void restartWithAssumptions(const std::vector<ID>& assumptions);

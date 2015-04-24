@@ -165,6 +165,11 @@ class DLVHEX_EXPORT GenuineGroundSolver : virtual public NogoodContainer, public
          */
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
+        /**
+          * \brief Returns the full set of internal nogoods.
+          * @return The instance of the solver as a set of nogoods. */
+        virtual const NogoodSet& getNogoods() const = 0;
+
         typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
         typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
 
@@ -238,6 +243,7 @@ class DLVHEX_EXPORT GenuineSolver : public GenuineGrounder, public GenuineGround
         void removePropagator(PropagatorCallback* pb);
         void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr());
         void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
+        const NogoodSet& getNogoods() const;
 
         /**
          * \brief Returns a pointer to the internal grounder.

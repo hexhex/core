@@ -310,6 +310,7 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
          */
         CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
+        virtual const NogoodSet& getNogoods() const;
 
         virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
         virtual void addPropagator(PropagatorCallback* pb);

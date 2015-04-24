@@ -77,15 +77,29 @@ ClaspSolver::DlvhexClauseAddCallback::DlvhexClauseAddCallback(ClaspSolver& cs) :
 void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c, bool isNew)
 {
     Clasp::LitVec lv;
+#ifndef NDEBUG
+    std::stringstream ss;
+#endif
     for (int i = 0; i < c.size; ++i){
+#ifndef NDEBUG
+        ss << (c.lits[i].sign() ? "-" : "") << c.lits[i].var() << "(" << c.lits[i].index() << ")" << " ";
+#endif
         lv.push_back(c.lits[i]);
     }
-    std::cout << "Got clause of size " << c.size << std::endl;
+#ifndef NDEBUG
+    DBGLOG(DBG, "Added clasp clause: " << ss.str());
+#endif
+    DBGLOG(DBG,"Got clause of size " << c.size);
     std::vector<Nogood> nogoods = cs.claspClauseToHexNogoods(lv);
-    std::cout << "Got " << nogoods.size() << " dlvhex nogoods:" << std::endl;
+    DBGLOG(DBG, "Got " << nogoods.size() << " dlvhex nogoods:");
     BOOST_FOREACH (Nogood ng, nogoods){
-        std::cout << ng.getStringRepresentation(cs.reg) << std::endl;
+        nogoodset.addNogood(ng);
+        DBGLOG(DBG, ng.getStringRepresentation(cs.reg));
     }
+}
+
+const NogoodSet& ClaspSolver::DlvhexClauseAddCallback::getNogoods() const{
+    return nogoodset;
 }
 
 // ============================== ExternalPropagator ==============================
@@ -1088,6 +1102,14 @@ Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool reg
         str = str + ":" + RawPrinter::toString(reg, reg->ogatoms.getIDByAddress(addr));
         #endif
         claspctx.symbolTable().addUnique(c, str.c_str()).lit = clasplit;
+
+        // temporarily map clasplit back to addr (this mapping will be redefined after the optimization, cf. updateSymbolTable)
+        while (clasplit.index() >= claspToHex.size()){
+            claspToHex.push_back(new AddressVector);
+        }
+//        DBGLOG(DBG, "Temporary mapping: " << (clasplit.sign() ? "-" : "") << clasplit.var() << " <--> " << addr);
+std::cerr << "Temporary mapping: C:" << (clasplit.sign() ? "-" : "") << clasplit.var() << "(" << clasplit.index() << ")" << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg) << std::endl;
+        claspToHex[clasplit.index()]->push_back(addr);
     }
     assert(addr < hexToClaspSolver.size());
     assert(hexToClaspSolver[addr] != noLiteral);
@@ -1150,16 +1172,27 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
     // now unfold the nogoods
     DBGLOG(DBG, "Unfolding protonogood");
     std::vector<Nogood> nogoods;
-    if (protoNogoods.size() == 0) return nogoods;
+    if (protoNogoods.size() == 0){
+        DBGLOG(DBG, "Protonogood is empty");
+        return nogoods;
+    }
 
     // store the index of the next element for each set-element of the proto-nogood
     std::vector<int> ind(protoNogoods.size());
-    for (int i = 0; i < protoNogoods.size(); ++i) ind[i] = 0;
+    for (int i = 0; i < protoNogoods.size(); ++i) {
+        if (protoNogoods[i].size() == 0){
+            DBGLOG(DBG, "Element of protonogood is empty");
+            return nogoods;
+        }
+        ind[i] = 0;
+    }
 
     // while more element in the first set-element
+    DBGLOG(DBG, "Unfolding loop");
     while (ind[0] < protoNogoods[0].size()){
 
         // translate
+        DBGLOG(DBG, "Translating");
         Nogood ng;
         for (int i = 0; i < protoNogoods.size(); ++i){
             ng.insert(protoNogoods[i][ind[i]]);
@@ -1483,6 +1516,9 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
     ep.reset(new ExternalPropagator(*this));
 }
 
+const NogoodSet& ClaspSolver::getNogoods() const{
+    return clac.getNogoods();
+}
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
 {

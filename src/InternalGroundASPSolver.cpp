@@ -946,6 +946,9 @@ void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationCo
     throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
 }
 
+const NogoodSet& InternalGroundASPSolver::getNogoods() const{
+    return nogoodset;
+}
 
 void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
 {

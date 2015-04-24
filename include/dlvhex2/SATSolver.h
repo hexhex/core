@@ -92,6 +92,11 @@ class SATSolver : virtual public NogoodContainer
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
 
         /**
+          * \brief Returns the full set of internal nogoods.
+          * @return The instance of the solver as a set of nogoods. */
+        virtual const NogoodSet& getNogoods() const = 0;
+
+        /**
          * \brief Interprets the settings in \p ctx and creates an instance of a concrete subclass of this class, which implements a specific reasoner.
          *
          * @param ctx ProgramCtx.

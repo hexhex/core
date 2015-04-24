@@ -730,6 +730,9 @@ void CDNLSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen
     throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
 }
 
+const NogoodSet& CDNLSolver::getNogoods() const{
+    return nogoodset;
+}
 
 void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
 {

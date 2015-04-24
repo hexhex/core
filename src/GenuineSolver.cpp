@@ -246,6 +246,11 @@ void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr fro
     solver->addNogoodSet(ns, frozen);
 }
 
+const NogoodSet& GenuineSolver::getNogoods() const
+{
+    return solver->getNogoods();
+}
+
 
 DLVHEX_NAMESPACE_END
 
