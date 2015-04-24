@@ -152,14 +152,23 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
               * @param lv Added clasp clause. */
             void translateClause(const Clasp::LitVec& lv);
 
-	        /**
-	          * \brief Informs the callback that clasp's symbol table has been fully initialized. This triggers the translation of cached clasp nogoods to HEX.
-	          *
-	          * The translation of clasp clauses to HEX is only possible after the symbol table of clasp has been finalized for the optimized program.
-	          * However, some nogoods (in particular from Clark's completion) may arrive even before that point. To overcome this problem, one could update the symbol table
-	          * before nogoods are handled. But as this is costly, we simply cache all clasp nogoods and translate them when the callback is informed that the symbol table is finalized.
-	          */
-	        void symbolTableIsReady();
+	    /**
+	      * \brief Informs the callback that clasp's symbol table is updated. This ensures that newly added nogoods are cached rather than translated immediately.
+	      *
+	      * The translation of clasp clauses to HEX is only possible after the symbol table of clasp has been finalized for the optimized program.
+	      * However, some nogoods (in particular from Clark's completion) may arrive even before that point. To overcome this problem, one could update the symbol table
+	      * before nogoods are handled. But as this is costly, we simply cache all clasp nogoods and translate them when the callback is informed that the symbol table is finalized.
+	      */
+	    void symbolTableIsNotReady();
+
+	    /**
+	      * \brief Informs the callback that clasp's symbol table has been fully initialized. This triggers the translation of cached clasp nogoods to HEX.
+	      *
+	      * The translation of clasp clauses to HEX is only possible after the symbol table of clasp has been finalized for the optimized program.
+	      * However, some nogoods (in particular from Clark's completion) may arrive even before that point. To overcome this problem, one could update the symbol table
+	      * before nogoods are handled. But as this is costly, we simply cache all clasp nogoods and translate them when the callback is informed that the symbol table is finalized.
+	      */
+	    void symbolTableIsReady();
 
             /**
               * \brief Returns the full set of extracted nogoods in HEX format.

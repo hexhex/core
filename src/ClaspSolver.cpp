@@ -117,6 +117,11 @@ const NogoodSet& ClaspSolver::DlvhexClauseAddCallback::getNogoods() const
     return nogoodset;
 }
 
+void ClaspSolver::DlvhexClauseAddCallback::symbolTableIsNotReady()
+{
+    symbolTableReady = false;
+}
+
 void ClaspSolver::DlvhexClauseAddCallback::symbolTableIsReady()
 {
     if (!symbolTableReady){
@@ -1061,7 +1066,8 @@ void ClaspSolver::updateSymbolTable()
         DBGLOG(DBG, "SAT problem has " << claspctx.numVars() << " variables");
     }
     #endif
-                                 // the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
+
+    // the largest possible index is "claspctx.numVars() * 2 + 1", thus we allocate one element more
     resetAndResizeClaspToHex(claspctx.numVars() * 2 + 1 + 1);
 
     LOG(DBG, "Symbol table of optimized program:");
@@ -1071,6 +1077,15 @@ void ClaspSolver::updateSymbolTable()
         storeHexToClasp(hexAdr, it->second.lit);
         DBGLOG(DBG, "H:" << hexAdr << " (" << reg->ogatoms.getByAddress(hexAdr).text <<  ") <--> "
             "C:" << it->second.lit.index() << "/" << (it->second.lit.sign() ? "!" : "") << it->second.lit.var());
+
+// It seems that the following assertion does not hold if the program is initially inconsistent.
+// This might be the case because instance information (such as the number of problem variables) is not correctly updated by clasp
+// once the inconsistency has been detected.
+
+while (it->second.lit.index() >= claspToHex.size()){
+    claspToHex.push_back(new AddressVector);
+}
+
         assert(it->second.lit.index() < claspToHex.size());
         AddressVector* &c2h = claspToHex[it->second.lit.index()];
         c2h->push_back(hexAdr);
@@ -1301,6 +1316,13 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
     if (inconsistent) {
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        claspctx.endInit();
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
@@ -1312,6 +1334,12 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
     DBGLOG(DBG, "Finalizing initialization");
     if (!claspctx.endInit()) {
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
@@ -1346,6 +1374,12 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
 
     if (inconsistent) {
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
@@ -1357,6 +1391,12 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationCon
     DBGLOG(DBG, "Finalizing initialization");
     if (!claspctx.endInit()) {
         DBGLOG(DBG, "SAT instance is unsatisfiable");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
@@ -1418,6 +1458,7 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
     if (!!ep.get()) ep.reset();
 
     // Update program
+    clac.symbolTableIsNotReady();
     asp.updateProgram();
 
     // transfer added edb
@@ -1472,6 +1513,12 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
 
     if (inconsistent) {
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
@@ -1483,11 +1530,18 @@ void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationCons
     DBGLOG(DBG, "Finalizing reinitialization");
     if (!claspctx.endInit()) {
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
 
     updateSymbolTable();
+    clac.symbolTableIsReady();
 
     DBGLOG(DBG, "Resetting solver object");
     solve.reset(new Clasp::BasicSolve(*claspctx.master()));
@@ -1568,6 +1622,12 @@ void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr froze
     DBGLOG(DBG, "Finalizing reinitialization");
     if (!claspctx.endInit()) {
         DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+
+        DBGLOG(DBG, "Trying to extract reason for inconsistency");
+        updateSymbolTable();
+        clac.symbolTableIsReady();
+        DBGLOG(DBG, "Final abortion");
+
         inconsistent = true;
         return;
     }
