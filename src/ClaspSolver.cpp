@@ -91,7 +91,7 @@ void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c
     ss << " }";
 #endif
 
-    DBGLOG(DBG, "Retrieved clasp clause of size " << c.size << ": " << ss.str() << "; " << (symbolTableReady ? "will translate immediately" : "will cache for later translation"));
+    DBGLOG(DBG, "Callback retrieved clasp clause of size " << c.size << ": " << ss.str() << "; " << (symbolTableReady ? "will translate immediately" : "will cache for later translation"));
     if (symbolTableReady) {
         translateClause(lv);
     }else{
@@ -102,13 +102,13 @@ void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c
 void ClaspSolver::DlvhexClauseAddCallback::translateClause(const Clasp::LitVec& lv)
 {
 #ifndef NDEBUG
-    DBGLOG(DBG, "Translating clasp clause of size " << lv.size());
+    DBGLOG(DBG, "Callback translates clasp clause of size " << lv.size());
 #endif
     std::vector<Nogood> nogoods = cs.claspClauseToHexNogoods(lv);
-    DBGLOG(DBG, "Got " << nogoods.size() << " dlvhex nogoods:");
+    DBGLOG(DBG, "Callback got " << nogoods.size() << " dlvhex nogoods");
     BOOST_FOREACH (Nogood ng, nogoods){
         nogoodset.addNogood(ng);
-        DBGLOG(DBG, ng.getStringRepresentation(cs.reg));
+        DBGLOG(DBG, "Callback got dlvhex nogood " << ng.getStringRepresentation(cs.reg));
     }
 }
 
@@ -1182,7 +1182,7 @@ std::vector<Nogood> ClaspSolver::claspClauseToHexNogoods(const Clasp::LitVec& li
         ss << (i > 0 ? ", " : " ") << (lits[i].sign() ? "!" : "") << lits[i].var();
     }
     ss << " }";
-    DBGLOG(DBG, "Translating extracted clasp clause of size " << lits.size() << ": " << ss.str());
+    DBGLOG(DBG, "Translating clasp clause of size " << lits.size() << ": " << ss.str());
 
     std::stringstream protongss;
     protongss << "{";
@@ -1758,6 +1758,18 @@ InterpretationPtr ClaspSolver::getNextModel()
 
     // ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
     while (nextSolveStep != ReturnModel) {
+#ifndef NDEBUG
+        {
+            if (claspctx.master()->conflictClause().size() > 0){
+                DBGLOG(DBG, "Got a clasp conflict clause of size " << claspctx.master()->conflictClause().size());
+                std::vector<Nogood> conflictNogoods = claspClauseToHexNogoods(claspctx.master()->conflictClause());
+                BOOST_FOREACH (Nogood ng,conflictNogoods){
+                    DBGLOG(DBG, "Found HEX conflict nogood: " << ng.getStringRepresentation(reg));
+                }
+            }
+        }
+#endif
+
         switch (nextSolveStep) {
             case Restart:
                 ENUMALGODBG("ini");
