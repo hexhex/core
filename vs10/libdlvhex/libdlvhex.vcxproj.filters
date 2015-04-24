@@ -17,9 +17,6 @@
     <ClCompile Include="..\..\src\ASPSolverManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\AsynchronousModelGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Atoms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

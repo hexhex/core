@@ -89,7 +89,6 @@
     <ClCompile Include="..\..\src\ASPSolverManager.cpp" />
     <ClCompile Include="..\..\src\ASPSolver_dlv.cpp" />
     <ClCompile Include="..\..\src\ASPSolver_libclingo.cpp" />
-    <ClCompile Include="..\..\src\AsynchronousModelGenerator.cpp" />
     <ClCompile Include="..\..\src\Atoms.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\..\include;$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
