@@ -82,7 +82,7 @@ void ClaspSolver::DlvhexClauseAddCallback::addedClause(const Clasp::ClauseRep& c
 #endif
     for (int i = 0; i < c.size; ++i){
 #ifndef NDEBUG
-        ss << (c.lits[i].sign() ? "-" : "") << c.lits[i].var() << "(" << c.lits[i].index() << ")" << " ";
+        ss << c.lits[i].index() << "/" << (c.lits[i].sign() ? "-" : "") << c.lits[i].var() << " ";
 #endif
         lv.push_back(c.lits[i]);
     }
@@ -1123,7 +1123,7 @@ Clasp::Literal ClaspSolver::convertHexToClaspProgramLit(IDAddress addr, bool reg
         while (clasplit.index() >= claspToHex.size()){
             claspToHex.push_back(new AddressVector);
         }
-        DBGLOG(DBG, "Temporary mapping: C:" << (clasplit.sign() ? "-" : "") << clasplit.var() << "(" << clasplit.index() << ")" << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg));
+        DBGLOG(DBG, "Temporary mapping: C:" << clasplit.index() << "/" << (clasplit.sign() ? "-" : "") << clasplit.var() << " <--> H:" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(addr), reg));
         claspToHex[clasplit.index()]->push_back(addr);
     }
     assert(addr < hexToClaspSolver.size());
