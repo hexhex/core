@@ -37,6 +37,7 @@
 #include "dlvhex2/ExternalLearningHelper.h"
 #include "dlvhex2/HexParser.h"
 #include "dlvhex2/InternalGrounder.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -260,8 +261,8 @@ ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string lear
 
 void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
 {
-
     if (nogoods) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ELH::learnFrom/iobehavior");
         DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
         Nogood extNgInput;
@@ -284,6 +285,7 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 {
 
     if (nogoods) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ELH::learnFrom/functionality");
         DBGLOG(DBG, "External Learning: Functionality");
 
         // there is a unique output
@@ -326,6 +328,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 
     // learning of negative information
     if (nogoods) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ELH::learnFrom/neg");
         Nogood extNgInput;
         if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false);
 
@@ -394,6 +397,7 @@ void ExternalLearningHelper::learnFromGroundRule(const PluginAtom::Query& query,
     RegistryPtr reg = query.ctx->registry();
 
     if (nogoods) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ELH:learnFromGround (unused?)"); // PS: this method seems unused
         DBGLOG(DBG, "External Learning: Ground Rule");
 
         const Rule& rule = query.ctx->registry()->rules.getByID(groundRule);
@@ -425,6 +429,7 @@ void ExternalLearningHelper::learnFromRule(const PluginAtom::Query& query, ID ri
 {
 
     if (nogoods) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ELH:learnFromRule (unused?)"); // PS: this method seems unused
         DBGLOG(DBG, "External Learning: Rule");
 
         // prepare map for replacing body predicates:

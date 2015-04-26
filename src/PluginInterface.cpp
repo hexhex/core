@@ -410,6 +410,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const 
     const ExternalAtom& eatom = query.ctx->registry()->eatoms.getByID(query.eatomID);
     std::vector<Query> atomicQueries;
     if ((prop.isLinearOnAtomLevel() || prop.isLinearOnTupleLevel()) && query.ctx->config.getOption("ExternalLearningLinearity")) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"PluginAtom::splitQuery/linearity");
 
         DBGLOG(DBG, "Splitting query by exploiting linearity");
 

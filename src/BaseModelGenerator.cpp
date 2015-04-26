@@ -546,6 +546,8 @@ ExternalAnswerTupleCallback& cb,
 NogoodContainerPtr nogoods,
 bool* fromCache) const
 {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"evaluate eaquery");
+
     const ProgramCtx& ctx = *query.ctx;
     const RegistryPtr reg = ctx.registry();
     const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(query.eatomID);
