@@ -50,6 +50,7 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 #include "dlvhex2/ExternalLearningHelper.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
@@ -243,6 +244,7 @@ class PythonAtom : public PluginAtom
 
         virtual void
         retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods) throw (PluginError) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"PythonAtom::retrieve");
             try
             {
                 DBGLOG(DBG, "Preparing Python for query");
@@ -262,7 +264,15 @@ class PythonAtom : public PluginAtom
                 }
 
                 DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
-                PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
+
+                {
+                #if defined(DLVHEX_BENCHMARK)
+                    dlvhex::benchmark::ID pythonSid =
+                        dlvhex::benchmark::BenchmarkController::Instance().getInstrumentationID("Python: "+getPredicate());
+                    DLVHEX_BENCHMARK_SCOPE(pythonSid);
+                #endif
+                    PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
+                }
 
                 DBGLOG(DBG, "Resetting Python");
                 PythonAPI::emb_query = NULL;
