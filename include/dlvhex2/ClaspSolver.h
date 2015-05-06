@@ -492,6 +492,8 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
         std::auto_ptr<ExternalPropagator> ep;
 
         // control flow
+        /** \brief Set of all facts which might need to be explicitly assumed depending on whther facts are explicitly represented or as disjunctions (see option "ClaspForceSeparateVariablesForFacts" in ProgramCtx). */
+        Clasp::LitVec factassumptions;
         /** \brief Set of current assumptions using during solving. */
         Clasp::LitVec assumptions;
         /** \brief Next step in instance solving. */

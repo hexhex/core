@@ -123,6 +123,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
                                  // see --help
     config.setOption("UseConstantSpace", 0);
     config.setOption("ClaspForceSingleThreaded", 0);
+	config.setOption("ClaspForceSeparateVariablesForFacts", 0);
     config.setOption("LazyUFSCheckerInitialization", 0);
     config.setOption("SupportSets", 0);
     config.setOption("ForceGC", 0);
