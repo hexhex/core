@@ -170,7 +170,7 @@ namespace
 
             std::set<ID> bodyVars;
             BOOST_FOREACH (ID b, rule.body) {
-                reg->getVariablesInID(b, bodyVars);
+                reg->getVariablesInID(b, bodyVars, false, false);
             }
 
             bool ground = bodyVars.size() == 0 && !rule.weight.isVariableTerm() && !rule.level.isVariableTerm();
