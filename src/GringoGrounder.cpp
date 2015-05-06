@@ -588,14 +588,13 @@ int GringoGrounder::doRun()
         *programStream << std::endl;
         printer.print(intPred);
         *programStream << "(0.." << ctx.maxint << ").";
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	
+
         // don't spam stderr with warnings (note: Gringo prints to stderr, not to cerr!)
-//        Gringo::message_printer()->disable(Gringo::W_DEFINE_REDEFINTION);
-//        Gringo::message_printer()->disable(Gringo::W_DEFINE_CYCLIC);
-//        Gringo::message_printer()->disable(Gringo::W_TERM_UNDEFINED);
+        Gringo::message_printer()->disable(Gringo::W_OPERATION_UNDEFINED);
         Gringo::message_printer()->disable(Gringo::W_ATOM_UNDEFINED);
-//        Gringo::message_printer()->disable(Gringo::W_NONMONOTONE_AGGREGATE);
         Gringo::message_printer()->disable(Gringo::W_FILE_INCLUDED);
+        Gringo::message_printer()->disable(Gringo::W_VARIABLE_UNBOUNDED);
+        Gringo::message_printer()->disable(Gringo::W_TOTAL);
 
         // prepare
         Gringo::Output::OutputPredicates outPreds;
