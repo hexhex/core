@@ -1487,8 +1487,10 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 52:
                 pctx.config.setOption("LiberalSafety", 0);
+                break;
 			case 53:
 				pctx.config.setOption("ClaspForceSeparateVariablesForFacts", 1);
+                break;
             case 54:
                 int optmode = 0;
                 try
@@ -1503,6 +1505,7 @@ Config& config, ProgramCtx& pctx)
                 }
                 pctx.config.setOption("OptimizationTwoStep", optmode);
                 forceoptmode = true;
+                break;
         }
     }
 
