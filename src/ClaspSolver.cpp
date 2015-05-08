@@ -649,18 +649,7 @@ void ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Interpreta
     bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
     while (en < en_end) {
         // add fact
-		if (ctx.config.getOption("ClaspForceSeparateVariablesForFacts")){
-			// in order to enfoce different solver variables for different facts, add a guess instead of statically adding the facts
-			// during solving an assumption will be used to force facts to be true
-			OrdinaryAtom primeat = reg->ogatoms.getByAddress(*en);
-			primeat.tuple[0] = reg->getAuxiliaryConstantSymbol('v', primeat.tuple[0]);
-			primeat.kind |= ID::PROPERTY_AUX;
-			ID enpr = reg->storeOrdinaryGAtom(primeat);
-//			asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
-			asp.startRule(Clasp::Asp::DISJUNCTIVERULE).addHead(convertHexToClaspProgramLit(*en).var()).addHead(convertHexToClaspSolverLit(enpr.address).var()).endRule();
-		}else{
-	        asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
-		}
+        asp.startRule(Clasp::Asp::BASICRULE).addHead(convertHexToClaspProgramLit(*en).var()).endRule();
         en++;
     }
 
@@ -1399,16 +1388,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
     updateSymbolTable();
     clac.symbolTableIsReady();
 
-	if (ctx.config.getOption("ClaspForceSeparateVariablesForFacts")){
-		DBGLOG(DBG, "Prepare facts assumptions");
-		bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
-		bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
-		while (en < en_end) {
-			factassumptions.push_back(convertHexToClaspSolverLit(*en));
-			en++;
-		}
-	}
-
     createMinimizeConstraints(p);
 
     DBGLOG(DBG, "Prepare solver object");
@@ -1902,13 +1881,6 @@ InterpretationPtr ClaspSolver::getNextModel()
                     nextSolveStep = ReturnModel;
                 }
                 else {
-					if (ctx.config.getOption("ClaspForceSeparateVariablesForFacts")){
-	                    DBGLOG(DBG, "Adding assumptions to force facts to be true");
-						BOOST_FOREACH (Clasp::Literal fact, factassumptions){
-							assumptions.push_back(fact);
-						}
-					}
-
                     DBGLOG(DBG, "Adding step literal to assumptions");
                     assumptions.push_back(claspctx.stepLiteral());
 

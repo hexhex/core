@@ -828,7 +828,6 @@ Config& config, ProgramCtx& pctx)
         { "forcegc", no_argument, 0, 49 },
         { "incremental", no_argument, 0, 50 },
         { "strongsafety", no_argument, 0, 52 },
-		{ "sepvar", no_argument, 0, 53 },
 		{ "optmode", required_argument, 0, 54 },
         { NULL, 0, NULL, 0 }
     };
@@ -1487,9 +1486,6 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 52:
                 pctx.config.setOption("LiberalSafety", 0);
-                break;
-			case 53:
-				pctx.config.setOption("ClaspForceSeparateVariablesForFacts", 1);
                 break;
             case 54:
                 int optmode = 0;
