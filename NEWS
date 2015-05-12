@@ -11,7 +11,7 @@ dlvhex NEWS -- history of user-visible changes.
 ** Code cleanup, bugfixes and stability improvements, improved error and warning messages.
 ** New default options: strong negation, liberal safety and external learning methods are enabled by default (increased efficiency, decreased syntactic restrictions).
 ** Complete doxygen documentation.
-** The solver backend was upgraded to clasp 3.1.1.
+** The solver backend was upgraded to Clasp 3.1.2 and Gringo 4.5.0.
 
 * Version 2.4.0 (September 2014)
 
@@ -19,7 +19,7 @@ dlvhex NEWS -- history of user-visible changes.
 ** An alternative algorithm for external source compatibility checking based on support sets.
 ** A plugin interface for customized model generators.
 ** Numerous bugfixes and optimizations.
-** The solver backend was upgraded to gringo 4.4.0 clasp 3.1.0.
+** The solver backend was upgraded to Gringo 4.4.0 Clasp 3.1.0.
 
 * Version 2.3.0 (December 2013)
 

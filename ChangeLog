@@ -1,3 +1,9 @@
+2015-05-06  Christoph Redl <redl@kr.tuwien.ac.at>
+	* build_potassco.sh: Upgrade to clasp 3.1.2 and gringo 4.5.0.
+	* checkout_build_potassco.sh: Likewise.
+	* bootstrap-extra.sh: Likewise.
+	* bootstrap-windows.sh: Upgrade to clasp 3.1.2.
+
 2015-03-19  Peter Schueller <peter.schuller@marmara.edu.tr>
 	* include/dlvhex2/Benchmarking.h: Implementation of nesting-aware
 	benchmarking, which will not measure "pure" times that do not contain

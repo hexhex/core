@@ -361,6 +361,22 @@ namespace
                         // B.
                         DBGLOG(DBG, "Constructing key rule body");
                         BOOST_FOREACH (ID bb, rule.body) {
+                            // remove range comparisons of the aggregate value (this will not destroy safety)
+                            if (bb.isBuiltinAtom()){
+                                const AggregateAtom& aatom = reg->aatoms.getByID(b);
+                                const BuiltinAtom& batom = reg->batoms.getByID(bb);
+                                if ( // check if the builtin is a range comparison
+                                     (   batom.tuple[0].address == ID::TERM_BUILTIN_LT || batom.tuple[0].address == ID::TERM_BUILTIN_LE
+                                      || batom.tuple[0].address == ID::TERM_BUILTIN_GT || batom.tuple[0].address == ID::TERM_BUILTIN_GE
+                                      || batom.tuple[0].address == ID::TERM_BUILTIN_NE)
+                                     // check if it compares the aggregate value
+                                  && (   (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ && aatom.tuple[0].isVariableTerm() && (batom.tuple[1] == aatom.tuple[0] || batom.tuple[2] == aatom.tuple[0]))
+                                      || (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ && aatom.tuple[4].isVariableTerm() && (batom.tuple[1] == aatom.tuple[4] || batom.tuple[2] == aatom.tuple[4])) )
+                                   ) {
+                                    continue;
+                                }
+                            }
+
                             if (bb == b) {
                                 // make sure that we do not lose safety: if b _defines_ a variable, then define it as an arbitrary integer insteads
                                 const AggregateAtom& aatom = reg->aatoms.getByID(b);

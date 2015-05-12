@@ -37,6 +37,7 @@
 
 #ifdef HAVE_LIBGRINGO
 
+#include "gringo/input/groundtermparser.hh"
 #include "dlvhex2/GringoGrounder.h"
 #include "dlvhex2/Rule.h"
 #include "dlvhex2/Benchmarking.h"
@@ -556,6 +557,15 @@ const OrdinaryASPProgram& GringoGrounder::getGroundProgram()
     return groundProgram;
 }
 
+namespace{
+struct EmptyMod : public Gringo::GringoModule {
+    Gringo::Input::GroundTermParser termParser;
+    virtual Gringo::Value parseValue(std::string const &str) { return termParser.parse(str); }
+    virtual Gringo::Control *newControl(int, char const **) { throw std::logic_error("creating new control instances not supported in gringo"); }
+    virtual void freeControl(Gringo::Control *) { throw std::logic_error("creating new control instances not supported in gringo"); }
+    ~EmptyMod() {}
+};
+}
 
 int GringoGrounder::doRun()
 {
@@ -580,18 +590,18 @@ int GringoGrounder::doRun()
         *programStream << "(0.." << ctx.maxint << ").";
 
         // don't spam stderr with warnings (note: Gringo prints to stderr, not to cerr!)
-        Gringo::message_printer()->disable(Gringo::W_DEFINE_REDEFINTION);
-        Gringo::message_printer()->disable(Gringo::W_DEFINE_CYCLIC);
-        Gringo::message_printer()->disable(Gringo::W_TERM_UNDEFINED);
+        Gringo::message_printer()->disable(Gringo::W_OPERATION_UNDEFINED);
         Gringo::message_printer()->disable(Gringo::W_ATOM_UNDEFINED);
-        Gringo::message_printer()->disable(Gringo::W_NONMONOTONE_AGGREGATE);
         Gringo::message_printer()->disable(Gringo::W_FILE_INCLUDED);
+        Gringo::message_printer()->disable(Gringo::W_VARIABLE_UNBOUNDED);
+        Gringo::message_printer()->disable(Gringo::W_TOTAL);
 
         // prepare
         Gringo::Output::OutputPredicates outPreds;
         GroundHexProgramBuilder outputter(ctx, groundProgram, intPred, anonymousPred, unsatPred);
         Gringo::Output::OutputBase out(std::move(outPreds), outputter);
-        Gringo::Scripts scripts;
+        EmptyMod mod;
+        Gringo::Scripts scripts(mod);
         Gringo::Defines defs;
         Gringo::Input::Program prg;
         Gringo::Input::NongroundProgramBuilder pb(scripts, prg, out, defs);

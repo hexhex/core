@@ -26,7 +26,7 @@
  * @file   GringoGrounder.hpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
  *
- * @brief  Interface to genuine gringo 4.3.0-based grounder.
+ * @brief  Interface to genuine gringo 4.5.0-based grounder.
  */
 
 #ifdef HAVE_CONFIG_H

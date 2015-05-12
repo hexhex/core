@@ -716,6 +716,8 @@ namespace
 
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "evaluateFindOptimum");
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluateFindOptimum::gNM");
+        DBGLOG_SCOPE(DBG,"eFO",false);
+        DBGLOG(DBG,"eFO = evaluateFindOptimum");
 
         assert(ctx->config.getOption("OptimizationTwoStep") == 1);
         AnswerSetPtr lastAnswerSet;
@@ -742,16 +744,25 @@ namespace
                 // copy interpretation! (we and callbacks might modify it after returning from this method)
                 answerset->interpretation->getStorage() = interpretation->getStorage();
                 answerset->computeWeightVector();
-                LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()));
+                LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()) << ", old best: " << printvector(ctx->currentOptimum));
                 assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
                 ctx->currentOptimum = answerset->getWeightVector();
+                // if we have at least one weight we need to complete the vector
+                // in order to obtain bounds for all levels
+                // (if we do not do this, clasp will not set a boud if we find a cost-free model)
+                // TODO set currentOptimumRelevantLevels not in ClaspSolver but in WeakPlugin during rewriting (should be possible!)
+                while (ctx->currentOptimum.size() < (ctx->currentOptimumRelevantLevels+1))
+                    ctx->currentOptimum.push_back(0);
                 lastAnswerSet = answerset;
             }
+            // exit if we get no model
+            // if we get a model with zero cost, the next iteration will set 0 as bound in clasp, so no further model will be found
         } while( !!om );
         // we got no model so we left the loop:
         // * either there never was any model with any weight
         // * or we got models and found the optimum (ctx->currentOptimum) and lastAnswerSet is the first optimal one
         // our caller will handle these cases
+        DBGLOG(DBG,"returning answer set " << reinterpret_cast<void*>(lastAnswerSet.get()));
         return lastAnswerSet;
     }
 
@@ -763,6 +774,8 @@ namespace
     void evaluateOnce(ProgramCtx* ctx) {
 
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+        DBGLOG_SCOPE(DBG,"eO",false);
+        DBGLOG(DBG,"eO = evaluateOnce");
 
         // this implementation requires that there is no optimization OR
         // that the optimal cost has been found and set and that we use two-stop optimization mode
@@ -799,6 +812,8 @@ namespace
                 answerset->interpretation->getStorage() = interpretation->getStorage();
                 answerset->computeWeightVector();
                 LOG(DBG, "weight vector of this answer set: " << printvector(answerset->getWeightVector()));
+                // TODO this assertion should be done, but only if optimizing and perhaps even then we might have vector length difference problems
+                //assert( ctx->currentOptimum == answerset->getWeightVector() );
 
                 // add EDB if configured that way
                 if( !ctx->config.getOption("NoFacts") )
@@ -834,6 +849,8 @@ namespace
     void evaluateOnceExpspace(ProgramCtx* ctx) {
 
         DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+        DBGLOG_SCOPE(DBG,"eOE",false);
+        DBGLOG(DBG,"eOE = evaluateOnceExpspace");
 
         // this implementation should only be used for naive optimization
         assert(ctx->config.getOption("Optimization") == 1 &&

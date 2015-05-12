@@ -375,7 +375,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
             continue;
         }
 
-        DBGLOG(DBG, "Checking if model candidate is a model");
+        LOG(DBG, "Checking if model candidate is a model");
         if (!isModel(modelCandidate)) {
             LOG(DBG,"isModel failed");
             continue;

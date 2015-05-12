@@ -1,0 +1,3 @@
+p(a) v p(b) v p(c).
+bad :- &id[p](c).
+:~ bad. [2@1]

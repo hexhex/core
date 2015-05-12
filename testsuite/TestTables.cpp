@@ -331,8 +331,10 @@ BOOST_AUTO_TEST_CASE(testRuleTable)
 
   // weak constraint ":~ b, a(X). [3,X]"
   Tuple tupbaX; tupbaX.push_back(idatb); tupbaX.push_back(idataX);
+  Tuple wv;
+  wv.push_back(ID_FAIL); // DLV-style weak constraint
   Rule rule4(ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT,
-      empty, tupbaX, ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, 3), idX);
+      empty, tupbaX, ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, 3), idX, wv);
 
 	{
 		RuleTable rtab;

@@ -75,7 +75,11 @@ bool PluginAtom::Query::operator==(const Query& other) const
         (
         (interpretation == other.interpretation) ||
         (interpretation != 0 && other.interpretation != 0 &&
-        *interpretation == *other.interpretation)
+        *interpretation == *other.interpretation) &&
+        // Equivalence of the predicateInputMask in the current and the cached query is required for the reason described in method retrieveCached.
+        // Because for the same external atom the mask can only increase over time (when new ground atoms are added to registry) but never decrease,
+        // comparing the number of atoms suffices.
+        (predicateInputMask->getStorage().count() == other.predicateInputMask->getStorage().count())
         );
 }
 
@@ -290,6 +294,41 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
     // The currently implemented "poor (wo)man's version" is:
     // * store answers in cache with queries as keys, disregard relations between patterns
     ///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
+
+
+    // Remark: Note that cache entries for nogoods must not be reused if the set of ground atoms in the registry (which might occur as input to the external atom) was expanded,
+    //         even if the actual input (true atoms) to the external atom is the same.
+    //         This is because negative atoms might be part of the premise part in the learned nogood.
+    //
+    // Example:
+    //
+    // Unit 1:
+    //    d(a) v -d(a).
+    //    -d(b) v d(b).
+    //
+    // Unit 2:
+    //    p(X) :- &id[d](X).
+    //      (where &id copies the extension of d to the output)
+    //
+    // Unit 3:
+    //    q(X) :- &ext[p](X).
+    //    :- q(X).
+    //      (where &ext outputs {z} for input {p(a)} and {} otherwise)
+    //
+    // Suppose the guess of the atoms is in the order of occurrence in the program.
+    //
+    // Then the first guess in Unit 1 is {d(a), -d(b)}. Unit 2 derives then p(a) but not p(b); at this point p(b) is not even in the registry!
+    // Then the third unit learns { T p(a), F &ext[p](z) }, i.e., { T p(a) } implies &ext[p](z).
+    // Despite the absence of p(b) in the interpretation and the registry, F p(b) is conceptually part of the premise because {p(a), p(b)} would lead to the empty output.
+    // Nevertheless the nogood is still ok for unit 3 because p(b) is implicitly fixed to false.
+    //
+    // However, because the learned nogoods are cached, they could be reused at some later point after p(b) was introduced. But then the nogood is not correct anymore
+    // because F p(b) needs to be explicitly checked. In particular, the guess {d(a), d(b)} leads to the introduction of p(b) in Unit 2.
+    // From this point, the nogood { T p(a), F &ext[p](z) } should not be retrievable anymore.
+    // 
+    // However, as Query::predicateInputMask changes whenever the set of ground atoms in the registry is expanded
+    // (which might occur as input), comparing predicateInputMask in Query::operator==() should guarantee that the cache entry is not reused anymore
+    // (actually, comparing the sizes of predicateInputMask suffices as predicateInputMask can only increase but not decrease when the registry is expanded).
 
     boost::mutex::scoped_lock lock(cacheMutex);
 

@@ -385,7 +385,14 @@ namespace PythonAPI
         if (!id.isAtom() && !id.isLiteral()) throw PluginError("dlvhex.getTuple: Parameter must an atom or literal ID");
         const OrdinaryAtom& ogatom = emb_ctx->registry()->lookupOrdinaryAtom(id);
         boost::python::tuple t;
-        BOOST_FOREACH (ID term, ogatom.tuple) t += boost::python::make_tuple(getValue(term));
+        BOOST_FOREACH(ID term, ogatom.tuple) {
+            if (term.isIntegerTerm()) {
+                t += boost::python::make_tuple(getIntValue(term));
+            }
+            else {
+                t += boost::python::make_tuple(getValue(term));
+            }
+        }
         return t;
     }
 
@@ -404,10 +411,12 @@ namespace PythonAPI
     ID storeAtom(boost::python::tuple args) {
         OrdinaryAtom atom(dlvhex::ID::MAINKIND_ATOM);
         bool nonground = false;
+        DBGLOG(DBG,"PythonPlugin::storeAtom with " << boost::python::len(args) << " elements");
         for (int i = 0; i < boost::python::len(args); ++i) {
             boost::python::extract<int> get_int(args[i]);
             if (get_int.check()) {
                 // store as int
+                DBGLOG(DBG," arg " << i << " is integer " << get_int());
                 atom.tuple.push_back(dlvhex::ID::termFromInteger(get_int()));
             }
             else {
@@ -415,6 +424,7 @@ namespace PythonAPI
                 if (get_string.check()) {
                     // store as string
                     std::string str = boost::python::extract<std::string>(args[i]);
+                    DBGLOG(DBG," arg " << i << " is string (=var/const) " << str);
                     if (str[0] == '_' || (str[0] >= 'A' && str[0] <= 'Z')) {
                         atom.tuple.push_back(emb_ctx->registry()->storeVariableTerm(str));
                         nonground = true;
@@ -426,6 +436,7 @@ namespace PythonAPI
                 else {
                     boost::python::extract<ID> get_ID(args[i]);
                     if (get_ID.check()) {
+                        DBGLOG(DBG," arg " << i << " is ID " << get_ID() << " which is " << printToString<RawPrinter>(get_ID(), emb_ctx->registry()));
                         if (!get_ID().isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
                         atom.tuple.push_back(get_ID());
                     }
@@ -437,10 +448,12 @@ namespace PythonAPI
         }
         if (nonground) {
             atom.kind |= dlvhex::ID::SUBKIND_ATOM_ORDINARYN;
+            DBGLOG(DBG,"storing nonground atom " << atom);
             return emb_ctx->registry()->storeOrdinaryNAtom(atom);
         }
         else {
             atom.kind |= dlvhex::ID::SUBKIND_ATOM_ORDINARYG;
+            DBGLOG(DBG,"storing ground atom " << atom);
             return emb_ctx->registry()->storeOrdinaryGAtom(atom);
         }
     }
