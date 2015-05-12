@@ -135,7 +135,7 @@
  * Example:
  * \code
  * def concat(a, b):
- *   dlvhex.output((dlvhex.getValue(a), dlvhex.getValue(b)))
+ *   dlvhex.output((dlvhex.getValue(a) + dlvhex.getValue(b)))
  * \endcode
  * The function just takes the values of these parameters and outputs their string concatenation.
  * Here, \em a and \em b are the input parameters (of type constant). If an external atom specifies an input parameter of type TUPLE,
