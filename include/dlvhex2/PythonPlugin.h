@@ -135,7 +135,7 @@
  * Example:
  * \code
  * def concat(a, b):
- *   dlvhex.outputValues(dlvhex.getValue(a), dlvhex.getValue(b))
+ *   dlvhex.output(dlvhex.getValue(a), dlvhex.getValue(b))
  * \endcode
  * The function just takes the values of these parameters and outputs their string concatenation.
  * Here, \em a and \em b are the input parameters (of type constant). If an external atom specifies an input parameter of type TUPLE,
@@ -147,7 +147,7 @@
  *   ret = ""
  *   for x in tup:
  *     ret = reg + x
- *   dlvhex.outputValues((ret, ))
+ *   dlvhex.output((ret, ))
  * \endcode
  * Note that akin to the \ref pluginframework "C++ API", terms and atoms are represented by IDs and the retrieval of the value behind
  * usually requires the use of the \em getValue method; some methods combine this with other functionalities (see method list below).
