@@ -828,6 +828,7 @@ Config& config, ProgramCtx& pctx)
         { "forcegc", no_argument, 0, 49 },
         { "incremental", no_argument, 0, 50 },
         { "strongsafety", no_argument, 0, 52 },
+		{ "optmode", required_argument, 0, 54 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -842,6 +843,7 @@ Config& config, ProgramCtx& pctx)
     bool heuristicChosen = false;
     bool heuristicMonolithic = false;
     bool solverSet = false;
+    bool forceoptmode = false;
     while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (ch) {
             case 'h':
@@ -1484,6 +1486,22 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 52:
                 pctx.config.setOption("LiberalSafety", 0);
+                break;
+            case 54:
+                int optmode = 0;
+                try
+                {
+                    if( optarg[0] == '=' )
+                        optmode = boost::lexical_cast<unsigned>(&optarg[1]);
+                    else
+                        optmode = boost::lexical_cast<unsigned>(optarg);
+                }
+                catch(const boost::bad_lexical_cast&) {
+                    LOG(ERROR,"could not parse optmode '" << optarg << "' - using default");
+                }
+                pctx.config.setOption("OptimizationTwoStep", optmode);
+                forceoptmode = true;
+                break;
         }
     }
 
@@ -1530,7 +1548,7 @@ Config& config, ProgramCtx& pctx)
 
     }
     bool usingClaspBackend = (pctx.config.getOption("GenuineSolver") == 3 || pctx.config.getOption("GenuineSolver") == 4);
-    if( heuristicMonolithic && usingClaspBackend ) {
+    if( !forceoptmode && heuristicMonolithic && usingClaspBackend ) {
         // we can use this in a safe way if we use a monolithic evaluation unit
         // we can use this with the clasp backend (the other solver does not honor setOptimum() calls)
         // TODO we can also use this if we have all weight constraints in one evaluation unit, this can be detected automatically

@@ -697,11 +697,41 @@ void ClaspSolver::createMinimizeConstraints(const AnnotatedGroundProgram& p)
     minc = 0;
     if (!!sharedMinimizeData) {
         DBGLOG(DBG, "Setting minimize mode");
-                                 // optimum is set by setOptimum
-        sharedMinimizeData->setMode(Clasp::MinimizeMode_t::optimize);
 
-        LOG(DBG, "Attaching minimize constraint to clasp");
-        minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+        // start with the current global optimum as upper bound if available
+        if (ctx.currentOptimum.size() > 0){
+            int optlen = ctx.currentOptimum.size() - 1;
+            LOG(DBG, "Transforming optimum " << printvector(ctx.currentOptimum) << " (length: " << optlen << ") to clasp-internal representation");
+            Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+            for (int l = 0; l < optlen; ++l)
+                newopt[l] = ctx.currentOptimum[optlen - l];
+
+            sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, newopt, optlen);
+
+            LOG(DBG, "Attaching minimize constraint to clasp");
+            minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+
+            bool intres = minc->integrate(*claspctx.master());
+            LOG(DBG, "Integrating constraint gave result " << intres);
+            delete []newopt;
+        }else{
+
+            // setting the upper bound works by enabling the following comments:
+            //
+            // int len = 1;
+            //Clasp::wsum_t* newopt = new Clasp::wsum_t[len];
+            //newopt[0] = 3;
+
+            sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate /*, newopt, len*/);
+
+            LOG(DBG, "Attaching minimize constraint to clasp");
+            minc = sharedMinimizeData->attach(*claspctx.master(), Clasp::MinimizeMode_t::opt_bb);
+
+            //bool intres = minc->integrate(*claspctx.master());
+            //LOG(DBG, "Integrating constraint gave result " << intres);
+            //delete []newopt;
+
+        }
 
         assert(!!minc);
     }

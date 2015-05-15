@@ -854,8 +854,8 @@ namespace
 
         // this implementation should only be used for naive optimization
         assert(ctx->config.getOption("Optimization") == 1 &&
-            ctx->config.getOption("OptimizationTwoStep") == 0 &&
-            ctx->config.getOption("OptimizationByDlvhex") == 1);
+            ctx->config.getOption("OptimizationTwoStep") == 0 /*&&
+            ctx->config.getOption("OptimizationByDlvhex") == 1*/);
         ModelBuilder<FinalEvalGraph>& mb = createModelBuilder(ctx);
         const unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
         unsigned mcount = 0;
@@ -904,38 +904,47 @@ namespace
                                  // betterThan does not necessarily mean strictly better, i.e., it includes solutions of the same quality!
                 bool equalOrBetter = (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum));
 
-                // if the model is not equal or better, ignore it and try to get the next model
-                if( !equalOrBetter )
-                    continue;
-
                 // keep track of the current optimum
-                ctx->currentOptimum = answerset->getWeightVector();
-                LOG(DBG, "Current global optimum (equalOrBetter = True): " << printvector(answerset->getWeightVector()));
-
-                // in this block we do not need to count models as we need to enumerate all of them
-                // only afterwards the requested number of best models can be output
-
-                // is there a previous model and the new model is (strictly!) better than the best known one?
-                if( !bestModels.empty() && !bestModels.front()->betterThan(answerset->getWeightVector()) ) {
-                    // new model is better than all previous ones --> clear cache
-                    LOG(DBG, "clearing bestModels because new model is strictly better");
-                    bestModels.clear();
+                if( equalOrBetter ) {
+                    ctx->currentOptimum = answerset->getWeightVector();
+                    LOG(DBG, "Current global optimum (equalOrBetter = True): " << printvector(answerset->getWeightVector()));
                 }
-                // store this one in cache
-                LOG(DBG, "recording answer set in bestModels: " << *answerset);
-                bestModels.push_back(answerset);
 
-                // also show some non-optimal models?
-                if( ctx->config.getOption("OptimizationFilterNonOptimal") == 0 )
-                    // yes: cache models and decide at the end upon optimality
+                if (ctx->config.getOption("OptimizationByDlvhex")){
+                    if( !equalOrBetter ) continue;
+
+                    // in this block we do not need to count models as we need to enumerate all of them
+                    // only afterwards the requested number of best models can be output
+
+                    // is there a previous model and the new model is (strictly!) better than the best known one?
+                    if( !bestModels.empty() && !bestModels.front()->betterThan(answerset->getWeightVector()) ) {
+                        // new model is better than all previous ones --> clear cache
+                        LOG(DBG, "clearing bestModels because new model is strictly better");
+                        bestModels.clear();
+                    }
+
+                    // also show some non-optimal models?
+                    if( ctx->config.getOption("OptimizationFilterNonOptimal") == 0 ) {
+                        // yes: output model immediately
+                        abort |= callModelCallbacks(ctx, answerset);
+                        mcount++;
+                    }else{
+                        // store this one in cache and decide at the end upon optimality
+                        LOG(DBG, "recording answer set in bestModels: " << *answerset);
+                        bestModels.push_back(answerset);
+                    }
+                }else{
                     abort |= callModelCallbacks(ctx, answerset);
+                    mcount++;
+                }
+                if (mcountLimit != 0 && mcount >= mcountLimit) abort = true;
             }
         }
         while( !!om && !abort );
 
         // process cached models
         BOOST_FOREACH(AnswerSetPtr answerset, bestModels) {
-            mcount ++;
+            mcount++;
             abort |= callModelCallbacks(ctx, answerset);
             // respect model count limit for cached models
             if( abort || (mcountLimit != 0 && mcount >= mcountLimit) )

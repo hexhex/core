@@ -400,25 +400,25 @@ public boost::enable_shared_from_this<Registry>
          * \brief Extracts all variable IDs from \p id.
          *
          * Get all IDs of variables in atom given by ID
-         * add these ids to \p out
-         * (returns even local variables for aggregates).
+         * add these ids to \p out.
          * @param id Atom, literal or term ID.
          * @param out Reference to a set of IDs where all identified variables are to be added.
          * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
+         * @param includeLocalAggVar Specifies whether to include local variables in aggregates.
          */
-        void getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous = false) const;
+        void getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous = false, bool includeLocalAggVar = true) const;
 
         /**
          * \brief Extracts all variable IDs from \p id.
          *
          * Get all IDs of variables in atom given by ID
-         * returns these ids
-         * (returns even local variables for aggregates).
+         * returns these ids.
          * @param id Atom, literal or term ID.
          * @return Set of IDs with all identified variables.
          * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
+         * @param includeLocalAggVar Specifies whether to include local variables in aggregates.
          */
-        std::set<ID> getVariablesInID(const ID& id, bool includeAnonymous = false) const;
+        std::set<ID> getVariablesInID(const ID& id, bool includeAnonymous = false, bool includeLocalAggVar = true) const;
 
         /**
          * \brief Retrieves variables in a term, an ordinary atom or the output list of an external atom.
@@ -426,38 +426,38 @@ public boost::enable_shared_from_this<Registry>
          * Get all IDs of variables in atom given by ID,
          * but skip input variables in external atoms.
          * add these ids to out
-         * (returns even local variables for aggregates)
          * @param id Atom, literal or term ID.
          * @param out Reference to a set of IDs where all identified variables are to be added.
          * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
+         * @param includeLocalAggVar Specifies whether to include local variables in aggregates.
          */
-        void getOutVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous = false) const;
+        void getOutVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous = false, bool includeLocalAggVar = true) const;
 
         /**
          * \brief Applies getVariablesInID to multiple IDs.
          *
          * Get all IDs of variables in atoms in given tuple
          * add these ids to \p out
-         * (returns even local variables for aggregates)
          * tuple \p t contains IDs of literals or atoms.
          * @param t Vector of IDs of atoms, literals and terms.
          * @param out Reference to the tuple where variable IDs to be added.
          * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
+         * @param includeLocalAggVar Specifies whether to include local variables in aggregates.
          */
-        void getVariablesInTuple(const Tuple& t, std::set<ID>& out, bool includeAnonymous = false) const;
+        void getVariablesInTuple(const Tuple& t, std::set<ID>& out, bool includeAnonymous = false, bool includeLocalAggVar = true) const;
 
         /**
          * \brief Applies getVariablesInID to multiple IDs.
          *
          * Get all IDs of variables in atoms in given tuple
          * add these ids to \p out
-         * (returns even local variables for aggregates)
          * tuple \p t contains IDs of literals or atoms.
          * @param t Vector of IDs of atoms, literals and terms.
          * @return Set of IDs with all identified variables.
          * @param includeAnonymous True to include the anonymous variable ("_") if present, false to skip it.
+         * @param includeLocalAggVar Specifies whether to include local variables in aggregates.
          */
-        std::set<ID> getVariablesInTuple(const Tuple& t, bool includeAnonymous = false) const;
+        std::set<ID> getVariablesInTuple(const Tuple& t, bool includeAnonymous = false, bool includeLocalAggVar = true) const;
 
         /**
          * \brief Recursively substitutes variables in terms.

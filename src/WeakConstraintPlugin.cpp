@@ -170,7 +170,7 @@ namespace
 
             std::set<ID> bodyVars;
             BOOST_FOREACH (ID b, rule.body) {
-                reg->getVariablesInID(b, bodyVars);
+                reg->getVariablesInID(b, bodyVars, false, false);
             }
 
             bool ground = bodyVars.size() == 0 && !rule.weight.isVariableTerm() && !rule.level.isVariableTerm();
@@ -209,6 +209,9 @@ namespace
             if (!ctxdata.allmodels) ctx.config.setOption("OptimizationByBackend", 1);
             // suppress non-optimal models preceeding the optimal ones
             if (!ctxdata.allmodels) ctx.config.setOption("OptimizationFilterNonOptimal", 1);
+//ctx.config.setOption("OptimizationFilterNonOptimal", 0);
+//ctx.config.setOption("OptimizationByBackend", 1);
+//ctx.config.setOption("OptimizationByDlvhex", 0);
             if( ctx.config.getOption("OptimizationTwoStep") == 0 )
                 LOG(WARNING,"optimization might be slow because it cannot be done in a strictly decreasing manner"
                     "(TODO perhaps it could be done but we currently cannot detect if weight constraints are in single unit)");
