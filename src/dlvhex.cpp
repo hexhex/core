@@ -243,8 +243,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
         << " -N, --maxint=<num>   Set maximum integer (#maxint in the program takes precedence over the parameter)." << std::endl
         << "     --weaksafety     Skip strong safety check." << std::endl
-        << "     --strongsafety   Applies traditional strong safety criteria (default)." << std::endl
-        << "     --liberalsafety  Uses more liberal safety conditions than strong safety." << std::endl
+        << "     --strongsafety   Applies traditional strong safety criteria." << std::endl
+        << "     --liberalsafety  Uses more liberal safety conditions than strong safety (default)." << std::endl
         << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)." << std::endl
         << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
         << "     --split          Use instantiation splitting techniques." << std::endl

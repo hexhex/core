@@ -66,7 +66,6 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
     return *this;
 }
 
-
 /**
  * @return overall monotonicity
  */
@@ -102,6 +101,13 @@ bool ExtSourceProperties::isAntimonotonic() const
     return true;
 }
 
+/**
+ * @return overall nonmonotonicity
+ */
+bool ExtSourceProperties::isNonmonotonic() const
+{
+    return !isMonotonic();
+}
 
 void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAtom& atom, const std::vector<std::vector<std::string> >& props)
 {

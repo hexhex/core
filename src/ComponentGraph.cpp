@@ -962,23 +962,25 @@ ComponentInfo& newComponentInfo) const
             if (!(!cio.outerEatoms.empty() && cio.innerRules.empty()))
             ci.fixedDomain &= cio.fixedDomain;
 
-        // if *ito does not depend on any component in originals
-        // then outer eatoms stay outer eatoms
-        // otherwise they become inner eatoms
-        if( internallyDepends.find(*ito) == internallyDepends.end() ) {
-            // does not depend on other components
-            ci.outerEatoms.insert(ci.outerEatoms.end(),
-                cio.outerEatoms.begin(), cio.outerEatoms.end());
-            ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
-        }
-        else {
-            // does depend on other components
-            // -> former outer eatoms now become inner eatoms
-            ci.innerEatoms.insert(ci.innerEatoms.end(),
-                cio.outerEatoms.begin(), cio.outerEatoms.end());
+        // outer external atoms which get input from the same component become inner ones
+        BOOST_FOREACH (ID outerEA, cio.outerEatoms){
+            const ExternalAtom& eatom = reg->eatoms.getByID(outerEA);
+            bool becomesInner = false;
+            becomesInner = (ci.predicatesInComponent.find(eatom.auxInputPredicate) != ci.predicatesInComponent.end());
+            for (int i = 0; i < eatom.inputs.size(); ++i) {
+                if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE && ci.predicatesInComponent.find(eatom.inputs[i]) != ci.predicatesInComponent.end()){
+                    becomesInner = true;
+                    break;
+                }
+            }
 
-            // here, outer eatom becomes inner eatom
-            ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+            if (!becomesInner) {
+                ci.outerEatoms.insert(ci.outerEatoms.end(), outerEA);
+                ci.outerEatomsNonmonotonic |= eatom.getExtSourceProperties().isNonmonotonic();
+            }else{
+                ci.innerEatoms.insert(ci.innerEatoms.end(), outerEA);
+                ci.innerEatomsNonmonotonic |= eatom.getExtSourceProperties().isNonmonotonic();
+            }
         }
         WARNING("if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
     }
