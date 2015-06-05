@@ -204,6 +204,12 @@ struct ExtSourceProperties
     bool isAntimonotonic() const;
 
     /**
+     * \brief Checks if the external source is nonmonotonic.
+     * @return Overall nonmonotonicity.
+     */
+    bool isNonmonotonic() const;
+
+    /**
      * \brief Checks if the external source is monotonic in a given parameter.
      * @param parameterIndex 0-based index.
      * @return Monotonicity on parameter level.

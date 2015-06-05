@@ -84,6 +84,7 @@ outerEatoms(ci.outerEatoms)
     }
 
     innerEatoms = ci.innerEatoms;
+
     // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
     createEatomGuessingRules(ctx);
 
