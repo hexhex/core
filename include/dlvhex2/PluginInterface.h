@@ -680,6 +680,13 @@ typedef boost::shared_ptr<PluginEnvironment> PluginEnvironmentPtr;
  * IDs put into tuple must either be integer IDs or Term IDs that have been
  * registered in table Registry::terms.
  *
+ * If an external atom specifies that it provides partial answers (see ExtSourceProperties::providesPartialAnswer),
+ * it further must add all tuples which can become true if currently unassigned input atoms are defined
+ * using \code answer.getUnknown().push_back(tuple) \endcode.
+ * As this might be the case for infinitely many tuples,
+ * the (finite) set of relevant ones can be retrieved from the output atoms in the set \code replacements \endcode
+ * of all positive replacement atoms stemming from this external atom.
+ * 
  * \subsection registeratoms Registering the Atoms
  *
  * So far, we described the implementation of a specific external atom. In order
@@ -837,14 +844,24 @@ class DLVHEX_EXPORT PluginAtom
             Answer();
 
             /**
-             * \brief Access storage (read/write) and mark answer as used.
+             * \brief Access true storage (read/write) and mark answer as used.
              */
             std::vector<Tuple>& get() { used = true; return *output; }
 
             /**
-             * \brief Access storage (read only). Do NOT mark as used.
+             * \brief Access true storage (read only). Do NOT mark as used.
              */
             const std::vector<Tuple>& get() const { return *output; }
+
+            /**
+             * \brief Access unknown storage (read/write) and mark answer as used.
+             */
+            std::vector<Tuple>& getUnknown() { used = true; return *output; }
+
+            /**
+             * \brief Access unknown storage (read only). Do NOT mark as used.
+             */
+            const std::vector<Tuple>& getUnknown() const { return *output; }
 
             /**
              * \brief Usage report (for cache).
@@ -880,8 +897,10 @@ class DLVHEX_EXPORT PluginAtom
             bool operator==(const Answer& other) const;
 
             private:
-                // \brief shared_ptr storage for have low-cost-copying of this object and for a more efficient query answer cache implementation.
+                // \brief stores the positive output values; shared_ptr storage for have low-cost-copying of this object and for a more efficient query answer cache implementation.
                 boost::shared_ptr<std::vector<Tuple> > output;
+                // \brief stores the unknown output values (those neither in output nor in unknown are false); shared_ptr storage for have low-cost-copying of this object and for a more efficient query answer cache implementation.
+                boost::shared_ptr<std::vector<Tuple> > unknown;
                 // usage marker: true if this was default-constructed and never used
                 bool used;
         };
@@ -1259,6 +1278,9 @@ class DLVHEX_EXPORT PluginAtom
         const std::string& getPredicate() const
             { return predicate; }
 
+        /** \brief Returns a mask of all positive replacement atoms which are currently in the registry and match with this PluginAtom. */
+        PredicateMaskPtr getReplacements(){ replacements->updateMask(); return replacements; }
+
         /**
          * \brief Erase all elements from queryAnswerCache and queryNogoodCache
          */
@@ -1302,6 +1324,9 @@ class DLVHEX_EXPORT PluginAtom
         QueryNogoodCache queryNogoodCache;
         /** \brief Mutex for accessing PluginAtom::queryAnswerCache and PluginAtom::queryNogoodCache. */
         boost::mutex cacheMutex;
+
+        /** \brief Mask of all positive replacement atoms of this external atom. */
+        PredicateMaskPtr replacements;
 
         /** \brief Output tuples generated so far (used for learning for functional sources). */
         std::vector<Tuple> otuples;

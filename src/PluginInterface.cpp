@@ -253,6 +253,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
             subqueryFromCache = retrieveCached(atomicQuery, atomicAnswer, query.ctx->config.getOption("ExternalLearningUser") ? nogoods : NogoodContainerPtr());
         }
         else {
+            replacements->updateMask();
             subqueryFromCache = false;
 
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
@@ -622,6 +623,10 @@ void PluginAtom::setRegistry(RegistryPtr reg)
         Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, predicate);
         predicateID = registry->terms.storeAndGetID(t);
     }
+    replacements = PredicateMaskPtr(new PredicateMask());
+    replacements->setRegistry(reg);
+    replacements->addPredicate(reg->getAuxiliaryConstantSymbol('r', predicateID));
+    replacements->updateMask();
     assert(predicateID != ID_FAIL);
 }
 

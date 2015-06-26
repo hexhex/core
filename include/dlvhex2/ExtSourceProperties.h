@@ -126,6 +126,8 @@ struct ExtSourceProperties
     /** \brief See ExtSourceProperties::hasWellorderingNatural. */
                                  // <i,j> means that output value at position j is strictly smaller than at input position i (wrt. natural numbers)
     std::set<std::pair<int, int> > wellorderingNatural;
+    /** \brief See ExtSourceProperties::providesPartialAnswer. */
+    bool providesPartialAnswer;
 
     /**
      * \brief Constructor.
@@ -142,6 +144,7 @@ struct ExtSourceProperties
         variableOutputArity = false;
         caresAboutAssigned = false;
         caresAboutChanged = false;
+        providesPartialAnswer = false;
     }
 
     /**
@@ -190,6 +193,8 @@ struct ExtSourceProperties
     inline void addWellorderingStrlen(int index1, int index2) { wellorderingStrlen.insert(std::pair<int, int>(index1, index2)); }
     /** \brief See ExtSourceProperties::hasWellorderingNatural. */
     inline void addWellorderingNatural(int index1, int index2) { wellorderingNatural.insert(std::pair<int, int>(index1, index2)); }
+    /** \brief See ExtSourceProperties::hasWellorderingNatural. */
+    inline void setProvidesPartialAnswer(bool value) { providesPartialAnswer = value; }
 
     /**
      * \brief Checks if the external source is monotonic.
@@ -378,6 +383,16 @@ struct ExtSourceProperties
      */
     bool doesCareAboutChanged() const
         { return caresAboutChanged; }
+
+    /**
+     * \brief Checks if the external source provides a partial answer.
+     *
+     * If the external atom provides a partial answer, it is expected to specify both true and unknown atoms wrt. partial input,
+     * whereas an external atom which does not provide partial answer should assume unassigned input atoms to be false (see PluginInterface).
+     * @return True if the external source provides partial answers.
+     */
+    bool doesProvidePartialAnswer() const
+        { return providesPartialAnswer; }
 
     /**
      * \brief Parses external source properties given as vectors of terms and integrates them into the current instance of the class.

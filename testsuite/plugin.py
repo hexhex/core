@@ -56,6 +56,31 @@ def testSetMinus2(p, q):
 					))
 			dlvhex.output(x)
 
+def testSetMinusPartial(p, q):
+
+	input = dlvhex.getInputAtoms()
+	for x in input:
+		tup = x.tuple()
+
+		# for a p-atom p(x)
+		if tup[0].value() == p.value():
+
+			# if it is true and the corresponding q-atom q(x) is not true (i.e., false or undefined)
+			if dlvhex.isTrue(x) and not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
+				# if the q-atom q(x) is false, then x is definitely in the output
+				if dlvhex.isFalse(dlvhex.storeAtom((q, tup[1]))):
+					#print "Definitely true: " + tup[1].value()
+					dlvhex.output((tup[1], ))
+				# if the q-atom q(x) is undefined, then x might be in the output
+				else:
+					print "Could be true: " + tup[1].value()
+					dlvhex.outputUnknown((tup[1], ))
+
+			# if the p-atom p(x) is undefined and the q-atom q(x) is not true (i.e., false or undefined), then x might be in the output
+			if not dlvhex.isTrue(x) and not dlvhex.isFalse(x) and not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
+				print "Could be true: " + tup[1].value()
+				dlvhex.outputUnknown((tup[1], ))
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -90,5 +115,11 @@ def register():
 	prop.addAntimonotonicInputPredicate(1)
 	dlvhex.addAtom("testSetMinus", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
 	dlvhex.addAtom("testSetMinus2", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addAntimonotonicInputPredicate(1)
+	dlvhex.addAtom("testSetMinusPartial", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
 
 	dlvhex.addAtom("date", (), 1)

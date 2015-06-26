@@ -152,6 +152,11 @@
  * Note that akin to the \ref pluginframework "C++ API", terms and atoms are represented by IDs and the retrieval of the value behind
  * usually requires the use of the \em getValue method; some methods combine this with other functionalities (see method list below).
  *
+ * If an external atom specifies that it provides partial answers (see below),
+ * it further must add all tuples which can become true if currently unassigned input atoms are defined
+ * using \code dlvhex.outputUnknown((ret, )) \endcode. As this might be the case for infinitely many tuples,
+ * the (finite) set of relevant ones can be retrieved from the output atoms returned by \code dlvhex.getRelevantOutputAtoms() \endcode.
+ *
  * In addition to the actual semantics of an external atom, the Python API can also be used for defining custom learning techniques (described in the following list).
  * Advanced plugin features, such as providing converters, rewriters and dependency graph optimizations. are, however, only possible with the \ref pluginframework "C++ API".
  *
@@ -176,8 +181,10 @@
  * <b>Basic Plugin Functionality</b>
  * <ul>
  *   <li>\code{.txt}void output(args)\endcode Adds a tuple of IDs or values \em args to the external source output.</li>
+ *   <li>\code{.txt}void outputUnknown(args)\endcode Adds a tuple of IDs or values \em args to the external source possible output under more complete input (only needed if the external atom provides partial answers, see below). The external source is expected to decide for all tuples from output atoms returned by \code dlvhex.getRelevantOutputAtoms() \endcode whether they might become true (if not true yet).</li>
  *   <li>\code{.txt}ID getExternalAtomID()\endcode Returns the ID of the currently evaluated external atom; the changed information (cf. hasChanged) is relative to the last call for the same external atom</li>
  *   <li>\code{.txt}tuple getInputAtoms([pred])\endcode Returns a tuple of \em all input atoms (\em not only true ones!) to this external atom; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
+ *   <li>\code{.txt}tuple getRelevantOutputAtoms([pred])\endcode Returns a set of \em all relevant output atoms of this external atom \em; this is relevant for answering queries partially (see \code prop.providesPartialAnswer() \code): the external atom is expected to mark all tuples of the output atoms as unknown if they might become true under a more complete input.</li>
  *   <li>\code{.txt}tuple getTrueInputAtoms([pred])\endcode Returns a tuple of all input atoms to this external atom <em>which are currently true</em>; \em pred is an optional predicate ID, which allows for restricting the tuple to atoms over this predicate.</li>
  *   <li>\code{.txt}int getInputAtomCount()\endcode Returns the number of \em input atoms (\em not only true ones!).</li>
  *   <li>\code{.txt}int getTrueInputAtomCount()\endcode Returns the number of input atoms <em>which are currently true</em>.</li>
@@ -235,6 +242,7 @@
  *   <li>\code{.txt}void prop.setFiniteFiber(value)\endcode Declare that the source has a finite fiber.</li>
  *   <li>\code{.txt}void prop.addWellorderingStrlen(index1, index2)\endcode Declare that output argument \em index1 has a string length wellordering wrt. input argument \em index2.</li>
  *   <li>\code{.txt}void prop.addWellorderingNatural(index1, index2)\endcode Declare that output argument \em index1 has a natural wellordering wrt. input argument \em index2.</li>
+ *   <li>\code{.txt}void prop.providesPartialAnswer(values)\endcode Declare that the external atom provies a partial answer under partial input using a 3-valued logic (true, false, unknown); in that case the implementation must add positive answer tuples using \code dlvhex.output \endcode and currently unknown ones using \code dlvhex.outputUnknown \endcode (others are false), whereas without this property the unassigned input atoms should be assumed to be false and a complete answer wrt. this assumption should be delivered.</li>
  * </ul>
  *
  * Moreover, for an ID object \em id, there are the following shortcuts:

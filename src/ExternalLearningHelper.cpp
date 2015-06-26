@@ -81,16 +81,19 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
 
         // positive atoms are only required for non-antimonotonic input parameters
         // negative atoms are only required for non-monotonic input parameters
-        if (query.interpretation->getFact(*en) != negateMonotonicity) {
-            // positive
-            if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")) {
-                extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+        // unassigned input atoms are not needed if the external source provides partial answers (i.e., works over partial interpretations)
+        if (!(prop.doesProvidePartialAnswer() && !!query.assigned && !query.assigned->getFact(*en))){
+            if (query.interpretation->getFact(*en) != negateMonotonicity) {
+                // positive
+                if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")) {
+                    extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+                }
             }
-        }
-        else {
-            // negative
-            if (!prop.isMonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")) {
-                extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+            else {
+                // negative
+                if (!prop.isMonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")) {
+                    extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+                }
             }
         }
 
@@ -360,13 +363,14 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                 if ((atom.tuple.size() - 1 - aux) != query.input.size() + query.pattern.size()) paramMatch = false;
 
                 if (paramMatch) {
-                    // check if this tuple is _not_ in the answer
+                    // check if this tuple is _not_ in the answer (if the external atom provides partial answers, it also must not be in the unknown list)
                     Tuple t;
                     for (uint32_t i = aux + 1 + query.input.size(); i < atom.tuple.size(); i++) {
                         t.push_back(atom.tuple[i]);
                     }
 
-                    if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()) {
+                    if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
+                        (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
                         // construct positive output atom
                         OrdinaryAtom posatom = atom;
                         posatom.tuple[0] = posOutPredicate;

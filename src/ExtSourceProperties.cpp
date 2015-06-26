@@ -63,6 +63,7 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
     variableOutputArity |= prop2.variableOutputArity;
     caresAboutAssigned |= prop2.caresAboutAssigned;
     caresAboutChanged |= prop2.caresAboutChanged;
+    providesPartialAnswer |= prop2.providesPartialAnswer;
     return *this;
 }
 
@@ -276,6 +277,11 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
             if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"caresaboutchanged\" expects no parameters");
             DBGLOG(DBG, "External Atom has a variable output arity");
             caresAboutChanged = true;
+        }
+        else if (name == "providespartialanswer") {
+            if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"providesPartialAnswer\" expects no parameters");
+            DBGLOG(DBG, "External Atom provides partial answer");
+            providesPartialAnswer = true;
         }
         else {
             throw SyntaxError("Property \"" + name + "\" unrecognized");

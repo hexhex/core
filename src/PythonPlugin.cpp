@@ -212,6 +212,7 @@ namespace PythonAPI
     const PluginAtom::Query* emb_query;
     PluginAtom::Answer* emb_answer;
     NogoodContainerPtr emb_nogoods;
+    PredicateMaskPtr emb_eareplacements;
     std::vector<PluginAtomPtr> *emb_pluginAtoms;
     boost::python::object main;
     boost::python::object dict;
@@ -249,6 +250,7 @@ class PythonAtom : public PluginAtom
                 PythonAPI::emb_query = &query;
                 PythonAPI::emb_answer = &answer;
                 PythonAPI::emb_nogoods = nogoods;
+                PythonAPI::emb_eareplacements = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements();
 
                 boost::python::tuple t;
                 DBGLOG(DBG, "Constructing input tuple");
@@ -268,6 +270,7 @@ class PythonAtom : public PluginAtom
                 PythonAPI::emb_query = NULL;
                 PythonAPI::emb_answer = NULL;
                 PythonAPI::emb_nogoods.reset();
+                PythonAPI::emb_eareplacements.reset();
             }
             catch(boost::python::error_already_set& e) {
                 PyErr_Print();
@@ -437,11 +440,11 @@ namespace PythonAPI
                     boost::python::extract<ID> get_ID(args[i]);
                     if (get_ID.check()) {
                         DBGLOG(DBG," arg " << i << " is ID " << get_ID() << " which is " << printToString<RawPrinter>(get_ID(), emb_ctx->registry()));
-                        if (!get_ID().isTerm()) throw PluginError("dlvhex.output: Parameters must be term IDs");
+                        if (!get_ID().isTerm()) throw PluginError("dlvhex.output/dlvhex.outputUnknown: Parameters must be term IDs");
                         atom.tuple.push_back(get_ID());
                     }
                     else {
-                        PluginError("dlvhex.output: unknown parameter type");
+                        PluginError("dlvhex.output/dlvhex.outputUnknown: unknown parameter type");
                     }
                 }
             }
@@ -750,6 +753,37 @@ namespace PythonAPI
         emb_answer->get().push_back(outputTuple);
     }
 
+    void outputUnknown(boost::python::tuple args) {
+
+        Tuple outputTuple;
+        for (int i = 0; i < boost::python::len(args); ++i) {
+
+            boost::python::extract<int> get_int(args[i]);
+            if (get_int.check()) {
+                // store as int
+                outputTuple.push_back(dlvhex::ID::termFromInteger(get_int()));
+            }
+            else {
+                boost::python::extract<std::string> get_string(args[i]);
+                if (get_string.check()) {
+                    // store as string
+                    outputTuple.push_back(emb_ctx->registry()->storeConstantTerm(boost::python::extract<std::string>(args[i])));
+                }
+                else {
+                    boost::python::extract<ID> get_ID(args[i]);
+                    if (get_ID.check()) {
+                        if (!get_ID().isTerm()) throw PluginError("dlvhex.outputUnknown: Parameters must be term IDs");
+                        outputTuple.push_back(get_ID());
+                    }
+                    else {
+                        PluginError("dlvhex.outputUnknown: unknown parameter type");
+                    }
+                }
+            }
+        }
+        emb_answer->getUnknown().push_back(outputTuple);
+    }
+
     ID getExternalAtomID() {
         return emb_query->eatomID;
     }
@@ -866,6 +900,19 @@ namespace PythonAPI
         return isFalse(*this_);
     }
 
+    boost::python::tuple getRelevantOutputAtoms() {
+
+        const ExternalAtom& eatom = emb_query->interpretation->getRegistry()->eatoms.getByID(getExternalAtomID());
+        bm::bvector<>::enumerator en = emb_eareplacements->mask()->getStorage().first();
+        bm::bvector<>::enumerator en_end = emb_eareplacements->mask()->getStorage().end();
+        boost::python::tuple t;
+        while (en < en_end) {
+            t += boost::python::make_tuple(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en));
+            en++;
+        }
+        return t;
+    }
+
     void resetCacheOfPlugins() {
         if( PythonAPI::emb_ctx == NULL ) {
             LOG(ERROR,"cannot reset plugin cache - emb_ctx = NULL");
@@ -896,6 +943,7 @@ BOOST_PYTHON_MODULE(dlvhex)
     boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtomWithSign);
     boost::python::def("storeOutputAtom", PythonAPI::storeOutputAtom);
     boost::python::def("output", PythonAPI::output);
+    boost::python::def("outputUnknown", PythonAPI::outputUnknown);
     boost::python::def("getExternalAtomID", PythonAPI::getExternalAtomID);
     boost::python::def("getInputAtoms", PythonAPI::getInputAtoms);
     boost::python::def("getInputAtoms", PythonAPI::getInputAtomsOfPredicate);
@@ -909,6 +957,7 @@ BOOST_PYTHON_MODULE(dlvhex)
     boost::python::def("hasChanged", PythonAPI::hasChanged);
     boost::python::def("isTrue", PythonAPI::isTrue);
     boost::python::def("isFalse", PythonAPI::isFalse);
+    boost::python::def("getRelevantOutputAtoms", PythonAPI::getRelevantOutputAtoms);
     boost::python::def("storeExternalAtom", PythonAPI::storeExternalAtom);
     boost::python::def("storeRule", PythonAPI::storeRule);
     boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
@@ -946,7 +995,8 @@ BOOST_PYTHON_MODULE(dlvhex)
         .def("setUsesEnvironment", &dlvhex::ExtSourceProperties::setUsesEnvironment)
         .def("setFiniteFiber", &dlvhex::ExtSourceProperties::setFiniteFiber)
         .def("addWellorderingStrlen", &dlvhex::ExtSourceProperties::addWellorderingStrlen)
-        .def("addWellorderingNatural", &dlvhex::ExtSourceProperties::addWellorderingNatural);
+        .def("addWellorderingNatural", &dlvhex::ExtSourceProperties::addWellorderingNatural)
+        .def("setProvidesPartialAnswer", &dlvhex::ExtSourceProperties::setProvidesPartialAnswer);
 
     boost::python::scope().attr("CONSTANT") = (int)PluginAtom::CONSTANT;
     boost::python::scope().attr("PREDICATE") = (int)PluginAtom::PREDICATE;

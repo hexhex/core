@@ -1,0 +1,14 @@
+domain(a).
+domain(b).
+domain(c).
+domain(d).
+domain(e).
+domain(f).
+domain(g).
+domain(h).
+domain(i).
+domain(j).
+
+sel(X) :- domain(X), &testSetMinusPartial[domain, nsel](X).
+nsel(X) :- domain(X), &testSetMinusPartial[domain, sel](X).
+:- sel(X), sel(Y), sel(Z), X != Y, X != Z, Y != Z.
