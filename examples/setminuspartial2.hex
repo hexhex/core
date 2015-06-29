@@ -1,0 +1,9 @@
+domain(a).
+domain(b).
+domain(c).
+domain(d).
+domain(e).
+
+sel(X) v nsel(X) :- domain(X).
+
+result(X) :- domain(X), &testSetMinusPartial[sel, empty](X).
