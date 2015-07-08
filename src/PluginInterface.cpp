@@ -76,6 +76,10 @@ bool PluginAtom::Query::operator==(const Query& other) const
         (interpretation == other.interpretation) ||
         (interpretation != 0 && other.interpretation != 0 &&
         *interpretation == *other.interpretation) &&
+        (
+        assigned == other.assigned) ||
+        (assigned != 0 && other.assigned != 0 &&
+        *assigned == *other.assigned) &&
         // Equivalence of the predicateInputMask in the current and the cached query is required for the reason described in method retrieveCached.
         // Because for the same external atom the mask can only increase over time (when new ground atoms are added to registry) but never decrease,
         // comparing the number of atoms suffices.
@@ -270,6 +274,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         // overall answer is the union of the atomic answers
         DBGLOG(DBG, "Atomic query delivered " << atomicAnswer.get().size() << " tuples");
         answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
+        answer.getUnknown().insert(answer.getUnknown().end(), atomicAnswer.getUnknown().begin(), atomicAnswer.getUnknown().end());
 
         // query counts as answered from cache if at least one subquery was answered from cache
         fromCache |= subqueryFromCache;
@@ -336,6 +341,7 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 
     Answer& ans = queryAnswerCache[query];
     if( ans.hasBeenUsed()) {
+        DBGLOG(DBG, "Answering from cache");
         // answer was not default -> use
         answer = ans;
 
@@ -360,7 +366,9 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 
         return true;             // answered from cache
     }
-    else { {
+    else {
+        {
+            DBGLOG(DBG, "Answering by evaluation");
             // answer was default constructed
             // -> retrieve and replace in cache
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");

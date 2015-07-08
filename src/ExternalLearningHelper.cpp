@@ -36,6 +36,7 @@
 
 #include "dlvhex2/ExternalLearningHelper.h"
 #include "dlvhex2/HexParser.h"
+#include "dlvhex2/Printer.h"
 #include "dlvhex2/InternalGrounder.h"
 
 #include <boost/lexical_cast.hpp>
@@ -369,13 +370,13 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                         t.push_back(atom.tuple[i]);
                     }
 
-#ifdef NDEBUG
+#ifndef NDEBUG
                     DBGLOG(DBG, "Output of external atom:");
                     BOOST_FOREACH (Tuple t, answer.get()){
-                        DBGLOG(DBG, "+" << printToString<RawPrinter>(t));
+                        DBGLOG(DBG, "+" << printManyToString<RawPrinter>(t, ",",  query.ctx->registry()));
                     }
                     BOOST_FOREACH (Tuple t, answer.getUnknown()){
-                        DBGLOG(DBG, "~" << printToString<RawPrinter>(t));
+                        DBGLOG(DBG, "~" << printManyToString<RawPrinter>(t, ",",  query.ctx->registry()));
                     }
 #endif
 

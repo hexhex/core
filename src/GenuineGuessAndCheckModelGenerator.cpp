@@ -941,7 +941,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
     }
 
     // evaluate the external atom and learn nogoods if external learning is used
-    DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
+    DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: " << *assigned << ")");
     evaluateExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], evalIntr, vcb,
         factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed, answeredFromCache);
     updateEANogoods(partialInterpretation, assigned, changed);

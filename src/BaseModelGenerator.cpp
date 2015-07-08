@@ -336,7 +336,7 @@ bool BaseModelGenerator::VerifyExternalAtomCB::onlyNegativeAuxiliaries()
     while (en < en_end) {
         const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
         if (oatom.tuple[0] == pospred) {
-            DBGLOG(DBG, "Unfounded positive auxiliary detected: " << *en);
+            DBGLOG(DBG, "Unfounded positive auxiliary detected: " << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg));
             falsified = reg->ogatoms.getIDByAddress(*en);
             return false;
         }
