@@ -533,6 +533,7 @@ void ExternalAtomMask::updateMask()
 
 const InterpretationConstPtr ExternalAtomMask::getAuxInputMask() const
 {
+    assert (!!auxInputMask && "auxInputMask not set");
     return auxInputMask;
 }
 
