@@ -32,7 +32,7 @@ else
 	done
 	echo $prog > $instfile
 
-	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py CONF INST" "$confstr" "$instfile" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic CONF INST" "$confstr" "$instfile" "$to"
 	rm $instfile
 fi
 

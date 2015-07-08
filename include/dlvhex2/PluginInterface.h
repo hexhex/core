@@ -856,12 +856,12 @@ class DLVHEX_EXPORT PluginAtom
             /**
              * \brief Access unknown storage (read/write) and mark answer as used.
              */
-            std::vector<Tuple>& getUnknown() { used = true; return *output; }
+            std::vector<Tuple>& getUnknown() { used = true; return *unknown; }
 
             /**
              * \brief Access unknown storage (read only). Do NOT mark as used.
              */
-            const std::vector<Tuple>& getUnknown() const { return *output; }
+            const std::vector<Tuple>& getUnknown() const { return *unknown; }
 
             /**
              * \brief Usage report (for cache).
