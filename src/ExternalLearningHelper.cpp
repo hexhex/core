@@ -369,6 +369,16 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                         t.push_back(atom.tuple[i]);
                     }
 
+#ifdef NDEBUG
+                    DBGLOG(DBG, "Output of external atom:");
+                    BOOST_FOREACH (Tuple t, answer.get()){
+                        DBGLOG(DBG, "+" << printToString<RawPrinter>(t));
+                    }
+                    BOOST_FOREACH (Tuple t, answer.getUnknown()){
+                        DBGLOG(DBG, "~" << printToString<RawPrinter>(t));
+                    }
+#endif
+
                     if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
                         (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
                         // construct positive output atom

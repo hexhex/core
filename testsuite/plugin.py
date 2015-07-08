@@ -72,17 +72,20 @@ def testSetMinusPartial(p, q):
 				# if q(x) is false, then x is definitely in the output
 				if dlvhex.isFalse(dlvhex.storeAtom((q, tup[1]))):
 					#print "Definitely true: " + tup[1].value()
+					print "True: " + tup[1].value()
 					dlvhex.output((tup[1], ))
 
 				# if q(x) is undefined, then x might be in the output
 				else:
 					#print "Could be true: " + tup[1].value()
+					print "Unknown: " + tup[1].value()
 					dlvhex.outputUnknown((tup[1], ))
 					v=0
 
 			# if p(x) is undefined and q(x) is not true (i.e., false or undefined), then x might be in the output
 			if not dlvhex.isTrue(x) and not dlvhex.isFalse(x) and not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
 				#print "Could be true: " + tup[1].value()
+				print "Unknown: " + tup[1].value()
 				dlvhex.outputUnknown((tup[1], ))
 				v=0
 
