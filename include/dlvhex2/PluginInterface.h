@@ -883,7 +883,7 @@ class DLVHEX_EXPORT PluginAtom
              * @return Reference to this object.
              */
             Answer& operator=(const Answer& other)
-                { output = other.output; used = true; return *this; }
+                { output = other.output; unknown = other.unknown; used = true; return *this; }
 
             /**
              * \brief Comparison non-implementation (produces linker error on purpose).

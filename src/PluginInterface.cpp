@@ -113,6 +113,7 @@ std::size_t hash_value(const PluginAtom::Query& q)
 
 PluginAtom::Answer::Answer():
 output(new std::vector<Tuple>),
+unknown(new std::vector<Tuple>),
 used(false)
 {
 }
