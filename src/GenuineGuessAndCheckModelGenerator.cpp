@@ -949,8 +949,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
     // if the input to the external atom was complete, then remember the verification result;
     // for incomplete input we cannot yet decide this yet, evaluation is only done for learning purposes in this case
     if( !assigned ||
-        !bm::any_sub(annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage(),
-    assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() ) ) {
+        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count() == (assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()) {
         eaVerified[eaIndex] = vcb.verify();
 
         DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
