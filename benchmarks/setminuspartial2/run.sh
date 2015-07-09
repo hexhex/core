@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "{1..40}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
-	confstr=";--eaevalheuristics=always;-N=1;--eaevalheuristics=always -N=1"
+	confstr=";--eaevalheuristics=always;-n=1;--eaevalheuristics=always -n=1"
 
 	# write instance file
 	inststr=`printf "%03d" ${instance}`
