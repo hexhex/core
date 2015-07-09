@@ -1457,7 +1457,17 @@ void ClaspSolver::removePropagator(PropagatorCallback* pb)
 
 void ClaspSolver::addNogood(Nogood ng)
 {
-    nogoods.push_back(ng);
+    Nogood ng2;
+    BOOST_FOREACH (ID lit, ng) {
+        // do not add nogoods which expand the domain (this is the case if they contain positive atoms which are not in the domain)
+        if (!lit.isNaf() && !isMappedToClaspLiteral(lit.address)) { return; }
+        // keep positive atoms and negated atoms which are in the domain
+        else if (!lit.isNaf() || isMappedToClaspLiteral(lit.address)) { ng2.insert(lit); }
+        // the only remaining case should be that the literal is negated and the atom is not contained in the domain
+        else { assert(lit.isNaf() && !isMappedToClaspLiteral(lit.address) && "conditions are logically incomplete"); }
+    }
+
+    nogoods.push_back(ng2);
 }
 
 
