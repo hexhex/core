@@ -100,6 +100,7 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
 
         en++;
     }
+    DBGLOG(DBG, "Input nogood: " << extNgInput.getStringRepresentation(query.ctx->registry()));
 
     return extNgInput;
 }
