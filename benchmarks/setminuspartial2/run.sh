@@ -25,7 +25,8 @@ else
 	prog="
 		sel(X) v nsel(X) :- domain(X).
 
-		result(X) :- domain(X), &testSetMinusPartial[sel, empty](X)."
+		result(X) :- domain(X), &testSetMinusPartial[sel, empty](X).
+		:- result(X1), result(X2), result(X3), X1 != X2, X1 != X3, X2 != X3."
 	for (( j = 1; j <= $instance; j++ ))
 	do
 		prog="domain($j). $prog"

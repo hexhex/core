@@ -66,23 +66,24 @@ def testSetMinusPartial(p, q):
 		# for each possible input atom p(x) (according to the grouding, it is not necessarily true in the current input)
 		if tup[0].value() == p.value():
 
-			# if p(x) is true and the corresponding atom q(x) is not true (i.e., false or undefined)
-			if dlvhex.isTrue(x) and not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
+			qAtom = dlvhex.storeAtom((q, tup[1]))
 
+			# if p(x) is true and the corresponding atom q(x) is not true (i.e., false or undefined)
+			if dlvhex.isTrue(x) and not dlvhex.isTrue(qAtom):
 				# if q(x) is false, then x is definitely in the output
-				if dlvhex.isFalse(dlvhex.storeAtom((q, tup[1]))):
-					#print "Definitely true: " + tup[1].value()
+				if not dlvhex.isInputAtom(qAtom) or dlvhex.isFalse(qAtom):
+#					print "Definitely true: " + tup[1].value()
 					dlvhex.output((tup[1], ))
 
 				# if q(x) is undefined, then x might be in the output
 				else:
-					#print "Could be true: " + tup[1].value()
+#					print "Could be true: " + tup[1].value()
 					dlvhex.outputUnknown((tup[1], ))
 					v=0
 
 			# if p(x) is undefined and q(x) is not true (i.e., false or undefined), then x might be in the output
-			if not dlvhex.isTrue(x) and not dlvhex.isFalse(x) and not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
-				#print "Could be true: " + tup[1].value()
+			if not dlvhex.isTrue(x) and not dlvhex.isFalse(x) and not dlvhex.isTrue(qAtom):
+#				print "Could be true: " + tup[1].value()
 				dlvhex.outputUnknown((tup[1], ))
 				v=0
 
