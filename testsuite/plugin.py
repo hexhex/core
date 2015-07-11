@@ -34,7 +34,7 @@ def testSetMinus(p, q):
 			if dlvhex.isTrue(x):
 				premisse = (x, ) + premisse
 
-			if not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
+			if x.isTrue() and not dlvhex.isTrue(dlvhex.storeAtom((q, tup[1]))):
 				outputatoms = (dlvhex.storeOutputAtom((tup[1], )), ) + outputatoms
 				dlvhex.output((tup[1], ))
 
