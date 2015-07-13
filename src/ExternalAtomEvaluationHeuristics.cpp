@@ -71,9 +71,12 @@ ExternalAtomEvaluationHeuristicsPeriodic::ExternalAtomEvaluationHeuristicsPeriod
 
 bool ExternalAtomEvaluationHeuristicsPeriodic::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
 {
+    static int b = 10;
+
     counter++;
-    if (counter > 10){
+    if (counter > b){
         counter = 0;
+//        b += 10;
         return true;
     }else{
         return false;

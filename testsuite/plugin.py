@@ -90,7 +90,7 @@ def testSetMinusPartial(p, q):
 			# if p(x) is false, then x is definitely not in the output
 			# (no implementation needed, this is by default)
 
-def numberOfBalls(assignment, box, color, min, max):
+def numberOfBalls(assignment, min, max):
 
 	inBox = ()
 	notInBox = ()
@@ -98,13 +98,12 @@ def numberOfBalls(assignment, box, color, min, max):
 
 	# for all balls in the given box
 	for ball in dlvhex.getInputAtoms():
-		if ball.tuple()[0] == assignment and ball.tuple()[2] == color and ball.tuple()[3] == box:
-			if ball.isTrue():
-				inBox = inBox + (ball.tuple()[1], )
-			elif ball.isFalse():
-				notInBox = notInBox + (ball.tuple()[1], )
-			else:
-				possiblyInBox = possiblyInBox + (ball.tuple()[1], )
+		if ball.isTrue():
+			inBox = inBox + (ball.tuple()[1], )
+		elif ball.isFalse():
+			notInBox = notInBox + (ball.tuple()[1], )
+		else:
+			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
 
 	if len(inBox) >= min.intValue() and (len(inBox) + len(possiblyInBox)) <= max.intValue():
 		# external atom is true
@@ -120,7 +119,7 @@ def numberOfBalls(assignment, box, color, min, max):
 		# external atom is certainly not true
 		v = 0
 
-def numberOfBallsSE(assignment, box, color, max):
+def numberOfBallsSE(assignment, max):
 
 	inBox = ()
 	notInBox = ()
@@ -128,13 +127,12 @@ def numberOfBallsSE(assignment, box, color, max):
 
 	# for all balls in the given box
 	for ball in dlvhex.getInputAtoms():
-		if ball.tuple()[0] == assignment and ball.tuple()[2] == color and ball.tuple()[3] == box:
-			if ball.isTrue():
-				inBox = inBox + (ball.tuple()[1], )
-			elif ball.isFalse():
-				notInBox = notInBox + (ball.tuple()[1], )
-			else:
-				possiblyInBox = possiblyInBox + (ball.tuple()[1], )
+		if ball.isTrue():
+			inBox = inBox + (ball.tuple()[1], )
+		elif ball.isFalse():
+			notInBox = notInBox + (ball.tuple()[1], )
+		else:
+			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
 
 	if (len(inBox) + len(possiblyInBox)) <= max.intValue():
 		# external atom is true
@@ -150,7 +148,7 @@ def numberOfBallsSE(assignment, box, color, max):
 		# external atom is certainly not true
 		v = 0
 
-def numberOfBallsGE(assignment, box, color, min):
+def numberOfBallsGE(assignment, min):
 
 	inBox = ()
 	notInBox = ()
@@ -158,16 +156,17 @@ def numberOfBallsGE(assignment, box, color, min):
 
 	# for all balls in the given box
 	for ball in dlvhex.getInputAtoms():
-		if ball.tuple()[0] == assignment and ball.tuple()[2] == color and ball.tuple()[3] == box:
-			if ball.isTrue():
-				inBox = inBox + (ball.tuple()[1], )
-			elif ball.isFalse():
-				notInBox = notInBox + (ball.tuple()[1], )
-			else:
-				possiblyInBox = possiblyInBox + (ball.tuple()[1], )
+		if ball.isTrue():
+			inBox = inBox + (ball.tuple()[1], )
+		elif ball.isFalse():
+			notInBox = notInBox + (ball.tuple()[1], )
+		else:
+			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
 
 	if len(inBox) >= min.intValue():
 		# external atom is true
+		if len(possiblyInBox) > 0:
+			print "known although incomplete"
 		dlvhex.output(())
 
 	elif (len(inBox) + len(possiblyInBox)):
@@ -223,16 +222,16 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-	dlvhex.addAtom("numberOfBalls", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
+	dlvhex.addAtom("numberOfBalls", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	prop.addAntimonotonicInputPredicate(0)
-	dlvhex.addAtom("numberOfBallsSE", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
+	dlvhex.addAtom("numberOfBallsSE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	prop.addMonotonicInputPredicate(0)
-	dlvhex.addAtom("numberOfBallsGE", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
+	dlvhex.addAtom("numberOfBallsGE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	dlvhex.addAtom("date", (), 1)
