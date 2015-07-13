@@ -670,13 +670,19 @@ std::string CDNLSolver::litToString(ID lit)
 
 int CDNLSolver::addNogoodAndUpdateWatchingStructures(Nogood ng)
 {
-
     assert(ng.isGround());
 
-    // do not add nogoods which expand the domain
+    // simplify nogood
+    Nogood ng2;
     BOOST_FOREACH (ID lit, ng) {
-        if (!allFacts.contains(lit.address)) return 0;
+        // do not add nogoods which expand the domain (this is the case if they contain positive atoms which are not in the domain)
+        if (!lit.isNaf() && !allFacts.contains(lit.address)) { return 0; }
+        // keep positive atoms and negated atoms which are in the domain
+        else if (!lit.isNaf() || allFacts.contains(lit.address)) { ng2.insert(lit); }
+        // the only remaining case should be that the literal is negated and the atom is not contained in the domain
+        else { assert(lit.isNaf() && !allFacts.contains(lit.address) && "conditions are logically incomplete"); }
     }
+    ng = ng2;
 
     int index = nogoodset.addNogood(ng);
     DBGLOG(DBG, "Adding nogood " << ng << " with index " << index);

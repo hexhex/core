@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "{1..40}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
-	confstr=";--eaevalheuristics=always;-N=1;--eaevalheuristics=always -N=1"
+	confstr=";--eaevalheuristics=always;-n=1;--eaevalheuristics=always -n=1"
 
 	# write instance file
 	inststr=`printf "%03d" ${instance}`
@@ -25,7 +25,8 @@ else
 	prog="
 		sel(X) v nsel(X) :- domain(X).
 
-		result(X) :- domain(X), &testSetMinusPartial[sel, empty](X)."
+		result(X) :- domain(X), &testSetMinusPartial[sel, empty](X).
+		:- result(X1), result(X2), result(X3), X1 != X2, X1 != X3, X2 != X3."
 	for (( j = 1; j <= $instance; j++ ))
 	do
 		prog="domain($j). $prog"
