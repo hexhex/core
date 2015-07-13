@@ -533,6 +533,7 @@ InterpretationConstPtr changed)
     DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", learnedEANogoods->getNogoodCount() - learnedEANogoodsTransferredIndex);
     for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i) {
         const Nogood& ng = learnedEANogoods->getNogood(i);
+        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidnogoodsizes, "Sum of learned EA-Nogood sizes", ng.size());
         if (factory.ctx.config.getOption("PrintLearnedNogoods")) {
             // we cannot use i==1 because of learnedEANogoods.clear() below in this function
             static bool first = true;

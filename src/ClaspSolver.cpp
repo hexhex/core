@@ -162,7 +162,8 @@ void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s)
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::ExtProp:callHEXProps");
 
     DBGLOG(DBG, "ExternalPropagator: Calling HEX-Propagator");
-    #ifndef NDEBUG
+
+#ifndef NDEBUG
     // extract model and compare with the incrementally extracted one
     InterpretationPtr fullyExtractedCurrentIntr = InterpretationPtr(new Interpretation(cs.reg));
     InterpretationPtr fullyExtractedCurrentAssigned = InterpretationPtr(new Interpretation(cs.reg));
@@ -176,7 +177,7 @@ void ClaspSolver::ExternalPropagator::callHexPropagators(Clasp::Solver& s)
     assert (fullyExtractedCurrentIntr->getStorage() == currentIntr->getStorage() && fullyExtractedCurrentAssigned->getStorage() == currentAssigned->getStorage());
 
     int propNr = 0;
-    #endif
+#endif
 
     // call HEX propagators
     DBGLOG(DBG, "Need to call " << cs.propagators.size() << " propagators");
@@ -256,7 +257,9 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
     DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
 
     for (;;) {
-        if (hexPropagate) callHexPropagators(s);
+        if (hexPropagate) {
+            callHexPropagators(s);
+        }
         if (addNewNogoodsToClasp(s)) {
             DBGLOG(DBG, "Propagation led to conflict");
             assert(s.queueSize() == 0 || s.hasConflict());
@@ -314,7 +317,7 @@ Clasp::Constraint::PropResult ClaspSolver::ExternalPropagator::propagate(Clasp::
             currentAssigned->setFact(adr);
             currentChanged->setFact(adr);
 
-            // add the variable to the undo watch for the decision level on which it was assigned
+            // add the variable t   o the undo watch for the decision level on which it was assigned
             while (assignmentsOnDecisionLevel.size() < level + 1) {
                 if(assignmentsOnDecisionLevel.size() > 0) {
                     DBGLOG(DBG, "Adding undo watch to level " << assignmentsOnDecisionLevel.size());

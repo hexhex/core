@@ -38,6 +38,7 @@
 #include "dlvhex2/HexParser.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/InternalGrounder.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -57,8 +58,7 @@ bool ExternalLearningHelper::DefaultInputNogoodProvider::dependsOnOutputTuple() 
 }
 
 
-Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple) const
-{
+Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple, int* weakenedPremiseLiterals) const{
 
     // store for each predicate term ID the index of the corresponding parameter in input
     std::map<ID, int> inputPredicateTable;
@@ -83,7 +83,7 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
         // positive atoms are only required for non-antimonotonic input parameters
         // negative atoms are only required for non-monotonic input parameters
         // unassigned input atoms are not needed if the external source provides partial answers (i.e., works over partial interpretations)
-        if (!(prop.doesProvidePartialAnswer() && !!query.assigned && !query.assigned->getFact(*en))){
+        if (!prop.doesProvidePartialAnswer() || !query.assigned || query.assigned->getFact(*en)){
             if (query.interpretation->getFact(*en) != negateMonotonicity) {
                 // positive
                 if (!prop.isAntimonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")) {
@@ -94,6 +94,13 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
                 // negative
                 if (!prop.isMonotonic(index) || !query.ctx->config.getOption("ExternalLearningMonotonicity")) {
                     extNgInput.insert(NogoodContainer::createLiteral(*en, query.interpretation->getFact(*en)));
+                }
+            }
+        }else{
+            if (!!query.assigned && !query.assigned->getFact(*en)){
+                if (weakenedPremiseLiterals != 0) {
+                    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenednumber, "Weakened EA-nogood premises", 1);
+                    *weakenedPremiseLiterals = *weakenedPremiseLiterals + 1;
                 }
             }
         }
@@ -270,15 +277,20 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
         DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
         Nogood extNgInput;
-        if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true);
-
+        int weakenedPremiseLiterals = 0;
+        if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, true, Tuple(), &weakenedPremiseLiterals);
         Set<ID> out = ExternalLearningHelper::getOutputAtoms(query, answer, false);
         BOOST_FOREACH (ID oid, out) {
+            int weakenedPremiseLiterals2 = 0;
             Nogood extNg = !inp->dependsOnOutputTuple()
                 ? extNgInput
-                : (*inp)(query, prop, true, query.ctx->registry()->ogatoms.getByID(oid).tuple);
+                : (*inp)(query, prop, true, query.ctx->registry()->ogatoms.getByID(oid).tuple, &weakenedPremiseLiterals2);
+            weakenedPremiseLiterals += weakenedPremiseLiterals2;
+
             extNg.insert(oid);
             DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
+
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenednumber, "EA-Nogoods from weakened intr.", (weakenedPremiseLiterals > 0 ? 1 : 0));
             nogoods->addNogood(extNg);
         }
     }
@@ -332,7 +344,13 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
     // learning of negative information
     if (nogoods) {
         Nogood extNgInput;
-        if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false);
+        int weakenedPremiseLiterals = 0;
+        if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false, Tuple(), &weakenedPremiseLiterals);
+
+        if (weakenedPremiseLiterals > 0){
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Positive gr.inst. after weakened EA-eval", answer.get().size());
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedunknown, "Unknown gr.inst. after weakened EA-eval", answer.getUnknown().size());
+        }
 
         // iterate over negative output atoms
         bm::bvector<>::enumerator en = query.extinterpretation->getStorage().first();
@@ -381,8 +399,13 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                     }
 #endif
 
+                if (weakenedPremiseLiterals > 0){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Total gr.inst. after weakened EA-eval", 1); }
+                if (weakenedPremiseLiterals > 0 && std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
+                if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
+
                     if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
                         (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
+
                         // construct positive output atom
                         OrdinaryAtom posatom = atom;
                         posatom.tuple[0] = posOutPredicate;
@@ -392,9 +415,11 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                         Nogood ng = !inp->dependsOnOutputTuple()
                             ? extNgInput
                             : (*inp)(query, prop, false, t);
+
                         ng.insert(NogoodContainer::createLiteral(posAtomID.address));
                         nogoods->addNogood(ng);
                         DBGLOG(DBG, "Learned negative nogood " << ng.getStringRepresentation(query.ctx->registry()));
+                        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenednumber, "EA-Nogoods from weakened intr.", (weakenedPremiseLiterals > 0 ? 1 : 0));
                     }
                 }
             }

@@ -300,9 +300,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         none             : No learning" << std::endl
         << "                         reduct           : Learning is based on the FLP-reduct" << std::endl
         << "                         ufs (default)    : Learning is based on the unfounded set" << std::endl
-        << "     --eaevalheuristics=[always,inputcomplete,eacomplete,post,never]" << std::endl
+        << "     --eaevalheuristics=[always,periodic,inputcomplete,eacomplete,post,never]" << std::endl
         << "                      Selects the heuristic for external atom evaluation." << std::endl
         << "                         always           : Evaluate whenever possible" << std::endl
+        << "                         periodic         : Evaluate in regular intervals" << std::endl
         << "                         inputcomplete    : Evaluate whenever the input to the external atom is complete" << std::endl
         << "                         eacomplete       : Evaluate whenever all atoms relevant for the external atom are assigned" << std::endl
         << "                         post (default)   : Only evaluate at the end" << std::endl
@@ -829,6 +830,8 @@ Config& config, ProgramCtx& pctx)
         { "incremental", no_argument, 0, 50 },
         { "strongsafety", no_argument, 0, 52 },
 		{ "optmode", required_argument, 0, 54 },
+		{ "claspdefernprop", required_argument, 0, 55 },
+		{ "claspdefermsec", required_argument, 0, 56 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1311,6 +1314,10 @@ Config& config, ProgramCtx& pctx)
                     pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
                     pctx.config.setOption("NoPropagator", 0);
                 }
+               else  if (heur == "periodic") {
+                    pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsPeriodicFactory());
+                    pctx.config.setOption("NoPropagator", 0);
+                }
                 else if (heur == "inputcomplete") {
                     pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsInputCompleteFactory());
                     pctx.config.setOption("NoPropagator", 0);
@@ -1488,19 +1495,53 @@ Config& config, ProgramCtx& pctx)
                 pctx.config.setOption("LiberalSafety", 0);
                 break;
             case 54:
-                int optmode = 0;
-                try
                 {
-                    if( optarg[0] == '=' )
-                        optmode = boost::lexical_cast<unsigned>(&optarg[1]);
-                    else
-                        optmode = boost::lexical_cast<unsigned>(optarg);
+                    int optmode = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            optmode = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            optmode = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"could not parse optmode '" << optarg << "' - using default");
+                    }
+                    pctx.config.setOption("OptimizationTwoStep", optmode);
+                    forceoptmode = true;
                 }
-                catch(const boost::bad_lexical_cast&) {
-                    LOG(ERROR,"could not parse optmode '" << optarg << "' - using default");
+                break;
+            case 55:
+                {
+                    int deferval = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            deferval = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            deferval = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"claspdefernprop '" << optarg << "' does not specify an integer value");
+                    }
+                    pctx.config.setOption("ClaspDeferNPropagations", deferval);
                 }
-                pctx.config.setOption("OptimizationTwoStep", optmode);
-                forceoptmode = true;
+                break;
+            case 56:
+                {
+                    int deferval = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            deferval = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            deferval = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"claspdefermsec '" << optarg << "' does not specify an integer value");
+                    }
+                    pctx.config.setOption("ClaspDeferMaxTMilliseconds", deferval);
+                }
                 break;
         }
     }

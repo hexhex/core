@@ -10,8 +10,8 @@ color(b7, green).
 %color(b9, green).
 color(b10, blue).
 color(b11, blue).
-%color(b12, blue).
-%color(b13, blue).
+color(b12, blue).
+color(b13, blue).
 
 % define boxes
 box(x1).
@@ -24,6 +24,8 @@ in(B, C, X) v -in(B, C, X) :- color(B, C), box(X).
 inBox(B) :- in(B, C, X).
 :- color(B, C), not inBox(B).
 
-:- not &numberOfBallsGE[in, x1, green, 2]().
-:- not &numberOfBallsGE[in, x2, blue, 2]().
-:- not &numberOfBallsGE[in, x3, red, 2]().
+:- not &numberOfBalls[in, x1, green, 2, 3]().
+:- not &numberOfBalls[in, x2, blue, 1, 2]().
+:- not &numberOfBalls[in, x3, red, 1, 2]().
+:- not &numberOfBalls[in, x1, blue, 1, 2]().
+:- not &numberOfBalls[in, x2, red, 2, 3]().

@@ -70,9 +70,10 @@ class DLVHEX_EXPORT ExternalLearningHelper
                  * @param prop Properties of the external source.
                  * @param contained Specified whether we want a reason for a tuple to be contained in the output (true) or not (false).
                  * @param tuple The output tuple for which we want to compute the reason.
+                 * @param weakenedPremiseLiterals Indicates the number of literals from the premise which were removed because they are currently unassigned and thus do not influence the result; can be 0.
                  * @return The constructed reason in form of a nogood.
                  */
-                virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const = 0;
+                virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple(), int* weakenedPremiseLiterals = 0) const = 0;
         };
         typedef boost::shared_ptr<InputNogoodProvider> InputNogoodProviderConstPtr;
 
@@ -94,7 +95,7 @@ class DLVHEX_EXPORT ExternalLearningHelper
                  */
                 DefaultInputNogoodProvider(bool negateMonotonicity);
                 virtual bool dependsOnOutputTuple() const;
-                virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple()) const;
+                virtual Nogood operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple = Tuple(), int* weakenedPremiseLiterals = 0) const;
         };
 
         /**

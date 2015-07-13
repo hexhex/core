@@ -439,6 +439,9 @@ InterpretationConstPtr changed,
 bool* fromCache) const
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
+    if (!!assigned){
+        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sideeapart,"evaluate external atom part.", 1);
+    }
     LOG_SCOPE(PLUGIN,"eEA",false);
     RegistryPtr reg = ctx.registry();
     DBGLOG(DBG,"eEA = evaluateExternalAtom for " << printToString<RawPrinter>(eatomID, reg) << "/" << eatomID);
@@ -456,6 +459,10 @@ bool* fromCache) const
 
     // update masks (inputMask and auxInputMask)
     eatom.updatePredicateInputMask();
+
+#ifndef NDEBUG
+    DBGLOG(DBG, "Assigned input atoms: " << (assigned->getStorage() & eatom.getPredicateInputMask()->getStorage()).count() << " out of " << eatom.getPredicateInputMask()->getStorage().count() << " (total number of assigned atoms" << assigned->getStorage().count() << ")");
+#endif
 
     // project interpretation for predicate inputs
     InterpretationConstPtr eatominp =

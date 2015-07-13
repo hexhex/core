@@ -62,6 +62,37 @@ ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsAlwaysFactor
 }
 
 
+// ============================== Periodic ==============================
+
+ExternalAtomEvaluationHeuristicsPeriodic::ExternalAtomEvaluationHeuristicsPeriodic(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg), counter(0)
+{
+}
+
+
+bool ExternalAtomEvaluationHeuristicsPeriodic::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    counter++;
+    if (counter > 10){
+        counter = 0;
+        return true;
+    }else{
+        return false;
+    }
+}
+
+
+bool ExternalAtomEvaluationHeuristicsPeriodic::frequent()
+{
+    return true;
+}
+
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsPeriodicFactory::createHeuristics(RegistryPtr reg)
+{
+    return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsPeriodic(reg));
+}
+
+
 // ============================== InputComplete ==============================
 
 ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsInputComplete(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg)

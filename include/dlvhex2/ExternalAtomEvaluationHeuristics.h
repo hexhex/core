@@ -65,6 +65,30 @@ class ExternalAtomEvaluationHeuristicsAlwaysFactory : public ExternalAtomEvaluat
     virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
 };
 
+// ============================== Periodic ==============================
+
+/**
+ * \brief Evaluates in regular intervals.
+ */
+class ExternalAtomEvaluationHeuristicsPeriodic : public ExternalAtomEvaluationHeuristics
+{
+    private:
+        /** \brief Counts the number of calls to doEvaluate. */
+        int counter;
+    public:
+        ExternalAtomEvaluationHeuristicsPeriodic(RegistryPtr reg);
+        virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+        virtual bool frequent();
+};
+
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristicsPeriodicFactory.
+ */
+class ExternalAtomEvaluationHeuristicsPeriodicFactory : public ExternalAtomEvaluationHeuristicsFactory
+{
+    virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
+};
+
 // ============================== InputComplete ==============================
 
 /**
