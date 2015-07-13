@@ -154,30 +154,39 @@ def numberOfBallsGE(assignment, min):
 	notInBox = ()
 	possiblyInBox = ()
 
+#	print "---"
+#	print "check if >=",min.intValue(),"input atoms are true"
+
 	# for all balls in the given box
 	for ball in dlvhex.getInputAtoms():
 		if ball.isTrue():
+#			print "true input atom:", ball.value()
 			inBox = inBox + (ball.tuple()[1], )
 		elif ball.isFalse():
+#			print "false input atom:", ball.value()
 			notInBox = notInBox + (ball.tuple()[1], )
 		else:
+#			print "unknown input atom:", ball.value()
 			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
 
 	if len(inBox) >= min.intValue():
 		# external atom is true
-		if len(possiblyInBox) > 0:
-			print "known although incomplete"
+#		print "result is TRUE"
 		dlvhex.output(())
 
-	elif (len(inBox) + len(possiblyInBox)):
+	elif (len(inBox) + len(possiblyInBox)) >= min.intValue():
 		# external atom can be true
 		dlvhex.outputUnknown(())
+#		print "result is UNKOWN"
 
 	else:
 		# else case applies: if (len(inBox) + len(possiblyInBox)) < min.intValue()
 		#
 		# external atom is certainly not true
+#		print "result is FALSE"
 		v = 0
+
+#	print "---"
 
 def date():
 	from datetime import datetime
@@ -231,7 +240,7 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-	prop.addMonotonicInputPredicate(0)
+#	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("numberOfBallsGE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	dlvhex.addAtom("date", (), 1)

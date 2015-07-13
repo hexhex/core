@@ -289,6 +289,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
 
             extNg.insert(oid);
             DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
+//std::cout << "Learned nogood " << extNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior" << std::endl;
 
             DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenednumber, "EA-Nogoods from weakened intr.", (weakenedPremiseLiterals > 0 ? 1 : 0));
             nogoods->addNogood(extNg);

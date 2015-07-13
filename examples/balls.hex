@@ -30,8 +30,8 @@ inR3(B) :- in(B, red, x3).
 inB1(B) :- in(B, blue, x1).
 inR2(B) :- in(B, red, x2).
 
-:- not &numberOfBallsGE[inG1, 2, 3]().
-:- not &numberOfBallsGE[inB2, 1, 3]().
-:- not &numberOfBallsGE[inR3, 1, 3]().
-:- not &numberOfBallsGE[inB1, 2, 3]().
-:- not &numberOfBallsGE[inR2, 2, 3]().
+:- not &numberOfBallsGE[inG1, 2]().
+:- not &numberOfBallsGE[inB2, 1]().
+:- not &numberOfBallsGE[inR3, 1]().
+:- not &numberOfBallsGE[inB1, 2]().
+:- not &numberOfBallsGE[inR2, 2]().
