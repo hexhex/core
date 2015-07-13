@@ -1,0 +1,29 @@
+% define balls
+color(b1, red).
+color(b2, red).
+color(b3, red).
+%color(b4, red).
+%color(b5, red).
+color(b6, green).
+color(b7, green).
+%color(b8, green).
+%color(b9, green).
+color(b10, blue).
+color(b11, blue).
+%color(b12, blue).
+%color(b13, blue).
+
+% define boxes
+box(x1).
+box(x2).
+box(x3).
+
+% put each ball into exactly one box
+in(B, C, X) v -in(B, C, X) :- color(B, C), box(X).
+:- in(B, C, X1), in(B, C, X2), X1 != X2.
+inBox(B) :- in(B, C, X).
+:- color(B, C), not inBox(B).
+
+:- not &numberOfBallsGE[in, x1, green, 2]().
+:- not &numberOfBallsGE[in, x2, blue, 2]().
+:- not &numberOfBallsGE[in, x3, red, 2]().
