@@ -182,6 +182,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <cstring>
 
@@ -341,6 +342,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 
         << std::endl << "Debugging and General Options:" << std::endl
         << "     --dumpevalplan=F Dump evaluation plan (usable as manual heuristics) to file F." << std::endl
+        << "     --dumpeanogoods=F" << std::endl
+        << "                      Dump learned EA nogoods to file F." << std::endl
         << " -v, --verbose[=N]    Specify verbose category (if option is used without [=N] then default is 1):" << std::endl
         << "                         1                : Program analysis information (including dot-file)" << std::endl
         << "                         2                : Program modifications by plugins" << std::endl
@@ -832,6 +835,7 @@ Config& config, ProgramCtx& pctx)
 		{ "optmode", required_argument, 0, 54 },
 		{ "claspdefernprop", required_argument, 0, 55 },
 		{ "claspdefermsec", required_argument, 0, 56 },
+        { "dumpeanogoods", required_argument, 0, 57 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1541,6 +1545,12 @@ Config& config, ProgramCtx& pctx)
                         LOG(ERROR,"claspdefermsec '" << optarg << "' does not specify an integer value");
                     }
                     pctx.config.setOption("ClaspDeferMaxTMilliseconds", deferval);
+                }
+                break;
+            case 57:
+                {
+                    pctx.config.setStringOption("DumpEANogoods", optarg);
+                    std::ofstream filev(pctx.config.getStringOption("DumpEANogoods").c_str(), std::ios_base::out);
                 }
                 break;
         }

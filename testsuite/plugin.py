@@ -178,6 +178,7 @@ def numberOfBallsGE(assignment, min):
 		# external atom can be true
 		dlvhex.outputUnknown(())
 #		print "result is UNKOWN"
+		v = 0
 
 	else:
 		# else case applies: if (len(inBox) + len(possiblyInBox)) < min.intValue()
@@ -240,7 +241,7 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-	prop.addMonotonicInputPredicate(0)
+#	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("numberOfBallsGE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	dlvhex.addAtom("date", (), 1)

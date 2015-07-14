@@ -461,7 +461,11 @@ bool* fromCache) const
     eatom.updatePredicateInputMask();
 
 #ifndef NDEBUG
-    DBGLOG(DBG, "Assigned input atoms: " << (assigned->getStorage() & eatom.getPredicateInputMask()->getStorage()).count() << " out of " << eatom.getPredicateInputMask()->getStorage().count() << " (total number of assigned atoms" << assigned->getStorage().count() << ")");
+    if (!!assigned) {
+        DBGLOG(DBG, "Assigned input atoms: " << (assigned->getStorage() & eatom.getPredicateInputMask()->getStorage()).count() << " out of " << eatom.getPredicateInputMask()->getStorage().count() << " (total number of assigned atoms" << assigned->getStorage().count() << ")");
+    }else{
+        DBGLOG(DBG, "Assigned input atoms: all");
+    }
 #endif
 
     // project interpretation for predicate inputs

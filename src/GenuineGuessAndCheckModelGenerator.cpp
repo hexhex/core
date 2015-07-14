@@ -33,6 +33,8 @@
 #include "config.h"
 #endif
 
+#include <fstream>
+
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
@@ -548,8 +550,14 @@ InterpretationConstPtr changed)
             }
             LOG(DBG,"learned nogood " << ng.getStringRepresentation(reg));
         }
-        DBGLOG(DBG, "Adding learned nogood " << ng.getStringRepresentation(reg) << " to solver");
-        if (ng.isGround()) solver->addNogood(ng);
+        if (ng.isGround()) {
+            DBGLOG(DBG, "Adding learned nogood " << ng.getStringRepresentation(reg) << " to solver");
+            if (factory.ctx.config.getStringOption("DumpEANogoods")[0] != '\0'){
+		        std::ofstream filev(factory.ctx.config.getStringOption("DumpEANogoods").c_str(), std::ios_base::app);
+                filev << ng.getStringRepresentation(reg) << std::endl;
+            }
+            solver->addNogood(ng);
+        }
     }
 
     // for encoding-based UFS checkers and explicit FLP checks, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)

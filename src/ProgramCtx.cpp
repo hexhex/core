@@ -147,6 +147,8 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
                                  // if 1 then we only show optimal results, otherwise before getting optimal results we might get nonoptimal ones
     config.setOption("OptimizationFilterNonOptimal", 1);
 
+    config.setStringOption("DumpEANogoods", "");
+
     #warning "TODO cleanup the setASPSoftware vs nGenuineSolver thing"
     // but if we have genuinegc, take genuinegc as default
     #if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
