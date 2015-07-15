@@ -733,16 +733,6 @@ class DLVHEX_EXPORT PluginAtom
             InterpretationConstPtr interpretation;
 
             /**
-             * \brief Bitset of ground atoms representing the full current (partial) model.
-             *
-             * This model might be more complete than Query::interpretation, i.e., it
-             * might contain atoms which are not input to this
-             * the external atom. However, some learning techniques may make use of
-             * them since they give a hint which atoms might be relevant for the program.
-             */
-            InterpretationConstPtr extinterpretation;
-
-            /**
              * \brief Bitset of ground atoms which are currently assigned.
              *
              * For the atoms in assigned, interpretation defines the truth value.

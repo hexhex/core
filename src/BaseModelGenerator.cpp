@@ -493,7 +493,6 @@ bool* fromCache) const
         // XXX here we copy it, we should just reference it
         PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
         // XXX make this part of constructor
-        query.extinterpretation = inputi;
         return evaluateExternalAtomQuery(query, cb, nogoods, fromCache);
     }
     else {
@@ -527,7 +526,6 @@ bool* fromCache) const
                 // build query as reference to the storage in cache
                 // XXX here we copy, we could make it const ref in Query
                 PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
-                query.extinterpretation = inputi;
                 if( ! evaluateExternalAtomQuery(query, cb, nogoods, fromCache) )
                     return false;
             }
@@ -645,7 +643,6 @@ NogoodContainerPtr nogoods) const
         // XXX here we copy it, we should just reference it
         PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), eatom.inputs, eatom.tuple, eatomID, pim);
         // XXX make this part of constructor
-        query.extinterpretation = eatominp;
         eatom.pluginAtom->learnSupportSets(query, nogoods);
     }
     else {
@@ -669,7 +666,6 @@ NogoodContainerPtr nogoods) const
                 // build query as reference to the storage in cache
                 // XXX here we copy, we could make it const ref in Query
                 PluginAtom::Query query(&ctx, eatom.getPredicateInputMask(), inputtuple, eatom.tuple, eatomID);
-                query.extinterpretation = eatominp;
                 eatom.pluginAtom->learnSupportSets(query, nogoods);
             }
         }

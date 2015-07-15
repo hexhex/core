@@ -2,12 +2,12 @@
 color(b1, red).
 color(b2, red).
 color(b3, red).
-%color(b4, red).
+color(b4, red).
 %color(b5, red).
 color(b6, green).
 color(b7, green).
 color(b8, green).
-%color(b9, green).
+color(b9, green).
 color(b10, blue).
 color(b11, blue).
 color(b12, blue).
@@ -30,8 +30,8 @@ inR3(B) :- in(B, red, x3).
 inB1(B) :- in(B, blue, x1).
 inR2(B) :- in(B, red, x2).
 
-:- not &numberOfBallsGE[inG1, 2]().
-:- not &numberOfBallsGE[inB2, 1]().
-:- not &numberOfBallsGE[inR3, 1]().
-:- not &numberOfBallsGE[inB1, 2]().
-:- not &numberOfBallsGE[inR2, 2]().
+:- not &numberOfBallsGE[inG1, 3]().
+:- not &numberOfBallsGE[inB2, 2]().
+:- not &numberOfBallsSE[inR3, 1]().
+:- not &numberOfBallsSE[inB1, 0]().
+:- not &numberOfBallsGE[inR2, 3]().

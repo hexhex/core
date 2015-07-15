@@ -189,6 +189,21 @@ def numberOfBallsGE(assignment, min):
 
 #	print "---"
 
+def partialTest(assignment):
+
+	premisse = ()
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			premisse = premisse + (x, )
+			print "true input atom:", x.value()
+		elif x.isFalse():
+			premisse = premisse + (x.negate(), )
+			print "false input atom:", x.value()
+		else:
+			print "unknown input atom:", x.value()
+
+#	dlvhex.learn(premisse + (dlvhex.storeOutputAtom(()), ))
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -226,8 +241,8 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-	prop.addMonotonicInputPredicate(0)
-	prop.addAntimonotonicInputPredicate(1)
+#	prop.addMonotonicInputPredicate(0)
+#	prop.addAntimonotonicInputPredicate(1)
 	dlvhex.addAtom("testSetMinusPartial", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
 
 	prop = dlvhex.ExtSourceProperties()
@@ -236,12 +251,16 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-	prop.addAntimonotonicInputPredicate(0)
+#	prop.addAntimonotonicInputPredicate(0)
 	dlvhex.addAtom("numberOfBallsSE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 #	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("numberOfBallsGE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("partialTest", (dlvhex.PREDICATE, ), 0, prop)
 
 	dlvhex.addAtom("date", (), 1)

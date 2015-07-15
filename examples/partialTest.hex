@@ -1,0 +1,5 @@
+domain(X) :- #int(X).
+in(X) v nin(X) :- domain(X).
+
+r :- &partialTest[in]().
+

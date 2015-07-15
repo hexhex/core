@@ -354,8 +354,8 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         }
 
         // iterate over negative output atoms
-        bm::bvector<>::enumerator en = query.extinterpretation->getStorage().first();
-        bm::bvector<>::enumerator en_end = query.extinterpretation->getStorage().end();
+        bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().end();
         ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
         ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
         while (en < en_end) {
