@@ -92,117 +92,114 @@ def testSetMinusPartial(p, q):
 
 def numberOfBalls(assignment, min, max):
 
-	inBox = ()
-	notInBox = ()
-	possiblyInBox = ()
+	true = 0
+	false = 0
+	unknown = 0
 
-	# for all balls in the given box
-	for ball in dlvhex.getInputAtoms():
-		if ball.isTrue():
-			inBox = inBox + (ball.tuple()[1], )
-		elif ball.isFalse():
-			notInBox = notInBox + (ball.tuple()[1], )
+	premisse = ()
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			true = true + 1
+		elif x.isFalse():
+			false = false + 1
 		else:
-			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
+			unknown = unknown + 1
+			v = 0
 
-	if len(inBox) >= min.intValue() and (len(inBox) + len(possiblyInBox)) <= max.intValue():
+	if true >= min.intValue() and (true + unknown) <= max.intValue():
 		# external atom is true
 		dlvhex.output(())
-
-	elif (len(inBox) + len(possiblyInBox)) >= min.intValue() and len(inBox) <= max.intValue():
+	elif (true + unknown) >= min.intValue() and true <= max.intValue():
 		# external atom can be true
 		dlvhex.outputUnknown(())
-
 	else:
-		# else case applies: if (len(inBox) + len(possiblyInBox)) < min.intValue() or len(inBox) > max.intValue()
+		# else case applies: (true + unknown) < min.intValue() or true > max.intValue()
 		#
 		# external atom is certainly not true
 		v = 0
 
 def numberOfBallsSE(assignment, max):
 
-	inBox = ()
-	notInBox = ()
-	possiblyInBox = ()
-
-	# for all balls in the given box
-	for ball in dlvhex.getInputAtoms():
-		if ball.isTrue():
-			inBox = inBox + (ball.tuple()[1], )
-		elif ball.isFalse():
-			notInBox = notInBox + (ball.tuple()[1], )
-		else:
-			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
-
-	if (len(inBox) + len(possiblyInBox)) <= max.intValue():
-		# external atom is true
-		dlvhex.output(())
-
-	elif len(inBox) <= max.intValue():
-		# external atom can be true
-		dlvhex.outputUnknown(())
-
-	else:
-		# else case applies: if len(inBox) > max.intValue()
-		#
-		# external atom is certainly not true
-		v = 0
-
-def numberOfBallsGE(assignment, min):
-
-	inBox = ()
-	notInBox = ()
-	possiblyInBox = ()
-
-#	print "---"
-#	print "check if >=",min.intValue(),"input atoms are true"
-
-	# for all balls in the given box
-	for ball in dlvhex.getInputAtoms():
-		if ball.isTrue():
-#			print "true input atom:", ball.value()
-			inBox = inBox + (ball.tuple()[1], )
-		elif ball.isFalse():
-#			print "false input atom:", ball.value()
-			notInBox = notInBox + (ball.tuple()[1], )
-		else:
-#			print "unknown input atom:", ball.value()
-			possiblyInBox = possiblyInBox + (ball.tuple()[1], )
-
-	if len(inBox) >= min.intValue():
-		# external atom is true
-#		print "result is TRUE"
-		dlvhex.output(())
-
-	elif (len(inBox) + len(possiblyInBox)) >= min.intValue():
-		# external atom can be true
-		dlvhex.outputUnknown(())
-#		print "result is UNKOWN"
-		v = 0
-
-	else:
-		# else case applies: if (len(inBox) + len(possiblyInBox)) < min.intValue()
-		#
-		# external atom is certainly not true
-#		print "result is FALSE"
-		v = 0
-
-#	print "---"
-
-def partialTest(assignment):
+	true = 0
+	false = 0
+	unknown = 0
 
 	premisse = ()
 	for x in dlvhex.getInputAtoms():
 		if x.isTrue():
-			premisse = premisse + (x, )
-			print "true input atom:", x.value()
+			true = true + 1
 		elif x.isFalse():
-			premisse = premisse + (x.negate(), )
-			print "false input atom:", x.value()
+			false = false + 1
 		else:
-			print "unknown input atom:", x.value()
+			unknown = unknown + 1
+			v = 0
 
-#	dlvhex.learn(premisse + (dlvhex.storeOutputAtom(()), ))
+	if (true + unknown) <= max.intValue():
+		# external atom is true
+		dlvhex.output(())
+	elif true <= max.intValue():
+		# external atom can be true
+		dlvhex.outputUnknown(())
+	else:
+		# else case applies: if true > max.intValue()
+		#
+		# external
+		v = 0
+
+def numberOfBallsGE(assignment, min):
+
+	true = 0
+	false = 0
+	unknown = 0
+
+	premisse = ()
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			true = true + 1
+		elif x.isFalse():
+			false = false + 1
+		else:
+			unknown = unknown + 1
+			v = 0
+
+	if true >= min.intValue():
+		# external atom is true
+		dlvhex.output(())
+	elif (true + unknown) >= min.intValue():
+		# external atom can be true
+		dlvhex.outputUnknown(())
+	else:
+		# else case applies: if (true + unknown) < min.intValue()
+		#
+		# external
+		v = 0
+
+def partialTest(assignment):
+
+	true = 0
+	false = 0
+	unknown = 0
+
+	premisse = ()
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			true = true + 1
+#			premisse = premisse + (x, )
+#			print "true input atom:", x.value()
+		elif x.isFalse():
+			false = false + 1
+#			premisse = premisse + (x.negate(), )
+#			print "false input atom:", x.value()
+		else:
+			unknown = unknown + 1
+#			print "unknown input atom:", x.value()
+			v = 0
+
+	if true > 1:
+#		dlvhex.learn(premisse + (dlvhex.storeOutputAtom((), False).negate(), ))
+		dlvhex.output(())
+	elif true + unknown > 1:
+		dlvhex.outputUnknown(())
 
 def date():
 	from datetime import datetime
@@ -251,12 +248,12 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-#	prop.addAntimonotonicInputPredicate(0)
+	prop.addAntimonotonicInputPredicate(0)
 	dlvhex.addAtom("numberOfBallsSE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
-#	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("numberOfBallsGE", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
