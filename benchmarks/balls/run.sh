@@ -23,6 +23,6 @@ else
 		exit 1
 	fi
 
-	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic CONF -N=INST ../../examples/balls.hex" "$confstr" "$instfile" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic --claspdefermsec=0 CONF -N=INST ../../examples/balls.hex" "$confstr" "$instfile" "$to"
 fi
 
