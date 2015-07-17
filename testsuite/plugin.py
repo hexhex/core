@@ -90,6 +90,33 @@ def testSetMinusPartial(p, q):
 			# if p(x) is false, then x is definitely not in the output
 			# (no implementation needed, this is by default)
 
+def isEmpty(assignment):
+
+	true = 0
+	false = 0
+	unknown = 0
+
+	premisse = ()
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			true = true + 1
+		elif x.isFalse():
+			false = false + 1
+		else:
+			unknown = unknown + 1
+
+	if true > 0:
+		# external atom is true
+		dlvhex.output(())
+	elif (true + unknown) > 0:
+		# external atom can be true
+		dlvhex.outputUnknown(())
+	else:
+		# else case applies: (true + unknown) < min.intValue() or true > max.intValue()
+		#
+		# external atom is certainly not true
+		v = 0
+
 def numberOfBalls(assignment, min, max):
 
 	true = 0
@@ -241,6 +268,10 @@ def register():
 #	prop.addMonotonicInputPredicate(0)
 #	prop.addAntimonotonicInputPredicate(1)
 	dlvhex.addAtom("testSetMinusPartial", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("isEmpty", (dlvhex.PREDICATE, ), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)

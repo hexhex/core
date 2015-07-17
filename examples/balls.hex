@@ -12,6 +12,7 @@ color(r9, red).
 %color(g2, green).
 %color(g3, green).
 %color(g4, green).
+color(N, green) :- #int(N), N > 0.
 %color(b1, blue).
 %color(b2, blue).
 %color(b3, blue).
@@ -20,7 +21,7 @@ color(r9, red).
 % define boxes
 box(x1).
 box(x2).
-%box(x3).
+box(x3).
 
 % put each ball into exactly one box
 in(B, C, X) : box(X) :- color(B, C).
@@ -37,11 +38,12 @@ inB3(B) :- in(B, blue, x3).
 
 %inR1(B) v inR2(B) :- color(B, red).
 
-:- &numberOfBallsSE[inR1, 8]().
+:- &isEmpty[inR1](), &isEmpty[inR2]().
+:- &numberOfBallsSE[inR1, 4]().
 %:- &numberOfBallsSE[inR2, 0]().
 %:- &numberOfBallsSE[inR3, 1]().
-%:- &numberOfBallsSE[inG1, 2]().
-%:- &numberOfBallsSE[inG2, 0]().
+:- &numberOfBallsSE[inG1, 1]().
+:- &numberOfBallsGE[inG2, 2]().
 %:- &numberOfBallsSE[inG3, 0]().
 %:- &numberOfBallsSE[inR3, 0]().
 %:- &numberOfBallsSE[inB1, 0]().
