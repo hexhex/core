@@ -15,14 +15,6 @@ else
 	# run single instance
 	confstr=";--eaevalheuristics=always;-n=1;--eaevalheuristics=always -n=1"
 
-	# write instance file
-	inststr=`printf "%03d" ${instance}`
-	instfile=$(mktemp "inst_${inststr}_XXXXXXXXXX.hex")
-	if [[ $? -gt 0 ]]; then
-		echo "Error while creating temp file" >&2
-		exit 1
-	fi
-
-	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic --claspdefermsec=0 CONF -N=INST ../../examples/balls.hex" "$confstr" "$instfile" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic --claspdefermsec=0 CONF -N=INST ../../examples/balls.hex" "$confstr" "$instance" "$to"
 fi
 
