@@ -187,6 +187,13 @@ struct sem<ChoiceParserModuleSemantics::choiceRule>
             BOOST_FOREACH (ID ruleID, rules) {
                 Rule rule = reg->rules.getByID(ruleID);
                 rule.body.insert(rule.body.end(), boost::fusion::at_c<1>(source).get().begin(), boost::fusion::at_c<1>(source).get().end());
+                // check if the rule contains external atoms
+                BOOST_FOREACH (ID b, rule.body) {
+                    if (b.isExternalAtom()) {
+                        rule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+                        break;
+                    }
+                }
                 rules[i] = reg->storeRule(rule);
                 i++;
             }
