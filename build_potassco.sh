@@ -34,8 +34,8 @@ if test -e gringo; then
 	fi
 else
 	echo "unpacking gringo"
-	tar xzf ${TOP_SRCDIR}/gringo-4.5.0-source.tar.gz
-	mv gringo-4.5.0-source gringo
+	tar xzf ${TOP_SRCDIR}/gringo-4.5.1-source.tar.gz
+	mv gringo-4.5.1-source gringo
 	patch gringo/SConstruct <$TOP_SRCDIR/buildclaspgringo/SConstruct.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
 	patch gringo/app/gringo/main.cc <$TOP_SRCDIR/buildclaspgringo/main.cc.patch ||
