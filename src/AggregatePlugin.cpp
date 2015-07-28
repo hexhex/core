@@ -250,9 +250,9 @@ namespace
         // find all top-level aggregates in the rule body
         DBGLOG(DBG, "Rewriting aggregate atoms in rule");
         int aggIndex = 0;
-        int symbolicSetSize = -1;
         BOOST_FOREACH (ID b, rule.body) {
             if (b.isAggregateAtom()) {
+                int symbolicSetSize = -1;
                 DBGLOG(DBG, "Rewriting aggregate atom " << printToString<RawPrinter>(b, reg));
                 const AggregateAtom& aatom = reg->aatoms.getByID(b);
 
