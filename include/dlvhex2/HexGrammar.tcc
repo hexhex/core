@@ -1197,7 +1197,7 @@ sem(sem)
 }
 
 
-WARNING("TODO more efficient than "rule = rule.copy() | *module" could be something else (see comments below)")
+WARNING("TODO more efficient than " rule = rule.copy() | *module " could be something else (see comments below)")
 // this could be a separate list for each type and a | b | c | d alternatives (have to be coded for each number of arguments)
 // this could be something not yet existing, see spirit-general mailinglist Sat, Jul 9, 2011 Vol 62, Issue 6
 

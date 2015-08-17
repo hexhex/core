@@ -982,7 +982,7 @@ ComponentInfo& newComponentInfo) const
                 ci.innerEatomsNonmonotonic |= eatom.getExtSourceProperties().isNonmonotonic();
             }
         }
-        WARNING("if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
+        WARNING("if " input " component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
     }
     ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
                                  // recompute if the collapsed component contains recursive aggregates; note that this is not simply the logical or of the basic components
