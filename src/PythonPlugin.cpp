@@ -1050,9 +1050,9 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const
         throw PluginError("Could not register dlvhex module in Python");
     }
     Py_Initialize();
-    wchar_t** wpargv = new wchar_t**[iargv];
+    wchar_t** wpargv = new wchar_t*[iargv];
     for(int i = 0; i < iargv; ++i) {
-        if( pargv[i] == NULL ) wpargv[i] = NULL
+        if( pargv[i] == NULL ) wpargv[i] = NULL;
         else {
             wpargv[i] = new wchar_t[strlen(pargv[i])+1];
             for(int c = 0; c < strlen(pargv[i])+1; c++) {
@@ -1060,8 +1060,7 @@ std::vector<PluginAtomPtr> PythonPlugin::createAtoms(ProgramCtx& ctx) const
                 // enough for now)
                 wpargv[i][c] = wchar_t(pargv[i][c]);
                 if( wpargv[i][c] & 0x7F != wpargv[i][c] ) {
-                    LOG(WARN,"console input argument contains non-7-bit character in
-                        argument '" << pargv[i] << "' !");
+                    LOG(WARNING,"console input argument contains non-7-bit character in argument '" << pargv[i] << "' !");
                 }
             }
         }
