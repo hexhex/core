@@ -5,6 +5,8 @@ testsuite/*.log
 *.o
 *.la
 *.lo
+buildclaspgringo/clasp
+buildclaspgringo/gringo
 Makefile.in
 Makefile
 libtool
