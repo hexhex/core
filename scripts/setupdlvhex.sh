@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # install dependencies only (except boost):
 # sudo apt-get install -y git gcc-4.8 g++-4.8 g++ bison re2c scons cmake automake autoconf libstdc++-4.8-dev libcurl4-openssl-dev libbz2-dev python2.7-dev libpython-all-dev libtool
 
