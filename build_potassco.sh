@@ -38,6 +38,8 @@ else
 	mv gringo-4.5.1-source gringo
 	patch gringo/SConstruct <$TOP_SRCDIR/buildclaspgringo/SConstruct.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
+	patch gringo/SConstruct <$TOP_SRCDIR/buildclaspgringo/SConstruct-lua.patch ||
+		{ echo "gringo patching failed!"; exit -1; }
 	patch gringo/app/gringo/main.cc <$TOP_SRCDIR/buildclaspgringo/main.cc.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
 	mkdir -p gringo/build/release
