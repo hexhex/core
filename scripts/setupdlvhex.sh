@@ -17,7 +17,7 @@ cd dlvhex
 read -p "Do you want to install the dependencies? (y/n) " depyn
 case $depyn in
 [Yy]* )
-	apt-get install -y git gcc-4.8 g++-4.8 g++ bison re2c scons cmake automake autoconf libstdc++-4.8-dev libcurl4-openssl-dev libbz2-dev python2.7-dev libpython-all-dev libtool;
+	apt-get install -y git gcc-4.8 g++-4.8 g++ bison re2c scons cmake automake autoconf libstdc++-4.8-dev libcurl4-openssl-dev libbz2-dev python2.7-dev libpython-all-dev libtool libltdl-dev;
 	break;;
 [Nn]* )
 	break;;
