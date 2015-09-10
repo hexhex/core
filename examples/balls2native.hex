@@ -1,0 +1,50 @@
+% define balls
+color(r1, red).
+color(r2, red).
+color(r3, red).
+color(r4, red).
+color(r5, red).
+color(r6, red).
+color(r7, red).
+color(r8, red).
+color(r9, red).
+%color(g1, green).
+%color(g2, green).
+%color(g3, green).
+%color(g4, green).
+color(N, green) :- #int(N), N > 0.
+%color(b1, blue).
+%color(b2, blue).
+%color(b3, blue).
+%color(b4, blue).
+
+% define boxes
+box(x1).
+box(x2).
+box(x3).
+
+% put each ball into exactly one box
+in(B, C, X) : box(X) :- color(B, C).
+
+inR1(B) :- in(B, red, x1).
+inG1(B) :- in(B, green, x1).
+inB1(B) :- in(B, blue, x1).
+inR2(B) :- in(B, red, x2).
+inG2(B) :- in(B, green, x2).
+inB2(B) :- in(B, blue, x2).
+inR3(B) :- in(B, red, x3).
+inG3(B) :- in(B, green, x3).
+inB3(B) :- in(B, blue, x3).
+
+%inR1(B) v inR2(B) :- color(B, red).
+
+%:- &testIsEmpty[inR1](), &testIsEmpty[inR2]().
+:- &testNumberOfBallsSE[inR1, 4]().
+%:- &testNumberOfBallsSE[inR2, 0]().
+%:- &testNumberOfBallsSE[inR3, 1]().
+:- &testNumberOfBallsSE[inG1, 1]().
+:- &testNumberOfBallsGE[inG2, 2]().
+%:- &testNumberOfBallsSE[inG3, 0]().
+%:- &testNumberOfBallsSE[inR3, 0]().
+%:- &testNumberOfBallsSE[inB1, 0]().
+%:- &testNumberOfBallsGE[inR2, 1]().
