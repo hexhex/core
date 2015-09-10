@@ -15,6 +15,6 @@ else
 	# run single instance
 	confstr=";--eaevalheuristics=always;-n=1;--eaevalheuristics=always -n=1"
 
-	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic --claspdefermsec=0 CONF -N=INST ../../examples/balls2native.hex" "$confstr" "$instance" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --heuristics=monolithic --claspdefermsec=0 CONF -N=INST ../../examples/balls2native.hex" "$confstr" "$instance" "$to"
 fi
 
