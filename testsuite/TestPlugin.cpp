@@ -2488,11 +2488,11 @@ public:
                 en++;
         }
 
-        if ((tr + un) <= query.input[2].address){
+        if ((tr + un) <= query.input[1].address){
                 // true
                 Tuple tu;
                 answer.get().push_back(tu);
-        }else if (tr <= query.input[2].address){
+        }else if (tr <= query.input[1].address){
                 // unknwon
                 Tuple tu;
                 answer.getUnknown().push_back(tu);
