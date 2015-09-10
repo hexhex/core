@@ -2376,6 +2376,180 @@ public:
   }
 };
 
+class TestIsEmpty:      // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestIsEmpty():
+    PluginAtom("testIsEmpty", false)
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    setOutputArity(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+        OrdinaryAtom myat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+        myat.tuple = query.input;
+
+        // find relevant input
+        bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+        while (en < en_end){
+		return;	// not empty
+        }
+
+	// empty
+        Tuple tu;
+        answer.get().push_back(tu);
+  }
+};
+
+class TestNumberOfBalls:      // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNumberOfBalls():
+    PluginAtom("testNumberOfBalls", false)
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    addInputConstant();
+    addInputConstant();
+    setOutputArity(0);
+
+    prop.providesPartialAnswer = true;
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+        OrdinaryAtom myat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+        myat.tuple = query.input;
+
+        // find relevant input
+	int tr = 0;
+	int fa = 0;
+	int un = 0;
+        bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+        while (en < en_end){
+		if ((!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)) tr++;
+		else if ((!query.assigned || query.assigned->getFact(*en)) && !query.interpretation->getFact(*en)) fa++;
+		else un++;
+		en++;
+        }
+
+	if (tr >= query.input[1].address && (tr + un) <= query.input[2].address){
+		// true
+	        Tuple tu;
+        	answer.get().push_back(tu);
+	}else if ((tr + un) >= query.input[1].address && tr <= query.input[2].address){
+		// unknwon
+		Tuple tu;
+		answer.getUnknown().push_back(tu);
+	}else{
+		// false
+	}
+  }
+};
+
+class TestNumberOfBallsSE:      // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNumberOfBallsSE():
+    PluginAtom("testNumberOfBallsSE", false)
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    addInputConstant();
+    setOutputArity(0);
+
+    prop.providesPartialAnswer = true;
+    prop.antimonotonicInputPredicates.insert(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+        OrdinaryAtom myat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+        myat.tuple = query.input;
+
+        // find relevant input
+        int tr = 0;
+        int fa = 0;
+        int un = 0;
+        bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+        while (en < en_end){
+                if ((!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)) tr++;
+                else if ((!query.assigned || query.assigned->getFact(*en)) && !query.interpretation->getFact(*en)) fa++;
+                else un++;
+                en++;
+        }
+
+        if ((tr + un) <= query.input[2].address){
+                // true
+                Tuple tu;
+                answer.get().push_back(tu);
+        }else if (tr <= query.input[2].address){
+                // unknwon
+                Tuple tu;
+                answer.getUnknown().push_back(tu);
+        }else{
+                // false
+        }
+  }
+};
+
+class TestNumberOfBallsGE:      // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNumberOfBallsGE():
+    PluginAtom("testNumberOfBallsGE", false)
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    addInputConstant();
+    setOutputArity(0);
+
+    prop.providesPartialAnswer = true;
+    prop.monotonicInputPredicates.insert(0);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+        OrdinaryAtom myat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+        myat.tuple = query.input;
+
+        // find relevant input
+        int tr = 0;
+        int fa = 0;
+        int un = 0;
+        bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+        while (en < en_end){
+                if ((!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)) tr++;
+                else if ((!query.assigned || query.assigned->getFact(*en)) && !query.interpretation->getFact(*en)) fa++;
+                else un++;
+                en++;
+        }
+
+        if (tr >= query.input[1].address) {
+                // true
+                Tuple tu;
+                answer.get().push_back(tu);
+        }else if ((tr + un) >= query.input[1].address) {
+                // unknwon
+                Tuple tu;
+                answer.getUnknown().push_back(tu);
+        }else{
+                // false
+        }
+  }
+};
+
 
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
@@ -2430,6 +2604,10 @@ public:
           ret.push_back(PluginAtomPtr(new TestGen2Atom("gen1", 1), PluginPtrDeleter<PluginAtom>()));
           ret.push_back(PluginAtomPtr(new TestGen2Atom("gen2", 2), PluginPtrDeleter<PluginAtom>()));
           ret.push_back(PluginAtomPtr(new TestGen2Atom("gen3", 3), PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestIsEmpty, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestNumberOfBalls, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestNumberOfBallsSE, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestNumberOfBallsGE, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
