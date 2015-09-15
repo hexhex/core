@@ -228,6 +228,78 @@ def partialTest(assignment):
 	elif true + unknown > 1:
 		dlvhex.outputUnknown(())
 
+def satCheck(formula,trueAt):	
+	import re
+
+	# read dimacs file:
+	file = open(formula.value()[1:-1])
+	
+	# parse content of file into list
+	conjs = []
+
+	for line in file:
+		disjs = []
+		literals = line.split()[:-1]
+		# lines starting with 'p' or 'c' are ignored, according to dimacs
+		if literals[0] != 'p' and literals[0] != 'c':
+			for lit in literals:
+				# a literal is stored in a two element list, separating negation and atom
+				if lit[0] == '-':
+					disjs.append(['-',lit[1:]])
+				else:
+					disjs.append(['',lit])
+			conjs.append(disjs)
+
+	file.close()
+
+	# store partial evaluation of input atoms:	
+	atoms = dlvhex.getInputAtoms()
+	atomVal = dict()
+	
+	# get only atom names with regexp
+	regex = re.compile('\w*\((\w*)\)')
+
+	for a in atoms:
+		at = regex.match(a.value()).group(1)
+		if a.isTrue():
+			atomVal[at] = 'true'
+		elif a.isFalse():
+			atomVal[at] = 'false'
+		else:
+			atomVal[at] = 'unknown'
+
+	
+	# check if sat formula is already known to be either true or false:
+	cFalse = False
+	cUnknown = False
+	for disjs in conjs:
+		dTrue = False
+		dUnknown = False
+		for lit in disjs:
+			# if one literal in clause is true, the clause is true
+			if (lit[0] != '-' and atomVal[lit[1]] == 'true') \
+				or (lit[0] == '-' and atomVal[lit[1]] == 'false'):
+				dTrue = True
+			# if one literal in clause is unknown, the clause is not known to be false yet
+			elif atomVal[lit[1]] == 'unknown':
+				dUnknown = True
+		
+		# if all the literals in a clause are false, the formula is false
+		if not dTrue and not dUnknown:
+			cFalse = True
+		# if the truth value of a clause is unknown, the formula could still evaluate to false
+		elif not dTrue:
+			cUnknown = True
+
+	# if the clause evaluates to false, the external atom is false, otherwise:
+	if not cFalse:
+		if cUnknown:
+			# external atom can be true
+			dlvhex.outputUnknown(())
+		else:
+			# external atom is true
+			dlvhex.output(())
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -292,3 +364,8 @@ def register():
 	dlvhex.addAtom("partialTest", (dlvhex.PREDICATE, ), 0, prop)
 
 	dlvhex.addAtom("date", (), 1)
+
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("satCheck", (dlvhex.CONSTANT, dlvhex.PREDICATE), 0, prop)
