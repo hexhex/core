@@ -252,6 +252,8 @@ bool ClaspSolver::ExternalPropagator::propagateFixpoint(Clasp::Solver& s, Clasp:
             lastPropagation = now;
             skipCounter = 0;
             hexPropagate = true;
+        } else {
+            skipCounter++;
         }
     }
     DBGLOG(DBG, "Will " << (hexPropagate ? "" : "not ") << "propagate to HEX");
