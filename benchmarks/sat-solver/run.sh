@@ -10,7 +10,7 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "{1..50}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
+	$bmscripts/runinsts.sh "{0..50}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
 	confstr="../../examples/sat-solver/sat1.hex;../../examples/sat-solver/sat2.hex;../../examples/sat-solver/sat3.hex;../../examples/sat-solver/sat4.hex;../../examples/sat-solver/sat5.hex"
