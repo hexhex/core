@@ -1,0 +1,19 @@
+atom(1).
+atom(2).
+atom(3).
+atom(4).
+atom(5).
+atom(6).
+atom(7).
+atom(8).
+atom(9).
+atom(10).
+atom(11).
+atom(12).
+atom(13).
+atom(14).
+atom(15).
+
+trueEval(X) v falseEval(X) :- atom(X).
+
+:- not &satCheck["../../examples/sat-solver/instances/sat5.hex", trueEval]().
