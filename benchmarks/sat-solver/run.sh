@@ -15,6 +15,6 @@ else
 	# run single instance
 	confstr="../../examples/sat-solver/sat1.hex;../../examples/sat-solver/sat2.hex;../../examples/sat-solver/sat3.hex;../../examples/sat-solver/sat4.hex;../../examples/sat-solver/sat5.hex"
 
-	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic --claspdefermsec=100000 CONF --claspdefernprop=INST" "$confstr" "$instance" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --heuristics=monolithic --eaevalheuristics=always --claspdefermsec=100000 --claspdefernprop=INST CONF" "$confstr" "$instance" "$to"
 fi
 
