@@ -16,4 +16,4 @@ atom(15).
 
 trueEval(X) v falseEval(X) :- atom(X).
 
-:- not &satCheck["../../examples/sat-solver/instances/sat5.hex", trueEval]().
+:- not &satCheck["../../examples/sat-solver/instances/formula5.hex", trueEval]().
