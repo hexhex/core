@@ -183,7 +183,7 @@ ProcessBuf::open(const std::vector<std::string>& av)
                 i++;
             }
 
-            *argv[i] = '\0';
+            argv[i] = NULL;
 
             // redirect stdin and stdout and stderr
 
