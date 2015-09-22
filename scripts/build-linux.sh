@@ -40,25 +40,36 @@ function usage {
 }
 
 function prepare {
-  echo "Creating build directory"
+  echo "==> Creating build directory"
   mkdir -p $BUILD_DIR
 }
 
-# Automatically installs all dependencies, use with caution!
-function installDependencies {
-  echo "Installing build dependencies"
+# Check for missing depdencies
+function checkDependencies {
+  echo "==> Checking build dependencies"
 
-  # TODO: Solve better than with sudo!
-  sudo apt-get update &> $OUTPUT_IO && sudo apt-get upgrade -y &> $OUTPUT_IO
-  sudo apt-get install -y sed git build-essential autoconf autotools-dev libtool wget scons bison re2c &> $OUTPUT_IO
-  sudo apt-get install -y python-dev libpython-all-dev libcurl4-openssl-dev libbz2-dev &> $OUTPUT_IO
+  deps="sed git build-essential autoconf autotools-dev libtool wget scons bison re2c python-dev libpython-all-dev libcurl4-openssl-dev libbz2-dev"
+  missing_deps=""
+
+  for dep in `echo $deps`; do
+    if ! dpkg -s $dep &> /dev/null; then
+      missing_deps="$missing_deps $dep"
+    fi
+  done
+
+  if [ ! -z "$missing_deps" ]; then
+    # TODO: Check for other distros and replace apt-get command
+    echo "Error: Missing build dependencies, use:"
+    echo "apt-get install$missing_deps"
+    exit 1
+  fi
 }
 
 # Boost is built standalone and not used from the package manager
 function buildBoost {
   cd $BUILD_DIR
 
-  echo "Downloading Boost $BOOST_VERSION"
+  echo "==> Downloading Boost $BOOST_VERSION"
 
   # Download and extract boost
   wget http://sourceforge.net/projects/boost/files/boost/$BOOST_VERSION/boost_$BOOST_FILE_VERSION.tar.gz &> $OUTPUT_IO
@@ -67,7 +78,7 @@ function buildBoost {
   rm boost_$BOOST_FILE_VERSION.tar.gz
   cd boost
 
-  echo "Building Boost libraries"
+  echo "==> Building Boost libraries"
 
   # Build boost
   ./bootstrap.sh --prefix=$LIB_DIR --with-python-version=2.7 &> $OUTPUT_IO
@@ -77,13 +88,13 @@ function buildBoost {
 function buildCore {
   cd $BUILD_DIR
 
-  echo "Cloning dlvhex core repository"
+  echo "==> Cloning dlvhex core repository"
 
   # Clone latest sources
   git clone --recursive $CORE_CLONE_URL &> $OUTPUT_IO
   cd core
 
-  echo "Configuring build"
+  echo "==> Configuring build"
 
   # Configure build
   export PYTHON_BIN=python$PYTHON_VERSION
@@ -92,7 +103,7 @@ function buildCore {
   ./bootstrap.sh &> $OUTPUT_IO
   ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig --enable-python --disable-shared --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
 
-  echo "Building core binary"
+  echo "==> Building core binary"
 
   # Build core
   make &> $OUTPUT_IO
@@ -101,12 +112,12 @@ function buildCore {
 
 # Collects build artifacts used for distribution later on
 function collect {
-  echo "Distributing build files"
+  echo "==> Distributing build files"
   # TODO: Where to copy build?
 }
 
 function cleanup {
-  echo "Cleaning up build"
+  echo "==> Cleaning up build"
 
   # TODO: Check if directories really exist
 
@@ -118,7 +129,7 @@ function cleanup {
   cd $BUILD_DIR/core
   make clean &> $OUTPUT_IO
 
-  echo "Build finished"
+  echo "==> Build finished"
 }
 
 
@@ -128,7 +139,7 @@ function cleanup {
 # Check given parameters
 while [ "$1" != "" ]; do
   case $1 in
-    -v )                        OUTPUT_IO=/dev/stdout
+    -v | --verbose )            OUTPUT_IO=/dev/stdout
                                 ;;
     -h | --help )               usage
                                 exit
@@ -139,10 +150,8 @@ while [ "$1" != "" ]; do
   shift
 done
 
+checkDependencies
 prepare
-
-# Only use that after checking the dependencies above!
-installDependencies
 
 # Build dependencies and library
 buildBoost
