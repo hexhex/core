@@ -1,0 +1,10 @@
+employee(a). employee(b). employee(c). employee(d). employee(e).
+know(a,b). know(b,c). know(c,d). know(d,e).
+
+same_skill(a,b).
+married(c,d).
+
+member(X,p1) | member(X,p2) :- employee(X).
+:~ member(X,P), member(Y,P), X != Y, not know(X,Y). [1@1,X,Y,P]
+:~ member(X,P), member(Y,P), X != Y, married(X,Y). [1@2,X,Y,P]
+:~ member(X,P), member(Y,P), X != Y, same_skill(X,Y). [1@2,X,Y,P]

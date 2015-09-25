@@ -1,0 +1,2 @@
+{employee(a),employee(b),employee(c),employee(d),employee(e),know(a,b),know(b,c),know(c,d),know(d,e),same_skill(a,b),married(c,d),member(a,p1),member(b,p2),member(c,p2),member(d,p1),member(e,p1)} <[6:1]>
+{employee(a),employee(b),employee(c),employee(d),employee(e),know(a,b),know(b,c),know(c,d),know(d,e),same_skill(a,b),married(c,d),member(a,p2),member(b,p1),member(c,p1),member(d,p2),member(e,p2)} <[6:1]>
