@@ -27,6 +27,7 @@ weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable
 weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
 weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable
 weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
+weak7.hex weak7.out --solver=genuinegc --weak-enable
 weak7.hex weak7.out --solver=genuinegc --weak-enable --heuristics=monolithic
 anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=genuinegc
 builtin_safety1.hex builtin_safety1.stderr --solver=genuinegc
