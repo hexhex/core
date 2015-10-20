@@ -836,6 +836,7 @@ Config& config, ProgramCtx& pctx)
 		{ "claspdefernprop", required_argument, 0, 55 },
 		{ "claspdefermsec", required_argument, 0, 56 },
         { "dumpeanogoods", required_argument, 0, 57 },
+        { "minimizenogoods", no_argument, 0, 58 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1553,6 +1554,9 @@ Config& config, ProgramCtx& pctx)
                     std::ofstream filev(pctx.config.getStringOption("DumpEANogoods").c_str(), std::ios_base::out);
                 }
                 break;
+            case 58:
+                    pctx.config.setOption("MinimizeNogoods", 1);
+                break;
         }
     }
 
@@ -1721,3 +1725,4 @@ void configurePluginPath(std::string& userPlugindir)
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
+
