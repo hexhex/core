@@ -1,0 +1,18 @@
+foo(a).
+foo(b).
+foo(c).
+bar(b).
+bar(c).
+bar(d).
+
+% we want this functionality: (X,Y) < (b,c)
+
+% encoded comfortably as this
+b1(X,Y) :- foo(X), bar(Y), <(mmm(X,Y),mmm(b,c)).
+
+% encoded verbatim as this (for example)
+b2(X,Y) :- foo(X), bar(Y), X < b.
+b2(X,Y) :- foo(X), bar(Y), X == b, Y < c.
+
+difference(X,Y) :- b1(X,Y), not b2(X,Y).
+difference(X,Y) :- b2(X,Y), not b1(X,Y).
