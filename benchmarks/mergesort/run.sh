@@ -1,9 +1,9 @@
 #!/bin/bash
 
-runheader=$(which dlvhex_run_header.sh)
-if [[ $runheader == "" ]] || [ $(cat $runheader | grep "dlvhex_run_header.sh Version 1." | wc -l) == 0 ]; then
-	echo "Could not find dlvhex_run_header.sh (version 1.x); make sure that the benchmarks/script directory is in your PATH"
-	exit 1
+runheader=$(which run_header.sh)
+if [[ $runheader == "" ]] || [ $(cat $runheader | grep "run_header.sh Version 1." | wc -l) == 0 ]; then
+        echo "Could not find run_header.sh (version 1.x); make sure that the benchmark scripts directory is in your PATH"
+        exit 1
 fi
 source $runheader
 
