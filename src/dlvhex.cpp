@@ -837,6 +837,7 @@ Config& config, ProgramCtx& pctx)
 		{ "claspdefermsec", required_argument, 0, 56 },
         { "dumpeanogoods", required_argument, 0, 57 },
         { "minimizenogoods", no_argument, 0, 58 },
+        { "minimizesize", required_argument, 0, 59 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1557,6 +1558,22 @@ Config& config, ProgramCtx& pctx)
             case 58:
                     pctx.config.setOption("MinimizeNogoods", 1);
                 break;
+            case 59:
+                {
+                    int minval = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            minval = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            minval = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"minimizesize '" << optarg << "' does not specify an integer value");
+                    }
+                    pctx.config.setOption("MinimizationSize", minval);
+                }
+                break;                
         }
     }
 
