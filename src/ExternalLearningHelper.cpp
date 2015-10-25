@@ -272,7 +272,7 @@ ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string lear
 
 void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
 {
-
+    DBGLOG(DBG, "Learned start n");
     if (nogoods) {
         DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
@@ -318,32 +318,34 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                     }
 
                     testNg.erase(ansID);
+                    
+                    InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
+                    InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
+                    
+                    // only add true atoms from nogood to the query interpretation
+                    set_iterator<ID> it = testNg.begin();
+                    while (it != testNg.end()) {
+                        if (!it->isNaf()) {
+                            interpretation->setFact(it->address);
+                        }
+                        assigned->setFact(it->address);
+                        it++;
+                    }
+                    
+                    PluginAtom::Query qa = query;
+                    qa.interpretation = interpretation;
+                    qa.assigned = assigned;
 
                     // iteratively remove each literal from nogood
                     BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
                         // only for non-auxiliaries
                         if (iid != ansID) {
-                            // erase atom from nogood copy (so that the nogood of the loop isn't changed)
-                            testNg.erase(iid);
-
                             PluginAtom::Answer ans;
-                            PluginAtom::Query qa = query;
-
-                            InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
-                            InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
-
-                            // only add true atoms from pruned nogood to the query interpretation
-                            set_iterator<ID> it = testNg.begin();
-                            while (it != testNg.end()) {
-                                if (!it->isNaf()) {
-                                    interpretation->setFact(it->address);
-                                }
-                                assigned->setFact(it->address);
-                                it++;
+                            
+                            if (!iid.isNaf()) {
+                                interpretation->clearFact(iid.address);
                             }
-
-                            qa.interpretation = interpretation;
-                            qa.assigned = assigned;
+                            assigned->clearFact(iid.address);
 
                             // query
                             query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
@@ -353,7 +355,12 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                             // and check if expected answer is still contained
                             if(!ansout.contains(ansID)) {
                                 // if it isn't, add the atom to the nogood again
-                                testNg.insert(iid);
+                                if (!iid.isNaf()) {
+                                    interpretation->setFact(iid.address);
+                                }
+                                assigned->setFact(iid.address);
+                            } else {
+                                testNg.erase(iid);
                             }
                         }
                     }
@@ -413,7 +420,7 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 
 void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
 {
-
+    DBGLOG(DBG, "Learned start n");
     // learning of negative information
     if (nogoods) {
         Nogood extNgInput;
@@ -527,31 +534,34 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                     }
 
                     testNg.erase(ansID);
+                    
+                    InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
+                    InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
+                    
+                    // only add true atoms from nogood to the query interpretation
+                    set_iterator<ID> it = testNg.begin();
+                    while (it != testNg.end()) {
+                        if (!it->isNaf()) {
+                            interpretation->setFact(it->address);
+                        }
+                        assigned->setFact(it->address);
+                        it++;
+                    }
+                    
+                    PluginAtom::Query qa = query;
+                    qa.interpretation = interpretation;
+                    qa.assigned = assigned;
+                    
                     // iteratively remove each literal from nogood
                     BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
                         // only for non-auxiliaries
                         if (iid != ansID) {
-                            // erase atom from nogood copy (so that the nogood of the loop isn't changed)
-                            testNg.erase(iid);
-
                             PluginAtom::Answer ans;
-                            PluginAtom::Query qa = query;
-
-                            InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
-                            InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
-
-                            // only add true atoms from pruned nogood to the query interpretation
-                            set_iterator<ID> it = testNg.begin();
-                            while (it != testNg.end()) {
-                                if (!it->isNaf()) {
-                                    interpretation->setFact(it->address);
-                                }
-                                assigned->setFact(it->address);
-                                it++;
+                            
+                            if (!iid.isNaf()) {
+                                interpretation->clearFact(iid.address);
                             }
-
-                            qa.interpretation = interpretation;
-                            qa.assigned = assigned;
+                            assigned->clearFact(iid.address);
 
                             // query
                             query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
@@ -561,7 +571,12 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                             // check if answer tuple is still false
                             if (std::find(ans.get().begin(), ans.get().end(), t) != ans.get().end() ||
                                (prop.doesProvidePartialAnswer() && std::find(ans.getUnknown().begin(), ans.getUnknown().end(), t) != ans.getUnknown().end())) {
-                                testNg.insert(iid);
+                                if (!iid.isNaf()) {
+                                    interpretation->setFact(iid.address);
+                                }
+                                assigned->setFact(iid.address);
+                            } else {
+                                testNg.erase(iid);
                             }
                         }
                     }
@@ -686,4 +701,5 @@ DLVHEX_NAMESPACE_END
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
+
 
