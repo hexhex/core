@@ -167,9 +167,10 @@ class DLVHEX_EXPORT ExternalLearningHelper
          * @param answer Answer.
          * @param prop Properties of the external atom.
          * @param nogoods The nogood container where learned nogoods shall be added.
+         * @param inputi current assignment from solver
          * @param inp Input nogood provider.
          */
-        static void learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider(false)));
+        static void learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InterpretationConstPtr inputi, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider(false)));
 
         /**
          * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
@@ -190,9 +191,10 @@ class DLVHEX_EXPORT ExternalLearningHelper
          * @param answer Answer.
          * @param prop Properties of the external atom.
          * @param nogoods The nogood container where learned nogoods shall be added.
+         * @param inputi current assignment from solver
          * @param inp Input nogood provider.
          */
-        static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider(true)));
+        static void learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InterpretationConstPtr inputi, InputNogoodProviderConstPtr inp = InputNogoodProviderConstPtr(new DefaultInputNogoodProvider(true)));
 
         /**
          * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
@@ -223,3 +225,4 @@ DLVHEX_NAMESPACE_END
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
+

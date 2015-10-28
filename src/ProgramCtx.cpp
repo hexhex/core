@@ -150,6 +150,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
 
     config.setStringOption("DumpEANogoods", "");
     config.setOption("MinimizeNogoods", 0);
+    config.setOption("MinimizeNogoodsOnConflict", 0);
 
     #warning "TODO cleanup the setASPSoftware vs nGenuineSolver thing"
     // but if we have genuinegc, take genuinegc as default
@@ -586,4 +587,5 @@ DLVHEX_NAMESPACE_END
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
+
 

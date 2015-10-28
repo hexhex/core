@@ -241,12 +241,12 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 }
 */
 
-bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache)
+bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache, InterpretationConstPtr inputi)
 {
     bool fromCache = false;
 
     // split the query
-    const ExtSourceProperties& prop = query.ctx->registry()->eatoms.getByID(query.eatomID).getExtSourceProperties();
+    const ExtSourceProperties& prop = getExtSourceProperties();
 
     DBGLOG(DBG, "Splitting query");
     std::vector<Query> atomicQueries = splitQuery(query, prop);
@@ -266,8 +266,8 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         }
 
         // learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
-        if (!subqueryFromCache) {
-            if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods);
+        if (!subqueryFromCache) {////
+            if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, inputi);
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
         }
 
@@ -280,7 +280,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         fromCache |= subqueryFromCache;
     }
 
-    if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
+    if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, inputi);
 
     return fromCache;
 }
@@ -712,3 +712,4 @@ DLVHEX_NAMESPACE_END
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
+

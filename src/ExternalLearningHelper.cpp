@@ -270,9 +270,8 @@ ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string lear
 }
 
 
-void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
+void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InterpretationConstPtr inputi, InputNogoodProviderConstPtr inp)
 {
-    DBGLOG(DBG, "Learned start n");
     if (nogoods) {
         DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
@@ -316,57 +315,61 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                             ansID = iid;
                         }
                     }
+                    
+                    if (inputi->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
+                        DBGLOG(DBG, "Conflicting nogood");
+                        testNg.erase(ansID);
 
-                    testNg.erase(ansID);
-                    
-                    InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
-                    InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
-                    
-                    // only add true atoms from nogood to the query interpretation
-                    set_iterator<ID> it = testNg.begin();
-                    while (it != testNg.end()) {
-                        if (!it->isNaf()) {
-                            interpretation->setFact(it->address);
-                        }
-                        assigned->setFact(it->address);
-                        it++;
-                    }
-                    
-                    PluginAtom::Query qa = query;
-                    qa.interpretation = interpretation;
-                    qa.assigned = assigned;
+                        InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
+                        InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
 
-                    // iteratively remove each literal from nogood
-                    BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
-                        // only for non-auxiliaries
-                        if (iid != ansID) {
-                            PluginAtom::Answer ans;
-                            
-                            if (!iid.isNaf()) {
-                                interpretation->clearFact(iid.address);
+                        // only add true atoms from nogood to the query interpretation
+                        set_iterator<ID> it = testNg.begin();
+                        while (it != testNg.end()) {
+                            if (!it->isNaf()) {
+                                interpretation->setFact(it->address);
                             }
-                            assigned->clearFact(iid.address);
+                            assigned->setFact(it->address);
+                            it++;
+                        }
 
-                            // query
-                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                        PluginAtom::Query qa = query;
+                        qa.interpretation = interpretation;
+                        qa.assigned = assigned;
 
-                            // get all answer atoms
-                            Set<ID> ansout = ExternalLearningHelper::getOutputAtoms(qa, ans, false);
-                            // and check if expected answer is still contained
-                            if(!ansout.contains(ansID)) {
-                                // if it isn't, add the atom to the nogood again
+                        // iteratively remove each literal from nogood
+                        BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
+                            // only for non-auxiliaries
+                            if (iid != ansID) {
+                                PluginAtom::Answer ans;
+
                                 if (!iid.isNaf()) {
-                                    interpretation->setFact(iid.address);
+                                    interpretation->clearFact(iid.address);
                                 }
-                                assigned->setFact(iid.address);
-                            } else {
-                                testNg.erase(iid);
+                                assigned->clearFact(iid.address);
+
+                                // query
+                                query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+
+                                // get all answer atoms
+                                Set<ID> ansout = ExternalLearningHelper::getOutputAtoms(qa, ans, false);
+                                // and check if expected answer is still contained
+                                if(!ansout.contains(ansID)) {
+                                    // if it isn't, add the atom to the nogood again
+                                    if (!iid.isNaf()) {
+                                        interpretation->setFact(iid.address);
+                                    }
+                                    assigned->setFact(iid.address);
+                                } else {
+                                    testNg.erase(iid);
+                                }
                             }
                         }
+                        testNg.insert(ansID);
+                        DBGLOG(DBG, "Learned minimized nogood " << testNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
                     }
-                    testNg.insert(ansID);
+                    
                     // add minimized nogood
-                    DBGLOG(DBG, "Learned minimized nogood " << testNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
                     nogoods->addNogood(testNg);
                 } else {
                     nogoods->addNogood(newNogoods.getNogood(i));
@@ -418,9 +421,8 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 }
 
 
-void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
+void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InterpretationConstPtr inputi, InputNogoodProviderConstPtr inp)
 {
-    DBGLOG(DBG, "Learned start n");
     // learning of negative information
     if (nogoods) {
         Nogood extNgInput;
@@ -532,57 +534,62 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                             ansID = iid;
                         }
                     }
+                    
+                    if (inputi->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
+                        DBGLOG(DBG, "Conflicting nogood");
 
-                    testNg.erase(ansID);
-                    
-                    InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
-                    InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
-                    
-                    // only add true atoms from nogood to the query interpretation
-                    set_iterator<ID> it = testNg.begin();
-                    while (it != testNg.end()) {
-                        if (!it->isNaf()) {
-                            interpretation->setFact(it->address);
-                        }
-                        assigned->setFact(it->address);
-                        it++;
-                    }
-                    
-                    PluginAtom::Query qa = query;
-                    qa.interpretation = interpretation;
-                    qa.assigned = assigned;
-                    
-                    // iteratively remove each literal from nogood
-                    BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
-                        // only for non-auxiliaries
-                        if (iid != ansID) {
-                            PluginAtom::Answer ans;
-                            
-                            if (!iid.isNaf()) {
-                                interpretation->clearFact(iid.address);
+                        testNg.erase(ansID);
+
+                        InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
+                        InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
+
+                        // only add true atoms from nogood to the query interpretation
+                        set_iterator<ID> it = testNg.begin();
+                        while (it != testNg.end()) {
+                            if (!it->isNaf()) {
+                                interpretation->setFact(it->address);
                             }
-                            assigned->clearFact(iid.address);
+                            assigned->setFact(it->address);
+                            it++;
+                        }
 
-                            // query
-                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                        PluginAtom::Query qa = query;
+                        qa.interpretation = interpretation;
+                        qa.assigned = assigned;
 
-                            Tuple t = externalAuxiliaryTable[ansID];
+                        // iteratively remove each literal from nogood
+                        BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
+                            // only for non-auxiliaries
+                            if (iid != ansID) {
+                                PluginAtom::Answer ans;
 
-                            // check if answer tuple is still false
-                            if (std::find(ans.get().begin(), ans.get().end(), t) != ans.get().end() ||
-                               (prop.doesProvidePartialAnswer() && std::find(ans.getUnknown().begin(), ans.getUnknown().end(), t) != ans.getUnknown().end())) {
                                 if (!iid.isNaf()) {
-                                    interpretation->setFact(iid.address);
+                                    interpretation->clearFact(iid.address);
                                 }
-                                assigned->setFact(iid.address);
-                            } else {
-                                testNg.erase(iid);
+                                assigned->clearFact(iid.address);
+
+                                // query
+                                query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+
+                                Tuple t = externalAuxiliaryTable[ansID];
+
+                                // check if answer tuple is still false
+                                if (std::find(ans.get().begin(), ans.get().end(), t) != ans.get().end() ||
+                                   (prop.doesProvidePartialAnswer() && std::find(ans.getUnknown().begin(), ans.getUnknown().end(), t) != ans.getUnknown().end())) {
+                                    if (!iid.isNaf()) {
+                                        interpretation->setFact(iid.address);
+                                    }
+                                    assigned->setFact(iid.address);
+                                } else {
+                                    testNg.erase(iid);
+                                }
                             }
                         }
+                        testNg.insert(ansID);
+                        DBGLOG(DBG, "Learned minimized negative nogood " << testNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
                     }
-                    testNg.insert(ansID);
+                    
                     // add minimized nogood
-                    DBGLOG(DBG, "Learned minimized negative nogood " << testNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
                     nogoods->addNogood(testNg);
                 } else {
                     nogoods->addNogood(newNogoods.getNogood(i));
