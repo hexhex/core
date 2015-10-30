@@ -410,6 +410,51 @@ class FunctionDecomposeGeneralAtom : public PluginAtom
         }
 };
 
+class FunctionInterprete : public PluginAtom
+{
+    private:
+        ProgramCtx* ctx;
+
+    public:
+        FunctionInterprete() : PluginAtom("functionInterprete", true) {
+            addInputConstant();
+
+            setOutputArity(1);
+        }
+
+        virtual void
+        retrieve(const Query& query, Answer& answer) throw (PluginError) {
+            Registry &registry = *getRegistry();
+
+            Term functionDef = registry.terms.getByID(query.input[0]);
+            if (!functionDef.isNestedTerm() || functionDef.arguments.size() == 0) {
+                throw PluginError("Argument to &functionInterprete must be a nested term specifying a function name and its arguments");
+            }
+
+            std::string functionName = registry.terms.getByID(functionDef.arguments[0]).symbol;
+            Tuple args;
+            for (int i = 1; i < functionDef.arguments.size(); ++i) args.push_back(functionDef.arguments[i]);
+
+            // call function
+            if (this->ctx->pluginAtomMap().find(functionName) == this->ctx->pluginAtomMap().end()) {
+                throw PluginError("Function \"" + functionName + "\" is not defined");
+            }
+            PluginAtomPtr pa = this->ctx->pluginAtomMap().find(functionName)->second;
+            Tuple empty;
+            PluginAtom::Query nquery(query.ctx, InterpretationPtr(), args, empty);
+            PluginAtom::Answer nanswer;
+            pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), InterpretationPtr(new Interpretation(getRegistry())));
+
+            // transfer answer
+            if (nanswer.get().size() != 1) throw PluginError("Function must return exactly one value");
+            answer.get().push_back(nanswer.get()[0]);
+        }
+
+        void setupProgramCtx(ProgramCtx& ctx) {
+            this->ctx = &ctx;
+        }
+};
+
 std::vector<PluginAtomPtr> FunctionPlugin::createAtoms(ProgramCtx& ctx) const
 {
     std::vector<PluginAtomPtr> ret;
@@ -426,6 +471,7 @@ std::vector<PluginAtomPtr> FunctionPlugin::createAtoms(ProgramCtx& ctx) const
     ret.push_back(PluginAtomPtr(new IsFunctionTermAtom(), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new GetArityAtom(), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new FunctionDecomposeGeneralAtom(), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new FunctionInterprete(), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 }

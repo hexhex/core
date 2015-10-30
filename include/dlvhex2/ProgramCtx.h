@@ -86,10 +86,16 @@ class DLVHEX_EXPORT ProgramCtx
          * @return Registry. */
         const RegistryPtr& registry() const
             { return _registry; }
+
         /** \brief Retrieve plugin container.
-         * @return PluginContainer. */
+         * @return PluginContainer&. */
         const PluginContainerPtr& pluginContainer() const
             { return _pluginContainer; }
+
+        /** \brief Retrieve pluginatom map.
+         * @return PluginAtomMap&. */
+        PluginAtomMap& pluginAtomMap() 
+            { return pluginAtoms; }
 
         /** \brief Setup the registry.
          *
