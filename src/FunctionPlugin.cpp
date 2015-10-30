@@ -416,8 +416,9 @@ class FunctionInterprete : public PluginAtom
         ProgramCtx* ctx;
 
     public:
-        FunctionInterprete() : PluginAtom("functionInterprete", true) {
+        FunctionInterprete(ProgramCtx* ctx) : PluginAtom("functionInterprete", true), ctx(ctx) {
             addInputConstant();
+            addInputTuple();
 
             setOutputArity(1);
         }
@@ -431,9 +432,9 @@ class FunctionInterprete : public PluginAtom
                 throw PluginError("Argument to &functionInterprete must be a nested term specifying a function name and its arguments");
             }
 
-            std::string functionName = registry.terms.getByID(functionDef.arguments[0]).symbol;
+            std::string functionName = registry.terms.getByID(functionDef.arguments[1]).symbol;
             Tuple args;
-            for (int i = 1; i < functionDef.arguments.size(); ++i) args.push_back(functionDef.arguments[i]);
+            for (int i = 2; i < functionDef.arguments.size(); ++i) args.push_back(functionDef.arguments[i]);
 
             // call function
             if (this->ctx->pluginAtomMap().find(functionName) == this->ctx->pluginAtomMap().end()) {
@@ -441,17 +442,13 @@ class FunctionInterprete : public PluginAtom
             }
             PluginAtomPtr pa = this->ctx->pluginAtomMap().find(functionName)->second;
             Tuple empty;
-            PluginAtom::Query nquery(query.ctx, InterpretationPtr(), args, empty);
+            PluginAtom::Query nquery(query.ctx, InterpretationPtr(), args, empty, query.eatomID);
             PluginAtom::Answer nanswer;
             pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), InterpretationPtr(new Interpretation(getRegistry())));
 
             // transfer answer
             if (nanswer.get().size() != 1) throw PluginError("Function must return exactly one value");
             answer.get().push_back(nanswer.get()[0]);
-        }
-
-        void setupProgramCtx(ProgramCtx& ctx) {
-            this->ctx = &ctx;
         }
 };
 
@@ -471,7 +468,7 @@ std::vector<PluginAtomPtr> FunctionPlugin::createAtoms(ProgramCtx& ctx) const
     ret.push_back(PluginAtomPtr(new IsFunctionTermAtom(), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new GetArityAtom(), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new FunctionDecomposeGeneralAtom(), PluginPtrDeleter<PluginAtom>()));
-    ret.push_back(PluginAtomPtr(new FunctionInterprete(), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new FunctionInterprete(&ctx), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 }
