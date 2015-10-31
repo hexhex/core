@@ -19,14 +19,14 @@ resFunctional(X) :- funcConcat(F), &functionInterprete[F, x, y](X).
 funcConcat2(F2) :- funcConcat(F), &idc[F](F2).
 resFunctional2(X) :- funcConcat2(F), &functionInterprete[F, v, u](X).
 
-resFunctional3(X) :- funcConcat2(F), $X=F(v, u).
+resFunctional3(X) :- funcConcat2(F), X=$F(v, u).
 
-testRewriting1(R) :- funcConcat(F), R=# F(1,2).
+%testRewriting1(R) :- funcConcat(F), R=#F(1,2).
 %testRewriting2(R) :- funcConcat(F), R=functionInterprete(F,1,2).
 
 
 
-% TODO: Rewriting
+% Rewriting
 % 
 % Rewrite expressions of form
 %    X(V1, ..., Vn)

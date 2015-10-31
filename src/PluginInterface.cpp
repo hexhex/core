@@ -417,9 +417,9 @@ void PluginAtom::learnSupportSets(const Query&, NogoodContainerPtr nogoods)
 std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const ExtSourceProperties& prop)
 {
 
-    const ExternalAtom& eatom = query.ctx->registry()->eatoms.getByID(query.eatomID);
     std::vector<Query> atomicQueries;
-    if ((prop.isLinearOnAtomLevel() || prop.isLinearOnTupleLevel()) && query.ctx->config.getOption("ExternalLearningLinearity")) {
+    if (query.eatomID != ID_FAIL && (prop.isLinearOnAtomLevel() || prop.isLinearOnTupleLevel()) && query.ctx->config.getOption("ExternalLearningLinearity")) {
+	const ExternalAtom& eatom = query.ctx->registry()->eatoms.getByID(query.eatomID);
 
         DBGLOG(DBG, "Splitting query by exploiting linearity");
 

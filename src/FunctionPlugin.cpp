@@ -444,7 +444,7 @@ class FunctionInterprete : public PluginAtom
                       call primitive function on args
                     #nr
                       return input[nr]
-                    constant
+                    constant or integer
                       return constant
             */
 
@@ -483,18 +483,23 @@ class FunctionInterprete : public PluginAtom
                 }
                 PluginAtomPtr pa = this->ctx->pluginAtomMap().find(functionName)->second;
                 Tuple empty;
-                PluginAtom::Query nquery(query.ctx, InterpretationPtr(), args, empty, query.eatomID);
+                PluginAtom::Query nquery(query.ctx, query.interpretation, args, empty, ID_FAIL, query.predicateInputMask, query.assigned, query.changed);
                 PluginAtom::Answer nanswer;
-                pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), InterpretationPtr(new Interpretation(getRegistry())));
+                pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), query.interpretation);
 
                 // transfer answer
                 if (nanswer.get().size() != 1) throw PluginError("Function must return exactly one value");
                 answer.get().push_back(nanswer.get()[0]);
+            }else if (query.input[0].isAuxiliary() && registry.getTypeByAuxiliaryConstantSymbol(query.input[0]) == 'f'){
+                assert(registry.getIDByAuxiliaryConstantSymbol(query.input[0]).isIntegerTerm() && "Original ID of aux_f must be an integer referring to an argument position");
+                Tuple t;
+                t.push_back(query.input[registry.getIDByAuxiliaryConstantSymbol(query.input[0]).address]);
+                answer.get().push_back(t);
             }else if (query.input[0].isIntegerTerm()){
                 Tuple t;
                 t.push_back(query.input[query.input[0].address]);
                 answer.get().push_back(t);
-            }else if (query.input[0].isConstantTerm()){
+            }else if (query.input[0].isConstantTerm() /*|| (query.input[0].isIntegerTerm())*/){
                 Tuple t;
                 t.push_back(query.input[0]);
                 answer.get().push_back(t);
@@ -526,6 +531,13 @@ public HexGrammarSemantics
             functionTermConstruct::base_type(mgr) {
             }
         };
+        struct functionTermConstructArg:
+        SemanticActionBase<FunctionParserModuleTermSemantics, ID, functionTermConstructArg>
+        {
+            functionTermConstructArg(FunctionParserModuleTermSemantics& mgr):
+            functionTermConstructArg::base_type(mgr) {
+            }
+        };
 };
 
 // create semantic handler for above semantic action
@@ -542,8 +554,6 @@ struct sem<FunctionParserModuleTermSemantics::functionTermConstruct>
         ID& target) {
         RegistryPtr reg = mgr.ctx.registry();
 
-target = ID::termFromInteger(10);
-/*
         Tuple args;
         args.push_back(reg->storeConstantTerm("functionInterprete"));
         args.push_back(boost::fusion::at_c<0>(source));
@@ -553,8 +563,20 @@ target = ID::termFromInteger(10);
             args.push_back(arg);
         }
         Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, args, reg);
-        target = reg->storeTerm(t);
-*/
+        ID tID = reg->storeTerm(t);
+        target = tID;
+    }
+};
+template<>
+struct sem<FunctionParserModuleTermSemantics::functionTermConstructArg>
+{
+    void operator()(
+        FunctionParserModuleTermSemantics& mgr,
+        const unsigned int& source,
+        ID& target) {
+        RegistryPtr reg = mgr.ctx.registry();
+
+        target = reg->getAuxiliaryConstantSymbol('f', ID::termFromInteger(source));
     }
 };
 
@@ -630,7 +652,8 @@ namespace
             typedef FunctionParserModuleTermSemantics Sem;
 
             functionTermConstruct
-                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ];
+                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ]
+                | (qi::lit('#') >> Base::posinteger) [ Sem::functionTermConstructArg(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
             BOOST_SPIRIT_DEBUG_NODE(functionTermConstruct);
@@ -698,7 +721,7 @@ namespace
             typedef FunctionParserModuleAtomSemantics Sem;
 
             functionTermEval
-                = (qi::lit('$') >> Base::primitiveTerm >> qi::lit('=') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermEval(sem) ];
+                = (Base::primitiveTerm >> qi::lit('=') >> qi::lit('$') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermEval(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
             BOOST_SPIRIT_DEBUG_NODE(functionTermEval);
