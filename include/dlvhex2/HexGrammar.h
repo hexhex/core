@@ -289,7 +289,7 @@ struct DLVHEX_EXPORT HexGrammarBase
     typename Rule<uint32_t>::type
         posinteger;
     typename Rule<ID>::type
-        term, pred, externalAtom, externalAtomPredicate,
+        term, primitiveTerm, pred, externalAtom, externalAtomPredicate,
         mlpModuleAtom, mlpModuleAtomPredicate, predDecl,
         classicalAtomPredicate, classicalAtom, builtinAtom, aggregateAtom,
         bodyAtom, bodyLiteral, headAtom, rule, constraint, weakconstraint, weakconstraintaspcore2;

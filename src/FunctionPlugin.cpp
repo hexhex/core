@@ -505,25 +505,25 @@ class FunctionInterprete : public PluginAtom
 };
 
 
-class FunctionParserModuleSemantics:
+class FunctionParserModuleTermSemantics:
 public HexGrammarSemantics
 {
     public:
         FunctionPlugin::CtxData& ctxdata;
 
     public:
-        FunctionParserModuleSemantics(ProgramCtx& ctx):
+        FunctionParserModuleTermSemantics(ProgramCtx& ctx):
         HexGrammarSemantics(ctx),
         ctxdata(ctx.getPluginData<FunctionPlugin>()) {
         }
 
         // use SemanticActionBase to redirect semantic action call into globally
         // specializable sem<T> struct space
-        struct functionTerm:
-        SemanticActionBase<FunctionParserModuleSemantics, ID, functionTerm>
+        struct functionTermConstruct:
+        SemanticActionBase<FunctionParserModuleTermSemantics, ID, functionTermConstruct>
         {
-            functionTerm(FunctionParserModuleSemantics& mgr):
-            functionTerm::base_type(mgr) {
+            functionTermConstruct(FunctionParserModuleTermSemantics& mgr):
+            functionTermConstruct::base_type(mgr) {
             }
         };
 };
@@ -531,10 +531,10 @@ public HexGrammarSemantics
 // create semantic handler for above semantic action
 // (needs to be in globally specializable struct space)
 template<>
-struct sem<FunctionParserModuleSemantics::functionTerm>
+struct sem<FunctionParserModuleTermSemantics::functionTermConstruct>
 {
     void operator()(
-        FunctionParserModuleSemantics& mgr,
+        FunctionParserModuleTermSemantics& mgr,
         const boost::fusion::vector2<
             dlvhex::ID,
             boost::optional<dlvhex::Tuple>
@@ -542,6 +542,8 @@ struct sem<FunctionParserModuleSemantics::functionTerm>
         ID& target) {
         RegistryPtr reg = mgr.ctx.registry();
 
+target = ID::termFromInteger(10);
+/*
         Tuple args;
         args.push_back(reg->storeConstantTerm("functionInterprete"));
         args.push_back(boost::fusion::at_c<0>(source));
@@ -551,80 +553,199 @@ struct sem<FunctionParserModuleSemantics::functionTerm>
             args.push_back(arg);
         }
         Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, args, reg);
-        t.updateSymbolOfNestedTerm(&(*reg));
-
         target = reg->storeTerm(t);
+*/
+    }
+};
+
+class FunctionParserModuleAtomSemantics:
+public HexGrammarSemantics
+{
+    public:
+        FunctionPlugin::CtxData& ctxdata;
+
+    public:
+        FunctionParserModuleAtomSemantics(ProgramCtx& ctx):
+        HexGrammarSemantics(ctx),
+        ctxdata(ctx.getPluginData<FunctionPlugin>()) {
+        }
+
+        // use SemanticActionBase to redirect semantic action call into globally
+        // specializable sem<T> struct space
+        struct functionTermEval:
+        SemanticActionBase<FunctionParserModuleAtomSemantics, ID, functionTermEval>
+        {
+            functionTermEval(FunctionParserModuleAtomSemantics& mgr):
+            functionTermEval::base_type(mgr) {
+            }
+        };
+};
+
+// create semantic handler for above semantic action
+// (needs to be in globally specializable struct space)
+template<>
+struct sem<FunctionParserModuleAtomSemantics::functionTermEval>
+{
+    void operator()(
+        FunctionParserModuleAtomSemantics& mgr,
+        const boost::fusion::vector3<
+            dlvhex::ID,
+            dlvhex::ID,
+            boost::optional<dlvhex::Tuple>
+            >& source,
+        ID& target) {
+        RegistryPtr reg = mgr.ctx.registry();
+
+        ExternalAtom functionInterprete(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+        Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "functionInterprete");
+        functionInterprete.predicate = reg->storeTerm(exPred);
+
+        functionInterprete.tuple.push_back(boost::fusion::at_c<0>(source)); // output term
+        functionInterprete.inputs.push_back(boost::fusion::at_c<1>(source)); // function object
+        Tuple tup;
+        if (!!boost::fusion::at_c<1>(source)) tup = boost::fusion::at_c<2>(source).get(); // arguments
+        BOOST_FOREACH (ID inp, tup){
+            functionInterprete.inputs.push_back(inp);
+        }
+
+        target = reg->eatoms.storeAndGetID(functionInterprete);
     }
 };
 
 namespace
 {
-
     template<typename Iterator, typename Skipper>
-        struct FunctionParserModuleGrammarBase:
+        struct FunctionParserModuleTermGrammarBase:
     // we derive from the original hex grammar
     // -> we can reuse its rules
     public HexGrammarBase<Iterator, Skipper>
     {
         typedef HexGrammarBase<Iterator, Skipper> Base;
 
-        FunctionParserModuleSemantics& sem;
+        FunctionParserModuleTermSemantics& sem;
 
-        FunctionParserModuleGrammarBase(FunctionParserModuleSemantics& sem):
+        FunctionParserModuleTermGrammarBase(FunctionParserModuleTermSemantics& sem):
         Base(sem),
         sem(sem) {
-            typedef FunctionParserModuleSemantics Sem;
+            typedef FunctionParserModuleTermSemantics Sem;
 
-            functionTerm
-                = (qi::lit('$') >> Base::term >> qi::lit('(') > -Base::terms >> qi::lit(')') > qi::eps) [ Sem::functionTerm(sem) ];
+            functionTermConstruct
+                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
-            BOOST_SPIRIT_DEBUG_NODE(functionTerm);
+            BOOST_SPIRIT_DEBUG_NODE(functionTermConstruct);
             #endif
         }
 
-        qi::rule<Iterator, ID(), Skipper> functionTerm;
+        qi::rule<Iterator, ID(), Skipper> functionTermConstruct;
     };
 
-    struct FunctionParserModuleGrammar:
-    FunctionParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
+    struct FunctionParserModuleTermGrammar:
+    FunctionParserModuleTermGrammarBase<HexParserIterator, HexParserSkipper>,
     // required for interface
     // note: HexParserModuleGrammar =
     //       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
         HexParserModuleGrammar
     {
-        typedef FunctionParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
+        typedef FunctionParserModuleTermGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
         typedef HexParserModuleGrammar QiBase;
 
-        FunctionParserModuleGrammar(FunctionParserModuleSemantics& sem):
+        FunctionParserModuleTermGrammar(FunctionParserModuleTermSemantics& sem):
         GrammarBase(sem),
-        QiBase(GrammarBase::functionTerm) {
+        QiBase(GrammarBase::functionTermConstruct) {
         }
     };
-    typedef boost::shared_ptr<FunctionParserModuleGrammar>
-        FunctionParserModuleGrammarPtr;
+    typedef boost::shared_ptr<FunctionParserModuleTermGrammar>
+        FunctionParserModuleTermGrammarPtr;
 
-    // moduletype = HexParserModule::TOPLEVEL
     template<enum HexParserModule::Type moduletype>
-    class FunctionParserModule:
+    class FunctionParserModuleTerm:
     public HexParserModule
     {
         public:
             // the semantics manager is stored/owned by this module!
-            FunctionParserModuleSemantics sem;
+            FunctionParserModuleTermSemantics sem;
             // we also keep a shared ptr to the grammar module here
-            FunctionParserModuleGrammarPtr grammarModule;
+            FunctionParserModuleTermGrammarPtr grammarModule;
 
-            FunctionParserModule(ProgramCtx& ctx):
+            FunctionParserModuleTerm(ProgramCtx& ctx):
             HexParserModule(moduletype),
             sem(ctx) {
-                LOG(INFO,"constructed FunctionParserModule");
+                LOG(INFO,"constructed FunctionParserModuleTerm");
             }
 
             virtual HexParserModuleGrammarPtr createGrammarModule() {
                 assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
-                grammarModule.reset(new FunctionParserModuleGrammar(sem));
-                LOG(INFO,"created FunctionParserModuleGrammar");
+                grammarModule.reset(new FunctionParserModuleTermGrammar(sem));
+                LOG(INFO,"created FunctionParserModuleTermGrammar");
+                return grammarModule;
+            }
+    };
+
+    template<typename Iterator, typename Skipper>
+        struct FunctionParserModuleAtomGrammarBase:
+    // we derive from the original hex grammar
+    // -> we can reuse its rules
+    public HexGrammarBase<Iterator, Skipper>
+    {
+        typedef HexGrammarBase<Iterator, Skipper> Base;
+
+        FunctionParserModuleAtomSemantics& sem;
+
+        FunctionParserModuleAtomGrammarBase(FunctionParserModuleAtomSemantics& sem):
+        Base(sem),
+        sem(sem) {
+            typedef FunctionParserModuleAtomSemantics Sem;
+
+            functionTermEval
+                = (qi::lit('$') >> Base::primitiveTerm >> qi::lit('=') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermEval(sem) ];
+
+            #ifdef BOOST_SPIRIT_DEBUG
+            BOOST_SPIRIT_DEBUG_NODE(functionTermEval);
+            #endif
+        }
+
+        qi::rule<Iterator, ID(), Skipper> functionTermEval;
+    };
+
+    struct FunctionParserModuleAtomGrammar:
+    FunctionParserModuleAtomGrammarBase<HexParserIterator, HexParserSkipper>,
+    // required for interface
+    // note: HexParserModuleGrammar =
+    //       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
+        HexParserModuleGrammar
+    {
+        typedef FunctionParserModuleAtomGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
+        typedef HexParserModuleGrammar QiBase;
+
+        FunctionParserModuleAtomGrammar(FunctionParserModuleAtomSemantics& sem):
+        GrammarBase(sem),
+        QiBase(GrammarBase::functionTermEval) {
+        }
+    };
+    typedef boost::shared_ptr<FunctionParserModuleAtomGrammar>
+        FunctionParserModuleAtomGrammarPtr;
+
+    template<enum HexParserModule::Type moduletype>
+    class FunctionParserModuleAtom:
+    public HexParserModule
+    {
+        public:
+            // the semantics manager is stored/owned by this module!
+            FunctionParserModuleAtomSemantics sem;
+            // we also keep a shared ptr to the grammar module here
+            FunctionParserModuleAtomGrammarPtr grammarModule;
+
+            FunctionParserModuleAtom(ProgramCtx& ctx):
+            HexParserModule(moduletype),
+            sem(ctx) {
+                LOG(INFO,"constructed FunctionParserModuleAtom");
+            }
+
+            virtual HexParserModuleGrammarPtr createGrammarModule() {
+                assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
+                grammarModule.reset(new FunctionParserModuleAtomGrammar(sem));
+                LOG(INFO,"created FunctionParserModuleAtomGrammar");
                 return grammarModule;
             }
     };
@@ -643,7 +764,9 @@ FunctionPlugin::createParserModules(ProgramCtx& ctx)
     FunctionPlugin::CtxData& ctxdata = ctx.getPluginData<FunctionPlugin>();
     if( ctxdata.parser ) {
         ret.push_back(HexParserModulePtr(
-            new FunctionParserModule<HexParserModule::TERM>(ctx)));
+            new FunctionParserModuleTerm<HexParserModule::TERM>(ctx)));
+        ret.push_back(HexParserModulePtr(
+            new FunctionParserModuleAtom<HexParserModule::BODYATOM>(ctx)));
     }
 
     return ret;

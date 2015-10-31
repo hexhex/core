@@ -941,21 +941,27 @@ sem(sem)
         | qi::lexeme[ ascii::upper >> *(ascii::alnum | qi::char_('_')) ];
     posinteger
         = qi::ulong_;
+    primitiveTerm
+        = cident     [ Sem::termFromCIdent(sem) ]
+        | string     [ Sem::termFromString(sem) ]
+        | variable   [ Sem::termFromVariable(sem) ]
+        | posinteger [ Sem::termFromInteger(sem) ];
     term
-        = ( cident >> qi::lit('(') >> -terms >> qi::lit(')') > qi::eps )     [ Sem::termFromFunctionTerm(sem) ]
+        = termExt
+        | ( cident >> qi::lit('(') >> -terms >> qi::lit(')') > qi::eps )     [ Sem::termFromFunctionTerm(sem) ]
+        // Replacing the following four alternatives by primitiveTerm does not work:
+        //    lt-dlvhex2: ../include/dlvhex2/ID.h:371: bool dlvhex::ID::isIntegerTerm() const: Assertion `isTerm()' failed.
+        // Is this a bug?
         | cident     [ Sem::termFromCIdent(sem) ]
         | string     [ Sem::termFromString(sem) ]
         | variable   [ Sem::termFromVariable(sem) ]
-        | posinteger [ Sem::termFromInteger(sem) ]
-        | termExt
-        ;
+        | posinteger [ Sem::termFromInteger(sem) ];
+
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
     terms
         = (term > qi::eps) % qi::lit(',');
-
     pred
         = cident     [ Sem::predFromNameOnly(sem) ];
-
     preds
         = (pred > qi::eps) % qi::lit(',');
 
@@ -1169,6 +1175,7 @@ sem(sem)
     BOOST_SPIRIT_DEBUG_NODE(variable);
     BOOST_SPIRIT_DEBUG_NODE(posinteger);
     BOOST_SPIRIT_DEBUG_NODE(term);
+    BOOST_SPIRIT_DEBUG_NODE(primitiveTerm);
     BOOST_SPIRIT_DEBUG_NODE(externalAtom);
     BOOST_SPIRIT_DEBUG_NODE(externalAtomPredicate);
     BOOST_SPIRIT_DEBUG_NODE(externalAtomPropertyString);
