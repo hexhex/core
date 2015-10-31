@@ -1,0 +1,36 @@
+% constants are evaluated to themselves
+resConst(R) :- &functionInterprete[hello](R).
+
+% integers refer to parameters
+resArg(R) :- &functionInterprete[2, dlv, hex](R).
+
+% functions refer to external atoms and can be nested
+resPrim(R) :- &functionInterprete[testConcat(1, 2), a, b](R).
+resPrim2(R) :- &functionInterprete[testConcat(1, testConcat(x, 3)), a, b, c](R).
+
+% functionInterprete creates a new scope with new local variables
+resFI(X) :- &functionInterprete[functionInterprete(testConcat(1, 2), 1, 3), x, y, z](X).
+
+% functions may be stored in variables
+funcConcat(F) :- F=testConcat(1, 2).
+resFunctional(X) :- funcConcat(F), &functionInterprete[F, x, y](X).
+
+% functions may be passed as argument
+funcConcat2(F2) :- funcConcat(F), &idc[F](F2).
+resFunctional2(X) :- funcConcat2(F), &functionInterprete[F, v, u](X).
+
+%testRewriting(R) :- funcConcat(F), R=$ F(1,2).
+
+% TODO: Rewriting
+% 
+% Rewrite expressions of form
+%    X(V1, ..., Vn)
+% where X is a variable to
+%    functionInterprete(X, V1, ..., Vn)
+% 
+% and
+% 
+% expressions of form
+%    R=$functionInterprete(...)
+% to
+%    &functionInterprete[...](R)

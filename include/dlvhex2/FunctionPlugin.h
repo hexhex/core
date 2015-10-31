@@ -54,6 +54,9 @@ public PluginInterface
             /** \brief True to rewrite function symbols to external atoms and false to handle them natively. */
             bool rewrite;
 
+            /** \brief Enable parser for functionals. */
+            bool parser;
+
             CtxData();
             virtual ~CtxData() {};
     };
@@ -72,6 +75,9 @@ public PluginInterface
         // processes options for this plugin, and removes recognized options from pluginOptions
         // (do not free the pointers, the const char* directly come from argv)
         virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
+
+        // create parser modules that extend and the basic hex grammar
+        virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
         // rewrite program by adding auxiliary constraints
         virtual PluginRewriterPtr createRewriter(ProgramCtx&);

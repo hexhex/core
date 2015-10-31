@@ -57,7 +57,7 @@ namespace spirit = boost::spirit;
 namespace qi = boost::spirit::qi;
 
 FunctionPlugin::CtxData::CtxData():
-maxArity(1), rewrite(false)
+maxArity(1), rewrite(false), parser(false)
 {
 }
 
@@ -82,6 +82,8 @@ void FunctionPlugin::printUsage(std::ostream& o) const
         << "                      Maximum number of output terms in functionDecompose." << std::endl
         << "     --function-rewrite" << std::endl
         << "                      Rewrite function symbols to external atoms." << std::endl;
+//        << "     --function-functionals" << std::endl
+//        << "                      Enable support for functionals (experimental).";
 }
 
 
@@ -108,6 +110,10 @@ ProgramCtx& ctx)
         }
         if( boost::starts_with(str, "--function-rewrite") ) {
             ctxdata.rewrite = true;
+            processed = true;
+        }
+        if( boost::starts_with(str, "--function-functionals") ) {
+            ctxdata.parser = true;
             processed = true;
         }
 
@@ -427,30 +433,221 @@ class FunctionInterprete : public PluginAtom
         retrieve(const Query& query, Answer& answer) throw (PluginError) {
             Registry &registry = *getRegistry();
 
-            Term functionDef = registry.terms.getByID(query.input[0]);
-            if (!functionDef.isNestedTerm() || functionDef.arguments.size() == 0) {
-                throw PluginError("Argument to &functionInterprete must be a nested term specifying a function name and its arguments");
+            /*
+                Algorithm:
+
+                  switch input[0]
+                    nested term with eval function
+                      evaluate arg[0] recursively with input[arg[1]] ... input[arg[n]]
+                    nested term with primitive function
+                      evaluate all args recursively with input[0]=arg same input[1..n]
+                      call primitive function on args
+                    #nr
+                      return input[nr]
+                    constant
+                      return constant
+            */
+
+            // nested function interpretation
+            if (query.input[0].isNestedTerm() && registry.terms.getByID(registry.terms.getByID(query.input[0]).arguments[0]).symbol == "functionInterprete") {
+                // evaluate recursively; change the input according to the input list (new scope)
+                Query query2 = query;
+                Tuple input2;
+                input2.push_back(registry.terms.getByID(query.input[0]).arguments[1]);
+                for (int i = 2; i < registry.terms.getByID(query.input[0]).arguments.size(); ++i){
+                    if (registry.terms.getByID(query.input[0]).arguments[i].isIntegerTerm()){
+                        input2.push_back(query.input[registry.terms.getByID(query.input[0]).arguments[i].address]);
+                    }else{
+                        input2.push_back(registry.terms.getByID(query.input[0]).arguments[i]);
+                    }
+                }
+                query2.input = input2;
+                retrieve(query2, answer);
+            }else if (query.input[0].isNestedTerm()) {
+                // primitive function
+
+                // evaluate arguments
+                Tuple args;
+                for (int i = 1; i < registry.terms.getByID(query.input[0]).arguments.size(); ++i) {
+                    Query query2 = query;
+                    query2.input[0] = registry.terms.getByID(query.input[0]).arguments[i];
+                    Answer answer2;
+                    retrieve(query2, answer2);
+                    args.push_back(answer2.get()[0][0]);
+                }
+
+                // call function
+                std::string functionName = registry.terms.getByID(registry.terms.getByID(query.input[0]).arguments[0]).symbol;
+                if (this->ctx->pluginAtomMap().find(functionName) == this->ctx->pluginAtomMap().end()) {
+                    throw PluginError("Function \"" + functionName + "\" is not defined");
+                }
+                PluginAtomPtr pa = this->ctx->pluginAtomMap().find(functionName)->second;
+                Tuple empty;
+                PluginAtom::Query nquery(query.ctx, InterpretationPtr(), args, empty, query.eatomID);
+                PluginAtom::Answer nanswer;
+                pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), InterpretationPtr(new Interpretation(getRegistry())));
+
+                // transfer answer
+                if (nanswer.get().size() != 1) throw PluginError("Function must return exactly one value");
+                answer.get().push_back(nanswer.get()[0]);
+            }else if (query.input[0].isIntegerTerm()){
+                Tuple t;
+                t.push_back(query.input[query.input[0].address]);
+                answer.get().push_back(t);
+            }else if (query.input[0].isConstantTerm()){
+                Tuple t;
+                t.push_back(query.input[0]);
+                answer.get().push_back(t);
+            }else{
+                assert(false && "Error: Unknown parameter type");
             }
-
-            std::string functionName = registry.terms.getByID(functionDef.arguments[1]).symbol;
-            Tuple args;
-            for (int i = 2; i < functionDef.arguments.size(); ++i) args.push_back(functionDef.arguments[i]);
-
-            // call function
-            if (this->ctx->pluginAtomMap().find(functionName) == this->ctx->pluginAtomMap().end()) {
-                throw PluginError("Function \"" + functionName + "\" is not defined");
-            }
-            PluginAtomPtr pa = this->ctx->pluginAtomMap().find(functionName)->second;
-            Tuple empty;
-            PluginAtom::Query nquery(query.ctx, InterpretationPtr(), args, empty, query.eatomID);
-            PluginAtom::Answer nanswer;
-            pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), InterpretationPtr(new Interpretation(getRegistry())));
-
-            // transfer answer
-            if (nanswer.get().size() != 1) throw PluginError("Function must return exactly one value");
-            answer.get().push_back(nanswer.get()[0]);
         }
 };
+
+
+class FunctionParserModuleSemantics:
+public HexGrammarSemantics
+{
+    public:
+        FunctionPlugin::CtxData& ctxdata;
+
+    public:
+        FunctionParserModuleSemantics(ProgramCtx& ctx):
+        HexGrammarSemantics(ctx),
+        ctxdata(ctx.getPluginData<FunctionPlugin>()) {
+        }
+
+        // use SemanticActionBase to redirect semantic action call into globally
+        // specializable sem<T> struct space
+        struct functionTerm:
+        SemanticActionBase<FunctionParserModuleSemantics, ID, functionTerm>
+        {
+            functionTerm(FunctionParserModuleSemantics& mgr):
+            functionTerm::base_type(mgr) {
+            }
+        };
+};
+
+// create semantic handler for above semantic action
+// (needs to be in globally specializable struct space)
+template<>
+struct sem<FunctionParserModuleSemantics::functionTerm>
+{
+    void operator()(
+        FunctionParserModuleSemantics& mgr,
+        const boost::fusion::vector2<
+            dlvhex::ID,
+            boost::optional<dlvhex::Tuple>
+            >& source,
+        ID& target) {
+        RegistryPtr reg = mgr.ctx.registry();
+
+        Tuple args;
+        args.push_back(reg->storeConstantTerm("functionInterprete"));
+        args.push_back(boost::fusion::at_c<0>(source));
+        Tuple tup;
+        if (!!boost::fusion::at_c<1>(source)) tup = boost::fusion::at_c<1>(source).get();
+        BOOST_FOREACH (ID arg, tup){
+            args.push_back(arg);
+        }
+        Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, args, reg);
+        t.updateSymbolOfNestedTerm(&(*reg));
+
+        target = reg->storeTerm(t);
+    }
+};
+
+namespace
+{
+
+    template<typename Iterator, typename Skipper>
+        struct FunctionParserModuleGrammarBase:
+    // we derive from the original hex grammar
+    // -> we can reuse its rules
+    public HexGrammarBase<Iterator, Skipper>
+    {
+        typedef HexGrammarBase<Iterator, Skipper> Base;
+
+        FunctionParserModuleSemantics& sem;
+
+        FunctionParserModuleGrammarBase(FunctionParserModuleSemantics& sem):
+        Base(sem),
+        sem(sem) {
+            typedef FunctionParserModuleSemantics Sem;
+
+            functionTerm
+                = (qi::lit('$') >> Base::term >> qi::lit('(') > -Base::terms >> qi::lit(')') > qi::eps) [ Sem::functionTerm(sem) ];
+
+            #ifdef BOOST_SPIRIT_DEBUG
+            BOOST_SPIRIT_DEBUG_NODE(functionTerm);
+            #endif
+        }
+
+        qi::rule<Iterator, ID(), Skipper> functionTerm;
+    };
+
+    struct FunctionParserModuleGrammar:
+    FunctionParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
+    // required for interface
+    // note: HexParserModuleGrammar =
+    //       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
+        HexParserModuleGrammar
+    {
+        typedef FunctionParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
+        typedef HexParserModuleGrammar QiBase;
+
+        FunctionParserModuleGrammar(FunctionParserModuleSemantics& sem):
+        GrammarBase(sem),
+        QiBase(GrammarBase::functionTerm) {
+        }
+    };
+    typedef boost::shared_ptr<FunctionParserModuleGrammar>
+        FunctionParserModuleGrammarPtr;
+
+    // moduletype = HexParserModule::TOPLEVEL
+    template<enum HexParserModule::Type moduletype>
+    class FunctionParserModule:
+    public HexParserModule
+    {
+        public:
+            // the semantics manager is stored/owned by this module!
+            FunctionParserModuleSemantics sem;
+            // we also keep a shared ptr to the grammar module here
+            FunctionParserModuleGrammarPtr grammarModule;
+
+            FunctionParserModule(ProgramCtx& ctx):
+            HexParserModule(moduletype),
+            sem(ctx) {
+                LOG(INFO,"constructed FunctionParserModule");
+            }
+
+            virtual HexParserModuleGrammarPtr createGrammarModule() {
+                assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
+                grammarModule.reset(new FunctionParserModuleGrammar(sem));
+                LOG(INFO,"created FunctionParserModuleGrammar");
+                return grammarModule;
+            }
+    };
+
+}                                // anonymous namespace
+
+
+// create parser modules that extend and the basic hex grammar
+// this parser also stores the query information into the plugin
+std::vector<HexParserModulePtr>
+FunctionPlugin::createParserModules(ProgramCtx& ctx)
+{
+    DBGLOG(DBG,"FunctionPlugin::createParserModules()");
+    std::vector<HexParserModulePtr> ret;
+
+    FunctionPlugin::CtxData& ctxdata = ctx.getPluginData<FunctionPlugin>();
+    if( ctxdata.parser ) {
+        ret.push_back(HexParserModulePtr(
+            new FunctionParserModule<HexParserModule::TERM>(ctx)));
+    }
+
+    return ret;
+}
 
 std::vector<PluginAtomPtr> FunctionPlugin::createAtoms(ProgramCtx& ctx) const
 {
