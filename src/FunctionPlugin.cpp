@@ -563,7 +563,8 @@ struct sem<FunctionParserModuleTermSemantics::functionTermConstruct>
             args.push_back(arg);
         }
         Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED, args, reg);
-        ID tID = reg->storeTerm(t);
+		ID tID = reg->terms.getIDByString(t.symbol);
+		if (tID == ID_FAIL) tID = reg->terms.storeAndGetID(t);
         target = tID;
     }
 };

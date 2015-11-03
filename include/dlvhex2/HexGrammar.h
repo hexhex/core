@@ -196,6 +196,7 @@ class DLVHEX_EXPORT HexGrammarSemantics
             name(HexGrammarSemantics& mgr): name ::base_type(mgr) {} \
         };
 
+        DLVHEX_DEFINE_SEMANTIC_ACTION(termId, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromCIdent, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromFunctionTerm, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromInteger, ID);

@@ -76,6 +76,14 @@ HexParserSkipperGrammar::base_type(ws)
 // HexGrammarBase semantic processors ///////////////////////////
 /////////////////////////////////////////////////////////////////
 template<>
+struct sem<HexGrammarSemantics::termId>
+{
+    void operator()(HexGrammarSemantics& mgr, const ID& source, ID& target) {
+        target = source;
+    }
+};
+
+template<>
 struct sem<HexGrammarSemantics::termFromCIdent>
 {
     void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target) {
@@ -947,15 +955,9 @@ sem(sem)
         | variable   [ Sem::termFromVariable(sem) ]
         | posinteger [ Sem::termFromInteger(sem) ];
     term
-        = termExt
+        = termExt                                                            [ Sem::termId(sem) ]   // termId is a workaround: for some reason the value of the subexpression must be explicitly copied, otherwise term evaluates to ID_FAIL
         | ( cident >> qi::lit('(') >> -terms >> qi::lit(')') > qi::eps )     [ Sem::termFromFunctionTerm(sem) ]
-        // Replacing the following four alternatives by primitiveTerm does not work:
-        //    lt-dlvhex2: ../include/dlvhex2/ID.h:371: bool dlvhex::ID::isIntegerTerm() const: Assertion `isTerm()' failed.
-        // Is this a bug?
-        | cident     [ Sem::termFromCIdent(sem) ]
-        | string     [ Sem::termFromString(sem) ]
-        | variable   [ Sem::termFromVariable(sem) ]
-        | posinteger [ Sem::termFromInteger(sem) ];
+        | primitiveTerm                                                      [ Sem::termId(sem) ];
 
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
     terms
