@@ -17,9 +17,6 @@
     <ClCompile Include="..\..\src\ASPSolverManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\AsynchronousModelGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\Atoms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -497,9 +494,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\dlvhex2\ASPSolverManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\dlvhex2\AsynchronousModelGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="config.h">

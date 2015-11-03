@@ -89,7 +89,6 @@
     <ClCompile Include="..\..\src\ASPSolverManager.cpp" />
     <ClCompile Include="..\..\src\ASPSolver_dlv.cpp" />
     <ClCompile Include="..\..\src\ASPSolver_libclingo.cpp" />
-    <ClCompile Include="..\..\src\AsynchronousModelGenerator.cpp" />
     <ClCompile Include="..\..\src\Atoms.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\..\include;$(SolutionDir)\..\bm3.7.0;$(SolutionDir)\..\buildclaspgringo\clasp\libclasp;$(SolutionDir)\..\buildclaspgringo\clasp\libprogram_opts;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -160,7 +159,6 @@
     <ClInclude Include="..\..\include\dlvhex2\AnswerSetPrinterCallback.h" />
     <ClInclude Include="..\..\include\dlvhex2\ASPSolver.h" />
     <ClInclude Include="..\..\include\dlvhex2\ASPSolverManager.h" />
-    <ClInclude Include="..\..\include\dlvhex2\AsynchronousModelGenerator.h" />
     <ClInclude Include="..\..\include\dlvhex2\Atoms.h" />
     <ClInclude Include="..\..\include\dlvhex2\BaseModelGenerator.h" />
     <ClInclude Include="..\..\include\dlvhex2\Benchmarking.h" />

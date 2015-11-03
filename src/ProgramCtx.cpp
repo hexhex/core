@@ -152,7 +152,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("MinimizeNogoods", 0);
     config.setOption("MinimizeNogoodsOnConflict", 0);
 
-    #warning "TODO cleanup the setASPSoftware vs nGenuineSolver thing"
+    WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
     // but if we have genuinegc, take genuinegc as default
     #if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
     config.setOption("GenuineSolver", 4);
