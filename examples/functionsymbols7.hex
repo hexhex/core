@@ -18,11 +18,13 @@ resFunctional(X) :- funcConcat(F), &functionInterprete[F, x, y](X).
 % functions may be passed as argument
 funcConcat2(F2) :- funcConcat(F), &idc[F](F2).
 resFunctional2(X) :- funcConcat2(F), &functionInterprete[F, v, u](X).
-
 resFunctional3(X) :- funcConcat2(F), X=$F(v, u).
 
-%testRewriting1(R) :- funcConcat(F), R=#F(1,2).
-%testRewriting2(R) :- funcConcat(F), R=functionInterprete(F,1,2).
+% test rewriting
+testRewriting1(R) :- funcConcat(F), R=#F(1,2).
+testRewriting2(F) :- funcConcat(F), R=functionInterprete(F,1,2).
+resFunctiona4(X) :- testRewriting1(F), &functionInterprete[F, x, y](X).
+resFunctiona5(X) :- testRewriting2(F), &functionInterprete[F, x, y](X).
 
 
 
