@@ -8,4 +8,4 @@ y(2,3) :- unequal.
 
 :- not unequal.
 
-unequal :- &generalizedSubsetSum[p_x,y,16]().
+unequal :- &generalizedSubsetSum[p_x,y,5]().
