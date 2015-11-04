@@ -300,6 +300,24 @@ def satCheck(formula,trueAt):
 			# external atom is true
 			dlvhex.output(())
 
+def generalizedSubsetSum(x,y,b):
+	true = 0
+	false = 0
+	unknown = 0
+
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			true = true + int(x.tuple()[2].value())
+		elif x.isFalse():
+			false = false + int(x.tuple()[2].value())
+		else:
+			unknown = unknown + int(x.tuple()[2].value())
+
+	if true > b.intValue() or true + unknown < b.intValue():
+		dlvhex.output(())
+	elif true != b.intValue() or unknown != 0:
+		dlvhex.outputUnknown(())
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -369,3 +387,7 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	dlvhex.addAtom("satCheck", (dlvhex.CONSTANT, dlvhex.PREDICATE), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("generalizedSubsetSum", (dlvhex.PREDICATE, dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)

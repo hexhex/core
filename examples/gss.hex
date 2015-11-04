@@ -1,0 +1,11 @@
+x(1,1).
+x(2,2).
+
+p_x(X,Y) v n_x(X,Y) :- x(X,Y).
+
+y(1,2) :- unequal.
+y(2,3) :- unequal.
+
+:- not unequal.
+
+unequal :- &generalizedSubsetSum[p_x,y,16]().
