@@ -21,8 +21,6 @@ resFunctional2(X) :- funcConcat2(F), &functionInterprete[F, v, u](X).
 resFunctional3(X) :- funcConcat2(F), X=$F(v, u).
 
 % test rewriting
-%p(Z) :- &functionInterprete[testConcat(functionInterprete(testConcat(testConcat(#1,b),b),#1),a),x](Z).
-
 testRewriting1(R) :- funcConcat(F), R=#F(#1,#2).
 testRewriting2(F) :- funcConcat(F), R=functionInterprete(F,#1,#2).
 resFunctional4(X) :- testRewriting1(F), &functionInterprete[F, x, y](X).

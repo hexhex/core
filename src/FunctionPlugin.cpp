@@ -697,6 +697,10 @@ namespace
             virtual HexParserModuleGrammarPtr createGrammarModule() {
                 assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
                 grammarModule.reset(new FunctionParserModuleTermGrammar(sem));
+
+                // we need recursive support becauses the module parses terms which can contain subterms which are also parsed by this module
+                grammarModule->registerTermModule(grammarModule);
+
                 LOG(INFO,"created FunctionParserModuleTermGrammar");
                 return grammarModule;
             }
