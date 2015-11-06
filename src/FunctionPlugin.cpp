@@ -455,8 +455,8 @@ class FunctionInterprete : public PluginAtom
                 Tuple input2;
                 input2.push_back(registry.terms.getByID(query.input[0]).arguments[1]);
                 for (int i = 2; i < registry.terms.getByID(query.input[0]).arguments.size(); ++i){
-                    if (registry.terms.getByID(query.input[0]).arguments[i].isIntegerTerm()){
-                        input2.push_back(query.input[registry.terms.getByID(query.input[0]).arguments[i].address]);
+                    if (registry.terms.getByID(query.input[0]).arguments[i].isAuxiliary() && registry.getTypeByAuxiliaryConstantSymbol(registry.terms.getByID(query.input[0]).arguments[i]) == 'f'){
+                        input2.push_back(query.input[registry.getIDByAuxiliaryConstantSymbol(registry.terms.getByID(query.input[0]).arguments[i]).address]);
                     }else{
                         input2.push_back(registry.terms.getByID(query.input[0]).arguments[i]);
                     }
@@ -495,11 +495,7 @@ class FunctionInterprete : public PluginAtom
                 Tuple t;
                 t.push_back(query.input[registry.getIDByAuxiliaryConstantSymbol(query.input[0]).address]);
                 answer.get().push_back(t);
-            }else if (query.input[0].isIntegerTerm()){
-                Tuple t;
-                t.push_back(query.input[query.input[0].address]);
-                answer.get().push_back(t);
-            }else if (query.input[0].isConstantTerm() /*|| (query.input[0].isIntegerTerm())*/){
+            }else if (query.input[0].isConstantTerm() || (query.input[0].isIntegerTerm())){
                 Tuple t;
                 t.push_back(query.input[0]);
                 answer.get().push_back(t);
@@ -653,7 +649,7 @@ namespace
             typedef FunctionParserModuleTermSemantics Sem;
 
             functionTermConstruct
-                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ]
+                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> ((Base::term | functionTermConstruct) > qi::eps) % qi::lit(',') >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ]
                 | (qi::lit('#') >> Base::posinteger) [ Sem::functionTermConstructArg(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
