@@ -649,7 +649,7 @@ namespace
             typedef FunctionParserModuleTermSemantics Sem;
 
             functionTermConstruct
-                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> ((Base::term | functionTermConstruct) > qi::eps) % qi::lit(',') >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ]
+                = (qi::lit('#') >> Base::primitiveTerm >> qi::lit('(') >> Base::terms >> qi::lit(')')) [ Sem::functionTermConstruct(sem) ]
                 | (qi::lit('#') >> Base::posinteger) [ Sem::functionTermConstructArg(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
