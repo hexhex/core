@@ -1,0 +1,5 @@
+controlsStk(C1,C1,C2,P) :- ownsStk(C1,C2,P).
+
+controlsStk(C1,C2,C3,P) :- company(C1), controls(C1,C2), ownsStk(C2,C3,P).
+
+controls(C1,C2) :- company(C1), company(C2), &controls[controlsStk](C1,C2).
