@@ -318,6 +318,67 @@ def generalizedSubsetSum(x,y,b):
 	elif true != b.intValue() or unknown != 0:
 		dlvhex.outputUnknown(())
 
+def strategicConflict(conflicting,strategic):
+	trueList = []
+	falseList = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == strategic and x.isTrue():
+			trueList.append(x.tuple()[1])
+		elif x.tuple()[0] == strategic and x.isFalse():
+			falseList.append(x.tuple()[1])
+
+	for x in dlvhex.getTrueInputAtoms():
+		if x.tuple()[0] == conflicting:
+			if x.tuple()[1] in trueList and x.tuple()[2]:
+				dlvhex.output(())
+			elif x.tuple()[1] not in falseList and x.tuple()[2]:
+				dlvhex.outputUnknown(())
+
+def controls(controlsStk):
+	controlDict = dict()
+
+	for x in dlvhex.getTrueInputAtoms():
+		if x.tuple()[1].value() in controlDict:
+			if x.tuple()[3].value() in controlDict[x.tuple()[1].value()]:
+				newval = str(int(controlDict[x.tuple()[1].value()][x.tuple()[3].value()]) + int(x.tuple()[4].value()))
+				controlDict[x.tuple()[1].value()][x.tuple()[3].value()] = newval
+			else:
+				controlDict[x.tuple()[1].value()][x.tuple()[3].value()] = x.tuple()[4].value()
+		else:
+			controlDict[x.tuple()[1].value()] = dict()
+			controlDict[x.tuple()[1].value()][x.tuple()[3].value()] = x.tuple()[4].value()
+
+	unknownControlDict = dict()
+
+	for x in dlvhex.getInputAtoms():
+		if x not in dlvhex.getTrueInputAtoms():
+			if x.tuple()[1].value() in unknownControlDict:
+				if x.tuple()[3].value() in unknownControlDict[x.tuple()[1].value()]:
+					newval = str(int(unknownControlDict[x.tuple()[1].value()][x.tuple()[3].value()]) + int(x.tuple()[4].value()))
+					unknownControlDict[x.tuple()[1].value()][x.tuple()[3].value()] = newval
+				else:
+					unknownControlDict[x.tuple()[1].value()][x.tuple()[3].value()] = x.tuple()[4].value()
+			else:
+				unknownControlDict[x.tuple()[1].value()] = dict()
+				unknownControlDict[x.tuple()[1].value()][x.tuple()[3].value()] = x.tuple()[4].value()
+
+
+	for company1 in controlDict:
+		for company2 in controlDict[company1]:
+			if int(controlDict[company1][company2]) > 50:
+				dlvhex.output((company1,company2))
+
+	for company1 in unknownControlDict:
+		for company2 in unknownControlDict[company1]:
+			if company1 in controlDict and company2 in controlDict[company1]:
+				if int(unknownControlDict[company1][company2] + controlDict[company1][company2]) > 50:
+					dlvhex.outputUnknown((company1,company2))
+			else:
+				if int(unknownControlDict[company1][company2]) > 50:
+					dlvhex.outputUnknown((company1,company2))
+
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -391,3 +452,12 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	dlvhex.addAtom("generalizedSubsetSum", (dlvhex.PREDICATE, dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("strategicConflict", (dlvhex.PREDICATE, dlvhex.PREDICATE), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	dlvhex.addAtom("controls", (dlvhex.PREDICATE, ), 2, prop)

@@ -1,0 +1,15 @@
+strategic(X1) v strategic(X2) :- produced_by(X,X1,X2).
+strategic(W) :- controlsStk(_,_,W,_), not controller_missing_in_strategic(W).
+
+controller_missing_in_strategic(W) :- controlsStk(C1,_,W,_), not strategic(C1). 
+
+controlsStk(C1,C1,C2,P) :- ownsStk(C1,C2,P).
+controlsStk(C1,C2,C3,P) :- company(C1), controls(C1,C2), ownsStk(C2,C3,P).
+controls(C1,C2) :- company(C1), company(C2), &controls[controlsStk](C1,C2).
+
+ownsStk(X1,X2,50) :- produced_by(X,X1,X2).
+
+
+
+
+

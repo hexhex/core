@@ -1,0 +1,15 @@
+company(c1).
+company(c2).
+company(c3).
+company(c4).
+company(c5).
+produced_by(p1,c4,c4).
+produced_by(p2,c2,c4).
+produced_by(p3,c4,c1).
+produced_by(p4,c3,c5).
+produced_by(p5,c2,c3).
+produced_by(p6,c5,c5).
+produced_by(p7,c2,c1).
+produced_by(p8,c3,c3).
+produced_by(p9,c2,c3).
+produced_by(p10,c2,c5).
