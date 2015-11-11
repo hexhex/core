@@ -150,6 +150,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
 
     config.setStringOption("DumpEANogoods", "");
     config.setOption("MinimizeNogoods", 0);
+    config.setOption("MinimizeNogoodsOpt", 0);
     config.setOption("MinimizeNogoodsOnConflict", 0);
 
     WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")

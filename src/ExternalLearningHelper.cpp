@@ -275,7 +275,8 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
     if (nogoods) {
         DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
-        SimpleNogoodContainer newNogoods;
+        SimpleNogoodContainer newNogoodsContainer;
+	std::vector<std::pair<Nogood,ID>> newNogoods;
         
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
@@ -294,23 +295,26 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
 
             DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenednumber, "EA-Nogoods from weakened intr.", (weakenedPremiseLiterals > 0 ? 1 : 0));
             
-            if (query.ctx->config.getOption("MinimizeNogoods") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
-                newNogoods.addNogood(extNg);
+            if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+                newNogoodsContainer.addNogood(extNg);
+            } else if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+                std::pair<Nogood,ID> newNogood(extNgInput,oid);
+                newNogoods.push_back(newNogood);
             } else {
                 nogoods->addNogood(extNg);
             }
         }
 
-        if (query.ctx->config.getOption("MinimizeNogoods") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+        if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
             // iterate through all newly added nogoods
-            for (int i = 0; i < newNogoods.getNogoodCount(); ++i) {
-                if (newNogoods.getNogood(i).size() <= query.ctx->config.getOption("MinimizationSize")) {
+            for (int i = 0; i < newNogoodsContainer.getNogoodCount(); ++i) {
+                if (newNogoodsContainer.getNogood(i).size() <= query.ctx->config.getOption("MinimizationSize")) {
                     // copy the respective nogood
-                    Nogood testNg = newNogoods.getNogood(i);
+                    Nogood testNg = newNogoodsContainer.getNogood(i);
                     // store the ID of answer atom that should still be contained in answer after minimization
                     ID ansID;
 
-                    BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
+                    BOOST_FOREACH (ID& iid, newNogoodsContainer.getNogood(i)) {
                         if (query.ctx->registry()->ogatoms.getIDByAddress(iid.address).isExternalAuxiliary()) {
                             ansID = iid;
                         }
@@ -338,7 +342,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                         qa.assigned = assigned;
 
                         // iteratively remove each literal from nogood
-                        BOOST_FOREACH (ID& iid, newNogoods.getNogood(i)) {
+                        BOOST_FOREACH (ID& iid, newNogoodsContainer.getNogood(i)) {
                             // only for non-auxiliaries
                             if (iid != ansID) {
                                 PluginAtom::Answer ans;
@@ -372,10 +376,71 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                     // add minimized nogood
                     nogoods->addNogood(testNg);
                 } else {
-                    nogoods->addNogood(newNogoods.getNogood(i));
+                    nogoods->addNogood(newNogoodsContainer.getNogood(i));
                 }
             }
         }
+
+
+
+	if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {      
+        
+            BOOST_FOREACH (ID& iid, extNgInput) {
+                std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
+
+                for (int i = 0; i < newNogoods.size(); ++i) {
+                    if ((inputi->getFact(newNogoods[i].second.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict"))
+                            && (newNogoods[i].first.size() <= query.ctx->config.getOption("MinimizationSize"))) {
+                        Nogood testNg = newNogoods[i].first;
+
+                        testNg.erase(iid);
+
+                        PluginAtom::Answer ans;
+                        PluginAtom::Query qa = query;
+
+                        if (externalEvaluationsCache.find(testNg.getHash()) != externalEvaluationsCache.end()) {
+                            ans = externalEvaluationsCache[testNg.getHash()];
+                        } else {
+                            InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
+                            InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
+
+                            // only add true atoms from nogood to the query interpretation
+                            set_iterator<ID> it = testNg.begin();
+                            while (it != testNg.end()) {
+                                if (!it->isNaf()) {
+                                    interpretation->setFact(it->address);
+                                }
+                                assigned->setFact(it->address);
+                                it++;
+                            }
+
+                            qa.interpretation = interpretation;
+                            qa.assigned = assigned;
+
+                            // query
+                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+
+                            externalEvaluationsCache[testNg.getHash()] = ans;
+                        }
+                        // get all answer atoms
+                        Set<ID> ansout = ExternalLearningHelper::getOutputAtoms(qa, ans, false);
+                        // and check if expected answer is still contained
+                        if(ansout.contains(newNogoods[i].second)) {
+                            newNogoods[i].first = testNg;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < newNogoods.size(); ++i) {
+                Nogood newNg = newNogoods[i].first;
+                newNg.insert(newNogoods[i].second);
+                nogoods->addNogood(newNg);
+            }
+        }
+
+
+
     }
 }
 

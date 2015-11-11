@@ -1565,8 +1565,17 @@ Config& config, ProgramCtx& pctx)
                     if (heur == "always") {
                         pctx.config.setOption("MinimizeNogoods", 1);
                     }
-                    else  if (heur == "onconflict") {
+                    else if (heur == "onconflict") {
                         pctx.config.setOption("MinimizeNogoods", 1);
+                        pctx.config.setOption("MinimizeNogoodsOnConflict", 1);
+                    } 
+		    else if (heur == "alwaysopt") {
+                        pctx.config.setOption("MinimizeNogoods", 1);
+			pctx.config.setOption("MinimizeNogoodsOpt", 1);
+                    }
+                    else if (heur == "onconflictopt") {
+                        pctx.config.setOption("MinimizeNogoods", 1);
+			pctx.config.setOption("MinimizeNogoodsOpt", 1);
                         pctx.config.setOption("MinimizeNogoodsOnConflict", 1);
                     }
                     else {
