@@ -624,7 +624,16 @@ std::vector<ID>& ufsProgram)
 
         // Compute the set of problem variables: this is the set of all atoms which (1) occur in the head of some rule; or (2) are external atom auxiliaries
         BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
-        BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
+        BOOST_FOREACH (ID b, rule.body) {
+            domain->setFact(b.address);
+
+            if(b.isExternalAuxiliary()) {
+                assert(agp.mapsAux(b.address) && "mapping of auxiliary to EA not found");
+                const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
+                ea.updatePredicateInputMask();
+                domain->getStorage() |= ea.getPredicateInputMask()->getStorage();
+            }
+        }
 
         // Create two unique predicates and atoms for this rule
         OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_ATOM_HIDDEN);
@@ -1221,7 +1230,16 @@ void AssumptionBasedUnfoundedSetChecker::constructDomain()
         const Rule& rule = reg->rules.getByID(ruleID);
         if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
         BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
-        BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
+        BOOST_FOREACH (ID b, rule.body) {
+            domain->setFact(b.address);
+        
+            if(b.isExternalAuxiliary()) {
+                assert(agp.mapsAux(b.address) && "mapping of auxiliary to EA not found");
+                const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
+                ea.updatePredicateInputMask();
+                domain->getStorage() |= ea.getPredicateInputMask()->getStorage();
+            }
+        }
     }
 }
 
