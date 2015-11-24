@@ -300,6 +300,96 @@ def satCheck(formula,trueAt):
 			# external atom is true
 			dlvhex.output(())
 
+
+
+def pseudoBoolean(formula,trueAt):	
+	import re
+
+	# read dimacs file:
+	file = open(formula.value()[1:-1])
+	
+	# parse content of file into list
+	conjs = []
+
+	for line in file:
+		disjs = []
+		literals = line.split()[:-1]
+		# lines starting with 'p' or 'c' are ignored, according to dimacs
+		if literals[0] != 'p' and literals[0] != 'c':
+			for lit in literals:
+				if lit[0] != '>':
+					product = lit.split('*')
+					# a literal is stored in a two element list, separating negation and atom
+					if product[1][0] == '-':
+						disjs.append([product[0],'-',product[1][1:]])
+					else:
+						disjs.append([product[0],'',product[1]])
+				else:
+					result = lit[2:]
+			conjs.append([disjs,result])
+
+	file.close()
+
+	# store partial evaluation of input atoms:	
+	atoms = dlvhex.getInputAtoms()
+	atomVal = dict()
+	
+	# get only atom names with regexp
+	regex = re.compile('\w*\((\w*)\)')
+
+	for a in atoms:
+		at = regex.match(a.value()).group(1)
+		if a.isTrue():
+			atomVal[at] = 'true'
+		elif a.isFalse():
+			atomVal[at] = 'false'
+		else:
+			atomVal[at] = 'unknown'
+
+	
+	# check if sat formula is already known to be either true or false:
+	cFalse = False
+	cUnknown = False
+	for disjs in conjs:
+		dTrue = False
+		dUnknown = False
+
+		trueSum = 0
+		unknownSum = 0
+		for lit in disjs[0]:
+			# if one literal in clause is true, the clause is true
+			if (lit[1] != '-' and atomVal[lit[2]] == 'true') \
+				or (lit[1] == '-' and atomVal[lit[2]] == 'false'):
+				trueSum += int(lit[0])
+			# if one literal in clause is unknown, the clause is not known to be false yet
+			elif atomVal[lit[2]] == 'unknown':
+				unknownSum += int(lit[0])
+
+		if trueSum >= int(disjs[1]):
+			dTrue = True
+		elif trueSum + unknownSum >= int(disjs[1]):
+			dUnknown = True
+		
+		# if all the literals in a clause are false, the formula is false
+		if not dTrue and not dUnknown:
+			cFalse = True
+		# if the truth value of a clause is unknown, the formula could still evaluate to false
+		elif not dTrue:
+			cUnknown = True
+
+	# if the clause evaluates to false, the external atom is false, otherwise:
+	if not cFalse:
+		if cUnknown:
+			# external atom can be true
+			dlvhex.outputUnknown(())
+		else:
+			# external atom is true
+			dlvhex.output(())
+
+
+
+
+
 def generalizedSubsetSum(x,y,b):
 	true = 0
 	false = 0
@@ -448,6 +538,10 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	dlvhex.addAtom("satCheck", (dlvhex.CONSTANT, dlvhex.PREDICATE), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("pseudoBoolean", (dlvhex.CONSTANT, dlvhex.PREDICATE), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
