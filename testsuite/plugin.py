@@ -420,9 +420,9 @@ def strategicConflict(conflicting,strategic):
 
 	for x in dlvhex.getTrueInputAtoms():
 		if x.tuple()[0] == conflicting:
-			if x.tuple()[1] in trueList and x.tuple()[2]:
+			if (x.tuple()[1] in falseList) or (x.tuple()[2] in falseList):
 				dlvhex.output(())
-			elif x.tuple()[1] not in falseList and x.tuple()[2]:
+			elif (x.tuple()[1] not in trueList) or (x.tuple()[2] not in trueList):
 				dlvhex.outputUnknown(())
 
 def controls(controlsStk):
