@@ -300,12 +300,10 @@ def satCheck(formula,trueAt):
 			# external atom is true
 			dlvhex.output(())
 
-
-
 def pseudoBoolean(formula,trueAt):	
 	import re
 
-	# read dimacs file:
+	# read formula from file:
 	file = open(formula.value()[1:-1])
 	
 	# parse content of file into list
@@ -386,10 +384,6 @@ def pseudoBoolean(formula,trueAt):
 			# external atom is true
 			dlvhex.output(())
 
-
-
-
-
 def generalizedSubsetSum(x,y,b):
 	true = 0
 	false = 0
@@ -420,9 +414,9 @@ def strategicConflict(conflicting,strategic):
 
 	for x in dlvhex.getTrueInputAtoms():
 		if x.tuple()[0] == conflicting:
-			if (x.tuple()[1] in falseList) or (x.tuple()[2] in falseList):
+			if (x.tuple()[1] in trueList) and (x.tuple()[2] in trueList):
 				dlvhex.output(())
-			elif (x.tuple()[1] not in trueList) or (x.tuple()[2] not in trueList):
+			elif (x.tuple()[1] not in falseList) and (x.tuple()[2] not in falseList):
 				dlvhex.outputUnknown(())
 
 def controls(controlsStk):
