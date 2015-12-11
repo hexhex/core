@@ -543,6 +543,8 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
 	dlvhex.addAtom("strategicConflict", (dlvhex.PREDICATE, dlvhex.PREDICATE), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
