@@ -2551,6 +2551,38 @@ public:
 };
 
 
+    class SumNonZeroAtom : public PluginAtom
+    {
+        public:
+            SumNonZeroAtom() : PluginAtom("sumD0", 1)
+            {
+                addInputPredicate();
+                setOutputArity(1);
+            }
+      
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+    
+                int sum = 0;
+                int pos = query.interpretation.get()->getStorage().get_first();
+                while (pos != 0){
+                    const OrdinaryAtom& oatom = registry.ogatoms.getByAddress(pos);
+                    if(oatom.tuple[1].address == 0)
+                        sum += oatom.tuple[2].address;
+                    else
+                        sum -= oatom.tuple[2].address;
+                    pos = query.interpretation.get()->getStorage().get_next(pos);
+                }
+        
+                Tuple out;
+                out.push_back(ID::termFromInteger(sum == 0 ? 0 : 1));
+                answer.get().push_back(out);
+            }
+    };
+
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2608,6 +2640,7 @@ public:
           ret.push_back(PluginAtomPtr(new TestNumberOfBalls, PluginPtrDeleter<PluginAtom>()));
           ret.push_back(PluginAtomPtr(new TestNumberOfBallsSE, PluginPtrDeleter<PluginAtom>()));
           ret.push_back(PluginAtomPtr(new TestNumberOfBallsGE, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new SumNonZeroAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
