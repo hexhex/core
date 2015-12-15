@@ -1204,9 +1204,9 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
                 ID id = ctx.registry()->storeTerm(term);
                 assert(id != ID_FAIL);
                 assert(!id.isVariableTerm());
-                if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-                if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
-                if( id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
+                if( symidx == 0 && id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+                if( symidx == 0 && id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
+                if( symidx == 0 && id.isExternalInputAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
                 ogatom.tuple.push_back(id);
 
                 lastsymbolstart = symbolstarts[symidx];

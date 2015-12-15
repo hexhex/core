@@ -476,7 +476,7 @@ InterpretationConstPtr interpretation)
             // (ii) alternatively: collect the truth values of all atoms relevant to the external atoms in the rule body
             bool extFound = false;
             BOOST_FOREACH (ID b, rule.body) {
-                if (!b.isExternalAuxiliary()) {
+                if (mode == Ordinary || !b.isExternalAuxiliary()) {
                     // this atom is satisfied by the interpretation (otherwise we had already foundInd),
                     // therefore there must be another (external) atom which is false under I u -X
                     // ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
@@ -627,7 +627,7 @@ std::vector<ID>& ufsProgram)
         BOOST_FOREACH (ID b, rule.body) {
             domain->setFact(b.address);
 
-            if(b.isExternalAuxiliary()) {
+            if(mode == WithExt && b.isExternalAuxiliary()) {
                 assert(agp.mapsAux(b.address) && "mapping of auxiliary to EA not found");
                 const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
                 ea.updatePredicateInputMask();
@@ -1090,9 +1090,7 @@ std::vector<IDAddress> EncodingBasedUnfoundedSetChecker::getUnfoundedSet(Interpr
     }
 
     // we need the the compatible set with and without auxiliaries
-    DBGLOG(DBG, "1");
     InterpretationConstPtr compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
-    DBGLOG(DBG, "1");
 
     #ifndef NDEBUG
     std::stringstream programstring;
@@ -1233,7 +1231,7 @@ void AssumptionBasedUnfoundedSetChecker::constructDomain()
         BOOST_FOREACH (ID b, rule.body) {
             domain->setFact(b.address);
         
-            if(b.isExternalAuxiliary()) {
+            if(mode == WithExt && b.isExternalAuxiliary()) {
                 assert(agp.mapsAux(b.address) && "mapping of auxiliary to EA not found");
                 const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
                 ea.updatePredicateInputMask();
