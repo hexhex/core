@@ -462,6 +462,13 @@ def controls(controlsStk):
 				if int(unknownControlDict[company1][company2]) > 50:
 					dlvhex.outputUnknown((company1,company2))
 
+def greaterOrEqual(p, idx, bound):
+	sum = 0
+	for x in dlvhex.getTrueInputAtoms():
+		if x.tuple()[0] == p:
+			sum += x.tuple()[idx.intValue()].intValue()
+	if sum >= bound.intValue():
+		dlvhex.output(())
 
 def date():
 	from datetime import datetime
@@ -551,3 +558,5 @@ def register():
 	prop.setProvidesPartialAnswer(True)
 	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("controls", (dlvhex.PREDICATE, ), 2, prop)
+
+	dlvhex.addAtom("greaterOrEqual", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT), 0)

@@ -1,0 +1,33 @@
+#maxint=20.
+
+% We want to visit a set of locations in an arbitrary order.
+location(furniturestore).
+location(dentist).
+location(supermarket).
+
+loccnt(4).
+
+cost(furniturestore, dentist, 3).
+cost(furniturestore, supermarket, 2).
+cost(furniturestore, restaurant, 4).
+cost(dentist, supermarket, 2).
+cost(dentist, restaurant, 5).
+cost(supermarket, restaurant, 3).
+
+cost(Y, X, C) :- cost(X, Y, C).
+
+% Guess a sequence of locations.
+seq(I, L) v nseq(I, L) :- location(L), loccnt(N), #int(I), I <= N.
+
+% Visit all locations exactly once
+:- location(L), #count{ I : seq(I, L) } != 1.
+
+% no gaps and no multiple locations at the same time
+:- seq(I, L), I2 <= I, #int(I), #int(I2), #count{ L2 : seq(I2, L2) } != 1.
+
+% If the tour is longer than a given limit, we also want to stop at a restaurant.
+actcost(C, L1, L2) :- seq(I1, L1), seq(I2, L2), I2 = I1 + 1, cost(L1, L2, C).
+%mustVisitRestaurant v notMustVisitRestaurant.
+mustVisitRestaurant :- &greaterOrEqual[actcost, 1, 5]().
+%notMustVisitRestaurant :- not &greaterOrEqual[actcost, 1, 5]().
+location(restaurant) :- mustVisitRestaurant. 

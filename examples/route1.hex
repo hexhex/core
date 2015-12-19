@@ -1,0 +1,24 @@
+#maxint=2.
+
+% A family wants to visit a restaurant, a furniture store and the dentist.
+% Only one person needs to see the dentist.
+location(restaurant).
+%location(furniturestore).
+location(dentist).
+
+% Guess a sequence of locations.
+seq(I, L) v -seq(I, L) :- location(L), #int(I).
+
+% Visit all locations, no two locations at the same time, no two visity of the same location, no gaps.
+visited(L) :- seq(I, L).
+:- location(L), not visited(L).
+:- seq(I, L1), seq(I, L2), L1 != L2.
+:- seq(I1, L), seq(I2, L), I1 != I2.
+haveLoc(I) :- seq(I, L).
+:- haveLoc(I), not haveLoc(II), I = II + 1.
+
+% If the restaurant is visited before the dentist, then the affected family member is not allowed to eat
+% there. Thus, (only) in this case also the supermarket must be visited (at any point in the sequence)
+% to get some instant meal for later.
+mustVisitSupermarket :- seq(I1, restaurant), seq(I2, dentist), I1 < I2.
+location(supermarket) :- mustVisitSupermarket.
