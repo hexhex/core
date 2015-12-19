@@ -22,7 +22,7 @@ location(restaurant) v nlocation(restaurant).
 % Guess a sequence of locations.
 seq(I, L) v nseq(I, L) :- location(L), loccnt(N), #int(I), I <= N.
 
-% Visit all locations exactly once
+% Visit all locations exactly once.
 :- location(L), #count{ I : seq(I, L) } != 1.
 
 % no gaps and no multiple locations at the same time
