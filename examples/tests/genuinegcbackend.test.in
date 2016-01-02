@@ -1,5 +1,5 @@
 3col.hex 3col.out --solver=genuinegc
-csv1.hex csv1.out --csvinput=p,csv1.csv --csvoutput=q --solver=dlv
+csv1.hex csv1.out --csvinput=p,@abs_top_srcdir@/examples/csv1.csv --csvoutput=q --solver=genuinegc
 agg1.hex agg1.out --solver=genuinegc --aggregate-enable --aggregate-mode=native
 agg2.hex agg2.out --solver=genuinegc --aggregate-enable --aggregate-mode=native
 agg3.hex agg3.out --nofacts --solver=genuinegc --aggregate-enable --aggregate-mode=native

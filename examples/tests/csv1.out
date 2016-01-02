@@ -1,1 +1,2 @@
-{p(0,a,b,c),p(1,1,x,"h\"e;l\\lo world"),q(0,a,c,b),q(1,1,"h\"e;l\\lo world",x)}
+a;c;b
+1;"h\"el;lo\\ world";x
