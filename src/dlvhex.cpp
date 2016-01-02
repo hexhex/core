@@ -136,6 +136,7 @@
 #include "dlvhex2/PluginContainer.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/AnswerSetPrinterCallback.h"
 #include "dlvhex2/State.h"
 #include "dlvhex2/EvalGraphBuilder.h"
 #include "dlvhex2/EvalHeuristicBase.h"
@@ -254,6 +255,13 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "     --noeval         Just parse the program, don't evaluate it (only useful with --verbose)." << std::endl
         << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
         << "     --keepauxpreds   Keep auxiliary predicates in answer sets." << std::endl
+        << "     --csvinput=PREDICATE,FILENAME" << std::endl
+        << "                      Read from the given file in CVS format and add each line as fact" << std::endl
+        << "                      in over the specified predicate (the original line number is added as first argument)." << std::endl
+        << "     --cvsoutput=PREDICATE" << std::endl
+        << "                      Print the extension of the specified predicate in CVS format." << std::endl
+        << "                      They are sorted by their first argument (should be numeric)." << std::endl
+        << "                      Answer Sets are separated by empty lines." << std::endl
 
         << std::endl << "Plugin Options:" << std::endl
         << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
@@ -844,6 +852,8 @@ Config& config, ProgramCtx& pctx)
         { "dumpeanogoods", required_argument, 0, 57 },
         { "ngminimization", required_argument, 0, 58 },
         { "ngminimizationlimit", required_argument, 0, 59 },
+        { "csvinput", required_argument, 0, 60 },
+        { "csvoutput", required_argument, 0, 61 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -851,6 +861,9 @@ Config& config, ProgramCtx& pctx)
     pctx.config.setOption("NoPropagator", 0);
     pctx.defaultExternalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
     pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
+
+    // start with new input provider
+    pctx.inputProvider.reset(new InputProvider);
 
     bool specifiedModelQueueSize = false;
     bool defiaux = false;
@@ -1600,7 +1613,22 @@ Config& config, ProgramCtx& pctx)
                     }
                     pctx.config.setOption("MinimizationSize", minval);
                 }
-                break;                
+                break;   
+            case 60:
+                {
+                    std::string arg(optarg);
+                    if (arg.find(',', 0) == std::string::npos) throw GeneralError(std::string("Argument of \"--csvinput\" must be of type \"PREDICATE,FILENAME\""));
+                    std::string pred = arg.substr(0, arg.find(',', 0));
+                    std::string filename = arg.substr(arg.find(',', 0) + 1);
+                    pctx.inputProvider->addCSVFileInput(pred, filename);
+                }
+                break;
+            case 61:
+                {
+                    std::string pred(optarg);
+                    pctx.modelCallbacks.push_back(ModelCallbackPtr(new CSVAnswerSetPrinterCallback(pctx, pred)));
+                }
+                break;
         }
     }
 
@@ -1658,9 +1686,6 @@ Config& config, ProgramCtx& pctx)
     configurePluginPath(config.optionPlugindir);
 
     // check input files (stdin, file, or URI)
-
-    // start with new input provider
-    pctx.inputProvider.reset(new InputProvider);
 
     // stdin requested, append it first
     if( std::string(argv[optind - 1]) == "--" )
@@ -1763,11 +1788,7 @@ void configurePluginPath(std::string& userPlugindir)
 }
 
 
-// vim:expandtab:sw=4:ts=4:
-
-
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
-
 

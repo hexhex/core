@@ -129,6 +129,67 @@ AnswerSetPtr as)
     return true;
 }
 
+CSVAnswerSetPrinterCallback::CSVAnswerSetPrinterCallback(ProgramCtx& ctx, const std::string& predicate) : firstas(true)
+{
+    RegistryPtr reg = ctx.registry();
+
+    filterpm.reset(new PredicateMask);
+
+    // setup mask with registry
+    filterpm->setRegistry(reg);
+
+    // setup mask with predicates
+    ID pred = reg->storeConstantTerm(predicate);
+    filterpm->addPredicate(pred);
+}
+
+bool CSVAnswerSetPrinterCallback::operator()(
+AnswerSetPtr as)
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
+
+    // uses the Registry to print the interpretation, including
+    // possible influence from AuxiliaryPrinter objects (if any are registered)
+
+    Interpretation::Storage::enumerator it, it_end;
+
+    RegistryPtr reg = as->interpretation->getRegistry();
+                                 // must be in this scope!
+    Interpretation::Storage filteredbits;
+    assert( !!filterpm && "filter must always be defined in CSV format" );
+
+    filterpm->updateMask();
+    filteredbits =
+        as->interpretation->getStorage() & filterpm->mask()->getStorage();
+    it = filteredbits.first();
+    it_end = filteredbits.end();
+
+    std::ostream& o = std::cout;
+    if (!firstas) o << std::endl;
+    firstas = false;
+
+    typedef std::pair<IDAddress, IDAddress> OT;
+    std::vector<OT> output;
+    while( it != it_end ) {
+        const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*it);
+        if (oatom.tuple.size() < 3) throw GeneralError("Atoms which define CSV output must have an arity of 2 or greater.");
+        output.push_back(OT(oatom.tuple[1].address, *it));
+        ++it;
+    }
+    std::sort(output.begin(), output.end());
+    bool first = true;
+    BOOST_FOREACH (OT outputElement, output){
+        const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(outputElement.second);
+        if (!first) o << std::endl;
+        first = false;
+        for (int i = 2; i < oatom.tuple.size(); ++i) o << (i > 2 ? ";" : "") << printToString<RawPrinter>(oatom.tuple[i], reg);
+    }
+
+    o << std::endl;
+
+    // never abort
+    return true;
+}
 
 DLVHEX_NAMESPACE_END
 

@@ -641,8 +641,10 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
     ctx->benchmarksToSnapshotAtFirstModel.insert(std::make_pair("Candidate compatible sets", "CandCompat sets to first model"));
 
     // default model outputting callback
-    ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(*ctx));
-    ctx->modelCallbacks.push_back(asprinter);
+    if (ctx->modelCallbacks.size() == 0){
+        ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(*ctx));
+        ctx->modelCallbacks.push_back(asprinter);
+    }
 
     // setup printing of auxiliaries
     if( 1 == ctx->config.getOption("KeepAuxiliaryPredicates") ) {

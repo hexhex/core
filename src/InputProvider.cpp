@@ -101,6 +101,30 @@ void InputProvider::addFileInput(const std::string& filename)
     pimpl->contentNames.push_back(filename);
 }
 
+void InputProvider::addCSVFileInput(const std::string& predicate, const std::string& filename)
+{
+    std::ifstream ifs;
+    ifs.open(filename.c_str());
+
+    std::string line;
+    int lineNr = 0;
+    while (std::getline(ifs, line)) {
+        // replace unquoted semicolons by commas
+        bool quote = false;
+        for (int i = 0; i < line.length(); ++i){
+            if (!quote && line[i] == ';') line[i] = ',';
+            if (line[i] == '\"') quote = !quote;
+            if (line[i] == '\\') ++i;
+        }
+        // construct fact for this line
+        pimpl->stream << predicate << "(" << lineNr << "," << line << ").";
+
+        ++lineNr;
+    }
+
+    ifs.close();
+    pimpl->contentNames.push_back(filename);
+}
 
 #ifdef HAVE_CURL
 void InputProvider::addURLInput(const std::string& url)

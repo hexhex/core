@@ -1,3 +1,11 @@
+2016-01-02  Christoph Redl <redl@kr.tuwien.ac.at>
+	* dlvhex.cpp: Add options --csvinput and --csvoutput to allow
+	easy processing of CSV files.
+	* include/dlvhex2/AnswerSetPrinterCallback.h: Likewise.
+	* src/AnswerSetPrinterCallback.cpp: Likewise.
+	* include/dlvhex2/InputProvider.h: Likewise.
+	* src/InputProvider.cpp: Likewise.
+
 2015-05-06  Christoph Redl <redl@kr.tuwien.ac.at>
 	* build_potassco.sh: Upgrade to clasp 3.1.2 and gringo 4.5.1.
 	* checkout_build_potassco.sh: Likewise.

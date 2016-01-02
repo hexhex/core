@@ -61,6 +61,29 @@ public ModelCallback
         PredicateMaskPtr filterpm;
 };
 
+/** \brief Printer for (parts of) answer sets in CVS format. */
+class CSVAnswerSetPrinterCallback:
+public ModelCallback
+{
+    public:
+        /** \brief Constructor.
+         * @param ctx ProgramCtx. */
+        CSVAnswerSetPrinterCallback(ProgramCtx& ctx, const std::string& predicate);
+        /**
+         * \brief Method called for each answer set of the program.
+         *
+         * @param model Pointer to the current answer set.
+         * @return True continues the model generation process, false stops the model generation process.
+         */
+        virtual bool operator()(AnswerSetPtr model);
+
+    protected:
+        /** \brief Mask representing the set of all atoms which specify CVS output. */
+        PredicateMaskPtr filterpm;
+        /** \brief True until first answer set was printed. */
+        bool firstas;
+};
+
 DLVHEX_NAMESPACE_END
 #endif                           // ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
 

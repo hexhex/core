@@ -64,9 +64,15 @@ class DLVHEX_EXPORT InputProvider
          * @param contentname Unique name for this input. */
         void addStringInput(const std::string& content, const std::string& contentname);
         /** \brief Add input from a file.
-         * @param filename File to read from.
-         * @param contentname Unique name for this input. */
+         * @param filename File to read from. */
         void addFileInput(const std::string& filename);
+        /** \brief Add input from a file in CSV format.
+         * 
+         * Each line in the CSV file is stored as tuple in the extension of a given predicate,
+         * where the first element is the line number in the original file.
+         * @param filename CSV file to read from (semicolon-separated).
+         * @param predicate Predicate used to store the CSV content. */
+        void addCSVFileInput(const std::string& predicate, const std::string& filename);
     #ifdef HAVE_CURL
         /** \brief Add input from a URL.
          * @param url URL to read from.
