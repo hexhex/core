@@ -1,4 +1,5 @@
 3col.hex 3col.out --solver=dlv
+csv1.hex csv1.out --csvinput=p,csv1.csv --solver=dlv
 agg1.hex agg1.out --solver=dlv
 agg2.hex agg2.out --solver=dlv
 # TODO hexhex/core issue 3 wellfounded does not terminate agg3.hex agg3.out --nofacts --solver=dlv
@@ -115,3 +116,4 @@ module-Hanoi.mlp module-Hanoi.out --mlp --solver=dlv
 module-Complex.mlp module-Complex.out --mlp --solver=dlv
 module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=dlv
 module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=dlv
+
