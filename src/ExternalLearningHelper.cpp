@@ -507,6 +507,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         // containers for storing nogoods that still have to be minimized 
         SimpleNogoodContainer newNogoodsContainer;
         std::map<ID, Tuple> externalAuxiliaryTable;
+        std::vector<std::pair<Nogood,ID>> newNogoods;
 
         // iterate over negative output atoms
         bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().first();
@@ -576,9 +577,15 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                             // store the output tuples of the external auxiliary atom for minimization queries
                             ID externalAuxiliaryID = NogoodContainer::createLiteral(posAtomID.address);
                             externalAuxiliaryTable[externalAuxiliaryID] = t;
-
-                            ng.insert(externalAuxiliaryID);
-                            newNogoodsContainer.addNogood(ng);
+                            
+                            if (query.ctx->config.getOption("MinimizeNogoodsOpt")) {
+                                // if answers w.r.t. the inputs should be cached, input and output atoms have to be stored separately
+                                std::pair<Nogood,ID> newNogood(extNgInput,externalAuxiliaryID);
+                                newNogoods.push_back(newNogood);
+                            } else {
+                                ng.insert(externalAuxiliaryID);
+                                newNogoodsContainer.addNogood(ng);
+                            }
                         } else {
                             ng.insert(NogoodContainer::createLiteral(posAtomID.address));
                             nogoods->addNogood(ng);
@@ -592,7 +599,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         }
         
         // nogood minimization without caching answers of external atom
-        if (query.ctx->config.getOption("MinimizeNogoods") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+        if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
             // iterate through all newly added nogoods
             for (int i = 0; i < newNogoodsContainer.getNogoodCount(); ++i) {
                 if (newNogoodsContainer.getNogood(i).size() <= query.ctx->config.getOption("MinimizationSize")) {
@@ -666,6 +673,67 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                 } else {
                     nogoods->addNogood(newNogoodsContainer.getNogood(i));
                 }
+            }
+        }
+        
+        // nogood minimization with caching answers of external atom:
+	if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {      
+        
+            BOOST_FOREACH (ID& iid, extNgInput) {
+                // cache for answers of external atom
+                std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
+
+                for (int i = 0; i < newNogoods.size(); ++i) {
+                    if ((inputi->getFact(newNogoods[i].second.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict"))
+                            && (newNogoods[i].first.size() <= query.ctx->config.getOption("MinimizationSize"))) {
+                        Nogood testNg = newNogoods[i].first;
+
+                        testNg.erase(iid);
+
+                        PluginAtom::Answer ans;
+                        PluginAtom::Query qa = query;
+
+                        if (externalEvaluationsCache.find(testNg.getHash()) != externalEvaluationsCache.end()) {
+                            ans = externalEvaluationsCache[testNg.getHash()];
+                        } else {
+                            InterpretationPtr interpretation(new Interpretation(query.interpretation->getRegistry()));
+                            InterpretationPtr assigned(new Interpretation(query.interpretation->getRegistry()));
+
+                            // only add true atoms from nogood to the query interpretation
+                            set_iterator<ID> it = testNg.begin();
+                            while (it != testNg.end()) {
+                                if (!it->isNaf()) {
+                                    interpretation->setFact(it->address);
+                                }
+                                assigned->setFact(it->address);
+                                it++;
+                            }
+
+                            qa.interpretation = interpretation;
+                            qa.assigned = assigned;
+
+                            // query
+                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+
+                            externalEvaluationsCache[testNg.getHash()] = ans;
+                        }
+
+                        Tuple t = externalAuxiliaryTable[newNogoods[i].second];
+
+                        // check if answer tuple is still false
+                        if ((std::find(ans.get().begin(), ans.get().end(), t) == ans.get().end()) &&
+                           (std::find(ans.getUnknown().begin(), ans.getUnknown().end(), t) == ans.getUnknown().end())) {
+                            newNogoods[i].first = testNg;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < newNogoods.size(); ++i) {
+                Nogood newNg = newNogoods[i].first;
+                newNg.insert(newNogoods[i].second);
+                DBGLOG(DBG, "Learned minimized nogood " << newNg.getStringRepresentation(query.ctx->registry()) << " from input-output behavior");
+                nogoods->addNogood(newNg);
             }
         }
     }
