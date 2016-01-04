@@ -1,3 +1,17 @@
+2016-01-04  Tobias Kaminski <kaminski@kr.tuwien.ac.at>
+	* src/ClaspSolver.cpp: Fixed bug regarding option --claspdefernprop
+	* src/UnfoundedSetChecker.cpp: Fixed bug in UFS check
+	* dlvhex.cpp: Add options --ngminimization and --ngminimizationlimit
+	to control the minimization of nogoods learned from input-output
+	behavior.
+	* src/ProgramCtx.cpp: Likewise.
+	* src/ExternalLearningHelper.cpp: Likewise.
+	* src/PluginInterface.cpp: Implementation of conflict nogood detection.
+	* include/dlvhex2/PluginInterface.h: Likewise.
+	* include/dlvhex2/ExternalLearningHelper.h: Likewise.
+	* src/BaseModelGenerator.cpp: Likewise.
+	* include/dlvhex2/BaseModelGenerator.h: Likewise.
+
 2016-01-02  Christoph Redl <redl@kr.tuwien.ac.at>
 	* dlvhex.cpp: Add options --csvinput and --csvoutput to allow
 	easy processing of CSV files.
