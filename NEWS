@@ -2,7 +2,9 @@ dlvhex NEWS -- history of user-visible changes.
 
 * Version 2.5.0 (??)
 
+** External atom semantics was extended such that they may be evaluated under partial assignments (performance improvements).
 ** Extended Python plugin API.
+** Support for input and output in CSV format.
 ** Support for choice rules.
 ** Support for conditional literals.
 ** Support aggregates with multi-component symbolic sets.
