@@ -12,7 +12,7 @@ if test -e clasp; then
 	fi
 else
 	echo "checking out clasp"
-  svn co $POTASSCO_REPOROOT/tags/clasp-3.1.1 clasp
+  svn co $POTASSCO_REPOROOT/tags/clasp-3.1.4 clasp
 	mkdir -p clasp/build/release
 	echo "configuring clasp"
 	pushd clasp
@@ -34,7 +34,7 @@ if test -e gringo; then
 	fi
 else
 	echo "checking out gringo";
-  svn co $POTASSCO_REPOROOT/tags/gringo-4.4.0 gringo
+  svn co $POTASSCO_REPOROOT/tags/gringo-4.5.4 gringo
   mkdir -p gringo/build/release
 fi
 
