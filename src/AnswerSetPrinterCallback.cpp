@@ -182,7 +182,11 @@ AnswerSetPtr as)
         const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(outputElement.second);
         if (!first) o << std::endl;
         first = false;
-        for (int i = 2; i < oatom.tuple.size(); ++i) o << (i > 2 ? ";" : "") << printToString<RawPrinter>(oatom.tuple[i], reg);
+        for (int i = 2; i < oatom.tuple.size(); ++i) {
+            o << (i > 2 ? ";" : "");
+            if (oatom.tuple[i].isIntegerTerm()) o << oatom.tuple[i].address;
+            else o << reg->terms.getByID(oatom.tuple[i]).getUnquotedString();
+        }
     }
 
     o << std::endl;

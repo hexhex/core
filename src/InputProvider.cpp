@@ -110,14 +110,40 @@ void InputProvider::addCSVFileInput(const std::string& predicate, const std::str
     int lineNr = 0;
     while (std::getline(ifs, line)) {
         // replace unquoted semicolons by commas
-        bool quote = false;
-        for (int i = 0; i < line.length(); ++i){
-            if (!quote && line[i] == ';') line[i] = ',';
-            if (line[i] == '\"') quote = !quote;
-            if (line[i] == '\\') ++i;
+        bool firstChar = true;
+        bool addQuotes = false;
+        bool escaped = false;
+        pimpl->stream << predicate << "(" << lineNr << ",";
+        for (int i = 0; i <= line.length(); ++i){
+            // decide type of argument
+            if (firstChar && !(line[i] >= '0' && line[i] <= '9')) {
+                addQuotes = true;
+                pimpl->stream << "\"";
+            }
+            firstChar = false;
+
+            // detect end of argument
+            if ((line[i] == ';' || line[i] == 0) && !escaped){
+                if (addQuotes) pimpl->stream << "\"";
+                if (line[i] != 0) pimpl->stream << ",";
+                addQuotes = false;
+                firstChar = true;
+            }
+
+            // escape sequence
+            else if (line[i] == '\\' && !escaped) {
+                pimpl->stream << line[i];
+                escaped = true;
+            }
+
+            // output ordinary character
+            else if (line[i] != 0){
+                pimpl->stream << line[i];
+                escaped = false;
+            }
         }
         // construct fact for this line
-        pimpl->stream << predicate << "(" << lineNr << "," << line << ").";
+        pimpl->stream << ").";
 
         ++lineNr;
     }
