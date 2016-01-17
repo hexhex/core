@@ -143,7 +143,7 @@ function buildPlugin {
     echo -e "===> Build"
 
     # Build plugin
-    make #&> $OUTPUT_IO
+    make &> $OUTPUT_IO
     if [ $? -ne 0 ]; then
       echo -e "===> ${T_ERROR} Error building library"
     else
