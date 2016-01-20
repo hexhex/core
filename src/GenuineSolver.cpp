@@ -236,18 +236,20 @@ void GenuineSolver::removePropagator(PropagatorCallback* pb)
     solver->removePropagator(pb);
 }
 
+Nogood GenuineSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms)
+{
+    solver->getInconsistencyCause(explanationAtoms);
+}
 
 void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen)
 {
     solver->addProgram(program, frozen);
 }
 
-
 void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
 {
     solver->addNogoodSet(ns, frozen);
 }
-
 
 DLVHEX_NAMESPACE_END
 

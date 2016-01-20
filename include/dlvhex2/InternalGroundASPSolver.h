@@ -270,6 +270,7 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
          */
         InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
         virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
         virtual void restartWithAssumptions(const std::vector<ID>& assumptions);

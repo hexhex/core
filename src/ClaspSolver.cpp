@@ -1576,6 +1576,9 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum)
     delete []newopt;
 }
 
+Nogood ClaspSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
+    throw GeneralError("Not implemented");
+}
 
 InterpretationPtr ClaspSolver::getNextModel()
 {

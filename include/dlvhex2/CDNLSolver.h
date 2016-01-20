@@ -311,12 +311,13 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
          * @param ns Instance as NogoodSet.
          */
         CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
-        virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
         virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
         virtual void addPropagator(PropagatorCallback* pb);
         virtual void removePropagator(PropagatorCallback* pb);
         virtual InterpretationPtr getNextModel();
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
+        virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
         virtual void addNogood(Nogood ng);
 
         /**

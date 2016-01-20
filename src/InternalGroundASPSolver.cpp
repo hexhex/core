@@ -942,6 +942,9 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
     throw GeneralError("Internal grounder does not support incremental extension of the program");
 }
 
+Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
+    throw GeneralError("Not implemented");
+}
 
 void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
 {

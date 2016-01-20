@@ -87,7 +87,7 @@ class DLVHEX_EXPORT GenuineGrounder
          *
          * @param ctx ProgramCtx.
          * @param program OrdinaryASPProgram to be grounded.
-         * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their trutz values are relevant);
+         * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant);
          * if NULL, then all variables are frozen.
          * @return Pointer to the new grounder instance.
          */
@@ -157,6 +157,34 @@ class DLVHEX_EXPORT GenuineGroundSolver : virtual public NogoodContainer, public
          * @param frozen A set of atoms which occur in \p ns and are saved from being optimized away (e.g. because their truth values are relevant).
          */
         virtual void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr()) = 0;
+
+        /**
+         * \brief Returns an explanation for an inconsistency in terms of litervals over the atoms given in \p explanationAtoms.
+         *
+         * Let A be the set of \p explanationAtoms. Let further P be the program with IDB I and EDB E.
+         * A \emph proto-explanation X is a subset of A such that
+         * for any program P' with IDB I and EDB E', where E' coincides with E on all atoms which are (i) not in A or (ii) in X, is inconsistent.
+         * That is, X guarantees the inconsistency all programs with the same IDB I and the same EDB over atoms other than A,
+         * while facts over atoms in A but not in X are not relevant for inconsistency.
+         * (Note that set A itself is always a proto-explanation for an inconsistent program P because then the only
+         * possible P' is P itself.)
+         *
+         * Example: A proto-explanation of the Program
+         * \code
+         * a. b.
+         * :- a, not c.
+         * \endcode
+         * wrt. A={a,b,c} is X={a,c} because any program with the same IDB, fact a and c not being a fact is inconsistent
+         * (while b might be removed as a fact and the program is still inconsistent).
+         *
+         * An explanation is a proto-explanation X if all atoms in X are turned into signed literals,
+         * where the sign is positive of it is a fact in P and negative otherwise.
+         *  
+         * The method may only be called after getNextModel() has returned a NULL-pointer after first call.
+         * @param explanationAtoms The atoms which serve as explanation.
+         * @return An explanation for the inconsistency depending on the atoms in \p explanationAtoms.
+         */
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms) = 0;
 
         /**
          * \brief Adds a set of nogoods to the solver.
@@ -239,6 +267,7 @@ class DLVHEX_EXPORT GenuineSolver : public GenuineGrounder, public GenuineGround
         void addPropagator(PropagatorCallback* pb);
         void removePropagator(PropagatorCallback* pb);
         void addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen = InterpretationConstPtr());
+        Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
         void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
         /**
