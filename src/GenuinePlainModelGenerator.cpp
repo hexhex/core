@@ -274,6 +274,13 @@ GenuinePlainModelGenerator::generateNextModel()
     if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
     InterpretationPtr modelCandidate = solver->getNextModel();
 
+	// test inconsistency explanations
+    //PredicateMaskPtr explAtoms(new PredicateMask());
+    //explAtoms->setRegistry(factory.ctx.registry());
+    //explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+    //explAtoms->updateMask();
+	//if (!modelCandidate) solver->getInconsistencyCause(explAtoms->mask());
+
     DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
     return modelCandidate;
 }

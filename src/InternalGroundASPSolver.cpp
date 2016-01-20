@@ -943,7 +943,72 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
 }
 
 Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
-    throw GeneralError("Not implemented");
+
+    if (contradictoryNogoods.size() > 0) {
+        // start from the conflicting nogood
+        Nogood violatedNogood = nogoodset.getNogood(*(contradictoryNogoods.begin()));
+
+#ifndef NDEBUG
+        // create debug output graph
+        std::stringstream debugoutput;
+		debugoutput << "getInconsistencyCause starting from nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
+#endif
+
+        // resolve back to explanationAtoms
+        std::vector<ID> removeLits;
+        int resolveWithNogoodIndex = -1;
+        ID resolvedLiteral = ID_FAIL;
+        do {
+            removeLits.clear();
+            resolveWithNogoodIndex = -1;
+            resolvedLiteral = ID_FAIL;
+            // 1. check if the violated nogood contains implied literals; in this case mark for resolving
+            // 2. check if the violated nogood contains not implied literals other than from explanationAtoms; in this case mark for removal
+		    BOOST_FOREACH (ID lit, violatedNogood) {
+                // check if there are literals other than from explanationAtoms
+                if (!explanationAtoms->getFact(lit.address)) {
+                    // if it is an implied literal, resolve with it's reason, otherwise it is a fact and we remove it
+				    if (cause[lit.address] != -1 && resolveWithNogoodIndex != -1){
+                        resolveWithNogoodIndex = cause[lit.address];
+                        resolvedLiteral = lit;
+				    }else{
+                        removeLits.push_back(lit);
+                    }
+                }
+			}
+            // remove the literals marked for removal (actually, since removal from vectors is expensive, create a new vector but skip removed literals)
+            Nogood newNogood;
+            int nextRemovedLit = 0;
+			BOOST_FOREACH (ID lit, violatedNogood){
+				if (lit == removeLits[nextRemovedLit]){
+                    nextRemovedLit++;
+                    if (nextRemovedLit == removeLits.size()) break;
+				}else{
+                    // keep
+                    newNogood.insert(lit);
+                }
+            }
+            // possibly resolve
+            if (resolveWithNogoodIndex != -1){
+                violatedNogood = resolve(newNogood, nogoodset.getNogood(resolveWithNogoodIndex), resolvedLiteral.address);
+#ifndef NDEBUG
+                debugoutput << "Removed facts other than explanation atoms: " << newNogood.getStringRepresentation(reg) << std::endl;
+				debugoutput << "Resolved with " << nogoodset.getNogood(resolveWithNogoodIndex).getStringRepresentation(reg) << ": " << violatedNogood.getStringRepresentation(reg) << std::endl;
+#endif
+			}else{
+                violatedNogood = newNogood;
+            }
+		}while(removeLits.size() > 0 || resolveWithNogoodIndex != -1);
+
+        // the nogood contains now only literals which have not been implied and which are from explanationAtoms
+#ifndef NDEBUG
+        debugoutput << "Final explanation nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
+        DBGLOG(DBG, debugoutput.str());
+#endif
+        return violatedNogood;
+	}else{
+        throw GeneralError("getInconsistencyCause can only be called for inconsistent instances after getNextModel() has returned NULL");
+    }
 }
 
 void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
