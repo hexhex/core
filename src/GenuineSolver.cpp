@@ -239,6 +239,7 @@ void GenuineSolver::removePropagator(PropagatorCallback* pb)
 Nogood GenuineSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms)
 {
     solver->getInconsistencyCause(explanationAtoms);
+	return Nogood();
 }
 
 void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen)

@@ -62,7 +62,7 @@ public ModelCallback
 };
 
 /** \brief Printer for (parts of) answer sets in CVS format. */
-class CSVAnswerSetPrinterCallback:
+class DLVHEX_EXPORT CSVAnswerSetPrinterCallback:
 public ModelCallback
 {
     public:
