@@ -270,7 +270,6 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
          */
         InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
         virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
-        std::string getImplicatoinGraphAsDotString();
         virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
@@ -281,6 +280,12 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         virtual InterpretationPtr getNextModel();
         virtual int getModelCount();
         virtual std::string getStatistics();
+
+        /**
+          * \brief Returns a string representation of the current implication graph in dot format.
+          * @return String representation of the current implication graph in dot format.
+          */
+        std::string getImplicationGraphAsDotString();
 
         typedef boost::shared_ptr<InternalGroundASPSolver> Ptr;
         typedef boost::shared_ptr<const InternalGroundASPSolver> ConstPtr;

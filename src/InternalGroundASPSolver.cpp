@@ -943,49 +943,6 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
     throw GeneralError("Internal grounder does not support incremental extension of the program");
 }
 
-std::string InternalGroundASPSolver::getImplicatoinGraphAsDotString(){
-
-    // create debug output graph
-    std::stringstream dot;
-
-    // export implication graph
-    dot << "digraph G { ";
-    BOOST_FOREACH (IDAddress adr, this->allAtoms){
-        if (!assignedAtoms->getFact(adr)) continue;
-
-        dot << adr << " [label=\"" << (this->interpretation->getFact(adr) ? "" : "-") << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg) << "@" << this->decisionlevel[adr] << " ";
-        // decision literal?
-        if (cause[adr] == -1 && decisionlevel[adr] == 0){
-            dot << "(fact)" << "\"]; ";
-        }else if (cause[adr] == -1 && decisionlevel[adr] > 0){
-            dot << "(decision)" << "\"]; ";
-        }else{
-            const Nogood& implicant = nogoodset.getNogood(cause[adr]);
-            dot << "(" << implicant.getStringRepresentation(reg) << ")" << "\"]; ";
-            // add edges from implicants
-            BOOST_FOREACH (ID id, implicant) {
-                if (id.address != adr){
-                    dot << id.address << " -> " << adr << "; ";
-                }
-            }
-        }
-    }
-
-    // add conflict nogood and edges if present
-    if (contradictoryNogoods.size() > 0) {
-        // start from the conflicting nogood
-        int conflictNogoodIndex = *(contradictoryNogoods.begin());
-        Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
-        dot << "c [label=\"conflict (" << violatedNogood.getStringRepresentation(reg) << ")\"]; ";
-        BOOST_FOREACH (ID id, violatedNogood) {
-            dot << id.address << " -> c; ";
-        }
-    }
-
-    dot << "}" << std::endl;
-    return dot.str();
-}
-
 Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
 
     if (contradictoryNogoods.size() > 0) {
@@ -995,7 +952,7 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 
 #ifndef NDEBUG
         std::stringstream debugoutput;
-        debugoutput << "getInconsistencyCause, current implication graph:" << std::endl << getImplicatoinGraphAsDotString() << std::endl;
+        debugoutput << "getInconsistencyCause, current implication graph:" << std::endl << getImplicationGraphAsDotString() << std::endl;
 		debugoutput << "getInconsistencyCause starting from nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
 #endif
 
@@ -1117,7 +1074,7 @@ void InternalGroundASPSolver::setOptimum(std::vector<int>& optimum)
 InterpretationPtr InternalGroundASPSolver::getNextModel()
 {
 #ifndef NDEBUG
-    DBGLOG(DBG, "getNextModel, current implication graph:" << std::endl << getImplicatoinGraphAsDotString());
+    DBGLOG(DBG, "getNextModel, current implication graph:" << std::endl << getImplicationGraphAsDotString());
 #endif
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
@@ -1235,6 +1192,49 @@ std::string InternalGroundASPSolver::getStatistics()
     #endif
 }
 
+
+std::string InternalGroundASPSolver::getImplicationGraphAsDotString(){
+
+    // create debug output graph
+    std::stringstream dot;
+
+    // export implication graph
+    dot << "digraph G { ";
+    BOOST_FOREACH (IDAddress adr, this->allAtoms){
+        if (!assignedAtoms->getFact(adr)) continue;
+
+        dot << adr << " [label=\"" << (this->interpretation->getFact(adr) ? "" : "-") << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg) << "@" << this->decisionlevel[adr] << " ";
+        // decision literal?
+        if (cause[adr] == -1 && decisionlevel[adr] == 0){
+            dot << "(fact)" << "\"]; ";
+        }else if (cause[adr] == -1 && decisionlevel[adr] > 0){
+            dot << "(decision)" << "\"]; ";
+        }else{
+            const Nogood& implicant = nogoodset.getNogood(cause[adr]);
+            dot << "(" << implicant.getStringRepresentation(reg) << ")" << "\"]; ";
+            // add edges from implicants
+            BOOST_FOREACH (ID id, implicant) {
+                if (id.address != adr){
+                    dot << id.address << " -> " << adr << "; ";
+                }
+            }
+        }
+    }
+
+    // add conflict nogood and edges if present
+    if (contradictoryNogoods.size() > 0) {
+        // start from the conflicting nogood
+        int conflictNogoodIndex = *(contradictoryNogoods.begin());
+        Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
+        dot << "c [label=\"conflict (" << violatedNogood.getStringRepresentation(reg) << ")\"]; ";
+        BOOST_FOREACH (ID id, violatedNogood) {
+            dot << id.address << " -> c; ";
+        }
+    }
+
+    dot << "}" << std::endl;
+    return dot.str();
+}
 
 DLVHEX_NAMESPACE_END
 
