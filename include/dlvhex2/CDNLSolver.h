@@ -92,6 +92,8 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
         InterpretationPtr assignedAtoms;
         /** \brief Decision level for each atom; undefined if unassigned. */
         DynamicVector<IDAddress, int> decisionlevel;
+        /** \brief Stores for decision literals if they have already been flipped. */
+        DynamicVector<IDAddress, int> flipped;
         /** \brief Stores for each atom the index and hash of the clause which implied it; undefined if unassigned or guessed. */
         boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
         /** \brief Current decision level >= 0. */

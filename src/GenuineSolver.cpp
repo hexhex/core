@@ -112,7 +112,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
         case 1: case 2:          // internal grounder or Gringo + internal solver
         {
             DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
+            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p, frozen) : new InternalGroundASPSolver(ctx, p, frozen));
             return ptr;
         }
         break;
@@ -143,7 +143,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
         case 1: case 2:          // internal grounder or Gringo + internal solver
         {
             DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p)) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p)));
+            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen));
             return ptr;
         }
         break;
@@ -238,8 +238,7 @@ void GenuineSolver::removePropagator(PropagatorCallback* pb)
 
 Nogood GenuineSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms)
 {
-    solver->getInconsistencyCause(explanationAtoms);
-	return Nogood();
+    return solver->getInconsistencyCause(explanationAtoms);
 }
 
 void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen)

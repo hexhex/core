@@ -79,7 +79,6 @@ void InternalGroundASPSolver::createNogoodsForRule(ID ruleBodyAtomID, ID ruleID)
 // 2. body must not be true if a literal is false
 void InternalGroundASPSolver::createNogoodsForRuleBody(ID ruleBodyAtomID, const Tuple& ruleBody)
 {
-
     BOOST_FOREACH(ID bodyLit, ruleBody) {
         if (bodyLit.isAggregateAtom()) throw GeneralError("Internal solver does not support aggregate atoms");
     }
@@ -158,7 +157,7 @@ Set<std::pair<ID, ID> > InternalGroundASPSolver::createShiftedProgram()
 }
 
 
-void InternalGroundASPSolver::createSingularLoopNogoods()
+void InternalGroundASPSolver::createSingularLoopNogoods(InterpretationConstPtr frozen)
 {
 
     DBGLOG(DBG, "Creating singular loop nogoods");
@@ -178,7 +177,7 @@ void InternalGroundASPSolver::createSingularLoopNogoods()
     // an atom must not be true if the bodies of all supporting shifted rules are false
     BOOST_FOREACH (IDAddress litadr, ordinaryFacts) {
         // only for atoms which are no facts
-        if (!program.getGroundProgram().edb->getFact(litadr)) {
+        if (!program.getGroundProgram().edb->getFact(litadr) && (!frozen || !frozen->getFact(litadr))) {
             Nogood supNogood;
             supNogood.insert(createLiteral(litadr));
 
@@ -918,7 +917,7 @@ InterpretationPtr InternalGroundASPSolver::outputProjection(InterpretationConstP
 }
 
 
-InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0)
+InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0)
 {
     DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
@@ -928,7 +927,7 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
     resizeVectors();
     initializeLists();
     computeClarkCompletion();
-    createSingularLoopNogoods();
+    createSingularLoopNogoods(frozen);
     resizeVectors();
     initWatchingStructures();
     computeDepGraph();
@@ -967,12 +966,15 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
             // 1. check if the violated nogood contains implied literals; in this case mark for resolving
             // 2. check if the violated nogood contains not implied literals other than from explanationAtoms; in this case mark for removal
 		    BOOST_FOREACH (ID lit, violatedNogood) {
+                assert (decisionlevel[lit.address] == 0 && "found literal assigned on decisionlevel > 0");
                 // check if there are literals other than from explanationAtoms
                 if (!explanationAtoms->getFact(lit.address)) {
-                    // if it is an implied literal, resolve with it's reason, otherwise it is a fact and we remove it
-				    if (cause[lit.address] != -1 && resolveWithNogoodIndex != -1){
-                        resolveWithNogoodIndex = cause[lit.address];
-                        resolvedLiteral = lit;
+                    // if it is an implied literal, resolve with its reason, otherwise it is a fact and we remove it
+				    if (cause[lit.address] != -1){
+                        if (resolveWithNogoodIndex == -1){
+                            resolveWithNogoodIndex = cause[lit.address];
+                            resolvedLiteral = lit;
+                        }
 				    }else{
                         removeLits.push_back(lit);
                     }
@@ -982,9 +984,8 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
             Nogood newNogood;
             int nextRemovedLit = 0;
 			BOOST_FOREACH (ID lit, violatedNogood){
-				if (lit == removeLits[nextRemovedLit]){
+				if (nextRemovedLit < removeLits.size() && lit == removeLits[nextRemovedLit]){
                     nextRemovedLit++;
-                    if (nextRemovedLit == removeLits.size()) break;
 				}else{
                     // keep
                     newNogood.insert(lit);
@@ -1008,9 +1009,8 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
         DBGLOG(DBG, debugoutput.str());
 #endif
         return violatedNogood;
-	}else{
-        throw GeneralError("getInconsistencyCause can only be called for inconsistent instances after getNextModel() has returned NULL");
     }
+    throw GeneralError("getInconsistencyCause can only be called for inconsistent instances after getNextModel() has returned NULL after first call");
 }
 
 void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
@@ -1208,7 +1208,7 @@ std::string InternalGroundASPSolver::getImplicationGraphAsDotString(){
         if (cause[adr] == -1 && decisionlevel[adr] == 0){
             dot << "(fact)" << "\"]; ";
         }else if (cause[adr] == -1 && decisionlevel[adr] > 0){
-            dot << "(decision)" << "\"]; ";
+            dot << "(" << (flipped[adr] ? "flipped " : "")  << "decision)" << "\"]; ";
         }else{
             const Nogood& implicant = nogoodset.getNogood(cause[adr]);
             dot << "(" << implicant.getStringRepresentation(reg) << ")" << "\"]; ";

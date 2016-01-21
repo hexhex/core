@@ -63,8 +63,9 @@ class InternalGroundDASPSolver : public InternalGroundASPSolver
         /** \brief Constructor.
          * @param ctx ProgramCtx.
          * @param p Ground program with meta information.
+         * @param frozen Atoms which shall not be optimized away since they might be defined by assumptions.
          */
-        InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
+        InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
         virtual InterpretationPtr getNextModel();
 
         typedef boost::shared_ptr<InternalGroundDASPSolver> Ptr;

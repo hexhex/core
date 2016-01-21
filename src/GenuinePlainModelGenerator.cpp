@@ -249,6 +249,27 @@ factory(factory)
         }
     }
     #endif
+
+/*
+// Explanation atoms must be frozen, removed from the facts and instead added as assumptions.
+// This is to prevent the grounder from optimizing them away.
+PredicateMaskPtr explAtoms(new PredicateMask());
+explAtoms->setRegistry(factory.ctx.registry());
+explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+explAtoms->updateMask();
+InterpretationPtr edbWithoutExplAtoms(new Interpretation(*program.edb));
+edbWithoutExplAtoms->getStorage() -= explAtoms->mask()->getStorage();
+program.edb = edbWithoutExplAtoms;
+solver = GenuineSolver::getInstance(factory.ctx, program, explAtoms->mask());
+std::vector<ID> assumptions;
+bm::bvector<>::enumerator en = explAtoms->mask()->getStorage().first();
+bm::bvector<>::enumerator en_end = explAtoms->mask()->getStorage().end();
+while (en < en_end) {
+    assumptions.push_back(ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+    en++;
+}
+solver->restartWithAssumptions(assumptions);
+*/
 }
 
 
@@ -274,14 +295,14 @@ GenuinePlainModelGenerator::generateNextModel()
     if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
     InterpretationPtr modelCandidate = solver->getNextModel();
 
-    /*
-	// test inconsistency explanations
-    PredicateMaskPtr explAtoms(new PredicateMask());
-    explAtoms->setRegistry(factory.ctx.registry());
-    explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-    explAtoms->updateMask();
-	if (!modelCandidate) solver->getInconsistencyCause(explAtoms->mask());
-    */
+/*
+// test inconsistency explanations
+PredicateMaskPtr explAtoms(new PredicateMask());
+explAtoms->setRegistry(factory.ctx.registry());
+explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+explAtoms->updateMask();
+if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInconsistencyCause(explAtoms->mask()).getStringRepresentation(factory.ctx.registry()) << std::endl;
+*/
 
     DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
     return modelCandidate;

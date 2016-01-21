@@ -821,6 +821,7 @@ void CDNLSolver::flipDecisionLiteral()
     // flip dLit, but now on the previous decision level!
     DBGLOG(DBG, "Flipping decision literal: " << litToString(negation(dLit)));
     setFact(negation(dLit), currentDL);
+    flipped[dLit.address] = 1;
 }
 
 
@@ -894,6 +895,7 @@ InterpretationPtr CDNLSolver::getNextModel()
                     DBGLOG(DBG, "Guess: " << litToString(guess));
                     decisionLiteralOfDecisionLevel[currentDL] = guess;
                     setFact(guess, currentDL);
+                    flipped[guess.address] = 0;
                 }
             }
         }
