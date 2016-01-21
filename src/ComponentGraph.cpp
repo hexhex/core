@@ -406,7 +406,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
             else if( id.isExternalAtom() ) {
                 // if the SCC contains more than one node, and it contains external atoms,
                 // then they are inner external atoms (there must be some loop)
-                if( multimember ) {
+                if( multimember || ctx.config.getOption("NoOuterExternalAtoms") ) {
                     ci.innerEatoms.push_back(id);
                     innerEatomNodes.push_back(*itn);
 

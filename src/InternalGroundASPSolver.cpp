@@ -1082,6 +1082,7 @@ InterpretationPtr InternalGroundASPSolver::getNextModel()
 
     if (!firstmodel && complete()) {
         if (currentDL == 0) {
+            loadAddedNogoods();
             return InterpretationPtr();
         }
         else {

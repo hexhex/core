@@ -259,6 +259,27 @@ reg(factory.reg)
         // this will not find unfounded sets due to external sources,
         // but at least unfounded sets due to disjunctions
             !factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+
+/*
+// Explanation atoms must be frozen, removed from the facts and instead added as assumptions.
+// This is to prevent the grounder from optimizing them away.
+PredicateMaskPtr explAtoms(new PredicateMask());
+explAtoms->setRegistry(factory.ctx.registry());
+explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+explAtoms->updateMask();
+std::vector<ID> assumptions;
+bm::bvector<>::enumerator en = explAtoms->mask()->getStorage().first();
+bm::bvector<>::enumerator en_end = explAtoms->mask()->getStorage().end();
+while (en < en_end) {
+    assumptions.push_back(program.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+    en++;
+}
+InterpretationPtr edbWithoutExplAtoms(new Interpretation(*program.edb));
+edbWithoutExplAtoms->getStorage() -= explAtoms->mask()->getStorage();
+program.edb = edbWithoutExplAtoms;
+solver = GenuineSolver::getInstance(factory.ctx, program, explAtoms->mask());
+solver->restartWithAssumptions(assumptions);
+*/
     }
 
     // external learning related initialization
@@ -364,6 +385,15 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         // would be non-optimal.
         if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
         modelCandidate = solver->getNextModel();
+
+/*
+// test inconsistency explanations
+PredicateMaskPtr explAtoms(new PredicateMask());
+explAtoms->setRegistry(factory.ctx.registry());
+explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+explAtoms->updateMask();
+if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInconsistencyCause(explAtoms->mask()).getStringRepresentation(factory.ctx.registry()) << std::endl;
+*/
 
         DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
         if( !modelCandidate ) {

@@ -859,6 +859,7 @@ Config& config, ProgramCtx& pctx)
         { "ngminimizationlimit", required_argument, 0, 59 },
         { "csvinput", required_argument, 0, 60 },
         { "csvoutput", required_argument, 0, 61 },
+        { "noouterexternalatoms", no_argument, 0, 62 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1634,6 +1635,11 @@ Config& config, ProgramCtx& pctx)
                     pctx.modelCallbacks.push_back(ModelCallbackPtr(new CSVAnswerSetPrinterCallback(pctx, pred)));
                 }
                 break;
+            case 62:
+                {
+                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+                }
+                break;
         }
     }
 
@@ -1685,6 +1691,18 @@ Config& config, ProgramCtx& pctx)
         // we can use this with the clasp backend (the other solver does not honor setOptimum() calls)
         // TODO we can also use this if we have all weight constraints in one evaluation unit, this can be detected automatically
         pctx.config.setOption("OptimizationTwoStep", 1);
+    }
+    // We cannot use strong safety if we treat all outer external atoms as inner ones.
+    // We support two types of safety (strong and liberal) and two grounding approaches (decomposition-based and fixpoint-based). The two dimensions are related as follows:
+    // - decomposition-based grounding is made for strong safety (it cannot handle liberally safe programs)
+    // - fixpoint-based grounding is made for liberal safety (but can also handle strongly safe programs which are a special case of liberally safe ones)
+    // Currently there are no separate options for the two dimensions: --strongsafety and --liberalsafety switch both the safety concept and the grounding approach (fixpoint-based with --liberalsafety and decomposition-based for --strongsafety).
+    // Treating outer external atoms as inner ones does not destroy strong safety (because the structure of the program does not change) but destroys correctness of the decomposition-based grounder even for strongly safe programs,
+    // while the fixpoint-based grounding approach is still correct (both for strongly and for liberally safe programs).
+    // Thus, we can only handle outer external atoms as inner ones if --liberalsafety is used since then also the fixpoint-based grounding approach is used
+    // (in principle, switching only the grounding approach to fixpoint-based but still using strong safety is possible but not implemented).
+    if (!pctx.config.getOption("LiberalSafety") && pctx.config.getOption("NoOuterExternalAtoms")){
+        throw GeneralError("Option --noouterexternalatoms can only be used with --liberalsafety");
     }
 
     // configure plugin path
