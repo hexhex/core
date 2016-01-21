@@ -944,7 +944,10 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
 
 Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
 
+    loadAddedNogoods();
     if (contradictoryNogoods.size() > 0) {
+        if (!explanationAtoms) return Nogood(); // explanation is trivial in this case
+
         // start from the conflicting nogood
         int conflictNogoodIndex = *(contradictoryNogoods.begin());
         Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
@@ -1045,7 +1048,7 @@ void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assu
     // set assumptions at DL=0
     DBGLOG(DBG, "Setting assumptions");
     BOOST_FOREACH (ID a, assumptions) {
-        setFact(a, 0);
+        if (allAtoms.contains(a.address)) setFact(a, 0);
     }
 
     setEDB();
@@ -1082,7 +1085,6 @@ InterpretationPtr InternalGroundASPSolver::getNextModel()
 
     if (!firstmodel && complete()) {
         if (currentDL == 0) {
-            loadAddedNogoods();
             return InterpretationPtr();
         }
         else {
@@ -1152,6 +1154,12 @@ InterpretationPtr InternalGroundASPSolver::getNextModel()
                 }
                 else {
                     DBGLOG(DBG, "Did not learn anything");
+
+                    if (assignedAtoms->getStorage().count() > allAtoms.size()){
+                        std::cout << "All: ";
+                        BOOST_FOREACH (IDAddress a, allAtoms) { std::cout << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(a), reg) << " "; }
+                        std::cout << " (" << allAtoms.size() << ")" << std::endl;
+                    }
 
                     if (!complete()) {
                         // guess
