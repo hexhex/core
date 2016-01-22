@@ -263,23 +263,27 @@ reg(factory.reg)
 /*
 // Explanation atoms must be frozen, removed from the facts and instead added as assumptions.
 // This is to prevent the grounder from optimizing them away.
-PredicateMaskPtr explAtoms(new PredicateMask());
-explAtoms->setRegistry(factory.ctx.registry());
-explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-explAtoms->updateMask();
+PredicateMaskPtr explAtomMask(new PredicateMask());
+explAtomMask->setRegistry(factory.ctx.registry());
+explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+explAtomMask->updateMask();
+InterpretationConstPtr explAtoms = explAtomMask->mask(); // = input;
 std::vector<ID> assumptions;
-bm::bvector<>::enumerator en = explAtoms->mask()->getStorage().first();
-bm::bvector<>::enumerator en_end = explAtoms->mask()->getStorage().end();
-while (en < en_end) {
-    assumptions.push_back(program.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
-    en++;
+if (!!explAtoms){
+    bm::bvector<>::enumerator en = explAtoms->getStorage().first();
+    bm::bvector<>::enumerator en_end = explAtoms->getStorage().end();
+    while (en < en_end) {
+        assumptions.push_back(program.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+        en++;
+    }
+    InterpretationPtr edbWithoutExplAtoms(new Interpretation(*program.edb));
+    edbWithoutExplAtoms->getStorage() -= explAtoms->getStorage();
+    program.edb = edbWithoutExplAtoms;
+    solver = GenuineSolver::getInstance(factory.ctx, program, explAtoms);
+    solver->restartWithAssumptions(assumptions);
 }
-InterpretationPtr edbWithoutExplAtoms(new Interpretation(*program.edb));
-edbWithoutExplAtoms->getStorage() -= explAtoms->mask()->getStorage();
-program.edb = edbWithoutExplAtoms;
-solver = GenuineSolver::getInstance(factory.ctx, program, explAtoms->mask());
-solver->restartWithAssumptions(assumptions);
 */
+
     }
 
     // external learning related initialization
@@ -388,11 +392,12 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 /*
 // test inconsistency explanations
-PredicateMaskPtr explAtoms(new PredicateMask());
-explAtoms->setRegistry(factory.ctx.registry());
-explAtoms->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-explAtoms->updateMask();
-if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInconsistencyCause(explAtoms->mask()).getStringRepresentation(factory.ctx.registry()) << std::endl;
+PredicateMaskPtr explAtomMask(new PredicateMask());
+explAtomMask->setRegistry(factory.ctx.registry());
+explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+explAtomMask->updateMask();
+InterpretationConstPtr explAtoms = explAtomMask->mask(); // = input;
+if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInconsistencyCause(explAtoms).getStringRepresentation(factory.ctx.registry()) << std::endl;
 */
 
         DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
