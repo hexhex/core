@@ -279,7 +279,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
         
         // containers for storing nogoods that still have to be minimized 
         SimpleNogoodContainer newNogoodsContainer;
-	std::vector<std::pair<Nogood,ID>> newNogoods;
+	    std::vector<std::pair<Nogood,ID>> newNogoods;
         
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;

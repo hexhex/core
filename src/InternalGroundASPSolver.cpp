@@ -341,7 +341,7 @@ void InternalGroundASPSolver::initSourcePointers()
 }
 
 
-void InternalGroundASPSolver::initializeLists()
+void InternalGroundASPSolver::initializeLists(InterpretationConstPtr frozen)
 {
 
     // determine the set of all facts and a literal index
@@ -372,13 +372,24 @@ void InternalGroundASPSolver::initializeLists()
         }
     }
 
-    // include facts in the list of all literals
+    // include facts in the list of all atoms
     bm::bvector<>::enumerator en = program.getGroundProgram().edb->getStorage().first();
     bm::bvector<>::enumerator en_end = program.getGroundProgram().edb->getStorage().end();
     while (en < en_end) {
         allAtoms.insert(*en);
         ordinaryFacts.insert(*en);
         ++en;
+    }
+
+    // frozen atoms in the list of all atoms
+    if (!!frozen) {
+        en = frozen->getStorage().first();
+        en_end = frozen->getStorage().end();
+        while (en < en_end) {
+            allAtoms.insert(*en);
+            ordinaryFacts.insert(*en);
+            en++;
+        }
     }
 
     // built an interpretation of ordinary facts
@@ -925,7 +936,7 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
     reg = ctx.registry();
 
     resizeVectors();
-    initializeLists();
+    initializeLists(frozen);
     computeClarkCompletion();
     createSingularLoopNogoods(frozen);
     resizeVectors();
@@ -942,10 +953,19 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
     throw GeneralError("Internal grounder does not support incremental extension of the program");
 }
 
+/**
+  * In order to compute an inconsistency reason the program must be inconsistent.
+  * This condition is stronger than the condition of getNextModel() returning NULL:
+  *   getNextModel() might also return if there are _no more_ models, while for inconsistent programs it would return NULL even after a restart.
+  */
 Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
 
     loadAddedNogoods();
-    if (contradictoryNogoods.size() > 0) {
+    if ((!getNextModel() && modelCount == 0) ||
+        /** @TODO: FOR TESTIGN PURPOSES ONLY
+          * If (for whatever reason) there is a contradictory nogood after getNextModel() returns NULL, we can compute a reason why there is no *further* model (flipping all decision literals leads to this conflict);
+          *   if all previous models have been rejected due to incompatibility (which needs to be checked by the caller), then this is also a reason for inconsistency. */
+        (!getNextModel() && contradictoryNogoods.size() > 0)) {
         if (!explanationAtoms) return Nogood(); // explanation is trivial in this case
 
         // start from the conflicting nogood
@@ -955,7 +975,8 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 #ifndef NDEBUG
         std::stringstream debugoutput;
         debugoutput << "getInconsistencyCause, current implication graph:" << std::endl << getImplicationGraphAsDotString() << std::endl;
-		debugoutput << "getInconsistencyCause starting from nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
+		debugoutput << "getInconsistencyCause, explanation atoms: " << *explanationAtoms << std::endl;
+		debugoutput << "getInconsistencyCause, starting from nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
 #endif
 
         // resolve back to explanationAtoms
@@ -1013,7 +1034,7 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 #endif
         return violatedNogood;
     }
-    throw GeneralError("getInconsistencyCause can only be called for inconsistent instances after getNextModel() has returned NULL after first call");
+    throw GeneralError("getInconsistencyCause can only be called for inconsistent instances (getNextModel() has to return NULL at first call)");
 }
 
 void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
@@ -1048,7 +1069,9 @@ void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assu
     // set assumptions at DL=0
     DBGLOG(DBG, "Setting assumptions");
     BOOST_FOREACH (ID a, assumptions) {
-        if (allAtoms.contains(a.address)) setFact(a, 0);
+        if (allAtoms.contains(a.address)) {
+            setFact(a, 0);
+        }
     }
 
     setEDB();

@@ -150,8 +150,10 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         void computeStronglyConnectedComponents();
         /** \brief Initializes the source pointer data structures for unfounded set detection. */
         void initSourcePointers();
-        /** \brief Initializes all lists of atoms and facts. */
-        void initializeLists();
+        /** \brief Initializes all lists of atoms and facts.
+          *
+          * @param frozen Atoms which shall not be optimized away since they might be defined by assumptions. */
+        void initializeLists(InterpretationConstPtr frozen);
 
         // unfounded set members
         virtual void setFact(ID fact, int dl, int cause);

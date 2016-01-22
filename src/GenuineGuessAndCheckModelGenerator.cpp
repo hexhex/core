@@ -267,16 +267,17 @@ PredicateMaskPtr explAtomMask(new PredicateMask());
 explAtomMask->setRegistry(factory.ctx.registry());
 explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
 explAtomMask->updateMask();
-InterpretationConstPtr explAtoms = explAtomMask->mask(); // = input;
+InterpretationConstPtr explAtoms = input; // explAtomMask->mask();
 std::vector<ID> assumptions;
 if (!!explAtoms){
     bm::bvector<>::enumerator en = explAtoms->getStorage().first();
     bm::bvector<>::enumerator en_end = explAtoms->getStorage().end();
     while (en < en_end) {
-        assumptions.push_back(program.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+        assumptions.push_back(postprocessedInput->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+        DBGLOG(DBG, "Adding assumption " << printToString<RawPrinter>(assumptions[assumptions.size() - 1], factory.ctx.registry()));
         en++;
     }
-    InterpretationPtr edbWithoutExplAtoms(new Interpretation(*program.edb));
+    InterpretationPtr edbWithoutExplAtoms(new Interpretation(*postprocessedInput));
     edbWithoutExplAtoms->getStorage() -= explAtoms->getStorage();
     program.edb = edbWithoutExplAtoms;
     solver = GenuineSolver::getInstance(factory.ctx, program, explAtoms);
@@ -396,7 +397,7 @@ PredicateMaskPtr explAtomMask(new PredicateMask());
 explAtomMask->setRegistry(factory.ctx.registry());
 explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
 explAtomMask->updateMask();
-InterpretationConstPtr explAtoms = explAtomMask->mask(); // = input;
+InterpretationConstPtr explAtoms = input; // explAtomMask->mask();
 if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInconsistencyCause(explAtoms).getStringRepresentation(factory.ctx.registry()) << std::endl;
 */
 

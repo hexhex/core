@@ -929,6 +929,56 @@ public:
 
 };
 
+class TestSetMinusNonComfortAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestSetMinusNonComfortAtom():
+    PluginAtom("testSetMinusNonComfort", false) // monotonic, and no predicate inputs anyway
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    addInputPredicate();
+    prop.monotonicInputPredicates.insert(0);
+    prop.antimonotonicInputPredicates.insert(1);
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	static std::map<std::string, ID> ruleIDs;
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+
+	// Learning of the nogoods
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+		}
+	}
+  }
+};
+
 class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learning
   public PluginAtom
 {
@@ -2609,6 +2659,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestStrlenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusNonComfortAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNongroundNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));

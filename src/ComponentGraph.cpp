@@ -366,6 +366,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     SCCToComponentMap sccToComponent(scccount);
     for(unsigned s = 0; s < scccount; ++s) {
         const NodeSet& nodes = sccMembers[s];
+
         Component c = boost::add_vertex(cg);
         DBGLOG(DBG,"created component node " << c << " for scc " << s <<
             " with depgraph nodes " << printrange(nodes));
@@ -526,6 +527,31 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
             }                    // for each dependency of *itn
         }                        // collect dependencies outgoing from node *itn in SCC s
     }                            // create dependencies outgoing from SCC s
+
+    // collapse components with predecessors which contain only external atoms
+    if (ctx.config.getOption("NoOuterExternalAtoms")){
+        ComponentIterator cit = getComponents().first;
+        while(cit != getComponents().second) {
+            bool restart = false;
+            // for predecessors
+            ComponentGraph::PredecessorIterator pit, pit_end;
+            for (boost::tie(pit, pit_end) = getDependencies(*cit); pit != pit_end; ++pit) {
+                Component dependsOn = targetOf(*pit);
+                if (getComponentInfo(dependsOn).innerConstraints.size() == 0 && getComponentInfo(dependsOn).innerRules.size() == 0
+                    && getComponentInfo(dependsOn).innerEatoms.size() == 1 && getComponentInfo(dependsOn).outerEatoms.size() == 0){
+
+                    ComponentSet collapse;
+                    collapse.insert(*cit);
+                    collapse.insert(dependsOn);
+                    collapseComponents(collapse);
+                    restart = true;
+                    break;
+                }
+            }
+            if (restart) cit = getComponents().first;
+            else cit++;
+        }
+    }
 }
 
 

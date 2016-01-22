@@ -268,7 +268,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         }
 
         // learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
-        if (!subqueryFromCache) {////
+        if (!subqueryFromCache) {
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, inputi);
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
         }
@@ -351,11 +351,14 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
         if (nogoods) {
             SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
             if (cachedNogoods) {
+                DBGLOG(DBG, "Found " << cachedNogoods->getNogoodCount() << " cached nogoods");
                 // return cached nogoods
                 for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+                return true;             // answered from cache
             }
             else {
                 // answer is cached but no nogoods: reevaluate and return nogoods
+                DBGLOG(DBG, "No cached nogoods --> reevaluate");
                 queryAnswerCache[query] = Answer();
                 Answer& ans2 = queryAnswerCache[query];
                 cachedNogoods.reset(new SimpleNogoodContainer());
@@ -363,10 +366,10 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
                 ans2.use();
                 answer = ans2;   // ans2 should be the same as ans
                 for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+                return false;             // not (fully) answered from cache
             }
         }
 
-        return true;             // answered from cache
     }
     else {
         {
