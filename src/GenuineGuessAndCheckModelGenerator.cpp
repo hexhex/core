@@ -261,6 +261,8 @@ haveInconsistencyCause(false)
             //explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
             //explAtomMask->updateMask();
 
+            // @TODO: Negative input atoms must be handled somehow! (atoms which are currently not in the input but are derivable in predecessor units)
+
             // Explanation atoms are all input atoms to this unit.
             // They must be frozen, removed from the facts and instead added as assumptions.
             // This is to prevent the grounder from optimizing them away.
