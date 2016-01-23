@@ -108,6 +108,14 @@ outerEatoms(ci.outerEatoms)
     }
 }
 
+void GenuineGuessAndCheckModelGeneratorFactory::addInconsistencyCauseFromSuccessor(const Nogood* cause){
+    DBGLOG(DBG, "Inconsistency cause was added to model generator factory: " << cause->getStringRepresentation(ctx.registry()) << ", ogatoms in registry: " << ctx.registry()->ogatoms.getSize());
+
+    // Store the nogood for future reinstantiations of the model generator.
+    // To this end, store also the current maximum index of ground atoms in the registry;
+    //   all atoms which are added later must be added with negative sign to the nogood because it was generated as inconsistency cause under the assumption that these atoms do not exist.
+    succNogoods.push_back(std::pair<Nogood, int>(*cause, ctx.registry()->ogatoms.getSize()));
+}
 
 GenuineGuessAndCheckModelGeneratorFactory::ModelGeneratorPtr
 GenuineGuessAndCheckModelGeneratorFactory::createModelGenerator(
@@ -185,7 +193,8 @@ InterpretationConstPtr input):
 FLPModelGeneratorBase(factory, input),
 factory(factory),
 reg(factory.reg),
-cmModelCount(0)
+cmModelCount(0),
+haveInconsistencyCause(false)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");
     DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
@@ -310,8 +319,18 @@ cmModelCount(0)
                 solver->restartWithAssumptions(assumptions);
 
                 // start analysis solver
-                analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, AnnotatedGroundProgram(factory.ctx, gp), explAtoms));
+                analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, annotatedGroundProgram, explAtoms));
                 analysissolver->restartWithAssumptions(assumptions);
+            }
+
+            // update nogoods learned from successor (add all ground atoms which have been added to the registry in the meantime in negative form) and add it to the new model generator
+            typedef std::pair<Nogood, int> NogoodIntegerPair;
+            BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
+                for (int i = nip.second; i < factory.ctx.registry()->ogatoms.getSize(); i++){
+                    if (annotatedGroundProgram.getProgramMask()->getFact(i)) nip.first.insert(NogoodContainer::createLiteral(i, false));
+                }
+                nip.second = factory.ctx.registry()->ogatoms.getSize();
+                addNogood(&nip.first);
             }
         }
     }
@@ -437,9 +456,12 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
             if (!!explAtoms && cmModelCount == 0) {
 #ifndef NDEBUG
                 InterpretationConstPtr imodel = analysissolver->getNextModel();
+                if (!!imodel) { DBGLOG(DBG, "Error: Inconsistency analysis program was model " << *imodel << " but should be inconsistent"); }
                 assert (!imodel && "Instance did not yield models, but after restart it is not inconsistent!");
 #endif
-                std::cout << "Program is inconsistent: " << analysissolver->getInconsistencyCause(explAtoms).getStringRepresentation(factory.ctx.registry()) << std::endl;
+                haveInconsistencyCause = true;
+                inconsistencyCause = analysissolver->getInconsistencyCause(explAtoms);
+                DBGLOG(DBG, "Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
             }
         }
 
@@ -455,7 +477,16 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         if (!finalCompatibilityCheck(modelCandidate)) {
             LOG(DBG,"compatibility failed");
             if (!!analysissolver){
-                analysissolver->addNogood(Nogood(annotatedGroundProgram.getProgramMask(), modelCandidate));
+                InterpretationPtr relevantatoms(new Interpretation(*annotatedGroundProgram.getProgramMask()));
+                bm::bvector<>::enumerator en = annotatedGroundProgram.getProgramMask()->getStorage().first();
+                bm::bvector<>::enumerator en_end = annotatedGroundProgram.getProgramMask()->getStorage().end();
+                while (en < en_end) {
+                    if (factory.ctx.registry()->ogatoms.getIDByAddress(*en).isAuxiliary()) relevantatoms->clearFact(*en);
+                    en++;
+                }
+                Nogood ng(relevantatoms, modelCandidate);
+                DBGLOG(DBG, "Adding model candidate " << ng.getStringRepresentation(factory.ctx.registry()) << " to inconsistency analyzer");
+                analysissolver->addNogood(ng);
             }
             continue;
         }
@@ -482,6 +513,16 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
     }while(true);
 }
 
+const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
+    DBGLOG(DBG, "Inconsistency cause was requested: " << (haveInconsistencyCause ? "" : "not") << " available");
+    return (haveInconsistencyCause ? &inconsistencyCause : 0);
+}
+
+void GenuineGuessAndCheckModelGenerator::addNogood(const Nogood* cause){
+    DBGLOG(DBG, "Adding nogood to model generator: " << cause->getStringRepresentation(factory.ctx.registry()));
+    solver->addNogood(*cause);
+    if (!!analysissolver) analysissolver->addNogood(*cause);
+}
 
 void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng)
 {

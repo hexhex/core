@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>--plugindir=. --solver=genuinegi --noouterexternalatoms --forcegc --verbose=1 outere.txt 2&gt;out.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--plugindir=. --noouterexternalatoms --forcegc --verbose=1 outere.txt 2&gt;out.txt</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerWorkingDirectory>$(SolutionDir)$(Configuration)\</LocalDebuggerWorkingDirectory>
