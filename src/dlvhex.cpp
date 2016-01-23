@@ -860,6 +860,7 @@ Config& config, ProgramCtx& pctx)
         { "csvinput", required_argument, 0, 60 },
         { "csvoutput", required_argument, 0, 61 },
         { "noouterexternalatoms", no_argument, 0, 62 },
+        { "transunitlearning", no_argument, 0, 64 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1637,6 +1638,15 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 62:
                 {
+                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+                }
+                break;
+            case 64:
+                {
+                    pctx.config.setOption("UnitInconsistencyAnalysis", 1);
+                    pctx.config.setOption("TransUnitLearning", 1);
+                    pctx.config.setOption("ForceGC", 1);
+                    pctx.config.setOption("LiberalSafety", 1);
                     pctx.config.setOption("NoOuterExternalAtoms", 1);
                 }
                 break;

@@ -324,13 +324,15 @@ haveInconsistencyCause(false)
             }
 
             // update nogoods learned from successor (add all ground atoms which have been added to the registry in the meantime in negative form) and add it to the new model generator
-            typedef std::pair<Nogood, int> NogoodIntegerPair;
-            BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
-                for (int i = nip.second; i < factory.ctx.registry()->ogatoms.getSize(); i++){
-                    if (annotatedGroundProgram.getProgramMask()->getFact(i)) nip.first.insert(NogoodContainer::createLiteral(i, false));
+            if (factory.ctx.config.getOption("TransUnitLearning")){
+                typedef std::pair<Nogood, int> NogoodIntegerPair;
+                BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
+                    for (int i = nip.second; i < factory.ctx.registry()->ogatoms.getSize(); i++){
+                        if (annotatedGroundProgram.getProgramMask()->getFact(i)) nip.first.insert(NogoodContainer::createLiteral(i, false));
+                    }
+                    nip.second = factory.ctx.registry()->ogatoms.getSize();
+                    addNogood(&nip.first);
                 }
-                nip.second = factory.ctx.registry()->ogatoms.getSize();
-                addNogood(&nip.first);
             }
         }
     }
@@ -515,13 +517,15 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
     DBGLOG(DBG, "Inconsistency cause was requested: " << (haveInconsistencyCause ? "" : "not") << " available");
-    return (haveInconsistencyCause ? &inconsistencyCause : 0);
+    return (factory.ctx.config.getOption("TransUnitLearning") && haveInconsistencyCause ? &inconsistencyCause : 0);
 }
 
 void GenuineGuessAndCheckModelGenerator::addNogood(const Nogood* cause){
     DBGLOG(DBG, "Adding nogood to model generator: " << cause->getStringRepresentation(factory.ctx.registry()));
-    solver->addNogood(*cause);
-    if (!!analysissolver) analysissolver->addNogood(*cause);
+    if (factory.ctx.config.getOption("TransUnitLearning")){
+        solver->addNogood(*cause);
+        if (!!analysissolver) analysissolver->addNogood(*cause);
+    }
 }
 
 void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng)
