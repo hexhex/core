@@ -43,6 +43,7 @@
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/PredicateMask.h"
 #include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/InternalGroundDASPSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/NogoodGrounder.h"
 
@@ -109,6 +110,10 @@ public PropagatorCallback
         GenuineGrounderPtr grounder;
         /** \brief Solver instance. */
         GenuineGroundSolverPtr solver;
+        /** \brief Number of models of this model generate (only compatible and minimal ones). */
+        int cmModelCount;
+        /** \brief Second solver instance (non-optimized solver!) for inconsistency analysis. */
+        InternalGroundDASPSolverPtr analysissolver;
         /** \brief Manager for unfounded set checking. */
         UnfoundedSetCheckerManagerPtr ufscm;
         /** \brief All atoms in the program. */

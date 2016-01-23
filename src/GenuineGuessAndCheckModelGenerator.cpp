@@ -184,7 +184,8 @@ Factory& factory,
 InterpretationConstPtr input):
 FLPModelGeneratorBase(factory, input),
 factory(factory),
-reg(factory.reg)
+reg(factory.reg),
+cmModelCount(0)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");
     DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
@@ -242,7 +243,39 @@ reg(factory.reg)
         program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder GuessPr GenGnCMG");
-        grounder = GenuineGrounder::getInstance(factory.ctx, program);
+        
+        // run solver possibly with the possibility to analyze unit inconsistency at a later point
+        InterpretationConstPtr explAtoms;
+        if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
+            //PredicateMaskPtr explAtomMask(new PredicateMask());
+            //explAtomMask->setRegistry(factory.ctx.registry());
+            //explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+            //explAtomMask->updateMask();
+
+            // Explanation atoms are all input atoms to this unit.
+            // They must be frozen, removed from the facts and instead added as assumptions.
+            // This is to prevent the grounder from optimizing them away.
+            explAtoms = input; // explAtomMask->mask();
+
+#ifndef NDEBUG
+            // in debug mode we analyze conflicts wrt. "explain" atoms rather than the unit input
+            if (factory.ctx.config.getOption("UnitInconsistencyAnalysisDebug")) {
+                PredicateMaskPtr explAtomMask(new PredicateMask());
+                explAtomMask->setRegistry(factory.ctx.registry());
+                explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+                explAtomMask->updateMask();
+                explAtoms = explAtomMask->mask();
+            }
+#endif
+
+            if (!!explAtoms){
+                InterpretationPtr edbWithoutExplAtoms(new Interpretation(*postprocessedInput));
+                edbWithoutExplAtoms->getStorage() -= explAtoms->getStorage();
+                program.edb = edbWithoutExplAtoms;
+            }
+        }
+
+        grounder = GenuineGrounder::getInstance(factory.ctx, program, explAtoms);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
 
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
@@ -253,38 +286,34 @@ reg(factory.reg)
         annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, factory.innerEatoms);
         solver = GenuineGroundSolver::getInstance(
             factory.ctx, annotatedGroundProgram,
-            InterpretationConstPtr(),
-        // do the UFS check for disjunctions only if we don't do
-        // a minimality check in this class;
-        // this will not find unfounded sets due to external sources,
-        // but at least unfounded sets due to disjunctions
+            explAtoms,
+            // do the UFS check for disjunctions only if we don't do
+            // a minimality check in this class;
+            // this will not find unfounded sets due to external sources,
+            // but at least unfounded sets due to disjunctions
             !factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
 
-/*
-// Explanation atoms must be frozen, removed from the facts and instead added as assumptions.
-// This is to prevent the grounder from optimizing them away.
-PredicateMaskPtr explAtomMask(new PredicateMask());
-explAtomMask->setRegistry(factory.ctx.registry());
-explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-explAtomMask->updateMask();
-InterpretationConstPtr explAtoms = input; // explAtomMask->mask();
-std::vector<ID> assumptions;
-if (!!explAtoms){
-    bm::bvector<>::enumerator en = explAtoms->getStorage().first();
-    bm::bvector<>::enumerator en_end = explAtoms->getStorage().end();
-    while (en < en_end) {
-        assumptions.push_back(postprocessedInput->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
-        DBGLOG(DBG, "Adding assumption " << printToString<RawPrinter>(assumptions[assumptions.size() - 1], factory.ctx.registry()));
-        en++;
-    }
-    InterpretationPtr edbWithoutExplAtoms(new Interpretation(*postprocessedInput));
-    edbWithoutExplAtoms->getStorage() -= explAtoms->getStorage();
-    program.edb = edbWithoutExplAtoms;
-    solver = GenuineSolver::getInstance(factory.ctx, program, explAtoms);
-    solver->restartWithAssumptions(assumptions);
-}
-*/
+        // initialize a non-optimized solver instance for later inconsistency analysis (if requested)
+        if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
+            // explanation atoms are assumptions
+            if (!!explAtoms){
+                std::vector<ID> assumptions;
+                bm::bvector<>::enumerator en = explAtoms->getStorage().first();
+                bm::bvector<>::enumerator en_end = explAtoms->getStorage().end();
+                while (en < en_end) {
+                    assumptions.push_back(postprocessedInput->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+                    DBGLOG(DBG, "Adding assumption " << printToString<RawPrinter>(assumptions[assumptions.size() - 1], factory.ctx.registry()));
+                    en++;
+                }
 
+                // restart standard solver with assumptions
+                solver->restartWithAssumptions(assumptions);
+
+                // start analysis solver
+                analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, AnnotatedGroundProgram(factory.ctx, gp), explAtoms));
+                analysissolver->restartWithAssumptions(assumptions);
+            }
+        }
     }
 
     // external learning related initialization
@@ -391,15 +420,28 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
         modelCandidate = solver->getNextModel();
 
-/*
-// test inconsistency explanations
-PredicateMaskPtr explAtomMask(new PredicateMask());
-explAtomMask->setRegistry(factory.ctx.registry());
-explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-explAtomMask->updateMask();
-InterpretationConstPtr explAtoms = input; // explAtomMask->mask();
-if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInconsistencyCause(explAtoms).getStringRepresentation(factory.ctx.registry()) << std::endl;
-*/
+
+        // test inconsistency explanations
+        if (!modelCandidate && factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
+            InterpretationConstPtr explAtoms = input;
+#ifndef NDEBUG
+            // in debug mode we analyze conflicts wrt. "explain" atoms rather than the unit input
+            if (factory.ctx.config.getOption("UnitInconsistencyAnalysisDebug")) {
+                PredicateMaskPtr explAtomMask(new PredicateMask());
+                explAtomMask->setRegistry(factory.ctx.registry());
+                explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
+                explAtomMask->updateMask();
+                explAtoms = explAtomMask->mask();
+            }
+#endif
+            if (!!explAtoms && cmModelCount == 0) {
+#ifndef NDEBUG
+                InterpretationConstPtr imodel = analysissolver->getNextModel();
+                assert (!imodel && "Instance did not yield models, but after restart it is not inconsistent!");
+#endif
+                std::cout << "Program is inconsistent: " << analysissolver->getInconsistencyCause(explAtoms).getStringRepresentation(factory.ctx.registry()) << std::endl;
+            }
+        }
 
         DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
         if( !modelCandidate ) {
@@ -412,6 +454,9 @@ if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInco
         LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
         if (!finalCompatibilityCheck(modelCandidate)) {
             LOG(DBG,"compatibility failed");
+            if (!!analysissolver){
+                analysissolver->addNogood(Nogood(annotatedGroundProgram.getProgramMask(), modelCandidate));
+            }
             continue;
         }
 
@@ -432,6 +477,7 @@ if (!modelCandidate) std::cout << "Program is inconsistent: " << solver->getInco
 
         LOG(DBG,"returning model without guess: " << *modelCandidate);
 
+        cmModelCount++;
         return modelCandidate;
     }while(true);
 }
@@ -595,6 +641,7 @@ InterpretationConstPtr changed)
                 filev << ng.getStringRepresentation(reg) << std::endl;
             }
             solver->addNogood(ng);
+            if (!!analysissolver) analysissolver->addNogood(ng);
         }
     }
 
@@ -802,6 +849,7 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
             }
             #endif
             solver->addNogood(ng);
+            if (!!analysissolver) analysissolver->addNogood(ng);
         }
         return !ufsFound;
     }
