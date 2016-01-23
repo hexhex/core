@@ -5,9 +5,9 @@ pi(X) :- p(X).
 qi(X) :- q(X).
 po(X) :- &id[pi](X).
 qo(X) :- &id[qi](X).
-a v b v c.
+y(X) v n(X) :- #int(X).
 
 % main part
 res(X) :- &testSetMinusNonComfort[po,qo](X). %<tuplelevellinear>.
-:- res(X).
+:- res(X), not y(1).
 %:- po(X).
