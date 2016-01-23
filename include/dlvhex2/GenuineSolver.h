@@ -178,8 +178,8 @@ class DLVHEX_EXPORT GenuineGroundSolver : virtual public NogoodContainer, public
          * (while b might be removed as a fact and the program is still inconsistent).
          *
          * An explanation is a proto-explanation X if all atoms in X are turned into signed literals,
-         * where the sign is positive of it is a fact in P and negative otherwise.
-         *  
+         * where the sign is positive if it is a fact in P and negative otherwise.
+         *
          * The method may only be called after getNextModel() has returned a NULL-pointer after first call.
          * @param explanationAtoms The atoms which serve as explanation.
          * @return An explanation for the inconsistency depending on the atoms in \p explanationAtoms.
