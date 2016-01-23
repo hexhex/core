@@ -279,7 +279,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
         
         // containers for storing nogoods that still have to be minimized 
         SimpleNogoodContainer newNogoodsContainer;
-	    std::vector<std::pair<Nogood,ID>> newNogoods;
+        std::vector<std::pair<Nogood,ID>> newNogoods;
         
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
@@ -507,7 +507,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         // containers for storing nogoods that still have to be minimized 
         SimpleNogoodContainer newNogoodsContainer;
         std::map<ID, Tuple> externalAuxiliaryTable;
-        std::vector<std::pair<Nogood,ID>> newNogoods;
+        std::vector<std::pair<Nogood,ID> > newNogoods;
 
         // iterate over negative output atoms
         bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().first();
