@@ -156,7 +156,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("MinimizeNogoodsOnConflict", 0);
     // forces all external atoms to be treated as inner
     config.setOption("NoOuterExternalAtoms", 0);
-    config.setOption("UnitInconsistencyAnalysis", 1);
+    config.setOption("UnitInconsistencyAnalysis", 0);
     config.setOption("UnitInconsistencyAnalysisDebug", 0);  // analyze wrt. "explain" atoms
 
     WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
