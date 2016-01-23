@@ -14,4 +14,4 @@ someN :- n(X).
 
 % main part
 res(X) :- &testSetMinusNogoodBasedLearning[po,qo](X)<tuplelevellinear>.
-:- res(X). %, someN.
+:- res(X), someN.
