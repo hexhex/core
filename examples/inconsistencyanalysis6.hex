@@ -23,8 +23,11 @@ product(X) :- #int(X).
 produce(X) v nproduce(X) :- product(X).
 
 % define requirements of products (actually considered as part of the external source, but are implemented as fact to allow for easier modification -> influence on runtime is negnectible).
-require(a,p,1,2,3,n,4).
-require(a,p,4,n,5).
+require(a,p,0).
+require(a,p,X) :- #int(X), X > 2.
+
+require(b,p,1).
+require(b,p,X) :- #int(X), X >= 2.
 
 % checking part is split from the guessing part due to the (possibly) non-monotonic external atom
 requirement(Z) :- &getreq[produce,require](Z).
