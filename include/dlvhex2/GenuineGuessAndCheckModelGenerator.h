@@ -128,14 +128,26 @@ public PropagatorCallback
         // members
 
         /**
+         * \brief Identifies the set of atoms used to explain inconsistencies in this unit.
+         *
+         * @param program The program whose EDB needs to be modified for inconsistency analysis (explanation atoms are removed as facts and assumed instead).
+         */
+        void initializeExplanationAtoms(OrdinaryASPProgram& program);
+
+        /**
+         * \brief Initializes a non-optimized solver for inconsistency analysis in this unit.
+         */
+        void initializeInconsistencyAnalysis();
+
+        /**
          * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments.
          */
-        void setHeuristics();
+        void initializeHeuristics();
 
         /**
          * \brief Adds watches to all external auxilies for incremental verification and unverification of external atoms.
          */
-        void createVerificationWatchLists();
+        void initializeVerificationWatchLists();
 
         /**
          * \brief Learns related nonground nogoods.
@@ -294,6 +306,11 @@ public PropagatorCallback
 
         // generate and return next model, return null after last model
         virtual InterpretationPtr generateNextModel();
+
+        /** \brief Identifies a reason for an inconsistency in this unit.
+         *
+         * The method may only be called after generateNextModel() has returned NULL after first call. */
+        void identifyInconsistencyCause();
 
         // handling inconsistencies propagated over multiple units
         virtual const Nogood* getInconsistencyCause();
