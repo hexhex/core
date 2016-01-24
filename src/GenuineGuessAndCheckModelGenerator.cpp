@@ -316,6 +316,7 @@ void GenuineGuessAndCheckModelGenerator::initializeExplanationAtoms(OrdinaryASPP
     // Atoms from successor and sibling units are excluded by Condition (i) (they cannot occur in this unit because evaluation graphs are acyclic).
     // Atoms from this unit are excluded by Condition (ii).
     PredicateMaskPtr explAtomMask(new PredicateMask());
+    explAtoms.reset(new Interpretation(factory.ctx.registry()));
     explAtomMask->setRegistry(factory.ctx.registry());
     DBGLOG(DBG, "Computing set of explanation atoms");
     if (factory.ctx.config.getOption("UnitInconsistencyAnalysisDebug")) {   // in debug mode we analyze conflicts wrt. "explain" atoms rather than the unit input
@@ -341,7 +342,8 @@ void GenuineGuessAndCheckModelGenerator::initializeExplanationAtoms(OrdinaryASPP
         }
     }
     explAtomMask->updateMask();
-    explAtoms = explAtomMask->mask();
+    explAtoms->getStorage() |= explAtomMask->mask()->getStorage();
+    //explAtoms->getStorage() |= input->getStorage();
     DBGLOG(DBG, "Explanation atoms for inconsistency analysis: " << *explAtoms);
 
     if (!!explAtoms){
