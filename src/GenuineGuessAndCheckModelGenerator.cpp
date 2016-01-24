@@ -486,13 +486,16 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         if (!finalCompatibilityCheck(modelCandidate)) {
             LOG(DBG,"compatibility failed");
             if (!!analysissolver){
+                InterpretationPtr rematoms(new Interpretation(factory.ctx.registry()));
                 InterpretationPtr relevantatoms(new Interpretation(*annotatedGroundProgram.getProgramMask()));
-                bm::bvector<>::enumerator en = annotatedGroundProgram.getProgramMask()->getStorage().first();
-                bm::bvector<>::enumerator en_end = annotatedGroundProgram.getProgramMask()->getStorage().end();
+                relevantatoms->getStorage() |= postprocessedInput->getStorage();
+                bm::bvector<>::enumerator en = relevantatoms->getStorage().first();
+                bm::bvector<>::enumerator en_end = relevantatoms->getStorage().end();
                 while (en < en_end) {
-                    if (factory.ctx.registry()->ogatoms.getIDByAddress(*en).isAuxiliary()) relevantatoms->clearFact(*en);
+                    if (factory.ctx.registry()->ogatoms.getIDByAddress(*en).isAuxiliary()) rematoms->setFact(*en);
                     en++;
                 }
+                relevantatoms->getStorage() -= rematoms->getStorage();
                 Nogood ng(relevantatoms, modelCandidate);
                 DBGLOG(DBG, "Adding model candidate " << ng.getStringRepresentation(factory.ctx.registry()) << " to inconsistency analyzer");
                 analysissolver->addNogood(ng);
