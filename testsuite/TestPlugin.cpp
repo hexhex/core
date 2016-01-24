@@ -1341,6 +1341,40 @@ public:
   }
 };
 
+class TestIdpAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestIdpAtom():
+    PluginAtom("idp", false) // monotonic
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    setOutputArity(1);
+
+    prop.setProvidesPartialAnswer(true);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (atom.tuple.size() != 2) throw PluginError("TestIdpAtom can only process input predicates with arity 1!");
+
+		Tuple tu;
+		tu.push_back(atom.tuple[1]);
+        if (query.interpretation->getFact(*en)) answer.get().push_back(tu);
+        else answer.getUnknown().push_back(tu);
+		en++;
+	}
+  }
+};
+
 class TestIdcAtom:	// tests user-defined external learning
   public PluginAtom
 {
@@ -2632,6 +2666,89 @@ public:
             }
     };
 
+    class ProductionRequirementsAtom : public PluginAtom
+    {
+        public:
+            ProductionRequirementsAtom() : PluginAtom("getreq", false)
+            {
+                addInputPredicate();
+                addInputPredicate();
+                setOutputArity(1);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+      
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+
+                std::set<ID> produced;
+                std::set<ID> possiblyproduced;
+                std::set<ID> allrequirements;
+
+                ID const_p = registry.storeConstantTerm("p");
+                ID const_n = registry.storeConstantTerm("n");
+
+                // extract requirements and production plan
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end){
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+                    if (ogatom.tuple[0] == query.input[0]){
+                        if (!query.assigned || query.assigned->getFact(*en)){
+                            if (query.interpretation->getFact(*en)) { produced.insert(ogatom.tuple[1]); }
+                        } else { possiblyproduced.insert(ogatom.tuple[1]); }
+                    }
+                    if (ogatom.tuple[0] == query.input[1]){
+                        allrequirements.insert(ogatom.tuple[1]);
+                    }
+                    en++;
+                }
+
+                // decide for each requirement if it is true, false or unknown
+                BOOST_FOREACH (ID req, allrequirements) {
+                    en = query.predicateInputMask->getStorage().first();
+                    en_end = query.predicateInputMask->getStorage().end();
+                    while (en < en_end){
+                        const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+                        if (ogatom.tuple[0] == query.input[1] && ogatom.tuple[1] == req){
+                            if (ogatom.tuple[2] != const_p) throw PluginError("requirements specification must be of form req(Name, p, ..., n, ...)");
+                            bool cursat = true;
+                            bool curviolated = false;
+                            bool pos = true;
+                            for (int i = 3; i < ogatom.tuple.size(); ++i) {
+                                // switch to negative requirements
+                                if (ogatom.tuple[i] == const_n) {
+                                    pos = false;
+                                    continue;
+                                }
+                                // check for satisfaction of the current product
+                                cursat &= (pos && produced.find(ogatom.tuple[i]) != produced.end()) || (!pos && produced.find(ogatom.tuple[i]) == produced.end() && possiblyproduced.find(ogatom.tuple[i]) == possiblyproduced.end());
+                                curviolated |= (pos && produced.find(ogatom.tuple[i]) == produced.end() && possiblyproduced.find(ogatom.tuple[i]) == possiblyproduced.end()) || (!pos && produced.find(ogatom.tuple[i]) != produced.end());
+                            }
+                            assert (!(cursat && curviolated) && "precondition for requirement is satisfied and violated at the same time");
+                            // requirement is definitely true
+                            if (cursat) {
+                                Tuple out;
+                                out.push_back(req);
+                                answer.get().push_back(out);
+                                break;
+                            }
+                            // requirement could be true
+                            if (!curviolated) {
+                                Tuple out;
+                                out.push_back(req);
+                                answer.getUnknown().push_back(out);
+                                break;
+                            }
+                        }
+                        en++;
+                    }
+                }
+            }
+    };
 
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
@@ -2666,6 +2783,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestIdpAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdcAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNegAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
@@ -2692,6 +2810,7 @@ public:
           ret.push_back(PluginAtomPtr(new TestNumberOfBallsSE, PluginPtrDeleter<PluginAtom>()));
           ret.push_back(PluginAtomPtr(new TestNumberOfBallsGE, PluginPtrDeleter<PluginAtom>()));
           ret.push_back(PluginAtomPtr(new SumNonZeroAtom, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new ProductionRequirementsAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

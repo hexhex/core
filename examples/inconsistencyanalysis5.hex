@@ -1,0 +1,12 @@
+node(a). node(b). node(c). node(d). node(e).
+edge(a,b). edge(a,d). edge(b,d). edge(b,e). edge(c,d). edge(c,e).
+node(X) :- #int(X).
+edge(Y,X) :- edge(X,Y).
+
+% guessing part
+in(X) v out(X) :- node(X).
+:- in(X), in(Y), edge(X,Y).
+
+% checking part is split from the guessing part due to the (possibly) non-monotonic external atom
+check(Z) :- &idp[in](Z).
+:- check(Z), check(W), Z != W.
