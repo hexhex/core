@@ -458,7 +458,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
         modelCandidate = solver->getNextModel();
 
-
         // test inconsistency explanations
         if (!modelCandidate && factory.ctx.config.getOption("UnitInconsistencyAnalysis") && !!explAtoms && cmModelCount == 0) { identifyInconsistencyCause(); }
 
