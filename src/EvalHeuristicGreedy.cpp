@@ -337,14 +337,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
                         }
                     }
 
-                    bool o = false;
-                    if (compgraph.propsOf(comp).innerConstraints.size() == 1 && compgraph.propsOf(comp2).innerRules.size() == 1) {
-                        o = true;
-                    }
-                    if (compgraph.propsOf(comp2).innerConstraints.size() == 1 && compgraph.propsOf(comp).innerRules.size() == 1) {
-                        o = true;
-                    }
-
                     // if this is the case, then do not merge
                     if (!breakCycle) {
                         // we do not want to merge if a component in transitivePredecessorComponents is reachable from exactly one of comp and comp2

@@ -98,7 +98,9 @@ class DLVHEX_EXPORT ComponentGraph
         /** \brief Stores for each rule the set of stratified literals in the rule, i.e., which do not depend on atoms derived in the component. */
         boost::unordered_map<ID, std::set<ID> > stratifiedLiterals;
         /** \brief Set of all predicates defined in the component. */
-        std::set<ID> predicatesInComponent;
+        std::set<ID> predicatesDefinedInComponent;
+        /** \brief Set of all predicates occurring in the component. */
+        std::set<ID> predicatesOccurringInComponent;
 
         // this is determined by calculateComponents
         // and used for selecting model generator factories
@@ -371,6 +373,10 @@ class DLVHEX_EXPORT ComponentGraph
          * @param reg Registry used for resolving IDs.
          * @param ci ComponentInfo of the component to check. */
         static void calculateStratificationInfo(RegistryPtr reg, ComponentInfo& ci);
+        /** \brief Computes the set of all predicates in this component.
+         * @param reg Registry used for resolving IDs.
+         * @param ci ComponentInfo of the component to check. */
+        static void calculatePredicatesOfComponent(RegistryPtr reg, ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

@@ -112,6 +112,8 @@ public PropagatorCallback
         GenuineGroundSolverPtr solver;
         /** \brief Number of models of this model generate (only compatible and minimal ones). */
         int cmModelCount;
+        /** \brief Set of atoms used for inconsistency analysis (only defined if inconsistency analysis is used). */      
+        InterpretationConstPtr explAtoms;
         /** \brief Second solver instance (non-optimized solver!) for inconsistency analysis. */
         InternalGroundDASPSolverPtr analysissolver;
         /** \brief Stores if an inconsistency cause has been identified. */

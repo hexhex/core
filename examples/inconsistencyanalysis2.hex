@@ -1,4 +1,8 @@
-p(a). p(b). q(a). q(c).
+% monolithic: grounding problem because external atoms are evaluated under exponentially many interpretations
+% splitting: solving problem because constraint at the bottom cannot eliminate guesses
+
+p(a). p(b). p(c). p(d).
+q(a). q(c). q(e).
 
 % the following rules let the greedy heuristics split before the main part (since monotonicity of &id is not known to the solver)
 pi(X) :- p(X).
@@ -6,8 +10,10 @@ qi(X) :- q(X).
 po(X) :- &id[pi](X).
 qo(X) :- &id[qi](X).
 y(X) v n(X) :- #int(X).
+someN :- n(X).
+allY :- not someN.
 
 % main part
-res(X) :- &testSetMinusNonComfort[po,qo](X). %<tuplelevellinear>.
-:- res(X), not y(1).
+res(X) :- &testSetMinusNogoodBasedLearning[po,qo](X)<tuplelevellinear>.
+:- res(X), not allY.
 %:- po(X).

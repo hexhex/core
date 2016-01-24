@@ -1185,7 +1185,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
                         !ea.getExtSourceProperties().isMonotonic(i) &&
                     ogatom.tuple[0] == ea.inputs[i]) {
                         // if the predicate is defined in this component, enumerate all possible assignments
-                        if (ci.predicatesInComponent.count(ea.inputs[i]) > 0) {
+                        if (ci.predicatesDefinedInComponent.count(ea.inputs[i]) > 0) {
                             DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
                             nonmonotonicinput[*en] = false;
                         }

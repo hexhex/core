@@ -254,30 +254,46 @@ haveInconsistencyCause(false)
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder GuessPr GenGnCMG");
         
         // run solver possibly with the possibility to analyze unit inconsistency at a later point
-        InterpretationConstPtr explAtoms;
         if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
             //PredicateMaskPtr explAtomMask(new PredicateMask());
             //explAtomMask->setRegistry(factory.ctx.registry());
             //explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
             //explAtomMask->updateMask();
 
-            // @TODO: Negative input atoms must be handled somehow! (atoms which are currently not in the input but are derivable in predecessor units)
-
-            // Explanation atoms are all input atoms to this unit.
-            // They must be frozen, removed from the facts and instead added as assumptions.
-            // This is to prevent the grounder from optimizing them away.
-            explAtoms = input; // explAtomMask->mask();
-
-#ifndef NDEBUG
-            // in debug mode we analyze conflicts wrt. "explain" atoms rather than the unit input
-            if (factory.ctx.config.getOption("UnitInconsistencyAnalysisDebug")) {
-                PredicateMaskPtr explAtomMask(new PredicateMask());
-                explAtomMask->setRegistry(factory.ctx.registry());
+            // Explanation atoms are all ground atoms from the registry which
+            // (i) use a predicate which occurs in this unit (either in an ordinary atom or in an external atom input list); and
+            // (ii) are not defined in this unit.
+            // This captures exactly the atoms which *could* be derivable in some predecessor unit.
+            // Atoms from successor and sibling units are excluded by Condition (i) (they cannot occur in this unit because evaluation graphs are acyclic).
+            // Atoms from this unit are excluded by Condition (ii).
+            PredicateMaskPtr explAtomMask(new PredicateMask());
+            explAtomMask->setRegistry(factory.ctx.registry());
+            DBGLOG(DBG, "Computing set of explanation atoms");
+            if (factory.ctx.config.getOption("UnitInconsistencyAnalysisDebug")) {   // in debug mode we analyze conflicts wrt. "explain" atoms rather than the unit input
                 explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-                explAtomMask->updateMask();
-                explAtoms = explAtomMask->mask();
+            }else{
+                BOOST_FOREACH (ID predInComp, factory.ci.predicatesOccurringInComponent) {
+                    DBGLOG(DBG, "Predicate " << printToString<RawPrinter>(predInComp, factory.ctx.registry()) << " occurs in unit");
+                    if (factory.ci.predicatesDefinedInComponent.find(predInComp) == factory.ci.predicatesDefinedInComponent.end()) {
+                        DBGLOG(DBG, "Predicate " << printToString<RawPrinter>(predInComp, factory.ctx.registry()) << " is not defined in unit --> explanation atom");
+                        explAtomMask->addPredicate(predInComp);
+                    }
+                }
+                // nogoods learned from other components belong to this unit
+                typedef std::pair<Nogood, int> NogoodIntegerPair;
+                BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
+                    BOOST_FOREACH (ID atom, nip.first){
+                        ID predInComp = factory.ctx.registry()->ogatoms.getByID(atom).tuple[0];
+                        if (factory.ci.predicatesDefinedInComponent.find(predInComp) == factory.ci.predicatesDefinedInComponent.end()) {
+                            DBGLOG(DBG, "Predicate " << printToString<RawPrinter>(predInComp, factory.ctx.registry()) << " is not defined in unit --> explanation atom");
+                            explAtomMask->addPredicate(predInComp);
+                        }
+                    }
+                }
             }
-#endif
+            explAtomMask->updateMask();
+            explAtoms = explAtomMask->mask();
+            DBGLOG(DBG, "Explanation atoms for inconsistency analysis: " << *explAtoms);
 
             if (!!explAtoms){
                 InterpretationPtr edbWithoutExplAtoms(new Interpretation(*postprocessedInput));
@@ -446,17 +462,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
         // test inconsistency explanations
         if (!modelCandidate && factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
-            InterpretationConstPtr explAtoms = input;
-#ifndef NDEBUG
-            // in debug mode we analyze conflicts wrt. "explain" atoms rather than the unit input
-            if (factory.ctx.config.getOption("UnitInconsistencyAnalysisDebug")) {
-                PredicateMaskPtr explAtomMask(new PredicateMask());
-                explAtomMask->setRegistry(factory.ctx.registry());
-                explAtomMask->addPredicate(factory.ctx.registry()->storeConstantTerm("explain"));
-                explAtomMask->updateMask();
-                explAtoms = explAtomMask->mask();
-            }
-#endif
             if (!!explAtoms && cmModelCount == 0) {
 #ifndef NDEBUG
                 InterpretationConstPtr imodel = analysissolver->getNextModel();

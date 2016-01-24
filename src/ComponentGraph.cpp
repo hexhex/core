@@ -460,6 +460,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
         // compute stratification of default-negated literals and predicate input parameters
         calculateStratificationInfo(reg, ci);
 
+        // compute all predicate which occur in this component
+        calculatePredicatesOfComponent(reg, ci);
+
         DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
         DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
         DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
@@ -777,7 +780,7 @@ void ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
             headAtomIDs.insert(hid);
 
             const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(hid);
-            ci.predicatesInComponent.insert(oatom.tuple[0]);
+            ci.predicatesDefinedInComponent.insert(oatom.tuple[0]);
         }
     }
 
@@ -809,7 +812,7 @@ void ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
                 for (uint32_t p = 0; p < eatom.inputs.size() && stratified; ++p) {
                     if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.getExtSourceProperties().isNonmonotonic(p)) {
                         // is this predicate defined in this component?
-                        if (ci.predicatesInComponent.count(eatom.inputs[p]) > 0) {
+                        if (ci.predicatesDefinedInComponent.count(eatom.inputs[p]) > 0) {
                             stratified = false;
                             break;
                         }
@@ -824,6 +827,43 @@ void ComponentGraph::calculateStratificationInfo(RegistryPtr reg, ComponentInfo&
     }
 }
 
+void ComponentGraph::calculatePredicatesOfComponent(RegistryPtr reg, ComponentInfo& ci)
+{
+    DBGLOG(DBG, "calculatePredicatesOfComponent");
+
+    for (int setc = 1; setc <= 2; setc++) { // do this for inner rules and inner constraints
+        std::vector<ID>& set = (setc == 1 ? ci.innerRules : ci.innerConstraints);
+
+        BOOST_FOREACH(ID rid, set) {
+            const Rule& rule = reg->rules.getByID(rid);
+
+            BOOST_FOREACH(ID hid, rule.head) {
+                if (!hid.isOrdinaryAtom()) continue;
+                ci.predicatesOccurringInComponent.insert(reg->lookupOrdinaryAtom(hid).tuple[0]);
+            }
+
+            BOOST_FOREACH(ID bid, rule.body) {
+                if (bid.isOrdinaryAtom()) {
+                    ci.predicatesOccurringInComponent.insert(reg->lookupOrdinaryAtom(bid).tuple[0]);
+                }
+                if (bid.isExternalAtom()) {
+                    const ExternalAtom& eatom = reg->eatoms.getByID(bid);
+                    for (int i = 0; i < eatom.inputs.size(); i++){
+                        if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE) ci.predicatesOccurringInComponent.insert(eatom.inputs[i]);
+                    }
+                }
+                if (bid.isAggregateAtom()) {
+                    const AggregateAtom& aatom = reg->aatoms.getByID(bid);
+                    BOOST_FOREACH (ID abid, aatom.literals){
+                        if (abid.isOrdinaryAtom()) {
+                            ci.predicatesOccurringInComponent.insert(reg->lookupOrdinaryAtom(abid).tuple[0]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 // Compute the dependency infos and component info
 // before putting components `comps' and `sharedcomps' into a new component.
@@ -967,8 +1007,10 @@ ComponentInfo& newComponentInfo) const
                 ci.stronglySafeVariables[p.first].insert(id);
             }
         }
-        ci.predicatesInComponent.insert(
-            cio.predicatesInComponent.begin(), cio.predicatesInComponent.end());
+        ci.predicatesDefinedInComponent.insert(
+            cio.predicatesDefinedInComponent.begin(), cio.predicatesDefinedInComponent.end());
+        ci.predicatesOccurringInComponent.insert(
+            cio.predicatesOccurringInComponent.begin(), cio.predicatesOccurringInComponent.end());
         /*
             BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
               BOOST_FOREACH (ID id, p.second){
@@ -994,9 +1036,9 @@ ComponentInfo& newComponentInfo) const
         BOOST_FOREACH (ID outerEA, cio.outerEatoms){
             const ExternalAtom& eatom = reg->eatoms.getByID(outerEA);
             bool becomesInner = false;
-            becomesInner = (ci.predicatesInComponent.find(eatom.auxInputPredicate) != ci.predicatesInComponent.end());
+            becomesInner = (ci.predicatesDefinedInComponent.find(eatom.auxInputPredicate) != ci.predicatesDefinedInComponent.end());
             for (int i = 0; i < eatom.inputs.size(); ++i) {
-                if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE && ci.predicatesInComponent.find(eatom.inputs[i]) != ci.predicatesInComponent.end()){
+                if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE && ci.predicatesDefinedInComponent.find(eatom.inputs[i]) != ci.predicatesDefinedInComponent.end()){
                     becomesInner = true;
                     break;
                 }
