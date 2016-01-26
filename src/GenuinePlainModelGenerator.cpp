@@ -267,6 +267,8 @@ GenuinePlainModelGenerator::generateNextModel()
     
     RegistryPtr reg = factory.ctx.registry();
 
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+
     // Search space pruning: the idea is to set the current global optimum as upper limit in the solver instance (of this unit) to eliminate interpretations with higher costs.
     // Note that this optimization is conservative such that the algorithm remains complete even when the program is split. Because costs can be only positive,
     // if the costs of a partial model are greater than the current global optimum then also any completion of this partial model (by combining it with other units)
