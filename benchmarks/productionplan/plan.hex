@@ -1,0 +1,25 @@
+% Generating a production plan.
+%
+% A sets S of produced products implies certain requirements r(S). We assume that this function is *nonmonotonic*, i.e.,
+% production of additional products may eliminate requirements because one might uses the additionally produced items or by-products as a replacement for the former requirement.
+% Example: The production of a device may require a supplier for CPUs, but if CPUs are also produced in-house, then this supplier is not needed anymore.
+% Moreover, the need for a certain requirement depends only on a small subset of the produced or not produced products.
+%
+% We have constraints which forbid certain combinations of requirements because we cannot acquire them. We want the compute the possible production plans.
+%
+% Formally:
+% Given a set of possible products to produce P={P1, ..., Pn}, a set of requirements R = {R1, ..., Rn}, a requirements function r: 2^P -> 2^R and a set C \subseteq 2^R of constraints.
+% Find a production plan L \subseteq P s.t. C' \not\subseteq r(L) for all C' \in C.
+%
+% The computation of the requirements is realized as an external atom, which is
+% (i) nonmonotonic
+% (ii) depends only on a small part of the input (usually).
+% The requirement checks follow after the evaluation of the external atom. Without transunitpropagation, the checking part is completely separated from the guessing part.
+% The external source support partial evaluation. For any Ri, the external source returns T (F) if Ri is a requirement of all (no) completions of the partial product plan, and U otherwise.
+
+% guessing part
+produce(X) v nproduce(X) :- product(X).
+
+% checking part is split from the guessing part due to the (possibly) non-monotonic external atom
+requirement(Z) :- &getreq[produce,require](Z).
+:- requirement(Z), requirement(W), Z != W.
