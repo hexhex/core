@@ -5,6 +5,9 @@
 # $6: dependency probability
 # $7: number of instances
 
+# Good results:
+# ./generateset.sh 20 20 2 14 30 10 10
+
 if [[ $# -lt 7 ]]; then
 	echo "Error: Script expects 7 parameters"
 	exit 1;

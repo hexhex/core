@@ -448,6 +448,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
     // now we have postprocessed input in postprocessedInput
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "genuine guess and check loop");
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (gNM GenGnC)");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
 
     InterpretationPtr modelCandidate;
     do {

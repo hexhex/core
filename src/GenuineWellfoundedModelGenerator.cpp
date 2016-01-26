@@ -215,6 +215,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
             IntegrateExternalAnswerIntoInterpretationCB cb(dst);
             {
                 DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (inner EAs GenuineWfMG)");
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
                 evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
             }
             DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
