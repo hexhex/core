@@ -5,8 +5,8 @@
 # $6: dependency probability
 # $7: number of instances
 
-if [[ $# -lt 6 ]]; then
-	echo "Error: Script expects 6 parameters"
+if [[ $# -lt 7 ]]; then
+	echo "Error: Script expects 7 parameters"
 	exit 1;
 fi
 

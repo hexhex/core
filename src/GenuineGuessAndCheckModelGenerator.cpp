@@ -528,11 +528,13 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 }
 
 const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
+    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidic, "Returned unit inconsistency causes", (haveInconsistencyCause ? 1 : 0));
     DBGLOG(DBG, "Inconsistency cause was requested: " << (haveInconsistencyCause ? "" : "not") << " available");
     return (factory.ctx.config.getOption("TransUnitLearning") && haveInconsistencyCause ? &inconsistencyCause : 0);
 }
 
 void GenuineGuessAndCheckModelGenerator::addNogood(const Nogood* cause){
+    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidna, "Nogoods added from outside to GnC mg", 1);
     DBGLOG(DBG, "Adding nogood to model generator: " << cause->getStringRepresentation(factory.ctx.registry()));
     if (factory.ctx.config.getOption("TransUnitLearning")){
         solver->addNogood(*cause);
