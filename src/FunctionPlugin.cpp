@@ -428,7 +428,6 @@ class FunctionInterprete : public PluginAtom
                 if (t.arguments[i].isTerm() && t.arguments[i].isNestedTerm() ) {
                     if (containsPlaceholder(getRegistry()->terms.getByID(t.arguments[i]))) return true;
                 }else if (t.arguments[i].isTerm() && t.arguments[i].isConstantTerm()){
-std::cout << "Checking " << getRegistry()->terms.getByID(t.arguments[i]).getUnquotedString() << std::endl;
                     if (getRegistry()->terms.getByID(t.arguments[i]).getUnquotedString()[0] == '#') return true;
                 }
             }
