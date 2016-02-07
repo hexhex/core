@@ -65,20 +65,18 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#ifdef POSIX
-#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
-#define unsetenv(VAR) ::unsetenv(VAR)
-#else
+#ifdef WIN32
 void setenv(const char* var, const char* val, int v)
 {
     SetEnvironmentVariable(var, val);
 }
-
-
 void unsetenv(const char* var)
 {
     SetEnvironmentVariable(var, NULL);
 }
+#else
+#define setenv(VAR, VAL, V) ::setenv(VAR, VAL, V)
+#define unsetenv(VAR) ::unsetenv(VAR)
 #endif
 
 struct PluginContainer::LoadedPlugin
