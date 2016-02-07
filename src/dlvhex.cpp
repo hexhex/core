@@ -169,15 +169,13 @@
 #include <getopt.h>
 #include <signal.h>
 #include <sys/types.h>
-#ifdef POSIX
+#ifdef WIN32
+#include <windows.h>
+#undef ERROR                     // there is a clash with a Windows definition
+#elif POSIX
 #include <pwd.h>
 #else
-#ifdef WIN32
-#include <Windows.h>
-#undef ERROR                     // there is a clash with a Windows definition
-#else
 #error Either POSIX or WIN32 must be defined
-#endif
 #endif
 
 #include <boost/tokenizer.hpp>
@@ -326,10 +324,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         always           : Try to minimize every learned nogood" << std::endl
         << "                         alwaysopt        : Like always, but use cache for answers of external atom queries" << std::endl
         << "                         onconflict       : Only minimize nogoods that are violated by the current assignment" << std::endl
-        << "                         onconflictopt    : Like onconflict, but use cache for answers of external atom queries" << std::endl          
+        << "                         onconflictopt    : Like onconflict, but use cache for answers of external atom queries" << std::endl
         << "     --ngminimizationlimit=N" << std::endl
         << "                      Maximum size of nogoods that will be minimized" << std::endl
-        << "                      (only useful with ngminimization)" << std::endl            
+        << "                      (only useful with ngminimization)" << std::endl
         << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
         << "                      Specifies the frequency of unfounded set checks (only useful with --flpcheck=[a]ufs[m])." << std::endl
         << "                         post (default)   : Do UFS check only over complete interpretations" << std::endl
@@ -453,10 +451,10 @@ namespace
 void signal_handler(int signum)
 {
     // perform benchmarking shutdown to obtain benchmark output
-    #ifdef POSIX
-    LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal " << signum << "!");
-    #else
+    #ifdef WIN32
     LOG(ERROR,"dlvhex2 with pid " << GetCurrentProcessId() << " got termination signal" << signum << "!");
+    #else
+    LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal " << signum << "!");
     #endif
 
     benchmark::BenchmarkController::finish();
@@ -1590,7 +1588,7 @@ Config& config, ProgramCtx& pctx)
                     else if (heur == "onconflict") {
                         pctx.config.setOption("MinimizeNogoods", 1);
                         pctx.config.setOption("MinimizeNogoodsOnConflict", 1);
-                    } 
+                    }
 		    else if (heur == "alwaysopt") {
                         pctx.config.setOption("MinimizeNogoods", 1);
 			pctx.config.setOption("MinimizeNogoodsOpt", 1);
@@ -1620,7 +1618,7 @@ Config& config, ProgramCtx& pctx)
                     }
                     pctx.config.setOption("MinimizationSize", minval);
                 }
-                break;   
+                break;
             case 60:
                 {
                     std::string arg(optarg);
@@ -1755,34 +1753,6 @@ Config& config, ProgramCtx& pctx)
 
 void configurePluginPath(std::string& userPlugindir)
 {
-    // TODO (WIN32)
-    #ifdef POSIX
-    bool reset = false;
-    if( !userPlugindir.empty() && userPlugindir[0] == '!' ) {
-        reset = true;
-        if( userPlugindir.size() > 2 && userPlugindir[1] == ':' )
-            userPlugindir.erase(0,2);
-        else
-            userPlugindir.erase(0,1);
-    }
-
-    std::stringstream searchpath;
-
-    if( !userPlugindir.empty() )
-        searchpath << userPlugindir << ':';
-
-    if( !reset ) {
-        // add LD_LIBRARY_PATH
-        const char *envld = ::getenv("LD_LIBRARY_PATH");
-        if( envld ) {
-            searchpath << envld << ":";
-        }
-
-        const char* homedir = ::getpwuid(::geteuid())->pw_dir;
-        searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
-    }
-    userPlugindir = searchpath.str();
-    #else
     #ifdef WIN32
     bool reset = false;
     if( !userPlugindir.empty() && userPlugindir[0] == '!' ) {
@@ -1814,9 +1784,34 @@ void configurePluginPath(std::string& userPlugindir)
         #endif
     }
     userPlugindir = searchpath.str();
+    #elif POSIX
+    bool reset = false;
+    if( !userPlugindir.empty() && userPlugindir[0] == '!' ) {
+        reset = true;
+        if( userPlugindir.size() > 2 && userPlugindir[1] == ':' )
+            userPlugindir.erase(0,2);
+        else
+            userPlugindir.erase(0,1);
+    }
+
+    std::stringstream searchpath;
+
+    if( !userPlugindir.empty() )
+        searchpath << userPlugindir << ':';
+
+    if( !reset ) {
+        // add LD_LIBRARY_PATH
+        const char *envld = ::getenv("LD_LIBRARY_PATH");
+        if( envld ) {
+            searchpath << envld << ":";
+        }
+
+        const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+        searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
+    }
+    userPlugindir = searchpath.str();
     #else
     #error Either POSIX or WIN32 must be defined
-    #endif
     #endif
 }
 
