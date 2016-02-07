@@ -248,7 +248,8 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
     bool fromCache = false;
 
     // split the query
-    const ExtSourceProperties& prop = registry->eatoms.getByID(query.eatomID).getExtSourceProperties();
+    ExtSourceProperties emptyProp;
+    const ExtSourceProperties& prop = (query.eatomID != ID_FAIL ? registry->eatoms.getByID(query.eatomID).getExtSourceProperties() : emptyProp);
 
     DBGLOG(DBG, "Splitting query");
     std::vector<Query> atomicQueries = splitQuery(query, prop);
