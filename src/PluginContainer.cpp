@@ -53,7 +53,7 @@
 //#include <dirent.h>
 //#include <pwd.h>
 #ifdef WIN32
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 #include <boost/foreach.hpp>
