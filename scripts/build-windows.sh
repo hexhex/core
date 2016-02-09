@@ -11,6 +11,8 @@
 ################################################################################
 
 LIB_DIR=/vagrant_data/out
+PYTHON_DIR=$HOME/.wine/drive_c/Python27
+MINGW_DIR=/usr/i686-w64-mingw32
 
 ################################################################################
 
@@ -43,13 +45,8 @@ export PATH="$HOME/bin:$PATH"
 echo "cat >/usr/local/bin/python-config << 'EOF'
 #!/bin/sh
 
-# Source dir of Windows Python
-PYTHON_DIR=$HOME/.wine/drive_c/Python27
-MINGW_DIR=/usr/i686-w64-mingw32
-
-# Check params
-while [ \"$1\" != \"\" ]; do
-  case $1 in
+while [ \"\$1\" != \"\" ]; do
+  case \$1 in
     --includes )                  echo \" -I$PYTHON_DIR/include\"
                                   ;;
     --prefix | --exec-prefix )    echo \"$PYTHON_DIR/include\"
@@ -138,9 +135,9 @@ if [ ! -d "$HOME/boost_1_57_0" ]; then
   cd boost_1_57_0
   # We set Python version manually, so disable in that step to prevent an entry in project-config.jam
   ./bootstrap.sh -without-libraries=python
+  # Set cross compiler and custom python path
   echo "using gcc : 4.8 : i686-w64-mingw32-g++ ;" > user-config.jam
   echo "using python : 2.7 : /usr/bin/python : $HOME/.wine/drive_c/Python27/include : $LIB_DIR/usr/local/lib ;" >> user-config.jam
-  # TODO: Remove using python line from project-config file !
   ./b2 -q --user-config=user-config.jam toolset=gcc target-os=windows threading=multi threadapi=win32 variant=release link=static runtime-link=static --without-context --without-coroutine install --prefix=$LIB_DIR/usr/local include=$LIB_DIR/usr/local/include
 fi
 
@@ -156,7 +153,7 @@ if [ ! -d "$HOME/dlvhex-core" ]; then
   #export PYTHON_INCLUDE_DIR=$HOME/.wine/drive_c/Python27/include
 
   # Patch the gringo patch for cross-compiling
-  sed -i '1s/^/62c62\n< env['CXX']            = 'g++'\n---\n> env['CXX']            = 'i686-w64-mingw32-g++'\n/' buildclaspgringo/SConstruct.patch
+  sed -i "1s|^|62c62\n< env['CXX']            = 'g++'\n---\n> env['CXX']            = 'i686-w64-mingw32-g++'\n68c68\n< env['LIBPATH']        = []\n---\n> env['LIBPATH']        = ['$LIB_DIR/usr/local/lib', '$MINGW_DIR/libs']\n|" buildclaspgringo/SConstruct.patch
 
   # see http://curl.haxx.se/docs/faq.html#Link_errors_when_building_libcur about CURL_STATICLIB define
   mingw ./configure LDFLAGS="-static -static-libgcc -static-libstdc++ -L$LIB_DIR/usr/local/lib" --prefix $LIB_DIR/usr/local PKG_CONFIG_PATH=$LIB_DIR/usr/local/lib/pkgconfig --enable-python --enable-static --disable-shared --enable-static-boost --with-boost=$LIB_DIR/usr/local --with-libcurl=$LIB_DIR/usr/local --host=i686-w64-mingw32 CFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CXXFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CPPFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB"
