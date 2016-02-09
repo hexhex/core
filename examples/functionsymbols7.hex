@@ -20,8 +20,9 @@ resFunctional3(X) :- funcConcat2(F), X=$F(v, u).
 % test rewriting
 testRewriting1(R) :- funcConcat(F), R=$F("#1","#2").
 testRewriting2(R) :- funcConcat(F), R=$F(1,2).
-
-
+testRewriting3(R) :- R=$testConcat(a,b)().
+testRewriting4(R) :- R=$testConcat(testConcat(a,b),c).
+testRewriting5(R) :- F=$testConcat("#1","#2")(x), R=$F(y).
 
 % Rewriting
 % 

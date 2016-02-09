@@ -493,7 +493,15 @@ class FunctionInterprete : public PluginAtom
 		            throw PluginError("Invalid function parameter: " + placeholder);
 		        }
                 Tuple t;
-                t.push_back(query.input[placeholderInt]);
+                if (placeholderInt >= query.input.size()){
+                    // reference to parameter which does not exist --> introduce new parameter
+                    WARNING("Function parameter undefined: #" + placeholder);
+                    std::stringstream ss;
+                    ss << "\"#" << (placeholderInt - (query.input.size() - 1)) << "\"";
+                    t.push_back(registry.storeConstantTerm(ss.str()));
+                }else{
+                    t.push_back(query.input[placeholderInt]);
+                }
                 answer.get().push_back(t);
             }else if (query.input[0].isTerm() && (query.input[0].isConstantTerm() || (query.input[0].isIntegerTerm()))){
                 Tuple t;
@@ -593,7 +601,7 @@ struct sem<FunctionParserModuleAtomSemantics::functionTermEval>
         const boost::fusion::vector3<
             dlvhex::ID,
             dlvhex::ID,
-            boost::optional<dlvhex::Tuple>
+            boost::optional<boost::optional<dlvhex::Tuple> >
             >& source,
         ID& target) {
         RegistryPtr reg = mgr.ctx.registry();
@@ -605,7 +613,7 @@ struct sem<FunctionParserModuleAtomSemantics::functionTermEval>
         functionInterprete.tuple.push_back(boost::fusion::at_c<0>(source)); // output term
         functionInterprete.inputs.push_back(boost::fusion::at_c<1>(source)); // function object
         Tuple tup;
-        if (!!boost::fusion::at_c<1>(source)) tup = boost::fusion::at_c<2>(source).get(); // arguments
+        if (!!boost::fusion::at_c<2>(source) && !!boost::fusion::at_c<2>(source).get()) tup = boost::fusion::at_c<2>(source).get().get(); // arguments
         BOOST_FOREACH (ID inp, tup){
             functionInterprete.inputs.push_back(inp);
         }
@@ -632,7 +640,7 @@ namespace
             typedef FunctionParserModuleAtomSemantics Sem;
 
             functionTermEval
-                = (Base::primitiveTerm >> qi::lit('=') >> qi::lit('$') >> Base::primitiveTerm >> qi::lit('(') >> -Base::terms >> qi::lit(')')) [ Sem::functionTermEval(sem) ];
+                = (Base::primitiveTerm >> qi::lit('=') >> qi::lit('$') >> Base::term >> -(qi::lit('(') >> -Base::terms >> qi::lit(')'))) [ Sem::functionTermEval(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
             BOOST_SPIRIT_DEBUG_NODE(functionTermEval);
