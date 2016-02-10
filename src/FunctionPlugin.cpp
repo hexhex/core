@@ -598,10 +598,11 @@ struct sem<FunctionParserModuleAtomSemantics::functionTermEval>
 {
     void operator()(
         FunctionParserModuleAtomSemantics& mgr,
-        const boost::fusion::vector3<
+        const boost::fusion::vector4<
             dlvhex::ID,
             dlvhex::ID,
-            boost::optional<boost::optional<dlvhex::Tuple> >
+            boost::optional<boost::optional<dlvhex::Tuple> >,
+            boost::optional<boost::optional<std::vector<std::vector<std::string> > > >
             >& source,
         ID& target) {
         RegistryPtr reg = mgr.ctx.registry();
@@ -616,6 +617,9 @@ struct sem<FunctionParserModuleAtomSemantics::functionTermEval>
         if (!!boost::fusion::at_c<2>(source) && !!boost::fusion::at_c<2>(source).get()) tup = boost::fusion::at_c<2>(source).get().get(); // arguments
         BOOST_FOREACH (ID inp, tup){
             functionInterprete.inputs.push_back(inp);
+        }
+        if (!!boost::fusion::at_c<3>(source) && !!boost::fusion::at_c<3>(source).get()) {
+            functionInterprete.prop.interpretProperties(mgr.ctx.registry(), functionInterprete, boost::fusion::at_c<3>(source).get().get());
         }
 
         target = reg->eatoms.storeAndGetID(functionInterprete);
@@ -640,7 +644,7 @@ namespace
             typedef FunctionParserModuleAtomSemantics Sem;
 
             functionTermEval
-                = (Base::primitiveTerm >> qi::lit('=') >> qi::lit('$') >> Base::term >> -(qi::lit('(') >> -Base::terms >> qi::lit(')'))) [ Sem::functionTermEval(sem) ];
+                = (Base::primitiveTerm >> qi::lit('=') >> qi::lit('$') >> Base::term >> -(qi::lit('(') >> -Base::terms >> qi::lit(')')) >> -(qi::lit('<') > -Base::externalAtomProperties >> qi::lit('>'))) [ Sem::functionTermEval(sem) ];
 
             #ifdef BOOST_SPIRIT_DEBUG
             BOOST_SPIRIT_DEBUG_NODE(functionTermEval);

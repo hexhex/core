@@ -1,0 +1,2 @@
+r(hello).
+r(Y) :- r(X), Y=$tail(X)<wellorderingstrlen 0 0>.
