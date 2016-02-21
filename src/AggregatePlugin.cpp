@@ -1011,8 +1011,13 @@ namespace
                     int smallest = -1;
                     int largest = -1;
                     BOOST_FOREACH (Tuple t, mightBeTrueInput) {
-                        if (t[0].address < smallest && t[0].address < *minFunctionValue / cnt) smallest = t[0].address;
-                        if (t[0].address > largest && t[0].address > *minFunctionValue / cnt) largest = t[0].address;
+                        if (cnt == 0){
+                            smallest = t[0].address;
+                            largest = t[0].address;
+                        }else{
+                            if (t[0].address < smallest && t[0].address < *minFunctionValue / cnt) smallest = t[0].address;
+                            if (t[0].address > largest && t[0].address > *minFunctionValue / cnt) largest = t[0].address;
+                        }
                     }
                     if (smallest != -1){
                         *minFunctionValue -= smallest;

@@ -312,7 +312,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out, bool includeAnonymous,
                 }
                 // local variables
                 BOOST_FOREACH(ID idv, atom.variables) {
-                    out.insert(idv);
+                    if (idv.isVariableTerm()) out.insert(idv);
                 }
             }
             // left and right term
