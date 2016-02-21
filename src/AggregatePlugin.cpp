@@ -463,7 +463,8 @@ namespace
                 DBGLOG(DBG, "Generating new aggregate or external atom");
                 ID valueVariable;
                 // boolean external atoms can only be used for range queries but not if we need the exact value
-                bool useBooleanEa = (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite && (aatom.tuple[0] == ID_FAIL || aatom.tuple[1].address == ID::TERM_BUILTIN_LE || aatom.tuple[1].address == ID::TERM_BUILTIN_LT || aatom.tuple[1].address == ID::TERM_BUILTIN_GE || aatom.tuple[1].address == ID::TERM_BUILTIN_GT) && (aatom.tuple[4] == ID_FAIL || aatom.tuple[3].address == ID::TERM_BUILTIN_LE || aatom.tuple[3].address == ID::TERM_BUILTIN_LT || aatom.tuple[3].address == ID::TERM_BUILTIN_GE || aatom.tuple[3].address == ID::TERM_BUILTIN_GT) );
+                bool useBooleanEa = (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite); // && (aatom.tuple[0] == ID_FAIL || aatom.tuple[1].address == ID::TERM_BUILTIN_LE || aatom.tuple[1].address == ID::TERM_BUILTIN_LT || aatom.tuple[1].address == ID::TERM_BUILTIN_GE || aatom.tuple[1].address == ID::TERM_BUILTIN_GT) && (aatom.tuple[4] == ID_FAIL || aatom.tuple[3].address == ID::TERM_BUILTIN_LE || aatom.tuple[3].address == ID::TERM_BUILTIN_LT || aatom.tuple[3].address == ID::TERM_BUILTIN_GE || aatom.tuple[3].address == ID::TERM_BUILTIN_GT) );
+                bool negate = false;
                 switch (ctxdata.mode) {
                     case AggregatePlugin::CtxData::ExtRewrite:
                     case AggregatePlugin::CtxData::ExtBlRewrite:
@@ -488,8 +489,28 @@ namespace
                         eaReplacement.inputs.push_back(inputPredID);
                         // i3
                         if (useBooleanEa){
-                            if (aatom.tuple[0] != ID_FAIL) { eaReplacement.inputs.push_back(ID::termFromInteger(aatom.tuple[1].address)); eaReplacement.inputs.push_back(aatom.tuple[0]); } else { eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); }
-                            if (aatom.tuple[4] != ID_FAIL) { eaReplacement.inputs.push_back(ID::termFromInteger(aatom.tuple[3].address)); eaReplacement.inputs.push_back(aatom.tuple[4]); } else { eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); }
+                            if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address == ID::TERM_BUILTIN_EQ && aatom.tuple[4] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                            }
+                            else if (aatom.tuple[4] != ID_FAIL && aatom.tuple[3].address == ID::TERM_BUILTIN_EQ && aatom.tuple[0] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                            }
+                            else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address == ID::TERM_BUILTIN_NE && aatom.tuple[4] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                                negate = true;
+                            }
+                            else if (aatom.tuple[4] != ID_FAIL && aatom.tuple[3].address == ID::TERM_BUILTIN_NE && aatom.tuple[0] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                                negate = true;
+                            }
+                            else{
+                                if (aatom.tuple[0] != ID_FAIL) { eaReplacement.inputs.push_back(ID::termFromInteger(aatom.tuple[1].address)); eaReplacement.inputs.push_back(aatom.tuple[0]); } else { eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); }
+                                if (aatom.tuple[4] != ID_FAIL) { eaReplacement.inputs.push_back(ID::termFromInteger(aatom.tuple[3].address)); eaReplacement.inputs.push_back(aatom.tuple[4]); } else { eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); }
+                            }
                         }
                         // o1
                         BOOST_FOREACH (ID t, symbolicSetVarsIntersectingRemainingBody) {
@@ -507,7 +528,7 @@ namespace
                         if (!useBooleanEa) eaReplacement.tuple.push_back(valueVariable);
 
                         // store external atom and add its ID to the rule body
-                        newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
+                        newRule.body.push_back(b.isNaf() ^ negate ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
 
                         // make the rule know that it contains an external atom
                         newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
