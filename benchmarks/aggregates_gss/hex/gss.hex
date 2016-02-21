@@ -1,0 +1,4 @@
+true(exists,X,C) v false(exists,X,C) :- var(exists,X,C).
+true(all,X,C) :- var(all,X,C), saturate.
+saturate :- #sum{ C,X : true(EA,X,C) } != K, k(K).
+:- not saturate.
