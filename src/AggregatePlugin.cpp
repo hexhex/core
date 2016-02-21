@@ -875,10 +875,15 @@ namespace
                             }
 
 #ifndef NDEBUG
+                            std::stringstream ss;
+                            ss << "true:";
+                            BOOST_FOREACH (Tuple t, trueTuples[key]){ ss << " " << t[0].address; }
+                            ss << ", can be true:";
+                            BOOST_FOREACH (Tuple t, mightBeTrueTuples[key]){ ss << " " << t[0].address; }
                             if (upperBound == -2){
-                                DBGLOG(DBG, "Aggregate atom returned possible range [" << minFunctionValue << ", " << maxFunctionValue << "]; range query is [" << lowerBound << ", infinity]");
+                                DBGLOG(DBG, "Aggregate atom returned possible range [" << minFunctionValue << ", " << maxFunctionValue << "]; range query is [" << lowerBound << ", infinity] with input " << ss.str());
                             }else{
-                                DBGLOG(DBG, "Aggregate atom returned possible range [" << minFunctionValue << ", " << maxFunctionValue << "]; range query is [" << lowerBound << ", " << upperBound << "]");
+                                DBGLOG(DBG, "Aggregate atom returned possible range [" << minFunctionValue << ", " << maxFunctionValue << "]; range query is [" << lowerBound << ", " << upperBound << "] with input " << ss.str());
                             }
 #endif
                             if (minFunctionValue >= lowerBound && (upperBound == -2 || maxFunctionValue <= upperBound)){
@@ -1007,33 +1012,34 @@ namespace
                     *defined = true;
                 }
 
-                if (mightBeTrueInput.size() > 0){
-                    int smallest = -1;
-                    int largest = -1;
-                    BOOST_FOREACH (Tuple t, mightBeTrueInput) {
-                        if (cnt == 0){
-                            smallest = t[0].address;
-                            largest = t[0].address;
-                        }else{
-                            if (t[0].address < smallest && t[0].address < *minFunctionValue / cnt) smallest = t[0].address;
-                            if (t[0].address > largest && t[0].address > *minFunctionValue / cnt) largest = t[0].address;
+                int smallest = -1;
+                int largest = -1;
+                int smallestcnt = 0;
+                int largestcnt = 0;
+                BOOST_FOREACH (Tuple t, mightBeTrueInput) {
+                    if (t[0].address == smallest) { smallestcnt++; }
+                    if (t[0].address == largest) { largestcnt++; }
+                    if (smallest == -1 || t[0].address < smallest) { smallest = t[0].address; smallestcnt = 1; }
+                    if (largest == -1 || t[0].address > largest) { largest = t[0].address; largestcnt = 1; }
+                }
+                if (*defined) {
+                    if (smallest != -1) {
+                        if ((*minFunctionValue + smallest * smallestcnt) / (cnt + smallestcnt) < (*minFunctionValue / cnt)){
+                            *minFunctionValue += smallest * smallestcnt;
+                            cnt += smallestcnt;
                         }
                     }
-                    if (smallest != -1){
-                        *minFunctionValue -= smallest;
-                        cnt++;
-                        *defined = true;
+                    if (largest != -1) {
+                        if ((*maxFunctionValue + largest * largestcnt) / (cnt + largestcnt) > (*maxFunctionValue / cnt)){
+                            *maxFunctionValue += largest * largestcnt;
+                            cnt += largestcnt;
+                        }
                     }
-                    if (largest != -1){
-                        *maxFunctionValue += largest;
-                        cnt++;
-                        *defined = true;
-                    }
-                }
-
-                if (*defined){
                     *minFunctionValue /= cnt;
                     *maxFunctionValue /= cnt;
+                }else{
+                    if (smallest != -1) *minFunctionValue = smallest;
+                    if (largest != -1) *maxFunctionValue = largest;
                 }
             }
 
