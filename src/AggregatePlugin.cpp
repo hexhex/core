@@ -960,11 +960,20 @@ namespace
                 *minFunctionValue = 0;
                 *maxFunctionValue = 0;
                 BOOST_FOREACH (Tuple t, trueInput) {
-                    *minFunctionValue += t[0].address;
-                    *maxFunctionValue += t[0].address;
+                    if (t[0].isConstantTerm()){
+                        *minFunctionValue--;
+                        *maxFunctionValue--;
+                    }else{
+                        *minFunctionValue += t[0].address;
+                        *maxFunctionValue += t[0].address;
+                    }
                 }
                 BOOST_FOREACH (Tuple t, mightBeTrueInput) {
-                    *maxFunctionValue += t[0].address;
+                    if (t[0].isConstantTerm()){
+                        *minFunctionValue--;
+                    }else{
+                        *maxFunctionValue += t[0].address;
+                    }
                 }
             }
 
