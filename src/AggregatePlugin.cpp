@@ -959,22 +959,26 @@ namespace
                 *defined = true;
                 *minFunctionValue = 0;
                 *maxFunctionValue = 0;
+                int nfv = 0;
+                int xfv = 0;
                 BOOST_FOREACH (Tuple t, trueInput) {
                     if (t[0].isConstantTerm()){
-                        *minFunctionValue--;
-                        *maxFunctionValue--;
+                        nfv--;
+                        xfv--;
                     }else{
-                        *minFunctionValue += t[0].address;
-                        *maxFunctionValue += t[0].address;
+                        nfv += t[0].address;
+                        xfv += t[0].address;
                     }
                 }
                 BOOST_FOREACH (Tuple t, mightBeTrueInput) {
                     if (t[0].isConstantTerm()){
-                        *minFunctionValue--;
+                        nfv--;
                     }else{
-                        *maxFunctionValue += t[0].address;
+                        xfv += t[0].address;
                     }
                 }
+                *minFunctionValue = (nfv >= 0 ? nfv : 0);
+                *maxFunctionValue = (xfv >= 0 ? xfv : 0);
             }
 
         public:
