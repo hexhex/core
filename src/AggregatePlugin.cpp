@@ -470,7 +470,7 @@ namespace
 
                     // add reversed key and value rules
                     if (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite) {
-                        for (int r = 1; r <= 2; ++r){
+                        for (int r = 1; r <= 1; ++r){
                             const Rule kvrule = (r == 1 ? keyRule : inputRule);
                             BOOST_FOREACH (ID b, kvrule.body) {
                                 if (!b.isOrdinaryAtom()) {
