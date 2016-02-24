@@ -279,6 +279,7 @@ namespace
                 DBGLOG(DBG, "Found " << aatom.mvariables.size() << " multi-symbolic sets");
 
                 // first of all, analyze the aggregate and build needed sets of variables
+                std::vector<std::set<ID> > symSetVars;
                 for (int symbSetIndex = 0; symbSetIndex <= aatom.mvariables.size(); ++symbSetIndex) {
                     if (symbSetIndex == aatom.mvariables.size() && symbSetIndex > 0) continue;
 
@@ -292,11 +293,12 @@ namespace
 
                     // collect all variables from the conjunction of the symbolic set
                     DBGLOG(DBG, "Harvesting variables in literals of the symbolic set");
-                    std::set<ID> symSetVars;
-                    BOOST_FOREACH (ID c, currentSymbolicSetVars) { symSetVars.insert(c); }
+                    symSetVars.push_back(std::set<ID>());
+                    std::set<ID>& currentSymSetVars = symSetVars[symSetVars.size() - 1];
+                    BOOST_FOREACH (ID c, currentSymbolicSetVars) { currentSymSetVars.insert(c); }
                     BOOST_FOREACH (ID cs, currentSymbolicSetLiterals) {
                         DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
-                        reg->getVariablesInID(cs, symSetVars);
+                        reg->getVariablesInID(cs, currentSymSetVars);
                     }
 
                     // collect all variables from the remaining body of the rule
@@ -319,7 +321,7 @@ namespace
 
                     // collect all variables of the symbolic set which occur also in the remaining rule body
                     DBGLOG(DBG, "Harvesting variables shared between symbolic set and remaining rule body");
-                    BOOST_FOREACH (ID c, symSetVars) {
+                    BOOST_FOREACH (ID c, currentSymSetVars) {
                         if (std::find(bodyVars.begin(), bodyVars.end(), c) != bodyVars.end()) {
                             DBGLOG(DBG, "Body variable of symbolic set: " << printToString<RawPrinter>(c, reg));
                             symbolicSetVarsIntersectingRemainingBody.push_back(c);
@@ -414,6 +416,7 @@ namespace
                         //	  if X occurs also in the remaining body of the rule
                         //          add it to the tuple of p
                         //   3. add all variables of the symbolic set to the tuple of p
+                        //   4. (optional) for encoding "extbl", add first variable of the symbolic set and all variables in the conjunction of the symbolic set
                         // B. The body consists of:
                         //   1. the conjunction of the symbolic set
                         //   2. key head
@@ -439,6 +442,14 @@ namespace
                         for (int i = 0; i < currentSymbolicSetVars.size(); i++) {
                             oatom.tuple.push_back(currentSymbolicSetVars[i]);
                         }
+                        //   4.
+                        if (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite) {
+                            // extbl
+                            for (std::set<ID>::iterator it = symSetVars[symbSetIndex].begin(); it != symSetVars[symbSetIndex].end(); ++it) {
+                                oatom.tuple.push_back(*it);
+                            }
+                            oatom.tuple.push_back(ID::termFromInteger(symSetVars[symbSetIndex].size()));
+                        }
                         inputRule.head.push_back(reg->storeOrdinaryAtom(oatom));
                         // B.
                         DBGLOG(DBG, "Constructing input rule body");
@@ -451,11 +462,44 @@ namespace
                         inputRule.body.push_back(ID::posLiteralFromAtom(keyRule.head[0]));
                     }
 
-                    // recursively handle aggregates in this rule
+                    // recursively handle aggregates in the key and the value rule
                     DBGLOG(DBG, "Recursive call for " << printToString<RawPrinter>(reg->storeRule(keyRule), reg));
                     rewriteRule(ctx, edb, idb, keyRule);
                     DBGLOG(DBG, "Recursive call for " << printToString<RawPrinter>(reg->storeRule(inputRule), reg));
                     rewriteRule(ctx, edb, idb, inputRule);
+
+                    // add reversed key and value rules
+                    if (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite) {
+                        for (int r = 1; r <= 2; ++r){
+                            const Rule kvrule = (r == 1 ? keyRule : inputRule);
+                            BOOST_FOREACH (ID b, kvrule.body) {
+                                if (!b.isOrdinaryAtom()) {
+                                    DBGLOG(DBG, "Skipping non-ordinary literal " << printToString<RawPrinter>(b, reg) << " in reversed rule");
+                                    continue;
+                                }
+                                if (!b.isNaf()) {
+                                    Rule rev = kvrule;
+                                    rev.body.clear();
+                                    rev.body.push_back(ID::posLiteralFromAtom(rev.head[0]));
+                                    rev.head.clear();
+                                    rev.head.push_back(ID::atomFromLiteral(b));
+                                    ID revID = reg->storeRule(rev);
+                                    DBGLOG(DBG, "Adding reversed rule " << printToString<RawPrinter>(revID, reg));
+                                    idb.push_back(revID);
+                                }else{
+                                    Rule rev = kvrule;
+                                    rev.body.clear();
+                                    rev.head.clear();
+                                    rev.body.push_back(ID::posLiteralFromAtom(rev.head[0]));
+                                    rev.body.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(b)));
+                                    rev.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+                                    ID revID = reg->storeRule(rev);
+                                    DBGLOG(DBG, "Adding reversed constraint: " << printToString<RawPrinter>(revID, reg));
+                                    idb.push_back(revID);
+                                }
+                            }
+                        }
+                    }
                 }
                 assert(symbolicSetSize != -1 && "found aggregate without symbolic set");
 
@@ -829,15 +873,24 @@ namespace
                             key.push_back(oatom.tuple[i]);
                         }
 
-                        // remember the remaining terms for this key
+                        // encoding "extbl": value has the form [key,value,substitution_of_all_variables,count_of_all_variables]; the last two elements need to be stripped off
                         Tuple value;
                         for (uint32_t j = arity + 1; j < oatom.tuple.size(); ++j) {
+                            if (booleanAtom && (j == oatom.tuple.size() - (1 + oatom.tuple[oatom.tuple.size() - 1].address))) break;
                             value.push_back(oatom.tuple[j]);
                         }
                         if ((!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)){
+                            // remove from mightBeTrue if present (might happen with encoding "extbl" since multiple value atoms can contain the same actual value)
+                            if (booleanAtom) {
+                                std::vector<Tuple>::iterator it = std::find(mightBeTrueTuples[key].begin(), mightBeTrueTuples[key].end(), value);
+                                if (it != mightBeTrueTuples[key].end()) mightBeTrueTuples[key].erase(it);
+                            }
                             trueTuples[key].push_back(value);
                         }else if (!!query.assigned && !query.assigned->getFact(*en)){ 
-                            mightBeTrueTuples[key].push_back(value);
+                            // skip if present in true (might happen with encoding "extbl" since multiple value atoms can contain the same actual value)
+                            if (!booleanAtom || (std::find(trueTuples[key].begin(), trueTuples[key].end(), value) == trueTuples[key].end())) {
+                                mightBeTrueTuples[key].push_back(value);
+                            }
                         }
                     }
 
