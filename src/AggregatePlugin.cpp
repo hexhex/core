@@ -300,6 +300,7 @@ namespace
                         DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
                         reg->getVariablesInID(cs, currentSymSetVars);
                     }
+                    DBGLOG(DBG, "Symbolic set uses " << currentSymSetVars.size() << " variables");
 
                     // collect all variables from the remaining body of the rule
                     DBGLOG(DBG, "Harvesting variables in remaining rule body");
@@ -416,7 +417,8 @@ namespace
                         //	  if X occurs also in the remaining body of the rule
                         //          add it to the tuple of p
                         //   3. add all variables of the symbolic set to the tuple of p
-                        //   4. (optional) for encoding "extbl", add first variable of the symbolic set and all variables in the conjunction of the symbolic set
+                        //   4. (optional) for encoding "extbl", add index of the current symbolic set element
+                        //   5. (optional) for encoding "extbl", add all variables in the conjunction of the symbolic set
                         // B. The body consists of:
                         //   1. the conjunction of the symbolic set
                         //   2. key head
@@ -442,10 +444,15 @@ namespace
                         for (int i = 0; i < currentSymbolicSetVars.size(); i++) {
                             oatom.tuple.push_back(currentSymbolicSetVars[i]);
                         }
-                        //   4.
+                        // extbl
                         if (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite) {
-                            // extbl
+                            //   4.
+                            DBGLOG(DBG, "Adding symbolic set index " << symbSetIndex);
+                            oatom.tuple.push_back(ID::termFromInteger(symbSetIndex));
+                            //   5.
+                            DBGLOG(DBG, "Adding " << symSetVars[symbSetIndex].size() << " variables to input rule head");
                             for (std::set<ID>::iterator it = symSetVars[symbSetIndex].begin(); it != symSetVars[symbSetIndex].end(); ++it) {
+                                DBGLOG(DBG, "Adding " << printToString<RawPrinter>(*it, reg));
                                 oatom.tuple.push_back(*it);
                             }
                             oatom.tuple.push_back(ID::termFromInteger(symSetVars[symbSetIndex].size()));
@@ -667,6 +674,23 @@ namespace
             rewriteRule(ctx, newEdb, newIdb, ctx.registry()->rules.getByID(rid));
         }
 
+        // eliminate duplicates
+        int shift = 0;
+        InterpretationPtr intr(new Interpretation(ctx.registry()));
+        for (int ridx = 0; ridx < newIdb.size() - shift; ){
+            // move next actual rule to the current position (respecting skipped rules)
+            newIdb[ridx] = newIdb[ridx + shift];
+            if (intr->getFact(newIdb[ridx].address)){
+                // skip rule
+                shift++;
+            }else{
+                // no duplicate: remember rule
+                intr->setFact(newIdb[ridx].address);
+                ridx++;
+            }
+        }
+        newIdb.resize(newIdb.size() - shift);
+
         #ifndef NDEBUG
         std::stringstream programstring;
         RawPrinter printer(programstring, ctx.registry());
@@ -873,10 +897,10 @@ namespace
                             key.push_back(oatom.tuple[i]);
                         }
 
-                        // encoding "extbl": value has the form [key,value,substitution_of_all_variables,count_of_all_variables]; the last two elements need to be stripped off
+                        // encoding "extbl": value has the form [key,value,substitution_of_all_variables,symbolic_set_element_idx,count_of_all_variables]; the last two elements need to be stripped off
                         Tuple value;
                         for (uint32_t j = arity + 1; j < oatom.tuple.size(); ++j) {
-                            if (booleanAtom && (j == oatom.tuple.size() - (1 + oatom.tuple[oatom.tuple.size() - 1].address))) break;
+                            if (booleanAtom && (j == oatom.tuple.size() - (2 + oatom.tuple[oatom.tuple.size() - 1].address))) break;
                             value.push_back(oatom.tuple[j]);
                         }
                         if ((!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)){
