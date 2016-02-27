@@ -180,12 +180,14 @@ const char* first, const char* sep, const char* last) const
 void Interpretation::add(const Interpretation& other)
 {
     bits |= other.bits;
+    hashUpdated = false;
 }
 
 
 void Interpretation::bit_and(const Interpretation& other)
 {
     bits &= other.bits;
+    hashUpdated = false;
 }
 
 
@@ -209,13 +211,13 @@ InterpretationPtr Interpretation::getInterpretationWithoutExternalAtomAuxiliarie
 
 bool Interpretation::operator==(const Interpretation& other) const
 {
-    return bits == other.bits;
+    return /*getHash() == other.getHash() &&*/ bits == other.bits;
 }
 
 
 bool Interpretation::operator!=(const Interpretation& other) const
 {
-    return bits != other.bits;
+    return /*getHash() != other.getHash() ||*/ bits != other.bits;
 }
 
 
@@ -224,6 +226,13 @@ bool Interpretation::operator<(const Interpretation& other) const
     return bits < other.bits;
 }
 
+std::size_t Interpretation::getHash() const {
+    if (!hashUpdated) {
+        myHash = hash_value(*this);
+        hashUpdated = true;
+    }
+    return myHash;
+}
 
 DLVHEX_NAMESPACE_END
 

@@ -245,6 +245,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 
 bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache, InterpretationConstPtr inputi)
 {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrf,"PluginAtom retrieveFacade");
     bool fromCache = false;
 
     // split the query
@@ -258,6 +259,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         Answer atomicAnswer;
         bool subqueryFromCache;
         if (useCache) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveCached");
             subqueryFromCache = retrieveCached(atomicQuery, atomicAnswer, query.ctx->config.getOption("ExternalLearningUser") ? nogoods : NogoodContainerPtr());
         }
         else {
@@ -270,6 +272,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
 
         // learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
         if (!subqueryFromCache) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveFacade Learning");
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, inputi);
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
         }
@@ -283,7 +286,10 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         fromCache |= subqueryFromCache;
     }
 
-    if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, inputi);
+    {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveFacade negative learning");
+        if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, inputi);
+    }
 
     return fromCache;
 }
@@ -342,31 +348,37 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 
     boost::mutex::scoped_lock lock(cacheMutex);
 
-    Answer& ans = queryAnswerCache[query];
-    if( ans.hasBeenUsed()) {
+    typedef std::pair<Answer, SimpleNogoodContainerPtr> CacheEntryType;
+    CacheEntryType& ans = queryAnswerNogoodCache[query];
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrl,"PluginAtom retrieveCached after cache lookup");
+    if( ans.first.hasBeenUsed()) {
         DBGLOG(DBG, "Answering from cache");
         // answer was not default -> use
-        answer = ans;
+        {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrcai,"PluginAtom retrieveCached copy answer");
+            answer = ans.first;
+        }
 
         // check if there are cached nogoods
         if (nogoods) {
-            SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
-            if (cachedNogoods) {
-                DBGLOG(DBG, "Found " << cachedNogoods->getNogoodCount() << " cached nogoods");
+            if (ans.second) {
+                DBGLOG(DBG, "Found " << ans.second->getNogoodCount() << " cached nogoods");
                 // return cached nogoods
-                for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrnt,"PluginAtom retrieveCached nogood transfer");
+                for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
                 return true;             // answered from cache
             }
             else {
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve from retrieveCached");
                 // answer is cached but no nogoods: reevaluate and return nogoods
                 DBGLOG(DBG, "No cached nogoods --> reevaluate");
-                queryAnswerCache[query] = Answer();
-                Answer& ans2 = queryAnswerCache[query];
-                cachedNogoods.reset(new SimpleNogoodContainer());
-                retrieve(query, ans2, cachedNogoods);
+                queryAnswerNogoodCache[query].first = Answer();
+                Answer& ans2 = queryAnswerNogoodCache[query].first;
+                ans.second.reset(new SimpleNogoodContainer());
+                retrieve(query, ans2, ans.second);
                 ans2.use();
                 answer = ans2;   // ans2 should be the same as ans
-                for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+                for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
                 return false;             // not (fully) answered from cache
             }
         }
@@ -377,24 +389,24 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
             DBGLOG(DBG, "Answering by evaluation");
             // answer was default constructed
             // -> retrieve and replace in cache
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve from retrieveCached");
 
             if (nogoods) {
-                SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
-                assert(!cachedNogoods);
+                assert(!ans.second);
 
-                cachedNogoods.reset(new SimpleNogoodContainer());
-                retrieve(query, ans, cachedNogoods);
-                for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+                ans.second.reset(new SimpleNogoodContainer());
+                retrieve(query, ans.first, ans.second);
+                for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
             }
             else {
-                retrieve(query, ans, NogoodContainerPtr());
+                retrieve(query, ans.first, NogoodContainerPtr());
             }
 
             // if there was no answer, perhaps it has never been used, so we use it manually
-            ans.use();
+            ans.first.use();
         }
-        answer = ans;
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrca,"PluginAtom retrieveCached copy answer");
+        answer = ans.first;
 
         return false;            // not answered from cache
     }
