@@ -253,7 +253,11 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
     const ExtSourceProperties& prop = (query.eatomID != ID_FAIL ? registry->eatoms.getByID(query.eatomID).getExtSourceProperties() : emptyProp);
 
     DBGLOG(DBG, "Splitting query");
-    std::vector<Query> atomicQueries = splitQuery(query, prop);
+    std::vector<Query> atomicQueries;
+    {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrsq,"PluginAtom retrieveFacade split query");
+        atomicQueries  = splitQuery(query, prop);
+    }
     DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
     BOOST_FOREACH (Query atomicQuery, atomicQueries) {
         Answer atomicAnswer;
@@ -278,9 +282,12 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         }
 
         // overall answer is the union of the atomic answers
-        DBGLOG(DBG, "Atomic query delivered " << atomicAnswer.get().size() << " tuples");
-        answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
-        answer.getUnknown().insert(answer.getUnknown().end(), atomicAnswer.getUnknown().begin(), atomicAnswer.getUnknown().end());
+        {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidraqm,"PluginAtom retrieveFacade atomic query merging");
+            DBGLOG(DBG, "Atomic query delivered " << atomicAnswer.get().size() << " tuples");
+            answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
+            answer.getUnknown().insert(answer.getUnknown().end(), atomicAnswer.getUnknown().begin(), atomicAnswer.getUnknown().end());
+        }
 
         // query counts as answered from cache if at least one subquery was answered from cache
         fromCache |= subqueryFromCache;
