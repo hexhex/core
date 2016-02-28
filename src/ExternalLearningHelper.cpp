@@ -44,6 +44,9 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/functional/hash.hpp>
+
+#include <unordered_set>
 
 #include <fstream>
 
@@ -495,6 +498,15 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 {
     // learning of negative information
     if (nogoods) {
+        // transform output into set for faster lookup
+         struct TupleHash {
+             std::size_t operator() (const Tuple& t) const {
+                 std::size_t seed = 0;
+                 boost::hash_combine(seed, t);
+                 return seed;
+             }
+        };
+
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
         if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false, Tuple(), &weakenedPremiseLiterals);
@@ -514,6 +526,11 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         bm::bvector<>::enumerator en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().end();
         ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
         ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
+
+        std::unordered_set<Tuple, TupleHash> toutput, tunknown;
+        BOOST_FOREACH (Tuple t, answer.get()) toutput.insert(t);
+        BOOST_FOREACH (Tuple t, answer.getUnknown()) tunknown.insert(t);
+
         while (en < en_end) {
             const OrdinaryAtom& atom = query.ctx->registry()->ogatoms.getByAddress(*en);
             if (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate) {
@@ -557,11 +574,11 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 #endif
 
                 if (weakenedPremiseLiterals > 0){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Total gr.inst. after weakened EA-eval", 1); }
-                if (weakenedPremiseLiterals > 0 && std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
-                if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
-
-                    if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
-                        (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
+                if (weakenedPremiseLiterals > 0 && toutput.find(t) == toutput.end() /*std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()*/ ) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
+                if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end() /*std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end()*/ )){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
+DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(b, "NEGATIVE LEARNING 2");
+                    if (toutput.find(t) == toutput.end() && //std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
+                        (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end())) { //std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
 
                         // construct positive output atom
                         OrdinaryAtom posatom = atom;
@@ -597,7 +614,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
             }
             en++;
         }
-        
+
         // nogood minimization without caching answers of external atom
         if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
             // iterate through all newly added nogoods

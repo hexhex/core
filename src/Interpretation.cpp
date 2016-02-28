@@ -38,6 +38,7 @@
 #include "dlvhex2/Interpretation.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/Benchmarking.h"
 #include <boost/functional/hash.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -211,13 +212,15 @@ InterpretationPtr Interpretation::getInterpretationWithoutExternalAtomAuxiliarie
 
 bool Interpretation::operator==(const Interpretation& other) const
 {
-    return /*getHash() == other.getHash() &&*/ bits == other.bits;
+    return bits == other.bits;
+    return getHash() == other.getHash() && bits == other.bits;
 }
 
 
 bool Interpretation::operator!=(const Interpretation& other) const
 {
-    return /*getHash() != other.getHash() ||*/ bits != other.bits;
+    return  bits != other.bits;
+    return getHash() != other.getHash() || bits != other.bits;
 }
 
 
@@ -228,6 +231,7 @@ bool Interpretation::operator<(const Interpretation& other) const
 
 std::size_t Interpretation::getHash() const {
     if (!hashUpdated) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "Interpretation update hash");
         myHash = hash_value(*this);
         hashUpdated = true;
     }

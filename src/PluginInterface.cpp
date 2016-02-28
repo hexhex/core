@@ -116,14 +116,12 @@ std::size_t hash_value(const PluginAtom::Query& q)
     return seed;
 }
 
-
 PluginAtom::Answer::Answer():
 output(new std::vector<Tuple>),
 unknown(new std::vector<Tuple>),
 used(false)
 {
 }
-
 
 void
 PluginAtom::addInputPredicate(bool nameIsRelevant)
@@ -253,11 +251,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
     const ExtSourceProperties& prop = (query.eatomID != ID_FAIL ? registry->eatoms.getByID(query.eatomID).getExtSourceProperties() : emptyProp);
 
     DBGLOG(DBG, "Splitting query");
-    std::vector<Query> atomicQueries;
-    {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrsq,"PluginAtom retrieveFacade split query");
-        atomicQueries  = splitQuery(query, prop);
-    }
+    std::vector<Query> atomicQueries = splitQuery(query, prop);
     DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
     BOOST_FOREACH (Query atomicQuery, atomicQueries) {
         Answer atomicAnswer;
@@ -282,12 +276,9 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         }
 
         // overall answer is the union of the atomic answers
-        {
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidraqm,"PluginAtom retrieveFacade atomic query merging");
-            DBGLOG(DBG, "Atomic query delivered " << atomicAnswer.get().size() << " tuples");
-            answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
-            answer.getUnknown().insert(answer.getUnknown().end(), atomicAnswer.getUnknown().begin(), atomicAnswer.getUnknown().end());
-        }
+        DBGLOG(DBG, "Atomic query delivered " << atomicAnswer.get().size() << " tuples");
+        answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
+        answer.getUnknown().insert(answer.getUnknown().end(), atomicAnswer.getUnknown().begin(), atomicAnswer.getUnknown().end());
 
         // query counts as answered from cache if at least one subquery was answered from cache
         fromCache |= subqueryFromCache;
@@ -356,22 +347,19 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
     boost::mutex::scoped_lock lock(cacheMutex);
 
     typedef std::pair<Answer, SimpleNogoodContainerPtr> CacheEntryType;
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidcl,"PluginAtom cache lookup");
     CacheEntryType& ans = queryAnswerNogoodCache[query];
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrl,"PluginAtom retrieveCached after cache lookup");
+    DLVHEX_BENCHMARK_STOP(sidcl);
     if( ans.first.hasBeenUsed()) {
         DBGLOG(DBG, "Answering from cache");
         // answer was not default -> use
-        {
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrcai,"PluginAtom retrieveCached copy answer");
-            answer = ans.first;
-        }
+        answer = ans.first;
 
         // check if there are cached nogoods
         if (nogoods) {
             if (ans.second) {
                 DBGLOG(DBG, "Found " << ans.second->getNogoodCount() << " cached nogoods");
                 // return cached nogoods
-                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrnt,"PluginAtom retrieveCached nogood transfer");
                 for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
                 return true;             // answered from cache
             }
@@ -396,7 +384,7 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
             DBGLOG(DBG, "Answering by evaluation");
             // answer was default constructed
             // -> retrieve and replace in cache
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve from retrieveCached");
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
 
             if (nogoods) {
                 assert(!ans.second);
@@ -412,7 +400,6 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
             // if there was no answer, perhaps it has never been used, so we use it manually
             ans.first.use();
         }
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrca,"PluginAtom retrieveCached copy answer");
         answer = ans.first;
 
         return false;            // not answered from cache
