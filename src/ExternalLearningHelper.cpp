@@ -576,7 +576,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                 if (weakenedPremiseLiterals > 0){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Total gr.inst. after weakened EA-eval", 1); }
                 if (weakenedPremiseLiterals > 0 && toutput.find(t) == toutput.end() /*std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()*/ ) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
                 if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end() /*std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end()*/ )){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
-DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(b, "NEGATIVE LEARNING 2");
+
                     if (toutput.find(t) == toutput.end() && //std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
                         (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end())) { //std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
 
