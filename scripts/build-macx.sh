@@ -51,6 +51,7 @@ function prepare {
 function checkDependencies {
   echo "==> Checking build dependencies"
 
+  # TODO: Bison is always found on Mac OS X, so we have to check for min version too!
   deps="git autoconf automake libtool pkg-config wget scons bison re2c python"
   missing_deps=""
 
