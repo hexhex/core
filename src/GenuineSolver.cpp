@@ -112,7 +112,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
         case 1: case 2:          // internal grounder or Gringo + internal solver
         {
             DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
+            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p, frozen) : new InternalGroundASPSolver(ctx, p, frozen));
             return ptr;
         }
         break;
@@ -143,7 +143,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
         case 1: case 2:          // internal grounder or Gringo + internal solver
         {
             DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
-            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p)) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p)));
+            GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen) : new InternalGroundASPSolver(ctx, AnnotatedGroundProgram(ctx, p), frozen));
             return ptr;
         }
         break;
@@ -172,11 +172,13 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
     GenuineGrounderPtr grounder;
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineSolver ctor)");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground2, "HEX grounder time");
         grounder = GenuineGrounder::getInstance(ctx, p, frozen);
         gprog = &grounder->getGroundProgram();
     }
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver ctor)");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
     GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
     return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
@@ -236,18 +238,20 @@ void GenuineSolver::removePropagator(PropagatorCallback* pb)
     solver->removePropagator(pb);
 }
 
+Nogood GenuineSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms)
+{
+    return solver->getInconsistencyCause(explanationAtoms);
+}
 
 void GenuineSolver::addProgram(const AnnotatedGroundProgram& program, InterpretationConstPtr frozen)
 {
     solver->addProgram(program, frozen);
 }
 
-
 void GenuineSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
 {
     solver->addNogoodSet(ns, frozen);
 }
-
 
 DLVHEX_NAMESPACE_END
 

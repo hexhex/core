@@ -168,6 +168,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
         // manage outer external atoms
         if( !factory.outerEatoms.empty() ) {
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineWfMG)");
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground2, "HEX grounder time");
             // augment input with result of external atom evaluation
             // use newint as input and as output interpretation
             IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
@@ -215,6 +216,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
             IntegrateExternalAnswerIntoInterpretationCB cb(dst);
             {
                 DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (inner EAs GenuineWfMG)");
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
                 evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
             }
             DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
@@ -247,6 +249,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
                 // cheap exchange -> thisret1 will then be free'd
                 {
                     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (cp mdl GenuineWfMG)");
+                    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
                     dst->getStorage() = model->getStorage();
                 }
                 DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
@@ -261,6 +264,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
             // (TODO do this error check, and do it only in debug mode)
             {
                 DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (fp check GenuineWfMG)");
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
                 int cmpresult = dst->getStorage().compare(src->getStorage());
                 if( cmpresult == 0 ) {
                     DBGLOG(DBG,"reached fixpoint");
@@ -289,6 +293,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
         }
         else {
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (make result GenuineWfMG)");
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
             // does not matter which one we take, they are equal
             InterpretationPtr result = ints[0];
             DBGLOG(DBG,"leaving loop with result " << *result);

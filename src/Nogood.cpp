@@ -70,6 +70,16 @@ Nogood::Nogood() : ground(true)
 {
 }
 
+Nogood::Nogood(InterpretationConstPtr assigned, InterpretationConstPtr interpretation)
+    : ground(true)
+{
+    bm::bvector<>::enumerator en = assigned->getStorage().first();
+    bm::bvector<>::enumerator en_end = assigned->getStorage().end();
+    while (en < en_end) {
+        insert(NogoodContainer::createLiteral(*en, interpretation->getFact(*en)));
+        en++;
+    }
+}
 
 void Nogood::recomputeHash()
 {

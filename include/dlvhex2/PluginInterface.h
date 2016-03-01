@@ -1275,11 +1275,10 @@ class DLVHEX_EXPORT PluginAtom
         PredicateMaskPtr getReplacements(){ replacements->updateMask(); return replacements; }
 
         /**
-         * \brief Erase all elements from queryAnswerCache and queryNogoodCache
+         * \brief Erase all elements from queryAnswerNogoodCache.
          */
         void resetCache() {
-            queryAnswerCache.clear();
-            queryNogoodCache.clear();
+            queryAnswerNogoodCache.clear();
         }
 
     protected:
@@ -1307,15 +1306,13 @@ class DLVHEX_EXPORT PluginAtom
         unsigned outputSize;
 
         // Query/Answer cache
-        /** \brief Type used for associating an Answer to a Query. */
-        typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
+        /** \brief Type used for associating an Answer and a NogoodContainer to a Query. */
+        typedef boost::unordered_map<const Query, std::pair<Answer, SimpleNogoodContainerPtr> > QueryAnswerNogoodCache;
         /** \brief Type used for associating a container of learned nogoods to a Query. */
         typedef boost::unordered_map<const Query, SimpleNogoodContainerPtr> QueryNogoodCache;
-        /** \brief Associates an Answer to a Query. */
-        QueryAnswerCache queryAnswerCache;
-        /** \brief Associates a container of learned Nogoods Query. */
-        QueryNogoodCache queryNogoodCache;
-        /** \brief Mutex for accessing PluginAtom::queryAnswerCache and PluginAtom::queryNogoodCache. */
+        /** \brief Associates an Answer and a NogoodContainer to a Query. */
+        QueryAnswerNogoodCache queryAnswerNogoodCache;
+        /** \brief Mutex for accessing PluginAtom::queryAnswerNogoodCache. */
         boost::mutex cacheMutex;
 
         /** \brief Mask of all positive replacement atoms of this external atom. */

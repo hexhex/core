@@ -44,6 +44,9 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/functional/hash.hpp>
+
+#include <unordered_set>
 
 #include <fstream>
 
@@ -62,6 +65,8 @@ bool ExternalLearningHelper::DefaultInputNogoodProvider::dependsOnOutputTuple() 
 
 Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple, int* weakenedPremiseLiterals) const{
 
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(inputprovider, "InputNogoodProvider::operator()");
+
     // store for each predicate term ID the index of the corresponding parameter in input
     std::map<ID, int> inputPredicateTable;
     int index = 0;
@@ -72,7 +77,6 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
     // find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
     bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
     bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
-
     Nogood extNgInput;
 
     while (en < en_end) {
@@ -106,11 +110,9 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
                 }
             }
         }
-
         en++;
     }
     DBGLOG(DBG, "Input nogood: " << extNgInput.getStringRepresentation(query.ctx->registry()));
-
     return extNgInput;
 }
 
@@ -279,7 +281,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
         
         // containers for storing nogoods that still have to be minimized 
         SimpleNogoodContainer newNogoodsContainer;
-	std::vector<std::pair<Nogood,ID>> newNogoods;
+        std::vector<std::pair<Nogood,ID>> newNogoods;
         
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
@@ -495,6 +497,14 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 {
     // learning of negative information
     if (nogoods) {
+        // transform output into set for faster lookup
+         struct TupleHash {
+             std::size_t operator() (const Tuple& t) const {
+                 std::size_t seed = 0;
+                 boost::hash_combine(seed, t);
+                 return seed;
+             }
+        };
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
         if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false, Tuple(), &weakenedPremiseLiterals);
@@ -507,13 +517,18 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         // containers for storing nogoods that still have to be minimized 
         SimpleNogoodContainer newNogoodsContainer;
         std::map<ID, Tuple> externalAuxiliaryTable;
-        std::vector<std::pair<Nogood,ID>> newNogoods;
+        std::vector<std::pair<Nogood,ID> > newNogoods;
 
         // iterate over negative output atoms
         bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().first();
         bm::bvector<>::enumerator en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements()->mask()->getStorage().end();
         ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
         ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
+
+        std::unordered_set<Tuple, TupleHash> toutput, tunknown;
+        BOOST_FOREACH (Tuple t, answer.get()) toutput.insert(t);
+        BOOST_FOREACH (Tuple t, answer.getUnknown()) tunknown.insert(t);
+
         while (en < en_end) {
             const OrdinaryAtom& atom = query.ctx->registry()->ogatoms.getByAddress(*en);
             if (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate) {
@@ -557,12 +572,11 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 #endif
 
                 if (weakenedPremiseLiterals > 0){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Total gr.inst. after weakened EA-eval", 1); }
-                if (weakenedPremiseLiterals > 0 && std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
-                if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
+                if (weakenedPremiseLiterals > 0 && toutput.find(t) == toutput.end() /*std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()*/ ) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
+                if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end() /*std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end()*/ )){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
 
-                    if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
-                        (!prop.doesProvidePartialAnswer() || std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
-
+                    if (toutput.find(t) == toutput.end() && //std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
+                        (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end())) { //std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
                         // construct positive output atom
                         OrdinaryAtom posatom = atom;
                         posatom.tuple[0] = posOutPredicate;
@@ -597,7 +611,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
             }
             en++;
         }
-        
+
         // nogood minimization without caching answers of external atom
         if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
             // iterate through all newly added nogoods

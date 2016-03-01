@@ -479,6 +479,7 @@ class ClaspSolver : public GenuineGroundSolver, public SATSolver
         ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
         virtual ~ClaspSolver();
         virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen);
 
         // search control

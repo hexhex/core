@@ -79,10 +79,11 @@ void AggregatePlugin::printUsage(std::ostream& o) const
     //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
     o << "     --aggregate-enable[=true,false]" << std::endl
         << "                      Enable aggregate plugin (default is enabled)." << std::endl;
-    o << "     --aggregate-mode=[native,ext]" << std::endl
+    o << "     --aggregate-mode=[native,ext,extbl]" << std::endl
         << "                         native (default) : Keep aggregates" << std::endl
         << "                                            (but simplify them to some basic types)" << std::endl
         << "                         ext              : Rewrite aggregates to external atoms" << std::endl
+        << "                         extbl            : Rewrite aggregates to boolean external atoms" << std::endl
     //	  << "     --aggregate-allowrecaggregates" << std::endl
     //          << "                      Allows cycles through aggregates." << std::endl
     //          << "                      Depending on the solver backend, this might lead to" << std::endl
@@ -118,7 +119,7 @@ ProgramCtx& ctx)
     typedef std::list<const char*>::iterator Iterator;
     Iterator it;
     WARNING("create (or reuse, maybe from potassco?) cmdline option processing facility")
-        it = pluginOptions.begin();
+    it = pluginOptions.begin();
     while( it != pluginOptions.end() ) {
         bool processed = false;
         const std::string str(*it);
@@ -141,7 +142,11 @@ ProgramCtx& ctx)
             std::string m = str.substr(std::string("--aggregate-mode=").length());
             if (m == "ext") {
                 ctxdata.mode = CtxData::ExtRewrite;
-            }                    // "native" was previously called "simplify" --> keep it for backwards compatibility
+            } 
+            else if (m == "extbl") {
+                ctxdata.mode = CtxData::ExtBlRewrite;
+            }
+            // "native" was previously called "simplify" --> keep it for backwards compatibility
             else if (m == "native" || m == "simplify") {
                 ctxdata.mode = CtxData::Simplify;
             }
@@ -274,6 +279,7 @@ namespace
                 DBGLOG(DBG, "Found " << aatom.mvariables.size() << " multi-symbolic sets");
 
                 // first of all, analyze the aggregate and build needed sets of variables
+                std::vector<std::set<ID> > symSetVars;
                 for (int symbSetIndex = 0; symbSetIndex <= aatom.mvariables.size(); ++symbSetIndex) {
                     if (symbSetIndex == aatom.mvariables.size() && symbSetIndex > 0) continue;
 
@@ -287,12 +293,14 @@ namespace
 
                     // collect all variables from the conjunction of the symbolic set
                     DBGLOG(DBG, "Harvesting variables in literals of the symbolic set");
-                    std::set<ID> symSetVars;
-                    BOOST_FOREACH (ID c, currentSymbolicSetVars) { symSetVars.insert(c); }
+                    symSetVars.push_back(std::set<ID>());
+                    std::set<ID>& currentSymSetVars = symSetVars[symSetVars.size() - 1];
+                    BOOST_FOREACH (ID c, currentSymbolicSetVars) { currentSymSetVars.insert(c); }
                     BOOST_FOREACH (ID cs, currentSymbolicSetLiterals) {
                         DBGLOG(DBG, "Harvesting variables in literal of the symbolic set: " << printToString<RawPrinter>(cs, reg));
-                        reg->getVariablesInID(cs, symSetVars);
+                        reg->getVariablesInID(cs, currentSymSetVars);
                     }
+                    DBGLOG(DBG, "Symbolic set uses " << currentSymSetVars.size() << " variables");
 
                     // collect all variables from the remaining body of the rule
                     DBGLOG(DBG, "Harvesting variables in remaining rule body");
@@ -314,7 +322,7 @@ namespace
 
                     // collect all variables of the symbolic set which occur also in the remaining rule body
                     DBGLOG(DBG, "Harvesting variables shared between symbolic set and remaining rule body");
-                    BOOST_FOREACH (ID c, symSetVars) {
+                    BOOST_FOREACH (ID c, currentSymSetVars) {
                         if (std::find(bodyVars.begin(), bodyVars.end(), c) != bodyVars.end()) {
                             DBGLOG(DBG, "Body variable of symbolic set: " << printToString<RawPrinter>(c, reg));
                             symbolicSetVarsIntersectingRemainingBody.push_back(c);
@@ -409,6 +417,8 @@ namespace
                         //	  if X occurs also in the remaining body of the rule
                         //          add it to the tuple of p
                         //   3. add all variables of the symbolic set to the tuple of p
+                        //   4. (optional) for encoding "extbl", add index of the current symbolic set element
+                        //   5. (optional) for encoding "extbl", add all variables in the conjunction of the symbolic set
                         // B. The body consists of:
                         //   1. the conjunction of the symbolic set
                         //   2. key head
@@ -434,6 +444,19 @@ namespace
                         for (int i = 0; i < currentSymbolicSetVars.size(); i++) {
                             oatom.tuple.push_back(currentSymbolicSetVars[i]);
                         }
+                        // extbl
+                        if (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite) {
+                            //   4.
+                            DBGLOG(DBG, "Adding symbolic set index " << symbSetIndex);
+                            oatom.tuple.push_back(ID::termFromInteger(symbSetIndex));
+                            //   5.
+                            DBGLOG(DBG, "Adding " << symSetVars[symbSetIndex].size() << " variables to input rule head");
+                            for (std::set<ID>::iterator it = symSetVars[symbSetIndex].begin(); it != symSetVars[symbSetIndex].end(); ++it) {
+                                DBGLOG(DBG, "Adding " << printToString<RawPrinter>(*it, reg));
+                                oatom.tuple.push_back(*it);
+                            }
+                            oatom.tuple.push_back(ID::termFromInteger(symSetVars[symbSetIndex].size()));
+                        }
                         inputRule.head.push_back(reg->storeOrdinaryAtom(oatom));
                         // B.
                         DBGLOG(DBG, "Constructing input rule body");
@@ -446,37 +469,100 @@ namespace
                         inputRule.body.push_back(ID::posLiteralFromAtom(keyRule.head[0]));
                     }
 
-                    // recursively handle aggregates in this rule
+                    // recursively handle aggregates in the key and the value rule
                     DBGLOG(DBG, "Recursive call for " << printToString<RawPrinter>(reg->storeRule(keyRule), reg));
                     rewriteRule(ctx, edb, idb, keyRule);
                     DBGLOG(DBG, "Recursive call for " << printToString<RawPrinter>(reg->storeRule(inputRule), reg));
                     rewriteRule(ctx, edb, idb, inputRule);
+
+                    // add reversed key and value rules
+                    if (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite) {
+                        for (int r = 2; r <= 2; ++r){
+                            const Rule kvrule = (r == 1 ? keyRule : inputRule);
+                            BOOST_FOREACH (ID b, kvrule.body) {
+                                if (!b.isOrdinaryAtom()) {
+                                    DBGLOG(DBG, "Skipping non-ordinary literal " << printToString<RawPrinter>(b, reg) << " in reversed rule");
+                                    continue;
+                                }
+                                if (!b.isNaf()) {
+                                    Rule rev = kvrule;
+                                    rev.body.clear();
+                                    rev.body.push_back(ID::posLiteralFromAtom(rev.head[0]));
+                                    rev.head.clear();
+                                    rev.head.push_back(ID::atomFromLiteral(b));
+                                    ID revID = reg->storeRule(rev);
+                                    DBGLOG(DBG, "Adding reversed rule " << printToString<RawPrinter>(revID, reg));
+                                    idb.push_back(revID);
+                                }else{
+                                    Rule rev = kvrule;
+                                    rev.body.clear();
+                                    rev.head.clear();
+                                    rev.body.push_back(ID::posLiteralFromAtom(rev.head[0]));
+                                    rev.body.push_back(ID::nafLiteralFromAtom(ID::atomFromLiteral(b)));
+                                    rev.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+                                    ID revID = reg->storeRule(rev);
+                                    DBGLOG(DBG, "Adding reversed constraint: " << printToString<RawPrinter>(revID, reg));
+                                    idb.push_back(revID);
+                                }
+                            }
+                        }
+                    }
                 }
                 assert(symbolicSetSize != -1 && "found aggregate without symbolic set");
 
                 // actual rewriting
                 DBGLOG(DBG, "Generating new aggregate or external atom");
                 ID valueVariable;
+                // boolean external atoms can only be used for range queries but not if we need the exact value
+                bool useBooleanEa = (ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite); // && (aatom.tuple[0] == ID_FAIL || aatom.tuple[1].address == ID::TERM_BUILTIN_LE || aatom.tuple[1].address == ID::TERM_BUILTIN_LT || aatom.tuple[1].address == ID::TERM_BUILTIN_GE || aatom.tuple[1].address == ID::TERM_BUILTIN_GT) && (aatom.tuple[4] == ID_FAIL || aatom.tuple[3].address == ID::TERM_BUILTIN_LE || aatom.tuple[3].address == ID::TERM_BUILTIN_LT || aatom.tuple[3].address == ID::TERM_BUILTIN_GE || aatom.tuple[3].address == ID::TERM_BUILTIN_GT) );
+                bool negate = false;
                 switch (ctxdata.mode) {
                     case AggregatePlugin::CtxData::ExtRewrite:
+                    case AggregatePlugin::CtxData::ExtBlRewrite:
                     {
                         // Construct the external atom as follows:
                         // Input is
                         // i1. the predicate name of the key rule generated above
                         // i2. the predicate name of the input rule generated above
+                        // i3. (optional) the bounds if both are <= (or missing) and a boolean EA is used
                         // Output is
                         // o1. the list of variables determined above in step A2
-                        // o2. the function value
+                        // o2. (optional) the function value if no boolean EA is used
                         DBGLOG(DBG, "Constructing aggregate replacing external atom");
                         ExternalAtom eaReplacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
                         std::stringstream eaName;
-                        eaName << aggregateFunctionToExternalAtomName(aatom.tuple[2]);
+                        eaName << aggregateFunctionToExternalAtomName(aatom.tuple[2]) << (useBooleanEa ? "bl" : "");
                         Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, eaName.str());
                         eaReplacement.predicate = reg->storeTerm(exPred);
                         // i1
                         eaReplacement.inputs.push_back(keyPredID);
                         // i2
                         eaReplacement.inputs.push_back(inputPredID);
+                        // i3
+                        if (useBooleanEa){
+                            if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address == ID::TERM_BUILTIN_EQ && aatom.tuple[4] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                            }
+                            else if (aatom.tuple[4] != ID_FAIL && aatom.tuple[3].address == ID::TERM_BUILTIN_EQ && aatom.tuple[0] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                            }
+                            else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address == ID::TERM_BUILTIN_NE && aatom.tuple[4] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[0]);
+                                negate = true;
+                            }
+                            else if (aatom.tuple[4] != ID_FAIL && aatom.tuple[3].address == ID::TERM_BUILTIN_NE && aatom.tuple[0] == ID_FAIL) {
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                                eaReplacement.inputs.push_back(ID::termFromInteger(ID::TERM_BUILTIN_LE)); eaReplacement.inputs.push_back(aatom.tuple[4]);
+                                negate = true;
+                            }
+                            else{
+                                if (aatom.tuple[0] != ID_FAIL) { eaReplacement.inputs.push_back(ID::termFromInteger(aatom.tuple[1].address)); eaReplacement.inputs.push_back(aatom.tuple[0]); } else { eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); }
+                                if (aatom.tuple[4] != ID_FAIL) { eaReplacement.inputs.push_back(ID::termFromInteger(aatom.tuple[3].address)); eaReplacement.inputs.push_back(aatom.tuple[4]); } else { eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); eaReplacement.inputs.push_back(reg->storeConstantTerm("none")); }
+                            }
+                        }
                         // o1
                         BOOST_FOREACH (ID t, symbolicSetVarsIntersectingRemainingBody) {
                             eaReplacement.tuple.push_back(t);
@@ -490,10 +576,10 @@ namespace
                             valueVariable = reg->storeVariableTerm(var.str());
                         }
                         // o2
-                        eaReplacement.tuple.push_back(valueVariable);
+                        if (!useBooleanEa) eaReplacement.tuple.push_back(valueVariable);
 
                         // store external atom and add its ID to the rule body
-                        newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
+                        newRule.body.push_back(b.isNaf() ^ negate ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
 
                         // make the rule know that it contains an external atom
                         newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
@@ -544,23 +630,24 @@ namespace
                 }
 
                 // add (at most) two atoms reflecting the original left and right comparator
-                if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address != ID::TERM_BUILTIN_EQ) {
-                    BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
-                    bi.tuple.push_back(aatom.tuple[1]);
-                    bi.tuple.push_back(aatom.tuple[0]);
-                    warnMaxint(ctx, aatom.tuple[0]);
-                    bi.tuple.push_back(valueVariable);
-                    newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
+                if (!useBooleanEa){
+                    if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1].address != ID::TERM_BUILTIN_EQ) {
+                        BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+                        bi.tuple.push_back(aatom.tuple[1]);
+                        bi.tuple.push_back(aatom.tuple[0]);
+                        warnMaxint(ctx, aatom.tuple[0]);
+                        bi.tuple.push_back(valueVariable);
+                        newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
+                    }
+                    if (aatom.tuple[4] != ID_FAIL && aatom.tuple[3].address != ID::TERM_BUILTIN_EQ) {
+                        BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+                        bi.tuple.push_back(aatom.tuple[3]);
+                        bi.tuple.push_back(valueVariable);
+                        bi.tuple.push_back(aatom.tuple[4]);
+                        warnMaxint(ctx, aatom.tuple[4]);
+                        newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
+                    }
                 }
-                if (aatom.tuple[4] != ID_FAIL && aatom.tuple[3].address != ID::TERM_BUILTIN_EQ) {
-                    BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
-                    bi.tuple.push_back(aatom.tuple[3]);
-                    bi.tuple.push_back(valueVariable);
-                    bi.tuple.push_back(aatom.tuple[4]);
-                    warnMaxint(ctx, aatom.tuple[4]);
-                    newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
-                }
-
             }
             else {
                 // take it as it is
@@ -586,6 +673,23 @@ namespace
         BOOST_FOREACH (ID rid, ctx.idb) {
             rewriteRule(ctx, newEdb, newIdb, ctx.registry()->rules.getByID(rid));
         }
+
+        // eliminate duplicates
+        int shift = 0;
+        InterpretationPtr intr(new Interpretation(ctx.registry()));
+        for (int ridx = 0; ridx < newIdb.size() - shift; ){
+            // move next actual rule to the current position (respecting skipped rules)
+            newIdb[ridx] = newIdb[ridx + shift];
+            if (intr->getFact(newIdb[ridx].address)){
+                // skip rule
+                shift++;
+            }else{
+                // no duplicate: remember rule
+                intr->setFact(newIdb[ridx].address);
+                ridx++;
+            }
+        }
+        newIdb.resize(newIdb.size() - shift);
 
         #ifndef NDEBUG
         std::stringstream programstring;
@@ -654,22 +758,30 @@ namespace
     class AggAtom : public PluginAtom
     {
         protected:
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) = 0;
+            bool booleanAtom;
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) = 0;
 
-            std::string getName(std::string aggFunction) {
+            std::string getName(std::string aggFunction, bool booleanAtom) {
                 std::stringstream ss;
-                ss << aggFunction;
+                ss << aggFunction << (booleanAtom ? "bl" : "");
                 return ss.str();
             }
 
         public:
 
-            AggAtom(std::string aggFunction)
-            : PluginAtom(getName(aggFunction), false) {
+            AggAtom(std::string aggFunction, bool booleanAtom = false)
+            : PluginAtom(getName(aggFunction, booleanAtom), false), booleanAtom(booleanAtom) {
                 prop.variableOutputArity = true;
 
                 addInputPredicate();
                 addInputPredicate();
+                if (booleanAtom){
+                    prop.providesPartialAnswer = true;
+                    addInputConstant();
+                    addInputConstant();
+                    addInputConstant();
+                    addInputConstant();
+                }
 
                 setOutputArity(1);
             }
@@ -686,7 +798,6 @@ namespace
 
                 // collect all keys for which we need to evaluate the aggregate function
                 int arity = -1;
-                boost::unordered_map<Tuple, InterpretationPtr> subQueries;
                 while (en < en_end) {
                     const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en);
 
@@ -699,53 +810,41 @@ namespace
                         for (int i = 1; i < oatom.tuple.size(); ++i) {
                             key.push_back(oatom.tuple[i]);
                         }
-                        if (subQueries.count(key) == 0) {
-                            subQueries[key] = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
+
+                        // now shrink the interpretations to the according value atoms
+                        Query sub = query;
+                        InterpretationPtr subIntr(new Interpretation(query.ctx->registry()));
+                        InterpretationPtr subAssigned;
+                        if (!!query.assigned) subAssigned.reset(new Interpretation(query.ctx->registry()));
+                        sub.interpretation = subIntr;
+                        sub.assigned = subAssigned;
+                        bm::bvector<>::enumerator en2 = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first();
+                        bm::bvector<>::enumerator en2_end = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end();
+                        while (en < en_end) {
+                            const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en2);
+
+                            if (oatom.tuple[0] == query.input[1]) {
+                                // does it belong to this key?
+                                bool match = true;
+                                for (int i = 1; i < oatom.tuple.size(); ++i) {
+                                    if (key[i - 1] != oatom.tuple[i]) {
+                                        match = false;
+                                        break;
+                                    }
+                                }
+                                if (match) {
+                                    subIntr->setFact(query.interpretation->getFact(*en));
+                                    if (!!query.assigned) subAssigned->setFact(query.assigned->getFact(*en));
+                                }
+                            }
+
+                            en++;
                         }
-                        assert(!!subQueries[key]);
-                                 // all key atoms must have the same arity
-                        assert (arity == -1 || arity == key.size());
-                        arity = key.size();
-                        subQueries[key]->setFact(*en);
+
+                        atomicQueries.push_back(query);
                     }
 
                     en++;
-                }
-
-                // now assign the value atoms to the subqueries
-                en = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first();
-                en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end();
-                while (en < en_end) {
-                    const OrdinaryAtom& oatom = registry->ogatoms.getByAddress(*en);
-
-                    // extract the key of this atom
-                    Tuple key;
-                    key.clear();
-                                 // value atom
-                    if (oatom.tuple[0] == query.input[1]) {
-                                 // if there is a value atom, then there must also be a key atom and the arity must be known
-                        assert (arity != -1);
-                        // extract the key
-                        for (int i = 1; i <= arity; ++i) {
-                            key.push_back(oatom.tuple[i]);
-                        }
-                        assert(!!subQueries[key]);
-                        subQueries[key]->setFact(*en);
-                    }
-
-                    en++;
-                }
-
-                // prepare a separate subquery for each key
-                typedef std::pair<Tuple, InterpretationPtr> Pair;
-                BOOST_FOREACH (Pair p, subQueries) {
-                    Query qa = query;
-                    qa.predicateInputMask = p.second;
-                    InterpretationPtr intr(new Interpretation(query.interpretation->getRegistry()));
-                    intr->getStorage() |= query.interpretation->getStorage();
-                    intr->getStorage() &= p.second->getStorage();
-                    qa.interpretation = intr;
-                    atomicQueries.push_back(qa);
                 }
 
                 return atomicQueries;
@@ -756,8 +855,8 @@ namespace
                 Registry &registry = *getRegistry();
 
                 // extract all keys
-                bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
-                bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+                bm::bvector<>::enumerator en = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end();
                 std::vector<Tuple> keys;
                 int arity = -1;
                 while (en < en_end) {
@@ -780,10 +879,10 @@ namespace
                 }
 
                 // go through all value atoms
-                en = query.interpretation->getStorage().first();
-                en_end = query.interpretation->getStorage().end();
+                en = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first();
+                en_end = query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end();
 
-                boost::unordered_map<Tuple, std::vector<Tuple> > tuples;
+                boost::unordered_map<Tuple, std::vector<Tuple> > trueTuples, mightBeTrueTuples;
                 while (en < en_end) {
                     const OrdinaryAtom& oatom = registry.ogatoms.getByAddress(*en);
 
@@ -798,12 +897,25 @@ namespace
                             key.push_back(oatom.tuple[i]);
                         }
 
-                        // remember the remaining terms for this key
+                        // encoding "extbl": value has the form [key,value,substitution_of_all_variables,symbolic_set_element_idx,count_of_all_variables]; the last two elements need to be stripped off
                         Tuple value;
                         for (uint32_t j = arity + 1; j < oatom.tuple.size(); ++j) {
+                            if (booleanAtom && (j == oatom.tuple.size() - (2 + oatom.tuple[oatom.tuple.size() - 1].address))) break;
                             value.push_back(oatom.tuple[j]);
                         }
-                        tuples[key].push_back(value);
+                        if ((!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)){
+                            // remove from mightBeTrue if present (might happen with encoding "extbl" since multiple value atoms can contain the same actual value)
+                            if (booleanAtom) {
+                                std::vector<Tuple>::iterator it = std::find(mightBeTrueTuples[key].begin(), mightBeTrueTuples[key].end(), value);
+                                if (it != mightBeTrueTuples[key].end()) mightBeTrueTuples[key].erase(it);
+                            }
+                            trueTuples[key].push_back(value);
+                        }else if (!!query.assigned && !query.assigned->getFact(*en)){ 
+                            // skip if present in true (might happen with encoding "extbl" since multiple value atoms can contain the same actual value)
+                            if (!booleanAtom || (std::find(trueTuples[key].begin(), trueTuples[key].end(), value) == trueTuples[key].end())) {
+                                mightBeTrueTuples[key].push_back(value);
+                            }
+                        }
                     }
 
                     en++;
@@ -813,15 +925,58 @@ namespace
                 typedef std::pair<Tuple, std::vector<Tuple> > Pair;
                 BOOST_FOREACH (Tuple key, keys) {
                     bool def = false;
-                    uint32_t functionValue = 0;
-                    compute(tuples[key], &functionValue, &def);
+                    uint32_t minFunctionValue = 0;
+                    uint32_t maxFunctionValue = 0;
+                    compute(trueTuples[key], mightBeTrueTuples[key], &minFunctionValue, &maxFunctionValue, &def);
 
                     // output
                     if (def) {
                         Tuple result = key;
-                        // compute the function value or just a truth value?
-                        result.push_back(ID::termFromInteger(functionValue));
-                        answer.get().push_back(result);
+                        if (booleanAtom){
+                            int lowerBound = 0;
+                            int upperBound = -2; // means infinity
+
+                            if (query.input[2].isTerm() && query.input[2].isIntegerTerm()){
+                                DBGLOG(DBG, "Aggregate has a left bound");
+                                if (query.input[2].address == ID::TERM_BUILTIN_LE) lowerBound = query.input[3].address > lowerBound ? query.input[3].address : lowerBound;
+                                if (query.input[2].address == ID::TERM_BUILTIN_LT) lowerBound = query.input[3].address + 1 > lowerBound ? query.input[3].address + 1 : lowerBound;
+                                if (query.input[2].address == ID::TERM_BUILTIN_GE) upperBound = (query.input[3].address < upperBound || upperBound == -2) ? query.input[3].address : upperBound;
+                                if (query.input[2].address == ID::TERM_BUILTIN_GT) upperBound = (query.input[3].address - 1 < upperBound || upperBound == -2) ? query.input[3].address - 1 : upperBound;
+                            }
+                            if (query.input[4].isTerm() && query.input[4].isIntegerTerm()){
+                                DBGLOG(DBG, "Aggregate has a right bound");
+                                if (query.input[4].address == ID::TERM_BUILTIN_GE) lowerBound = query.input[5].address > lowerBound ? query.input[5].address : lowerBound;
+                                if (query.input[4].address == ID::TERM_BUILTIN_GT) lowerBound = query.input[5].address + 1 > lowerBound ? query.input[5].address + 1 : lowerBound;
+                                if (query.input[4].address == ID::TERM_BUILTIN_LE) upperBound = (query.input[5].address < upperBound || upperBound == -2) ? query.input[5].address : upperBound;
+                                if (query.input[4].address == ID::TERM_BUILTIN_LT) upperBound = (query.input[5].address - 1 < upperBound || upperBound == -2) ? query.input[5].address - 1 : upperBound;
+                            }
+
+#ifndef NDEBUG
+                            std::stringstream ss;
+                            ss << "true:";
+                            BOOST_FOREACH (Tuple t, trueTuples[key]){ ss << " " << t[0].address; }
+                            ss << ", can be true:";
+                            BOOST_FOREACH (Tuple t, mightBeTrueTuples[key]){ ss << " " << t[0].address; }
+                            if (upperBound == -2){
+                                DBGLOG(DBG, "Aggregate atom returned possible range [" << minFunctionValue << ", " << maxFunctionValue << "]; range query is [" << lowerBound << ", infinity] with input " << ss.str());
+                            }else{
+                                DBGLOG(DBG, "Aggregate atom returned possible range [" << minFunctionValue << ", " << maxFunctionValue << "]; range query is [" << lowerBound << ", " << upperBound << "] with input " << ss.str());
+                            }
+#endif
+                            if (minFunctionValue >= lowerBound && (upperBound == -2 || maxFunctionValue <= upperBound)){
+				                DBGLOG(DBG, "Aggregate is true");
+                                answer.get().push_back(result);
+                            }else if (maxFunctionValue < lowerBound || (upperBound != -2 && minFunctionValue > upperBound)){
+				                DBGLOG(DBG, "Aggregate is false");
+                            }else{
+				                DBGLOG(DBG, "Aggregate is unknown");
+                                answer.getUnknown().push_back(result);
+                            }
+                        }else{
+                            assert (minFunctionValue == maxFunctionValue && "Non-boolean aggregates must deliver a definite value");
+                            result.push_back(ID::termFromInteger(minFunctionValue));
+                            answer.get().push_back(result);
+                        }
                     }
                 }
             }
@@ -830,88 +985,156 @@ namespace
     class MaxAtom : public AggAtom
     {
         private:
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) {
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
 
                 *defined = false;
-                *returnValue = 0;
-                BOOST_FOREACH (Tuple t, input) {
-                    *returnValue = t[0].address > *returnValue ? t[0].address : *returnValue;
+                *minFunctionValue = 0;
+                *maxFunctionValue = 0;
+                BOOST_FOREACH (Tuple t, trueInput) {
+                    *minFunctionValue = t[0].address > *minFunctionValue ? t[0].address : *minFunctionValue;
+                    *defined = true;
+                }
+                *maxFunctionValue = *minFunctionValue;
+                BOOST_FOREACH (Tuple t, mightBeTrueInput) {
+                    *maxFunctionValue = t[0].address > *maxFunctionValue ? t[0].address : *maxFunctionValue;
                     *defined = true;
                 }
             }
 
         public:
-            MaxAtom() : AggAtom("max") {}
+            MaxAtom(bool booleanAtom = false) : AggAtom("max", booleanAtom) {}
     };
 
     class MinAtom : public AggAtom
     {
         private:
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) {
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
 
                 *defined = false;
-                *returnValue = 0;
-                BOOST_FOREACH (Tuple t, input) {
-                    *returnValue = t[0].address < *returnValue || !(*defined) ? t[0].address : *returnValue;
+                *minFunctionValue = 0;
+                *maxFunctionValue = 0;
+                BOOST_FOREACH (Tuple t, trueInput) {
+                    *maxFunctionValue = t[0].address < *maxFunctionValue || !(*defined) ? t[0].address : *maxFunctionValue;
+                    *defined = true;
+                }
+                *minFunctionValue = *maxFunctionValue;
+                BOOST_FOREACH (Tuple t, mightBeTrueInput) {
+                    *minFunctionValue = t[0].address < *minFunctionValue || !(*defined) ? t[0].address : *minFunctionValue;
                     *defined = true;
                 }
             }
 
         public:
-            MinAtom() : AggAtom("min") {}
+            MinAtom(bool booleanAtom = false) : AggAtom("min", booleanAtom) {}
     };
 
     class SumAtom : public AggAtom
     {
         private:
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) {
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
 
                 *defined = true;
-                *returnValue = 0;
-                BOOST_FOREACH (Tuple t, input) {
-                    *returnValue += t[0].address;
+                *minFunctionValue = 0;
+                *maxFunctionValue = 0;
+                int nfv = 0;
+                int xfv = 0;
+                BOOST_FOREACH (Tuple t, trueInput) {
+                    if (t[0].isConstantTerm()){
+                        nfv--;
+                        xfv--;
+                    }else{
+                        nfv += t[0].address;
+                        xfv += t[0].address;
+                    }
                 }
+                BOOST_FOREACH (Tuple t, mightBeTrueInput) {
+                    if (t[0].isConstantTerm()){
+                        nfv--;
+                    }else{
+                        xfv += t[0].address;
+                    }
+                }
+                *minFunctionValue = (nfv >= 0 ? nfv : 0);
+                *maxFunctionValue = (xfv >= 0 ? xfv : 0);
             }
 
         public:
-            SumAtom() : AggAtom("sum") {}
+            SumAtom(bool booleanAtom = false) : AggAtom("sum", booleanAtom) {}
     };
 
     class TimesAtom : public AggAtom
     {
         private:
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) {
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
 
                 *defined = false;
-                *returnValue = 1;
-                BOOST_FOREACH (Tuple t, input) {
-                    *returnValue *= t[0].address;
+                *minFunctionValue = 1;
+                *maxFunctionValue = 1;
+                BOOST_FOREACH (Tuple t, trueInput) {
+                    *minFunctionValue *= t[0].address;
+                    *maxFunctionValue *= t[0].address;
+                    *defined = true;
+                }
+                BOOST_FOREACH (Tuple t, mightBeTrueInput) {
+                    if (t[0].address == 0) *minFunctionValue = 0;
+                    if (t[0].address != 0) *maxFunctionValue *= t[0].address;
                     *defined = true;
                 }
             }
 
         public:
-            TimesAtom() : AggAtom("times") {}
+            TimesAtom(bool booleanAtom = false) : AggAtom("times", booleanAtom) {}
     };
 
     class AvgAtom : public AggAtom
     {
         private:
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) {
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
 
                 *defined = false;
-                *returnValue = 0;
+                *minFunctionValue = 0;
+                *maxFunctionValue = 0;
                 int cnt = 0;
-                BOOST_FOREACH (Tuple t, input) {
-                    *returnValue += t[0].address;
+                BOOST_FOREACH (Tuple t, trueInput) {
+                    *minFunctionValue += t[0].address;
+                    *maxFunctionValue += t[0].address;
                     cnt++;
                     *defined = true;
                 }
-                if (*defined) *returnValue /= cnt;
+
+                int smallest = -1;
+                int largest = -1;
+                int smallestcnt = 0;
+                int largestcnt = 0;
+                BOOST_FOREACH (Tuple t, mightBeTrueInput) {
+                    if (t[0].address == smallest) { smallestcnt++; }
+                    if (t[0].address == largest) { largestcnt++; }
+                    if (smallest == -1 || t[0].address < smallest) { smallest = t[0].address; smallestcnt = 1; }
+                    if (largest == -1 || t[0].address > largest) { largest = t[0].address; largestcnt = 1; }
+                }
+                if (*defined) {
+                    if (smallest != -1) {
+                        if ((*minFunctionValue + smallest * smallestcnt) / (cnt + smallestcnt) < (*minFunctionValue / cnt)){
+                            *minFunctionValue += smallest * smallestcnt;
+                            cnt += smallestcnt;
+                        }
+                    }
+                    if (largest != -1) {
+                        if ((*maxFunctionValue + largest * largestcnt) / (cnt + largestcnt) > (*maxFunctionValue / cnt)){
+                            *maxFunctionValue += largest * largestcnt;
+                            cnt += largestcnt;
+                        }
+                    }
+                    *minFunctionValue /= cnt;
+                    *maxFunctionValue /= cnt;
+                }else{
+                    if (smallest != -1) *minFunctionValue = smallest;
+                    if (largest != -1) *maxFunctionValue = largest;
+                }
             }
 
         public:
-            AvgAtom() : AggAtom("avg") {}
+            AvgAtom(bool booleanAtom = false) : AggAtom("avg", booleanAtom) {}
     };
 
     class CountAtom : public AggAtom
@@ -919,14 +1142,15 @@ namespace
         private:
             virtual std::string aggFunction(){ return "count"; }
 
-            virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined) {
+            virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
 
                 *defined = true;
-                *returnValue = input.size();
+                *minFunctionValue = trueInput.size();
+                *maxFunctionValue = trueInput.size() + mightBeTrueInput.size();
             }
 
         public:
-            CountAtom() : AggAtom("count") {}
+            CountAtom(bool booleanAtom = false) : AggAtom("count", booleanAtom) {}
     };
 
 }
@@ -947,6 +1171,12 @@ std::vector<PluginAtomPtr> AggregatePlugin::createAtoms(ProgramCtx& ctx) const
     ret.push_back(PluginAtomPtr(new TimesAtom(), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new AvgAtom(), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new CountAtom(), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new MaxAtom(true), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new MinAtom(true), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new SumAtom(true), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TimesAtom(true), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new AvgAtom(true), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new CountAtom(true), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 }

@@ -361,11 +361,13 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
 
                             // never merge if one of the components has a nonmonotonic dependency to some predecessor
                             // (the dependency could become internal, which slows down grounding significantly)
-                            nd |= (nonmonotonicPredecessor.find(comp) != nonmonotonicPredecessor.end()) ||
-                                (nonmonotonicPredecessor.find(comp2) != nonmonotonicPredecessor.end());
+                            //nd |= (nonmonotonicPredecessor.find(comp) != nonmonotonicPredecessor.end()) ||
+                            //    (nonmonotonicPredecessor.find(comp2) != nonmonotonicPredecessor.end());
 
-                            //            nd = (negdep.find(std::pair<Component, Component>(comp, comp2)) != negdep.end()) ||
-                            //	           (negdep.find(std::pair<Component, Component>(comp2, comp)) != negdep.end());
+                            // never merge if this makes a nonmonotonic dependency internal
+                            // (should be a more specific version of the commented check above)
+                            nd |= (negdep.find(std::pair<ComponentGraph::Component, ComponentGraph::Component>(comp, comp2)) != negdep.end()) ||
+                                  (negdep.find(std::pair<ComponentGraph::Component, ComponentGraph::Component>(comp2, comp)) != negdep.end());
                         }
 
                         if (mergeComponents(ctx, compgraph.propsOf(comp), compgraph.propsOf(comp2), nd)) {

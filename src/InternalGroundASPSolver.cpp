@@ -43,6 +43,7 @@
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/Printer.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
@@ -78,7 +79,6 @@ void InternalGroundASPSolver::createNogoodsForRule(ID ruleBodyAtomID, ID ruleID)
 // 2. body must not be true if a literal is false
 void InternalGroundASPSolver::createNogoodsForRuleBody(ID ruleBodyAtomID, const Tuple& ruleBody)
 {
-
     BOOST_FOREACH(ID bodyLit, ruleBody) {
         if (bodyLit.isAggregateAtom()) throw GeneralError("Internal solver does not support aggregate atoms");
     }
@@ -157,7 +157,7 @@ Set<std::pair<ID, ID> > InternalGroundASPSolver::createShiftedProgram()
 }
 
 
-void InternalGroundASPSolver::createSingularLoopNogoods()
+void InternalGroundASPSolver::createSingularLoopNogoods(InterpretationConstPtr frozen)
 {
 
     DBGLOG(DBG, "Creating singular loop nogoods");
@@ -177,7 +177,7 @@ void InternalGroundASPSolver::createSingularLoopNogoods()
     // an atom must not be true if the bodies of all supporting shifted rules are false
     BOOST_FOREACH (IDAddress litadr, ordinaryFacts) {
         // only for atoms which are no facts
-        if (!program.getGroundProgram().edb->getFact(litadr)) {
+        if (!program.getGroundProgram().edb->getFact(litadr) && (!frozen || !frozen->getFact(litadr))) {
             Nogood supNogood;
             supNogood.insert(createLiteral(litadr));
 
@@ -311,7 +311,7 @@ void InternalGroundASPSolver::computeStronglyConnectedComponents()
         compStr << "}";
     }
     DBGLOG(DBG, "Program components: " << compStr.str());
-    DBGLOG(DBG, "All atoms: " << toString(allFacts));
+    DBGLOG(DBG, "All atoms: " << toString(allAtoms));
     DBGLOG(DBG, "All ordinary atoms: " << toString(ordinaryFacts));
     DBGLOG(DBG, "Ordinary atoms in non-singular components: " << toString(nonSingularFacts));
     #endif
@@ -341,7 +341,7 @@ void InternalGroundASPSolver::initSourcePointers()
 }
 
 
-void InternalGroundASPSolver::initializeLists()
+void InternalGroundASPSolver::initializeLists(InterpretationConstPtr frozen)
 {
 
     // determine the set of all facts and a literal index
@@ -354,7 +354,7 @@ void InternalGroundASPSolver::initializeLists()
 
             rulesWithPosHeadLiteral[lIt->address].insert(ruleID);
             // collect all facts
-            allFacts.insert(lIt->address);
+            allAtoms.insert(lIt->address);
             ordinaryFacts.insert(lIt->address);
         }
         for (std::vector<ID>::const_iterator lIt = r.body.begin(); lIt != r.body.end(); ++lIt) {
@@ -367,18 +367,29 @@ void InternalGroundASPSolver::initializeLists()
                 rulesWithNegBodyLiteral[lIt->address].insert(ruleID);
             }
             // collect all facts
-            allFacts.insert(lIt->address);
+            allAtoms.insert(lIt->address);
             ordinaryFacts.insert(lIt->address);
         }
     }
 
-    // include facts in the list of all literals
+    // include facts in the list of all atoms
     bm::bvector<>::enumerator en = program.getGroundProgram().edb->getStorage().first();
     bm::bvector<>::enumerator en_end = program.getGroundProgram().edb->getStorage().end();
     while (en < en_end) {
-        allFacts.insert(*en);
+        allAtoms.insert(*en);
         ordinaryFacts.insert(*en);
         ++en;
+    }
+
+    // frozen atoms in the list of all atoms
+    if (!!frozen) {
+        en = frozen->getStorage().first();
+        en_end = frozen->getStorage().end();
+        while (en < en_end) {
+            allAtoms.insert(*en);
+            ordinaryFacts.insert(*en);
+            en++;
+        }
     }
 
     // built an interpretation of ordinary facts
@@ -850,7 +861,7 @@ ID InternalGroundASPSolver::createNewBodyAtom()
     DBGLOG(DBG, "Creating body atom " << bodyPred.str());
     bodyAtomNumber++;
     ID bodyAtom = createNewAtom(reg->getNewConstantTerm("body"));
-    allFacts.insert(bodyAtom.address);
+    allAtoms.insert(bodyAtom.address);
     return bodyAtom;
 }
 
@@ -917,7 +928,7 @@ InterpretationPtr InternalGroundASPSolver::outputProjection(InterpretationConstP
 }
 
 
-InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0)
+InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0)
 {
     DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
@@ -925,9 +936,9 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
     reg = ctx.registry();
 
     resizeVectors();
-    initializeLists();
+    initializeLists(frozen);
     computeClarkCompletion();
-    createSingularLoopNogoods();
+    createSingularLoopNogoods(frozen);
     resizeVectors();
     initWatchingStructures();
     computeDepGraph();
@@ -942,6 +953,89 @@ void InternalGroundASPSolver::addProgram(const AnnotatedGroundProgram& p, Interp
     throw GeneralError("Internal grounder does not support incremental extension of the program");
 }
 
+/**
+  * In order to compute an inconsistency reason the program must be inconsistent.
+  * This condition is stronger than the condition of getNextModel() returning NULL:
+  *   getNextModel() might also return if there are _no more_ models, while for inconsistent programs it would return NULL even after a restart.
+  */
+Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
+
+    loadAddedNogoods();
+    if ((!getNextModel() && modelCount == 0) ||
+        /** @TODO: FOR TESTIGN PURPOSES ONLY
+          * If (for whatever reason) there is a contradictory nogood after getNextModel() returns NULL, we can compute a reason why there is no *further* model (flipping all decision literals leads to this conflict);
+          *   if all previous models have been rejected due to incompatibility (which needs to be checked by the caller), then this is also a reason for inconsistency. */
+        (!getNextModel() && contradictoryNogoods.size() > 0)) {
+        if (!explanationAtoms) return Nogood(); // explanation is trivial in this case
+
+        // start from the conflicting nogood
+        int conflictNogoodIndex = *(contradictoryNogoods.begin());
+        Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
+
+#ifndef NDEBUG
+        std::stringstream debugoutput;
+        debugoutput << "getInconsistencyCause, current implication graph:" << std::endl << getImplicationGraphAsDotString() << std::endl;
+		debugoutput << "getInconsistencyCause, explanation atoms: " << *explanationAtoms << std::endl;
+		debugoutput << "getInconsistencyCause, starting from nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
+#endif
+
+        // resolve back to explanationAtoms
+        std::vector<ID> removeLits;
+        int resolveWithNogoodIndex = -1;
+        ID resolvedLiteral = ID_FAIL;
+        do {
+            removeLits.clear();
+            resolveWithNogoodIndex = -1;
+            resolvedLiteral = ID_FAIL;
+            // 1. check if the violated nogood contains implied literals; in this case mark for resolving
+            // 2. check if the violated nogood contains not implied literals other than from explanationAtoms; in this case mark for removal
+		    BOOST_FOREACH (ID lit, violatedNogood) {
+                assert (decisionlevel[lit.address] == 0 && "found literal assigned on decisionlevel > 0");
+                // check if there are literals other than from explanationAtoms
+                if (!explanationAtoms->getFact(lit.address)) {
+                    // if it is an implied literal, resolve with its reason, otherwise it is a fact and we remove it
+				    if (cause[lit.address] != -1){
+                        if (resolveWithNogoodIndex == -1){
+                            resolveWithNogoodIndex = cause[lit.address];
+                            resolvedLiteral = lit;
+                        }
+				    }else{
+                        removeLits.push_back(lit);
+                    }
+                }
+			}
+            // remove the literals marked for removal (actually, since removal from vectors is expensive, create a new vector but skip removed literals)
+            Nogood newNogood;
+            int nextRemovedLit = 0;
+			BOOST_FOREACH (ID lit, violatedNogood){
+				if (nextRemovedLit < removeLits.size() && lit == removeLits[nextRemovedLit]){
+                    nextRemovedLit++;
+				}else{
+                    // keep
+                    newNogood.insert(lit);
+                }
+            }
+            // possibly resolve
+            if (resolveWithNogoodIndex != -1){
+                violatedNogood = resolve(newNogood, nogoodset.getNogood(resolveWithNogoodIndex), resolvedLiteral.address);
+#ifndef NDEBUG
+                debugoutput << "Removed facts other than explanation atoms: " << newNogood.getStringRepresentation(reg) << std::endl;
+				debugoutput << "Resolved with " << nogoodset.getNogood(resolveWithNogoodIndex).getStringRepresentation(reg) << ": " << violatedNogood.getStringRepresentation(reg) << std::endl;
+#endif
+			}else{
+                violatedNogood = newNogood;
+            }
+		}while(removeLits.size() > 0 || resolveWithNogoodIndex != -1);
+
+        // the nogood contains now only literals which have not been implied and which are from explanationAtoms
+#ifndef NDEBUG
+        debugoutput << "Final explanation nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
+        DBGLOG(DBG, debugoutput.str());
+#endif
+        return violatedNogood;
+    }
+    throw GeneralError("getInconsistencyCause can only be called for inconsistent instances (getNextModel() has to return NULL at first call)");
+}
 
 void InternalGroundASPSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
 {
@@ -954,8 +1048,8 @@ void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assu
 
     // reset
     std::vector<IDAddress> toClear;
-    bm::bvector<>::enumerator en = factWasSet->getStorage().first();
-    bm::bvector<>::enumerator en_end = factWasSet->getStorage().end();
+    bm::bvector<>::enumerator en = assignedAtoms->getStorage().first();
+    bm::bvector<>::enumerator en_end = assignedAtoms->getStorage().end();
     while (en < en_end) {
         toClear.push_back(*en);
         en++;
@@ -965,7 +1059,7 @@ void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assu
 
       DBGLOG(DBG, "Resetting solver");
       interpretation.reset(new Interpretation(ctx.registry()));
-      factWasSet.reset(new Interpretation(ctx.registry()));
+      assigned.reset(new Interpretation(ctx.registry()));
       changed.reset(new Interpretation(ctx.registry()));
       currentDL = 0;
       exhaustedDL = 0;
@@ -975,7 +1069,9 @@ void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assu
     // set assumptions at DL=0
     DBGLOG(DBG, "Setting assumptions");
     BOOST_FOREACH (ID a, assumptions) {
-        setFact(a, 0);
+        if (allAtoms.contains(a.address)) {
+            setFact(a, 0);
+        }
     }
 
     setEDB();
@@ -1003,6 +1099,10 @@ void InternalGroundASPSolver::setOptimum(std::vector<int>& optimum)
 
 InterpretationPtr InternalGroundASPSolver::getNextModel()
 {
+#ifndef NDEBUG
+    DBGLOG(DBG, "getNextModel, current implication graph:" << std::endl << getImplicationGraphAsDotString());
+#endif
+
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
     Nogood violatedNogood;
 
@@ -1016,7 +1116,7 @@ InterpretationPtr InternalGroundASPSolver::getNextModel()
     }
     firstmodel = false;
 
-                                 // if set to true, the loop will run even if the interpretation is already complete
+    // if set to true, the loop will run even if the interpretation is already complete
     bool anotherIterationEvenIfComplete = false;
     // (needed to check if newly added nogood (e.g. by external learners) are satisfied)
     while (!complete() || anotherIterationEvenIfComplete) {
@@ -1064,19 +1164,25 @@ InterpretationPtr InternalGroundASPSolver::getNextModel()
                 int nogoodCount = nogoodset.getNogoodCount();
                 BOOST_FOREACH (PropagatorCallback* cb, propagator) {
                     DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-                    cb->propagate(interpretation, factWasSet, changed);
+                    cb->propagate(interpretation, assignedAtoms, changedAtoms);
                 }
                 // add new nogoods
                 int ngc = nogoodset.getNogoodCount();
                 loadAddedNogoods();
                 if (ngc != nogoodset.getNogoodCount()) anotherIterationEvenIfComplete = true;
-                changed->clear();
+                changedAtoms->clear();
 
                 if (nogoodset.getNogoodCount() != nogoodCount) {
                     DBGLOG(DBG, "Learned something");
                 }
                 else {
                     DBGLOG(DBG, "Did not learn anything");
+
+                    if (assignedAtoms->getStorage().count() > allAtoms.size()){
+                        std::cout << "All: ";
+                        BOOST_FOREACH (IDAddress a, allAtoms) { std::cout << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(a), reg) << " "; }
+                        std::cout << " (" << allAtoms.size() << ")" << std::endl;
+                    }
 
                     if (!complete()) {
                         // guess
@@ -1118,6 +1224,49 @@ std::string InternalGroundASPSolver::getStatistics()
     #endif
 }
 
+
+std::string InternalGroundASPSolver::getImplicationGraphAsDotString(){
+
+    // create debug output graph
+    std::stringstream dot;
+
+    // export implication graph
+    dot << "digraph G { ";
+    BOOST_FOREACH (IDAddress adr, this->allAtoms){
+        if (!assignedAtoms->getFact(adr)) continue;
+
+        dot << adr << " [label=\"" << (this->interpretation->getFact(adr) ? "" : "-") << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(adr), reg) << "@" << this->decisionlevel[adr] << " ";
+        // decision literal?
+        if (cause[adr] == -1 && decisionlevel[adr] == 0){
+            dot << "(fact)" << "\"]; ";
+        }else if (cause[adr] == -1 && decisionlevel[adr] > 0){
+            dot << "(" << (flipped[adr] ? "flipped " : "")  << "decision)" << "\"]; ";
+        }else{
+            const Nogood& implicant = nogoodset.getNogood(cause[adr]);
+            dot << "(" << implicant.getStringRepresentation(reg) << ")" << "\"]; ";
+            // add edges from implicants
+            BOOST_FOREACH (ID id, implicant) {
+                if (id.address != adr){
+                    dot << id.address << " -> " << adr << "; ";
+                }
+            }
+        }
+    }
+
+    // add conflict nogood and edges if present
+    if (contradictoryNogoods.size() > 0) {
+        // start from the conflicting nogood
+        int conflictNogoodIndex = *(contradictoryNogoods.begin());
+        Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
+        dot << "c [label=\"conflict (" << violatedNogood.getStringRepresentation(reg) << ")\"]; ";
+        BOOST_FOREACH (ID id, violatedNogood) {
+            dot << id.address << " -> c; ";
+        }
+    }
+
+    dot << "}" << std::endl;
+    return dot.str();
+}
 
 DLVHEX_NAMESPACE_END
 

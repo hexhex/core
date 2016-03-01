@@ -64,6 +64,7 @@ public ostream_printable<InterpretationBase>
             { return o << "InterpretationBase::print() not overloaded"; }
 };
 
+class Nogood; // fwd definition
 /** \brief Base class for model generators.
  *
  * A model generator does the following:
@@ -105,6 +106,18 @@ public ostream_printable<ModelGeneratorBase<InterpretationT> >
          * @return Next model if any and NULL after last model. */
         virtual InterpretationPtr generateNextModel() = 0;
 
+        /** \brief Returns a reason for inconsistency in this instance wrt. the input atoms*
+          *
+          * @return Pointer to a nogood instance to contain the reason for the inconsistency, or false if no such reason cound be determined. */
+        virtual const Nogood* getInconsistencyCause() { return 0; }
+        
+        /** \brief Adds a nogood to the model generator.
+          *
+          * This nogood can be, for instance, an inconsistency cause in successor units.
+          *
+          * @param cause Pointer to the nogood to be added. */
+        virtual void addNogood(const Nogood* ng) {}
+
         // debug output
         virtual std::ostream& print(std::ostream& o) const
             { return o << "ModelGeneratorBase::print() not overloaded"; }
@@ -137,6 +150,12 @@ public ostream_printable<ModelGeneratorFactoryBase<InterpretationT> >
         ModelGeneratorFactoryBase() {}
         /** \brief Constructor. */
         virtual ~ModelGeneratorFactoryBase() {}
+        
+        /** \brief Informs the model generator about an inconsistency cause in successor units.
+          *
+          * @param cause Pointer to a nogood which, if violated and no new atoms are introduced, always makes a successor unit inconsistent.
+          *              Note: Due to nonmonotonicity the introduction of new atoms might invalidate this cause! */
+        virtual void addInconsistencyCauseFromSuccessor(const Nogood* cause) {}
 
         /** \brief Creates a ModelGenerator for a certain input interpretation.
          * @param input Input interpretation. */

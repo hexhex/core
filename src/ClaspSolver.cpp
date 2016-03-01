@@ -437,6 +437,7 @@ void ClaspSolver::freezeVariables(InterpretationConstPtr frozen, bool freezeByDe
         bm::bvector<>::enumerator en = frozen->getStorage().first();
         bm::bvector<>::enumerator en_end = frozen->getStorage().end();
         while (en < en_end) {
+            convertHexToClaspProgramLit(*en);   // all frozen literals are always part of the instance to make sure that they are contained in the answer sets
             if (isMappedToClaspLiteral(*en)) {
                 #ifndef NDEBUG
                 if (alreadyFrozen.count(hexToClaspSolver[*en].var()) == 0) {
@@ -1576,6 +1577,9 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum)
     delete []newopt;
 }
 
+Nogood ClaspSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
+    throw GeneralError("Not implemented");
+}
 
 InterpretationPtr ClaspSolver::getNextModel()
 {
@@ -1587,14 +1591,14 @@ InterpretationPtr ClaspSolver::getNextModel()
     /*
       This method essentially implements the following algorithm:
 
-                        [Restart]
+      [Restart]
       while (solve.solve() == Clasp::value_true) {				[Solve]
-        if (e->commitModel(solve.solver())) {				[CommitModel]
+        if (e->commitModel(solve.solver())) {				    [CommitModel]
            do {
-           onModel(e->lastModel());				[ExtractModel] & [ReturnModel]
+           onModel(e->lastModel());				                [ExtractModel] & [ReturnModel]
            } while (e->commitSymmetric(solve.solver()));		[CommitSymmetricModel]
         }
-        e->update(solve.solver());					[Update]
+        e->update(solve.solver());					            [Update]
       }
 
       However, the onModel-call is actually a return.

@@ -475,6 +475,12 @@ def date():
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
 	dlvhex.output((t, ))
 
+def tail(str):
+	if (len(str.value()) > 1 and str.value() != "\"\""):
+		dlvhex.output((str.value()[:-1], ))
+	else:
+		dlvhex.output(("\"\"", ))
+
 def main():
 	h1 = dlvhex.storeAtom(("q", "X"))
 	h2 = dlvhex.storeAtom(("r", "X"))
@@ -560,3 +566,7 @@ def register():
 	dlvhex.addAtom("controls", (dlvhex.PREDICATE, ), 2, prop)
 
 	dlvhex.addAtom("greaterOrEqual", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT), 0)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.addWellorderingStrlen(0, 0)
+	dlvhex.addAtom("tail", (dlvhex.CONSTANT, ), 1, prop)

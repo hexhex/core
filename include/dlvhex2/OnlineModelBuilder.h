@@ -800,6 +800,17 @@ EvalUnit u)
         // no further models for this model generator
         LOG(MODELB,"no further model");
 
+        // learning over multiple units: push inconsistency reason of this unit into predecessory
+        const Nogood* cause = mbprops.currentmg->getInconsistencyCause();
+        if (cause){
+            typename EvalGraphT::PredecessorIterator pit, pbegin, pend;
+            boost::tie(pbegin, pend) = eg.getPredecessors(u);
+            for (pit = pbegin; pit != pend; ++pit) {
+                eg.propsOf(eg.targetOf(*pit)).mgf->addInconsistencyCauseFromSuccessor(cause);
+                mbp[eg.targetOf(*pit)].currentmg->addNogood(cause);
+            }
+        }
+
         // mark this input model as finished for creating models
         ModelPropertyBundle& imodelprops = mg.propsOf(mbprops.getIModel().get());
         imodelprops.childModelsGenerated = true;

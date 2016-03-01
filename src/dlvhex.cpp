@@ -169,15 +169,13 @@
 #include <getopt.h>
 #include <signal.h>
 #include <sys/types.h>
-#ifdef POSIX
+#ifdef WIN32
+#include <windows.h>
+#undef ERROR                     // there is a clash with a Windows definition
+#elif POSIX
 #include <pwd.h>
 #else
-#ifdef WIN32
-#include <Windows.h>
-#undef ERROR                     // there is a clash with a Windows definition
-#else
 #error Either POSIX or WIN32 must be defined
-#endif
 #endif
 
 #include <boost/tokenizer.hpp>
@@ -326,10 +324,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         always           : Try to minimize every learned nogood" << std::endl
         << "                         alwaysopt        : Like always, but use cache for answers of external atom queries" << std::endl
         << "                         onconflict       : Only minimize nogoods that are violated by the current assignment" << std::endl
-        << "                         onconflictopt    : Like onconflict, but use cache for answers of external atom queries" << std::endl          
+        << "                         onconflictopt    : Like onconflict, but use cache for answers of external atom queries" << std::endl
         << "     --ngminimizationlimit=N" << std::endl
         << "                      Maximum size of nogoods that will be minimized" << std::endl
-        << "                      (only useful with ngminimization)" << std::endl            
+        << "                      (only useful with ngminimization)" << std::endl
         << "     --ufscheckheuristic=[post,max,periodic]" << std::endl
         << "                      Specifies the frequency of unfounded set checks (only useful with --flpcheck=[a]ufs[m])." << std::endl
         << "                         post (default)   : Do UFS check only over complete interpretations" << std::endl
@@ -453,10 +451,10 @@ namespace
 void signal_handler(int signum)
 {
     // perform benchmarking shutdown to obtain benchmark output
-    #ifdef POSIX
-    LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal " << signum << "!");
-    #else
+    #ifdef WIN32
     LOG(ERROR,"dlvhex2 with pid " << GetCurrentProcessId() << " got termination signal" << signum << "!");
+    #else
+    LOG(ERROR,"dlvhex2 with pid " << getpid() << " got termination signal " << signum << "!");
     #endif
 
     benchmark::BenchmarkController::finish();
@@ -859,6 +857,8 @@ Config& config, ProgramCtx& pctx)
         { "ngminimizationlimit", required_argument, 0, 59 },
         { "csvinput", required_argument, 0, 60 },
         { "csvoutput", required_argument, 0, 61 },
+        { "noouterexternalatoms", no_argument, 0, 62 },
+        { "transunitlearning", no_argument, 0, 64 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1588,7 +1588,7 @@ Config& config, ProgramCtx& pctx)
                     else if (heur == "onconflict") {
                         pctx.config.setOption("MinimizeNogoods", 1);
                         pctx.config.setOption("MinimizeNogoodsOnConflict", 1);
-                    } 
+                    }
 		    else if (heur == "alwaysopt") {
                         pctx.config.setOption("MinimizeNogoods", 1);
 			pctx.config.setOption("MinimizeNogoodsOpt", 1);
@@ -1618,7 +1618,7 @@ Config& config, ProgramCtx& pctx)
                     }
                     pctx.config.setOption("MinimizationSize", minval);
                 }
-                break;   
+                break;
             case 60:
                 {
                     std::string arg(optarg);
@@ -1632,6 +1632,20 @@ Config& config, ProgramCtx& pctx)
                 {
                     std::string pred(optarg);
                     pctx.modelCallbacks.push_back(ModelCallbackPtr(new CSVAnswerSetPrinterCallback(pctx, pred)));
+                }
+                break;
+            case 62:
+                {
+                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+                }
+                break;
+            case 64:
+                {
+                    pctx.config.setOption("UnitInconsistencyAnalysis", 1);
+                    pctx.config.setOption("TransUnitLearning", 1);
+                    pctx.config.setOption("ForceGC", 1);
+                    pctx.config.setOption("LiberalSafety", 1);
+                    pctx.config.setOption("NoOuterExternalAtoms", 1);
                 }
                 break;
         }
@@ -1686,6 +1700,18 @@ Config& config, ProgramCtx& pctx)
         // TODO we can also use this if we have all weight constraints in one evaluation unit, this can be detected automatically
         pctx.config.setOption("OptimizationTwoStep", 1);
     }
+    // We cannot use strong safety if we treat all outer external atoms as inner ones.
+    // We support two types of safety (strong and liberal) and two grounding approaches (decomposition-based and fixpoint-based). The two dimensions are related as follows:
+    // - decomposition-based grounding is made for strong safety (it cannot handle liberally safe programs)
+    // - fixpoint-based grounding is made for liberal safety (but can also handle strongly safe programs which are a special case of liberally safe ones)
+    // Currently there are no separate options for the two dimensions: --strongsafety and --liberalsafety switch both the safety concept and the grounding approach (fixpoint-based with --liberalsafety and decomposition-based for --strongsafety).
+    // Treating outer external atoms as inner ones does not destroy strong safety (because the structure of the program does not change) but destroys correctness of the decomposition-based grounder even for strongly safe programs,
+    // while the fixpoint-based grounding approach is still correct (both for strongly and for liberally safe programs).
+    // Thus, we can only handle outer external atoms as inner ones if --liberalsafety is used since then also the fixpoint-based grounding approach is used
+    // (in principle, switching only the grounding approach to fixpoint-based but still using strong safety is possible but not implemented).
+    if (!pctx.config.getOption("LiberalSafety") && pctx.config.getOption("NoOuterExternalAtoms")){
+        throw GeneralError("Option --noouterexternalatoms can only be used with --liberalsafety");
+    }
 
     // configure plugin path
     configurePluginPath(config.optionPlugindir);
@@ -1727,34 +1753,6 @@ Config& config, ProgramCtx& pctx)
 
 void configurePluginPath(std::string& userPlugindir)
 {
-    // TODO (WIN32)
-    #ifdef POSIX
-    bool reset = false;
-    if( !userPlugindir.empty() && userPlugindir[0] == '!' ) {
-        reset = true;
-        if( userPlugindir.size() > 2 && userPlugindir[1] == ':' )
-            userPlugindir.erase(0,2);
-        else
-            userPlugindir.erase(0,1);
-    }
-
-    std::stringstream searchpath;
-
-    if( !userPlugindir.empty() )
-        searchpath << userPlugindir << ':';
-
-    if( !reset ) {
-        // add LD_LIBRARY_PATH
-        const char *envld = ::getenv("LD_LIBRARY_PATH");
-        if( envld ) {
-            searchpath << envld << ":";
-        }
-
-        const char* homedir = ::getpwuid(::geteuid())->pw_dir;
-        searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
-    }
-    userPlugindir = searchpath.str();
-    #else
     #ifdef WIN32
     bool reset = false;
     if( !userPlugindir.empty() && userPlugindir[0] == '!' ) {
@@ -1786,9 +1784,34 @@ void configurePluginPath(std::string& userPlugindir)
         #endif
     }
     userPlugindir = searchpath.str();
+    #elif POSIX
+    bool reset = false;
+    if( !userPlugindir.empty() && userPlugindir[0] == '!' ) {
+        reset = true;
+        if( userPlugindir.size() > 2 && userPlugindir[1] == ':' )
+            userPlugindir.erase(0,2);
+        else
+            userPlugindir.erase(0,1);
+    }
+
+    std::stringstream searchpath;
+
+    if( !userPlugindir.empty() )
+        searchpath << userPlugindir << ':';
+
+    if( !reset ) {
+        // add LD_LIBRARY_PATH
+        const char *envld = ::getenv("LD_LIBRARY_PATH");
+        if( envld ) {
+            searchpath << envld << ":";
+        }
+
+        const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+        searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
+    }
+    userPlugindir = searchpath.str();
     #else
     #error Either POSIX or WIN32 must be defined
-    #endif
     #endif
 }
 

@@ -154,6 +154,11 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("MinimizeNogoods", 0);
     config.setOption("MinimizeNogoodsOpt", 0);
     config.setOption("MinimizeNogoodsOnConflict", 0);
+    // forces all external atoms to be treated as inner
+    config.setOption("NoOuterExternalAtoms", 0);
+    config.setOption("UnitInconsistencyAnalysis", 0);
+    config.setOption("UnitInconsistencyAnalysisDebug", 0);  // analyze wrt. "explain" atoms
+    config.setOption("TransUnitLearning", 0);
 
     WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
     // but if we have genuinegc, take genuinegc as default

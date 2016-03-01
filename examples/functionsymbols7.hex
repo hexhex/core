@@ -2,17 +2,14 @@
 resConst(R) :- &functionInterprete[hello](R).
 
 % integers refer to parameters
-resArg(R) :- &functionInterprete[#2, dlv, hex](R).
+resArg(R) :- &functionInterprete["#2", dlv, hex](R).
 
 % functions refer to external atoms and can be nested
-resPrim(R) :- &functionInterprete[testConcat(#1, #2), a, b](R).
-resPrim2(R) :- &functionInterprete[testConcat(#1, testConcat(x, #3)), a, b, c](R).
-
-% functionInterprete creates a new scope with new local variables
-resFI(X) :- &functionInterprete[functionInterprete(testConcat(#1, #2), #1, #3), x, y, z](X).
+resPrim(R) :- &functionInterprete[testConcat("#1", "#2"), a, b](R).
+resPrim2(R) :- &functionInterprete[testConcat("#1", testConcat(x, "#3")), a, b, c](R).
 
 % functions may be stored in variables
-funcConcat(F) :- F=testConcat(#1, #2).
+funcConcat(F) :- F=testConcat("#1", "#2").
 resFunctional(X) :- funcConcat(F), &functionInterprete[F, x, y](X).
 
 % functions may be passed as argument
@@ -21,23 +18,15 @@ resFunctional2(X) :- funcConcat2(F), &functionInterprete[F, v, u](X).
 resFunctional3(X) :- funcConcat2(F), X=$F(v, u).
 
 % test rewriting
-testRewriting1(R) :- funcConcat(F), R=#F(#1,#2).
-testRewriting2(F) :- funcConcat(F), R=functionInterprete(F,#1,#2).
-resFunctional4(X) :- testRewriting1(F), &functionInterprete[F, x, y](X).
-resFunctional5(X) :- testRewriting2(F), &functionInterprete[F, x, y](X).
-
-
+testRewriting1(R) :- funcConcat(F), R=$F("#1","#2").
+testRewriting2(R) :- funcConcat(F), R=$F(1,2).
+testRewriting3(R) :- R=$testConcat(a,b)().
+testRewriting4(R) :- R=$testConcat(testConcat(a,b),c).
+testRewriting5(R) :- F=$testConcat("#1","#2")(x), R=$F(y).
 
 % Rewriting
 % 
 % Rewrite expressions of form
-%    X(V1, ..., Vn)
-% where X is a variable to
-%    functionInterprete(X, V1, ..., Vn)
-% 
-% and
-% 
-% expressions of form
-%    R=$functionInterprete(...)
+%    R=$X(V1, ..., Vn)
 % to
-%    &functionInterprete[...](R)
+%    &functionInterprete[X,V1,...,Vn](R)

@@ -40,6 +40,7 @@
 #include "dlvhex2/Configuration.h"
 
 #include <iostream>
+#include <stdexcept>
 #include <cassert>
 
 DLVHEX_NAMESPACE_BEGIN

@@ -185,7 +185,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
     ++conflicts;
     if (conflicts >= 255) {
         DBGLOG(DBG, "Maximum conflicts count: dividing all counters by 2");
-        BOOST_FOREACH (IDAddress litadr, allFacts) {
+        BOOST_FOREACH (IDAddress litadr, allAtoms) {
             varCounterPos[litadr] /= 2;
             varCounterNeg[litadr] /= 2;
         }
@@ -220,8 +220,8 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1)
         DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl);
     }
                                  // fact was set
-    factWasSet->setFact(fact.address);
-    changed->setFact(fact.address);
+    assignedAtoms->setFact(fact.address);
+    changedAtoms->setFact(fact.address);
                                  // store decision level
     decisionlevel[fact.address] = dl;
     //if (c > -1)
@@ -246,8 +246,8 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1)
 void CDNLSolver::clearFact(IDAddress litadr)
 {
     DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
-    factWasSet->clearFact(litadr);
-    changed->setFact(litadr);
+    assignedAtoms->clearFact(litadr);
+    changedAtoms->setFact(litadr);
     cause[litadr] = -1;
     assignmentOrder.erase(litadr);
 
@@ -284,7 +284,7 @@ ID CDNLSolver::getGuess()
 
     // simple heuristic: guess the next unassigned literal
     /*
-    for (std::set<IDAddress>::reverse_iterator rit = allFacts.rbegin(); rit != allFacts.rend(); ++rit){
+    for (std::set<IDAddress>::reverse_iterator rit = allAtoms.rbegin(); rit != allAtoms.rend(); ++rit){
       if (!assigned(*rit)){
         return createLiteral(*rit);
       }
@@ -293,7 +293,7 @@ ID CDNLSolver::getGuess()
     */
 
     /*
-    BOOST_FOREACH (IDAddress litadr, allFacts){
+    BOOST_FOREACH (IDAddress litadr, allAtoms){
       if (!assigned(litadr)){
         return createLiteral(litadr);
       }
@@ -301,7 +301,7 @@ ID CDNLSolver::getGuess()
     return ID_FAIL;
     */
 
-    DBGLOG(DBG, "Have " << allFacts.size() << " atoms; " << factWasSet->getStorage().count() << " are assigned");
+    DBGLOG(DBG, "Have " << allAtoms.size() << " atoms; " << assignedAtoms->getStorage().count() << " are assigned");
 
     // iterate over recent conflicts, beginning at the most recent conflict
     for (std::vector<int>::reverse_iterator rit = recentConflicts.rbegin(); rit != recentConflicts.rend(); ++rit) {
@@ -333,7 +333,7 @@ ID CDNLSolver::getGuess()
     // no recent conflicts;
     // use alternative heuristic: choose globally most active literal
     ID mostActive = ID_FAIL;
-    BOOST_FOREACH (IDAddress litadr, allFacts) {
+    BOOST_FOREACH (IDAddress litadr, allAtoms) {
         if (!assigned(litadr)) {
             if (mostActive == ID_FAIL ||
             (varCounterPos[litadr] + varCounterNeg[litadr]) > (varCounterPos[mostActive.address] + varCounterNeg[mostActive.address])) {
@@ -637,7 +637,7 @@ void CDNLSolver::touchVarsInNogood(Nogood& ng)
 }
 
 
-void CDNLSolver::initListOfAllFacts()
+void CDNLSolver::initListOfAllAtoms()
 {
 
     // build a list of all literals which need to be assigned
@@ -647,7 +647,7 @@ void CDNLSolver::initListOfAllFacts()
         // go through all literals of the nogood
         for (Nogood::const_iterator lIt = ng.begin(); lIt != ng.end(); ++lIt) {
             if (lIt->isOrdinaryNongroundAtom()) throw GeneralError("Got nonground atom in SAT instance");
-            allFacts.insert(lIt->address);
+            allAtoms.insert(lIt->address);
         }
     }
 }
@@ -678,11 +678,11 @@ int CDNLSolver::addNogoodAndUpdateWatchingStructures(Nogood ng)
     Nogood ng2;
     BOOST_FOREACH (ID lit, ng) {
         // do not add nogoods which expand the domain (this is the case if they contain positive atoms which are not in the domain)
-        if (!lit.isNaf() && !allFacts.contains(lit.address)) { return 0; }
+        if (!lit.isNaf() && !allAtoms.contains(lit.address)) { return 0; }
         // keep positive atoms and negated atoms which are in the domain
-        else if (!lit.isNaf() || allFacts.contains(lit.address)) { ng2.insert(lit); }
+        else if (!lit.isNaf() || allAtoms.contains(lit.address)) { ng2.insert(lit); }
         // the only remaining case should be that the literal is negated and the atom is not contained in the domain
-        else { assert(lit.isNaf() && !allFacts.contains(lit.address) && "conditions are logically incomplete"); }
+        else { assert(lit.isNaf() && !allAtoms.contains(lit.address) && "conditions are logically incomplete"); }
     }
     ng = ng2;
 
@@ -721,23 +721,17 @@ CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), con
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
     resizeVectors();
-    initListOfAllFacts();
+    initListOfAllAtoms();
 
     // create an interpretation and a storage for assigned facts (we need 3 values)
     interpretation.reset(new Interpretation(ctx.registry()));
-    factWasSet.reset(new Interpretation(ctx.registry()));
-    changed.reset(new Interpretation(ctx.registry()));
+    assignedAtoms.reset(new Interpretation(ctx.registry()));
+    changedAtoms.reset(new Interpretation(ctx.registry()));
     currentDL = 0;
     exhaustedDL = 0;
 
     initWatchingStructures();
 };
-
-void CDNLSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
-{
-    throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
-}
-
 
 void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
 {
@@ -746,8 +740,8 @@ void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
     DBGLOG(DBG, "Resetting solver");
 
     interpretation.reset(new Interpretation(ctx.registry()));
-    factWasSet.reset(new Interpretation(ctx.registry()));
-    changed.reset(new Interpretation(ctx.registry()));
+    assignedAtoms.reset(new Interpretation(ctx.registry()));
+    changedAtoms.reset(new Interpretation(ctx.registry()));
     cause.clear();
     assignmentOrder = OrderedSet<IDAddress, SimpleHashIDAddress>();
     factsOnDecisionLevel.clear();
@@ -791,7 +785,7 @@ bool CDNLSolver::handlePreviousModel()
             // add model as nogood to get another one
             // a restriction to the decision literals suffices
             Nogood modelNogood;
-            BOOST_FOREACH (IDAddress fact, allFacts) {
+            BOOST_FOREACH (IDAddress fact, allAtoms) {
                 if (isDecisionLiteral(fact)) {
                     modelNogood.insert(createLiteral(fact, interpretation->getFact(fact)));
                 }
@@ -827,6 +821,7 @@ void CDNLSolver::flipDecisionLiteral()
     // flip dLit, but now on the previous decision level!
     DBGLOG(DBG, "Flipping decision literal: " << litToString(negation(dLit)));
     setFact(negation(dLit), currentDL);
+    flipped[dLit.address] = 1;
 }
 
 
@@ -879,13 +874,13 @@ InterpretationPtr CDNLSolver::getNextModel()
             int nogoodCount = nogoodset.getNogoodCount();
             BOOST_FOREACH (PropagatorCallback* cb, propagator) {
                 DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-                cb->propagate(interpretation, factWasSet, changed);
+                cb->propagate(interpretation, assignedAtoms, changedAtoms);
             }
             // add new nogoods
             int ngc = nogoodset.getNogoodCount();
             loadAddedNogoods();
             if (ngc != nogoodset.getNogoodCount()) anotherIterationEvenIfComplete = true;
-            changed->clear();
+            changedAtoms->clear();
 
             if (nogoodset.getNogoodCount() != nogoodCount) {
                 DBGLOG(DBG, "Learned something");
@@ -900,6 +895,7 @@ InterpretationPtr CDNLSolver::getNextModel()
                     DBGLOG(DBG, "Guess: " << litToString(guess));
                     decisionLiteralOfDecisionLevel[currentDL] = guess;
                     setFact(guess, currentDL);
+                    flipped[guess.address] = 0;
                 }
             }
         }
@@ -912,6 +908,14 @@ InterpretationPtr CDNLSolver::getNextModel()
     return icp;
 }
 
+Nogood CDNLSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
+    throw GeneralError("Not implemented");
+}
+
+void CDNLSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
+{
+    throw GeneralError("Internal CDNL solver does not support incremental extension of the instance");
+}
 
 void CDNLSolver::addNogood(Nogood ng)
 {

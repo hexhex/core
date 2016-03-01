@@ -34,16 +34,18 @@
 #ifndef NOGOOD_HPP_INCLUDED__09122011
 #define NOGOOD_HPP_INCLUDED__09122011
 
-#include "dlvhex2/ID.h"
 #include <vector>
 #include <set>
 #include <map>
 #include <boost/foreach.hpp>
-#include "dlvhex2/Printhelpers.h"
 #include <boost/foreach.hpp>
+#include <boost/unordered_map.hpp>
+
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Printhelpers.h"
 #include "dlvhex2/Set.h"
 #include "dlvhex2/Registry.h"
-#include <boost/unordered_map.hpp>
+#include "dlvhex2/Interpretation.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -81,6 +83,14 @@ class DLVHEX_EXPORT Nogood : public Set<ID>, public ostream_printable<Nogood>
          * \brief Constructs an empty nogood.
          */
         Nogood();
+
+        /**
+         * \brief Constructs a nogood from an interpretation.
+         *
+         * @param assigned Set of atoms to respect.
+         * @param interpretation Truth values of the atoms in \p assigned.
+         */
+        Nogood(InterpretationConstPtr assigned, InterpretationConstPtr interpretation);
 
         /**
          * \brief Recomputes the hash after literals were added.

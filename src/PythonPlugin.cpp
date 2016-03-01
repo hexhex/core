@@ -252,7 +252,9 @@ class PythonAtom : public PluginAtom
                 PythonAPI::emb_query = &query;
                 PythonAPI::emb_answer = &answer;
                 PythonAPI::emb_nogoods = nogoods;
-                PythonAPI::emb_eareplacements = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements();
+                if (query.eatomID != ID_FAIL) {
+                    PythonAPI::emb_eareplacements = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements();
+                }
 
                 boost::python::tuple t;
                 DBGLOG(DBG, "Constructing input tuple");
@@ -904,13 +906,17 @@ namespace PythonAPI
 
     boost::python::tuple getRelevantOutputAtoms() {
 
-        const ExternalAtom& eatom = emb_query->interpretation->getRegistry()->eatoms.getByID(getExternalAtomID());
-        bm::bvector<>::enumerator en = emb_eareplacements->mask()->getStorage().first();
-        bm::bvector<>::enumerator en_end = emb_eareplacements->mask()->getStorage().end();
         boost::python::tuple t;
-        while (en < en_end) {
-            t += boost::python::make_tuple(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en));
-            en++;
+        if (getExternalAtomID() != ID_FAIL && !!emb_eareplacements) {
+            const ExternalAtom& eatom = emb_query->interpretation->getRegistry()->eatoms.getByID(getExternalAtomID());
+            bm::bvector<>::enumerator en = emb_eareplacements->mask()->getStorage().first();
+            bm::bvector<>::enumerator en_end = emb_eareplacements->mask()->getStorage().end();
+            while (en < en_end) {
+                t += boost::python::make_tuple(emb_query->interpretation->getRegistry()->ogatoms.getIDByAddress(*en));
+                en++;
+            }
+        }else{
+            throw PluginError("getRelevantOutputAtoms() was called during evaluation of an external source without known external atom");
         }
         return t;
     }

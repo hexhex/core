@@ -81,7 +81,7 @@ function buildBoost {
   echo "==> Building Boost libraries"
 
   # Build boost
-  ./bootstrap.sh --prefix=$LIB_DIR --with-python-version=2.7 &> $OUTPUT_IO
+  ./bootstrap.sh --prefix=$LIB_DIR --with-python-version=$PYTHON_VERSION &> $OUTPUT_IO
   ./b2 -q link=static runtime-link=static install &> $OUTPUT_IO
 }
 
@@ -101,7 +101,7 @@ function buildCore {
 
   # Configure build
   ./bootstrap.sh &> $OUTPUT_IO
-  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig --enable-python --disable-shared --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
+  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
 
   echo "==> Building core binary"
 

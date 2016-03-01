@@ -57,6 +57,8 @@ public PluginInterface
             {
                 /** \brief Rewrting aggregates to external atoms. */
                 ExtRewrite,
+                /** \brief Rewrting aggregates to boolean external atoms. */
+                ExtBlRewrite,
                 /** \brief Simplify them such that they can be natively handled. */
                 Simplify
             };

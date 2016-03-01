@@ -78,8 +78,8 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
         // instance information
         /** \brief Instance. */
         NogoodSet nogoodset;
-        /** \brief Facts of the instance as Set. */
-        Set<IDAddress> allFacts;
+        /** \brief Atoms of the instance as Set. */
+        Set<IDAddress> allAtoms;
         /** \brief ProgramCtx. */
         ProgramCtx& ctx;
         /** \brief Nogoods scheduled for adding but not added yet. */
@@ -89,9 +89,11 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
         /** \brief Current (partial) interpretation. */
         InterpretationPtr interpretation;
         /** \brief Set of assigned atoms. */
-        InterpretationPtr factWasSet;
+        InterpretationPtr assignedAtoms;
         /** \brief Decision level for each atom; undefined if unassigned. */
         DynamicVector<IDAddress, int> decisionlevel;
+        /** \brief Stores for decision literals if they have already been flipped. */
+        DynamicVector<IDAddress, int> flipped;
         /** \brief Stores for each atom the index and hash of the clause which implied it; undefined if unassigned or guessed. */
         boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
         /** \brief Current decision level >= 0. */
@@ -153,7 +155,7 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
          * @param litadr Atom IDAddress.
          * @return True if \p litadr is assigned and false otherwise. */
         inline bool assigned(IDAddress litadr) {
-            return factWasSet->getFact(litadr);
+            return assignedAtoms->getFact(litadr);
         }
 
         /** \brief Checks if a literal is satisfied.
@@ -186,7 +188,7 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
         /** \brief Checks if the assignment is currently complete.
          * @return True if complete and false otherwise. */
         inline bool complete() {
-            return factWasSet->getStorage().count() == allFacts.size();
+            return assignedAtoms->getStorage().count() == allAtoms.size();
         }
 
         // reasoning members
@@ -235,13 +237,13 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
 
         // external learning
         /** \brief Set of atoms which (possibly) changes since last call of external learners because they have been reassigned. */
-        InterpretationPtr changed;
+        InterpretationPtr changedAtoms;
         /** \brief Set of external propagators. */
         Set<PropagatorCallback*> propagator;
 
         // initialization members
         /** \brief Harvests all atoms in the instance. */
-        void initListOfAllFacts();
+        void initListOfAllAtoms();
         /** \brief Resizes the internal solver vectors according to the total number of ground atoms in the registry. */
         virtual void resizeVectors();
 
@@ -311,12 +313,13 @@ class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver
          * @param ns Instance as NogoodSet.
          */
         CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
-        virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
         virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
         virtual void addPropagator(PropagatorCallback* pb);
         virtual void removePropagator(PropagatorCallback* pb);
         virtual InterpretationPtr getNextModel();
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
+        virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
         virtual void addNogood(Nogood ng);
 
         /**

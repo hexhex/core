@@ -86,6 +86,17 @@ class SATSolver : virtual public NogoodContainer
         virtual InterpretationPtr getNextModel() = 0;
 
         /**
+         * \brief Returns an explanation for an inconsistency in terms of litervals over the atoms given in \p explanationAtoms.
+         *
+         * Details (definition of explanations) are specified in subclasses.
+         *  
+         * The method may only be called after getNextModel() has returned a NULL-pointer after first call.
+         * @param explanationAtoms The atoms which serve as explanation.
+         * @return An explanation for the inconsistency depending on the atoms in \p explanationAtoms.
+         */
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms) = 0;
+
+        /**
          * \brief Adds a set of additional nogoods to the solver instance.
          *
          * @param ns The set of nogoods to add.

@@ -52,7 +52,6 @@
 #ifdef WIN32
 #include <windows.h>
 #undef ERROR
-typedef HANDLE pid_t;
 #endif
 
 DLVHEX_NAMESPACE_BEGIN
@@ -93,14 +92,6 @@ class DLVHEX_EXPORT ProcessBuf : public std::streambuf
 
     private:
 
-    #ifdef POSIX
-        /* \brief Child process ID (POSIX). */
-        pid_t process;
-        /** \brief Bidirectional output pipe (POSIX, this and child process). */
-        int outpipes[2];
-        /** \brief Bidirectional input pipe (POSIX, this and child process). */
-        int inpipes[2];
-    #else
     #ifdef WIN32
         /** Process handle (WIN32). */
         PROCESS_INFORMATION processInformation;
@@ -112,9 +103,15 @@ class DLVHEX_EXPORT ProcessBuf : public std::streambuf
         HANDLE g_hChildStd_OUT_Rd;
         /** \brief Bidirectional output pipe (WIN32, child process output write). */
         HANDLE g_hChildStd_OUT_Wr;
+    #elif defined(POSIX)
+        /* \brief Child process ID (POSIX). */
+        pid_t process;
+        /** \brief Bidirectional output pipe (POSIX, this and child process). */
+        int outpipes[2];
+        /** \brief Bidirectional input pipe (POSIX, this and child process). */
+        int inpipes[2];
     #else
     #error Either POSIX or WIN32 must be defined
-    #endif
     #endif
         /** \brief Status of the child process. */
         int status;

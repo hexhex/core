@@ -43,6 +43,7 @@
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/PredicateMask.h"
 #include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/InternalGroundDASPSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/NogoodGrounder.h"
 
@@ -109,6 +110,16 @@ public PropagatorCallback
         GenuineGrounderPtr grounder;
         /** \brief Solver instance. */
         GenuineGroundSolverPtr solver;
+        /** \brief Number of models of this model generate (only compatible and minimal ones). */
+        int cmModelCount;
+        /** \brief Set of atoms used for inconsistency analysis (only defined if inconsistency analysis is used). */      
+        InterpretationPtr explAtoms;
+        /** \brief Second solver instance (non-optimized solver!) for inconsistency analysis. */
+        InternalGroundDASPSolverPtr analysissolver;
+        /** \brief Stores if an inconsistency cause has been identified. */
+        bool haveInconsistencyCause;
+        /** \brief Stores the inconsistency cause as a nogood if GenuineGuessAndCheckModelGenerator::haveInconsistencyCause is set to true. */
+        Nogood inconsistencyCause;
         /** \brief Manager for unfounded set checking. */
         UnfoundedSetCheckerManagerPtr ufscm;
         /** \brief All atoms in the program. */
@@ -117,14 +128,26 @@ public PropagatorCallback
         // members
 
         /**
+         * \brief Identifies the set of atoms used to explain inconsistencies in this unit.
+         *
+         * @param program The program whose EDB needs to be modified for inconsistency analysis (explanation atoms are removed as facts and assumed instead).
+         */
+        void initializeExplanationAtoms(OrdinaryASPProgram& program);
+
+        /**
+         * \brief Initializes a non-optimized solver for inconsistency analysis in this unit.
+         */
+        void initializeInconsistencyAnalysis();
+
+        /**
          * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments.
          */
-        void setHeuristics();
+        void initializeHeuristics();
 
         /**
          * \brief Adds watches to all external auxilies for incremental verification and unverification of external atoms.
          */
-        void createVerificationWatchLists();
+        void initializeVerificationWatchLists();
 
         /**
          * \brief Learns related nonground nogoods.
@@ -283,6 +306,15 @@ public PropagatorCallback
 
         // generate and return next model, return null after last model
         virtual InterpretationPtr generateNextModel();
+
+        /** \brief Identifies a reason for an inconsistency in this unit.
+         *
+         * The method may only be called after generateNextModel() has returned NULL after first call. */
+        void identifyInconsistencyCause();
+
+        // handling inconsistencies propagated over multiple units
+        virtual const Nogood* getInconsistencyCause();
+        virtual void addNogood(const Nogood* cause);
 };
 
 /** \brief Factory for the GenuineGuessAndCheckModelGenerator. */
@@ -306,8 +338,10 @@ public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
         WARNING("TODO see comment above about ComponentInfo copy construction bug")
 
         /** \brief Outer external atoms of the component. */
-            std::vector<ID> outerEatoms;
+        std::vector<ID> outerEatoms;
 
+        /** \brief Nogoods learned from successor units. */
+        std::vector<std::pair<Nogood, int> > succNogoods;
     public:
         /** \brief Constructor.
          *
@@ -321,6 +355,9 @@ public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
 
         /** \brief Destructor. */
         virtual ~GenuineGuessAndCheckModelGeneratorFactory() { }
+
+        // add inconsistency explanation nogoods from successor components
+        virtual void addInconsistencyCauseFromSuccessor(const Nogood* cause);
 
         /** \brief Instantiates a model generator for the component.
          * @param input The facts to be added before solving.

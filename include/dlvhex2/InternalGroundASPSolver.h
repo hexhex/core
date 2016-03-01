@@ -137,8 +137,10 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         Set<std::pair<ID, ID> > createShiftedProgram();
         /** \brief Computes Clark's completion of the input program and adds it to the internal instance. */
         void computeClarkCompletion();
-        /** \brief Computes loop nogoods for singular components of the input program and adds it to the internal instance. */
-        void createSingularLoopNogoods();
+        /** \brief Computes loop nogoods for singular components of the input program and adds it to the internal instance.
+          *
+          * @param frozen Atoms which shall not be optimized away since they might be defined by assumptions. */
+        void createSingularLoopNogoods(InterpretationConstPtr frozen);
         virtual void resizeVectors();
         /** \brief Assigns all atoms from the EDB in the interpretation. */
         void setEDB();
@@ -148,8 +150,10 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         void computeStronglyConnectedComponents();
         /** \brief Initializes the source pointer data structures for unfounded set detection. */
         void initSourcePointers();
-        /** \brief Initializes all lists of atoms and facts. */
-        void initializeLists();
+        /** \brief Initializes all lists of atoms and facts.
+          *
+          * @param frozen Atoms which shall not be optimized away since they might be defined by assumptions. */
+        void initializeLists(InterpretationConstPtr frozen);
 
         // unfounded set members
         virtual void setFact(ID fact, int dl, int cause);
@@ -267,9 +271,11 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
          * Initializes the solver.
          * @param ctx ProgramCtx.
          * @param ns Instance as NogoodSet.
+         * @param frozen Atoms which shall not be optimized away since they might be defined by assumptions.
          */
-        InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
+        InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
         virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
         virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
 
         virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
@@ -279,6 +285,12 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         virtual InterpretationPtr getNextModel();
         virtual int getModelCount();
         virtual std::string getStatistics();
+
+        /**
+          * \brief Returns a string representation of the current implication graph in dot format.
+          * @return String representation of the current implication graph in dot format.
+          */
+        std::string getImplicationGraphAsDotString();
 
         typedef boost::shared_ptr<InternalGroundASPSolver> Ptr;
         typedef boost::shared_ptr<const InternalGroundASPSolver> ConstPtr;

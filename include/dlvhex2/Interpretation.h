@@ -67,6 +67,11 @@ public ostream_printable<Interpretation>
         /** \brief Internal bitset storage. */
         Storage bits;
 
+        // \brief Specifies whether Interpretation::myHash is up-to-date.
+        mutable bool hashUpdated;
+
+        // \brief Hash value of this interpretation.
+        mutable std::size_t myHash;
         // members
     public:
         /** \brief Constructor. */
@@ -169,14 +174,14 @@ public ostream_printable<Interpretation>
          * @param id Address of a ground atom ID.
          */
         inline void setFact(IDAddress id)
-            { bits.set(id); }
+            { bits.set(id); hashUpdated = false; }
 
         /**
          * \brief Removes an atom from the interpretation.
          * @param id Address of a ground atom ID.
          */
         inline void clearFact(IDAddress id)
-            { bits.clear_bit(id); }
+            { bits.clear_bit(id); hashUpdated = false; }
 
         /**
          * \brief Checks if a ground atom is true in the interpretation.
@@ -231,7 +236,7 @@ public ostream_printable<Interpretation>
          * \brief Resets the interpretation to the empty one.
          */
         inline void clear()
-            {  bits.clear();  }
+            {  bits.clear(); hashUpdated = false; }
 
         /**
          * \brief Compares this interpretation atomwise to another one.
@@ -254,6 +259,9 @@ public ostream_printable<Interpretation>
          */
         bool operator<(const Interpretation& other) const;
 
+        /** \brief Returns the hash value of this interpretation.
+          * @return Hash value. */
+        std::size_t getHash() const;
 };
 
 typedef Interpretation::Ptr InterpretationPtr;

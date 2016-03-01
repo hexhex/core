@@ -242,7 +242,7 @@ UnfoundedSetVerificationStatus& ufsVerStatus
 {
 
     // evaluate
-    DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification " << (!!ngc ? "with" : "without") << " learning");
+    DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification " << (!!ngc ? "with" : "without") << " learning under " << *ufsVerStatus.eaInput);
 
     const ExternalAtom& eatom = reg->eatoms.getByID(eaID);
 
@@ -284,7 +284,8 @@ UnfoundedSetVerificationStatus& ufsVerStatus
             // if no external atoms remain to be verified, then the truth/falsity of the auxiliary is finally known
             if (ufsVerStatus.auxIndexToRemainingExternalAtoms[i].empty()) {
                 // check if the auxiliary, which was assumed to be unfounded, is indeed _not_ in eaResult
-                DBGLOG(DBG, "All relevant external atoms have been evaluated auxiliary, now checking if auxiliary " << ufsVerStatus.auxiliariesToVerify[i] << " is justified");
+                DBGLOG(DBG, "All relevant external atoms have been evaluated auxiliary, now checking if auxiliary " << ufsVerStatus.auxiliariesToVerify[i] << " (" << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(ufsVerStatus.auxiliariesToVerify[i]), reg) << ") is justified");
+                DBGLOG(DBG, "Actual truth value: " << eaResult->getFact(ufsVerStatus.auxiliariesToVerify[i]) << ", assumed truth value under I u -X: " << ufsCandidate->getFact(ufsVerStatus.auxiliariesToVerify[i]));
                 if (eaResult->getFact(ufsVerStatus.auxiliariesToVerify[i]) != ufsCandidate->getFact(ufsVerStatus.auxiliariesToVerify[i])) {
 
                     // wrong guess: the auxiliary is _not_ unfounded
@@ -414,7 +415,7 @@ InterpretationConstPtr interpretation)
     // find all rules r such that H(r) intersects with the unfounded set
     BOOST_FOREACH (ID ruleID, groundProgram.idb) {
         const Rule& rule = reg->rules.getByID(ruleID);
-        if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
+        if (mg && (rule.isEAGuessingRule() /*|| (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary())*/)) continue;
 
         bool intersects = false;
         BOOST_FOREACH (ID h, rule.head) {
@@ -1228,7 +1229,7 @@ void AssumptionBasedUnfoundedSetChecker::constructDomain()
     // IDB
     BOOST_FOREACH (ID ruleID, groundProgram.idb) {
         const Rule& rule = reg->rules.getByID(ruleID);
-        if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) continue;
+        if (mg && (rule.isEAGuessingRule() /*|| (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary())*/)) continue;
         BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
         BOOST_FOREACH (ID b, rule.body) {
             domain->setFact(b.address);
@@ -1298,7 +1299,10 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemRule(Nogood
 {
 
     const Rule& rule = reg->rules.getByID(ruleID);
-    if (mg && (rule.isEAGuessingRule() || (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary()))) return;
+    if (mg && (rule.isEAGuessingRule() /*|| (rule.head.size() == 1 && rule.head[0].isExternalAuxiliary())*/)) {
+	    DBGLOG(DBG, "Skipping rule " << printToString<RawPrinter>(ruleID, reg));
+	    return;
+    }
 
     #ifndef NDEBUG
     std::stringstream programstring;
