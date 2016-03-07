@@ -1206,7 +1206,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
         if (en == en_end) {
             // verified
             DBGLOG(DBG, "Verified external atom without evaluation");
-            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sideavs, "gen. g&c verifyEAtom by eav (succeed)");
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sideavs, "gen. g&c verifyEAtom by eav (succeed)", 1);
             eaEvaluated[eaIndex] = true;
             eaVerified[eaIndex] = true;
             return true;
