@@ -1188,10 +1188,10 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed, bool* answeredFromCache)
 {
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "gen. g&c verifyEAtom by eval.");
     assert (!!partialInterpretation && "interpretation not set");
 
     if (factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideav, "trying to evaluate external atom using the verification tree");
         InterpretationConstPtr verifiedAuxes = eavTree.getVerifiedAuxiliaries(partialInterpretation, assigned, factory.ctx.registry());
 
         // check if all auxes are verified
@@ -1211,6 +1211,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
             return true;
         }
     }
+
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "gen. g&c verifyEAtom by eval.");
 
     // prepare EA evaluation
     InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
