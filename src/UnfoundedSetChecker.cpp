@@ -240,6 +240,29 @@ InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet,
 UnfoundedSetVerificationStatus& ufsVerStatus
 )
 {
+    if (ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideav, "UFS checker verifyEAtom by eav (attempt)");
+        BOOST_FOREACH (IDAddress adr, ufsVerStatus.auxiliariesToVerify){
+            ufsVerStatus.eaInput->setFact(ufsCandidate->getFact(adr));
+        }
+        InterpretationConstPtr verifiedAuxes = eavTree.getVerifiedAuxiliaries(ufsVerStatus.eaInput, InterpretationConstPtr(), ctx.registry());
+
+        // check if all auxes are verified
+        bool verified = true;
+        BOOST_FOREACH (IDAddress adr, ufsVerStatus.auxiliariesToVerify){
+            if (!verifiedAuxes->getFact(adr)) {
+                verified = false;
+                break;
+            }
+        }
+        if (verified) {
+            DBGLOG(DBG, "UFS checker: verified external atom without evaluation");
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sideavs, "UFS checker verifyEAtom by eav (succeed)", 1);
+            return true;
+        }else{
+            DBGLOG(DBG, "UFS checker: could not verify external atom without evaluation --> will evaluate");
+        }
+    }
 
     // evaluate
     DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification " << (!!ngc ? "with" : "without") << " learning under " << *ufsVerStatus.eaInput);
@@ -265,6 +288,10 @@ UnfoundedSetVerificationStatus& ufsVerStatus
                 BOOST_FOREACH (Nogood tng, transformed) {
                     solver->addNogood(tng);
                 }
+
+	            if (ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
+		            eavTree.addNogood(ng, reg, true);
+	            }
             }
         }
     }
@@ -1946,6 +1973,10 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset)
                 BOOST_FOREACH (Nogood tng, transformed) {
                     solver->addNogood(tng);
                 }
+
+	            if (ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
+		            eavTree.addNogood(ng, reg, true);
+	            }
             }
         }
         learnedNogoodsFromMainSearch = ngc->getNogoodCount();

@@ -46,6 +46,7 @@
 #include "dlvhex2/InternalGroundDASPSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/NogoodGrounder.h"
+#include "dlvhex2/ExternalAtomVerificationTree.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
@@ -63,56 +64,6 @@ public PropagatorCallback
     // types
     public:
         typedef GenuineGuessAndCheckModelGeneratorFactory Factory;
-
-        /**
-          * \brief Implements a tree representation of IO-nogoods.
-          *
-          * Both inner and leave nodes contain auxiliary atoms which are verified if an interpretation matches from the root until this node.
-          * Note that this is *not* a search tree: interpretations may match multiple pathes since nogoods may not depend on all atoms.
-          * The tree has a size of up to 3^n, where n is the number of atoms in the program, but may be much smaller if nogood minimization is used.
-          * Matching an interpretation is O(2^n), but may be also much lower if nogoods are minimized.
-          */
-        class ExternalAtomVerificationTree{
-        public:
-            /** \brief Node of GenuineGuessAndCheckModelGenerator::ExternalAtomVerificationTree. */
-            struct Node{
-                typedef boost::shared_ptr<Node> Ptr;
-                /** \brief Label of the edge from the parent to this node. */
-                ID label;
-                /** \brief Auxiliary atoms verified in this node. */
-                InterpretationPtr verified;
-                /** \brief Children. */
-                std::vector<Ptr> childNodes;
-            };
-            typedef Node::Ptr NodePtr;
-            NodePtr root;
-            /** \brief Default constructor. */
-            ExternalAtomVerificationTree();
-            /** \brief Adds a nogood to the tree.
-              * @param ng IO-Nogood to add.
-              * @param reg RegistryPtr.
-              * @param includeNegated Include 'n' atom for each 'p' atom and vice versa. */
-            void addNogood(const Nogood& iong, RegistryPtr reg, bool includeNegated);
-            /** \brief Gets a string representation of the tree.
-              * @param reg RegistryPtr.
-              * @param indent Indent in each line.
-              * @param root Start node for output. */
-            std::string toString(RegistryPtr reg, int indent = 0, NodePtr root = NodePtr());
-            /** \brief Returns the set of all external atom auxiliaries verified under a certain partial interpretation.
-              * @param partialInterpretation Current partial interpretation.
-              * @param assigned Currently assigned atoms.
-              * @param reg RegistryPtr.
-              * @return Set of all verified external atom auxiliaries. */
-            InterpretationConstPtr getVerifiedAuxiliaries(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, RegistryPtr reg);
-        private:
-            /** \brief Returns the set of all external atom auxiliaries verified under a certain partial interpretation beginning from a certain node (helper function).
-              * @param current Current Node in the search.
-              * @param output Interpretation to write the result to.
-              * @param partialInterpretation Current partial interpretation.
-              * @param assigned Currently assigned atoms.
-              * @param reg RegistryPtr. */
-            void getVerifiedAuxiliaries(NodePtr current, InterpretationPtr output, InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, RegistryPtr reg);
-        };
 
         // storage
     protected:

@@ -38,6 +38,7 @@
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/BaseModelGenerator.h"
 #include "dlvhex2/AnnotatedGroundProgram.h"
+#include "dlvhex2/ExternalAtomVerificationTree.h"
 
 #include <boost/unordered_map.hpp>
 
@@ -80,6 +81,8 @@ class UnfoundedSetChecker
         const AnnotatedGroundProgram& agp;
         /** \brief Set of all atoms in the component of the UFS checker. */
         InterpretationConstPtr componentAtoms;
+        /** \brief Tree representation of GenuineGuessAndCheckModelGenerator::learnedEANogoods for verification purposes */
+        ExternalAtomVerificationTree eavTree;
         /** Set of nogoods to be learned during UFS detection. */
         SimpleNogoodContainerPtr ngc;
         /** \brief Domain of all problem variables. */
