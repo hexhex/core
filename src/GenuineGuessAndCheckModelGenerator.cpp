@@ -1191,7 +1191,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
     assert (!!partialInterpretation && "interpretation not set");
 
     if (factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideav, "trying to evaluate external atom using the verification tree");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideav, "gen. g&c verifyEAtom by eav (attempt)");
         InterpretationConstPtr verifiedAuxes = eavTree.getVerifiedAuxiliaries(partialInterpretation, assigned, factory.ctx.registry());
 
         // check if all auxes are verified
@@ -1206,6 +1206,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
         if (en == en_end) {
             // verified
             DBGLOG(DBG, "Verified external atom without evaluation");
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sideavs, "gen. g&c verifyEAtom by eav (succeed)");
             eaEvaluated[eaIndex] = true;
             eaVerified[eaIndex] = true;
             return true;
