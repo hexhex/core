@@ -1209,56 +1209,60 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
             eaEvaluated[eaIndex] = true;
             eaVerified[eaIndex] = true;
             return true;
+        }else{
+            DBGLOG(DBG, "Could not verify external atom without evaluation --> will evaluate");
         }
     }
 
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "gen. g&c verifyEAtom by eval.");
+    {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "gen. g&c verifyEAtom by eval.");
 
-    // prepare EA evaluation
-    InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
-    DBGLOG(DBG, "Initializing VerifyExternalAtomCB");
-    VerifyExternalAtomCB vcb(partialInterpretation, factory.ctx.registry()->eatoms.getByID(factory.innerEatoms[eaIndex]), *(annotatedGroundProgram.getEAMask(eaIndex)));
+        // prepare EA evaluation
+        InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
+        DBGLOG(DBG, "Initializing VerifyExternalAtomCB");
+        VerifyExternalAtomCB vcb(partialInterpretation, factory.ctx.registry()->eatoms.getByID(factory.innerEatoms[eaIndex]), *(annotatedGroundProgram.getEAMask(eaIndex)));
 
-    DBGLOG(DBG, "Assigning all auxiliary inputs");
-    InterpretationConstPtr evalIntr = partialInterpretation;
-    if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")) {
-        // make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
-        // clone and extend
-        InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
-        ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
-        evalIntr = ncevalIntr;
-    }
-
-    // evaluate the external atom and learn nogoods if external learning is used
-    if (!!assigned) {
-         DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: " << *assigned << ")");
-    }else{
-        DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: all)");
-    }
-    evaluateExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], evalIntr, vcb,
-        factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed, answeredFromCache);
-    updateEANogoods(partialInterpretation, assigned, changed);
-
-    // if the input to the external atom was complete, then remember the verification result;
-    // for incomplete input we cannot yet decide this yet, evaluation is only done for learning purposes in this case
-    DBGLOG(DBG, "Checking whether verification result is to be stored");
-    if( !assigned ||
-        (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count() == (assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()) {
-        eaVerified[eaIndex] = vcb.verify();
-
-        DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
-
-        // we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
-        if(factory.ctx.config.getOption("NoPropagator") == 0) {
-            DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
-            eaEvaluated[eaIndex] = true;
-           if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+        DBGLOG(DBG, "Assigning all auxiliary inputs");
+        InterpretationConstPtr evalIntr = partialInterpretation;
+        if (!factory.ctx.config.getOption("IncludeAuxInputInAuxiliaries")) {
+            // make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
+            // clone and extend
+            InterpretationPtr ncevalIntr(new Interpretation(*partialInterpretation));
+            ncevalIntr->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputMask()->getStorage();
+            evalIntr = ncevalIntr;
         }
 
-        return !eaVerified[eaIndex];
-    }
-    else {
-        return false;
+        // evaluate the external atom and learn nogoods if external learning is used
+        if (!!assigned) {
+             DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: " << *assigned << ")");
+        }else{
+            DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: all)");
+        }
+        evaluateExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], evalIntr, vcb,
+            factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed, answeredFromCache);
+        updateEANogoods(partialInterpretation, assigned, changed);
+
+        // if the input to the external atom was complete, then remember the verification result;
+        // for incomplete input we cannot yet decide this yet, evaluation is only done for learning purposes in this case
+        DBGLOG(DBG, "Checking whether verification result is to be stored");
+        if( !assigned ||
+            (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count() == (assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()) {
+            eaVerified[eaIndex] = vcb.verify();
+
+            DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
+
+            // we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
+            if(factory.ctx.config.getOption("NoPropagator") == 0) {
+                DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
+                eaEvaluated[eaIndex] = true;
+               if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+            }
+
+            return !eaVerified[eaIndex];
+        }
+        else {
+            return false;
+        }
     }
 }
 
