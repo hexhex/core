@@ -159,6 +159,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("UnitInconsistencyAnalysis", 0);
     config.setOption("UnitInconsistencyAnalysisDebug", 0);  // analyze wrt. "explain" atoms
     config.setOption("TransUnitLearning", 0);
+    config.setOption("ExternalAtomVerificationFromLearnedNogoods", 0);
 
     WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")
     // but if we have genuinegc, take genuinegc as default

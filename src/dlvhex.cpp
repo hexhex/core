@@ -859,6 +859,7 @@ Config& config, ProgramCtx& pctx)
         { "csvoutput", required_argument, 0, 61 },
         { "noouterexternalatoms", no_argument, 0, 62 },
         { "transunitlearning", no_argument, 0, 64 },
+        { "verifyfromlearned", no_argument, 0, 65 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1646,6 +1647,11 @@ Config& config, ProgramCtx& pctx)
                     pctx.config.setOption("ForceGC", 1);
                     pctx.config.setOption("LiberalSafety", 1);
                     pctx.config.setOption("NoOuterExternalAtoms", 1);
+                }
+                break;
+            case 65:
+                {
+                    pctx.config.setOption("ExternalAtomVerificationFromLearnedNogoods", 1);
                 }
                 break;
         }

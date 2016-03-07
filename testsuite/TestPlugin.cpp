@@ -979,6 +979,85 @@ public:
   }
 };
 
+class TestSetMinusPartialAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestSetMinusPartialAtom():
+    PluginAtom("testSetMinusPartial", false) // monotonic, and no predicate inputs anyway
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    addInputPredicate();
+    prop.monotonicInputPredicates.insert(0);
+    prop.antimonotonicInputPredicates.insert(1);
+		prop.setProvidesPartialAnswer(true);
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	static std::map<std::string, ID> ruleIDs;
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+
+	std::vector<Tuple> tuples1true;
+	std::vector<Tuple> tuples1unknown;
+	std::vector<Tuple> tuples2true;
+	std::vector<Tuple> tuples2unknown;
+	while (en < en_end){
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (uint32_t i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (!query.assigned || query.assigned->getFact(*en) ) {
+			// assigned
+			if (query.interpretation->getFact(*en) ){
+				// assigned to true?
+				if (atom.tuple[0] == query.input[0]){
+					tuples1true.push_back(tu);
+				}
+				if (atom.tuple[0] == query.input[1]){
+					tuples2true.push_back(tu);
+				}
+			}
+		}else{
+			// not assigned
+			if (atom.tuple[0] == query.input[0]){
+				tuples1unknown.push_back(tu);
+			}
+			if (atom.tuple[0] == query.input[1]){
+				tuples2unknown.push_back(tu);
+			}
+		}
+		en++;
+	}
+
+	// Learning of the nogoods
+	BOOST_FOREACH (Tuple t, tuples1true){
+		if (std::find(tuples2true.begin(), tuples2true.end(), t) != tuples2true.end()){
+			// true in first predicate, true in second --> false in the result
+		}else if (std::find(tuples2unknown.begin(), tuples2unknown.end(), t) != tuples2unknown.end()){
+			// true in first predicate, unknown in second --> unknown in the result
+			answer.getUnknown().push_back(t);
+		}else{
+			// true in first predicate, false in second --> true in the result
+			answer.get().push_back(t);
+		}
+	}
+	BOOST_FOREACH (Tuple t, tuples1unknown){
+		if (std::find(tuples2true.begin(), tuples2true.end(), t) == tuples2true.end()){
+			// unknown in first predicate, false or unknown in second --> unknown in the result
+			answer.getUnknown().push_back(t);
+		}
+	}
+	// false in the first predicate --> false in the result
+  }
+};
+
 class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learning
   public PluginAtom
 {
@@ -2777,6 +2856,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNonComfortAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusPartialAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNongroundNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));

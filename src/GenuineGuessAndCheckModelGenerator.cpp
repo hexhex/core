@@ -307,6 +307,110 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()
     DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
+GenuineGuessAndCheckModelGenerator::ExternalAtomVerificationTree::ExternalAtomVerificationTree() : root(NodePtr(new Node())){
+}
+
+void GenuineGuessAndCheckModelGenerator::ExternalAtomVerificationTree::addNogood(const Nogood& iong, RegistryPtr reg, bool includeNegated){
+
+    // Navigate to the right part in the tree part
+    ID aux = ID_FAIL;
+    NodePtr currentNode = root;
+    BOOST_FOREACH (ID lit, iong) {
+        ID mlit = reg->ogatoms.getIDByAddress(lit.address);
+        if (lit.isNaf()) mlit.kind |= ID::NAF_MASK;
+        if (mlit.isExternalAuxiliary()) {
+            if (aux != ID_FAIL) {
+                // not an IO-nogood
+                return;
+            }
+            aux = mlit;
+        }else{
+            // check if the current literal already matches with a child node
+            bool match = false;
+            BOOST_FOREACH (NodePtr childNode, currentNode->childNodes) {
+                if (childNode->label == mlit) {
+                    currentNode = childNode;
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) {
+                // create new node
+                currentNode->childNodes.push_back(NodePtr(new Node()));
+                currentNode->childNodes[currentNode->childNodes.size() - 1]->label = mlit;
+                currentNode = currentNode->childNodes[currentNode->childNodes.size() - 1];
+            }
+        }
+    }
+
+    // insert auxiliary to verify
+    if (aux == ID_FAIL) {
+        // not an IO-nogood
+        return;
+    }else{
+        if (!currentNode->verified){
+            currentNode->verified.reset(new Interpretation(reg));
+        }
+        currentNode->verified->setFact(aux.address);
+        if (includeNegated) currentNode->verified->setFact(reg->swapExternalAtomAuxiliaryAtom(aux).address);
+    }
+}
+
+std::string GenuineGuessAndCheckModelGenerator::ExternalAtomVerificationTree::toString(RegistryPtr reg, int indent, NodePtr root){
+    std::stringstream ss;
+    if (!root){
+        ss << toString(reg, indent, this->root);
+        return ss.str();
+    }
+
+    for (int i = 0; i < indent; ++i) ss << "   ";
+    if (root->label != ID_FAIL) {
+        ss << "[" << (root->label.isNaf() ? "-" : "") << printToString<RawPrinter>(root->label, reg) << "]; ";
+    }else{
+        ss << "[ROOT]; ";
+    }
+    ss << "verified:";
+    if (!!root->verified) {
+        bm::bvector<>::enumerator en = root->verified->getStorage().first();
+        bm::bvector<>::enumerator en_end = root->verified->getStorage().end();
+        while (en < en_end) {
+            ss << " " << (reg->ogatoms.getIDByAddress(*en).isNaf() ? "-" : "") << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(*en), reg);
+            en++;
+        }
+    }else{
+        ss << " none";
+    }
+    ss << std::endl;
+    BOOST_FOREACH (NodePtr child, root->childNodes) ss << toString(reg, indent + 1, child);
+    return ss.str();
+}
+
+InterpretationConstPtr GenuineGuessAndCheckModelGenerator::ExternalAtomVerificationTree::getVerifiedAuxiliaries(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, RegistryPtr reg){
+
+    InterpretationPtr verified(new Interpretation(reg));
+    getVerifiedAuxiliaries(root, verified, partialInterpretation, assigned, reg);
+    DBGLOG(DBG, "Verification tree returns " << verified->getStorage().count() << " verified auxiliaries");
+    return verified;
+}
+
+void GenuineGuessAndCheckModelGenerator::ExternalAtomVerificationTree::getVerifiedAuxiliaries(NodePtr current, InterpretationPtr output, InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, RegistryPtr reg){
+
+    // add the auxiliaries verified in the current node
+    if (!!current->verified) {
+        DBGLOG(DBG, "Adding " << current->verified->getStorage().count() << " auxiliaries to verified ones");
+        output->add(*current->verified);
+    }
+
+    // Recursively navigate through the tree.
+    // Since this is not a search tree, we have to invesigate all pathes which match!
+    BOOST_FOREACH (NodePtr child, current->childNodes) {
+        if ( (!assigned || assigned->getFact(child->label.address)) && partialInterpretation->getFact(child->label.address) != child->label.isNaf() ) {
+            // match: go to this node
+            getVerifiedAuxiliaries (child, output, partialInterpretation, assigned, reg);
+        }
+    }
+}
+
 void GenuineGuessAndCheckModelGenerator::initializeExplanationAtoms(OrdinaryASPProgram& program){
 
     // Explanation atoms are all ground atoms from the registry which
@@ -702,13 +806,20 @@ InterpretationConstPtr changed)
             }
             solver->addNogood(ng);
             if (!!analysissolver) analysissolver->addNogood(ng);
+
+            if ( factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods") ) {
+                eavTree.addNogood(ng, reg, true);
+                DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << "; to verification tree; updated tree:" << std::endl << eavTree.toString(reg));
+            }
         }
     }
 
+    // if nogoods are also used for verification purposes, then do not delete them
+    //if ( !factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods") ) {
     // for encoding-based UFS checkers and explicit FLP checks, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
     // for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
-    if (factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
-    (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionE"))) {
+    if ( factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
+         (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionE")) ) {
         ufscm->learnNogoodsFromMainSearch(true);
         nogoodGrounder->resetWatched(learnedEANogoods);
         learnedEANogoods->clear();
@@ -716,6 +827,7 @@ InterpretationConstPtr changed)
     else {
         learnedEANogoods->forgetLeastFrequentlyAdded();
     }
+    //}
     learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
 }
 
@@ -1082,6 +1194,76 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "gen. g&c verifyEAtom by eval.");
     assert (!!partialInterpretation && "interpretation not set");
 
+    if (factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
+/*
+        // try to verify or falsify the external atom by exploiting previously learned nogoods
+        InterpretationPtr verifiedAuxes(new Interpretation(factory.ctx.registry()));
+        for (int i = 0; i < learnedEANogoods->getNogoodCount(); ++i) {
+            const Nogood& ng = learnedEANogoods->getNogood(i);
+            bool match = true;
+            bool verified;  // only relevant if match is true
+            ID aux = ID_FAIL; // auxiliary to be verified (if any)
+            BOOST_FOREACH (ID lit, ng) {
+                ID mlit = factory.ctx.registry()->ogatoms.getIDByAddress(lit.address);
+                if ( !!assigned && !assigned->getFact(lit.address) ) {
+                    // not assigned -> no match
+                    match = false;
+                    break;
+                }else{
+                    // assigned
+                    if (!mlit.isExternalAuxiliary() && partialInterpretation->getFact(lit.address) == lit.isNaf() ){
+                        // wrong truth value of an input atom --> no match
+                        match = false;
+                        break;
+                    }
+                    if (mlit.isExternalAuxiliary() ){
+                        // external auxiliary is assigned, check if it has the correct truth value
+                        verified = (partialInterpretation->getFact(lit.address) == lit.isNaf());
+                        if (aux != ID_FAIL) {
+                            // this is not an io-nogood because it contains multiple external atom auxiliaries
+                            match = false;
+                            break;
+                        }else{
+                            aux = mlit;
+                        }
+                    }
+                }  
+            }
+            if (match && aux != ID_FAIL) {
+                if (!verified) {
+                    // falsified
+                    eaEvaluated[eaIndex] = true;
+                    eaVerified[eaIndex] = false;
+                    return false;
+                }else{
+                    // remember the auxiliary and its negation to be verified
+                    verifiedAuxes->setFact(aux.address);
+                    verifiedAuxes->setFact(factory.ctx.registry()->swapExternalAtomAuxiliaryAtom(aux).address);
+                }
+            }
+        }
+*/
+
+        InterpretationConstPtr verifiedAuxes = eavTree.getVerifiedAuxiliaries(partialInterpretation, assigned, factory.ctx.registry());
+
+        // check if all auxes are verified
+        bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+        bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
+        while (en < en_end) {
+            if (factory.ctx.registry()->ogatoms.getIDByAddress(*en).isExternalAuxiliary()) {
+                if (!verifiedAuxes->getFact(*en)) break;
+            }
+            en++;
+        }
+        if (en == en_end) {
+            // verified
+            DBGLOG(DBG, "Verified external atom without evaluation");
+            eaEvaluated[eaIndex] = true;
+            eaVerified[eaIndex] = true;
+            return true;
+        }
+    }
+
     // prepare EA evaluation
     InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
     DBGLOG(DBG, "Initializing VerifyExternalAtomCB");
@@ -1120,7 +1302,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
         if(factory.ctx.config.getOption("NoPropagator") == 0) {
             DBGLOG(DBG, "Setting external atom status of " << eaIndex << " to evaluated");
             eaEvaluated[eaIndex] = true;
-            if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
+           if (eaVerified[eaIndex]) verifiedAuxes->getStorage() |= annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage();
         }
 
         return !eaVerified[eaIndex];
