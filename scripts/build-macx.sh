@@ -51,7 +51,8 @@ function prepare {
 function checkDependencies {
   echo "==> Checking build dependencies"
 
-  deps="git autoconf wget scons bison re2c python"
+  # TODO: Bison is always found on Mac OS X, so we have to check for min version too!
+  deps="git autoconf automake libtool pkg-config wget scons bison re2c python"
   missing_deps=""
 
   for dep in `echo $deps`; do

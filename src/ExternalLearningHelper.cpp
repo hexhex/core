@@ -65,6 +65,8 @@ bool ExternalLearningHelper::DefaultInputNogoodProvider::dependsOnOutputTuple() 
 
 Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple, int* weakenedPremiseLiterals) const{
 
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(inputprovider, "InputNogoodProvider::operator()");
+
     // store for each predicate term ID the index of the corresponding parameter in input
     std::map<ID, int> inputPredicateTable;
     int index = 0;
@@ -75,7 +77,6 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
     // find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
     bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
     bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.ctx->registry()->eatoms.getByID(query.eatomID).getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
-
     Nogood extNgInput;
 
     while (en < en_end) {
@@ -109,11 +110,9 @@ Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const Plug
                 }
             }
         }
-
         en++;
     }
     DBGLOG(DBG, "Input nogood: " << extNgInput.getStringRepresentation(query.ctx->registry()));
-
     return extNgInput;
 }
 
@@ -506,7 +505,6 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                  return seed;
              }
         };
-
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
         if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false, Tuple(), &weakenedPremiseLiterals);
@@ -576,10 +574,9 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                 if (weakenedPremiseLiterals > 0){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Total gr.inst. after weakened EA-eval", 1); }
                 if (weakenedPremiseLiterals > 0 && toutput.find(t) == toutput.end() /*std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()*/ ) { DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in out after weakened EA-eval", 1); }
                 if (weakenedPremiseLiterals > 0 && (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end() /*std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end()*/ )){ DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidweakenedpositive, "Gr.inst. not in unknown after weakened EA-eval", 1); }
-DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(b, "NEGATIVE LEARNING 2");
+
                     if (toutput.find(t) == toutput.end() && //std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end() &&
                         (!prop.doesProvidePartialAnswer() || tunknown.find(t) == tunknown.end())) { //std::find(answer.getUnknown().begin(), answer.getUnknown().end(), t) == answer.getUnknown().end())) {
-
                         // construct positive output atom
                         OrdinaryAtom posatom = atom;
                         posatom.tuple[0] = posOutPredicate;

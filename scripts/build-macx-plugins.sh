@@ -2,14 +2,17 @@
 
 
 ################################################################################
-# build-linux-plugins.sh
+# build-macx-plugins.sh
 #
 # Author: Alex Leutgöb <alexleutgoeb@gmail.com>
 #
 # Run this script to create builds of the most commong plugins of the DLVHEX
-# project for Linux platforms. The script clones a clean copy of the
+# project for Mac OS X. The script clones a clean copy of the
 # repositories and builds the binaries. The script requires a valid build of
-# DLVHEX core. Tested on Ubuntu and Debian.
+# DLVHEX core. Tested on Mac OS X 10.10 and above.
+#
+# The Mac OS X script uses the homebrew package manager to install additional
+# dependencies.
 #
 ################################################################################
 
@@ -25,7 +28,7 @@ PLUGINS="nestedhexplugin mcsieplugin actionplugin actionplugin-addons stringplug
 ROOT_DIR=`pwd`
 OUTPUT_IO=/dev/null
 # TODO: Check if already set from core build script
-BUILD_DIR=$ROOT_DIR/build-linux
+BUILD_DIR=$ROOT_DIR/build-macx
 LIB_DIR=$BUILD_DIR/out
 
 # Color output
@@ -57,23 +60,23 @@ function prepare {
   mkdir -p $BUILD_DIR
 }
 
+
 # Check for missing depdencies
 function checkDependencies {
-  echo -e "==> Check build dependencies"
+  echo "==> Checking build dependencies"
 
-  deps="unzip sed git build-essential autoconf autotools-dev libtool wget scons bison re2c python-dev libpython-all-dev libcurl4-openssl-dev libbz2-dev"
+  deps="unzip git autoconf wget scons bison re2c python"
   missing_deps=""
 
-  for dep in `echo -e $deps`; do
-    if ! dpkg -s $dep &> /dev/null; then
+  for dep in `echo $deps`; do
+    if ! which $dep &> /dev/null; then
       missing_deps="$missing_deps $dep"
     fi
   done
 
   if [ ! -z "$missing_deps" ]; then
-    # TODO: Check for other distros and replace apt-get command
     echo -e "${T_ERROR} Missing build dependencies, use:"
-    echo -e "apt-get install${missing_deps}"
+    echo "brew install$missing_deps"
     exit 1
   fi
 }
