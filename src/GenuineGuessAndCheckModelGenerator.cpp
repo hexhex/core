@@ -814,8 +814,6 @@ InterpretationConstPtr changed)
         }
     }
 
-    // if nogoods are also used for verification purposes, then do not delete them
-    //if ( !factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods") ) {
     // for encoding-based UFS checkers and explicit FLP checks, we need to keep learned nogoods (otherwise future UFS searches will not be able to use them)
     // for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
     if ( factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
@@ -827,7 +825,6 @@ InterpretationConstPtr changed)
     else {
         learnedEANogoods->forgetLeastFrequentlyAdded();
     }
-    //}
     learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
 }
 
@@ -1195,55 +1192,6 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
     assert (!!partialInterpretation && "interpretation not set");
 
     if (factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
-/*
-        // try to verify or falsify the external atom by exploiting previously learned nogoods
-        InterpretationPtr verifiedAuxes(new Interpretation(factory.ctx.registry()));
-        for (int i = 0; i < learnedEANogoods->getNogoodCount(); ++i) {
-            const Nogood& ng = learnedEANogoods->getNogood(i);
-            bool match = true;
-            bool verified;  // only relevant if match is true
-            ID aux = ID_FAIL; // auxiliary to be verified (if any)
-            BOOST_FOREACH (ID lit, ng) {
-                ID mlit = factory.ctx.registry()->ogatoms.getIDByAddress(lit.address);
-                if ( !!assigned && !assigned->getFact(lit.address) ) {
-                    // not assigned -> no match
-                    match = false;
-                    break;
-                }else{
-                    // assigned
-                    if (!mlit.isExternalAuxiliary() && partialInterpretation->getFact(lit.address) == lit.isNaf() ){
-                        // wrong truth value of an input atom --> no match
-                        match = false;
-                        break;
-                    }
-                    if (mlit.isExternalAuxiliary() ){
-                        // external auxiliary is assigned, check if it has the correct truth value
-                        verified = (partialInterpretation->getFact(lit.address) == lit.isNaf());
-                        if (aux != ID_FAIL) {
-                            // this is not an io-nogood because it contains multiple external atom auxiliaries
-                            match = false;
-                            break;
-                        }else{
-                            aux = mlit;
-                        }
-                    }
-                }  
-            }
-            if (match && aux != ID_FAIL) {
-                if (!verified) {
-                    // falsified
-                    eaEvaluated[eaIndex] = true;
-                    eaVerified[eaIndex] = false;
-                    return false;
-                }else{
-                    // remember the auxiliary and its negation to be verified
-                    verifiedAuxes->setFact(aux.address);
-                    verifiedAuxes->setFact(factory.ctx.registry()->swapExternalAtomAuxiliaryAtom(aux).address);
-                }
-            }
-        }
-*/
-
         InterpretationConstPtr verifiedAuxes = eavTree.getVerifiedAuxiliaries(partialInterpretation, assigned, factory.ctx.registry());
 
         // check if all auxes are verified
