@@ -270,7 +270,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
 
         // learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
         if (!subqueryFromCache) {
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveFacade Learning");
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"retrieveFacade Learning");
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, inputi);
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
         }
@@ -285,7 +285,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
     }
 
     {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveFacade negative learning");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"retrieveFacade neg. learning");
         if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, inputi);
     }
 

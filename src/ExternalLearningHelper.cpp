@@ -65,7 +65,7 @@ bool ExternalLearningHelper::DefaultInputNogoodProvider::dependsOnOutputTuple() 
 
 Nogood ExternalLearningHelper::DefaultInputNogoodProvider::operator()(const PluginAtom::Query& query, const ExtSourceProperties& prop, bool contained, const Tuple tuple, int* weakenedPremiseLiterals) const{
 
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(inputprovider, "InputNogoodProvider::operator()");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(inputprovider, "InpNogoodProvider::operator()");
 
     // store for each predicate term ID the index of the corresponding parameter in input
     std::map<ID, int> inputPredicateTable;
@@ -301,8 +301,10 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
             
             if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
                 // if nogoods should be minimized store them in intermediary container
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmin, "Nogood minimization");
                 newNogoodsContainer.addNogood(extNg);
             } else if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+                DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmin, "Nogood minimization");
                 // if answers w.r.t. the inputs should be cached, input and output atoms have to be stored separately
                 std::pair<Nogood,ID> newNogood(extNgInput,oid);
                 newNogoods.push_back(newNogood);
@@ -313,6 +315,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
 
         // nogood minimization without caching answers of external atom
         if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmin, "Nogood minimization");
             // iterate through all newly added nogoods
             for (int i = 0; i < newNogoodsContainer.getNogoodCount(); ++i) {
                 if (newNogoodsContainer.getNogood(i).size() <= query.ctx->config.getOption("MinimizationSize")) {
@@ -391,8 +394,8 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
 
 
         // nogood minimization with caching answers of external atom:
-	if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {      
-        
+	if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmin, "Nogood minimization");
             BOOST_FOREACH (ID& iid, extNgInput) {
                 // cache for answers of external atom
                 std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
@@ -614,6 +617,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
 
         // nogood minimization without caching answers of external atom
         if (query.ctx->config.getOption("MinimizeNogoods") && !query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmin, "Nogood minimization");
             // iterate through all newly added nogoods
             for (int i = 0; i < newNogoodsContainer.getNogoodCount(); ++i) {
                 if (newNogoodsContainer.getNogood(i).size() <= query.ctx->config.getOption("MinimizationSize")) {
@@ -692,7 +696,8 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         
         // nogood minimization with caching answers of external atom:
 	if (query.ctx->config.getOption("MinimizeNogoods") && query.ctx->config.getOption("MinimizeNogoodsOpt") && !inp->dependsOnOutputTuple() && prop.doesProvidePartialAnswer()) {      
-        
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmin, "Nogood minimization");
+
             BOOST_FOREACH (ID& iid, extNgInput) {
                 // cache for answers of external atom
                 std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;

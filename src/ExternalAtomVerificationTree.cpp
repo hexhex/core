@@ -42,6 +42,7 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Interpretation.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <bm/bmalgo.h>
 
@@ -60,6 +61,8 @@ ExternalAtomVerificationTree::ExternalAtomVerificationTree() : root(NodePtr(new 
 }
 
 void ExternalAtomVerificationTree::addNogood(const Nogood& iong, RegistryPtr reg, bool includeNegated){
+
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideavaddnogood, "ExternalAtomVerificationTree::addNogood");
 
     // Navigate to the right part in the tree part
     ID aux = ID_FAIL;

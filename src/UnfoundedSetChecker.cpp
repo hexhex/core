@@ -104,6 +104,7 @@ domain(new Interpretation(ctx.registry()))
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux, InterpretationConstPtr ufsCandidate)
 {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidisufs, "UnfoundedSetChecker::isUFS");
 
     // in debug mode we might want to do both checks (traditional and support set based)
     #ifndef NDEBUG
@@ -264,6 +265,8 @@ UnfoundedSetVerificationStatus& ufsVerStatus
         }
     }
 
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideval, "UFS checker verify by eval");
+
     // evaluate
     DBGLOG(DBG, "Evaluate " << eaID << " for UFS verification " << (!!ngc ? "with" : "without") << " learning under " << *ufsVerStatus.eaInput);
 
@@ -300,6 +303,7 @@ UnfoundedSetVerificationStatus& ufsVerStatus
     }
 
     // remove the external atom from the remaining lists of all auxiliaries which wait for the EA to be verified
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidauxup, "UFS checker verify: aux up");
     DBGLOG(DBG, "Updating data structures");
     assert (eaID.address < ufsVerStatus.externalAtomAddressToAuxIndices.size());
     BOOST_FOREACH (uint32_t i, ufsVerStatus.externalAtomAddressToAuxIndices[eaID.address]) {
