@@ -343,7 +343,6 @@ public ModelGeneratorBase<Interpretation>
          * @param query See PluginInterface::Query.
          * @param cb Callback during evaluation of the external atom (see BaseModelGenerator::ExternalAnswerTupleCallback).
          * @param nogoods Container to add learned nogoods to (if external learning is enabled), can be NULL.
-         * @param inputi current assignment from solver
          * @param fromCache Pointer to a bool field which is is stored whether the query was answered from cache (true) or by actual evaluation (false); can be NULL.
          * @return False if process was aborted by callback and true otherwise.
          */
@@ -351,7 +350,6 @@ public ModelGeneratorBase<Interpretation>
             PluginAtom::Query& query,
             ExternalAnswerTupleCallback& cb,
             NogoodContainerPtr nogoods,
-            InterpretationConstPtr inputi,
             bool* fromCache = 0) const;
 
         /**

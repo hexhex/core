@@ -495,7 +495,7 @@ bool* fromCache) const
         // XXX here we copy it, we should just reference it
         PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
         // XXX make this part of constructor
-        return evaluateExternalAtomQuery(query, cb, nogoods, inputi, fromCache);
+        return evaluateExternalAtomQuery(query, cb, nogoods, fromCache);
     }
     else {
         // auxiliary input predicate -> get input tuples (with cache)
@@ -528,7 +528,7 @@ bool* fromCache) const
                 // build query as reference to the storage in cache
                 // XXX here we copy, we could make it const ref in Query
                 PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
-                if( ! evaluateExternalAtomQuery(query, cb, nogoods, inputi, fromCache) )
+                if( ! evaluateExternalAtomQuery(query, cb, nogoods, fromCache) )
                     return false;
             }
         }
@@ -555,7 +555,6 @@ bool BaseModelGenerator::evaluateExternalAtomQuery(
 PluginAtom::Query& query,
 ExternalAnswerTupleCallback& cb,
 NogoodContainerPtr nogoods,
-InterpretationConstPtr inputi,
 bool* fromCache) const
 {
     const ProgramCtx& ctx = *query.ctx;
@@ -572,7 +571,7 @@ bool* fromCache) const
 
     PluginAtom::Answer answer;
     assert(!!eatom.pluginAtom);
-    bool fromCache_ = eatom.pluginAtom->retrieveFacade(query, answer, nogoods, query.ctx->config.getOption("UseExtAtomCache"), inputi);
+    bool fromCache_ = eatom.pluginAtom->retrieveFacade(query, answer, nogoods, query.ctx->config.getOption("UseExtAtomCache"));
     if (fromCache) *fromCache = fromCache_;
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 

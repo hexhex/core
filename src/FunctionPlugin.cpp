@@ -473,7 +473,7 @@ class FunctionInterprete : public PluginAtom
                     Tuple empty;
                     PluginAtom::Query nquery(query.ctx, query.interpretation, args, empty, ID_FAIL, query.predicateInputMask, query.assigned, query.changed);
                     PluginAtom::Answer nanswer;
-                    pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"), query.interpretation);
+                    pa->retrieveFacade(nquery, nanswer, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"));
 
                     // transfer answer
                     if (nanswer.get().size() != 1) throw PluginError("Function must return exactly one value");
