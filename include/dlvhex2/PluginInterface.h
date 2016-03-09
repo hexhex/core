@@ -813,6 +813,10 @@ class DLVHEX_EXPORT PluginAtom
             changed(changed) {
             }
             /**
+             * \brief Assignes the query in depth (copy internal data structures rather than share).
+             * @param q2 Query to copy. */
+            void assign(const Query& q2);
+            /**
              * Equality for hashing the query for caching query results.
              */
             bool operator==(const Query& other) const;
@@ -1069,11 +1073,10 @@ class DLVHEX_EXPORT PluginAtom
          * @param answer Output of the external source.
          * @param nogoods Here, nogoods learned from the external source can be added to prune the search space; see Nogood, NogoodContainer and ExternalLearningHelper.
          * @param useCache True to use the cache (if possible), false to answer the query directly.
-         * @param inputi current assignment from solver
          * 
          * @return True if the query was answered from cache and false otherwise.
          */
-        bool retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache, InterpretationConstPtr inputi);
+        bool retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache);
 
         /**
          * \brief Retrieve answer object according to a query by using the cache if possible.

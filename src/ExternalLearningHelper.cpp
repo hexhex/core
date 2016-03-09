@@ -274,7 +274,7 @@ ID ExternalLearningHelper::getIDOfLearningRule(ProgramCtx* ctx, std::string lear
 }
 
 
-void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InterpretationConstPtr inputi, InputNogoodProviderConstPtr inp)
+void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
 {
     if (nogoods) {
         DBGLOG(DBG, "External Learning: IOBehavior" << (query.ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
@@ -330,7 +330,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                         }
                     }
                     
-                    if (inputi->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
+                    if (query.interpretation->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
                         DBGLOG(DBG, "Conflicting nogood");
                         
                         testNg.erase(ansID);
@@ -364,7 +364,9 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                                 assigned->clearFact(iid.address);
 
                                 // query
-                                query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                                //if (query.ctx->config.getOption("UseExtAtomCache")) query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveCached(qa, ans, NogoodContainerPtr());
+				//else query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                                query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveFacade(qa, ans, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"));
 
                                 // get all answer atoms
                                 Set<ID> ansout = ExternalLearningHelper::getOutputAtoms(qa, ans, false);
@@ -401,7 +403,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                 std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
 
                 for (int i = 0; i < newNogoods.size(); ++i) {
-                    if ((inputi->getFact(newNogoods[i].second.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict"))
+                    if ((query.interpretation->getFact(newNogoods[i].second.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict"))
                             && (newNogoods[i].first.size() <= query.ctx->config.getOption("MinimizationSize"))) {
                         Nogood testNg = newNogoods[i].first;
 
@@ -430,7 +432,9 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                             qa.assigned = assigned;
 
                             // query
-                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                            //if (query.ctx->config.getOption("UseExtAtomCache")) query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveCached(qa, ans, NogoodContainerPtr());
+                            //else query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveFacade(qa, ans, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"));
 
                             externalEvaluationsCache[testNg.getHash()] = ans;
                         }
@@ -496,7 +500,7 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
 }
 
 
-void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InterpretationConstPtr inputi, InputNogoodProviderConstPtr inp)
+void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
 {
     // learning of negative information
     if (nogoods) {
@@ -632,7 +636,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                         }
                     }
                     
-                    if (inputi->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
+                    if (query.interpretation->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
                         DBGLOG(DBG, "Conflicting nogood");
                         
                         testNg.erase(ansID);
@@ -666,7 +670,9 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                                 assigned->clearFact(iid.address);
 
                                 // query
-                                query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                                //if (query.ctx->config.getOption("UseExtAtomCache")) query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveCached(qa, ans, NogoodContainerPtr());
+                                //else query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                                query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveFacade(qa, ans, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"));
 
                                 Tuple t = externalAuxiliaryTable[ansID];
 
@@ -703,7 +709,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                 std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
 
                 for (int i = 0; i < newNogoods.size(); ++i) {
-                    if ((inputi->getFact(newNogoods[i].second.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict"))
+                    if ((query.interpretation->getFact(newNogoods[i].second.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict"))
                             && (newNogoods[i].first.size() <= query.ctx->config.getOption("MinimizationSize"))) {
                         Nogood testNg = newNogoods[i].first;
 
@@ -732,7 +738,9 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                             qa.assigned = assigned;
 
                             // query
-                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                            //if (query.ctx->config.getOption("UseExtAtomCache")) query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveCached(qa, ans, NogoodContainerPtr());
+                            //else query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieve(qa, ans, NogoodContainerPtr());
+                            query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->retrieveFacade(qa, ans, NogoodContainerPtr(), query.ctx->config.getOption("UseExtAtomCache"));
 
                             externalEvaluationsCache[testNg.getHash()] = ans;
                         }

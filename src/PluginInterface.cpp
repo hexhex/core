@@ -69,24 +69,35 @@ bool PluginAtom::Query::operator<(const Query& other) const
 }
 #endif
 
+void PluginAtom::Query::assign(const PluginAtom::Query& q2){
+    ctx = q2.ctx;
+    interpretation.reset(); assigned.reset(); changed.reset(); predicateInputMask.reset();
+    if (!!q2.interpretation) { InterpretationPtr interpretation(new Interpretation(q2.ctx->registry())); interpretation->add(*q2.interpretation); this->interpretation = interpretation; }
+    if (!!q2.assigned) { InterpretationPtr assigned(new Interpretation(q2.ctx->registry())); assigned->add(*q2.assigned); this->assigned = assigned; }
+    if (!!q2.changed) { InterpretationPtr changed(new Interpretation(q2.ctx->registry())); changed->add(*q2.changed); this->changed = changed; }
+    input = q2.input;
+    pattern = q2.pattern;
+    eatomID = q2.eatomID;
+    if (!!q2.predicateInputMask) { InterpretationPtr predicateInputMask(new Interpretation(q2.ctx->registry())); predicateInputMask->add(*q2.predicateInputMask); this->predicateInputMask = predicateInputMask; }
+}
+
 bool PluginAtom::Query::operator==(const Query& other) const
 {
     return
         (input == other.input) &&
         (pattern == other.pattern) &&
         (
-        (interpretation == other.interpretation) ||
-        (interpretation != 0 && other.interpretation != 0 &&
-        *interpretation == *other.interpretation) &&
+		(interpretation == other.interpretation) ||
+		(interpretation != 0 && other.interpretation != 0 && *interpretation == *other.interpretation)
+	) &&
         (
-        assigned == other.assigned) ||
-        (assigned != 0 && other.assigned != 0 &&
-        *assigned == *other.assigned) &&
-        // Equivalence of the predicateInputMask in the current and the cached query is required for the reason described in method retrieveCached.
-        // Because for the same external atom the mask can only increase over time (when new ground atoms are added to registry) but never decrease,
-        // comparing the number of atoms suffices.
-        (predicateInputMask->getStorage().count() == other.predicateInputMask->getStorage().count())
-        );
+		(assigned == other.assigned) ||
+		(assigned != 0 && other.assigned != 0 && *assigned == *other.assigned)
+	) &&
+	(
+		(predicateInputMask == other.predicateInputMask) ||
+		(predicateInputMask != 0 && other.predicateInputMask != 0 && *predicateInputMask == *other.predicateInputMask)
+	);
 }
 
 
@@ -241,7 +252,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 }
 */
 
-bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache, InterpretationConstPtr inputi)
+bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContainerPtr nogoods, bool useCache)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrf,"PluginAtom retrieveFacade");
     bool fromCache = false;
@@ -270,8 +281,8 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
 
         // learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
         if (!subqueryFromCache) {
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"retrieveFacade Learning");
-            if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods, inputi);
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveFacade Learning");
+            if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods);
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
         }
 
@@ -286,7 +297,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
 
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"retrieveFacade neg. learning");
-        if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods, inputi);
+        if (!!nogoods && query.ctx->config.getOption("ExternalLearningNeg")) ExternalLearningHelper::learnFromNegativeAtoms(query, answer, prop, nogoods);
     }
 
     return fromCache;
@@ -345,20 +356,21 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
     // (actually, comparing the sizes of predicateInputMask suffices as predicateInputMask can only increase but not decrease when the registry is expanded).
 
     boost::mutex::scoped_lock lock(cacheMutex);
-
+InterpretationPtr emp(new Interpretation(query.ctx->registry()));
     typedef std::pair<Answer, SimpleNogoodContainerPtr> CacheEntryType;
+
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidcl,"PluginAtom cache lookup");
     CacheEntryType& ans = queryAnswerNogoodCache[query];
     DLVHEX_BENCHMARK_STOP(sidcl);
     if( ans.first.hasBeenUsed()) {
         DBGLOG(DBG, "Answering from cache");
-        // answer was not default -> use
-        answer = ans.first;
 
         // check if there are cached nogoods
         if (nogoods) {
             if (ans.second) {
                 DBGLOG(DBG, "Found " << ans.second->getNogoodCount() << " cached nogoods");
+		// answer was not default -> use
+		answer = ans.first;
                 // return cached nogoods
                 for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
                 return true;             // answered from cache
@@ -368,16 +380,18 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
                 // answer is cached but no nogoods: reevaluate and return nogoods
                 DBGLOG(DBG, "No cached nogoods --> reevaluate");
                 queryAnswerNogoodCache[query].first = Answer();
-                Answer& ans2 = queryAnswerNogoodCache[query].first;
                 ans.second.reset(new SimpleNogoodContainer());
-                retrieve(query, ans2, ans.second);
-                ans2.use();
-                answer = ans2;   // ans2 should be the same as ans
+                retrieve(query, ans.first, ans.second);
                 for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
+		// answer was not default -> use
+		answer = ans.first;
                 return false;             // not (fully) answered from cache
             }
-        }
-
+        }else{
+		// answer was not default -> use
+		answer = ans.first;
+		return true;
+	}
     }
     else {
         {
@@ -386,22 +400,28 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
             // -> retrieve and replace in cache
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
 
+            // make sure that the cache uses an in-depth copy of the query (otherwise the cache might change with the assignment)
+            queryAnswerNogoodCache.erase(queryAnswerNogoodCache.find(query));
+            Query queryc = query;
+            queryc.assign(query);
+            CacheEntryType& ans = queryAnswerNogoodCache[queryc]; // shadows above ans!
+
             if (nogoods) {
                 assert(!ans.second);
 
                 ans.second.reset(new SimpleNogoodContainer());
-                retrieve(query, ans.first, ans.second);
+                retrieve(queryc, ans.first, ans.second);
                 for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
+                answer = ans.first;
             }
             else {
-                retrieve(query, ans.first, NogoodContainerPtr());
+                retrieve(queryc, ans.first, NogoodContainerPtr());
+                answer = ans.first;
             }
 
             // if there was no answer, perhaps it has never been used, so we use it manually
             ans.first.use();
         }
-        answer = ans.first;
-
         return false;            // not answered from cache
     }
 }
