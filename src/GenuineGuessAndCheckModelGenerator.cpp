@@ -529,7 +529,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 }
 
 const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
-    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidic, "Returned unit inconsistency causes", (haveInconsistencyCause ? 1 : 0));
+    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidic, "Unit inconsistency causes", (haveInconsistencyCause ? 1 : 0));
     DBGLOG(DBG, "Inconsistency cause was requested: " << (haveInconsistencyCause ? "" : "not") << " available");
     return (factory.ctx.config.getOption("TransUnitLearning") && haveInconsistencyCause ? &inconsistencyCause : 0);
 }

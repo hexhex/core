@@ -453,7 +453,7 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
                                 }
                             }
                             if (!relevant) {
-                                DLVHEX_BENCHMARK_REGISTER_AND_COUNT(siddc, "UFS decision c. for mon./antim. applies", 1);
+                                DLVHEX_BENCHMARK_REGISTER_AND_COUNT(siddc, "UFS dec. c. for mon./antim.", 1);
                                 en++;
                                 continue;
                             }
