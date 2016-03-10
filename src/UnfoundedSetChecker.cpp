@@ -287,9 +287,9 @@ UnfoundedSetVerificationStatus& ufsVerStatus
             if (ng.isGround()) {
                 DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
 
-                std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-                BOOST_FOREACH (Nogood tng, transformed) {
-                    solver->addNogood(tng);
+                std::pair<bool, Nogood> transformed = nogoodTransformation(ng, compatibleSet);
+                if (transformed.first) {
+                    solver->addNogood(transformed.second);
                 }
 
 	            if (ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {
@@ -901,9 +901,9 @@ std::vector<ID>& ufsProgram)
             if (ng.isGround()) {
                 DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
 
-                std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-                BOOST_FOREACH (Nogood tng, transformed) {
-                    ufsDetectionProblem.addNogood(tng);
+                std::pair<bool, Nogood> transformed = nogoodTransformation(ng, compatibleSet);
+                if (transformed.first) {
+                    ufsDetectionProblem.addNogood(transformed.second);
                 }
             }
         }
@@ -1004,11 +1004,13 @@ std::vector<ID>& ufsProgram)
 }
 
 
-std::vector<Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(Nogood ng, InterpretationConstPtr assignment)
+std::pair<bool, Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(Nogood ng, InterpretationConstPtr assignment)
 {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtransform, "UFS nogood transformation");
 
-    bool skip = false;
-    Nogood ngAdd;
+    std::pair<bool, Nogood> ret;
+    bool& skip = ret.first; skip = false;
+    Nogood& ngAdd = ret.second;
 
     BOOST_FOREACH (ID id, ng) {
                                  // we have to requery the ID because nogoods strip off unnecessary information (e.g. property flags)
@@ -1084,15 +1086,8 @@ std::vector<Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(Nogoo
             }
         }
     }
-    if (skip) {
-        return std::vector<Nogood>();
-    }
-    else {
-        DBGLOG(DBG, "Adding transformed nogood " << ngAdd);
-        std::vector<Nogood> result;
-        result.push_back(ngAdd);
-        return result;
-    }
+    DBGLOG(DBG, "Adding transformed nogood " << ngAdd << " (valid: " << !skip << ")");
+    return ret;
 }
 
 
@@ -1886,13 +1881,14 @@ UnfoundedSetChecker(&mg, ctx, groundProgram, agp, componentAtoms, ngc)
 }
 
 
-std::vector<Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nogood ng, InterpretationConstPtr assignment)
+std::pair<bool, Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nogood ng, InterpretationConstPtr assignment)
 {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtransform, "UFS nogood transformation");
 
     // Note: this transformation must not depend on the compatible set!
-
-    bool skip = false;
-    Nogood ngAdd;
+    std::pair<bool, Nogood> ret;
+    bool& skip = ret.first; skip = false;
+    Nogood& ngAdd = ret.second;
 
     BOOST_FOREACH (ID id, ng) {
         // we have to requery the ID because nogoods strip off unnecessary information (e.g. property flags)
@@ -1947,15 +1943,8 @@ std::vector<Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nog
             }
         }
     }
-    if (skip) {
-        return std::vector<Nogood>();
-    }
-    else {
-        DBGLOG(DBG, "Adding transformed nogood " << ngAdd);
-        std::vector<Nogood> result;
-        result.push_back(ngAdd);
-        return result;
-    }
+    DBGLOG(DBG, "Adding transformed nogood " << ngAdd << " (valid: " << !skip << ")");
+    return ret;
 }
 
 
@@ -1973,9 +1962,9 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset)
                 DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
 
                 // this transformation must not depend on the compatible set!
-                std::vector<Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
-                BOOST_FOREACH (Nogood tng, transformed) {
-                    solver->addNogood(tng);
+                std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
+                if (transformed.first) {
+                    solver->addNogood(transformed.second);
                 }
 
 	            if (ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods")) {

@@ -659,7 +659,7 @@ InterpretationConstPtr compatibleSet,
 InterpretationConstPtr assigned,
 InterpretationConstPtr changed)
 {
-
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(siduean, "updateEANogoods");
     DBGLOG(DBG, "updateEANogoods");
 
     // generalize ground nogoods to nonground ones
@@ -715,7 +715,7 @@ InterpretationConstPtr changed)
     if ( factory.ctx.config.getOption("UFSCheckAssumptionBased") ||
          (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionE")) ) {
         ufscm->learnNogoodsFromMainSearch(true);
-        nogoodGrounder->resetWatched(learnedEANogoods);
+        if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->resetWatched(learnedEANogoods);
         learnedEANogoods->clear();
     }
     else {

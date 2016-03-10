@@ -110,9 +110,9 @@ class UnfoundedSetChecker
          * @param ng The nogood from the main search.
          * @param compatibleSet The current compatible set we do the unfounded set search with respect to.
          *                      Note: For AssumptionBasedUnfoundedSetChecker it is essential that the nogood transformation is independent of the compatible set.
-         * @return A set of nogoods which can be used in the unfounded set search.
+         * @return A pair of a boolean, which denotes if the transformation yielded a nogood, an the transformed nogood in this case.
          */
-        virtual std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet) = 0;
+        virtual std::pair<bool, Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet) = 0;
 
     private:
 
@@ -399,13 +399,7 @@ class EncodingBasedUnfoundedSetChecker : public UnfoundedSetChecker
             const std::set<ID>& skipProgram,
             std::vector<ID>& ufsProgram);
 
-        /**
-         * \brief Transforms a nogood from the main search to the UFS search.
-         * @param ng Nogodo to transform.
-         * @param compatibleSet Compatible set for which the UFS check shall be performed.
-         * @return Transformed nogood.
-         */
-        std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet);
+        std::pair<bool, Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet);
 
     public:
         /**
@@ -544,14 +538,7 @@ class AssumptionBasedUnfoundedSetChecker : public UnfoundedSetChecker
          */
         void setAssumptions(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram);
 
-        /**
-         * Transforms a nogood (valid input-output relationship of some external atom) learned in the main search for being used in the UFS search.
-         * @param ng The nogood from the main search.
-         * @param compatibleSet The current compatible set we do the unfounded set search with respect to.
-         *                      Note: For AssumptionBasedUnfoundedSetChecker it is essential that the nogood transformation is independent of the compatible set.
-         * @return A set of nogoods which can be used in the unfounded set search.
-         */
-        std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet);
+        std::pair<bool, Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr compatibleSet);
 
     public:
         /**
