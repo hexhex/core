@@ -1009,7 +1009,7 @@ std::pair<bool, Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(N
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtransform, "UFS nogood transformation");
 
     std::pair<bool, Nogood> ret;
-    bool& skip = ret.first; skip = false;
+    bool& valid = ret.first; valid = true;
     Nogood& ngAdd = ret.second;
 
     BOOST_FOREACH (ID id, ng) {
@@ -1030,7 +1030,7 @@ std::pair<bool, Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(N
             // do not add a nogood if it extends the variable domain (this is counterproductive)
             if ( !domain->getFact(useID.address) ) {
                 DBGLOG(DBG, "Skipping because " << useID.address << " expands the domain");
-                skip = true;
+                valid = false;
                 break;
             }
             else {
@@ -1051,7 +1051,7 @@ std::pair<bool, Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(N
                 if (assignment->getFact(id.address) == false) {
                     // false in I --> nogood can never fire unter I u -X
                     DBGLOG(DBG, "Skipping because " << id.address << " can never be true under I u -X");
-                    skip = true;
+                    valid = false;
                     break;
                 }
                 else {
@@ -1071,7 +1071,7 @@ std::pair<bool, Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(N
                     // positive variant is true in I --> nogood fires if it is also in X
                     if ( !domain->getFact(id.address) ) {
                         DBGLOG(DBG, "Skipping because " << id.address << " can never be false under I u -X");
-                        skip = true;
+                        valid = false;
                         break;
                     }
                     else {
@@ -1086,7 +1086,7 @@ std::pair<bool, Nogood> EncodingBasedUnfoundedSetChecker::nogoodTransformation(N
             }
         }
     }
-    DBGLOG(DBG, "Adding transformed nogood " << ngAdd << " (valid: " << !skip << ")");
+    DBGLOG(DBG, "Adding transformed nogood " << ngAdd << " (valid: " << valid << ")");
     return ret;
 }
 
@@ -1887,7 +1887,7 @@ std::pair<bool, Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation
 
     // Note: this transformation must not depend on the compatible set!
     std::pair<bool, Nogood> ret;
-    bool& skip = ret.first; skip = false;
+    bool& valid = ret.first; valid = true;
     Nogood& ngAdd = ret.second;
 
     BOOST_FOREACH (ID id, ng) {
@@ -1908,7 +1908,7 @@ std::pair<bool, Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation
             // do not add a nogood if it extends the variable domain (this is counterproductive)
             if ( !domain->getFact(useID.address) ) {
                 DBGLOG(DBG, "Skipping because " << useID.address << " expands the domain");
-                skip = true;
+                valid = false;
                 break;
             }
             else {
@@ -1943,7 +1943,7 @@ std::pair<bool, Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation
             }
         }
     }
-    DBGLOG(DBG, "Adding transformed nogood " << ngAdd << " (valid: " << !skip << ")");
+    DBGLOG(DBG, "Adding transformed nogood " << ngAdd << " (valid: " << valid << ")");
     return ret;
 }
 
