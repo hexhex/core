@@ -42,6 +42,7 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/ExtSourceProperties.h"
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp>
@@ -434,12 +435,29 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
             if (b.isExternalAuxiliary()) {
                 BOOST_FOREACH (ID eaID, auxToEA[b.address]) {
                     const ExternalAtom& ea = reg->eatoms.getByID(eaID);
+                    const ExtSourceProperties& prop = ea.getExtSourceProperties();
 
                     ea.updatePredicateInputMask();
                     bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
                     bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
                     while (en < en_end) {
                         if (depNodes.find(*en) == depNodes.end()) depNodes[*en] = boost::add_vertex(*en, depGraph);
+
+                        if (ctx->config.getOption("FLPDecisionCriterionEM")) {
+                            const OrdinaryAtom& oatom = ctx->registry()->ogatoms.getByAddress(*en);
+                            bool relevant = true;
+                            for (int i = 0; i < ea.inputs.size(); ++i) {
+                                if (oatom.tuple[0] == ea.inputs[i] && (!b.isNaf() && prop.isAntimonotonic(i) || b.isNaf() && prop.isMonotonic(i))) {
+                                    relevant = false;
+                                    break;
+                                }
+                            }
+                            if (!relevant) {
+                                DLVHEX_BENCHMARK_REGISTER_AND_COUNT(siddc, "UFS decision c. for mon./antim. applies", 1);
+                                en++;
+                                continue;
+                            }
+                        }
 
                         BOOST_FOREACH (ID h, rule.head) {
                             if (!h.isExternalAuxiliary()) {
@@ -505,10 +523,17 @@ void AnnotatedGroundProgram::computeAdditionalDependencies()
         BOOST_FOREACH (ID b, rule.body) {
             if (b.isExternalAtom()) {
                 const ExternalAtom& ea = reg->eatoms.getByID(b);
+                const ExtSourceProperties& prop = ea.getExtSourceProperties();
                 ea.updatePredicateInputMask();
                 // for all (nonground) atoms over a predicate parameter
                 for (int i = 0; i < ea.inputs.size(); ++i) {
                     if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE) {
+                        // polarity check
+                        if (ctx->config.getOption("FLPDecisionCriterionEM") && (!b.isNaf() && prop.isAntimonotonic(i) || b.isNaf() && prop.isMonotonic(i))) {
+                            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(siddc, "UFS decision c. for mon./antim. applies", 1);
+                            continue;
+                        }
+
                         BOOST_FOREACH (Pair p, nongroundDepNodes) {
                             const OrdinaryAtom& at = reg->lookupOrdinaryAtom(p.first);
                             // check if this nonground atom specifies input to the external atom

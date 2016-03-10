@@ -301,6 +301,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         all (default)    : Exploit head- and e-cycles for skipping minimality checks" << std::endl
         << "                         head             : Exploit head-cycles for skipping minimality checks" << std::endl
         << "                         e                : Exploit e-cycles for skipping minimality checks" << std::endl
+        << "                         em               : Exploit e-cycles and (anti)monotonicity of predicate parameters for skipping minimality checks" << std::endl
         << "                         none             : Do not exploit head- or e-cycles for skipping minimality checks" << std::endl
         << "     --noflpcriterion Do no apply decision criterion to skip the FLP check." << std::endl
         << "                      (equivalent to --flpcriterion=none)" << std::endl
@@ -1470,18 +1471,27 @@ Config& config, ProgramCtx& pctx)
                     std::string cycle(optarg);
                     if (cycle == "all") {
                         pctx.config.setOption("FLPDecisionCriterionE", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEM", 1);
                         pctx.config.setOption("FLPDecisionCriterionHead", 1);
                     }
                     else if (cycle == "head") {
                         pctx.config.setOption("FLPDecisionCriterionE", 0);
+                        pctx.config.setOption("FLPDecisionCriterionEM", 0);
                         pctx.config.setOption("FLPDecisionCriterionHead", 1);
                     }
                     else if (cycle == "e") {
                         pctx.config.setOption("FLPDecisionCriterionE", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEM", 0);
+                        pctx.config.setOption("FLPDecisionCriterionHead", 0);
+                    }
+                    else if (cycle == "em") {
+                        pctx.config.setOption("FLPDecisionCriterionE", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEM", 1);
                         pctx.config.setOption("FLPDecisionCriterionHead", 0);
                     }
                     else if (cycle == "none") {
                         pctx.config.setOption("FLPDecisionCriterionE", 0);
+                        pctx.config.setOption("FLPDecisionCriterionEM", 0);
                         pctx.config.setOption("FLPDecisionCriterionHead", 0);
                     }
                     else {
