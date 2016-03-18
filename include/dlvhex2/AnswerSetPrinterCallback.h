@@ -59,6 +59,8 @@ public ModelCallback
     protected:
         /** \brief Mask representing the set of all atoms to be included in the output; might be NULL to represent that all atoms shall be output. */
         PredicateMaskPtr filterpm;
+        /** \brief ProgramCtx. */
+        ProgramCtx& ctx;
 };
 
 /** \brief Printer for (parts of) answer sets in CVS format. */

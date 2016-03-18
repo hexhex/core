@@ -47,7 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-AnswerSetPrinterCallback::AnswerSetPrinterCallback(ProgramCtx& ctx)
+AnswerSetPrinterCallback::AnswerSetPrinterCallback(ProgramCtx& ctx) : ctx(ctx)
 {
     RegistryPtr reg = ctx.registry();
 
@@ -124,6 +124,12 @@ AnswerSetPtr as)
     o << '}';
     as->printWeightVector(o);
     o << std::endl;
+
+    if (ctx.config.getOption("WaitOnModel")) {
+        std::cerr << "<waiting>" << std::endl;
+        std::string line;
+        std::getline(std::cin, line);
+    }
 
     // never abort
     return true;

@@ -260,6 +260,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                      Print the extension of the specified predicate in CVS format." << std::endl
         << "                      They are sorted by their first argument (should be numeric)." << std::endl
         << "                      Answer Sets are separated by empty lines." << std::endl
+        << "     --waitonmodel    Wait for newline from stdin after each model." << std::endl
 
         << std::endl << "Plugin Options:" << std::endl
         << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
@@ -861,6 +862,7 @@ Config& config, ProgramCtx& pctx)
         { "noouterexternalatoms", no_argument, 0, 62 },
         { "transunitlearning", no_argument, 0, 64 },
         { "verifyfromlearned", no_argument, 0, 65 },
+        { "waitonmodel", no_argument, 0, 66 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1662,6 +1664,11 @@ Config& config, ProgramCtx& pctx)
             case 65:
                 {
                     pctx.config.setOption("ExternalAtomVerificationFromLearnedNogoods", 1);
+                }
+                break;
+            case 66:
+                {
+                    pctx.config.setOption("WaitOnModel", 1);
                 }
                 break;
         }
