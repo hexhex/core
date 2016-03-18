@@ -1,6 +1,6 @@
 dlvhex NEWS -- history of user-visible changes.
 
-* Version 2.5.0 (??)
+* Version 2.5.0 (March 2016)
 
 ** External atom semantics was extended to 3 values (true, false, unknown); 2-valued external atoms are still compatible.
 ** Support for external atom evaluation under partial assignments (possible performance improvements).
