@@ -204,9 +204,14 @@ function buildCore {
   # Compile core
   if [ ! -d "$BUILD_DIR/core" ]; then
     cd $BUILD_DIR
+
+    echo "==> Downloading DLVHEX"
+
     git clone --recursive $CORE_CLONE_URL &> $OUTPUT_IO
     cd core
-    exit
+
+    echo "==> Building DLVHEX"
+
     ./bootstrap.sh &> $OUTPUT_IO
 
     # Set Python configs
