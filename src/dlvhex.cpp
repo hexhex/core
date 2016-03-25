@@ -254,10 +254,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
         << "     --keepauxpreds   Keep auxiliary predicates in answer sets." << std::endl
         << "     --csvinput=PREDICATE,FILENAME" << std::endl
-        << "                      Read from the given file in CVS format and add each line as fact" << std::endl
+        << "                      Read from the given file in CSV format and add each line as fact" << std::endl
         << "                      in over the specified predicate (the original line number is added as first argument)." << std::endl
         << "     --cvsoutput=PREDICATE" << std::endl
-        << "                      Print the extension of the specified predicate in CVS format." << std::endl
+        << "                      Print the extension of the specified predicate in CSV format." << std::endl
         << "                      They are sorted by their first argument (should be numeric)." << std::endl
         << "                      Answer Sets are separated by empty lines." << std::endl
         << "     --waitonmodel    Wait for newline from stdin after each model." << std::endl
