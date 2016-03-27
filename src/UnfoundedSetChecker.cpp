@@ -2318,10 +2318,11 @@ SimpleNogoodContainerPtr ngc)
 
     bool flpdc_head = (ctx.config.getOption("FLPDecisionCriterionHead") != 0);
     bool flpdc_e = (ctx.config.getOption("FLPDecisionCriterionE") != 0);
+    bool flpdc_emi = (ctx.config.getOption("FLPDecisionCriterionEMI") != 0);
 
     // in incremental mode we need to proceed as we can decide the FLP criterion only after checking each component for necessary extensions
     if (!ctx.config.getOption("IncrementalGrounding")) {
-        if ((!agp.hasHeadCycles() && flpdc_head) && (!mg || !agp.hasECycles() && flpdc_e)) {
+        if ( (!agp.hasHeadCycles() && flpdc_head) && (!mg || flpdc_e && (!agp.hasECycles() || (flpdc_emi && !agp.hasECycles(interpretation)))) ) {
             DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");
             return std::vector<IDAddress>();
         }
@@ -2335,7 +2336,7 @@ SimpleNogoodContainerPtr ngc)
         lastAGPComponentCount = agp.getComponentCount();
 
         DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet monolithic");
-        if (mg && (agp.hasECycles() || !flpdc_e)) {
+        if (mg && (!flpdc_e || (agp.hasECycles() && (!flpdc_emi || agp.hasECycles(interpretation))))) {
             DBGLOG(DBG, "Checking UFS under consideration of external atoms");
             if (preparedUnfoundedSetCheckers.size() == 0) {
                 preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
@@ -2372,13 +2373,13 @@ SimpleNogoodContainerPtr ngc)
         // search in each component for unfounded sets
         DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
         for (int comp = 0; comp < agp.getComponentCount(); ++comp) {
-            if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp) && flpdc_e)) {
+            if ( (!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || flpdc_e && (!agp.hasECycles(comp) || (flpdc_emi && !agp.hasECycles(comp, interpretation)))) ) {
                 DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
                 continue;
             }
 
             DBGLOG(DBG, "Checking for UFS in component " << comp);
-            if (mg && (agp.hasECycles(comp) || !flpdc_e)) {
+            if ( mg && (!flpdc_e || (agp.hasECycles(comp) && (!flpdc_emi || agp.hasECycles(comp, interpretation)))) ) {
                 DBGLOG(DBG, "Checking UFS under consideration of external atoms");
                 if (preparedUnfoundedSetCheckers.find(comp) == preparedUnfoundedSetCheckers.end()) {
                     preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>

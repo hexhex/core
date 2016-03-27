@@ -969,9 +969,32 @@ namespace
 
 }
 
-
 bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr) const
 {
+/*
+    DBGLOG(DBG, "Computing ecycles wrt. interpretation");
+
+    // filter the graph: eliminate vertices which are not in intr
+    struct edge_filter {
+        InterpretationConstPtr intr;
+        edge_filter() {}
+        edge_filter(InterpretationConstPtr intr) : intr(intr) { }
+        bool operator()(const boost::detail::edge_desc_impl<boost::bidirectional_tag, long unsigned int>& e) const {
+            return true; //intr->getFact(e.source) && intr->getFact(e.target);
+        }
+    };
+    struct node_filter {
+        InterpretationConstPtr intr;
+        node_filter() {}
+        node_filter(InterpretationConstPtr intr) : intr(intr) { }
+        bool operator()(const Node& n) const {
+            return intr->getFact(n);
+        }
+    };
+    edge_filter efilter(intr);
+    node_filter nfilter(intr);
+    boost::filtered_graph<Graph, edge_filter, node_filter> depGraph2(depGraph, efilter, nfilter);
+*/
 
     // make a copy of the dependency graph
     Graph depGraph2;

@@ -62,6 +62,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("FLPDecisionCriterionHead", 1);
     config.setOption("FLPDecisionCriterionE", 1);
     config.setOption("FLPDecisionCriterionEM", 1);
+    config.setOption("FLPDecisionCriterionEMI", 0);
     config.setOption("FLPCheck", 0);
     config.setOption("UFSCheck", 1);
     config.setOption("UFSCheckMonolithic", 0);

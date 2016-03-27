@@ -297,12 +297,13 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         aufsm            : Use unfounded sets for minimality checking by exploiting assumptions;" << std::endl
         << "                                            do not decompose the program for UFS checking" << std::endl
         << "                         none             : Disable the check" << std::endl
-        << "     --flpcriterion=[all,head,e,none]" << std::endl
+        << "     --flpcriterion=[all,head,e,em,emi,none]" << std::endl
         << "                      Defines the kind of cycles whose absence is exploited for skipping minimality checks." << std::endl
         << "                         all (default)    : Exploit head- and e-cycles for skipping minimality checks" << std::endl
         << "                         head             : Exploit head-cycles for skipping minimality checks" << std::endl
         << "                         e                : Exploit e-cycles for skipping minimality checks" << std::endl
         << "                         em               : Exploit e-cycles and (anti)monotonicity of predicate parameters for skipping minimality checks" << std::endl
+        << "                         emi              : Exploit e-cycles, (anti)monotonicity of predicate parameters and current interpretation for skipping minimality checks" << std::endl
         << "                         none             : Do not exploit head- or e-cycles for skipping minimality checks" << std::endl
         << "     --noflpcriterion Do no apply decision criterion to skip the FLP check." << std::endl
         << "                      (equivalent to --flpcriterion=none)" << std::endl
@@ -1474,26 +1475,37 @@ Config& config, ProgramCtx& pctx)
                     if (cycle == "all") {
                         pctx.config.setOption("FLPDecisionCriterionE", 1);
                         pctx.config.setOption("FLPDecisionCriterionEM", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEMI", 1);
                         pctx.config.setOption("FLPDecisionCriterionHead", 1);
                     }
                     else if (cycle == "head") {
                         pctx.config.setOption("FLPDecisionCriterionE", 0);
                         pctx.config.setOption("FLPDecisionCriterionEM", 0);
+                        pctx.config.setOption("FLPDecisionCriterionEMI", 0);
                         pctx.config.setOption("FLPDecisionCriterionHead", 1);
                     }
                     else if (cycle == "e") {
                         pctx.config.setOption("FLPDecisionCriterionE", 1);
                         pctx.config.setOption("FLPDecisionCriterionEM", 0);
+                        pctx.config.setOption("FLPDecisionCriterionEMI", 0);
                         pctx.config.setOption("FLPDecisionCriterionHead", 0);
                     }
                     else if (cycle == "em") {
                         pctx.config.setOption("FLPDecisionCriterionE", 1);
                         pctx.config.setOption("FLPDecisionCriterionEM", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEMI", 0);
+                        pctx.config.setOption("FLPDecisionCriterionHead", 0);
+                    }
+                    else if (cycle == "emi") {
+                        pctx.config.setOption("FLPDecisionCriterionE", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEM", 1);
+                        pctx.config.setOption("FLPDecisionCriterionEMI", 1);
                         pctx.config.setOption("FLPDecisionCriterionHead", 0);
                     }
                     else if (cycle == "none") {
                         pctx.config.setOption("FLPDecisionCriterionE", 0);
                         pctx.config.setOption("FLPDecisionCriterionEM", 0);
+                        pctx.config.setOption("FLPDecisionCriterionEMI", 0);
                         pctx.config.setOption("FLPDecisionCriterionHead", 0);
                     }
                     else {
