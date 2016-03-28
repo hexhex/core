@@ -15,5 +15,5 @@ all-local:
 distclean:
 	-rm -rf Makefile
 
-EXTRA_DIST = main.cc.patch SConstruct.patch SConstruct-lua.patch #gringo-clang.patch gringo.patch gringo-patch-cond.diff gringo-patch-domain-fwd-decl.diff gringo-patch-domain-fwd-decl-builtsource.diff gringo-patch-unpool-pred.diff
+EXTRA_DIST = main.cc.patch SConstruct.patch SConstruct-lua.patch SConstruct-python.patch #gringo-clang.patch gringo.patch gringo-patch-cond.diff gringo-patch-domain-fwd-decl.diff gringo-patch-domain-fwd-decl-builtsource.diff gringo-patch-unpool-pred.diff
 
