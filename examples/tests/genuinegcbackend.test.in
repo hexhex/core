@@ -23,11 +23,11 @@ weak5.hex weak5.out --solver=genuinegc --strongnegation-enable --weak-enable --h
 weak_bench_small.hex weak_bench_small.out --solver=genuinegc --weak-enable
 weak_bench_small.hex weak_bench_small.out --solver=genuinegc --weak-enable --heuristics=monolithic
 weak6a.hex weak6a.out --solver=genuinegc --strongnegation-enable --weak-enable
-weak6a.hex weak6a.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
+#weak6a.hex weak6a.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
 weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable
-weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
+#weak6b.hex weak6b.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
 weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable
-weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
+#weak6c.hex weak6c.out --solver=genuinegc --strongnegation-enable --weak-enable --heuristics=monolithic
 # weak7 does currently not work without monolithic heuristics
 # weak7.hex weak7.out --solver=genuinegc --weak-enable
 weak7.hex weak7.out --solver=genuinegc --weak-enable --heuristics=monolithic
