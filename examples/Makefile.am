@@ -29,6 +29,7 @@ EXTRA_DIST = \
     choicerule3.hex \
     choicerule4.hex \
     choicerule5.hex \
+    choicerule6.hex \
     comments.hex \
     conditional1.hex \
     conditional2.hex \
@@ -198,6 +199,7 @@ EXTRA_DIST = \
     tests/choicerule3.out \
     tests/choicerule4.out \
     tests/choicerule5.out \
+    tests/choicerule6.out \
     tests/comments.out \
     tests/conditional1.out \
     tests/conditional2.out \

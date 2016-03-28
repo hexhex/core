@@ -749,7 +749,7 @@ namespace
                 answerset->interpretation->getStorage() = interpretation->getStorage();
                 answerset->computeWeightVector();
                 LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()) << ", old best: " << printvector(ctx->currentOptimum));
-                assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
+//                assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
                 ctx->currentOptimum = answerset->getWeightVector();
                 // if we have at least one weight we need to complete the vector
                 // in order to obtain bounds for all levels
