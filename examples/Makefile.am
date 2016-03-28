@@ -181,7 +181,9 @@ EXTRA_DIST = \
     tests/agg6.out \
     tests/agg7.out \
     tests/agg8.out \
-    tests/aggextcycle1.out \
+    tests/aggextcycle1e.out \
+    tests/aggextcycle1sa.out \
+    tests/aggextcycle1s.stderr \
     tests/anonymousvariable1.out \
     tests/auxinput.out \
     tests/builtin_safety1.stderr \
