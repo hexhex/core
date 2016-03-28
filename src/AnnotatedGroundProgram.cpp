@@ -266,6 +266,7 @@ const AnnotatedGroundProgram& other)
     eaMasks = other.eaMasks;
     auxToEA = other.auxToEA;
     programMask = other.programMask;
+    depNodes = other.depNodes;
     depGraph = other.depGraph;
     depSCC = other.depSCC;
     componentOfAtom = other.componentOfAtom;
@@ -846,7 +847,7 @@ void AnnotatedGroundProgram::computeECycles()
                     std::back_inserter(reachable),
                     boost::on_discover_vertex()))));
 
-                if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()) {
+                if (std::find(reachable.begin(), reachable.end(), depNodes[e.first]) != reachable.end()) {
                                  // yes, there is a cycle
                     cyclicInputAtoms->setFact(e.second);
                 }
@@ -971,8 +972,8 @@ namespace
 
 bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr) const
 {
-/*
-    DBGLOG(DBG, "Computing ecycles wrt. interpretation");
+
+    DBGLOG(DBG, "Computing e-cycles wrt. interpretation " << *intr);
 
     // filter the graph: eliminate vertices which are not in intr
     struct edge_filter {
@@ -980,7 +981,7 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
         edge_filter() {}
         edge_filter(InterpretationConstPtr intr) : intr(intr) { }
         bool operator()(const boost::detail::edge_desc_impl<boost::bidirectional_tag, long unsigned int>& e) const {
-            return true; //intr->getFact(e.source) && intr->getFact(e.target);
+            return intr->getFact(e.m_source) && intr->getFact(e.m_target);
         }
     };
     struct node_filter {
@@ -994,8 +995,8 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
     edge_filter efilter(intr);
     node_filter nfilter(intr);
     boost::filtered_graph<Graph, edge_filter, node_filter> depGraph2(depGraph, efilter, nfilter);
-*/
 
+/*
     // make a copy of the dependency graph
     Graph depGraph2;
     boost::copy_graph(depGraph, depGraph2);
@@ -1005,6 +1006,7 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
     BOOST_FOREACH (IDAddress adr, depSCC[compNr]) {
         if (!intr->getFact(adr)) skipnodes.insert(depNodes.at(adr));
     }
+
     boost::graph_traits<Graph>::edge_iterator vi, vi_end;
     std::vector<Graph::edge_descriptor> delEdges;
     for (boost::tuples::tie(vi, vi_end) = edges(depGraph2); vi != vi_end; vi++) {
@@ -1019,10 +1021,12 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
     BOOST_FOREACH (Node n, skipnodes) {
         remove_vertex(n, depGraph2);
     }
+*/
 
     // make a BFS in the reduced graph
     typedef std::pair<IDAddress, IDAddress> Edge;
     BOOST_FOREACH (Edge e, externalEdges) {
+        DBGLOG(DBG, "Checking e-edge " << printToString<RawPrinter>(ctx->registry()->ogatoms.getIDByAddress(e.first), ctx->registry()) << " --> " << printToString<RawPrinter>(ctx->registry()->ogatoms.getIDByAddress(e.second), ctx->registry()));
         if (!intr->getFact(e.first)) continue;
         if (!intr->getFact(e.second)) continue;
         if (std::find(depSCC[compNr].begin(), depSCC[compNr].end(), e.first) == depSCC[compNr].end()) continue;
@@ -1037,14 +1041,18 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
             std::back_inserter(reachable),
             boost::on_discover_vertex()))));
 
-        if (std::find(reachable.begin(), reachable.end(), depNodes.at(e.second)) != reachable.end()) {
+        if (std::find(reachable.begin(), reachable.end(), depNodes.at(e.first)) != reachable.end()) {
             // yes, there is a cycle
             return true;
         }
     }
-    if (hasHeadCycles(compNr)) {
-        DBGLOG(DBG, "Component " << compNr << " has no e-cycle wrt. interpretation, although it has in general e-cycles");
+
+#ifndef NDEBUG
+    if (hasECycles(compNr)) {
+        DBGLOG(DBG, "Component " << compNr << " has no e-cycle wrt. interpretation, although it has e-cycles in general");
+        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidecycintskip, "E-cycles broken by interpretation", 1);
     }
+#endif
 
     return false;
 }
@@ -1061,9 +1069,11 @@ bool AnnotatedGroundProgram::hasECycles(InterpretationConstPtr intr) const
     for (uint32_t i = 0; i < depSCC.size(); ++i) {
         if (hasECycles(i, intr)) return true;
     }
-    if (hasHeadCycles()) {
-        DBGLOG(DBG, "Program has no e-cycle wrt. interpretation, although it has in general e-cycles");
+#ifndef NDEBUG
+    if (hasECycles()) {
+        DBGLOG(DBG, "Program has no e-cycle wrt. interpretation, although it has e-cycles in general");
     }
+#endif
     return false;
 }
 
