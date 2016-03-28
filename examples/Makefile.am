@@ -5,10 +5,16 @@ EXTRA_DIST = \
     tests/libclingobackend.test \
     tests/README.txt \
     3col.hex \
+    csv1.hex \
     agg1.hex \
     agg2.hex \
     agg3.hex \
     agg4.hex \
+    agg5.hex \
+    agg6.hex \
+    agg7.hex \
+    agg8.hex \
+    aggextcycle1.hex \
     anonymousvariable1.hex \
     auxinput.hex \
     builtin_safety1.hex \
@@ -17,7 +23,14 @@ EXTRA_DIST = \
     builtin_safety1c.hex \
     builtin_safety1d.hex \
     builtin_safety2.hex \
+    choicerule1.hex \
+    choicerule2.hex \
+    choicerule3.hex \
+    choicerule4.hex \
+    choicerule5.hex \
     comments.hex \
+    conditional1.hex \
+    conditional2.hex \
     duplicaterule.asp \
     empty.hex \
     equality.hex \
@@ -49,6 +62,9 @@ EXTRA_DIST = \
     functionsymbols4.hex \
     functionsymbols5.hex \
     functionsymbols6.hex \
+    headguard1.hex \
+    headguard2.hex \
+    headguard3.hex \
     higherorder1.hex \
     higherorder2.hex \
     higherorder3.hex \
@@ -87,9 +103,11 @@ EXTRA_DIST = \
     weak2.hex \
     weak3.hex \
     weak4.hex \
+    weak5.hex \
     weak6a.hex \
     weak6b.hex \
     weak6c.hex \
+    weak7.hex \
     weak_bench_small.hex \
     maxint.hex \
     naftest.hex \
@@ -101,6 +119,7 @@ EXTRA_DIST = \
     non3col.hex \
     non3col2.hex \
     notstronglysafe1.hex \
+    notstronglysafe2.hex \
     notwellfounded1.hex \
     notwellfounded2.hex \
     operators.hex \
@@ -153,10 +172,16 @@ EXTRA_DIST = \
     module-EvenOddTwoCalls1.mlp \
     module3-NotExist.mlp \
     tests/3col.out \
+    tests/csv1.out \
     tests/agg1.out \
     tests/agg2.out \
     tests/agg3.out \
     tests/agg4.out \
+    tests/agg5.out \
+    tests/agg6.out \
+    tests/agg7.out \
+    tests/agg8.out \
+    tests/aggextcycle1.out \
     tests/anonymousvariable1.out \
     tests/auxinput.out \
     tests/builtin_safety1.stderr \
@@ -165,7 +190,14 @@ EXTRA_DIST = \
     tests/builtin_safety1c.stderr \
     tests/builtin_safety1d.out \
     tests/builtin_safety2.out \
+    tests/choicerule1.out \
+    tests/choicerule2.out \
+    tests/choicerule3.out \
+    tests/choicerule4.out \
+    tests/choicerule5.out \
     tests/comments.out \
+    tests/conditional1.out \
+    tests/conditional2.out \
     tests/duplicaterule.out \
     tests/empty.out \
     tests/equality.out \
@@ -189,6 +221,9 @@ EXTRA_DIST = \
     tests/functionsymbols4.out \
     tests/functionsymbols5.out \
     tests/functionsymbols6.stderr \
+    tests/headguard1.out \
+    tests/headguard2.out \
+    tests/headguard3.out \
     tests/higherorder1.out \
     tests/higherorder2.out \
     tests/higherorder3.out \
@@ -227,9 +262,12 @@ EXTRA_DIST = \
     tests/weak1r.out \
     tests/weak2.out \
     tests/weak3.out \
+    tests/weak4.out \
+    tests/weak5.out \
     tests/weak6a.out \
     tests/weak6b.out \
     tests/weak6c.out \
+    tests/weak7.out \
     tests/weak_bench_small.out \
     tests/maxint.out \
     tests/naftest.out \
@@ -242,6 +280,7 @@ EXTRA_DIST = \
     tests/non3col.out \
     tests/non3col2.out \
     tests/notstronglysafe1.stderr \
+    tests/notstronglysafe2.stderr \
     tests/notwellfounded1_nofacts.out \
     tests/notwellfounded1_withfacts.out \
     tests/notwellfounded2.out \
