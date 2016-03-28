@@ -1047,12 +1047,10 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
         }
     }
 
-#ifndef NDEBUG
     if (hasECycles(compNr)) {
         DBGLOG(DBG, "Component " << compNr << " has no e-cycle wrt. interpretation, although it has e-cycles in general");
         DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidecycintskip, "E-cycles broken by interpretation", 1);
     }
-#endif
 
     return false;
 }
