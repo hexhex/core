@@ -6,6 +6,7 @@ EXTRA_DIST = \
     tests/README.txt \
     3col.hex \
     csv1.hex \
+    csv1.csv \
     agg1.hex \
     agg2.hex \
     agg3.hex \
