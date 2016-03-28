@@ -225,7 +225,7 @@ EXTRA_DIST = \
     tests/functionsymbols6.stderr \
     tests/headguard1.out \
     tests/headguard2.out \
-    tests/headguard3.out \
+    tests/headguard3.stderr \
     tests/higherorder1.out \
     tests/higherorder2.out \
     tests/higherorder3.out \
