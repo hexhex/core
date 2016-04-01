@@ -1803,6 +1803,11 @@ void configurePluginPath(std::string& userPlugindir)
     if( !userPlugindir.empty() )
         searchpath << userPlugindir << ';';
 
+    #ifdef LOCAL_PLUGIN_DIR
+        reset = true;
+        searchpath << LOCAL_PLUGIN_DIR << ';';
+    #endif
+
     if( !reset ) {
         // add LD_LIBRARY_PATH
         const char *envld = ::getenv("LD_LIBRARY_PATH");

@@ -141,7 +141,7 @@ function buildPlugin {
     echo -e "===> Build"
 
     # Build plugin
-    mingw make LDFLAGS="-L$LIB_DIR/usr/local/lib -no-undefined" &> $OUTPUT_IO
+    mingw make LDFLAGS="-L$LIB_DIR/usr/local/lib -lboost_system -ldlvhex2-base -no-undefined" &> $OUTPUT_IO
     if [ $? -ne 0 ]; then
       echo -e "===> ${T_ERROR} Error building library"
     else

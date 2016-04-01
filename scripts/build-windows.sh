@@ -222,7 +222,7 @@ function buildCore {
     sed -i "1s|^|62c62\n< env['CXX']            = 'g++'\n---\n> env['CXX']            = 'i686-w64-mingw32-g++'\n68c68\n< env['LIBPATH']        = []\n---\n> env['LIBPATH']        = ['$LIB_DIR/usr/local/lib', '$MINGW_DIR/libs']\n|" buildclaspgringo/SConstruct.patch
 
     # see http://curl.haxx.se/docs/faq.html#Link_errors_when_building_libcur about CURL_STATICLIB define
-    mingw ./configure LDFLAGS="-static -static-libgcc -static-libstdc++ -L$LIB_DIR/usr/local/lib" --prefix $LIB_DIR/usr/local PKG_CONFIG_PATH=$LIB_DIR/usr/local/lib/pkgconfig --enable-python --enable-static --disable-shared --enable-static-boost --with-boost=$LIB_DIR/usr/local --with-libcurl=$LIB_DIR/usr/local --host=i686-w64-mingw32 CFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CXXFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CPPFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB"
+    mingw ./configure LDFLAGS="-static -static-libgcc -static-libstdc++ -L$LIB_DIR/usr/local/lib" --prefix $LIB_DIR/usr/local PKG_CONFIG_PATH=$LIB_DIR/usr/local/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-static --disable-shared --enable-static-boost --with-boost=$LIB_DIR/usr/local --with-libcurl=$LIB_DIR/usr/local --host=i686-w64-mingw32 CFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CXXFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CPPFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB"
     mingw make
     mingw make install PREFIX=$LIB_DIR/usr/local
   fi
