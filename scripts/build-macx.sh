@@ -106,14 +106,18 @@ function buildCore {
   # TODO: Better solution for that?
   export PATH=/usr/local/Cellar/bison/3.0.4/bin:$PATH
 
-  # Configure build
-  # ./bootstrap.sh &> $OUTPUT_IO
-  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
+  ./bootstrap.sh &> $OUTPUT_IO
 
   echo "==> Patching Makefile"
   # TODO
-  # -> In Makefile: libdlvhex2-base.la may not include$(libdlvhex2_base_la_LIBADD),
+  echo "Comment line 221 (libdlvhex2_base_la_LIBADD=..) in src/Makefile.am and press Enter"
+  read
+  # Reason: In Makefile: libdlvhex2-base.la may not include$(libdlvhex2_base_la_LIBADD),
   # otherwise boost static libs are added to static lib and it won't link anymore!
+
+  # Configure build
+  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
+
 
   echo "==> Building core binary"
 
