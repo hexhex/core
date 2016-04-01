@@ -975,28 +975,7 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
 
     DBGLOG(DBG, "Computing e-cycles wrt. interpretation " << *intr);
 
-    // filter the graph: eliminate vertices which are not in intr
-    struct edge_filter {
-        InterpretationConstPtr intr;
-        edge_filter() {}
-        edge_filter(InterpretationConstPtr intr) : intr(intr) { }
-        bool operator()(const boost::detail::edge_desc_impl<boost::bidirectional_tag, long unsigned int>& e) const {
-            return intr->getFact(e.m_source) && intr->getFact(e.m_target);
-        }
-    };
-    struct node_filter {
-        InterpretationConstPtr intr;
-        node_filter() {}
-        node_filter(InterpretationConstPtr intr) : intr(intr) { }
-        bool operator()(const Node& n) const {
-            return intr->getFact(n);
-        }
-    };
-    edge_filter efilter(intr);
-    node_filter nfilter(intr);
-    boost::filtered_graph<Graph, edge_filter, node_filter> depGraph2(depGraph, efilter, nfilter);
-
-/*
+#ifdef WIN32
     // make a copy of the dependency graph
     Graph depGraph2;
     boost::copy_graph(depGraph, depGraph2);
@@ -1021,7 +1000,28 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
     BOOST_FOREACH (Node n, skipnodes) {
         remove_vertex(n, depGraph2);
     }
-*/
+#else
+    // filter the graph: eliminate vertices which are not in intr
+    struct edge_filter {
+        InterpretationConstPtr intr;
+        edge_filter() {}
+        edge_filter(InterpretationConstPtr intr) : intr(intr) { }
+        bool operator()(const boost::detail::edge_desc_impl<boost::bidirectional_tag, long unsigned int>& e) const {
+            return intr->getFact(e.m_source) && intr->getFact(e.m_target);
+        }
+    };
+    struct node_filter {
+        InterpretationConstPtr intr;
+        node_filter() {}
+        node_filter(InterpretationConstPtr intr) : intr(intr) { }
+        bool operator()(const Node& n) const {
+            return intr->getFact(n);
+        }
+    };
+    edge_filter efilter(intr);
+    node_filter nfilter(intr);
+    boost::filtered_graph<Graph, edge_filter, node_filter> depGraph2(depGraph, efilter, nfilter);
+#endif
 
     // make a BFS in the reduced graph
     typedef std::pair<IDAddress, IDAddress> Edge;
