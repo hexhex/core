@@ -101,7 +101,7 @@ function buildCore {
 
   # Configure build
   ./bootstrap.sh &> $OUTPUT_IO
-  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
+  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
 
   echo "==> Building core binary"
 
