@@ -339,6 +339,25 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
+#
+# the local plugin dir is a relative path from the current binary dir,
+# which is disabled by default and can be
+# overridden by setting LOCAL_PLUGIN_DIR=... at configure-time
+# if set, the plugin loading from the SYS_PLUGIN_DIR and USER_PLUGIN_DIR
+# gets disabled
+#
+if test "$LOCAL_PLUGIN_DIR" = ""; then
+    localplugindir=""
+else
+    localplugindir="$LOCAL_PLUGIN_DIR"
+    # only set if a custom directory is set
+    CPPFLAGS="$CPPFLAGS -DLOCAL_PLUGIN_DIR='\"$localplugindir\"'"
+fi
+
+# this goes into dlvhex2.pc
+AC_SUBST(localplugindir)
+
+
 WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/genuineiibackend.test"
 AC_SUBST(WHICH_DLVHEX_TESTS)
 
