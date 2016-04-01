@@ -82,7 +82,10 @@ function buildBoost {
 
   # Build boost
   ./bootstrap.sh --prefix=$LIB_DIR --with-python-version=$PYTHON_VERSION &> $OUTPUT_IO
-  ./b2 -q link=static runtime-link=static install &> $OUTPUT_IO
+  # PIC needed for linking shared plugins with static libs:
+  # http://stackoverflow.com/a/19768349/272089
+  # http://stackoverflow.com/q/27848105/272089
+  ./b2 -q cxxflags=-fPIC link=static runtime-link=static install &> $OUTPUT_IO
 }
 
 function buildCore {
@@ -101,7 +104,7 @@ function buildCore {
 
   # Configure build
   ./bootstrap.sh &> $OUTPUT_IO
-  ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
+  ./configure --prefix $LIB_DIR CXXFLAGS=-fPIC PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-shared=no --enable-static-boost --with-boost=$LIB_DIR &> $OUTPUT_IO
 
   echo "==> Building core binary"
 
