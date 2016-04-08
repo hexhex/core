@@ -61,19 +61,27 @@ Term::Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg): kind
 void Term::updateSymbolOfNestedTerm(Registry* reg)
 {
     std::stringstream ss;
-    ss << reg->terms.getByID(arguments[0]).symbol;
-    if (arguments.size() > 1) {
-        ss << "(";
-        for (uint32_t i = 1; i < arguments.size(); ++i) {
-            ss << (i > 1 ? "," : "");
-            if (arguments[i].isIntegerTerm()) {
-                ss << arguments[i].address;
+    if (kind == ID::SUBKIND_TERM_RANGE) {
+        // range terms are printed without function symbol and parantheses
+        ss << arguments[1].address;
+        ss << "..";
+        ss << arguments[2].address;
+        symbol = ss.str();
+    }else{
+        ss << reg->terms.getByID(arguments[0]).symbol;
+        if (arguments.size() > 1) {
+            ss << "(";
+            for (uint32_t i = 1; i < arguments.size(); ++i) {
+                ss << (i > 1 ? "," : "");
+                if (arguments[i].isIntegerTerm()) {
+                    ss << arguments[i].address;
+                }
+                else {
+                    ss << reg->terms.getByID(arguments[i]).symbol;
+                }
             }
-            else {
-                ss << reg->terms.getByID(arguments[i]).symbol;
-            }
+            ss << ")";
         }
-        ss << ")";
     }
 
     symbol = ss.str();

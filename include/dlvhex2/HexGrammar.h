@@ -201,6 +201,7 @@ class DLVHEX_EXPORT HexGrammarSemantics
         DLVHEX_DEFINE_SEMANTIC_ACTION(termId, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromCIdent, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromFunctionTerm, ID);
+        DLVHEX_DEFINE_SEMANTIC_ACTION(termFromRange, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromInteger, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromString, ID);
         DLVHEX_DEFINE_SEMANTIC_ACTION(termFromVariable, ID);

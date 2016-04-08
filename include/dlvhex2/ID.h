@@ -120,6 +120,8 @@ private ostream_printable<ID>
     static const IDKind SUBKIND_TERM_PREDICATE = 0x04000000;
     /** \brief Marks term IDs as nested terms (terms consisting of function symbols and sub-terms). */
     static const IDKind SUBKIND_TERM_NESTED =    0x05000000;
+    /** \brief Marks term IDs as range terms of kind a..b (special kind of nested terms). */
+    static const IDKind SUBKIND_TERM_RANGE =     0x06000000;
 
     /** \brief Marks atom IDs as ordinary ground atoms. */
     static const IDKind SUBKIND_ATOM_ORDINARYG = 0x00000000;
@@ -391,6 +393,11 @@ private ostream_printable<ID>
      * The given ID must be a valid term ID!
      * @return True if it is a nested term ID. */
     inline bool isNestedTerm() const { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_NESTED; }
+    /** \brief Checks if a term ID represents a range term.
+     *
+     * The given ID must be a valid term ID!
+     * @return True if it is a range term ID. */
+    inline bool isRangeTerm() const { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_RANGE; }
 
     /** \brief Checks if an ID represents an atom.
      * @return True if it is an atom ID. */

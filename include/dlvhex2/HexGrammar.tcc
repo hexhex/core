@@ -119,6 +119,23 @@ struct sem<HexGrammarSemantics::termFromFunctionTerm>
 };
 
 template<>
+struct sem<HexGrammarSemantics::termFromRange>
+{
+    void operator()(HexGrammarSemantics& mgr, const boost::fusion::vector2<ID, ID>& source, ID& target) {
+        std::vector<ID> args;
+        Term functionSymbol(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "range");
+        ID fid = mgr.ctx.registry()->terms.getIDByString(functionSymbol.symbol);
+        if (fid == ID_FAIL) fid = mgr.ctx.registry()->terms.storeAndGetID(functionSymbol);
+        args.push_back(fid);
+        args.push_back(boost::fusion::at_c<0>(source));
+        args.push_back(boost::fusion::at_c<1>(source));
+        Term rangeTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED | ID::SUBKIND_TERM_RANGE, args, mgr.ctx.registry());
+        target = mgr.ctx.registry()->terms.getIDByString(rangeTerm.symbol);
+        if (target == ID_FAIL) target = mgr.ctx.registry()->terms.storeAndGetID(rangeTerm);
+    }
+};
+
+template<>
 struct sem<HexGrammarSemantics::termFromInteger>
 {
     void operator()(HexGrammarSemantics& mgr, unsigned int source, ID& target) {
@@ -959,6 +976,7 @@ sem(sem)
     term
         = termExt                                                            [ Sem::termId(sem) ]   // termId is a workaround: for some reason the value of the subexpression must be explicitly copied, otherwise term evaluates to ID_FAIL
         | ( cident >> qi::lit('(') >> -terms >> qi::lit(')') > qi::eps )     [ Sem::termFromFunctionTerm(sem) ]
+        | (primitiveTerm >> qi::lit("..") >> primitiveTerm)                  [ Sem::termFromRange(sem) ]
         | primitiveTerm                                                      [ Sem::termId(sem) ];
 
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
