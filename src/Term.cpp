@@ -61,7 +61,7 @@ Term::Term(IDKind kind, const std::vector<ID>& arguments, RegistryPtr reg): kind
 void Term::updateSymbolOfNestedTerm(Registry* reg)
 {
     std::stringstream ss;
-    if (kind & ID::PROPERTY_MASK == ID::PROPERTY_TERM_RANGE) {
+    if ((kind & ID::PROPERTY_MASK) == ID::PROPERTY_TERM_RANGE) {
         // range terms are printed without function symbol and parantheses
         ss << arguments[1].address;
         ss << "..";
@@ -82,7 +82,6 @@ void Term::updateSymbolOfNestedTerm(Registry* reg)
             ss << ")";
         }
     }
-
     symbol = ss.str();
 }
 
