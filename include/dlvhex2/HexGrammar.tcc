@@ -129,7 +129,7 @@ struct sem<HexGrammarSemantics::termFromRange>
         args.push_back(fid);
         args.push_back(boost::fusion::at_c<0>(source));
         args.push_back(boost::fusion::at_c<1>(source));
-        Term rangeTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED | ID::SUBKIND_TERM_RANGE, args, mgr.ctx.registry());
+        Term rangeTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_NESTED | ID::PROPERTY_TERM_RANGE, args, mgr.ctx.registry());
         target = mgr.ctx.registry()->terms.getIDByString(rangeTerm.symbol);
         if (target == ID_FAIL) target = mgr.ctx.registry()->terms.storeAndGetID(rangeTerm);
     }
