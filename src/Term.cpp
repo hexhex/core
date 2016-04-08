@@ -66,7 +66,6 @@ void Term::updateSymbolOfNestedTerm(Registry* reg)
         ss << arguments[1].address;
         ss << "..";
         ss << arguments[2].address;
-        symbol = ss.str();
     }else{
         ss << reg->terms.getByID(arguments[0]).symbol;
         if (arguments.size() > 1) {
