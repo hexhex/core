@@ -203,6 +203,7 @@
  * Therefore, this encodes that whenever all atoms from 1. are true, then the output atom <em>must not be false</em> (this is why the negative output atom is added).
  * <ul>
  *   <li>\code{.txt}bool learn(tup)\endcode Learns a nogood as a tuple of atom IDs or their negations \em tup; returns if learning was enabled.</li>
+ *   <li>\code{.txt}bool learnSupportSets()\endcode Returns <em>True</em> if the plugin was called for support set learning, and <em>False</em> if it was called for query answering. If the external source provides a complete set support sets (declared via properties) and it was called for support set learning, then it must return all support sets. If it was called for query answering, then it must answer the query. However, it may also answer the query if it was called for support set learning and it may also return support sets if it was called for query answering (although this is not necessary and not suggested for efficiency reasons).</li>
  *   <li>\code{.txt}ID storeOutputAtom(args, [sign])\endcode Constructs an external atom output atom from IDs or values \em args (for learning purposes) and its sign, where true (default) means positive and false means negative, and returns its ID.</li>
  * </ul>
  * For instance, the nogood <em>{ p(a), -q(a), -&diff[p,q](a) }</em> encodes that whenever the atom <em>p(a)</em> is true and the atom <em>q(a)</em> is false, then the atom &diff[p,q](a) must be true (i.e. must not be false) since constant <em>a</em> will be in the output of the set difference of <em>p</em> and <em>q</em>.

@@ -352,6 +352,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
                 // create body of support rule
                 BOOST_FOREACH (ID lit, ng){
                     ID flit = (lit.isOrdinaryGroundAtom() ? reg->ogatoms.getIDByAddress(lit.address) : reg->onatoms.getIDByAddress(lit.address));
+                    flit.kind |= (lit.kind & ID::NAF_MASK);
                     if (!flit.isExternalAuxiliary()) {
                         // replace default-negated body atoms by the atoms which explicitly represent falsehood
                         if (flit.isNaf()){
@@ -418,7 +419,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
                             DBGLOG(DBG, "Saturation rule: " << printToString<RawPrinter>(saturationRuleID, reg));
                             program.idb.push_back(saturationRuleID);
 
-                            // one of "a" or "af" must be true whenever "aux" is not false
+                            // one of "a" or "af" must be true whenever "naux" is not false
                             Rule guessAorAF(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ);
                             guessAorAF.head.push_back(aID);
                             guessAorAF.head.push_back(negAID);
@@ -440,15 +441,15 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     // 1. substitute external atom guessing rule "e v ne :- B" by "ne :- not a"
     // 2. replace external atom auxiliaries 'r'/'n' by 'R'/'N' in all rules
     DBGLOG(DBG, "Replacing external atom auxiliaries");
-    OrdinaryASPProgram inlinedProgram(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
+    OrdinaryASPProgram inlinedProgram(reg, std::vector<ID>(), postprocessedInput, factory.ctx.maxint);
     for (int rIndex = 0; rIndex < program.idb.size(); ++rIndex) {
         DBGLOG(DBG, "Processing rule " << printToString<RawPrinter>(program.idb[rIndex], reg));
         const Rule& rule = reg->rules.getByID(program.idb[rIndex]);
         if (rule.isEAGuessingRule() && eliminatedExtPreds->getFact(reg->getIDByAuxiliaryConstantSymbol(reg->lookupOrdinaryAtom(rule.head[0]).tuple[0]).address)){
             Rule simplifiedGuessingRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-            simplifiedGuessingRule.head.push_back(rule.head[1]);
+            simplifiedGuessingRule.head.push_back(replacePredForInlinedEAs(rule.head[1], eliminatedExtPreds));
             simplifiedGuessingRule.body = rule.body;
-            simplifiedGuessingRule.body.push_back(ID::nafLiteralFromAtom(rule.head[0]));
+            simplifiedGuessingRule.body.push_back(ID::nafLiteralFromAtom(replacePredForInlinedEAs(rule.head[0], eliminatedExtPreds)));
             ID simplifiedGuessingRuleID = reg->storeRule(simplifiedGuessingRule);
             DBGLOG(DBG, "Simplified guessing rule " << printToString<RawPrinter>(program.idb[rIndex], reg) << " to " << printToString<RawPrinter>(simplifiedGuessingRuleID, reg));
             inlinedProgram.idb.push_back(simplifiedGuessingRuleID);
@@ -473,7 +474,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
                     if (!newRule) {
                         newRule = new Rule(rule);
                     }
-                    newRule->body[bIndex] = newAtomID;
+                    newRule->body[bIndex] = (newRule->body[bIndex].isNaf() ? ID::nafLiteralFromAtom(newAtomID) : ID::posLiteralFromAtom(newAtomID));
                 }
             }
             // was the rule modified?

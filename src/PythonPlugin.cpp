@@ -214,6 +214,7 @@ namespace PythonAPI
     const PluginAtom::Query* emb_query;
     PluginAtom::Answer* emb_answer;
     NogoodContainerPtr emb_nogoods;
+    bool emb_learnsupportsets;
     PredicateMaskPtr emb_eareplacements;
     std::vector<PluginAtomPtr> *emb_pluginAtoms;
     boost::python::object main;
@@ -252,6 +253,7 @@ class PythonAtom : public PluginAtom
                 PythonAPI::emb_query = &query;
                 PythonAPI::emb_answer = &answer;
                 PythonAPI::emb_nogoods = nogoods;
+                PythonAPI::emb_learnsupportsets = false;
                 if (query.eatomID != ID_FAIL) {
                     PythonAPI::emb_eareplacements = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements();
                 }
@@ -274,6 +276,47 @@ class PythonAtom : public PluginAtom
                 PythonAPI::emb_query = NULL;
                 PythonAPI::emb_answer = NULL;
                 PythonAPI::emb_nogoods.reset();
+                PythonAPI::emb_learnsupportsets = false;
+                PythonAPI::emb_eareplacements.reset();
+            }
+            catch(boost::python::error_already_set& e) {
+                PyErr_Print();
+            }
+        }
+
+        virtual void learnSupportSets(const Query& query, NogoodContainerPtr nogoods)
+        {
+            try
+            {
+                Answer answer;
+                DBGLOG(DBG, "Preparing Python for supportset learning");
+                PythonAPI::emb_query = &query;
+                PythonAPI::emb_answer = &answer;
+                PythonAPI::emb_nogoods = nogoods;
+                PythonAPI::emb_learnsupportsets = true;
+                if (query.eatomID != ID_FAIL) {
+                    PythonAPI::emb_eareplacements = query.ctx->registry()->eatoms.getByID(query.eatomID).pluginAtom->getReplacements();
+                }
+
+                boost::python::tuple t;
+                DBGLOG(DBG, "Constructing input tuple");
+                for (int i = 0; i < getInputArity(); ++i) {
+                    if (getInputType(i) != TUPLE) t += boost::python::make_tuple(query.input[i]);
+                    else {
+                        boost::python::tuple tupleparameters;
+                        for (int var = i; var < query.input.size(); ++var) tupleparameters += boost::python::make_tuple(query.input[var]);
+                        t += boost::python::make_tuple(tupleparameters);
+                    }
+                }
+
+                DBGLOG(DBG, "Calling " << getPredicate() << "_caller helper function");
+                PythonAPI::main.attr((getPredicate() + "_caller").c_str())(t);
+
+                DBGLOG(DBG, "Resetting Python");
+                PythonAPI::emb_query = NULL;
+                PythonAPI::emb_answer = NULL;
+                PythonAPI::emb_nogoods.reset();
+                PythonAPI::emb_learnsupportsets = false;
                 PythonAPI::emb_eareplacements.reset();
             }
             catch(boost::python::error_already_set& e) {
@@ -692,6 +735,10 @@ namespace PythonAPI
         }
     }
 
+    bool learnSupportSets() {
+        return emb_learnsupportsets;
+    }
+
     ID storeOutputAtomWithSign(boost::python::tuple args, bool sign) {
 
         Tuple outputTuple;
@@ -930,7 +977,6 @@ namespace PythonAPI
             PythonAPI::emb_ctx->resetCacheOfPlugins(false);
         }
     }
-
 };
 
 BOOST_PYTHON_MODULE(dlvhex)
@@ -971,6 +1017,7 @@ BOOST_PYTHON_MODULE(dlvhex)
     boost::python::def("evaluateSubprogram", PythonAPI::evaluateSubprogram);
     boost::python::def("loadSubprogram", PythonAPI::loadSubprogram);
     boost::python::def("resetCacheOfPlugins", PythonAPI::resetCacheOfPlugins);
+    boost::python::def("learnSupportSets", PythonAPI::learnSupportSets);
     boost::python::class_<dlvhex::ID>("ID")
         .def("value", &PythonAPI::ID_value)
         .def("extension", &PythonAPI::ID_extension)

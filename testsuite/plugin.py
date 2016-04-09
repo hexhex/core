@@ -6,6 +6,44 @@ def multiply(a, b):
 def test(a, b, c):
 	dlvhex.output((a, a))
 
+def id(p):
+	if dlvhex.learnSupportSets():
+		dlvhex.learn((
+				dlvhex.storeAtom((p, "X")),		# if p(X) is true for some X
+				dlvhex.storeOutputAtom(()).negate()	# then () is in the output
+				));
+	else:
+		for x in dlvhex.getTrueInputAtoms():
+			dlvhex.output(())
+			return
+def neg(p):
+	if dlvhex.learnSupportSets():
+		dlvhex.learn((
+				dlvhex.storeAtom((p, )).negate(),	# if p is true
+				dlvhex.storeOutputAtom(()).negate()	# then () is in the output
+				));
+	else:
+		for x in dlvhex.getTrueInputAtoms():
+			dlvhex.output(())
+			return
+
+def aOrNotB(a,b):
+
+	if dlvhex.learnSupportSets():
+		dlvhex.learn((
+				dlvhex.storeAtom((a, )),
+				dlvhex.storeOutputAtom(()).negate()	# then () is in the output
+				));
+		dlvhex.learn((
+				dlvhex.storeAtom((b, )).negate(),
+				dlvhex.storeOutputAtom(()).negate()	# then () is in the output
+				));
+	else:
+		aIsTrue = dlvhex.isTrue(dlvhex.storeAtom((a, )))
+		bIsFalse = dlvhex.isFalse(dlvhex.storeAtom((b, )))
+		if aIsTrue or bIsFalse:
+			dlvhex.output(())
+
 def fibonacci(val):
 	dlvhex.output((fibonacci_comp(val.intValue()), ))
 	
@@ -501,8 +539,26 @@ def main():
 
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)
+
 	dlvhex.addAtom("test", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT), 2)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setSupportSets(True)
+	prop.setCompletePositiveSupportSets(True)
+	dlvhex.addAtom("id", (dlvhex.PREDICATE, ), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setSupportSets(True)
+	prop.setCompletePositiveSupportSets(True)
+	dlvhex.addAtom("neg", (dlvhex.PREDICATE, ), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setSupportSets(True)
+	prop.setCompletePositiveSupportSets(True)
+	dlvhex.addAtom("aOrNotB", (dlvhex.PREDICATE, dlvhex.PREDICATE), 0, prop)
+
 	dlvhex.addAtom("fibonacci", (dlvhex.CONSTANT, ), 1)
+
 	dlvhex.addAtom("concat", (dlvhex.TUPLE, ), 1)
 
 	prop = dlvhex.ExtSourceProperties()
