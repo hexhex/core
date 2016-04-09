@@ -138,7 +138,7 @@ ID InternalGrounder::preprocessRule(ID ruleID)
         OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
         for (uint32_t i = 1; i < oa.tuple.size(); ++i) {
             if (oa.tuple[i].isNestedTerm()) {
-                throw GeneralError("Internal grounder cannot handle function symbols");
+                throw GeneralError("Internal grounder cannot handle function symbols and ranges");
             }
         }
     }
@@ -147,7 +147,7 @@ ID InternalGrounder::preprocessRule(ID ruleID)
             OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
             for (uint32_t i = 1; i < oa.tuple.size(); ++i) {
                 if (oa.tuple[i].isNestedTerm()) {
-                    throw GeneralError("Internal grounder cannot handle function symbols");
+                    throw GeneralError("Internal grounder cannot handle function symbols and ranges");
                 }
             }
         }
@@ -155,12 +155,12 @@ ID InternalGrounder::preprocessRule(ID ruleID)
             ExternalAtom ea = reg->eatoms.getByID(a);
             for (uint32_t i = 0; i < ea.inputs.size(); ++i) {
                 if (ea.inputs[i].isNestedTerm()) {
-                    throw GeneralError("Internal grounder cannot handle function symbols");
+                    throw GeneralError("Internal grounder cannot handle function symbols and ranges");
                 }
             }
             for (uint32_t i = 0; i < ea.tuple.size(); ++i) {
                 if (ea.tuple[i].isNestedTerm()) {
-                    throw GeneralError("Internal grounder cannot handle function symbols");
+                    throw GeneralError("Internal grounder cannot handle function symbols and ranges");
                 }
             }
         }
