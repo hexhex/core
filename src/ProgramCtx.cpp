@@ -129,6 +129,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("ClaspForceSingleThreaded", 0);
     config.setOption("LazyUFSCheckerInitialization", 0);
     config.setOption("SupportSets", 0);
+    config.setOption("ExternalSourceInlining", 0);
     config.setOption("ForceGC", 0);
     config.setStringOption("PluginDirs", "");
     config.setOption("IncrementalGrounding", 0);

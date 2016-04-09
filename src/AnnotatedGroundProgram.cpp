@@ -1127,6 +1127,12 @@ ID AnnotatedGroundProgram::getIndexedEAtom(int index) const
     return indexedEatoms[index];
 }
 
+int AnnotatedGroundProgram::getIndexOfEAtom(ID eatomID) const
+{
+    for (int i = 0; i < indexedEatoms.size(); ++i)
+        if (indexedEatoms[i] == eatomID) return i;
+    return -1;
+}
 
 InterpretationConstPtr AnnotatedGroundProgram::getProgramMask() const
 {

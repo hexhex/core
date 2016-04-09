@@ -258,13 +258,19 @@ haveInconsistencyCause(false)
 
         grounder = GenuineGrounder::getInstance(factory.ctx, program, explAtoms);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
-
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
         if (!!gp.mask) mask->add(*gp.mask);
         gp.mask = InterpretationConstPtr();
+        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, factory.innerEatoms);
+
+        // external source inlining
+        if (factory.ctx.config.getOption("ExternalSourceInlining")) {
+            inlineExternalAtoms(program, grounder, annotatedGroundProgram, activeInnerEatoms);
+        }else{
+            activeInnerEatoms = factory.innerEatoms;
+        }
 
         // run solver
-        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, factory.innerEatoms);
         solver = GenuineGroundSolver::getInstance(
             factory.ctx, annotatedGroundProgram,
             explAtoms,
@@ -305,6 +311,221 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()
     DBGLOG(DBG, "Removing propagator to solver");
     solver->removePropagator(this);
     DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
+}
+
+void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram& program, GenuineGrounderPtr& grounder, AnnotatedGroundProgram& annotatedGroundProgram, std::vector<ID>& activeInnerEatoms) {
+
+    InterpretationPtr eliminatedExtPreds(new Interpretation(reg));
+    for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
+        // evaluate the external atom if it provides support sets
+        const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+        if (eatom.getExtSourceProperties().providesSupportSets()) {
+            eliminatedExtPreds->setFact(eatom.predicate.address);
+
+            DBGLOG(DBG, "Constructing support rules for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
+            SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+            learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], supportSets);
+
+            // external atom support rules
+            for (int i = 0; i < supportSets->getNogoodCount(); ++i) {
+                const Nogood& ng = supportSets->getNogood(i);
+                DBGLOG(DBG, "Processing support set " << ng.getStringRepresentation(reg));
+                Rule supportRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+
+                // find unique auxiliary and create head of support rule
+                ID auxID = ID_FAIL;
+                BOOST_FOREACH (ID lit, ng){
+                    ID flit = (lit.isOrdinaryGroundAtom() ? reg->ogatoms.getIDByAddress(lit.address) : reg->onatoms.getIDByAddress(lit.address));
+                    if (flit.isExternalAuxiliary()) {
+                        if (reg->isNegativeExternalAtomAuxiliaryAtom(flit)) {
+                            flit = reg->swapExternalAtomAuxiliaryAtom(flit);
+                            flit.kind &= (ID::ALL_ONES ^ ID::NAF_MASK);
+                        }
+                        if (auxID != ID_FAIL) throw GeneralError("Invalid support set detected (contains multiple auxiliaries)");
+                        auxID = flit;
+                        supportRule.head.push_back(flit);
+                    }
+                }
+                if (auxID == ID_FAIL) throw GeneralError("Invalid support set detected (contains no auxiliary)");
+                const OrdinaryAtom& aux = reg->lookupOrdinaryAtom(auxID);
+
+                // create body of support rule
+                BOOST_FOREACH (ID lit, ng){
+                    ID flit = (lit.isOrdinaryGroundAtom() ? reg->ogatoms.getIDByAddress(lit.address) : reg->onatoms.getIDByAddress(lit.address));
+                    if (!flit.isExternalAuxiliary()) {
+                        // replace default-negated body atoms by the atoms which explicitly represent falsehood
+                        if (flit.isNaf()){
+                            const OrdinaryAtom& a = reg->ogatoms.getByID(flit);
+                            OrdinaryAtom negA(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+                            negA.tuple = aux.tuple;
+                            negA.tuple[0] = reg->getAuxiliaryConstantSymbol('F', aux.tuple[0]);
+                            negA.tuple.insert(negA.tuple.end(), a.tuple.begin(), a.tuple.end());
+                            ID negAID = reg->storeOrdinaryAtom(negA);
+                            supportRule.body.push_back(negAID);
+                        }else{
+                            supportRule.body.push_back(flit);
+                        }
+                    }
+                }
+
+                // add support rule
+                ID supportRuleID = reg->storeRule(supportRule);
+                DBGLOG(DBG, "Adding support rule " << printToString<RawPrinter>(supportRuleID, reg));
+                program.idb.push_back(supportRuleID);
+            }
+
+            // explicit representation of negative input atoms
+            typedef boost::unordered_map<IDAddress, std::vector<ID> > AuxToEAType;
+            const AuxToEAType& auxToEA = annotatedGroundProgram.getAuxToEA();
+            BOOST_FOREACH (AuxToEAType::value_type currentAux, auxToEA) {
+                ID auxID = reg->ogatoms.getIDByAddress(currentAux.first);
+                DBGLOG(DBG, "Processing external atom auxiliary " << printToString<RawPrinter>(auxID, reg));
+                const OrdinaryAtom& aux = reg->ogatoms.getByAddress(currentAux.first);
+                if (reg->getTypeByAuxiliaryConstantSymbol(aux.tuple[0]) == 'r') {
+                    // for all input atoms
+                    int eaIndex = annotatedGroundProgram.getIndexOfEAtom(currentAux.second[0]);
+                    const boost::shared_ptr<ExternalAtomMask> mask = annotatedGroundProgram.getEAMask(eaIndex);
+                    bm::bvector<>::enumerator en = mask->mask()->getStorage().first();
+                    bm::bvector<>::enumerator en_end = mask->mask()->getStorage().end();
+                    while (en < en_end) {
+                        // atom "a"
+                        ID aID = reg->ogatoms.getIDByAddress(*en);
+                        if (!aID.isAuxiliary()) { // only input atoms from predicate input
+                            const OrdinaryAtom& a = reg->ogatoms.getByID(aID);
+                            DBGLOG(DBG, "Processing input atom: " << printToString<RawPrinter>(aID, reg));
+
+                            // create an atom "af" which represents the negation of "a" when input to "aux"
+                            OrdinaryAtom negA(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+                            negA.tuple = aux.tuple;
+                            negA.tuple[0] = reg->getAuxiliaryConstantSymbol('F', aux.tuple[0]);
+                            negA.tuple.insert(negA.tuple.end(), a.tuple.begin(), a.tuple.end());
+                            ID negAID = reg->storeOrdinaryAtom(negA);
+                            DBGLOG(DBG, "Negated atom: " << printToString<RawPrinter>(negAID, reg));
+
+                            // "af" is true if "a" is false
+                            Rule falsehoodRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+                            falsehoodRule.head.push_back(negAID);
+                            falsehoodRule.body.push_back(ID::nafLiteralFromAtom(aID));
+                            ID falsehoodRuleID = reg->storeRule(falsehoodRule);
+                            DBGLOG(DBG, "Falsehood rule for input atom: " << printToString<RawPrinter>(falsehoodRuleID, reg));
+                            program.idb.push_back(falsehoodRuleID);
+
+                            // "af" is also true if "aux" is true
+                            Rule saturationRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+                            saturationRule.head.push_back(negAID);
+                            saturationRule.body.push_back(auxID);
+                            ID saturationRuleID = reg->storeRule(saturationRule);
+                            DBGLOG(DBG, "Saturation rule: " << printToString<RawPrinter>(saturationRuleID, reg));
+                            program.idb.push_back(saturationRuleID);
+
+                            // one of "a" or "af" must be true whenever "aux" is not false
+                            Rule guessAorAF(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ);
+                            guessAorAF.head.push_back(aID);
+                            guessAorAF.head.push_back(negAID);
+                            guessAorAF.body.push_back(ID::nafLiteralFromAtom(reg->swapExternalAtomAuxiliaryAtom(auxID)));
+                            ID guessAorAFID = reg->storeRule(guessAorAF);
+                            DBGLOG(DBG, "Guessing rule: " << printToString<RawPrinter>(guessAorAFID, reg));
+                            program.idb.push_back(guessAorAFID);
+                        }
+
+                        en++;
+                    }
+                }
+            }
+        }else{
+            activeInnerEatoms.push_back(factory.innerEatoms[eaIndex]);
+        }
+    }
+
+    // 1. substitute external atom guessing rule "e v ne :- B" by "ne :- not a"
+    // 2. replace external atom auxiliaries 'r'/'n' by 'R'/'N' in all rules
+    DBGLOG(DBG, "Replacing external atom auxiliaries");
+    OrdinaryASPProgram inlinedProgram(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
+    for (int rIndex = 0; rIndex < program.idb.size(); ++rIndex) {
+        DBGLOG(DBG, "Processing rule " << printToString<RawPrinter>(program.idb[rIndex], reg));
+        const Rule& rule = reg->rules.getByID(program.idb[rIndex]);
+        if (rule.isEAGuessingRule() && eliminatedExtPreds->getFact(reg->getIDByAuxiliaryConstantSymbol(reg->lookupOrdinaryAtom(rule.head[0]).tuple[0]).address)){
+            Rule simplifiedGuessingRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+            simplifiedGuessingRule.head.push_back(rule.head[1]);
+            simplifiedGuessingRule.body = rule.body;
+            simplifiedGuessingRule.body.push_back(ID::nafLiteralFromAtom(rule.head[0]));
+            ID simplifiedGuessingRuleID = reg->storeRule(simplifiedGuessingRule);
+            DBGLOG(DBG, "Simplified guessing rule " << printToString<RawPrinter>(program.idb[rIndex], reg) << " to " << printToString<RawPrinter>(simplifiedGuessingRuleID, reg));
+            inlinedProgram.idb.push_back(simplifiedGuessingRuleID);
+        }else{
+            Rule* newRule = 0;  // in most cases we do not actually need to create one (if it is the same as the existing one)
+
+            // substitute in all head atoms
+            for (int hIndex = 0; hIndex < rule.head.size(); ++hIndex) {
+                ID newAtomID = replacePredForInlinedEAs(rule.head[hIndex], eliminatedExtPreds);
+                if (newAtomID != rule.head[hIndex]) {
+                    if (!newRule) {
+                        newRule = new Rule(rule);
+                    }
+                    newRule->head[hIndex] = newAtomID;
+                }
+            }
+
+            // substitute in all body atoms
+            for (int bIndex = 0; bIndex < rule.body.size(); ++bIndex) {
+                ID newAtomID = replacePredForInlinedEAs(rule.body[bIndex], eliminatedExtPreds);
+                if (newAtomID != rule.body[bIndex]) {
+                    if (!newRule) {
+                        newRule = new Rule(rule);
+                    }
+                    newRule->body[bIndex] = newAtomID;
+                }
+            }
+            // was the rule modified?
+            if (!!newRule){
+                inlinedProgram.idb.push_back(reg->storeRule(*newRule));
+                delete newRule;
+            }else{
+                inlinedProgram.idb.push_back(program.idb[rIndex]);
+            }
+        }
+    }
+
+#ifndef NDEBUG
+    DBGLOG(DBG, "Inlined program:");
+    BOOST_FOREACH (ID rID, inlinedProgram.idb) {
+        DBGLOG(DBG, printToString<RawPrinter>(rID, reg));
+    }
+#endif
+
+    // reground and reanalyze extended program
+    grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram, explAtoms);
+    OrdinaryASPProgram gp = grounder->getGroundProgram();
+    // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
+    if (!!gp.mask) mask->add(*gp.mask);
+    gp.mask = InterpretationConstPtr();
+    annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, activeInnerEatoms);
+}
+
+ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtPreds) {
+
+    DBGLOG(DBG, "replacePredForInlinedEAs called for " << printToString<RawPrinter>(atomID, factory.ctx.registry()));
+
+    // only external predicates are inlined
+    if (!atomID.isExternalAuxiliary()) {
+        DBGLOG(DBG, "--> not an external atom auxiliary; aborting");
+        return atomID;
+    }
+
+    const OrdinaryAtom& oatom = factory.ctx.registry()->lookupOrdinaryAtom(atomID);
+    char type = reg->getTypeByAuxiliaryConstantSymbol(oatom.tuple[0]);
+    ID id = reg->getIDByAuxiliaryConstantSymbol(oatom.tuple[0]);
+    DBGLOG(DBG, "replacePredForInlinedEAs: type=" << type << "; id=" << id << " (" << printToString<RawPrinter>(id, reg) << ")");
+    if ((type == 'r' || type == 'n') && eliminatedExtPreds->getFact(id.address)) {
+        // change 'r' to 'R' and 'n' to 'N'
+        type -= 32;
+        OrdinaryAtom inlined = oatom;
+        inlined.kind &= (ID::ALL_ONES ^ ID::PROPERTY_EXTERNALAUX);
+        inlined.tuple[0] = reg->getAuxiliaryConstantSymbol(type, id);
+        ID newID = reg->storeOrdinaryAtom(inlined);
+        DBGLOG(DBG, "replacePredForInlinedEAs returns " << printToString<RawPrinter>(newID, factory.ctx.registry()));
+        return newID;
+    }
 }
 
 void GenuineGuessAndCheckModelGenerator::initializeExplanationAtoms(OrdinaryASPProgram& program){
@@ -393,8 +614,8 @@ void GenuineGuessAndCheckModelGenerator::initializeHeuristics()
     defaultExternalAtomEvalHeuristics = factory.ctx.defaultExternalAtomEvaluationHeuristicsFactory->createHeuristics(reg);
 
     // set external atom evaluation strategy according to selected heuristics
-    for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i) {
-        const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[i]);
+    for (uint32_t i = 0; i < activeInnerEatoms.size(); ++i) {
+        const ExternalAtom& eatom = reg->eatoms.getByID(activeInnerEatoms[i]);
 
         eaEvaluated.push_back(false);
         eaVerified.push_back(false);
@@ -402,11 +623,11 @@ void GenuineGuessAndCheckModelGenerator::initializeHeuristics()
 
         // custom or default heuristics?
         if (eatom.pluginAtom->providesCustomExternalAtomEvaluationHeuristicsFactory()) {
-            DBGLOG(DBG, "Using custom external atom heuristics for external atom " << factory.innerEatoms[i]);
+            DBGLOG(DBG, "Using custom external atom heuristics for external atom " << activeInnerEatoms[i]);
             eaEvalHeuristics.push_back(eatom.pluginAtom->getCustomExternalAtomEvaluationHeuristicsFactory()->createHeuristics(reg));
         }
         else {
-            DBGLOG(DBG, "Using default external atom heuristics for external atom " << factory.innerEatoms[i]);
+            DBGLOG(DBG, "Using default external atom heuristics for external atom " << activeInnerEatoms[i]);
             eaEvalHeuristics.push_back(defaultExternalAtomEvalHeuristics);
         }
     }
@@ -423,7 +644,7 @@ void GenuineGuessAndCheckModelGenerator::initializeVerificationWatchLists()
     // set external atom evaluation strategy according to selected heuristics
     verifyWatchList.clear();
     unverifyWatchList.clear();
-    for (uint32_t i = 0; i < factory.innerEatoms.size(); ++i) {
+    for (uint32_t i = 0; i < activeInnerEatoms.size(); ++i) {
 
         // watch all atoms in the scope of the external atom for watch one input atom for verification
         bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(i)->mask()->getStorage().first();
@@ -576,12 +797,12 @@ void GenuineGuessAndCheckModelGenerator::learnSupportSets()
     if (factory.ctx.config.getOption("SupportSets")) {
         SimpleNogoodContainerPtr potentialSupportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
         SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-        for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
+        for(unsigned eaIndex = 0; eaIndex < activeInnerEatoms.size(); ++eaIndex) {
             // evaluate the external atom if it provides support sets
-            const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+            const ExternalAtom& eatom = reg->eatoms.getByID(activeInnerEatoms[eaIndex]);
             if (eatom.getExtSourceProperties().providesSupportSets()) {
-                DBGLOG(DBG, "Evaluating external atom " << factory.innerEatoms[eaIndex] << " for support set learning");
-                learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], potentialSupportSets);
+                DBGLOG(DBG, "Evaluating external atom " << activeInnerEatoms[eaIndex] << " for support set learning");
+                learnSupportSetsForExternalAtom(factory.ctx, activeInnerEatoms[eaIndex], potentialSupportSets);
             }
         }
 
@@ -733,19 +954,19 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
     bool compatible;
 
     compatible = true;
-    for (uint32_t eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
+    for (uint32_t eaIndex = 0; eaIndex < activeInnerEatoms.size(); ++eaIndex) {
         DBGLOG(DBG, "NoPropagator: " << factory.ctx.config.getOption("NoPropagator") << ", eaEvaluated[" << eaIndex << "]=" << eaEvaluated[eaIndex]);
         assert(!(factory.ctx.config.getOption("NoPropagator") && eaEvaluated[eaIndex]) && "Verification result was stored for later usage although NoPropagator property was set");
         if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == true) {
         }
         if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false) {
-            DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " was evaluated but falsified");
+            DBGLOG(DBG, "External atom " << activeInnerEatoms[eaIndex] << " was evaluated but falsified");
             compatible = false;
             if (!factory.ctx.config.getOption("AlwaysEvaluateAllExternalAtoms")) break;
         }
         if (eaEvaluated[eaIndex] == false) {
             // try to verify
-            DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " is not verified, trying to do this now");
+            DBGLOG(DBG, "External atom " << activeInnerEatoms[eaIndex] << " is not verified, trying to do this now");
             verifyExternalAtom(eaIndex, modelCandidate);
             DBGLOG(DBG, "Verification result: " << eaVerified[eaIndex]);
 
@@ -937,7 +1158,7 @@ IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, Int
     while (eaDepAtoms < eaDepAtoms_end) {
         // if search bitset has correct truth value
         if (search->getFact(*eaDepAtoms) == truthValue) {
-            DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
+            DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << activeInnerEatoms[eaIndex]);
             return *eaDepAtoms;
         }
         eaDepAtoms++;
@@ -988,8 +1209,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 
     DBGLOG(DBG, "Updating changed atoms sets");
     // update set of changed input atoms
-    for (int eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
-        const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+    for (int eaIndex = 0; eaIndex < activeInnerEatoms.size(); ++eaIndex) {
+        const ExternalAtom& eatom = reg->eatoms.getByID(activeInnerEatoms[eaIndex]);
         if (eatom.getExtSourceProperties().doesCareAboutChanged()) {
             assert (!!changedAtomsPerExternalAtom[eaIndex]);
             changedAtomsPerExternalAtom[eaIndex]->add(*changed);
@@ -1016,7 +1237,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
                     assert (!!eaEvalHeuristics[eaIndex]);
 
                     if ((highFrequency == eaEvalHeuristics[eaIndex]->frequent()) && !eaEvaluated[eaIndex]) {
-                        const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+                        const ExternalAtom& eatom = reg->eatoms.getByID(activeInnerEatoms[eaIndex]);
 
                         // evaluate external atom if the heuristics decides so
                         DBGLOG(DBG, "Calling " << (highFrequency ? "high" : "low") << " frequency heuristics for external atom " << eaEvalHeuristics[eaIndex]);
@@ -1027,7 +1248,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
                         partialInterpretation, assigned, changed)) {
                             // evaluate it
                             bool answeredFromCacheOrSupportSets;
-                            DBGLOG(DBG, "Heuristic decides to evaluate external atom " << factory.innerEatoms[eaIndex]);
+                            DBGLOG(DBG, "Heuristic decides to evaluate external atom " << activeInnerEatoms[eaIndex]);
                             conflict |= verifyExternalAtom(eaIndex, partialInterpretation, assigned,
                                 eatom.getExtSourceProperties().doesCareAboutChanged() ? changedAtomsPerExternalAtom[eaIndex] : InterpretationConstPtr(),
                                 &answeredFromCacheOrSupportSets);
@@ -1035,7 +1256,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
                             // if the external source was actually called, then clear the set of changed atoms (otherwise keep them until the source is actually called)
                             if (!answeredFromCacheOrSupportSets && eatom.getExtSourceProperties().doesCareAboutChanged()) {
                                 assert (!!changedAtomsPerExternalAtom[eaIndex]);
-                                DBGLOG(DBG, "Resetting changed atoms of external atom " << factory.innerEatoms[eaIndex]);
+                                DBGLOG(DBG, "Resetting changed atoms of external atom " << activeInnerEatoms[eaIndex]);
                                 changedAtomsPerExternalAtom[eaIndex]->clear();
                             }
                         }
@@ -1067,7 +1288,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "genuine g&c verifyEAtom");
 
-    const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
+    const ExternalAtom& eatom = reg->eatoms.getByID(activeInnerEatoms[eaIndex]);
 
     // if support sets are enabled, and the external atom provides complete support sets, we use them for verification
     if (!assigned && !changed && factory.ctx.config.getOption("SupportSets") &&
@@ -1117,7 +1338,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
         // prepare EA evaluation
         InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
         DBGLOG(DBG, "Initializing VerifyExternalAtomCB");
-        VerifyExternalAtomCB vcb(partialInterpretation, factory.ctx.registry()->eatoms.getByID(factory.innerEatoms[eaIndex]), *(annotatedGroundProgram.getEAMask(eaIndex)));
+        VerifyExternalAtomCB vcb(partialInterpretation, factory.ctx.registry()->eatoms.getByID(activeInnerEatoms[eaIndex]), *(annotatedGroundProgram.getEAMask(eaIndex)));
 
         DBGLOG(DBG, "Assigning all auxiliary inputs");
         InterpretationConstPtr evalIntr = partialInterpretation;
@@ -1131,11 +1352,11 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
 
         // evaluate the external atom and learn nogoods if external learning is used
         if (!!assigned) {
-             DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: " << *assigned << ")");
+             DBGLOG(DBG, "Verifying external Atom " << activeInnerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: " << *assigned << ")");
         }else{
-            DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: all)");
+            DBGLOG(DBG, "Verifying external Atom " << activeInnerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: all)");
         }
-        evaluateExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], evalIntr, vcb,
+        evaluateExternalAtom(factory.ctx, activeInnerEatoms[eaIndex], evalIntr, vcb,
             factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed, answeredFromCache);
         updateEANogoods(partialInterpretation, assigned, changed);
 
@@ -1146,7 +1367,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
             (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count() == (assigned->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()) {
             eaVerified[eaIndex] = vcb.verify();
 
-            DBGLOG(DBG, "Verifying " << factory.innerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
+            DBGLOG(DBG, "Verifying " << activeInnerEatoms[eaIndex] << " (Result: " << eaVerified[eaIndex] << ")");
 
             // we remember that we evaluated, only if there is a propagator that can undo this memory (that can unverify an eatom during model search)
             if(factory.ctx.config.getOption("NoPropagator") == 0) {

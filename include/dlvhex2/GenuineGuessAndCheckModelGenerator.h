@@ -74,6 +74,8 @@ public PropagatorCallback
         RegistryPtr reg;
 
         // information about verification/falsification of current external atom guesses
+        /** \brief The set of inner external atoms which were <em>not</em> inlined. */
+        std::vector<ID> activeInnerEatoms;
         /** \brief Stores for each replacement atom the set of external atoms which shall be verified when the replacement atom is (re-)assigned. */
         boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList;
         /** \brief Stores for each replacement atom the set of external atoms which shall be unverified when the replacement atom is (re-)assigned. */
@@ -129,6 +131,24 @@ public PropagatorCallback
         InterpretationPtr programMask;
 
         // members
+
+        /**
+          * \brief Inlines selected external atoms which provide support sets.
+          * @param program The input non-ground program whose external atoms are to be inlined (if possible).
+          * @param grounder The grounder used to ground \p program.
+          * @param annotatedGroundProgram The current annotations of \p program <em>before</em> the inlining, i.e., considering external atoms as external.
+          * @param activeInnerEatoms After the call this vector contains the external atoms which were <em>not</em> inlined.
+          * @param Parameters \p program, \p grounder, \p annotatedGroundProgram and \p activeInnerEatoms are updated. */
+        void inlineExternalAtoms(OrdinaryASPProgram& program, GenuineGrounderPtr& grounder, AnnotatedGroundProgram& annotatedGroundProgram, std::vector<ID>& activeInnerEatoms);
+
+        /**
+          * \brief If the atom represented by \p atomID uses a an external auxiliary predicate for an external predicate from \p eliminatedExtPreds,
+          * then 'r' is replaced by 'R' and 'n' by 'N'.
+          * @param atomID The atom whose predicate is to be replaced.
+          * @param eliminatedExtPreds The external predicates whose auxiliaries are to be replaced.
+          * @return The ID of the new atom.
+          */
+        ID replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtPreds);
 
         /**
          * \brief Identifies the set of atoms used to explain inconsistencies in this unit.

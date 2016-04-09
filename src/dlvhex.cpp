@@ -282,6 +282,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         generalize       : Generalize learned ground nogoods to nonground nogoods" << std::endl
         << "                      By default, all options except \"generalize\" are enabled." << std::endl
         << "     --supportsets    Exploits support sets for evaluation." << std::endl
+        << "     --extinlining    Inlines external sources (based on support sets)" << std::endl
         << "     --evalall        Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
         << "                      This makes nogood learning more independent of the sequence of external atom checks." << std::endl
         << "                      Only useful with --extlearn." << std::endl
@@ -864,6 +865,7 @@ Config& config, ProgramCtx& pctx)
         { "transunitlearning", no_argument, 0, 64 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
+        { "extinlining", no_argument, 0, 67 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1683,6 +1685,10 @@ Config& config, ProgramCtx& pctx)
                     pctx.config.setOption("WaitOnModel", 1);
                 }
                 break;
+            case 67:
+                {
+                    pctx.config.setOption("ExternalSourceInlining", 1);
+                }
         }
     }
 

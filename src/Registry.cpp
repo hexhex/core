@@ -77,6 +77,7 @@ DLVHEX_NAMESPACE_BEGIN
  * 'c': choice rules (internal ChoicePlugin)
  * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  * '0': null terms (used for existential quantification, see ExistsPlugin.cpp)
+ * 'F': explicit representation of false atoms (used for external source inlining)
  * 'o': special atoms introduced by gringo (IDs of kind integer) and predicate for guard atoms (ID(0, 0))
  * 'x': reserved for local use
  */

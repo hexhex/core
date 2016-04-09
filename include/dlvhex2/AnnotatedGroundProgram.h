@@ -306,6 +306,12 @@ class DLVHEX_EXPORT AnnotatedGroundProgram
          */
         ID getIndexedEAtom(int index) const;
         /**
+         * \brief Returns the index of an external atom identified by its ID.
+         * @param eatomID ID of the external atom to retrieve.
+         * @return Index of \p eatomID or -1 if it not indexed.
+         */
+        int getIndexOfEAtom(ID eatomID) const;
+        /**
          * \brief Returns the mask of the overall program.
          * @return Program mask.
          */

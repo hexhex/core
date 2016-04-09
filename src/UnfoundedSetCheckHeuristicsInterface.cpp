@@ -77,9 +77,9 @@ UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(const AnnotatedGroundPr
                     rulesOfAtom[b.address].insert(ruleNr);
                     nodupAtom->setFact(b.address);
                 }
-		if (b.isExternalAuxiliary()){
-		    notYetVerifiedExternalAtoms->setFact(b.address);
-		}
+		        if (b.isExternalAuxiliary()){
+		            notYetVerifiedExternalAtoms->setFact(b.address);
+		        }
             }
             atomsInRule[ruleNr] = nodupAtom->getStorage().count();
             nodupAtom->clear();
