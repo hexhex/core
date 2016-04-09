@@ -685,6 +685,19 @@ struct sem<HexGrammarSemantics::rule>
             else {
                 assert(head.size() == 1);
 
+                // if the only head atom uses a range, make a disjunction to force the reasoner to handle it as a rule
+                const OrdinaryAtom& oatom = mgr.ctx.registry()->lookupOrdinaryAtom(head[0]);
+                BOOST_FOREACH (ID arg, oatom.tuple) {
+                    if (arg.isRangeTerm()) {
+                        Tuple dhead;
+                        dhead.push_back(head[0]);
+                        dhead.push_back(head[0]);
+                        Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ, dhead, Tuple());
+                        target = reg->storeRule(r);
+                        return;
+                    }
+                }
+
                 // return ID of fact
                 target = *head.begin();
             }
