@@ -234,6 +234,7 @@
  *   <li>\code{.txt}void prop.addRelativeFiniteOutputDomain(index1, index2)\endcode Declare that output argument \em index2 has a finite domain wrt. input argument \em index1.</li>
  *   <li>\code{.txt}void prop.setFunctional(value)\endcode Declare the source as functional.</li>
  *   <li>\code{.txt}void prop.setFunctionalStart(index)\endcode Declare the source as functional beginning at term index + 1.</li>
+ *   <li>\code{.txt}void prop.setOnlySafeSupportSets(value)\endcode Declare that the source provides only safe support sets, i.e., all variables in support sets occur in positive input atoms (atoms other than output atoms).</li>
  *   <li>\code{.txt}void prop.setSupportSets(value)\endcode Declare that the source provides support sets.</li>
  *   <li>\code{.txt}void prop.setCompletePositiveSupportSets(value)\endcode Declare that the source provides complete positive support sets.</li>
  *   <li>\code{.txt}void prop.setCompleteNegativeSupportSets(value)\endcode Declare that the source provides complete negative support sets.</li>

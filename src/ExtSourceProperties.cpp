@@ -59,6 +59,7 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
     BOOST_FOREACH (int i, prop2.finiteOutputDomain) finiteOutputDomain.insert(i);
     wellorderingStrlen.insert(prop2.wellorderingStrlen.begin(), prop2.wellorderingStrlen.end());
     wellorderingNatural.insert(prop2.wellorderingNatural.begin(), prop2.wellorderingNatural.end());
+    onlySafeSupportSets |= prop2.onlySafeSupportSets;
     supportSets |= prop2.supportSets;
     completePositiveSupportSets |= prop2.completePositiveSupportSets;
     completeNegativeSupportSets |= prop2.completeNegativeSupportSets;
@@ -247,6 +248,11 @@ void ExtSourceProperties::interpretProperties(RegistryPtr reg, const ExternalAto
             if (param1 == ID_FAIL || param2 == ID_FAIL) throw GeneralError("Property \"wellordering\" expects two parameters");
             DBGLOG(DBG, "External Atom has a wellordering using natural");
             wellorderingNatural.insert(std::pair<int, int>(param1.address, param2.address));
+        }
+        else if (name == "onlysafesupportsets") {
+            if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"onlysafesupportsets\" expects no parameters");
+            DBGLOG(DBG, "External Atom provides only safe support sets");
+            onlySafeSupportSets = true;
         }
         else if (name == "supportsets") {
             if (param1 != ID_FAIL || param2 != ID_FAIL) throw GeneralError("Property \"supportsets\" expects no parameters");

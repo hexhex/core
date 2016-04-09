@@ -104,6 +104,8 @@ struct ExtSourceProperties
     int functionalStart;
     /** \brief See ExtSourceProperties::providesSupportSets. */
     bool supportSets;
+    /** \brief All variables in non-ground support sets are bound by positive input atoms (i.e., atoms other than external replacement atoms). */
+    bool onlySafeSupportSets;
     /** \brief See ExtSourceProperties::providesCompletePositiveSupportSets. */
     bool completePositiveSupportSets;
     /** \brief See ExtSourceProperties::providesCompleteNegativeSupportSets. */
@@ -140,6 +142,7 @@ struct ExtSourceProperties
         tuplelevellinear = false;
         usesEnvironment = false;
         finiteFiber = false;
+        onlySafeSupportSets = false;
         supportSets = false;
         completePositiveSupportSets = false;
         completeNegativeSupportSets = false;
@@ -171,6 +174,8 @@ struct ExtSourceProperties
     inline void setFunctional(bool value) { functional = value; }
     /** \brief See ExtSourceProperties::isFunction. */
     inline void setFunctionalStart(int value) { functionalStart = value; }
+    /** \brief See ExtSourceProperties::onlySafeSupportSets. */
+    inline void setOnlySafeSupportSets(bool value) { onlySafeSupportSets = value; }
     /** \brief See ExtSourceProperties::providesSupportSets. */
     inline void setSupportSets(bool value) { supportSets = value; }
     /** \brief See ExtSourceProperties::providesCompletePositiveSupportSets. */
@@ -335,6 +340,13 @@ struct ExtSourceProperties
      */
     bool hasWellorderingNatural(int from, int to) const
         { return wellorderingNatural.count(std::pair<int, int>(from, to)) > 0; }
+
+    /**
+     * \brief Checks if the external source provides only safe support sets.
+     * @return True if the external source provides only safe support sets (complete or incomplete).
+     */
+    bool providesOnlySafeSupportSets() const
+        { return onlySafeSupportSets; }
 
     /**
      * \brief Checks if the external source provides support sets.

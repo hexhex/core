@@ -322,11 +322,67 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
         if (eatom.getExtSourceProperties().providesSupportSets()) {
             eliminatedExtPreds->setFact(eatom.predicate.address);
 
-            DBGLOG(DBG, "Constructing support rules for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
-            SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-            learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], supportSets);
+            DBGLOG(DBG, "Learning support sets for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
+            if (eatom.getExtSourceProperties().providesOnlySafeSupportSets()) {
+                SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+                learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], supportSets);
+            }else{
+                SimpleNogoodContainerPtr potentialSupportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+                SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+                learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], potentialSupportSets);
+                NogoodGrounderPtr nogoodgrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), potentialSupportSets, potentialSupportSets, annotatedGroundProgram));
+                int nc = 0;
+                while (nc < potentialSupportSets->getNogoodCount()) {
+                    nc = potentialSupportSets->getNogoodCount();
+                    nogoodgrounder->update();
+                }
+
+                bool keep;
+                for (int i = 0; i < potentialSupportSets->getNogoodCount(); ++i) {
+                    const Nogood& ng = potentialSupportSets->getNogood(i);
+                    if (ng.isGround()) {
+                        // determine the external atom replacement in ng
+                        ID eaAux = ID_FAIL;
+                        BOOST_FOREACH (ID lit, ng) {
+                            if (reg->ogatoms.getIDByAddress(lit.address).isExternalAuxiliary()) {
+                                if (eaAux != ID_FAIL) throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is not a valid support set because it contains multiple external literals");
+                                eaAux = lit;
+                            }
+                        }
+                        if (eaAux == ID_FAIL) throw GeneralError("Set " + ng.getStringRepresentation(reg) + " is not a valid support set because it contains no external literals");
+
+                        // determine the according external atom
+                        if (annotatedGroundProgram.mapsAux(eaAux.address)) {
+                            DBGLOG(DBG, "Evaluating guards of " << ng.getStringRepresentation(reg));
+                            keep = true;
+                            Nogood ng2 = ng;
+                            reg->eatoms.getByID(annotatedGroundProgram.getAuxToEA(eaAux.address)[0]).pluginAtom->guardSupportSet(keep, ng2, eaAux);
+                            if (keep) {
+                                #ifndef NDEBUG
+                                // ng2 must be a subset of ng and still a valid support set
+                                ID aux = ID_FAIL;
+                                BOOST_FOREACH (ID id, ng2) {
+                                    if (reg->ogatoms.getIDByAddress(id.address).isExternalAuxiliary()) aux = id;
+                                    assert(ng.count(id) > 0);
+                                }
+                                assert(aux != ID_FAIL);
+                                #endif
+                                DBGLOG(DBG, "Keeping in form " << ng2.getStringRepresentation(reg));
+                                supportSets->addNogood(ng2);
+                                #ifdef DEBUG
+                            }
+                            else {
+                                assert(ng == ng2);
+                                DBGLOG(DBG, "Rejecting " << ng2.getStringRepresentation(reg));
+                                #endif
+                            }
+                        }
+                    }
+                }
+            }
 
             // external atom support rules
+            DBGLOG(DBG, "Constructing support rules for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
             for (int i = 0; i < supportSets->getNogoodCount(); ++i) {
                 const Nogood& ng = supportSets->getNogood(i);
                 DBGLOG(DBG, "Processing support set " << ng.getStringRepresentation(reg));
