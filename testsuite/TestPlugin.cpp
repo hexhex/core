@@ -2071,6 +2071,7 @@ public:
 
 		prop.variableOutputArity = true;					// the output arity of this external atom depends on the arity of the query predicate
 		prop.supportSets = true;									// we provide support sets
+                prop.onlySafeSupportSets = true;
 		prop.completePositiveSupportSets = true;	// we even provide (positive) complete support sets
   }
 

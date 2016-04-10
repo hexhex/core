@@ -1,0 +1,1 @@
+invalid :- input(coloring, X, C), input(coloring, Y, C), input(edge, X, Y).
