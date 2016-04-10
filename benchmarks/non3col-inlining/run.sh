@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "instances/*.graph" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
 	# run single instance
-	confstr="--extlearn=none --ufslearn=none checkNon3Colorability.hex;checkNon3Colorability.hex --extlearn=none --ufslearn=none --supportsets;checkNon3Colorability.hex --extlearn=none --ufslearn=none --extinlining;checkNon3ColorabilityPlain.hex --extlearn=none --ufslearn=none;checkNon3CompleteColorability.hex --extlearn=none --ufslearn=none;checkNon3CompleteColorability.hex --extlearn=none --ufslearn=none --supportsets;checkNon3CompleteColorability.hex --extlearn=none --ufslearn=none --extinlining;checkNon3CompleteColorabilityPlain.hex --extlearn=none --ufslearn=none"
+	confstr="checkNon3Colorability.hex;checkNon3Colorability.hex --supportsets;checkNon3Colorability.hex --extinlining;checkNon3ColorabilityPlain.hex;checkNon3CompleteColorability.hex;checkNon3CompleteColorability.hex --supportsets;checkNon3CompleteColorability.hex --extinlining;checkNon3CompleteColorabilityPlain.hex"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to"
 fi
