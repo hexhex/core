@@ -1492,8 +1492,16 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
     // we still need to notify the heuristics such that it can update its internal information about assigned atoms.
     assert (!!ufsCheckHeuristics);
     ufsCheckHeuristics->updateSkipProgram(verifiedAuxes, partialAssignment, assigned, changed);
-    if (!conflict) unfoundedSetCheck(partialAssignment, assigned, changed, true);
-    else ufsCheckHeuristics->notify(verifiedAuxes, partialAssignment, assigned, changed);
+    if (!conflict) {
+        if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 &&
+        factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")) {
+            DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
+        }else{
+            unfoundedSetCheck(partialAssignment, assigned, changed, true);
+        }
+    }else{
+        ufsCheckHeuristics->notify(verifiedAuxes, partialAssignment, assigned, changed);
+    }
 }
 
 

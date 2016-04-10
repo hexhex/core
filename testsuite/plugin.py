@@ -24,8 +24,8 @@ def neg(p):
 				));
 	else:
 		for x in dlvhex.getTrueInputAtoms():
-			dlvhex.output(())
 			return
+                dlvhex.output(())
 
 def aOrNotB(a,b):
 
