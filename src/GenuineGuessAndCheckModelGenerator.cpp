@@ -265,7 +265,7 @@ haveInconsistencyCause(false)
 
         // external source inlining
         if (factory.ctx.config.getOption("ExternalSourceInlining")) {
-            inlineExternalAtoms(program, grounder, annotatedGroundProgram, activeInnerEatoms);
+            inlineExternalAtoms(gp, grounder, annotatedGroundProgram, activeInnerEatoms);
         }else{
             activeInnerEatoms = factory.innerEatoms;
         }
@@ -315,13 +315,18 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()
 
 void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram& program, GenuineGrounderPtr& grounder, AnnotatedGroundProgram& annotatedGroundProgram, std::vector<ID>& activeInnerEatoms) {
 
-    InterpretationPtr eliminatedExtPreds(new Interpretation(reg));
+#ifndef NDEBUG
+        DBGLOG(DBG, "Inlining in program:" << std::endl << *program.edb << std::endl)
+        BOOST_FOREACH (ID rID, program.idb) {
+            DBGLOG(DBG, printToString<RawPrinter>(rID, reg));
+        }
+#endif
+
+    InterpretationPtr eliminatedExtAuxes(new Interpretation(reg));
     for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
         // evaluate the external atom if it provides support sets
         const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
         if (eatom.getExtSourceProperties().providesSupportSets()) {
-            eliminatedExtPreds->setFact(eatom.predicate.address);
-
             DBGLOG(DBG, "Learning support sets for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
             SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
             if (eatom.getExtSourceProperties().providesOnlySafeSupportSets()) {
@@ -436,6 +441,8 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
             BOOST_FOREACH (AuxToEAType::value_type currentAux, auxToEA) {
                 ID auxID = reg->ogatoms.getIDByAddress(currentAux.first);
                 DBGLOG(DBG, "Processing external atom auxiliary " << printToString<RawPrinter>(auxID, reg));
+                eliminatedExtAuxes->setFact(auxID.address);
+                eliminatedExtAuxes->setFact(reg->swapExternalAtomAuxiliaryAtom(auxID).address);
                 const OrdinaryAtom& aux = reg->ogatoms.getByAddress(currentAux.first);
                 if (reg->getTypeByAuxiliaryConstantSymbol(aux.tuple[0]) == 'r') {
                     // for all input atoms
@@ -496,15 +503,16 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     // 1. substitute external atom guessing rule "e v ne :- B" by "ne :- not a"
     // 2. replace external atom auxiliaries 'r'/'n' by 'R'/'N' in all rules
     DBGLOG(DBG, "Replacing external atom auxiliaries");
-    OrdinaryASPProgram inlinedProgram(reg, std::vector<ID>(), postprocessedInput, factory.ctx.maxint);
+    OrdinaryASPProgram inlinedProgram(reg, std::vector<ID>(), program.edb, factory.ctx.maxint);
     for (int rIndex = 0; rIndex < program.idb.size(); ++rIndex) {
         DBGLOG(DBG, "Processing rule " << printToString<RawPrinter>(program.idb[rIndex], reg));
         const Rule& rule = reg->rules.getByID(program.idb[rIndex]);
-        if (rule.isEAGuessingRule() && eliminatedExtPreds->getFact(reg->getIDByAuxiliaryConstantSymbol(reg->lookupOrdinaryAtom(rule.head[0]).tuple[0]).address)){
+        if (rule.isEAGuessingRule() && eliminatedExtAuxes->getFact(rule.head[0].address)){
+            int posIndex = (reg->getTypeByAuxiliaryConstantSymbol(rule.head[0]) == 'r' ? 0 : 1);
             Rule simplifiedGuessingRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-            simplifiedGuessingRule.head.push_back(replacePredForInlinedEAs(rule.head[1], eliminatedExtPreds));
+            simplifiedGuessingRule.head.push_back(replacePredForInlinedEAs(rule.head[1 - posIndex], eliminatedExtAuxes));
             simplifiedGuessingRule.body = rule.body;
-            simplifiedGuessingRule.body.push_back(ID::nafLiteralFromAtom(replacePredForInlinedEAs(rule.head[0], eliminatedExtPreds)));
+            simplifiedGuessingRule.body.push_back(ID::nafLiteralFromAtom(replacePredForInlinedEAs(rule.head[posIndex], eliminatedExtAuxes)));
             ID simplifiedGuessingRuleID = reg->storeRule(simplifiedGuessingRule);
             DBGLOG(DBG, "Simplified guessing rule " << printToString<RawPrinter>(program.idb[rIndex], reg) << " to " << printToString<RawPrinter>(simplifiedGuessingRuleID, reg));
             inlinedProgram.idb.push_back(simplifiedGuessingRuleID);
@@ -513,7 +521,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
 
             // substitute in all head atoms
             for (int hIndex = 0; hIndex < rule.head.size(); ++hIndex) {
-                ID newAtomID = replacePredForInlinedEAs(rule.head[hIndex], eliminatedExtPreds);
+                ID newAtomID = replacePredForInlinedEAs(rule.head[hIndex], eliminatedExtAuxes);
                 if (newAtomID != rule.head[hIndex]) {
                     if (!newRule) {
                         newRule = new Rule(rule);
@@ -524,7 +532,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
 
             // substitute in all body atoms
             for (int bIndex = 0; bIndex < rule.body.size(); ++bIndex) {
-                ID newAtomID = replacePredForInlinedEAs(rule.body[bIndex], eliminatedExtPreds);
+                ID newAtomID = replacePredForInlinedEAs(rule.body[bIndex], eliminatedExtAuxes);
                 if (newAtomID != rule.body[bIndex]) {
                     if (!newRule) {
                         newRule = new Rule(rule);
@@ -543,7 +551,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     }
 
 #ifndef NDEBUG
-    DBGLOG(DBG, "Inlined program:");
+    DBGLOG(DBG, "Inlined program:" << std::endl << *inlinedProgram.edb << std::endl);
     BOOST_FOREACH (ID rID, inlinedProgram.idb) {
         DBGLOG(DBG, printToString<RawPrinter>(rID, reg));
     }
@@ -558,13 +566,13 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, activeInnerEatoms);
 }
 
-ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtPreds) {
+ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtAuxes) {
 
     DBGLOG(DBG, "replacePredForInlinedEAs called for " << printToString<RawPrinter>(atomID, factory.ctx.registry()));
 
     // only external predicates are inlined
-    if (!atomID.isExternalAuxiliary()) {
-        DBGLOG(DBG, "--> not an external atom auxiliary; aborting");
+    if (!atomID.isExternalAuxiliary() || !eliminatedExtAuxes->getFact(atomID.address)) {
+        DBGLOG(DBG, "--> not an eliminated external atom auxiliary; aborting");
         return atomID;
     }
 
@@ -572,7 +580,7 @@ ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, Inter
     char type = reg->getTypeByAuxiliaryConstantSymbol(oatom.tuple[0]);
     ID id = reg->getIDByAuxiliaryConstantSymbol(oatom.tuple[0]);
     DBGLOG(DBG, "replacePredForInlinedEAs: type=" << type << "; id=" << id << " (" << printToString<RawPrinter>(id, reg) << ")");
-    if ((type == 'r' || type == 'n') && eliminatedExtPreds->getFact(id.address)) {
+    if ((type == 'r' || type == 'n')) {
         // change 'r' to 'R' and 'n' to 'N'
         type -= 32;
         OrdinaryAtom inlined = oatom;
@@ -1495,3 +1503,4 @@ DLVHEX_NAMESPACE_END
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
+
