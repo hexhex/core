@@ -9,7 +9,7 @@ def test(a, b, c):
 def id(p):
 	if dlvhex.learnSupportSets():
 		dlvhex.learn((
-				dlvhex.storeAtom((p, "X")),		# if p(X) is true for some X
+				dlvhex.storeAtom((p, )),	        # if p is true for some X
 				dlvhex.storeOutputAtom(()).negate()	# then () is in the output
 				));
 	else:
