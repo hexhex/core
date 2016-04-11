@@ -327,6 +327,8 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
         // evaluate the external atom if it provides support sets
         const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
         if (eatom.getExtSourceProperties().providesSupportSets()) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidinlined, "Inlined external atoms");
+
             DBGLOG(DBG, "Learning support sets for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
             SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
             if (eatom.getExtSourceProperties().providesOnlySafeSupportSets()) {
