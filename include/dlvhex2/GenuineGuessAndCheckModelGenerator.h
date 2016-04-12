@@ -142,13 +142,13 @@ public PropagatorCallback
         void inlineExternalAtoms(OrdinaryASPProgram& program, GenuineGrounderPtr& grounder, AnnotatedGroundProgram& annotatedGroundProgram, std::vector<ID>& activeInnerEatoms);
 
         /**
-          * \brief If the atom represented by \p atomID uses a an external auxiliary predicate for an external predicate from \p eliminatedExtPreds,
+          * \brief If the atom represented by \p atomID uses is an external auxiliary from \p eliminatedExtAuxes,
           * then 'r' is replaced by 'R' and 'n' by 'N'.
           * @param atomID The atom whose predicate is to be replaced.
           * @param eliminatedExtPreds The external predicates whose auxiliaries are to be replaced.
           * @return The ID of the new atom.
           */
-        ID replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtPreds);
+        ID replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtAuxes);
 
         /**
          * \brief Identifies the set of atoms used to explain inconsistencies in this unit.

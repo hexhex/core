@@ -1687,6 +1687,7 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 67:
                 {
+                    pctx.config.setOption("SupportSets", 1);
                     pctx.config.setOption("ExternalSourceInlining", 1);
                 }
         }
