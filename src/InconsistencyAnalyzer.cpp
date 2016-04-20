@@ -58,7 +58,7 @@ DLVHEX_NAMESPACE_BEGIN
 InconsistencyAnalyzer::InconsistencyAnalyzer(ProgramCtx& ctx) : ctx(ctx){
 }
 
-Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, InterpretationConstPtr explAtoms, std::vector<ID>& innerEatoms, OrdinaryASPProgram& program, AnnotatedGroundProgram& annotatedOptimizedProgram, bool* haveInconsistencyReason){
+Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, InterpretationConstPtr explAtoms, InterpretationConstPtr unitInput, std::vector<ID>& innerEatoms, OrdinaryASPProgram& program, AnnotatedGroundProgram& annotatedOptimizedProgram, bool* haveInconsistencyReason){
 
 #ifndef NDEBUG
     DBGLOG(DBG, "Performing inconsistency analyzis for program:" << std::endl << *program.edb << std::endl << printManyToString<RawPrinter>(program.idb, "\n", ctx.registry()));
@@ -86,8 +86,29 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
 
     bm::bvector<>::enumerator en, en_end;
 
-    // interprete the ground program as a set of classical implications
+    // remove input from predecessor units
+    InterpretationPtr newEdb(new Interpretation(*gp.edb));
+    newEdb->getStorage() -= unitInput->getStorage();
+    gp.edb = newEdb;
+
+#ifndef NDEBUG
+    DBGLOG(DBG, "Program to be analyzed:" << std::endl << *gp.edb << std::endl << printManyToString<RawPrinter>(gp.idb, "\n", ctx.registry()));
+#endif
+
     NogoodSet instance;
+
+    // add input is pseudo-nogoods to make sure they are part of the problem
+    en = unitInput->getStorage().first();
+    en_end = unitInput->getStorage().end();
+    while (en < en_end) {
+        Nogood ng;
+        ng.insert(NogoodContainer::createLiteral(*en, true));
+        ng.insert(NogoodContainer::createLiteral(*en, false));
+        instance.addNogood(ng);
+        en++;
+    }
+
+    // interprete the ground program as a set of classical implications
     if (!!gp.edb) {
         en = gp.edb->getStorage().first();
         en_end = gp.edb->getStorage().end();
@@ -144,7 +165,7 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
         bool verified = true;
         for (int eaIndex = 0; eaIndex < innerEatoms.size() && verified; ++eaIndex){
             BaseModelGenerator::VerifyExternalAtomCB vcb(model, ctx.registry()->eatoms.getByID(innerEatoms[eaIndex]), *(annotatedOptimizedProgram.getEAMask(eaIndex)));
-            mg->evaluateExternalAtom(ctx, innerEatoms[eaIndex], model, vcb);
+            mg->evaluateExternalAtom(ctx, innerEatoms[eaIndex], model, vcb, ctx.config.getOption("ExternalLearning") ? classicalSolver : NogoodContainerPtr());
             verified &= vcb.verify();
         }
 
@@ -159,16 +180,28 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
                 // (i) prevent super sets of this model from becoming models of the program (namely if l="F a"; then adding "a" as fact will eliminate the model because "a" must be true); or
                 // (ii) ensure that there is a non-empty unfounded set (namely if l=T a); then *not* adding "a" as fact will leave "a" unfounded)
                 if (model->getFact(*en)) {
-                    if (alreadyPos->getFact(*en)) continue; // cannot use this literal because it needs to be added negatively but is already positive
+                    if (alreadyPos->getFact(*en)) { en++; continue; } // cannot use this literal because it needs to be added negatively but is already positive
                     if (alreadyNeg->getFact(*en)) break; // needs to be added negatively and is already negative --> done
+                    DBGLOG(DBG, "Adding -" << printToString<RawPrinter>(ctx.registry()->ogatoms.getIDByAddress(*en), ctx.registry()) << " to reason nogood");
                     inconsistencyReason.insert(NogoodContainer::createLiteral(*en, false));
                     alreadyNeg->setFact(*en);
+
+                    // eliminate all models with this literal
+                    Nogood ng;
+                    ng.insert(NogoodContainer::createLiteral(*en, true));
+                    classicalSolver->addNogood(ng);
                     break;
                 }else{
-                    if (alreadyNeg->getFact(*en)) continue; // cannot use this literal because it needs to be added positively but is already negative
+                    if (alreadyNeg->getFact(*en)) { en++; continue; } // cannot use this literal because it needs to be added positively but is already negative
                     if (alreadyPos->getFact(*en)) break; // needs to be added positively and is already positive --> done
+                    DBGLOG(DBG, "Adding " << printToString<RawPrinter>(ctx.registry()->ogatoms.getIDByAddress(*en), ctx.registry()) << " to reason nogood");
                     inconsistencyReason.insert(NogoodContainer::createLiteral(*en, true));
                     alreadyPos->setFact(*en);
+
+                    // eliminate all models with this literal
+                    Nogood ng;
+                    ng.insert(NogoodContainer::createLiteral(*en, false));
+                    classicalSolver->addNogood(ng);
                     break;
                 }
                 en++;
@@ -181,7 +214,7 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
             }
         }
     }
-    DBGLOG(DBG, "Found inconsistency reason: " << inconsistencyReason.getStringRepresentation(ctx.registry()));
+    DBGLOG(DBG, "Found inconsistency reason: " << inconsistencyReason.getStringRepresentation(ctx.registry()) << std::endl << "for program " << *gp.edb << std::endl << printManyToString<RawPrinter>(gp.idb, "\n", ctx.registry()) << std::endl << "wrt. explanation atoms " << *explAtoms);
     *haveInconsistencyReason = true;
     return inconsistencyReason;
 }

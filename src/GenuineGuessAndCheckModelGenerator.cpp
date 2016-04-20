@@ -195,7 +195,8 @@ FLPModelGeneratorBase(factory, input),
 factory(factory),
 reg(factory.reg),
 cmModelCount(0),
-haveInconsistencyCause(false)
+haveInconsistencyCause(false),
+unitInput(input)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");
     DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
@@ -255,9 +256,22 @@ haveInconsistencyCause(false)
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder GuessPr GenGnCMG");
         
         // run solver possibly with the possibility to analyze unit inconsistency at a later point
-        if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){ initializeExplanationAtoms(program); }
+        if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
+            initializeExplanationAtoms(program);
+            // update nogoods learned from successor (add all ground atoms which have been added to the registry in the meantime in negative form) and add it to the new model generator
+            if (factory.ctx.config.getOption("TransUnitLearning")){
+                typedef std::pair<Nogood, int> NogoodIntegerPair;
+                BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
+                    for (int i = nip.second; i < factory.ctx.registry()->ogatoms.getSize(); i++){
+                        if (annotatedGroundProgram.getProgramMask()->getFact(i)) nip.first.insert(NogoodContainer::createLiteral(i, false));
+                    }
+                    nip.second = factory.ctx.registry()->ogatoms.getSize();
+                    addNogood(&nip.first);
+                }
+            }
+        }
 
-        grounder = GenuineGrounder::getInstance(factory.ctx, program, explAtoms);
+        grounder = GenuineGrounder::getInstance(factory.ctx, program /*, explAtoms*/);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
         if (!!gp.mask) mask->add(*gp.mask);
@@ -274,7 +288,7 @@ haveInconsistencyCause(false)
         // run solver
         solver = GenuineGroundSolver::getInstance(
             factory.ctx, annotatedGroundProgram,
-            explAtoms,
+            InterpretationConstPtr() /*explAtoms*/,
             // do the UFS check for disjunctions only if we don't do
             // a minimality check in this class;
             // this will not find unfounded sets due to external sources,
@@ -689,7 +703,9 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
         if( !modelCandidate ) {
             // compute reasons
-            if (factory.ctx.config.getOption("UnitInconsistencyAnalysis") && !!explAtoms) { identifyInconsistencyCause(); }
+            if (factory.ctx.config.getOption("UnitInconsistencyAnalysis") && !!explAtoms && cmModelCount == 0) {
+                identifyInconsistencyCause();
+            }
 
             LOG(DBG,"unsatisfiable -> returning no model");
             return InterpretationPtr();
@@ -728,11 +744,12 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
     DBGLOG(DBG, "GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause()");
-    InterpretationPtr emptyIntr(new Interpretation(factory.ctx.registry()));
-    OrdinaryASPProgram program(reg, factory.xidb, emptyIntr /*postprocessedInput*/, factory.ctx.maxint);
+    DBGLOG(DBG, "Program: " << *annotatedGroundProgram.getGroundProgram().edb << std::endl << printManyToString<RawPrinter>(annotatedGroundProgram.getGroundProgram().idb, "\n", factory.ctx.registry()));
+
+    OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
     program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
     InconsistencyAnalyzer ia(factory.ctx);
-    inconsistencyCause = ia.getInconsistencyReason(this, explAtoms, factory.innerEatoms, program, annotatedGroundProgram, &haveInconsistencyCause);
+    inconsistencyCause = ia.getInconsistencyReason(this, explAtoms, unitInput, factory.innerEatoms, program, annotatedGroundProgram, &haveInconsistencyCause);
 
     if (haveInconsistencyCause) {
         DBGLOG(DBG, "Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
@@ -750,6 +767,9 @@ const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
 void GenuineGuessAndCheckModelGenerator::addNogood(const Nogood* cause){
     DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidna, "Nogoods added from outside to GnC mg", 1);
     DBGLOG(DBG, "Adding nogood to model generator: " << cause->getStringRepresentation(factory.ctx.registry()));
+    if (factory.ctx.config.getOption("TransUnitLearning")){
+        if (!!solver) solver->addNogood(*cause);
+    }
 }
 
 void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng)
