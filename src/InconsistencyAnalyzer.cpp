@@ -176,6 +176,9 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
             en = explAtoms->getStorage().first();
             en_end = explAtoms->getStorage().end();
             while (en < en_end) {
+                // we want an inconsistency reason which is currently violated
+                if (unitInput->getFact(*en) != model->getFact(*en)) { en++; continue; }
+
                 // Use its negation in the inconsistency explanation; this will either:
                 // (i) prevent super sets of this model from becoming models of the program (namely if l="F a"; then adding "a" as fact will eliminate the model because "a" must be true); or
                 // (ii) ensure that there is a non-empty unfounded set (namely if l=T a); then *not* adding "a" as fact will leave "a" unfounded)
@@ -187,9 +190,12 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
                     alreadyNeg->setFact(*en);
 
                     // eliminate all models with this literal
-                    Nogood ng;
-                    ng.insert(NogoodContainer::createLiteral(*en, true));
-                    classicalSolver->addNogood(ng);
+                    if (annotatedOptimizedProgram.getProgramMask()->getFact(*en)){
+                        Nogood ng;
+                        ng.insert(NogoodContainer::createLiteral(*en, true));
+                        DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(ctx.registry()) << " to solver");
+                        classicalSolver->addNogood(ng);
+                    }
                     break;
                 }else{
                     if (alreadyNeg->getFact(*en)) { en++; continue; } // cannot use this literal because it needs to be added positively but is already negative
@@ -199,9 +205,12 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
                     alreadyPos->setFact(*en);
 
                     // eliminate all models with this literal
-                    Nogood ng;
-                    ng.insert(NogoodContainer::createLiteral(*en, false));
-                    classicalSolver->addNogood(ng);
+                    if (annotatedOptimizedProgram.getProgramMask()->getFact(*en)){
+                        Nogood ng;
+                        ng.insert(NogoodContainer::createLiteral(*en, false));
+                        DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(ctx.registry()) << " to solver");
+                        classicalSolver->addNogood(ng);
+                    }
                     break;
                 }
                 en++;
