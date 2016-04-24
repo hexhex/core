@@ -66,6 +66,12 @@ private:
     /** \brief ProgramCtx reference. */
     ProgramCtx& ctx;
 
+    /** \brief Creates a unique auxiliary atom for a given type and ID.
+      * @param type Character.
+      * @param id ID of arbitary type.
+      * @return ID of a unique atom for \p type and \p id. */
+    ID getAuxiliaryAtom(char type, ID id);
+
 public:
 
     /** \brief Constructor.
