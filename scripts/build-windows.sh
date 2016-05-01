@@ -16,7 +16,7 @@
 
 ZLIB_VERSION="1.2.8"
 OPENSSL_VERSION="1.0.2g"
-CURL_VERSION="7.41.0"
+CURL_VERSION="7.46.0"
 BZIP_VERSION="1.0.6"
 BOOST_VERSION="1.57.0" # 1.59.0 is not working for cc
 PYTHON_VERSION="2.7"
@@ -27,7 +27,7 @@ ROOT_DIR=`pwd`
 OUTPUT_IO=/dev/null
 BUILD_DIR=$ROOT_DIR/build-windows
 LIB_DIR=$BUILD_DIR/out
-PYTHON_DIR=$HOME/.wine/drive_c/Python27
+PYTHON_DIR=$BUILD_DIR/python/mingw32/opt
 MINGW_DIR=/usr/i686-w64-mingw32
 
 
@@ -51,7 +51,7 @@ function prepare {
 function checkDependencies {
   echo "==> Checking build dependencies"
 
-  deps="build-essential autoconf libtool pkg-config scons bison re2c p7zip-full python-dev libxml2-dev libxslt1-dev git ccze mingw-w64 wine"
+  deps="build-essential autoconf libtool pkg-config scons bison re2c p7zip-full python-dev libxml2-dev libxslt1-dev git ccze mingw-w64"
   missing_deps=""
 
   for dep in `echo $deps`; do
@@ -86,10 +86,10 @@ function buildZLib {
     mingw make libz.a &> $OUTPUT_IO
 
     # Manually install (requird libc for exe not available with mingw-w64):
-    mkdir -p $LIB_DIR/usr/local/include &> $OUTPUT_IO
-    mkdir -p $LIB_DIR/usr/local/lib &> $OUTPUT_IO
-    cp zconf.h zlib.h $LIB_DIR/usr/local/include &> $OUTPUT_IO
-    cp libz.a $LIB_DIR/usr/local/lib &> $OUTPUT_IO
+    mkdir -p $LIB_DIR/include &> $OUTPUT_IO
+    mkdir -p $LIB_DIR/lib &> $OUTPUT_IO
+    cp zconf.h zlib.h $LIB_DIR/include &> $OUTPUT_IO
+    cp libz.a $LIB_DIR/lib &> $OUTPUT_IO
   fi
 }
 
@@ -107,7 +107,7 @@ function buildOpenSsl {
 
     echo "==> Building OpenSSL libraries"
 
-    mingw ./Configure --openssldir=$LIB_DIR/usr/local mingw &> $OUTPUT_IO
+    mingw ./Configure --openssldir=$LIB_DIR mingw &> $OUTPUT_IO
     mingw make  &> $OUTPUT_IO
     mingw make install  &> $OUTPUT_IO
   fi
@@ -128,8 +128,7 @@ function buildCurl {
 
     echo "==> Building Curl libraries"
 
-    ./configure --host=i686-w64-mingw32 --prefix=$LIB_DIR/usr/local --enable-static=yes --enable-shared=no --with-zlib=$LIB_DIR/usr/local --with-ssl=$LIB_DIR/usr/local &> $OUTPUT_IO
-    # TODO: This fails due to crypto and ssl libs after gdi32 lib statement in LIBS from configure
+    ./configure --host=i686-w64-mingw32 --prefix=$LIB_DIR --enable-static=yes --enable-shared=no --with-zlib=$LIB_DIR --with-ssl=$LIB_DIR &> $OUTPUT_IO
     make &> $OUTPUT_IO
     make install &> $OUTPUT_IO
   fi
@@ -151,25 +150,30 @@ function buildBZip {
     echo "==> Building bzip libraries"
 
     mingw make &> $OUTPUT_IO
-    mingw make install PREFIX=$LIB_DIR/usr/local &> $OUTPUT_IO
+    mingw make install PREFIX=$LIB_DIR &> $OUTPUT_IO
   fi
 }
 
 function installPython {
-  # Install Python with Wine
-  if [ ! -d "$HOME/.wine/drive_c/Python27" ]; then
-    # Python installer
-    cd $HOME
-    wget https://www.python.org/ftp/python/2.7.11/python-2.7.11.msi
-    wine msiexec /i python-2.7.11.msi /L*v log.txt
-    # Python patch cause of redefinition of hypit function for MSVC
-    sed -i '/#define hypot _hypot/d' $HOME/.wine/drive_c/Python27/include/pyconfig.h
-    # Python mingw dll.a file
+  if [ ! -d "$BUILD_DIR/python" ]; then
+    cd $BUILD_DIR
+    echo "==> Downloading Python 2.7"
+    wget https://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/4.9.2/threads-posix/dwarf/i686-4.9.2-release-posix-dwarf-rt_v3-rev1.7z
+    # Extract only python things
+    7z x i686-4.9.2-release-posix-dwarf-rt_v3-rev1.7z -opython mingw32/opt/include/python2.7 mingw32/opt/bin/python* -r
+    rm i686-4.9.2-release-posix-dwarf-rt_v3-rev1.7z
+    # Patch python-config script, '-ne' flag is not defined for mingw-w64 cross compiler
+    sed -i '/echo -ne $RESULT/c\echo $RESULT' $PYTHON_DIR/bin/python-config.sh
+    chmod +x $PYTHON_DIR/bin/python-config.sh
+    # TODO: Look for solution without sudo command, this is only needed for boost.m4 that uses python-config
+    sudo rm -f /usr/local/bin/python-config
+    sudo ln -s $PYTHON_DIR/bin/python-config.sh /usr/local/bin/python-config
+
+    # Python mingw dll.a file for official python installation (the one from mingw toolchain requires other dependencies)
     wget https://bitbucket.org/carlkl/mingw-w64-for-python/downloads/libpython-cp27-none-win32.7z
-    7z e libpython-cp27-none-win32.7z
+    7z x libpython-cp27-none-win32.7z
+    mv libs/libpython27.dll.a $LIB_DIR/lib/libpython2.7.a
     rm -rf libs libpython-cp27-none-win32.7z
-    # TODO: Try to not use sudo in the script
-    sudo mv libpython27.dll.a /usr/i686-w64-mingw32/lib/libpython27.a
   fi
 }
 
@@ -195,8 +199,8 @@ function buildBoost {
     ./bootstrap.sh -without-libraries=python  &> $OUTPUT_IO
     # Set cross compiler and custom python path
     echo "using gcc : 4.8 : i686-w64-mingw32-g++ ;" > user-config.jam
-    echo "using python : 2.7 : /usr/bin/python : $HOME/.wine/drive_c/Python27/include : $LIB_DIR/usr/local/lib ;" >> user-config.jam
-    ./b2 -q --user-config=user-config.jam toolset=gcc target-os=windows threading=multi threadapi=win32 variant=release link=static runtime-link=static --without-context --without-coroutine install --prefix=$LIB_DIR/usr/local include=$LIB_DIR/usr/local/include  &> $OUTPUT_IO
+    echo "using python : 2.7 : $PYTHON_DIR/bin/python.exe : $PYTHON_DIR/include/python2.7 : $PYTHON_DIR/lib ;" >> user-config.jam
+    ./b2 -q --user-config=user-config.jam toolset=gcc target-os=windows threading=multi threadapi=win32 variant=release link=static runtime-link=static --without-context --without-coroutine install --prefix=$LIB_DIR include=$LIB_DIR/include  &> $OUTPUT_IO
   fi
 }
 
@@ -215,16 +219,17 @@ function buildCore {
     ./bootstrap.sh &> $OUTPUT_IO
 
     # Set Python configs
-    export PYTHON_BIN=python27
-    export PYTHON_INCLUDE_DIR=$HOME/.wine/drive_c/Python27/include
+    export PYTHON_BIN=python2.7.exe
+    export PYTHON_INCLUDE_DIR=$PYTHON_DIR/include/python2.7
+    export PYTHON_LIB=python2.7
 
     # Patch the gringo patch for cross-compiling
-    sed -i "1s|^|62c62\n< env['CXX']            = 'g++'\n---\n> env['CXX']            = 'i686-w64-mingw32-g++'\n68c68\n< env['LIBPATH']        = []\n---\n> env['LIBPATH']        = ['$LIB_DIR/usr/local/lib', '$MINGW_DIR/libs']\n|" buildclaspgringo/SConstruct.patch
+    sed -i "1s|^|62c62\n< env['CXX']            = 'g++'\n---\n> env['CXX']            = 'i686-w64-mingw32-g++'\n68c68\n< env['LIBPATH']        = []\n---\n> env['LIBPATH']        = ['$LIB_DIR/lib', '$MINGW_DIR/libs']\n|" buildclaspgringo/SConstruct.patch
 
     # see http://curl.haxx.se/docs/faq.html#Link_errors_when_building_libcur about CURL_STATICLIB define
-    mingw ./configure LDFLAGS="-static -static-libgcc -static-libstdc++ -L$LIB_DIR/usr/local/lib" --prefix $LIB_DIR/usr/local PKG_CONFIG_PATH=$LIB_DIR/usr/local/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-static --disable-shared --enable-static-boost --with-boost=$LIB_DIR/usr/local --with-libcurl=$LIB_DIR/usr/local --host=i686-w64-mingw32 CFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CXXFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CPPFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB"
+    mingw ./configure LDFLAGS="-static -static-libgcc -static-libstdc++ -L$LIB_DIR/lib -L$PYTHON_DIR/lib/python2.7/config/" --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig LOCAL_PLUGIN_DIR=plugins --enable-python --enable-static --disable-shared --enable-static-boost --with-boost=$LIB_DIR --with-libcurl=$LIB_DIR --host=i686-w64-mingw32 CFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CXXFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB" CPPFLAGS="-static -DBOOST_PYTHON_STATIC_LIB -DCURL_STATICLIB"
     mingw make
-    mingw make install PREFIX=$LIB_DIR/usr/local
+    mingw make install PREFIX=$LIB_DIR
   fi
 }
 
@@ -234,12 +239,12 @@ function cleanup {
   # TODO: Check if directories really exist
 
   # Clean up boost
-  # cd $BUILD_DIR/boost
-  # ./b2 --clean &> $OUTPUT_IO
+  cd $BUILD_DIR/boost
+  ./b2 --clean &> $OUTPUT_IO
 
   # Clean up core
-  # cd $BUILD_DIR/core
-  # make clean &> $OUTPUT_IO
+  cd $BUILD_DIR/core
+  make clean &> $OUTPUT_IO
 }
 
 
@@ -260,14 +265,11 @@ while [ "$1" != "" ]; do
   shift
 done
 
-# Needed on 64bit hosts to install wine package
-sudo dpkg --add-architecture i386
-
 checkDependencies
 
 # Create the xc env and enable it
-mkdir -p $HOME/bin
-cat >$HOME/bin/mingw << 'EOF'
+mkdir -p $LIB_DIR/bin
+cat >$LIB_DIR/bin/mingw << 'EOF'
 #!/bin/sh
 PREFIX=i686-w64-mingw32
 export CC=$PREFIX-gcc
@@ -277,31 +279,8 @@ export RANLIB=$PREFIX-ranlib
 export PATH="/usr/$PREFIX/bin:$PATH"
 exec "$@"
 EOF
-chmod u+x $HOME/bin/mingw
-export PATH="$HOME/bin:$PATH"
-
-# Override python-config script for proper Windows xc env
-echo "cat >/usr/local/bin/python-config << 'EOF'
-#!/bin/sh
-
-while [ \"\$1\" != \"\" ]; do
-  case \$1 in
-    --includes )                  echo \" -I$PYTHON_DIR/include\"
-                                  ;;
-    --prefix | --exec-prefix )    echo \"$PYTHON_DIR/include\"
-                                  ;;
-    --cflags )                    echo \" -I$PYTHON_DIR/include -I$MINGW_DIR/include -D_WIN32_WINNT=0x0501 -DWINVER=0x0501 -DG_OS_WIN32\"
-                                  ;;
-    --libs )                      echo \" -lpthread -mthreads -lm -lpython27 -L$PYTHON_DIR/libs -L$MINGW_DIR/libs\"
-                                  ;;
-    --ldflags )                   echo \" -lpthread -mthreads -lm -lpython27 -L$PYTHON_DIR/Python27/libs -L$MINGW_DIR/libs -Xlinker -export-dynamic\"
-                                  ;;
-  esac
-  shift
-done
-
-EOF" | sudo -s
-sudo chmod +x /usr/local/bin/python-config
+chmod u+x $LIB_DIR/bin/mingw
+export PATH="$LIB_DIR/bin:$PATH"
 
 # Create build dir
 prepare
