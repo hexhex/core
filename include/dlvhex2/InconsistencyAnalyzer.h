@@ -86,14 +86,13 @@ public:
       *
       * @param mg Pointer to some model generator to be used for external atom evaluation.
       * @param explAtoms Atoms to compute the inconsistency explanation for.
-      * @param unitInput Input from predecessor unit.
       * @param innerEatoms Inner external atoms in this unit; for inconsistency analysis, <em>all</em> external atoms in the unit must be considered to be inner.
       * @param program Program to compute the inconsistency reason for.
       * @param annotatedGroundProgram Previous (optimized) grounding with annotations.
       * @param haveInconsistencyCause Contains the result whether an inconsistency reason has been found.
       * @return Inconsistency reason R=(R+,R-) in form of a nogood with R+ as positive and R- as negative literals.
       */
-    Nogood getInconsistencyReason(BaseModelGenerator* mg, InterpretationConstPtr explAtoms, InterpretationConstPtr unitInput, std::vector<ID>& innerEatoms, OrdinaryASPProgram& program, AnnotatedGroundProgram& annotatedOptimizedProgram, bool* haveInconsistencyReason);
+    Nogood getInconsistencyReason(BaseModelGenerator* mg, InterpretationConstPtr explAtoms, std::vector<ID>& innerEatoms, OrdinaryASPProgram& program, AnnotatedGroundProgram& annotatedOptimizedProgram, bool* haveInconsistencyReason);
 };
 
 DLVHEX_NAMESPACE_END

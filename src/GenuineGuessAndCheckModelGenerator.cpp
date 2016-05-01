@@ -749,7 +749,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
     program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
     InconsistencyAnalyzer ia(factory.ctx);
-    inconsistencyCause = ia.getInconsistencyReason(this, explAtoms, unitInput, factory.innerEatoms, program, annotatedGroundProgram, &haveInconsistencyCause);
+    inconsistencyCause = ia.getInconsistencyReason(this, explAtoms, factory.innerEatoms, program, annotatedGroundProgram, &haveInconsistencyCause);
 
     if (haveInconsistencyCause) {
         DBGLOG(DBG, "Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
