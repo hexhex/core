@@ -408,7 +408,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
                         }
                         if (auxID != ID_FAIL) throw GeneralError("Invalid support set detected (contains multiple auxiliaries)");
                         auxID = flit;
-                        supportRule.head.push_back(flit);
+                        supportRule.head.push_back(replacePredForInlinedEAs(flit, InterpretationConstPtr()));
                     }
                 }
                 if (auxID == ID_FAIL) throw GeneralError("Invalid support set detected (contains no auxiliary)");
@@ -577,7 +577,7 @@ ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, Inter
     DBGLOG(DBG, "replacePredForInlinedEAs called for " << printToString<RawPrinter>(atomID, factory.ctx.registry()));
 
     // only external predicates are inlined
-    if (!atomID.isExternalAuxiliary() || !eliminatedExtAuxes->getFact(atomID.address)) {
+    if (!atomID.isExternalAuxiliary() || (!!eliminatedExtAuxes && !eliminatedExtAuxes->getFact(atomID.address))) {
         DBGLOG(DBG, "--> not an eliminated external atom auxiliary; aborting");
         return atomID;
     }
