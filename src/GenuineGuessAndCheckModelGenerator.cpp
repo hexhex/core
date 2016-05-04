@@ -322,11 +322,14 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
         }
 #endif
 
+    // remember the number of rules in the program before the rewriting
+    int origRules = program.idb.size();
+
     InterpretationPtr eliminatedExtAuxes(new Interpretation(reg));
     for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
         // evaluate the external atom if it provides support sets
         const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-        if (eatom.getExtSourceProperties().providesSupportSets()) {
+        if (eatom.getExtSourceProperties().providesSupportSets() && eatom.getExtSourceProperties().providesCompletePositiveSupportSets()) {
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidinlined, "Inlined external atoms");
 
             DBGLOG(DBG, "Learning support sets for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
@@ -538,6 +541,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
                 if (newAtomID != rule.body[bIndex]) {
                     if (!newRule) {
                         newRule = new Rule(rule);
+                        if (rIndex < origRules && rule.body[bIndex].isNaf()) throw GeneralError("Cannot inline negated external atom " + printToString<RawPrinter>(rule.body[bIndex], reg) + ": please rewrite");
                     }
                     newRule->body[bIndex] = (newRule->body[bIndex].isNaf() ? ID::nafLiteralFromAtom(newAtomID) : ID::posLiteralFromAtom(newAtomID));
                 }
