@@ -271,14 +271,7 @@ haveInconsistencyCause(false)
         }
 
         // run solver
-        solver = GenuineGroundSolver::getInstance(
-            factory.ctx, annotatedGroundProgram,
-            explAtoms,
-            // do the UFS check for disjunctions only if we don't do
-            // a minimality check in this class;
-            // this will not find unfounded sets due to external sources,
-            // but at least unfounded sets due to disjunctions
-            !factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"));
+        solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram, explAtoms);
 
         // initialize a non-optimized solver instance for later inconsistency analysis (if requested)
         if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){ initializeInconsistencyAnalysis(); }
@@ -1074,13 +1067,12 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "GenuineGnCMG: isModel");
     // FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-    if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0 &&
-    factory.ctx.config.getOption("FLPDecisionCriterionHead") && factory.ctx.config.getOption("FLPDecisionCriterionE")) {
-        DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
+    if (annotatedGroundProgram.hasECycles() == 0 && factory.ctx.config.getOption("FLPDecisionCriterionE")) {
+        DBGLOG(DBG, "No e-cycles --> No FLP/UFS check necessary");
         return true;
     }
     else {
-        DBGLOG(DBG, "Head- or e-cycles --> FLP/UFS check necessary");
+        DBGLOG(DBG, "e-cycles --> FLP/UFS check necessary");
 
         // Explicit FLP check
         if (factory.ctx.config.getOption("FLPCheck")) {
