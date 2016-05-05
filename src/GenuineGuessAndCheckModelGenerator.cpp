@@ -271,7 +271,7 @@ unitInput(input)
             }
         }
 
-        grounder = GenuineGrounder::getInstance(factory.ctx, program /*, explAtoms*/);
+        grounder = GenuineGrounder::getInstance(factory.ctx, program);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
         if (!!gp.mask) mask->add(*gp.mask);
@@ -286,7 +286,7 @@ unitInput(input)
         }
 
         // run solver
-        solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram, explAtoms);
+        solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
     }
 
     // external learning related initialization
@@ -581,7 +581,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidextregrounding, "Regrounding after inlining");
     // reground and reanalyze extended program
     if (groundAgain) {
-        grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram, explAtoms);
+        grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
 
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
@@ -623,6 +623,7 @@ ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, Inter
 void GenuineGuessAndCheckModelGenerator::initializeExplanationAtoms(OrdinaryASPProgram& program){
 
     PredicateMaskPtr explAtomMask(new PredicateMask());
+    explAtoms.reset(new Interpretation(factory.ctx.registry()));
     if (factory.ctx.config.getOption("UserInconsistencyAnalysis")) {
         // for debugging, use the atoms explicitly specified by the user (must be propositional)
         BOOST_FOREACH (std::string atomStr, factory.ctx.config.getExplanationAtoms()) {

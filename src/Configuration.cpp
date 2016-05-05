@@ -112,7 +112,7 @@ Configuration::addFilter(const std::string& f)
 void
 Configuration::addExplanationAtom(const std::string& e)
 {
-    optionFilter.push_back(e);
+    optionExplanation.push_back(e);
 }
 
 const std::vector<std::string>&
