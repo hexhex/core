@@ -1707,6 +1707,7 @@ Config& config, ProgramCtx& pctx)
                 pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
                 heuristicMonolithic = true;
                 pctx.config.setOption("ForceGC", 1);
+                pctx.config.setOption("UnitInconsistencyAnalysis", 1);
                 pctx.config.setOption("UserInconsistencyAnalysis", 1);
 
                 boost::char_separator<char> sep(",");

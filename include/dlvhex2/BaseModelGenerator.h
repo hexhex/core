@@ -105,6 +105,7 @@ public ModelGeneratorBase<Interpretation>
 {
     friend class UnfoundedSetCheckerOld;
     friend class UnfoundedSetChecker;
+    friend class InconsistencyAnalyzer;
     friend class EncodingBasedUnfoundedSetChecker;
     friend class AssumptionBasedUnfoundedSetChecker;
     // members

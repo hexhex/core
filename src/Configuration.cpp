@@ -124,7 +124,7 @@ Configuration::getFilters() const
 const std::vector<std::string>&
 Configuration::getExplanationAtoms() const
 {
-    return optionExplanationAtoms;
+    return optionExplanation;
 }
 
 const std::string&

@@ -119,8 +119,8 @@ public PropagatorCallback
         int cmModelCount;
         /** \brief Set of atoms used for inconsistency analysis (only defined if inconsistency analysis is used). */      
         InterpretationPtr explAtoms;
-        /** \brief Second solver instance (non-optimized solver!) for inconsistency analysis. */
-        InternalGroundDASPSolverPtr analysissolver;
+        /** \brief Remembers the input from the predecessor units (used for inconsistency analysis). */
+        InterpretationConstPtr unitInput;
         /** \brief Stores if an inconsistency cause has been identified. */
         bool haveInconsistencyCause;
         /** \brief Stores the inconsistency cause as a nogood if GenuineGuessAndCheckModelGenerator::haveInconsistencyCause is set to true. */
@@ -156,11 +156,6 @@ public PropagatorCallback
          * @param program The program whose EDB needs to be modified for inconsistency analysis (explanation atoms are removed as facts and assumed instead).
          */
         void initializeExplanationAtoms(OrdinaryASPProgram& program);
-
-        /**
-         * \brief Initializes a non-optimized solver for inconsistency analysis in this unit.
-         */
-        void initializeInconsistencyAnalysis();
 
         /**
          * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments.

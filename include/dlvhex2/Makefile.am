@@ -63,6 +63,7 @@ pkginclude_HEADERS = \
   HexParserModule.h \
   HigherOrderPlugin.h \
   ID.h \
+  InconsistencyAnalyzer.h \
   InputProvider.h \
   Interpretation.h \
   LiberalSafetyChecker.h \
