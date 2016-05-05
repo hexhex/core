@@ -109,6 +109,11 @@ Configuration::addFilter(const std::string& f)
     optionFilter.push_back(f);
 }
 
+void
+Configuration::addExplanationAtom(const std::string& e)
+{
+    optionFilter.push_back(e);
+}
 
 const std::vector<std::string>&
 Configuration::getFilters() const
@@ -116,6 +121,11 @@ Configuration::getFilters() const
     return optionFilter;
 }
 
+const std::vector<std::string>&
+Configuration::getExplanationAtoms() const
+{
+    return optionExplanationAtoms;
+}
 
 const std::string&
 Configuration::getStringOption(

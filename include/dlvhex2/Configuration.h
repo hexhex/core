@@ -119,11 +119,23 @@ class DLVHEX_EXPORT Configuration
             addFilter(const std::string&);
 
         /**
+         * Adds an atom for inconsistency explanation.
+         * @param atom Atom for the explanation. */
+        void addExplanationAtom(const std::string& atom);
+
+        /**
          * @brief Returns list of predicates to be filtered.
          * @return Vector of all predicates (as strings) to be filtered.
          */
         const std::vector<std::string>&
             getFilters() const;
+
+        /**
+         * @brief Returns list of atoms used for inconsistency explanation.
+         * @return Vector of atoms for inconsistency explanation.
+         */
+        const std::vector<std::string>&
+            getExplanationAtoms() const;
 
         /** \brief Retrieve the string value of an option.
          * @param key Name of the option.
@@ -154,6 +166,9 @@ class DLVHEX_EXPORT Configuration
          * @brief List of filter-predicates.
          */
         std::vector<std::string> optionFilter;
+
+        /** \brief Set of atoms used for inconsistency explanation. */
+        std::vector<std::string> optionExplanation;
 };
 
 DLVHEX_NAMESPACE_END

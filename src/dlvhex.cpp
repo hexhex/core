@@ -872,6 +872,7 @@ Config& config, ProgramCtx& pctx)
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
+        { "explain", required_argument, 0, 68 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1701,6 +1702,22 @@ Config& config, ProgramCtx& pctx)
                         else if (mode != "post") throw GeneralError("Unknown inlining mode \"" + mode + "\"");
                     }
                 }
+            case 68:
+            {
+                pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
+                heuristicMonolithic = true;
+                pctx.config.setOption("ForceGC", 1);
+                pctx.config.setOption("UserInconsistencyAnalysis", 1);
+
+                boost::char_separator<char> sep(",");
+                                 // g++ 3.3 is unable to pass that at the ctor line below
+                std::string oa(optarg);
+                boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+
+                for(boost::tokenizer<boost::char_separator<char> >::const_iterator e = tok.begin();
+                    e != tok.end(); ++e)
+                pctx.config.addExplanationAtom(*e);
+            }
         }
     }
 
