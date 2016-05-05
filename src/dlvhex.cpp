@@ -282,7 +282,13 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         generalize       : Generalize learned ground nogoods to nonground nogoods" << std::endl
         << "                      By default, all options except \"generalize\" are enabled." << std::endl
         << "     --supportsets    Exploits support sets for evaluation." << std::endl
-        << "     --extinlining    Inlines external sources (based on support sets)" << std::endl
+        << "     --extinlining[=post,re]" << std::endl
+        << "                      Inlines external sources (based on support sets). The parameter specifies the integration method:" << std::endl
+        << "                         post (default)   : Integrate after grounding; non-ground support sets are fully instantiated" << std::endl
+        << "                         re               : Reground using the ASP grounder if non-ground support sets were used to inline external atoms" << std::endl
+        << "                      Generally, the nogood grounding method employed by \"post\" might be slower, but is applied only to support sets," << std::endl
+        << "                      while the one by \"re\" is faster but needs to reground the whole program. Usually, \"post\" is faster if the number of" << std::endl
+        << "                      non-ground support sets is small compared to the grounding of the program; otherwise \"re\" might be faster." << std::endl
         << "     --evalall        Evaluate all external atoms in every compatibility check, even if previous external atoms already failed." << std::endl
         << "                      This makes nogood learning more independent of the sequence of external atom checks." << std::endl
         << "                      Only useful with --extlearn." << std::endl
@@ -865,7 +871,7 @@ Config& config, ProgramCtx& pctx)
         { "transunitlearning", no_argument, 0, 64 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
-        { "extinlining", no_argument, 0, 67 },
+        { "extinlining", optional_argument, 0, 67 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1689,6 +1695,11 @@ Config& config, ProgramCtx& pctx)
                 {
                     pctx.config.setOption("SupportSets", 1);
                     pctx.config.setOption("ExternalSourceInlining", 1);
+                    if (optarg) {
+                        std::string mode(optarg);
+                        if (mode == "re") pctx.config.setOption("ExternalSourceInlining", 2);
+                        else if (mode != "post") throw GeneralError("Unknown inlining mode \"" + mode + "\"");
+                    }
                 }
         }
     }

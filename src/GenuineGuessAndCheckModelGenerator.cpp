@@ -316,6 +316,7 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()
 void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram& program, GenuineGrounderPtr& grounder, AnnotatedGroundProgram& annotatedGroundProgram, std::vector<ID>& activeInnerEatoms) {
 
 #ifndef NDEBUG
+        DBGLOG(DBG, "External source inlining in mode " (factory.ctx.config.getOption("ExternalSourceInlining") == 2 ? "re" : "post"));
         DBGLOG(DBG, "Inlining in program:" << std::endl << *program.edb << std::endl)
         BOOST_FOREACH (ID rID, program.idb) {
             DBGLOG(DBG, printToString<RawPrinter>(rID, reg));
@@ -324,6 +325,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
 
     // remember the number of rules in the program before the rewriting
     int origRules = program.idb.size();
+    bool groundAgain = false;
 
     InterpretationPtr eliminatedExtAuxes(new Interpretation(reg));
     for(unsigned eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex) {
@@ -334,8 +336,9 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
 
             DBGLOG(DBG, "Learning support sets for " << printToString<RawPrinter>(factory.innerEatoms[eaIndex], reg));
             SimpleNogoodContainerPtr supportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-            if (eatom.getExtSourceProperties().providesOnlySafeSupportSets()) {
+            if (eatom.getExtSourceProperties().providesOnlySafeSupportSets() && factory.ctx.config.getOption("ExternalSourceInlining") == 2) {
                 learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], supportSets);
+                groundAgain = true;
             }else{
                 SimpleNogoodContainerPtr potentialSupportSets = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
                 learnSupportSetsForExternalAtom(factory.ctx, factory.innerEatoms[eaIndex], potentialSupportSets);
@@ -572,13 +575,17 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidextregrounding, "Regrounding after inlining");
     // reground and reanalyze extended program
-    grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram, explAtoms);
-    OrdinaryASPProgram gp = grounder->getGroundProgram();
+    if (groundAgain) {
+        grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram, explAtoms);
+        OrdinaryASPProgram gp = grounder->getGroundProgram();
 
-    // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
-    if (!!gp.mask) mask->add(*gp.mask);
-    gp.mask = InterpretationConstPtr();
-    annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, activeInnerEatoms);
+        // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
+        if (!!gp.mask) mask->add(*gp.mask);
+        gp.mask = InterpretationConstPtr();
+        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, activeInnerEatoms);
+    }else{
+        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, program, activeInnerEatoms);
+    }
     }
 }
 
