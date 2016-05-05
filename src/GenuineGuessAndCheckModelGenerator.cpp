@@ -584,7 +584,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
         gp.mask = InterpretationConstPtr();
         annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, activeInnerEatoms);
     }else{
-        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, program, activeInnerEatoms);
+        annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, inlinedProgram, activeInnerEatoms);
     }
     }
 }
