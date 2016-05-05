@@ -154,12 +154,12 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
     en_end = gp.edb->getStorage().end();
     while (en < en_end) {
         // explanation atoms cannot be part of the EDB
-	    if (!explAtoms->getFact(*en)) {
+//	    if (!explAtoms->getFact(*en)) {
                 Rule satOnModelRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
 	        satOnModelRule.head.push_back(satAtom);
 	        satOnModelRule.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('n', ctx.registry()->ogatoms.getIDByAddress(*en))));
                 analysisProgram.idb.push_back(ctx.registry()->storeRule(satOnModelRule));
-	    }
+//	    }
         en++;
     }
     BOOST_FOREACH (ID ruleID, gp.idb) {
@@ -188,7 +188,7 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
 
 #ifndef NDEBUG
     if (!!gp.edb) {
-        DBGLOG(DBG, "Analysis program:" << std::endl << *gp.edb << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n", ctx.registry()));
+        DBGLOG(DBG, "Analysis program:" << std::endl << *analysisProgramEdb.edb << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n", ctx.registry()));
     }else{
         DBGLOG(DBG, "Analysis program:" << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n", ctx.registry()));
     }
