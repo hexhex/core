@@ -436,6 +436,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
 
                 // add support rule
                 ID supportRuleID = reg->storeRule(supportRule);
+                DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidsupprulecount, "Added support rules", 1);
                 DBGLOG(DBG, "Adding support rule " << printToString<RawPrinter>(supportRuleID, reg));
                 program.idb.push_back(supportRuleID);
             }
@@ -494,6 +495,8 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
                             ID guessAorAFID = reg->storeRule(guessAorAF);
                             DBGLOG(DBG, "Guessing rule: " << printToString<RawPrinter>(guessAorAFID, reg));
                             program.idb.push_back(guessAorAFID);
+
+                            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidinlinedauxrules, "Added auxiliary rules", 4);
                         }
 
                         en++;
@@ -507,8 +510,10 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
 
     // 1. substitute external atom guessing rule "e v ne :- B" by "ne :- not a"
     // 2. replace external atom auxiliaries 'r'/'n' by 'R'/'N' in all rules
-    DBGLOG(DBG, "Replacing external atom auxiliaries");
     OrdinaryASPProgram inlinedProgram(reg, std::vector<ID>(), program.edb, factory.ctx.maxint);
+    {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidextreplace, "Rewrite to inlined ext. atoms");
+    DBGLOG(DBG, "Replacing external atom auxiliaries");
     for (int rIndex = 0; rIndex < program.idb.size(); ++rIndex) {
         DBGLOG(DBG, "Processing rule " << printToString<RawPrinter>(program.idb[rIndex], reg));
         const Rule& rule = reg->rules.getByID(program.idb[rIndex]);
@@ -562,14 +567,19 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
         DBGLOG(DBG, printToString<RawPrinter>(rID, reg));
     }
 #endif
+    }
 
+    {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidextregrounding, "Regrounding after inlining");
     // reground and reanalyze extended program
     grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram, explAtoms);
     OrdinaryASPProgram gp = grounder->getGroundProgram();
+
     // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
     if (!!gp.mask) mask->add(*gp.mask);
     gp.mask = InterpretationConstPtr();
     annotatedGroundProgram = AnnotatedGroundProgram(factory.ctx, gp, activeInnerEatoms);
+    }
 }
 
 ID GenuineGuessAndCheckModelGenerator::replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtAuxes) {
