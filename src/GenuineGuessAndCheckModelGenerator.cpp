@@ -316,7 +316,7 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()
 void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram& program, GenuineGrounderPtr& grounder, AnnotatedGroundProgram& annotatedGroundProgram, std::vector<ID>& activeInnerEatoms) {
 
 #ifndef NDEBUG
-        DBGLOG(DBG, "External source inlining in mode " (factory.ctx.config.getOption("ExternalSourceInlining") == 2 ? "re" : "post"));
+        DBGLOG(DBG, "External source inlining in mode " << (factory.ctx.config.getOption("ExternalSourceInlining") == 2 ? "re" : "post"));
         DBGLOG(DBG, "Inlining in program:" << std::endl << *program.edb << std::endl)
         BOOST_FOREACH (ID rID, program.idb) {
             DBGLOG(DBG, printToString<RawPrinter>(rID, reg));
