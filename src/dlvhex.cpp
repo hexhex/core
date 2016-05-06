@@ -1702,23 +1702,25 @@ Config& config, ProgramCtx& pctx)
                         else if (mode != "post") throw GeneralError("Unknown inlining mode \"" + mode + "\"");
                     }
                 }
+                break;
             case 68:
-            {
-                pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
-                heuristicMonolithic = true;
-                pctx.config.setOption("ForceGC", 1);
-                pctx.config.setOption("UnitInconsistencyAnalysis", 1);
-                pctx.config.setOption("UserInconsistencyAnalysis", 1);
+                {
+                    pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
+                    heuristicMonolithic = true;
+                    pctx.config.setOption("ForceGC", 1);
+                    pctx.config.setOption("UnitInconsistencyAnalysis", 1);
+                    pctx.config.setOption("UserInconsistencyAnalysis", 1);
 
-                boost::char_separator<char> sep(",");
+                    boost::char_separator<char> sep(",");
                                  // g++ 3.3 is unable to pass that at the ctor line below
-                std::string oa(optarg);
-                boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+                    std::string oa(optarg);
+                    boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
 
-                for(boost::tokenizer<boost::char_separator<char> >::const_iterator e = tok.begin();
-                    e != tok.end(); ++e)
-                pctx.config.addExplanationAtom(*e);
-            }
+                    for(boost::tokenizer<boost::char_separator<char> >::const_iterator e = tok.begin();
+                        e != tok.end(); ++e)
+                    pctx.config.addExplanationAtom(*e);
+                }
+                break;
         }
     }
 
