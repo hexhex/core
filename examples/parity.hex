@@ -1,0 +1,4 @@
+p(X) :- #int(X), X >= 1.
+
+p(a) :- even.
+even :- &parity[p]().

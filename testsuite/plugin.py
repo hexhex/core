@@ -44,6 +44,60 @@ def aOrNotB(a,b):
 		if aIsTrue or bIsFalse:
 			dlvhex.output(())
 
+def parity(p):
+
+	if dlvhex.learnSupportSets():
+		pos = ()
+		for x in dlvhex.getInputAtoms():
+			pos = pos + (False, )
+
+		# special case: no input
+		if pos == ():
+			# always true
+			dlvhex.learn(dlvhex.storeOutputAtom(()).negate(), )
+
+		else:
+			pos = pos[:-1]
+			pos = list(pos)
+			overflow = False 
+			while not overflow:
+				ng = ()
+				# enumerate all combinations except for the last element (which is then definite)
+				last = False
+				for i in range(0, len(pos)):
+					if pos[i] == True:
+						ng = ng + (dlvhex.getInputAtoms()[i], )
+						last = not last
+					else:
+						ng = ng + (dlvhex.getInputAtoms()[i].negate(), )
+
+				# add last element with a sign such that the partiy is even
+				if last:
+					ng = ng + (dlvhex.getInputAtoms()[-1], )
+				else:
+        	                        ng = ng + (dlvhex.getInputAtoms()[-1].negate(), )
+
+				# generate nogood which implies that the external atom is true
+				supset = ng + (dlvhex.storeOutputAtom(()).negate(), )
+				dlvhex.learn(supset)
+
+				# go to next combination and check if we have an overflow, i.e., all combinations have been enumerated
+				inc=0
+				pos[inc] = not pos[inc]
+				while not overflow and not pos[inc]:
+					inc = inc + 1
+                                        if inc >= len(pos):
+                                                overflow = True
+					else:
+						pos[inc] = not pos[inc]
+
+	even = True
+	for atom in dlvhex.getInputAtoms():
+		if atom.isTrue():
+			even = not even
+	if even:
+		dlvhex.output(())
+
 def fibonacci(val):
 	dlvhex.output((fibonacci_comp(val.intValue()), ))
 	
@@ -556,6 +610,11 @@ def register():
 	prop.setSupportSets(True)
 	prop.setCompletePositiveSupportSets(True)
 	dlvhex.addAtom("aOrNotB", (dlvhex.PREDICATE, dlvhex.PREDICATE), 0, prop)
+
+        prop = dlvhex.ExtSourceProperties()
+        prop.setSupportSets(True)
+        prop.setCompletePositiveSupportSets(True)
+	dlvhex.addAtom("parity", (dlvhex.PREDICATE, ), 0, prop)
 
 	dlvhex.addAtom("fibonacci", (dlvhex.CONSTANT, ), 1)
 
