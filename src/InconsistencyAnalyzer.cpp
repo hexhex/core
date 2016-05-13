@@ -188,7 +188,7 @@ Nogood InconsistencyAnalyzer::getInconsistencyReason(BaseModelGenerator* mg, Int
 
 #ifndef NDEBUG
     if (!!gp.edb) {
-        DBGLOG(DBG, "Analysis program:" << std::endl << *analysisProgramEdb->edb << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n", ctx.registry()));
+        DBGLOG(DBG, "Analysis program:" << std::endl << *analysisProgramEdb << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n", ctx.registry()));
     }else{
         DBGLOG(DBG, "Analysis program:" << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n", ctx.registry()));
     }
