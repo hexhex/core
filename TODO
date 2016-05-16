@@ -1,5 +1,8 @@
 -*- org -*-
 
+* at the moment we have two families of model generators: genuine and non-genuine
+  genuine uses GenuineSolver and GenuineGrounder
+  non-genuine uses ASPSoftwareManager
 * TODO ProgramCtx::idb should become set of IDs and similar for ProgramCtx::idbList, this has implications in other code and plugins!
 * TODO use explicit qi headers in include/dlvhex2/HexGrammar.h (and probably in other spirit-using files) to reduce compile time
 * TODO unify names of methods in dlvhex::Interpretation, we may want to name the single-bit methods "add" "remove" and "has" (...Fact)
