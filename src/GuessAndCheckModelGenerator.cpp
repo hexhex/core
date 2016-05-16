@@ -293,7 +293,7 @@ factory(factory)
             "non-idb components! (use plain)");
     }
 
-    // assign to const member -> stays the same from here no!
+    // assign to const member -> stays the same from here on!
     postprocessedInput = postprocInput;
 
     // start evaluate edb+xidb+gidb

@@ -967,8 +967,9 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
         // add domain predicates for all external atoms which are relevant for de-safety
         const Rule& rule = reg->rules.getByID(ruleid);
-        Rule ruleDom = rule;     // this will be the original rule, but with additional domain atoms for each external atom
-                                 // this will be the rule used for computing the domains: it contains the domain atom in the body and a guess of the external atom in the head
+        // this will be the original rule, but with additional domain atoms for each external atom
+        Rule ruleDom = rule;
+        // this will be the rule used for computing the domains: it contains the domain atom in the body and a guess of the external atom in the head
         Rule ruleExpl(rule.kind & (ID::ALL_ONES - ID::PROPERTY_RULE_EXTATOMS));
         ruleExpl.head = rule.head;
         BOOST_FOREACH (ID b, rule.body) {
