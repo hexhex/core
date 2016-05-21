@@ -725,6 +725,7 @@ namespace
 
         assert(ctx->config.getOption("OptimizationTwoStep") == 1);
         AnswerSetPtr lastAnswerSet;
+        std::vector<int> currentOptimum;
         ModelBuilder<FinalEvalGraph>& mb = createModelBuilder(ctx);
         OptionalModel om;
         do {
@@ -749,15 +750,18 @@ namespace
                 answerset->interpretation->getStorage() = interpretation->getStorage();
                 answerset->computeWeightVector();
                 LOG(INFO, "new global best weight vector: " << printvector(answerset->getWeightVector()) << ", old best: " << printvector(ctx->currentOptimum));
-                assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
-                ctx->currentOptimum = answerset->getWeightVector();
-                // if we have at least one weight we need to complete the vector
-                // in order to obtain bounds for all levels
-                // (if we do not do this, clasp will not set a boud if we find a cost-free model)
-                // TODO set currentOptimumRelevantLevels not in ClaspSolver but in WeakPlugin during rewriting (should be possible!)
-                while (ctx->currentOptimum.size() < (ctx->currentOptimumRelevantLevels+1))
-                    ctx->currentOptimum.push_back(0);
-                lastAnswerSet = answerset;
+                //assert(ctx->currentOptimum.empty() || answerset->strictlyBetterThan(ctx->currentOptimum));
+                if (currentOptimum.empty() || answerset->strictlyBetterThan(currentOptimum)) {
+                	currentOptimum = answerset->getWeightVector();
+                	lastAnswerSet = answerset;
+                }
+
+                ctx->currentOptimum = currentOptimum;
+
+                // decrease least significant level, such that future answer sets are strictly better
+                if (!ctx->currentOptimum.empty() && ctx->currentOptimum[ctx->currentOptimum.size() - 1] > 0) {
+                	ctx->currentOptimum[ctx->currentOptimum.size() - 1]--;
+                }
             }
             // exit if we get no model
             // if we get a model with zero cost, the next iteration will set 0 as bound in clasp, so no further model will be found
@@ -766,6 +770,12 @@ namespace
         // * either there never was any model with any weight
         // * or we got models and found the optimum (ctx->currentOptimum) and lastAnswerSet is the first optimal one
         // our caller will handle these cases
+        ctx->currentOptimum = lastAnswerSet->getWeightVector();
+        while (ctx->currentOptimum.size() < (ctx->currentOptimumRelevantLevels+1))
+            ctx->currentOptimum.push_back(0);
+
+        ctx->integrateNextOptimum = true;
+
         DBGLOG(DBG,"returning answer set " << reinterpret_cast<void*>(lastAnswerSet.get()));
         return lastAnswerSet;
     }
@@ -817,7 +827,7 @@ namespace
                 answerset->computeWeightVector();
                 LOG(DBG, "weight vector of this answer set: " << printvector(answerset->getWeightVector()));
                 // TODO this assertion should be done, but only if optimizing and perhaps even then we might have vector length difference problems
-                //assert( ctx->currentOptimum == answerset->getWeightVector() );
+                // assert( ctx->currentOptimum == answerset->getWeightVector() );
 
                 // add EDB if configured that way
                 if( !ctx->config.getOption("NoFacts") )
@@ -895,60 +905,29 @@ namespace
                 if( !ctx->config.getOption("NoFacts") )
                     answerset->interpretation->getStorage() |= ctx->edb->getStorage();
 
-                // cost check
-                // compare the solution to the best known model
-                // 3 Options:
-                // - ctx->config.getOption("OptimizationByDlvhex"):
-                //   Let dlvhex manage optimization. Setting this option to true suffices to get the correct result.
-                // - ctx->config.getOption("OptimizationFilterNonOptimal"):
-                //   Avoid that non-optimal models are printed before the best model appears; option is only relevant if "OptimizationByDlvhex" is also set.
-                // - ctx->config.getOption("OptimizationByBackend"):
-                //   Let solver backends manage optimization (if the specific backends supports it).
-                //   This option is optional but might prune the search space already in single units while dlvhex can optimize only after the final models have been found.
-                                 // betterThan does not necessarily mean strictly better, i.e., it includes solutions of the same quality!
-                bool equalOrBetter = (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum));
-
-                // keep track of the current optimum
-                if( equalOrBetter ) {
+                // is there a previous model and the new model is (strictly!) better than the best known one?
+                if(bestModels.empty() || answerset->strictlyBetterThan(bestModels.front()->getWeightVector())) {
+                    // new model is better than all previous ones --> clear cache
+                    LOG(DBG, "clearing bestModels because new model is strictly better");
                     ctx->currentOptimum = answerset->getWeightVector();
-                    LOG(DBG, "Current global optimum (equalOrBetter = True): " << printvector(answerset->getWeightVector()));
+                    bestModels.clear();
+                    mcount = 0;
                 }
 
-                if (ctx->config.getOption("OptimizationByDlvhex")){
-                    if( !equalOrBetter ) continue;
-
-                    // in this block we do not need to count models as we need to enumerate all of them
-                    // only afterwards the requested number of best models can be output
-
-                    // is there a previous model and the new model is (strictly!) better than the best known one?
-                    if( !bestModels.empty() && !bestModels.front()->betterThan(answerset->getWeightVector()) ) {
-                        // new model is better than all previous ones --> clear cache
-                        LOG(DBG, "clearing bestModels because new model is strictly better");
-                        bestModels.clear();
-                    }
-
-                    // also show some non-optimal models?
-                    if( ctx->config.getOption("OptimizationFilterNonOptimal") == 0 ) {
-                        // yes: output model immediately
-                        abort |= callModelCallbacks(ctx, answerset);
-                        mcount++;
-                    }else{
-                        // store this one in cache and decide at the end upon optimality
-                        LOG(DBG, "recording answer set in bestModels: " << *answerset);
-                        bestModels.push_back(answerset);
-                    }
-                }else{
-                    abort |= callModelCallbacks(ctx, answerset);
-                    mcount++;
+                // the check is currently necessary for genuineii and sometimes if there are models with no costs.
+                if (answerset->betterThan(ctx->currentOptimum)) {
+                	bestModels.push_back(answerset);
                 }
-                if (mcountLimit != 0 && mcount >= mcountLimit) abort = true;
+
+                LOG(DBG, "Current global optimum (equalOrBetter = True): " << printvector(answerset->getWeightVector()));
+
+             	mcount++;
             }
         }
-        while( !!om && !abort );
+        while( !!om && (mcountLimit == 0 || mcount < mcountLimit) );
 
         // process cached models
         BOOST_FOREACH(AnswerSetPtr answerset, bestModels) {
-            mcount++;
             abort |= callModelCallbacks(ctx, answerset);
             // respect model count limit for cached models
             if( abort || (mcountLimit != 0 && mcount >= mcountLimit) )

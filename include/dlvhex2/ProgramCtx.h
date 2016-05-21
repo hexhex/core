@@ -163,6 +163,15 @@ class DLVHEX_EXPORT ProgramCtx
          * set a weight bound for enumeration. */
         unsigned currentOptimumRelevantLevels;
 
+        /**
+         * \brief Integrates the next currentOptimum, during the setOptimum call.
+         *
+         * Usually, integrate must not be called inside of setOptimum(), because it violates a precondition for a commitSymmetric() call.
+         * Sometimes it is still necessary to immediately integrate the optimum, between the first and second step of the Two-Step-Evaluation for instance.
+         * Be cautious whenever you set this flag, since it can cut off some of the models.
+         */
+        bool integrateNextOptimum = false;
+
         // used by plugins to store specific plugin data in ProgramCtx
         // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
         template<typename PluginT>
