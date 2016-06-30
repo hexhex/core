@@ -49,6 +49,7 @@
 #include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 #include "dlvhex2/ExternalLearningHelper.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
@@ -1032,7 +1033,6 @@ namespace
     {
         private:
             virtual void compute(const std::vector<Tuple>& trueInput, const std::vector<Tuple>& mightBeTrueInput, unsigned int* minFunctionValue, unsigned int* maxFunctionValue, bool* defined) {
-
                 *defined = true;
                 *minFunctionValue = 0;
                 *maxFunctionValue = 0;

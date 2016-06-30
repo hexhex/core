@@ -975,7 +975,8 @@ bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr)
 
     DBGLOG(DBG, "Computing e-cycles wrt. interpretation " << *intr);
 
-#ifdef WIN32
+// the (more efficient) evaluation in the #else block does not work with some boost versions, therefore we use the old version for now
+#if 1 //WIN32
     // make a copy of the dependency graph
     Graph depGraph2;
     boost::copy_graph(depGraph, depGraph2);
