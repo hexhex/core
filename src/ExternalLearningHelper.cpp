@@ -499,19 +499,21 @@ void ExternalLearningHelper::learnFromFunctionality(const PluginAtom::Query& que
     }
 }
 
+namespace{
+     struct TupleHash {
+         std::size_t operator() (const Tuple& t) const {
+             std::size_t seed = 0;
+             boost::hash_combine(seed, t);
+             return seed;
+         }
+    };
+}
 
 void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& query, const PluginAtom::Answer& answer, const ExtSourceProperties& prop, NogoodContainerPtr nogoods, InputNogoodProviderConstPtr inp)
 {
     // learning of negative information
     if (nogoods) {
         // transform output into set for faster lookup
-         struct TupleHash {
-             std::size_t operator() (const Tuple& t) const {
-                 std::size_t seed = 0;
-                 boost::hash_combine(seed, t);
-                 return seed;
-             }
-        };
         Nogood extNgInput;
         int weakenedPremiseLiterals = 0;
         if (!inp->dependsOnOutputTuple()) extNgInput = (*inp)(query, prop, false, Tuple(), &weakenedPremiseLiterals);
