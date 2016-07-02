@@ -46,7 +46,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/functional/hash.hpp>
 
-#include <unordered_set>
+#include <boost/unordered_set.hpp>
 
 #include <fstream>
 
@@ -532,7 +532,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
         ID negOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('n', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
         ID posOutPredicate = query.ctx->registry()->getAuxiliaryConstantSymbol('r', query.ctx->registry()->eatoms.getByID(query.eatomID).predicate);
 
-        std::unordered_set<Tuple, TupleHash> toutput, tunknown;
+        boost::unordered_set<Tuple, TupleHash> toutput, tunknown;
         BOOST_FOREACH (Tuple t, answer.get()) toutput.insert(t);
         BOOST_FOREACH (Tuple t, answer.getUnknown()) tunknown.insert(t);
 
