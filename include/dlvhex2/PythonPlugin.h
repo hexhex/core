@@ -244,8 +244,8 @@
  *   <li>\code{.txt}void prop.setAtomlevellinear(value)\endcode Declare the source as linear on the atom level.</li>
  *   <li>\code{.txt}void prop.setUsesEnvironment(value)\endcode Declare the source as linear on the tuple level.</li>
  *   <li>\code{.txt}void prop.setFiniteFiber(value)\endcode Declare that the source has a finite fiber.</li>
- *   <li>\code{.txt}void prop.addWellorderingStrlen(index1, index2)\endcode Declare that output argument \em index1 has a string length wellordering wrt. input argument \em index2.</li>
- *   <li>\code{.txt}void prop.addWellorderingNatural(index1, index2)\endcode Declare that output argument \em index1 has a natural wellordering wrt. input argument \em index2.</li>
+ *   <li>\code{.txt}void prop.addWellorderingStrlen(index1, index2)\endcode Declare that output argument \em index2 has a string length wellordering wrt. input argument \em index1.</li>
+ *   <li>\code{.txt}void prop.addWellorderingNatural(index1, index2)\endcode Declare that output argument \em index2 has a natural wellordering wrt. input argument \em index1.</li>
  *   <li>\code{.txt}void prop.providesPartialAnswer(values)\endcode Declare that the external atom provies a partial answer under partial input using a 3-valued logic (true, false, unknown); in that case the implementation must add positive answer tuples using \code dlvhex.output \endcode and currently unknown ones using \code dlvhex.outputUnknown \endcode (others are false), whereas without this property the unassigned input atoms should be assumed to be false and a complete answer wrt. this assumption should be delivered.</li>
  * </ul>
  *
