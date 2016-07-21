@@ -973,7 +973,7 @@ sem(sem)
         = qi::lexeme[ ascii::lower >> *(ascii::alnum | qi::char_('_')) ];
     string
         = qi::lexeme[ qi::char_('"') >>
-        *( qi::string("\\\"")
+        *( qi::string("\\\"") | qi::string("\\\\")
         | qi::as_string[qi::char_ - (qi::char_('"') | qi::eol)]
         ) >> qi::char_('"') ];
     variable
