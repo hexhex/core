@@ -1031,6 +1031,10 @@ ComponentInfo& newComponentInfo) const
         // because domain restriction is always done in successor components
             if (!(!cio.outerEatoms.empty() && cio.innerRules.empty()))
             ci.fixedDomain &= cio.fixedDomain;
+    }
+
+    for(ito = comps.begin(); ito != comps.end(); ++ito) {
+        const ComponentInfo& cio = propsOf(*ito);
 
         // outer external atoms which get input from the same component become inner ones
         BOOST_FOREACH (ID outerEA, cio.outerEatoms){
@@ -1054,6 +1058,7 @@ ComponentInfo& newComponentInfo) const
         }
         WARNING("if " input " component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?")
     }
+
     ci.negativeDependencyBetweenRules |= foundInternalNegativeRuleDependency;
                                  // recompute if the collapsed component contains recursive aggregates; note that this is not simply the logical or of the basic components
     ci.recursiveAggregates = computeRecursiveAggregatesInComponent(ci);
