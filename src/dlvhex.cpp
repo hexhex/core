@@ -398,7 +398,7 @@ printVersion()
 {
     std::cout << PACKAGE_TARNAME << " " << VERSION << std::endl;
 
-    std::cout << "Copyright (C) 2005-2015 Roman Schindlauer, Thomas Krennwallner, Peter Sch\303\274ller, Christoph Redl" << std::endl
+    std::cout << "Copyright (C) 2005-2015 Roman Schindlauer, Thomas Krennwallner, Peter Sch\303\274ller, Christoph Redl, Tobias Kaminski, Antonius Weinzierl, Thomas Eiter, Michael Fink, Giovambattista Ianni" << std::endl
         << "License LGPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/lgpl.html>" << std::endl
         << "This is free software: you are free to change and redistribute it." << std::endl
         << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
