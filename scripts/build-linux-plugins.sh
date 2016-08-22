@@ -138,7 +138,7 @@ function buildPlugin {
 
     # Configure build
     ./bootstrap.sh &> $OUTPUT_IO
-    ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig --with-boost=$LIB_DIR &> $OUTPUT_IO
+    ./configure --prefix $LIB_DIR PKG_CONFIG_PATH=$LIB_DIR/lib/pkgconfig --with-boost=$LIB_DIR LDFLAGS="-Wl,-rpath,'\$\$ORIGIN' -Wl,-z,origin" CXXFLAGS="-DNDEBUG" &> $OUTPUT_IO
 
     echo -e "===> Build"
 
