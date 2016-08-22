@@ -19,13 +19,15 @@
 
 BASE_CLONE_URL="https://github.com/hexhex/"
 # TODO: Allow to override from command line to build a specific plugin only
-PLUGINS="nestedhexplugin mcsieplugin actionplugin actionplugin-addons stringplugin"
+# actionplugin and addons order is important here for collect step
+PLUGINS="nestedhexplugin mcsieplugin stringplugin actionplugin actionplugin-addons"
 # Plugins TODO: dlliteplugin, caspplugin, wordnetplugin
 # Don't change the following ones, should match directories from core build
 ROOT_DIR=`pwd`
 OUTPUT_IO=/dev/null
 # TODO: Check if already set from core build script
 BUILD_DIR=$ROOT_DIR/build-linux
+OUT_DIR=$ROOT_DIR/out-linux
 LIB_DIR=$BUILD_DIR/out
 
 # Color output
@@ -53,8 +55,9 @@ function usage {
 }
 
 function prepare {
-  echo -e "==> Create build directory"
+  echo -e "==> Create directories"
   mkdir -p $BUILD_DIR
+  mkdir -p $OUT_DIR
 }
 
 # Check for missing depdencies
@@ -82,7 +85,7 @@ function processPlugin {
   # Name of currently built plugin
   plugin_name=$1
 
-  echo -e "==> ${T_INFO} Process <$plugin_name> repository"
+  echo -e "\n==> ${T_INFO} Process <$plugin_name> repository"
 
   cd $BUILD_DIR
 
@@ -124,12 +127,15 @@ function processPlugin {
   else
     buildPlugin $plugin_name
   fi
+
+  cd $OUT_DIR
+  collect $plugin_name
 }
 
 # Make sure to dir to plugin directory before calling this method
 function buildPlugin {
   # Name of currently built plugin
-  plugin_name=$1
+  local plugin_name=$1
 
   echo -e "===> ${T_INFO} Build <$plugin_name> plugin"
 
@@ -163,8 +169,39 @@ function buildPlugin {
 
 # Collects build artifacts used for distribution later on
 function collect {
-  echo -e "==> Distributing build files"
-  # TODO: Where to copy build?
+  # Name of currently built plugin, we remove the "plugin" part from the name to find built libs
+  local plugin_name=${1//"plugin"/""}
+
+  echo -e "===> Collect build files for <$plugin_name> plugin"
+
+  # This is a temporary solution for collection the action addon libs
+  if [[ $plugin_name == *"addons"* ]]; then
+    plugin_name=${plugin_name/"-addons"/""}
+    plugin_name="_"$plugin_name
+  else
+    plugin_name="-"$plugin_name
+  fi
+
+  echo -e "====> Strip binary files"
+  cd $BUILD_DIR/out/lib
+  find . -type f -iname "lib*$plugin_name*.so*" -exec strip {} \; &> $OUTPUT_IO
+
+  echo -e "====> Archive"
+  tar_name="dlvhexplugin-${1//"plugin"/""}.tar"
+
+  # Find all plugin related libs and tar them, we look at two paths for now
+  cd $BUILD_DIR/out/lib
+  find * -maxdepth 1 \( -type f -or -type l \) -iname "lib*$plugin_name*.so*" -print0 | tar -cf $OUT_DIR/$tar_name --null -T - &> $OUTPUT_IO
+  cd $BUILD_DIR/out/lib/dlvhex2/plugins
+  find * -maxdepth 1 \( -type f -or -type l \) -iname "lib*$plugin_name*.so*" -print0 | tar -uf $OUT_DIR/$tar_name --null -T - &> $OUTPUT_IO
+
+  # Compress archive
+  rm -f $OUT_DIR/$tar_name.gz &> $OUTPUT_IO
+  gzip $OUT_DIR/$tar_name &> $OUTPUT_IO
+
+  cd $ROOT_DIR
+
+  echo -e "===> ${T_DONE} Collect finished"
 }
 
 
