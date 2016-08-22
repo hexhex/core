@@ -1137,7 +1137,7 @@ sem(sem)
 
     rule
         = (
-        (headAtom % qi::no_skip[*ascii::space >> qi::char_('v') >> ascii::space]) >>
+        (headAtom % qi::no_skip[*ascii::space >> (qi::char_('v') | qi::char_('|')) >> ascii::space]) >>
         -(
         qi::lit(":-") >
         (bodyLiteral % (qi::char_(',') | qi::char_(';')))
