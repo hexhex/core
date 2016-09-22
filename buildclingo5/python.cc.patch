@@ -1,0 +1,11 @@
+--- python.cc	2016-09-22 15:47:51.366661199 +0200
++++ python_new.cc	2016-09-22 15:48:24.063055517 +0200
+@@ -6509,7 +6509,7 @@
+ bool Python::exec(Location const &loc, String ) {
+     std::stringstream ss;
+     ss << loc << ": error: clingo has been build without python support\n";
+-    throw GringoError(ss.str());
++    throw GringoError(ss.str().c_str());
+ }
+ bool Python::callable(String) {
+     return false;

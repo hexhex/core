@@ -1,0 +1,4 @@
+67c67
+< env['WITH_LUA']       = 'auto'
+---
+> env['WITH_LUA']       = None

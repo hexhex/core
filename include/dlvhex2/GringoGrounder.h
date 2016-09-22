@@ -35,6 +35,9 @@
 #include "config.h"
 #endif
 
+
+#ifndef HAVE_CLINGO5
+
 #ifndef GRINGO3                  // GRINGO4
 
 #ifdef HAVE_LIBGRINGO
@@ -512,6 +515,88 @@ DLVHEX_NAMESPACE_END
 #endif
 #endif
 #endif
+
+#else // clingo5
+
+#ifndef _GRINGOGROUNDER_HPP
+#define _GRINGOGROUNDER_HPP
+
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/OrdinaryASPProgram.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/GenuineSolver.h"
+
+#include <vector>
+#include <map>
+#include <sstream>
+#include <string>
+
+extern "C" {
+  #include "clingo5/libgringo/clingo.h"
+}
+
+DLVHEX_NAMESPACE_BEGIN
+
+/**
+ * Gringo command line application.
+ */
+class GringoGrounder: public GenuineGrounder
+{
+    private:
+        /** \brief ProgramCtx. */
+        ProgramCtx& ctx;
+        /** \brief Input nonground program. */
+        OrdinaryASPProgram nongroundProgram;
+        /** \brief Generated ground program. */
+        OrdinaryASPProgram groundProgram;
+        /** \brief Set of frozen atoms, i.e., atoms to be excluded from optimization. */
+        InterpretationConstPtr frozen;
+        /** \brief Predicate used for dummy integer facts. */
+        ID intPred;
+        /** \brief Predicate used for atoms introduced by Gringo without counterpart in the nonground program. */
+        ID anonymousPred;
+        /** \brief Predicate to be used as a propositional atom for representing unsatisfiability. */
+        ID unsatPred;
+
+        /** \brief Printer for sending a program to Gringo. */
+        class Printer : public RawPrinter
+        {
+            public:
+                typedef RawPrinter Base;
+                /** \brief Predicate used for dummy integer facts. */
+                ID intPred;
+                /** \brief Constructor.
+                 * @param out Stream to send the ground program to.
+                 * @param registry Registry used for resolving IDs.
+                 * @param Predicate used for dummy integer facts. */
+                Printer(std::ostream& out, RegistryPtr registry, ID intPred) : RawPrinter(out, registry), intPred(intPred) {}
+
+                virtual void printRule(ID id);
+                virtual void printAggregate(ID id);
+                virtual void printInt(ID id);
+                virtual void print(ID id);
+        };
+
+    public:
+        /** \brief Constructor.
+         * @param ctx See GringoGrounder::ctx.
+         * @param p See GringoGrounder::nongroundProgram.
+         * @param frozen See GringoGrounder::frozen. */
+        GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen);
+        /** \brief Extracts the final ground program.
+         * @return Ground program. */
+        const OrdinaryASPProgram& getGroundProgram();
+
+    protected:
+        /** \brief Runs Gringo.
+         * @return Gringo return code. */
+        int doRun();
+};
+
+DLVHEX_NAMESPACE_END
+#endif
+#endif
+
 
 // vim:expandtab:ts=4:sw=4:
 // mode: C++

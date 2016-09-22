@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
     pctx.setASPSoftware(
         ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
     #else
-    #if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+    #if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP) || defined(HAVE_CLINGO5)
     #else
     #ifndef WIN32
     #error no asp software configured! configure.ac should not allow this to happen!
@@ -1902,4 +1902,3 @@ void configurePluginPath(std::string& userPlugindir)
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
-

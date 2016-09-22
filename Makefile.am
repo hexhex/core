@@ -30,9 +30,9 @@ uninstall-local:
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 	-rm -rf $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)
 
-SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} \
+SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} ${BUILDCLINGO5SUBDIRS} \
   libltdl examples include src testsuite
-DIST_SUBDIRS = buildclaspgringo \
+DIST_SUBDIRS = buildclaspgringo buildclingo5 \
   libltdl examples include src testsuite
 
 EXTRA_DIST = \
@@ -41,6 +41,7 @@ EXTRA_DIST = \
     COPYING.clasp.gringo \
     clasp-3.1.4-source.tar.gz \
     gringo-4.5.4-source.tar.gz \
+    clingo5.zip \
     build_potassco.sh \
     dlvhex2.pc.in \
     doxygen.am \

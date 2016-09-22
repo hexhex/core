@@ -36,6 +36,9 @@
 #include "config.h"
 #endif
 
+
+#ifndef HAVE_CLINGO5
+
 #ifdef HAVE_LIBCLASP
 
 #include "dlvhex2/ClaspSolver.h"
@@ -1725,6 +1728,267 @@ std::string ClaspSolver::getStatistics()
 
 
 DLVHEX_NAMESPACE_END
+#endif
+
+#else // clingo5
+
+#include "dlvhex2/ClaspSolver.h"
+
+#include <iostream>
+#include <sstream>
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Printhelpers.h"
+#include "dlvhex2/Set.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
+#include "dlvhex2/Benchmarking.h"
+
+#include <boost/foreach.hpp>
+#include <boost/graph/strong_components.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/tokenizer.hpp>
+
+extern "C" {
+  #include "clingo5/libgringo/clingo.h"
+}
+
+// activate this for detailed benchmarking in this file
+#undef DLVHEX_CLASPSOLVER_PROGRAMINIT_BENCHMARKING
+
+// @clasp examples: Run the following command to use the Makefile in clasp/libclasp/examples:
+//   export CXXFLAGS="-DWITH_THREADS=0 -I $PWD/../ -I $PWD/../../libprogram_opts/"
+
+DLVHEX_NAMESPACE_BEGIN
+
+// ============================== ClaspSolver ==============================
+
+clingo_atom_t* ClaspSolver::convertHexToClaspProgramAtom(IDAddress addr)
+{
+    clingo_atom_t at;
+
+    if (!isMappedToClaspAtom(addr)) {
+        clingo_backend_add_atom(backend, &at);
+
+        hexToClaspAtom[addr] = at;
+
+        claspToHexAtom[at] = addr;
+    }
+
+    return &hexToClaspAtom[addr];
+}
+
+void ClaspSolver::addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
+{
+    nextSolveStep = Restart;
+
+    bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+    bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+    while (en < en_end) {
+        clingo_backend_rule(backend, false, convertHexToClaspProgramAtom(*en), 1, NULL, 0);
+        en++;
+    }
+
+    BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb) {
+        const Rule& rule = reg->rules.getByID(ruleId);
+
+        clingo_atom_t head_ids[rule.head.size()];
+
+        for (uint32_t i = 0; i < rule.head.size(); ++i) {
+            head_ids[i] = *convertHexToClaspProgramAtom(rule.head[i].address);
+        }
+
+        if (ID(rule.kind, 0).isWeightRule()) {
+            clingo_weighted_literal_t body_ids[rule.body.size()];
+
+            for (uint32_t i = 0; i < rule.body.size(); ++i) {
+                if (rule.body[i].isNaf()) {
+                    body_ids[i].literal = -(clingo_literal_t)*convertHexToClaspProgramAtom(rule.body[i].address);
+                } else {
+                    body_ids[i].literal = (clingo_literal_t)*convertHexToClaspProgramAtom(rule.body[i].address);
+                }
+                body_ids[i].weight = (clingo_weight_t)rule.bodyWeightVector[i];
+            }
+
+            clingo_backend_weight_rule(backend, false, head_ids, rule.head.size(), NULL, body_ids, rule.body.size());
+        }
+        else {
+            clingo_literal_t body_ids[rule.body.size()];
+
+            for (uint32_t i = 0; i < rule.body.size(); ++i) {
+                if (rule.body[i].isNaf()) {
+                    body_ids[i] = -(clingo_literal_t)*convertHexToClaspProgramAtom(rule.body[i].address);
+                } else {
+                    body_ids[i] = (clingo_literal_t)*convertHexToClaspProgramAtom(rule.body[i].address);
+                }
+            }
+
+            clingo_backend_rule(backend, false, head_ids, rule.head.size(), body_ids, rule.body.size());
+        }
+    }
+
+    DBGLOG(DBG, "Resetting solver object");
+}
+
+
+
+std::string ClaspSolver::idAddressToString(IDAddress adr)
+{
+    std::stringstream ss;
+    ss << adr;
+    return ss.str();
+}
+
+
+IDAddress ClaspSolver::stringToIDAddress(std::string str)
+{
+    #ifndef NDEBUG
+    if (str.find(":") != std::string::npos) {
+        str = str.substr(0, str.find(":"));
+    }
+    #endif
+    return atoi(str.c_str());
+}
+
+
+
+void ClaspSolver::outputProject(InterpretationPtr intr)
+{
+    if( !!intr && !!projectionMask ) {
+        DBGLOG(DBG, "Projecting " << *intr);
+        intr->getStorage() -= projectionMask->getStorage();
+        DBGLOG(DBG, "Projected to " << *intr);
+    }
+}
+
+
+ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
+: ctx(ctx), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noAtom(0)
+{
+
+}
+
+
+ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
+: ctx(ctx), modelCount(0), nextVar(2), noAtom(0)
+{
+    reg = ctx.registry();
+
+    DBGLOG(DBG, "Configure clasp in SAT mode");
+    problemType = SAT;
+
+    nextSolveStep = Restart;
+
+    if (inconsistent) {
+        DBGLOG(DBG, "Program is inconsistent, aborting initialization");
+        inconsistent = true;
+        return;
+    }
+
+
+    enumerationStarted = false;
+}
+
+
+ClaspSolver::~ClaspSolver()
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::~ClaspSolver");
+}
+
+
+
+
+
+void ClaspSolver::addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen)
+{
+
+    assert(problemType == SAT && "programs can only be added in SAT mode");
+    DBGLOG(DBG, "Adding set of nogoods incrementally");
+
+
+
+    DBGLOG(DBG, "Resetting solver object");
+    nextSolveStep = Restart;
+}
+
+
+void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions)
+{
+
+    DBGLOG(DBG, "Restarting search");
+
+    if (inconsistent) {
+        DBGLOG(DBG, "Program is unconditionally inconsistent, ignoring assumptions");
+        return;
+    }
+    nextSolveStep = Restart;
+}
+
+
+void ClaspSolver::addPropagator(PropagatorCallback* pb)
+{
+    propagators.insert(pb);
+}
+
+
+void ClaspSolver::removePropagator(PropagatorCallback* pb)
+{
+    propagators.erase(pb);
+}
+
+
+void ClaspSolver::addNogood(Nogood ng)
+{
+    Nogood ng2;
+
+
+    nogoods.push_back(ng2);
+}
+
+
+// this method is called before asking for the next model
+// therefore it can be called with the same optimum multiple times
+void ClaspSolver::setOptimum(std::vector<int>& optimum)
+{
+	LOG(DBG, "Setting optimum " << printvector(optimum) << " in clasp");
+}
+
+Nogood ClaspSolver::getInconsistencyCause(InterpretationConstPtr explanationAtoms){
+    throw GeneralError("Not implemented");
+}
+
+InterpretationPtr ClaspSolver::getNextModel()
+{
+    clingo_model_t *model;
+
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "ClaspSlv::gNM (getNextModel)");
+
+    #define ENUMALGODBG(msg) { DBGLOG(DBG, "Model enumeration algorithm: (" << msg << ")"); }
+
+    clingo_solve_iteratively_next(it, &model);
+
+    return InterpretationPtr();
+}
+
+
+int ClaspSolver::getModelCount()
+{
+    return modelCount;
+}
+
+
+std::string ClaspSolver::getStatistics()
+{
+    std::stringstream ss;
+    ss << "Guesses: " <<
+        "Models: " << modelCount;
+    return ss.str();
+}
+
+
+DLVHEX_NAMESPACE_END
+
 #endif
 
 

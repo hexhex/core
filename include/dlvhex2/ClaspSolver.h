@@ -32,6 +32,8 @@
  * @brief  Interface to genuine clasp 3.1.1-based solver.
  */
 
+#ifndef HAVE_CLINGO5
+
 #ifndef CLASPSPSOLVER_HPP_INCLUDED__09122011
 #define CLASPSPSOLVER_HPP_INCLUDED__09122011
 
@@ -505,6 +507,243 @@ typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
 
 DLVHEX_NAMESPACE_END
 #endif
+#endif
+
+#else // clingo5
+
+#ifndef CLASPSPSOLVER_HPP_INCLUDED__07092016
+#define CLASPSPSOLVER_HPP_INCLUDED__07092016
+
+#include "dlvhex2/PlatformDefinitions.h"
+
+#define DISABLE_MULTI_THREADING  // we don't need multithreading capabilities
+
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Interpretation.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Nogood.h"
+#include "dlvhex2/Printhelpers.h"
+#include "dlvhex2/OrdinaryASPProgram.h"
+#include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/Set.h"
+#include "dlvhex2/SATSolver.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
+
+#include <vector>
+#include <set>
+#include <map>
+#include <queue>
+
+#include <boost/foreach.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/date_time.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+
+#define WITH_THREADS 0           // this is only relevant for option parsing, so we don't care at the moment
+
+extern "C" {
+  #include "clingo5/libgringo/clingo.h"
+}
+
+DLVHEX_NAMESPACE_BEGIN
+
+// forward declaration
+class PropagatorCallback;
+
+/**
+ * \brief Provides an interface to clasp 3.1.1 and can be used both as ASP and SAT solver.
+ *
+ * The ClaspSolver class uses three different name spaces for variables:
+ * (i)   HEX-IDs
+ * (ii)  clasp program variables
+ * (iii) clasp solver variables
+ *
+ * There is a one-to-one correlation between (i) and (ii)
+ * (except for an additional clasp variable which is permantly set to false to express empty rule heads),
+ * while the relation between (ii) and (iii) is many-to-zero/one. This is because
+ * program variables can be eliminated due to optimization, or multiple program variables can be identified
+ * to be equivalent and are thus mapped to the same internal solver variable.
+ *
+ * That is:
+ * * (i) <1--1> (ii) <N--0/1> (iii)
+ *
+ * It is important to know when to use which namespace. All classes of the HEX-solver other than this one use only (i).
+ * When sending an ASP program to clasp or calling clasp functions related to ASP program variables (such as defining programs or freezing external variables),
+ * it expects (ii). When sending clauses/nogoods to clasp, it expects the literals to use (iii).
+ * Also when retrieving models from clasp, the result is represented using (iii).
+ * Note that (ii) is only relevant in ASP mode, whereas SAT mode uses only (i) and (iii).
+ *
+ * We have the following conversion options:
+ *
+ * * (i) ---> (ii)   Translating a HEX-ID "id" (i) to a clasp program variable (ii) is via convertHexToClaspProgramLit(id.address).<br>
+ * Example usages: sending programs to clasp, adding new rules
+ * * (i) ---> (iii)  Translating a HEX-ID "id" (i) to a clasp solver variable (iii) is via convertHexToClaspSolverLit(id.address).<br>
+ * Example usages: sending nogoods to clasp, external learning
+ * * (ii) -/-> (i)   Unsupported/not needed (addition would be easy)
+ * * (ii) -/-> (iii) Unsupported/not needed (addition would be easy)
+ * * (iii) ---> (i)  Translating a positive or negative clasp solver variable "lit" (iii) to the list of address parts of a HEX-ID (i) of type ground atom
+ * is via convertClaspSolverLitToHex(lit.index()); this returns a pointer to a std::vector<IDAddress>.<br>
+ * Example usages: assignment extraction
+ * * (iii) -/-> (ii) Unsupported/not needed, but indirectly possible via (iii) --> (i) --> (ii)
+ */
+class ClaspSolver : public GenuineGroundSolver, public SATSolver
+{
+    private:
+        inline clingo_atom_t* convertHexToClaspProgramAtom(IDAddress addr);
+        // itoa/atio wrapper
+        /**
+         * \brief Encodes an IDAddress as string.
+         *
+         * This is necessary because clasp supports only strings for naming atoms.
+         * @param adr IDAddress.
+         * @return String representation of \p adr.
+         */
+        static std::string idAddressToString(IDAddress adr);
+        /**
+         * \brief Extracts an IDAddress from a string.
+         *
+         * This is necessary because clasp supports only strings for naming atoms.
+         * @param str Valid string representation of an IDAddress.
+         * @return \p str as IDAddress.
+         */
+        static IDAddress stringToIDAddress(std::string str);
+
+        clingo_solve_iteratively_t *it;
+
+        clingo_backend_t *backend;
+
+        // initialization/shutdown
+        /** \brief Atom number 1 will be our constant "false". */
+        uint32_t false_;
+        /** \brief Number of the next clasp program variable to be introduced. */
+        uint32_t nextVar;
+
+        clingo_atom_t noAtom;
+
+
+        std::map<IDAddress, clingo_atom_t> hexToClaspAtom;
+        std::map<clingo_atom_t, IDAddress> claspToHexAtom;
+
+
+        typedef std::vector<IDAddress> AddressVector;
+
+        /**
+         * \brief Resets ClaspSolver::claspToHex to the given size.
+         * @param size Desired size.
+         */
+        void resetAndResizeClaspToHex(unsigned size);
+
+
+        inline bool isMappedToClaspAtom(IDAddress addr) const { return hexToClaspAtom.find(addr) != hexToClaspAtom.end(); }
+        /**
+         * \brief Output filtering (works on given interpretation and modifies it).
+         * @param intr Interpretation to project be removing ClaspSolver::projectionMask.
+         */
+        void outputProject(InterpretationPtr intr);
+
+    protected:
+        // structural program information
+        /** \brief Reference to ProgramCtx. */
+        ProgramCtx& ctx;
+        /** \brief Mask for projection. */
+        InterpretationConstPtr projectionMask;
+        /** \brief Pointer to the registry. */
+        RegistryPtr reg;
+
+        // external learning
+        /** \brief List of external propagators. */
+        Set<PropagatorCallback*> propagators;
+        /** \brief List of nogoods scheduled for adding to clasp. */
+        std::list<Nogood> nogoods;
+
+        // instance information
+        /** \brief Type of the problem. */
+        enum ProblemType
+        {
+            /** \brief ASP program. */
+            ASP,
+            /** \brief SAT problem. */
+            SAT
+        };
+        /** \brief Type of the current instance. */
+        ProblemType problemType;
+
+
+        /** \brief Next step in instance solving. */
+        enum NextSolveStep
+        {
+            /** \brief Search restart. */
+            Restart,
+            /** \brief Search. */
+            Solve,
+            /** \brief Goto next model. */
+            CommitModel,
+            /** \brief Extract model. */
+            ExtractModel,
+            /** \brief Return model to user of class ClaspSolver. */
+            ReturnModel,
+            /** \brief Find next symmetric model. */
+            CommitSymmetricModel,
+            /** \brief Update clasp solver status. */
+            Update
+        };
+        /** \brief Next step in NextSolveStep to execute. */
+        NextSolveStep nextSolveStep;
+        /** \brief Extracted clasp model to return; only valid in state NextSolveStep::ReturnModel. */
+        InterpretationPtr model;
+        /** \brief Stores if model enumeration is currently in progress. */
+        bool enumerationStarted;
+        /** \brief True if the instance is inconsistent (wrt. any assumptions) and false otherwise. */
+        bool inconsistent;
+
+        // statistics
+        /** \brief Counts the model enumerated so far. */
+        int modelCount;
+
+    public:
+        // all of the following methods are inherited from GenuineGroundSolver.
+
+        // constructors/destructors and initialization
+        ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+        ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen = InterpretationConstPtr());
+        virtual ~ClaspSolver();
+        virtual void addProgram(const AnnotatedGroundProgram& p, InterpretationConstPtr frozen = InterpretationConstPtr());
+        virtual Nogood getInconsistencyCause(InterpretationConstPtr explanationAtoms);
+        virtual void addNogoodSet(const NogoodSet& ns, InterpretationConstPtr frozen);
+
+        // search control
+        void restartWithAssumptions(const std::vector<ID>& assumptions);
+        virtual void setOptimum(std::vector<int>& optimum);
+
+        // learning
+        virtual void addPropagator(PropagatorCallback* pb);
+        virtual void removePropagator(PropagatorCallback* pb);
+        virtual void addNogood(Nogood ng);
+
+        // querying
+        virtual InterpretationPtr getNextModel();
+        virtual int getModelCount();
+        virtual std::string getStatistics();
+
+        typedef boost::shared_ptr<ClaspSolver> Ptr;
+        typedef boost::shared_ptr<const ClaspSolver> ConstPtr;
+};
+
+typedef ClaspSolver::Ptr ClaspSolverPtr;
+typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
+
+DLVHEX_NAMESPACE_END
+#endif
+
+
 #endif
 
 // vim:expandtab:ts=4:sw=4:

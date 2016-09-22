@@ -1,0 +1,4 @@
+66c66
+< env['WITH_PYTHON']    = 'auto'
+---
+> env['WITH_PYTHON']    = None

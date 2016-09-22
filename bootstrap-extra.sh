@@ -31,7 +31,14 @@ if [ ! -e $GRINGOFNAME ]; then
   wget http://downloads.sourceforge.net/project/potassco/gringo/4.5.4/$GRINGOFNAME
 fi
 
-if [ ! -e $CLASPFNAME ] || [ ! -e $GRINGOFNAME ]; then
+CLINGO5FNAME=master.zip
+if [ ! -e clingo5.zip ]; then
+  echo "downloading clingo5.zip"
+  wget https://github.com/potassco/clingo/archive/$CLINGO5FNAME
+  mv $CLINGO5FNAME clingo5.zip
+fi
+
+if [ ! -e $CLASPFNAME ] || [ ! -e $GRINGOFNAME ] || [ ! -e clingo5.zip ]; then
   echo "could not download/find clasp or gringo source archives!"
   exit 1
 fi

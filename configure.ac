@@ -442,137 +442,167 @@ fi
 AC_DEFINE([HAVE_MLP], [1], [Defined on POSIX systems.])
 AC_DEFINE([POSIX], [1], [Defined on POSIX systems.])
 
-#
-# libclingo (see README)
-#
-AC_ARG_WITH([libclingo],
-  AS_HELP_STRING([--with-libclingo=<gringo-trunk-directory>],
-                 [use clingo as external solver, you need to specify the directory
-                  where you have built clingo-app of tag/gringo-3.0.3 without lua/luasql]),
-  [with_libclingo_support=$withval],
-  [with_libclingo_support=false])
-# conditions in makefiles
+
+# check if clingo5 should be used
+
+AC_ARG_ENABLE(clingo5,
+              [AS_HELP_STRING([--enable-clingo5],[enable using clingo5 for grounding and solving])],
+              [enable_clingo5=true],
+              [enable_clingo5=false]
+             )
+
+# conditionals for clingo, clasp and gringo
+
 AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" != xfalse])
-if test "x${with_libclingo_support}" != xfalse; then
-	# #define in config.h <- config.h.in
-	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
-  GRINGO_TRUNK_DIR=$with_libclingo_support
-  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
-    AC_MSG_ERROR([You have to specify gringo trunk in --with-libclingo=<gringo-trunk-dir>])
-  fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
-  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
-  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libclingobackend.test"
-  AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
-           ["$DISTCHECK_CONFIGURE_FLAGS '--with-libclingo=$GRINGO_TRUNK_DIR'"])
-  extsolver_found=true
-fi
-
-#
-# libclasp activation (see README)
-#
-# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
-#       otherwise we link against the clasp library included in gringo (which is the wrong version);
-#       (ld processes search pathes in the specified order)
-AC_ARG_WITH([libclasp],
-  AS_HELP_STRING([--with-libclasp=<clasp-trunk-directory>],
-                 [use clasp as genuine solver, you need to specify the directory
-                  where you have built clasp-app of tag/clasp-2.0.5]),
-  [with_libclasp_support=$withval],
-  [with_libclasp_support=false])
-#
-# libgringo activation (see README)
-#
-AC_ARG_WITH([libgringo],
-  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
-                 [use gringo as genuine grounder, you need to specify the directory
-                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
-  [with_libgringo_support=$withval],
-  [with_libgringo_support=false])
-
-#
-# default checkout, build, configure for clasp + gringo setting
-#
-AC_ARG_WITH([buildclaspgringo],
-  [AS_HELP_STRING([--without-buildclaspgringo],
-    [disable checkout, build, and configuration for clasp-2.0.5 and gringo-3.0.3])],
-    [],
-    [with_buildclaspgringo=yes])
-
-AM_CONDITIONAL([DO_BUILDCLASPGRINGO],[test ! "x${with_buildclaspgringo}" != xno])
-if test "x$with_buildclaspgringo" != xno; then
-  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], ["buildclaspgringo"])
-  AC_SUBST([DO_BUILDCLASPGRINGO], ["yes"])
-  AC_MSG_NOTICE([going to checkout, build, and configure for clasp and gringo])
-  with_libclasp_support=$ac_pwd/buildclaspgringo/clasp/
-  with_libgringo_support=$ac_pwd/buildclaspgringo/gringo/
-else
-  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], [""])
-  AC_SUBST([DO_BUILDCLASPGRINGO], ["no"])
-fi
-
-#
-# libclasp configuration
-#
-# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
-#       otherwise we link against the clasp library included in gringo (which is the wrong version);
-#       (ld processes search pathes in the specified order)
-#
-# conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBCLASP],[test "x${with_libclasp_support}" != xfalse])
-if test "x${with_libclasp_support}" != xfalse; then
-	# #define in config.h <- config.h.in
-	AC_DEFINE([HAVE_LIBCLASP], [1], [Defined if we have --with-libclasp.])
-  CLASP_TRUNK_DIR=$with_libclasp_support
-  if test "x$CLASP_TRUNK_DIR" = "xyes"; then
-    AC_MSG_ERROR([You have to specify clasp trunk in --with-libclasp=<clasp-trunk-dir>])
-  fi
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lclasp -lprogram_opts"
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${CLASP_TRUNK_DIR}/build/release/libclasp/lib/ -L${CLASP_TRUNK_DIR}/build/release/libprogram_opts/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
-  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${CLASP_TRUNK_DIR}/libclasp/ -I${CLASP_TRUNK_DIR}/libprogram_opts/ -I${CLASP_TRUNK_DIR}/app/"
-  # unfortunatly there is no lib for the following lines
-#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_options.o"
-#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_output.o"
-#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/app_options.o"
-#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/program_options.o"
-#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_parser.o"
-#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_store.o"
-  extsolver_found=true
-fi
-
-#
-# libgringo configuration
-#
-# conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
-if test "x${with_libgringo_support}" != xfalse; then
+AM_CONDITIONAL([DO_BUILDCLASPGRINGO],[test ! "x${with_buildclaspgringo}" != xno])
 
-  # Gringo 4 needs the following:
-  AX_CXX_COMPILE_STDCXX_11(,[mandatory])
-  AC_PROG_LEX
-  AC_PROG_YACC
-#  AC_PROG_RE2C
-#  AC_PROG_SCONS
+if test "x${enable_clingo5}" != xtrue; then
+	#
+	# libclingo (see README)
+	#
+	AC_ARG_WITH([libclingo],
+	  AS_HELP_STRING([--with-libclingo=<gringo-trunk-directory>],
+		         [use clingo as external solver, you need to specify the directory
+		          where you have built clingo-app of tag/gringo-3.0.3 without lua/luasql]),
+	  [with_libclingo_support=$withval],
+	  [with_libclingo_support=false])
+	# conditions in makefiles
+	if test "x${with_libclingo_support}" != xfalse; then
+		# #define in config.h <- config.h.in
+		AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
+	  GRINGO_TRUNK_DIR=$with_libclingo_support
+	  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
+	    AC_MSG_ERROR([You have to specify gringo trunk in --with-libclingo=<gringo-trunk-dir>])
+	  fi
+		EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
+		EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+		EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
+	  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libclingobackend.test"
+	  AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
+		   ["$DISTCHECK_CONFIGURE_FLAGS '--with-libclingo=$GRINGO_TRUNK_DIR'"])
+	  extsolver_found=true
+	fi
 
-	# #define in config.h <- config.h.in
-	AC_DEFINE([HAVE_LIBGRINGO], [1], [Defined if we have --with-libgringo.])
-  GRINGO_TRUNK_DIR=$with_libgringo_support
-  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
-    AC_MSG_ERROR([You have to specify gringo trunk in --with-libgringo=<gringo-trunk-dir>])
-  fi
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
-	# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
-	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
-  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
-  extsolver_found=true
+	#
+	# libclasp activation (see README)
+	#
+	# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
+	#       otherwise we link against the clasp library included in gringo (which is the wrong version);
+	#       (ld processes search pathes in the specified order)
+	AC_ARG_WITH([libclasp],
+	  AS_HELP_STRING([--with-libclasp=<clasp-trunk-directory>],
+		         [use clasp as genuine solver, you need to specify the directory
+		          where you have built clasp-app of tag/clasp-2.0.5]),
+	  [with_libclasp_support=$withval],
+	  [with_libclasp_support=false])
+	#
+	# libgringo activation (see README)
+	#
+	AC_ARG_WITH([libgringo],
+	  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
+		         [use gringo as genuine grounder, you need to specify the directory
+		          where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
+	  [with_libgringo_support=$withval],
+	  [with_libgringo_support=false])
+
+	#
+	# default checkout, build, configure for clasp + gringo setting
+	#
+	AC_ARG_WITH([buildclaspgringo],
+	  [AS_HELP_STRING([--without-buildclaspgringo],
+	    [disable checkout, build, and configuration for clasp-2.0.5 and gringo-3.0.3])],
+	    [],
+	    [with_buildclaspgringo=yes])
+
+	if test "x$with_buildclaspgringo" != xno; then
+	  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], ["buildclaspgringo"])
+	  AC_SUBST([DO_BUILDCLASPGRINGO], ["yes"])
+	  AC_MSG_NOTICE([going to checkout, build, and configure for clasp and gringo])
+	  with_libclasp_support=$ac_pwd/buildclaspgringo/clasp/
+	  with_libgringo_support=$ac_pwd/buildclaspgringo/gringo/
+	else
+	  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], [""])
+	  AC_SUBST([DO_BUILDCLASPGRINGO], ["no"])
+	fi
+
+	#
+	# libclasp configuration
+	#
+	# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
+	#       otherwise we link against the clasp library included in gringo (which is the wrong version);
+	#       (ld processes search pathes in the specified order)
+	#
+	# conditions in makefiles
+	if test "x${with_libclasp_support}" != xfalse; then
+		# #define in config.h <- config.h.in
+		AC_DEFINE([HAVE_LIBCLASP], [1], [Defined if we have --with-libclasp.])
+	  CLASP_TRUNK_DIR=$with_libclasp_support
+	  if test "x$CLASP_TRUNK_DIR" = "xyes"; then
+	    AC_MSG_ERROR([You have to specify clasp trunk in --with-libclasp=<clasp-trunk-dir>])
+	  fi
+		EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lclasp -lprogram_opts"
+		EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+		EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${CLASP_TRUNK_DIR}/build/release/libclasp/lib/ -L${CLASP_TRUNK_DIR}/build/release/libprogram_opts/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${CLASP_TRUNK_DIR}/libclasp/ -I${CLASP_TRUNK_DIR}/libprogram_opts/ -I${CLASP_TRUNK_DIR}/app/"
+	  # unfortunatly there is no lib for the following lines
+	#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_options.o"
+	#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/app/clasp_output.o"
+	#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/app_options.o"
+	#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/program_options.o"
+	#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_parser.o"
+	#  EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${CLASP_TRUNK_DIR}/build/release/libprogram_opts/value_store.o"
+	  extsolver_found=true
+	fi
+
+	#
+	# libgringo configuration
+	#
+	# conditions in makefiles
+	if test "x${with_libgringo_support}" != xfalse; then
+
+	  # Gringo 4 needs the following:
+	  AX_CXX_COMPILE_STDCXX_11(,[mandatory])
+	  AC_PROG_LEX
+	  AC_PROG_YACC
+	#  AC_PROG_RE2C
+	#  AC_PROG_SCONS
+
+		# #define in config.h <- config.h.in
+		AC_DEFINE([HAVE_LIBGRINGO], [1], [Defined if we have --with-libgringo.])
+	  GRINGO_TRUNK_DIR=$with_libgringo_support
+	  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
+	    AC_MSG_ERROR([You have to specify gringo trunk in --with-libgringo=<gringo-trunk-dir>])
+	  fi
+		EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lgringo" # do not take gringo -lprogram_opts, they are deprecated, newer ones are in clasp -lprogram_opts"
+		# TODO unless we only use gringo but not clasp, then take gringo -lprogram_opts
+		EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+		EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
+	  extsolver_found=true
+	fi
+
+	if test "x${with_libclasp_support}" != xfalse && test "x${with_libgringo_support}" != xfalse; then
+	  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/genuinegcbackend.test"
+	fi
 fi
 
-if test "x${with_libclasp_support}" != xfalse && test "x${with_libgringo_support}" != xfalse; then
-  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/genuinegcbackend.test"
+
+# enable clingo5:
+
+if test "x${enable_clingo5}" != xfalse; then
+	AC_SUBST([DO_BUILDCLINGO5], ["yes"])
+	AC_SUBST([BUILDCLINGO5SUBDIRS], ["buildclingo5"])
+	AC_DEFINE([HAVE_CLINGO5], [1], [Defined if we have --enable-clingo5.])
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -lclasp -lgringo -lprogram_opts -llp -lreify"
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lclasp -lgringo -lprogram_opts -llp -lreify"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L$ac_pwd/buildclingo5/clingo5/build/release/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+  	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I$ac_pwd/buildclingo5/ -I$ac_pwd/buildclingo5/clingo5/liblp/"
+	extsolver_found=true
 fi
 
 
@@ -667,6 +697,7 @@ AC_CONFIG_FILES([
            Makefile
            dlvhex2.pc
            buildclaspgringo/Makefile
+	   buildclingo5/Makefile
            examples/Makefile
            examples/tests/genuineiibackend.test
            examples/tests/dlvbackend.test

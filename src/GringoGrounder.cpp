@@ -35,6 +35,9 @@
 #include "config.h"
 #endif
 
+
+#ifndef HAVE_CLINGO5
+
 #ifndef GRINGO3                  // GRINGO4
 
 #ifdef HAVE_LIBGRINGO
@@ -1398,6 +1401,305 @@ detail::GringoOptions::GringoOptions()
 
 DLVHEX_NAMESPACE_END
 #endif
+#endif
+
+#else // clingo5
+
+#include "dlvhex2/GringoGrounder.h"
+#include "dlvhex2/Rule.h"
+#include "dlvhex2/Benchmarking.h"
+
+#include <boost/tokenizer.hpp>
+
+#include <iostream>
+#include <sstream>
+#include <stdio.h>
+#include <algorithm>
+#include <utility>
+
+extern "C" {
+  #include "clingo5/libgringo/clingo.h"
+}
+
+using dlvhex::ID;
+
+#define DEBUG_GRINGOPARSER
+
+#ifdef DEBUG_GRINGOPARSER
+# define GPDBGLOG(a,b) DBGLOG(a,b)
+#else
+# define GPDBGLOG(a,b) do { } while(false);
+#endif
+
+DLVHEX_NAMESPACE_BEGIN
+
+void GringoGrounder::Printer::printRule(ID id)
+{
+
+    const Rule& r = registry->rules.getByID(id);
+
+    // check if there is an unsatisfied ground atom
+    BOOST_FOREACH (ID b, r.body) {
+        if (b.isBuiltinAtom()) {
+            const BuiltinAtom& bi = registry->batoms.getByID(b);
+            if (bi.tuple.size() == 3 && bi.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ)) {
+                if ((bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())) {
+                    if (bi.tuple[1] != bi.tuple[2]) {
+                        // skip rule
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // disjunction in rule heads is | not v
+    printmany(r.head, " | ");
+    if(r.headGuard.size() > 0) {
+        out << " : ";
+        printmany(r.headGuard, ",");
+    }
+    if( !r.body.empty() ) {
+        bool first = true;
+        BOOST_FOREACH (ID b, r.body) {
+            // gringo does not accept equalities of type constant=Variable, so reverse them
+            // also remove equlities between equal ground terms
+            if (b.isBuiltinAtom()) {
+                const BuiltinAtom& bi = registry->batoms.getByID(b);
+                if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())) {
+                    if (bi.tuple[0].address == ID::TERM_BUILTIN_EQ && bi.tuple[1] == bi.tuple[2] ||
+                    bi.tuple[0].address == ID::TERM_BUILTIN_NE && bi.tuple[1] != bi.tuple[2]) {
+                        // skip
+                        continue;
+                    }
+                }
+                else if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && bi.tuple[2].isVariableTerm()) {
+                    BuiltinAtom bi2 = bi;
+                    bi2.tuple[1] = bi.tuple[2];
+                    bi2.tuple[2] = bi.tuple[1];
+                    bi2.tuple[0].address = ID::reverseBinaryOperator(bi2.tuple[0].address);
+                    if (first) {
+                        out << " :- ";
+                    }
+                    else {
+                        out << ", ";
+                    }
+                    first = false;
+                    print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
+                    continue;
+                }
+            }
+
+            if (first) {
+                out << " :- ";
+            }
+            else {
+                out << ", ";
+            }
+            first = false;
+
+            print(b);
+        }
+    }
+    out << ".";
+}
+
+
+void GringoGrounder::Printer::printAggregate(ID id)
+{
+
+    // we support aggregates of one of the four kinds:
+    // 1. l <= #agg{...} <= u
+    // 2. v = #agg{...}
+    // 3. l <= #agg{...}
+    // 4. #agg{...} <= u
+    const AggregateAtom& aatom = registry->aatoms.getByID(id);
+
+    // skipping the domain predicate is only possible when both bounds are specified and equal
+    bool assignment = ( aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+        ||  ( aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) );
+
+    ID lowerbound, upperbound;
+    // 1. l <= #agg{...} <= u
+    if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+    aatom.tuple[4] != ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE)) {
+        lowerbound = aatom.tuple[0];
+        upperbound = aatom.tuple[4];
+        // gringo expects a domain predicate: use #int
+        if (!assignment && lowerbound.isVariableTerm()) {
+            print(intPred);
+            out << "(";
+            print(lowerbound);
+            out << "), ";
+        }
+        if (!assignment && upperbound.isVariableTerm()) {
+            print(intPred);
+            out << "(";
+            print(upperbound);
+            out << "), ";
+        }
+        // 2. v = #agg{...}
+    }else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) &&
+    aatom.tuple[4] == ID_FAIL) {
+        lowerbound = aatom.tuple[0];
+        upperbound = aatom.tuple[0];
+        // gringo expects a domain predicate: use #int
+        if (!assignment && lowerbound.isVariableTerm()) {
+            print(intPred);
+            out << "(";
+            print(lowerbound);
+            out << "), ";
+        }
+        // 3. l <= #agg{...}
+    }else if (aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+    aatom.tuple[4] == ID_FAIL) {
+        lowerbound = aatom.tuple[0];
+        // gringo expects a domain predicate: use #int
+        if (!assignment && lowerbound.isVariableTerm()) {
+            print(intPred);
+            out << "(";
+            print(lowerbound);
+            out << "), ";
+        }
+        // 4. #agg{...} <= u
+    }else if (aatom.tuple[0] == ID_FAIL && aatom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_LE) &&
+    aatom.tuple[4] != ID_FAIL) {
+        upperbound = aatom.tuple[4];
+        // gringo expects a domain predicate: use #int
+        if (!assignment && upperbound.isVariableTerm()) {
+            print(intPred);
+            out << "(";
+            print(upperbound);
+            out << "), ";
+        }
+    }
+    else {
+        throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} or l <= #agg{...} or #agg{...} <= u with exactly one atom in the aggregate body");
+    }
+    if (aatom.literals.size() > 1) throw GeneralError("GringoGrounder can only handle aggregates of form: l <= #agg{...} <= u  or  v = #agg{...} with exactly one atom in the aggregate body (use --aggregate-enable --aggregate-mode=simplify)");
+
+    if (id.isLiteral() && id.isNaf()) out << "not ";
+
+    if (aatom.tuple[2] == ID::termFromBuiltin(ID::TERM_BUILTIN_AGGAVG)) {
+        throw PluginError("Aggregate #avg is unsupported in Gringo backend");
+    }
+
+    if (assignment) {
+        print(lowerbound);
+        out << "=";
+        print(aatom.tuple[2]);
+        out << "{";
+        printmany(aatom.variables, ",");
+        out << ":";
+        printmany(aatom.literals, ",");
+        out << "}";
+    }
+    else {
+        if(lowerbound != ID_FAIL) print(lowerbound);
+        print(aatom.tuple[2]);
+        out << "{";
+        printmany(aatom.variables, ",");
+        out << ":";
+        printmany(aatom.literals, ",");
+        out << "}";
+        if(upperbound != ID_FAIL) print(upperbound);
+    }
+}
+
+
+void GringoGrounder::Printer::printInt(ID id)
+{
+    // replace #int by a standard but unique predicate
+    print(intPred);
+}
+
+
+void GringoGrounder::Printer::print(ID id)
+{
+    if(id.isRule()) {
+        if (id.isWeakConstraint()) throw GeneralError("Gringo-based grounder does not support weak constraints");
+        printRule(id);
+    }
+    else if((id.isAtom() || id.isLiteral()) && id.isAggregateAtom()) {
+        printAggregate(id);
+    }
+    else if(id.isTerm() && id.isBuiltinTerm() && id == ID::termFromBuiltin(ID::TERM_BUILTIN_INT)) {
+        printInt(id);
+    }
+    else if(id.isNaf() && id.isLiteral() && id.isBuiltinAtom()) {
+        const BuiltinAtom& bi = registry->batoms.getByID(id);
+        print(bi.tuple[1]);
+        print(ID::termFromBuiltin(static_cast<dlvhex::ID::TermBuiltinAddress>(ID::negateBinaryOperator(bi.tuple[0].address))));
+        print(bi.tuple[2]);
+    }
+    else {
+        Base::print(id);
+    }
+}
+
+GringoGrounder::GringoGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, InterpretationConstPtr frozen):
+ctx(ctx), nongroundProgram(p), groundProgram(ctx.registry()), frozen(frozen)
+{
+
+    // we need a unique integer, a unique anonymous and a unique unsat predicate
+    unsatPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(0));
+    anonymousPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(1));
+    intPred = ctx.registry()->getAuxiliaryConstantSymbol('o', ID::termFromInteger(2));
+
+    groundProgram.mask = nongroundProgram.mask;
+    doRun();
+}
+
+
+const OrdinaryASPProgram& GringoGrounder::getGroundProgram()
+{
+    return groundProgram;
+}
+
+int GringoGrounder::doRun()
+{
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgroundertime, "Grounder time");
+
+    try
+    {
+        std::stringstream* programStream = new std::stringstream();
+        Printer printer(*programStream, ctx.registry(), intPred);
+
+        // print nonground program
+        if( nongroundProgram.edb != 0 ) {
+            // print edb interpretation as facts
+            nongroundProgram.edb->printAsFacts(*programStream);
+            *programStream << "\n";
+        }
+
+        // define integer predicateMessagePrinter
+        printer.printmany(nongroundProgram.idb, "\n");
+        *programStream << std::endl;
+        printer.print(intPred);
+        *programStream << "(0.." << ctx.maxint << ").";
+
+        if (!!frozen) {
+            bm::bvector<>::enumerator en = frozen->getStorage().first();
+            bm::bvector<>::enumerator en_end = frozen->getStorage().end();
+            // declare frozen atoms as external
+            while (en < en_end) {
+                *programStream << "#external ";
+                printer.print(ctx.registry()->ogatoms.getIDByAddress(*en));
+                *programStream << ".";
+                en++;
+            }
+        }
+
+        return EXIT_SUCCESS;
+    }
+    catch(...) {
+        DBGLOG(DBG, "Gringo terminated with error");
+        throw;
+    }
+}
+
+
+DLVHEX_NAMESPACE_END
 #endif
 
 // vim:expandtab:ts=4:sw=4:
