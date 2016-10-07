@@ -1,5 +1,7 @@
-explain(a).
-explain(b).
+a.b.c.
+explain(a) :- a.
+explain(b) :- b.
+explain(c) :- c.
 %explain(c).
 %a v b.
 %x :- explain(a), a.

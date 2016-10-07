@@ -48,7 +48,7 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/InternalGroundDASPSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
-#include "dlvhex2/InconsistencyAnalyzer.h"
+#include "dlvhex2/InternalGrounder.h"
 
 #include <bm/bmalgo.h>
 
@@ -258,15 +258,37 @@ unitInput(input)
         // run solver possibly with the possibility to analyze unit inconsistency at a later point
         if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
             initializeExplanationAtoms(program);
-            // update nogoods learned from successor (add all ground atoms which have been added to the registry in the meantime in negative form) and add it to the new model generator
-            if (factory.ctx.config.getOption("TransUnitLearning")){
-                typedef std::pair<Nogood, int> NogoodIntegerPair;
-                BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
-                    for (int i = nip.second; i < factory.ctx.registry()->ogatoms.getSize(); i++){
-                        if (annotatedGroundProgram.getProgramMask()->getFact(i)) nip.first.insert(NogoodContainer::createLiteral(i, false));
+
+            if (factory.ctx.config.getOption("UnitInconsistencyAnalysis")){
+                InternalGrounder nonOptimizedGrounder(factory.ctx, program, InternalGrounder::builtin);
+                OrdinaryASPProgram nonoptgp = nonOptimizedGrounder.getGroundProgram();
+                if (!!nonoptgp.mask) mask->add(*nonoptgp.mask);
+                nonoptgp.mask = InterpretationConstPtr();
+                DBGLOG(DBG, "Unoptimized ground program for inconsistency analysis:" << std::endl << *nonoptgp.edb << std::endl << printManyToString<RawPrinter>(nonoptgp.idb, "\n", factory.ctx.registry()));
+
+                // start analysis solver
+                AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
+                analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, nonoptagp));
+                std::vector<ID> assumptions;
+                bm::bvector<>::enumerator en = explAtoms->getStorage().first();
+                bm::bvector<>::enumerator en_end = explAtoms->getStorage().end();
+                while (en < en_end) {
+                    assumptions.push_back(postprocessedInput->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+                    DBGLOG(DBG, "Adding assumption " << printToString<RawPrinter>(assumptions[assumptions.size() - 1], factory.ctx.registry()));
+                    en++;
+                }
+                analysissolver->restartWithAssumptions(assumptions);
+
+                // update nogoods learned from successor (add all ground atoms which have been added to the registry in the meantime in negative form) and add it to the new model generator
+                if (factory.ctx.config.getOption("TransUnitLearning")){
+                    typedef std::pair<Nogood, int> NogoodIntegerPair;
+                    BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
+                        for (int i = nip.second; i < factory.ctx.registry()->ogatoms.getSize(); i++){
+                            if (nonoptagp.getProgramMask()->getFact(i)) nip.first.insert(NogoodContainer::createLiteral(i, false));
+                        }
+                        nip.second = factory.ctx.registry()->ogatoms.getSize();
+                        addNogood(&nip.first);
                     }
-                    nip.second = factory.ctx.registry()->ogatoms.getSize();
-                    addNogood(&nip.first);
                 }
             }
         }
@@ -624,7 +646,7 @@ void GenuineGuessAndCheckModelGenerator::initializeExplanationAtoms(OrdinaryASPP
 
     PredicateMaskPtr explAtomMask(new PredicateMask());
     explAtoms.reset(new Interpretation(factory.ctx.registry()));
-    if (factory.ctx.config.getOption("UserInconsistencyAnalysis")) {
+    if (factory.ctx.config.getExplanationAtoms().size() > 0) {
         // for debugging, use the atoms explicitly specified by the user (must be propositional)
         BOOST_FOREACH (std::string atomStr, factory.ctx.config.getExplanationAtoms()) {
             OrdinaryAtom atom(ID::MAINKIND_ATOM);
@@ -740,6 +762,21 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
         if (!finalCompatibilityCheck(modelCandidate)) {
             LOG(DBG,"compatibility failed");
+            if (!!analysissolver){
+                InterpretationPtr rematoms(new Interpretation(factory.ctx.registry()));
+                InterpretationPtr relevantatoms(new Interpretation(*annotatedGroundProgram.getProgramMask()));
+                relevantatoms->getStorage() |= postprocessedInput->getStorage();
+                bm::bvector<>::enumerator en = relevantatoms->getStorage().first();
+                bm::bvector<>::enumerator en_end = relevantatoms->getStorage().end();
+                while (en < en_end) {
+                    if (factory.ctx.registry()->ogatoms.getIDByAddress(*en).isAuxiliary()) rematoms->setFact(*en);
+                    en++;
+                }
+                relevantatoms->getStorage() -= rematoms->getStorage();
+                Nogood ng(relevantatoms, modelCandidate);
+                DBGLOG(DBG, "Adding model candidate " << ng.getStringRepresentation(factory.ctx.registry()) << " to inconsistency analyzer");
+                analysissolver->addNogood(ng);
+            }
             continue;
         }
 
@@ -767,18 +804,32 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
-    DBGLOG(DBG, "GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause()");
-    DBGLOG(DBG, "Program: " << *annotatedGroundProgram.getGroundProgram().edb << std::endl << printManyToString<RawPrinter>(annotatedGroundProgram.getGroundProgram().idb, "\n", factory.ctx.registry()));
+    DBGLOG(DBG, "identifyInconsistencyCause");
+    if (factory.ctx.config.getOption("UserInconsistencyAnalysis")) {
+        std::cout <<
+            "Explaining inconsistency of unit:" << std::endl <<
+            "    " << printManyToString<RawPrinter>(factory.idb, "\n    ", factory.ctx.registry()) << std::endl <<
+            "Explanation atoms: " << std::endl <<
+            "    " << *explAtoms << std::endl <<
+            "Unit input:" << std::endl;
+        if (!!unitInput) std::cout << "    " << *unitInput;
+        std::cout << std::endl;
+    }
 
-    OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
-    program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
-    InconsistencyAnalyzer ia(factory.ctx);
-    inconsistencyCause = ia.getInconsistencyReason(this, explAtoms, factory.innerEatoms, program, annotatedGroundProgram, &haveInconsistencyCause);
+    // imodel must always be NULL, but we still have to call analysissolver->getNextModel() to make sure that it propagates to derive the conflict
+    InterpretationConstPtr imodel = analysissolver->getNextModel();
+#ifndef NDEBUG
+    if (!!imodel) { DBGLOG(DBG, "Error: Inconsistency analysis program has model " << *imodel << " but should be inconsistent"); }
+    assert (!imodel && "Instance did not yield models, but after restart it is not inconsistent!");
+#endif
 
-    if (haveInconsistencyCause) {
-        DBGLOG(DBG, "Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
-    }else{
-        DBGLOG(DBG, "Inconsistency of program and inconsistence cause could not be detected");
+    haveInconsistencyCause = true;
+    inconsistencyCause = analysissolver->getInconsistencyCause(explAtoms);
+    DBGLOG(DBG, "Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
+    if (factory.ctx.config.getOption("UserInconsistencyAnalysis")) {
+        std::cout <<
+                "Explanation: " << std::endl <<
+                "    " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
     }
 }
 
@@ -793,6 +844,7 @@ void GenuineGuessAndCheckModelGenerator::addNogood(const Nogood* cause){
     DBGLOG(DBG, "Adding nogood to model generator: " << cause->getStringRepresentation(factory.ctx.registry()));
     if (factory.ctx.config.getOption("TransUnitLearning")){
         if (!!solver) solver->addNogood(*cause);
+        if (!!analysissolver) analysissolver->addNogood(*cause);
     }
 }
 
@@ -954,6 +1006,7 @@ InterpretationConstPtr changed)
                 filev << ng.getStringRepresentation(reg) << std::endl;
             }
             solver->addNogood(ng);
+            if (!!analysissolver) analysissolver->addNogood(ng);
 
             if ( factory.ctx.config.getOption("ExternalAtomVerificationFromLearnedNogoods") ) {
                 eavTree.addNogood(ng, reg, true);
@@ -1165,6 +1218,7 @@ bool GenuineGuessAndCheckModelGenerator::unfoundedSetCheck(InterpretationConstPt
             }
             #endif
             solver->addNogood(ng);
+            if (!!analysissolver) analysissolver->addNogood(ng);
         }
         return !ufsFound;
     }
@@ -1472,8 +1526,6 @@ void GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partia
 
 DLVHEX_NAMESPACE_END
 
-
 // vim:expandtab:ts=4:sw=4:
 // mode: C++
 // End:
-
