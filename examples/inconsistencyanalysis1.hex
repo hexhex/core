@@ -7,9 +7,9 @@ explain(c) :- c.
 %x :- explain(a), a.
 %y :- explain(b), a.
 %:- x, y, explain(a).
-z :- &id[explain](Z).
+z :- &id[explain](Z)<tuplelevellinear>.
 %:- not explain(c).
-:- &id[explain](a).
+:- &id[explain](a)<tuplelevellinear>.
 
 
 

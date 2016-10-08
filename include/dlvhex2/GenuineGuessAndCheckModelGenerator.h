@@ -117,6 +117,8 @@ public PropagatorCallback
         GenuineGroundSolverPtr solver;
         /** \brief Second solver instance (non-optimized solver!) for inconsistency analysis. */
         InternalGroundDASPSolverPtr analysissolver;
+        /** \brief Nogoods to be added to GenuineGuessAndCheckModelGenerator::analysissolver once it is initialized. */
+        SimpleNogoodContainerPtr analysissolverNogoods;
         /** \brief Number of models of this model generate (only compatible and minimal ones). */
         int cmModelCount;
         /** \brief Set of atoms used for inconsistency analysis (only defined if inconsistency analysis is used). */      
@@ -131,6 +133,8 @@ public PropagatorCallback
         UnfoundedSetCheckerManagerPtr ufscm;
         /** \brief All atoms in the program. */
         InterpretationPtr programMask;
+        /** \brief Current (non-ground) guessing program. */
+        OrdinaryASPProgram guessingProgram;
 
         // members
 

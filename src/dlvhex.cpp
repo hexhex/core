@@ -1674,7 +1674,6 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 64:
                 {
-                    pctx.config.setOption("UnitInconsistencyAnalysis", 1);
                     pctx.config.setOption("ForceGC", 1);
                     pctx.config.setOption("NoOuterExternalAtoms", 1);
                     pctx.config.setOption("LiberalSafety", 1);
