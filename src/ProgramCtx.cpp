@@ -164,7 +164,6 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("TransUnitLearning", 0);
     config.setOption("ExternalAtomVerificationFromLearnedNogoods", 0);
     config.setOption("WaitOnModel", 0);
-    config.setOption("UserInconsistencyAnalysis", 0);
 
 
     WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")

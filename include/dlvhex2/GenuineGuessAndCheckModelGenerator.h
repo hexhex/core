@@ -135,6 +135,13 @@ public PropagatorCallback
         // members
 
         /**
+          * \brief Prints info for identification of the current unit to the debug output.
+          *
+          * @param prefix Prefix to be printed at the beginning of each line.
+          */
+        void printUnitInfo(std::string prefix = "");
+
+        /**
           * \brief Inlines selected external atoms which provide support sets.
           * @param program The input non-ground program whose external atoms are to be inlined (if possible).
           * @param grounder The grounder used to ground \p program.
@@ -153,11 +160,11 @@ public PropagatorCallback
         ID replacePredForInlinedEAs(ID atomID, InterpretationConstPtr eliminatedExtAuxes);
 
         /**
-         * \brief Identifies the set of atoms used to explain inconsistencies in this unit.
+         * \brief Identifies the set of atoms used to explain inconsistencies in this unit and initializes the members for explaining inconsistency wrt. these atoms.
          *
          * @param program The program whose EDB needs to be modified for inconsistency analysis (explanation atoms are removed as facts and assumed instead).
          */
-        void initializeExplanationAtoms(OrdinaryASPProgram& program);
+        void initializeInconsistencyExplanation(OrdinaryASPProgram& program);
 
         /**
          * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments.

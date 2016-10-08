@@ -978,11 +978,11 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 
 #ifndef NDEBUG
         std::stringstream debugoutput;
-        DBGLOG(DBG, "getInconsistencyCause, last interpretation before detecting inconsistency:" << std::endl << *interpretation);
-        DBGLOG(DBG, "getInconsistencyCause, current implication graph:" << std::endl << getImplicationGraphAsDotString());
-		DBGLOG(DBG, "getInconsistencyCause, explanation atoms: " << *explanationAtoms);
+        DBGLOG(DBG, "[IR] getInconsistencyCause, last interpretation before detecting inconsistency: " << *interpretation);
+        DBGLOG(DBG, "[IR] getInconsistencyCause, current implication graph:" << std::endl << "[IR] " << getImplicationGraphAsDotString());
+		DBGLOG(DBG, "[IR] getInconsistencyCause, explanation atoms: " << *explanationAtoms);
         std::string indent = "";
-		debugoutput << "getInconsistencyCause, computation:" << std::endl << "[INIT] " << violatedNogood.getStringRepresentation(reg) << std::endl;
+		debugoutput << "[IR] getInconsistencyCause, computation:" << std::endl << "[IR:INIT] " << violatedNogood.getStringRepresentation(reg) << std::endl;
 #endif
 
         // resolve back to explanationAtoms
@@ -1025,11 +1025,11 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
             if (resolveWithNogoodIndex != -1){
                 violatedNogood = resolve(newNogood, nogoodset.getNogood(resolveWithNogoodIndex), resolvedLiteral.address);
 #ifndef NDEBUG
-                debugoutput << "[RNEX] " << indent << newNogood.getStringRepresentation(reg) << std::endl;
-				debugoutput << "[RLIT] " << indent << (resolvedLiteral.isNaf() ? "-" : "") << printToString<RawPrinter>(ID::atomFromLiteral(resolvedLiteral), reg) << std::endl;
-				debugoutput << "[IMPL] " << indent << nogoodset.getNogood(resolveWithNogoodIndex).getStringRepresentation(reg) << std::endl;
+                debugoutput << "[IR:RNEX] " << indent << newNogood.getStringRepresentation(reg) << std::endl;
+				debugoutput << "[IR:RLIT] " << indent << (resolvedLiteral.isNaf() ? "-" : "") << printToString<RawPrinter>(ID::atomFromLiteral(resolvedLiteral), reg) << std::endl;
+				debugoutput << "[IR:IMPL] " << indent << nogoodset.getNogood(resolveWithNogoodIndex).getStringRepresentation(reg) << std::endl;
                 indent = indent + "     ";
-                debugoutput << "[RSVT] " << indent << violatedNogood.getStringRepresentation(reg) << std::endl;
+                debugoutput << "[IR:RSVT] " << indent << violatedNogood.getStringRepresentation(reg) << std::endl;
 #endif
 			}else{
                 violatedNogood = newNogood;
@@ -1038,7 +1038,7 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 
         // the nogood contains now only literals which have not been implied and which are from explanationAtoms
 #ifndef NDEBUG
-        debugoutput << "[FINL] " << violatedNogood.getStringRepresentation(reg) << std::endl;
+        debugoutput << "[IR:FINL] " << indent << violatedNogood.getStringRepresentation(reg) << std::endl;
         DBGLOG(DBG, debugoutput.str() << std::endl << "INIT ... Initially violated nogood" << std::endl << "RNEX ... Eliminated non-implied literals other than explanation atoms" << std::endl << "RLIT ... Resolved literal" << std::endl << "IMPL ... Implicant of the resolved literal" << std::endl << "RSVT ... Resolvent" << std::endl << "FINL ... Final explanation nogood");
 
         // the assertion could already be checked above, but we want to trace the algorithm also in case of errors

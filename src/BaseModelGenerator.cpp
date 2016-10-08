@@ -409,7 +409,7 @@ bool BaseModelGenerator::VerifyExternalAtomCB::output(const Tuple& output)
 bool BaseModelGenerator::VerifyExternalAtomCB::verify()
 {
 
-    if (remainingguess) {
+    if (verified && remainingguess) {
         if (!onlyNegativeAuxiliaries()) {
             verified = false;
         }
