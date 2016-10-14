@@ -139,6 +139,15 @@ public PropagatorCallback
         // members
 
         /**
+         * \brief Generates a new auxiliary atom for temporary use which is unique for \p type and \p id.
+         *
+         * @param type
+         * @param id
+         * @return ID of the temporary atom.
+         */
+        ID getAuxiliaryAtom(char type, ID id);
+
+        /**
           * \brief Prints info for identification of the current unit to the debug output.
           *
           * @param prefix Prefix to be printed at the beginning of each line.
@@ -166,9 +175,9 @@ public PropagatorCallback
         /**
          * \brief Identifies the set of atoms used to explain inconsistencies in this unit and initializes the members for explaining inconsistency wrt. these atoms.
          *
-         * @param program The program whose EDB needs to be modified for inconsistency analysis (explanation atoms are removed as facts and assumed instead).
+         * See GenuineGuessAndCheckModelGenerator::explAtoms.
          */
-        void initializeInconsistencyExplanation(OrdinaryASPProgram& program);
+        void initializeInconsistencyExplanationAtoms();
 
         /**
          * \brief Initializes heuristics for external atom evaluation and UFS checking over partial assignments.

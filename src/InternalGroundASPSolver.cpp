@@ -1238,6 +1238,9 @@ std::string InternalGroundASPSolver::getStatistics()
     #endif
 }
 
+const NogoodSet& InternalGroundASPSolver::getNogoodStorage(){
+    return nogoodset;
+}
 
 std::string InternalGroundASPSolver::getImplicationGraphAsDotString(){
 

@@ -1110,13 +1110,25 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 }
 
 
-InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic)
+InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic)
 {
 
     RegistryPtr reg = ctx.registry();
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPreds");
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+
+    // get the set of all predicates defined in deidb
+    std::set<ID> predicatesDefinedInComponent;
+    BOOST_FOREACH(ID rid, deidb) {
+        const Rule& rule = reg->rules.getByID(rid);
+
+        BOOST_FOREACH(ID hid, rule.head) {
+            if (!hid.isOrdinaryAtom()) continue;
+            const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(hid);
+            predicatesDefinedInComponent.insert(oatom.tuple[0]);
+        }
+    }
 
     InterpretationPtr domintr = InterpretationPtr(new Interpretation(reg));
     domintr->getStorage() |= edb->getStorage();
@@ -1184,7 +1196,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
                         !ea.getExtSourceProperties().isMonotonic(i) &&
                     ogatom.tuple[0] == ea.inputs[i]) {
                         // if the predicate is defined in this component, enumerate all possible assignments
-                        if (ci.predicatesDefinedInComponent.count(ea.inputs[i]) > 0) {
+                        if (predicatesDefinedInComponent.count(ea.inputs[i]) > 0) {
                             DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
                             nonmonotonicinput[*en] = false;
                         }
@@ -1214,6 +1226,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(co
                     // set nonmonotonic input
                     allOnes = true;
                     BOOST_FOREACH (Pair p, nonmonotonicinput) {
+		        DBGLOG(DBG, "Checking input atom " << printToString<RawPrinter>(reg->ogatoms.getIDByAddress(p.first), reg) << " (current truth value: " << p.second << ")");
                         if (p.second) input->setFact(p.first);
                         else {
                             input->clearFact(p.first);

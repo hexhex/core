@@ -424,14 +424,13 @@ public ModelGeneratorBase<Interpretation>
 
         /**
          * Computes the relevant domain atoms, i.e., the extensions of the domain predicates.
-         * @param ci The component whose domain atoms to be computed
          * @param ctx ProgramCtx
          * @param edb Set of facts (usually the input model of the component)
          * @param deidb The IDB used for computing the domain expansion; this is a simplified version of the actual IDB and is computed by addDomainPredicatesAndCreateDomainExplorationProgram.
          * @param deidbInnerEatoms The inner atoms which are relevant for liberal domain-expansion safety; this is a subset of all inner external atoms in the unit and is computed by addDomainPredicatesAndCreateDomainExplorationProgram.
          * @param enumerateNonmonotonic If true, then the inner external atoms in deidbInnerEatoms are evaluated under all possible inputs to make sure that they are fully grounded; otherwise they are evaluated only under the current EDB, but then the grounding might be incomplete and might require incremental expansion.
          */
-        InterpretationConstPtr computeExtensionOfDomainPredicates(const ComponentGraph::ComponentInfo& ci, ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic = true);
+        InterpretationConstPtr computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic = true);
 };
 
 DLVHEX_NAMESPACE_END

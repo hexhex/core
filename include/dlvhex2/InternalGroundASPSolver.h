@@ -158,6 +158,7 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         // unfounded set members
         virtual void setFact(ID fact, int dl, int cause);
         virtual void clearFact(IDAddress litadr);
+
         /** \brief Removes a source pointer from an atom.
          * @param litadr Atom to remove the source pointer from. */
         void removeSourceFromAtom(IDAddress litadr);
@@ -285,6 +286,13 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver
         virtual InterpretationPtr getNextModel();
         virtual int getModelCount();
         virtual std::string getStatistics();
+
+        /**
+         * \brief Provides access to the internal nogood storage.
+         *
+         * @return Referene to the internal nogood storage.
+         */
+        const NogoodSet& getNogoodStorage();
 
         /**
           * \brief Returns a string representation of the current implication graph in dot format.

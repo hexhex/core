@@ -236,13 +236,22 @@ void UnfoundedSetCheckHeuristics::updateSkipProgram(InterpretationConstPtr verif
     std::set<ID> skipProgramFromScratch;
     BOOST_FOREACH (ID ruleID, idb) {
         // check if all atoms in the rule have been assigned
+        DBGLOG(DBG, "Checking rule " << printToString<RawPrinter>(ruleID, reg));
         const Rule& rule = reg->rules.getByID(ruleID);
-        if (rule.isEAGuessingRule()) continue;
+        if (rule.isEAGuessingRule()) {
+            continue;
+        }
         bool allassigned = true;
         BOOST_FOREACH (ID h, rule.head) {
             if (!assigned->getFact(h.address)) {
                 allassigned = false;
                 break;
+            }
+            if (h.isExternalAuxiliary()) {
+                allassigned &= verifiedAuxes->getFact(h.address);
+                if (!allassigned) {
+                    break;
+                }
             }
         }
         BOOST_FOREACH (ID b, rule.body) {
@@ -252,7 +261,9 @@ void UnfoundedSetCheckHeuristics::updateSkipProgram(InterpretationConstPtr verif
             }
             if (b.isExternalAuxiliary()) {
                 allassigned &= verifiedAuxes->getFact(b.address);
-                if (!allassigned) break;
+                if (!allassigned) {
+                    break;
+                }
             }
         }
         if (!allassigned) {
