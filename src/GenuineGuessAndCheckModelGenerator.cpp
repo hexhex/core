@@ -1147,15 +1147,15 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
     ID lID;
     BOOST_FOREACH (ID l, inconsistencyCause) {
         lID = factory.ctx.registry()->ogatoms.getIDByAddress(l.address);
-        if (lID.isAuxiliary() && factory.ctx.registry()->getTypeByAuxiliaryConstantSymbol(lID) == 'x'){
+        if (lID.isAuxiliary() && factory.ctx.registry()->getTypeByAuxiliaryConstantSymbol(factory.ctx.registry()->ogatoms.getByID(lID).tuple[0]) == 'x'){
             haveInconsistencyCause = false;
-            DBGLOG(DBG, "[IR] Inconsistency of program and only spurious inconsistence cause was detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
-            DBGLOG(DBG, "[IR] No inconsistency explanation found");
+            DBGLOG(DBG, "[IR] Inconsistency of program and spurious inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
+            DBGLOG(DBG, "[IR] No real inconsistency explanation found");
             return;
         }
     }
     haveInconsistencyCause = true;
-    DBGLOG(DBG, "[IR] Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
+    DBGLOG(DBG, "[IR] Inconsistency of program and real inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
     DBGLOG(DBG, "[IR] Explanation: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
 }
 
