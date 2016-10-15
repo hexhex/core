@@ -243,13 +243,13 @@ guessingProgram(factory.reg)
     guessingProgram.idb.insert(guessingProgram.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
     // identify explanation atoms
-    InterpretationPtr deinput(new Interpretation(reg));
-    deinput->add(*postprocInput);
+//    InterpretationPtr deinput(new Interpretation(reg));
+//    deinput->add(*postprocInput);
     std::vector<ID> solverAssumptions;
-    std::vector<ID> deidb = factory.deidb;
+//    std::vector<ID> deidb = factory.deidb;
     if (factory.ctx.config.getOption("TransUnitLearning")){
         initializeInconsistencyExplanationAtoms();
-
+/*
         // we add a guess of the truth value of all explanation atoms and enforce its truth value in the facts using assumptions.
         // (this is in order to make the grounding exhaustive also for the case that these atoms change their truth value)
         bm::bvector<>::enumerator en = explAtoms->getStorage().first();
@@ -273,11 +273,12 @@ guessingProgram(factory.reg)
             }
             en++;
         }
+*/
     }
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
-        InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, deidb, factory.deidbInnerEatoms /*, true, factory.ctx.config.getOption("TransUnitLearning")*/);
+        InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms /*, true, factory.ctx.config.getOption("TransUnitLearning")*/);
         postprocInput->add(*domPredictaesExtension);
     }
 
@@ -1062,14 +1063,56 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
     DBGLOG(DBG, "[IR] Unoptimized ground program for inconsistency analysis:" << std::endl <<
                 "[IR]     " << *nonoptgp.edb << std::endl <<
                 "[IR]     " << printManyToString<RawPrinter>(nonoptgp.idb, "\n[IR]     ", factory.ctx.registry()));
-    AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
-//        program.edb = originalEdb;
 
-    // start analysis solver
-    analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, nonoptagp, explAtoms));
+
     std::vector<ID> assumptions;
-    bm::bvector<>::enumerator en = explAtoms->getStorage().first();
-    bm::bvector<>::enumerator en_end = explAtoms->getStorage().end();
+
+
+
+
+    // make the program extensible
+    // Explanation atoms are all ground atoms from the registry which are not defined in this unit.
+    // This captures exactly the atoms which *could* be derivable in some predecessor unit.
+    PredicateMaskPtr extensionMask(new PredicateMask());
+    extensionMask->setRegistry(factory.ctx.registry());
+
+    BOOST_FOREACH (ID predInComp, factory.ci.predicatesOccurringInComponent) {
+        if (factory.ci.predicatesDefinedInComponent.find(predInComp) != factory.ci.predicatesDefinedInComponent.end()) {
+            DBGLOG(DBG, "[IR] Unit input is defined by " << printToString<RawPrinter>(predInComp, factory.ctx.registry()));
+            extensionMask->addPredicate(predInComp);
+        }
+    }
+    extensionMask->updateMask();
+
+    // for all atoms in the ground program
+    // (@TODO: can be further restricted to "underdefined" atoms, i.e., atoms which may be defined by instances of rules which are currently not in the ground program)
+    bm::bvector<>::enumerator en = extensionMask->mask()->getStorage().first();
+    bm::bvector<>::enumerator en_end = extensionMask->mask()->getStorage().end();
+
+    while (en < en_end) {
+        Rule extensionRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+        extensionRule.head.push_back(factory.ctx.registry()->ogatoms.getIDByAddress(*en));
+        OrdinaryAtom oat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+        oat.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', reg->ogatoms.getIDByAddress(*en)));
+        ID oatID = factory.ctx.registry()->storeOrdinaryAtom(oat);
+        extensionRule.body.push_back(ID::posLiteralFromAtom(oatID));
+        ID extensionRuleID = factory.ctx.registry()->storeRule(extensionRule);
+        DBGLOG(DBG, "[IR] Adding extension rule " << printToString<RawPrinter>(extensionRuleID, factory.ctx.registry()));
+        nonoptgp.idb.push_back(extensionRuleID);
+        explAtoms->setFact(oatID.address);
+        assumptions.push_back(ID::nafLiteralFromAtom(oatID));
+        en++;
+    }
+
+
+
+
+
+    // run analysis solver
+    AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
+    analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, nonoptagp, explAtoms));
+    en = explAtoms->getStorage().first();
+    en_end = explAtoms->getStorage().end();
     while (en < en_end) {
         assumptions.push_back(unitInput->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
         en++;
@@ -1098,11 +1141,22 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
     assert (!imodel && "Instance did not yield models, but after restart it is not inconsistent!");
 #endif
 
-    haveInconsistencyCause = true;
     inconsistencyCause = analysissolver->getInconsistencyCause(explAtoms);
+
+    // inconsistency reasons with extension atoms do not count because they are not necessarily inconsistency reasons of the nonground program
+    ID lID;
+    BOOST_FOREACH (ID l, inconsistencyCause) {
+        lID = factory.ctx.registry()->ogatoms.getIDByAddress(l.address);
+        if (lID.isAuxiliary() && factory.ctx.registry()->getTypeByAuxiliaryConstantSymbol(lID) == 'x'){
+            haveInconsistencyCause = false;
+            DBGLOG(DBG, "[IR] Inconsistency of program and only spurious inconsistence cause was detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
+            DBGLOG(DBG, "[IR] No inconsistency explanation found");
+            return;
+        }
+    }
+    haveInconsistencyCause = true;
     DBGLOG(DBG, "[IR] Inconsistency of program and inconsistence cause have been detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
     DBGLOG(DBG, "[IR] Explanation: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
-
 }
 
 const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
