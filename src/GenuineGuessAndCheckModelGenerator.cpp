@@ -1128,8 +1128,10 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
     bm::bvector<>::enumerator en_end = extensionMask->mask()->getStorage().end();
 
     ID atomID;
+    bool underdefined;
     while (en < en_end) {
         // next atom
+        underdefined = false;
         atomID = factory.ctx.registry()->ogatoms.getIDByAddress(*en);
         DBGLOG(DBG, "[IR] Checking underdefinedness of atom " << printToString<RawPrinter>(atomID, factory.ctx.registry()));
         const OrdinaryAtom& atom = factory.ctx.registry()->lookupOrdinaryAtom(atomID);
@@ -1206,23 +1208,70 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                     // iterate over ground rule instances, extract variable substitution and apply to full rule
                     BOOST_FOREACH (ID id, currentRuleProgramGround.idb) {
                         DBGLOG(DBG, "[IR] Found ground rule: " << printToString<RawPrinter>(id, factory.ctx.registry()));
+                        const OrdinaryAtom& variableExtractionAtom = factory.ctx.registry()->ogatoms.getByID(factory.ctx.registry()->rules.getByID(id).head[0]);
+
+                        Unifier fullunifier;
+                        int varidx = 0;
+                        BOOST_FOREACH (ID var, ruleVars) {
+                            fullunifier[var] = variableExtractionAtom.tuple[++varidx];
+                        }
+                        
+                        // apply to full rule
+                        Rule modRule = rule;
+                        for (int h = 0; h < modRule.head.size(); ++h) {
+                            OrdinaryAtom oa =  factory.ctx.registry()->ogatoms.getByID(modRule.head[h]);
+                            for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
+                            modRule.head[h] = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                        }
+                        for (int b = 0; b < modRule.body.size(); ++b) {
+                            if (modRule.body[b].isOrdinaryAtom()) {
+                                OrdinaryAtom oa = factory.ctx.registry()->ogatoms.getByID(modRule.body[b]);
+                                for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
+                                modRule.body[b] = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                            }
+                            if (modRule.body[b].isExternalAtom()) {
+                                const ExternalAtom& ea = factory.ctx.registry()->eatoms.getByID(modRule.body[b]);
+                                OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+                                oa.tuple.push_back(factory.ctx.registry()->getAuxiliaryConstantSymbol('r', ea.predicate));
+                                for (int v = 0; v < ea.inputs.size(); ++v) oa.tuple.push_back(ea.inputs[v].isVariableTerm() ? fullunifier[ea.inputs[v]] : ea.inputs[v]);
+                                for (int v = 0; v < ea.tuple.size(); ++v) oa.tuple.push_back(ea.tuple[v].isVariableTerm() ? fullunifier[ea.tuple[v]] : ea.tuple[v]);
+                                modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(factory.ctx.registry()->storeOrdinaryAtom(oa)) : ID::posLiteralFromAtom(factory.ctx.registry()->storeOrdinaryAtom(oa)));
+                            }
+                        }
+
+                        ID modRuleID = factory.ctx.registry()->storeRule(modRule);
+                        DBGLOG(DBG, "[IR] Corresponds to ground instance of the full rule: " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()));
+                        
+                        // check if this rule is already in the grounding
+                        if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRule) == nonoptgp.idb.end()) {
+                            underdefined = true;
+                            break;
+                        }
                     }
+                    if (underdefined) break;
                 }
+                if (underdefined) break;
             }
+            if (underdefined) break;
         }
 
-        // it is possibly underdefined: generate extension rule
-        Rule extensionRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-        extensionRule.head.push_back(atomID);
-        OrdinaryAtom oat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-        oat.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', atomID));
-        ID oatID = factory.ctx.registry()->storeOrdinaryAtom(oat);
-        extensionRule.body.push_back(ID::posLiteralFromAtom(oatID));
-        ID extensionRuleID = factory.ctx.registry()->storeRule(extensionRule);
-        DBGLOG(DBG, "[IR] Adding extension rule " << printToString<RawPrinter>(extensionRuleID, factory.ctx.registry()));
-        nonoptgp.idb.push_back(extensionRuleID);
-        explAtoms->setFact(oatID.address);
-        assumptions.push_back(ID::nafLiteralFromAtom(oatID));
+        if (underdefined) {
+            // it is possibly underdefined: generate extension rule
+            DBGLOG(DBG, "[IR] Atom " << printToString<RawPrinter>(atomID, factory.ctx.registry()) << " is possibly underdefined");
+            Rule extensionRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+            extensionRule.head.push_back(atomID);
+            OrdinaryAtom oat(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+            oat.tuple.push_back(reg->getAuxiliaryConstantSymbol('x', atomID));
+            ID oatID = factory.ctx.registry()->storeOrdinaryAtom(oat);
+            extensionRule.body.push_back(ID::posLiteralFromAtom(oatID));
+            ID extensionRuleID = factory.ctx.registry()->storeRule(extensionRule);
+            DBGLOG(DBG, "[IR] Adding extension rule " << printToString<RawPrinter>(extensionRuleID, factory.ctx.registry()));
+            nonoptgp.idb.push_back(extensionRuleID);
+            explAtoms->setFact(oatID.address);
+            assumptions.push_back(ID::nafLiteralFromAtom(oatID));
+        }else{
+             DBGLOG(DBG, "[IR] Atom " << printToString<RawPrinter>(atomID, factory.ctx.registry()) << " is certainly not underdefined");
+        }
         en++;
     }
 
