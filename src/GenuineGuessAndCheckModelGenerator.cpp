@@ -1243,7 +1243,7 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                         DBGLOG(DBG, "[IR] Corresponds to ground instance of the full rule: " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()));
                         
                         // check if this rule is already in the grounding
-                        if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRule) == nonoptgp.idb.end()) {
+                        if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRuleID) == nonoptgp.idb.end()) {
                             underdefined = true;
                             break;
                         }
