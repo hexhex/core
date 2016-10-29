@@ -1143,8 +1143,11 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
             DBGLOG(DBG, "[IR] Checking underdefinedness of atom wrt. rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));
             const Rule& rule = factory.ctx.registry()->rules.getByID(ruleID);
             std::set<ID> ruleVars, posOrdBodyVary;
-            factory.ctx.registry()->getVariablesInID(ruleID, ruleVars);
+            BOOST_FOREACH (ID h, rule.head) {
+                factory.ctx.registry()->getVariablesInID(h, ruleVars);
+            }
             BOOST_FOREACH (ID b, rule.body) {
+                factory.ctx.registry()->getVariablesInID(b, ruleVars);
                 if (!b.isNaf() && !b.isExternalAuxiliary()) {
                     factory.ctx.registry()->getVariablesInID(b, posOrdBodyVary);
                 }
@@ -1179,7 +1182,7 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
 
                     // ground the rule, restricted to positive ordinary atoms, wrt. mrpModel
                     Rule simplifiedRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-                    OrdinaryAtom variableExtractionAtom(ID::MAINKIND_ATOM);
+                    OrdinaryAtom variableExtractionAtom(ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
                     if (ruleVars.size() > 0) variableExtractionAtom.kind |= ID::SUBKIND_ATOM_ORDINARYN; else variableExtractionAtom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
                     variableExtractionAtom.tuple.push_back(unknownValueTerm);
                     BOOST_FOREACH (ID var, ruleVars) {
@@ -1214,39 +1217,54 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                         int varidx = 0;
                         BOOST_FOREACH (ID var, ruleVars) {
                             fullunifier[var] = variableExtractionAtom.tuple[++varidx];
+                            DBGLOG(DBG, "[IR] Substituting variable " << printToString<RawPrinter>(var, factory.ctx.registry()) << " by " << printToString<RawPrinter>(fullunifier[var], factory.ctx.registry()));
                         }
-                        
+
                         // apply to full rule
                         Rule modRule = rule;
+                        modRule.kind = (modRule.head.size() > 1 ? ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ : ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
                         for (int h = 0; h < modRule.head.size(); ++h) {
-                            OrdinaryAtom oa =  factory.ctx.registry()->ogatoms.getByID(modRule.head[h]);
+                            OrdinaryAtom oa =  factory.ctx.registry()->lookupOrdinaryAtom(modRule.head[h]);
+                            oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+                            oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
                             for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
                             modRule.head[h] = factory.ctx.registry()->storeOrdinaryAtom(oa);
                         }
                         for (int b = 0; b < modRule.body.size(); ++b) {
                             if (modRule.body[b].isOrdinaryAtom()) {
-                                OrdinaryAtom oa = factory.ctx.registry()->ogatoms.getByID(modRule.body[b]);
+                                OrdinaryAtom oa = factory.ctx.registry()->lookupOrdinaryAtom(modRule.body[b]);
+                                oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+                                oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
                                 for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
-                                modRule.body[b] = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                                ID oaID = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                                modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(oaID) : ID::posLiteralFromAtom(oaID));
                             }
                             if (modRule.body[b].isExternalAtom()) {
                                 const ExternalAtom& ea = factory.ctx.registry()->eatoms.getByID(modRule.body[b]);
-                                OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+                                OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+                                oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+                                oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
                                 oa.tuple.push_back(factory.ctx.registry()->getAuxiliaryConstantSymbol('r', ea.predicate));
                                 for (int v = 0; v < ea.inputs.size(); ++v) oa.tuple.push_back(ea.inputs[v].isVariableTerm() ? fullunifier[ea.inputs[v]] : ea.inputs[v]);
                                 for (int v = 0; v < ea.tuple.size(); ++v) oa.tuple.push_back(ea.tuple[v].isVariableTerm() ? fullunifier[ea.tuple[v]] : ea.tuple[v]);
-                                modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(factory.ctx.registry()->storeOrdinaryAtom(oa)) : ID::posLiteralFromAtom(factory.ctx.registry()->storeOrdinaryAtom(oa)));
+                                ID oaID = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                                modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(oaID) : ID::posLiteralFromAtom(oaID));
                             }
                         }
 
                         ID modRuleID = factory.ctx.registry()->storeRule(modRule);
-                        DBGLOG(DBG, "[IR] Corresponds to ground instance of the full rule: " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()));
-                        
+                        DBGLOG(DBG, "[IR] Corresponds to ground instance " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()) << " of the full rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));
                         // check if this rule is already in the grounding
                         if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRuleID) == nonoptgp.idb.end()) {
+                            DBGLOG(DBG, "[IR] This rule is not in the unoptimized ground program:");
+
                             underdefined = true;
-                            break;
+                        }else{
+                            DBGLOG(DBG, "[IR] This rule is in the unoptimized ground program:");
                         }
+                        DBGLOG(DBG, "[IR]     " << *nonoptgp.edb << std::endl <<
+                                    "[IR]     " << printManyToString<RawPrinter>(nonoptgp.idb, "\n[IR]     ", factory.ctx.registry()));
+                        if (underdefined) break;
                     }
                     if (underdefined) break;
                 }
