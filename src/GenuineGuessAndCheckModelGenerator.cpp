@@ -1102,6 +1102,17 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
             rule2.head[0] = factory.ctx.registry()->storeOrdinaryAtom(oatom);
             mrpProgramIdb.push_back(factory.ctx.registry()->storeRule(rule2));
         }
+        BOOST_FOREACH (ID b, rule.body) {
+	        if (!b.isNaf() || b.isExternalAuxiliary()) continue;
+            OrdinaryAtom oatom = factory.ctx.registry()->lookupOrdinaryAtom(b);
+            for (int i = 0; i < oatom.tuple.size(); ++i) {
+                if (oatom.tuple[i].isVariableTerm() && bodyVars.find(oatom.tuple[i]) == bodyVars.end()) {
+                    oatom.tuple[i] = unknownValueTerm;
+                }
+            }
+            rule2.head[0] = factory.ctx.registry()->storeOrdinaryAtom(oatom);
+            mrpProgramIdb.push_back(factory.ctx.registry()->storeRule(rule2));
+        }
     }
     GenuineSolverPtr mrpProgramSolver = GenuineSolver::getInstance(factory.ctx, mrpProgram);
     InterpretationConstPtr mrpModel = mrpProgramSolver->getNextModel();
