@@ -1267,14 +1267,14 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                         DBGLOG(DBG, "[IR] Corresponds to ground instance " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()) << " of the full rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));
                         // check if this rule is already in the grounding
                         if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRuleID) == nonoptgp.idb.end()) {
-                            DBGLOG(DBG, "[IR] This rule is not in the unoptimized ground program:");
+                            DBGLOG(DBG, "[IR] This rule is not in the unoptimized ground program");
 
                             underdefined = true;
                         }else{
-                            DBGLOG(DBG, "[IR] This rule is in the unoptimized ground program:");
+                            DBGLOG(DBG, "[IR] This rule is in the unoptimized ground program");
                         }
-                        DBGLOG(DBG, "[IR]     " << *nonoptgp.edb << std::endl <<
-                                    "[IR]     " << printManyToString<RawPrinter>(nonoptgp.idb, "\n[IR]     ", factory.ctx.registry()));
+//                        DBGLOG(DBG, "[IR]     " << *nonoptgp.edb << std::endl <<
+//                                    "[IR]     " << printManyToString<RawPrinter>(nonoptgp.idb, "\n[IR]     ", factory.ctx.registry()));
                         if (underdefined) break;
                     }
                     if (underdefined) break;

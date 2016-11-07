@@ -970,19 +970,21 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 
         // start from a conflicting nogood
         // heuristics: choose a conflicting nogood with minimal cardinality
-        int conflictNogoodIndex = 0;
+        int conflictNogoodIndex = contradictoryNogoods[0];
         BOOST_FOREACH (int i, contradictoryNogoods) {
-            if (nogoodset.getNogood(i).size() < nogoodset.getNogood(contradictoryNogoods[conflictNogoodIndex]).size()) conflictNogoodIndex = i;
+            if (nogoodset.getNogood(i).size() < nogoodset.getNogood(conflictNogoodIndex).size()) conflictNogoodIndex = i;
         }
-        Nogood violatedNogood = nogoodset.getNogood(contradictoryNogoods[conflictNogoodIndex]);
+        Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
+//        Nogood violatedNogood = nogoodset.getNogood(*(contradictoryNogoods.begin()));
 
 #ifndef NDEBUG
+        Nogood initiallyViolatedNogood = violatedNogood;
         std::stringstream debugoutput;
         DBGLOG(DBG, "[IR] getInconsistencyCause, last interpretation before detecting inconsistency: " << *interpretation);
         DBGLOG(DBG, "[IR] getInconsistencyCause, current implication graph:" << std::endl << "[IR] " << getImplicationGraphAsDotString());
 		DBGLOG(DBG, "[IR] getInconsistencyCause, explanation atoms: " << *explanationAtoms);
         std::string indent = "";
-		debugoutput << "[IR] getInconsistencyCause, computation:" << std::endl << "[IR:INIT] " << violatedNogood.getStringRepresentation(reg) << std::endl;
+		debugoutput << "[IR] getInconsistencyCause, computation:" << std::endl << "[IR:INIT] " << violatedNogood.getStringRepresentation(reg) << " (nr. " << conflictNogoodIndex << ")" << std::endl;   
 #endif
 
         // resolve back to explanationAtoms
@@ -1044,6 +1046,11 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
         // the assertion could already be checked above, but we want to trace the algorithm also in case of errors
         BOOST_FOREACH (ID lit, violatedNogood) {
             assert(interpretation->getFact(lit.address) != lit.isNaf() && "nogood supposed to be violated is not");
+        }
+
+        // check if the selected nogood is really violated
+		BOOST_FOREACH (ID lit, initiallyViolatedNogood) {
+            assert(interpretation->getFact(lit.address) != lit.isNaf() && "nogood supposed to be initially violated is not");
         }
 #endif
         return violatedNogood;
