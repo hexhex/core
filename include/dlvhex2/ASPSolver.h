@@ -48,6 +48,49 @@ DLVHEX_NAMESPACE_BEGIN
 
 namespace ASPSolver
 {
+    
+    /** \brief Interface to Alpha software. */
+    struct DLVHEX_EXPORT AlphaSoftware:
+    public ASPSolverManager::SoftwareBase
+    {
+        typedef ASPSolverManager::SoftwareConfiguration<AlphaSoftware> Configuration;
+
+        /** \brief Specific options for Alpha. */
+        struct DLVHEX_EXPORT Options:
+        public ASPSolverManager::GenericOptions
+        {
+            /** \brief Constructor. */
+            Options();
+            /** \brief Destructor. */
+            virtual ~Options();
+
+            /** \brief Commandline arguments to add (default="-silent"). */
+            std::vector<std::string> arguments;
+        };
+
+        /** \brief The delegate for AlphaSoftware. */
+        class DLVHEX_EXPORT Delegate:
+        public ASPSolverManager::DelegateInterface
+        {
+            public:
+                typedef AlphaSoftware::Options Options;
+
+                /** \brief Constructor.
+                 * @param options See AlphaSoftware::Options. */
+                Delegate(const Options& options);
+                /** \brief Destructor. */
+                virtual ~Delegate();
+                virtual void useASTInput(const OrdinaryASPProgram& program);
+                virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
+                virtual ASPSolverManager::ResultsPtr getResults();
+
+            protected:
+                struct ConcurrentQueueResultsImpl;
+                typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
+                    ConcurrentQueueResultsImplPtr;
+                ConcurrentQueueResultsImplPtr results;
+        };
+    };
 
     /** \brief Interface to DLV software. */
     struct DLVHEX_EXPORT DLVSoftware:

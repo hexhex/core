@@ -122,6 +122,7 @@ libdlvhex2_mlpsolver_la_SOURCES = \
 # dlvhex ASP component
 libdlvhex2_aspsolver_la_SOURCES = \
     ASPSolver.cpp \
+    ASPSolver_alpha.cpp \
     ASPSolver_dlv.cpp \
     ASPSolver_libclingo.cpp \
     DLVProcess.cpp \

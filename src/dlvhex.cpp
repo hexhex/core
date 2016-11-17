@@ -346,7 +346,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "     --modelqueuesize=N" << std::endl
         << "                      Size of the model queue, i.e. number of models which can be computed in parallel." << std::endl
         << "                      Default value is 5. The option is only useful for clasp solver." << std::endl
-        << "     --solver=S       Use S as ASP engine, where S is one of dlv, dlvdb, libdlv, libclingo, genuineii, genuinegi, genuineic, genuinegc" << std::endl
+        << "     --solver=S       Use S as ASP engine, where S is one of alpha, dlv, dlvdb, libdlv, libclingo, genuineii, genuinegi, genuineic, genuinegc" << std::endl
         << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
         << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)." << std::endl
         << "     --claspconfig=C  If clasp is used, configure it with C where C is parsed by clasp config parser, or " << std::endl
@@ -1055,7 +1055,12 @@ Config& config, ProgramCtx& pctx)
                     case 7:
                     {
                         std::string solver(optarg);
-                        if( solver == "dlv" ) {
+                        if( solver == "alpha" ) {
+                            pctx.setASPSoftware(
+                                ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::AlphaSoftware::Configuration));
+                            pctx.config.setOption("GenuineSolver", 0);
+                        }
+                        else if( solver == "dlv" ) {
                         #if defined(HAVE_DLV)
                             pctx.setASPSoftware(
                                 ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
