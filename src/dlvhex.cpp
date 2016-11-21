@@ -1056,9 +1056,13 @@ Config& config, ProgramCtx& pctx)
                     {
                         std::string solver(optarg);
                         if( solver == "alpha" ) {
+                        #if defined(HAVE_ALPHA)
                             pctx.setASPSoftware(
                                 ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::AlphaSoftware::Configuration));
                             pctx.config.setOption("GenuineSolver", 0);
+                        #else
+                            throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+                        #endif
                         }
                         else if( solver == "dlv" ) {
                         #if defined(HAVE_DLV)

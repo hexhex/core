@@ -513,6 +513,25 @@ else
   AC_SUBST([DO_BUILDCLASPGRINGO], ["no"])
 fi
 
+
+#
+# alpha solver configuration
+#
+
+AC_ARG_ENABLE(alpha,
+              [AS_HELP_STRING([--enable-alpha],[enable alpha lazy grounding support])],
+              [enable_alpha=true],
+              [enable_alpha=false]
+             )
+
+if test "x$enable_alpha" = "xtrue"; then
+	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I/usr/lib/jvm/default-java/include/ -I/usr/lib/jvm/default-java/include/linux/"
+	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -ljvm"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L/usr/lib/jvm/default-java/jre/lib/amd64/server/ -Wl,-R/usr/lib/jvm/default-java/jre/lib/amd64/server/"
+	AC_DEFINE([HAVE_ALPHA], [1], [Defined if we have --enable-alpha.])
+fi
+
+
 #
 # libclasp configuration
 #

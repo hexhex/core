@@ -48,7 +48,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 namespace ASPSolver
 {
-    
+    #ifdef HAVE_ALPHA
     /** \brief Interface to Alpha software. */
     struct DLVHEX_EXPORT AlphaSoftware:
     public ASPSolverManager::SoftwareBase
@@ -91,6 +91,7 @@ namespace ASPSolver
                 ConcurrentQueueResultsImplPtr results;
         };
     };
+    #endif
 
     /** \brief Interface to DLV software. */
     struct DLVHEX_EXPORT DLVSoftware:
@@ -137,6 +138,7 @@ namespace ASPSolver
                 ConcurrentQueueResultsImplPtr results;
         };
     };
+   
 
     #ifdef HAVE_LIBDLV
     /** \brief Interace to "DLV as a shared library" software. */

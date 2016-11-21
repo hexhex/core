@@ -36,7 +36,7 @@
 #  include "config.h"
 #endif
 
-#ifdef HAVE_DLV
+#ifdef HAVE_ALPHA
 
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/PlatformDefinitions.h"
@@ -52,6 +52,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
 #include <list>
+#include <jni.h>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -190,8 +191,9 @@ namespace ASPSolver
             do {
                 // get next input line
                 DBGLOG(DBG,"[" << this << "]" "getting input from stream");
-                std::string input;
+                std::string input;   
                 std::getline(is, input);
+                std::cout << input << std::endl;
                 DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() <<
                     " characters from input stream via getline");
                 if( input.empty() || is.bad() ) {
@@ -339,6 +341,40 @@ namespace ASPSolver
             programStream.flush();
 
             proc.endoffile();
+            
+//            std::string str;
+//
+//            std::ostringstream programStream2;
+//            RawPrinter printer2(programStream2, program.registry);
+//
+//            if( program.edb != 0 ) {
+//                // print edb interpretation as facts
+//                program.edb->printAsFacts(programStream2);
+//                programStream2 << "\n";
+//            }
+//
+//            printer2.printmany(program.idb, "\n");
+//            programStream << std::endl;
+//            str = programStream2.str();
+            
+//            std::cout << str << std::endl;
+            
+            JavaVMOption options[1];
+            JNIEnv *env;
+            JavaVM *jvm;
+            JavaVMInitArgs vm_args;
+            long status;
+            
+            
+            options[0].optionString = "-Djava.class.path=.";
+            memset(&vm_args, 0, sizeof(vm_args));
+            vm_args.version = JNI_VERSION_1_2;
+            vm_args.nOptions = 1;
+            vm_args.options = options;
+            
+            status = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
+            
+            
 
             #if 0
             {
