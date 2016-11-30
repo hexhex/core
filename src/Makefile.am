@@ -83,6 +83,7 @@ libdlvhex2_base_la_SOURCES = \
     WellfoundedModelGenerator.cpp \
     GenuineWellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
+    AlphaModelGenerator.cpp \
     GenuineGuessAndCheckModelGenerator.cpp \
     GenuineSolver.cpp \
     GringoGrounder.cpp \

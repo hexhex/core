@@ -518,17 +518,17 @@ fi
 # alpha solver configuration
 #
 
-AC_ARG_ENABLE(alpha,
-              [AS_HELP_STRING([--enable-alpha],[enable alpha lazy grounding support])],
-              [enable_alpha=true],
-              [enable_alpha=false]
+AC_ARG_WITH([alpha],
+              [AS_HELP_STRING([--with-alpha],[enable alpha lazy grounding support by providing a path to the jar file])],
+              [alphapath=$withval],
+              [alphapath=false]
              )
 
-if test "x$enable_alpha" = "xtrue"; then
+if test "x$enable_alpha" != "xfalse"; then
 	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I/usr/lib/jvm/default-java/include/ -I/usr/lib/jvm/default-java/include/linux/"
 	EXTSOLVER_LIBADD="${EXTSOLVER_LIBADD} -ljvm"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L/usr/lib/jvm/default-java/jre/lib/amd64/server/ -Wl,-R/usr/lib/jvm/default-java/jre/lib/amd64/server/"
-	AC_DEFINE([HAVE_ALPHA], [1], [Defined if we have --enable-alpha.])
+	AC_DEFINE_UNQUOTED([HAVE_ALPHA], ["-Djava.class.path=$alphapath"], [Defined if we have --with-alpha.])
 fi
 
 
@@ -727,6 +727,7 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  sysplugindir: $sysplugindir
 
  - Using the following solver backends:
+ ALPHA: $alphapath
  DLV: $DLVPATH
  DLVDB: $DLVDBPATH
  GRINGO_TRUNK_DIR: $GRINGO_TRUNK_DIR

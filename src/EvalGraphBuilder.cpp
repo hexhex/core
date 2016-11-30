@@ -39,6 +39,7 @@
 #include "dlvhex2/PlainModelGenerator.h"
 #include "dlvhex2/WellfoundedModelGenerator.h"
 #include "dlvhex2/GuessAndCheckModelGenerator.h"
+#include "dlvhex2/AlphaModelGenerator.h"
 #include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
@@ -168,6 +169,10 @@ const std::list<Component>& comps, const std::list<Component>& ccomps)
         if (!!ctx.customModelGeneratorProvider) {
             LOG(DBG,"configuring custom model generator factory for eval unit " << u);
             uprops.mgf = ctx.customModelGeneratorProvider->getCustomModelGeneratorFactory(ctx, ci);
+        }
+        else if (ctx.config.getOption("AlphaSolver") > 0) {
+            uprops.mgf.reset(new AlphaModelGeneratorFactory(
+                            ctx, ci, externalEvalConfig));
         }
         else {
             if( ci.innerEatoms.empty() && !ctx.config.getOption("ForceGC") ) {

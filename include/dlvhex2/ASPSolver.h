@@ -44,21 +44,27 @@
 #include <boost/scoped_ptr.hpp>
 #include <vector>
 
+#include <jni.h>
+
 DLVHEX_NAMESPACE_BEGIN
 
-namespace ASPSolver
-{
-    #ifdef HAVE_ALPHA
+        namespace ASPSolver {
+#ifdef HAVE_ALPHA
+
     /** \brief Interface to Alpha software. */
-    struct DLVHEX_EXPORT AlphaSoftware:
-    public ASPSolverManager::SoftwareBase
-    {
+    struct DLVHEX_EXPORT AlphaSoftware :
+    public ASPSolverManager::SoftwareBase {
         typedef ASPSolverManager::SoftwareConfiguration<AlphaSoftware> Configuration;
 
         /** \brief Specific options for Alpha. */
-        struct DLVHEX_EXPORT Options:
-        public ASPSolverManager::GenericOptions
-        {
+        struct DLVHEX_EXPORT Options :
+        public ASPSolverManager::GenericOptions {
+            JavaVM *jvm;
+            long status;
+            jclass cls;
+            jmethodID mid;
+            jobjectArray arr;
+
             /** \brief Constructor. */
             Options();
             /** \brief Destructor. */
@@ -69,40 +75,40 @@ namespace ASPSolver
         };
 
         /** \brief The delegate for AlphaSoftware. */
-        class DLVHEX_EXPORT Delegate:
-        public ASPSolverManager::DelegateInterface
-        {
-            public:
-                typedef AlphaSoftware::Options Options;
+        class DLVHEX_EXPORT Delegate :
+        public ASPSolverManager::DelegateInterface {
+        public:
+            typedef AlphaSoftware::Options Options;
 
-                /** \brief Constructor.
-                 * @param options See AlphaSoftware::Options. */
-                Delegate(const Options& options);
-                /** \brief Destructor. */
-                virtual ~Delegate();
-                virtual void useASTInput(const OrdinaryASPProgram& program);
-                virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
-                virtual ASPSolverManager::ResultsPtr getResults();
+            /** \brief Constructor.
+             * @param options See AlphaSoftware::Options. */
+            Delegate(const Options& options);
+            /** \brief Destructor. */
+            virtual ~Delegate();
+            virtual void useASTInput(const OrdinaryASPProgram& program);
+            virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
+            virtual ASPSolverManager::ResultsPtr getResults();
 
-            protected:
-                struct ConcurrentQueueResultsImpl;
-                typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
-                    ConcurrentQueueResultsImplPtr;
-                ConcurrentQueueResultsImplPtr results;
+            struct PreparedResultsImpl;
+            typedef boost::shared_ptr<PreparedResultsImpl>
+            PreparedResultsImplPtr;
+            PreparedResultsImplPtr results;
         };
     };
-    #endif
+
+    extern "C" {
+        JNIEXPORT void JNICALL sendResultsCPP(JNIEnv*e, jclass o, jobjectArray resultsArray);
+    }
+#endif
 
     /** \brief Interface to DLV software. */
-    struct DLVHEX_EXPORT DLVSoftware:
-    public ASPSolverManager::SoftwareBase
-    {
+    struct DLVHEX_EXPORT DLVSoftware :
+    public ASPSolverManager::SoftwareBase {
         typedef ASPSolverManager::SoftwareConfiguration<DLVSoftware> Configuration;
 
         /** \brief Specific options for DLV. */
-        struct DLVHEX_EXPORT Options:
-        public ASPSolverManager::GenericOptions
-        {
+        struct DLVHEX_EXPORT Options :
+        public ASPSolverManager::GenericOptions {
             /** \brief Constructor. */
             Options();
             /** \brief Destructor. */
@@ -116,72 +122,69 @@ namespace ASPSolver
         };
 
         /** \brief The delegate for DLVSoftware. */
-        class DLVHEX_EXPORT Delegate:
-        public ASPSolverManager::DelegateInterface
-        {
-            public:
-                typedef DLVSoftware::Options Options;
+        class DLVHEX_EXPORT Delegate :
+        public ASPSolverManager::DelegateInterface {
+        public:
+            typedef DLVSoftware::Options Options;
 
-                /** \brief Constructor.
-                 * @param options See DLVSoftware::Options. */
-                Delegate(const Options& options);
-                /** \brief Destructor. */
-                virtual ~Delegate();
-                virtual void useASTInput(const OrdinaryASPProgram& program);
-                virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
-                virtual ASPSolverManager::ResultsPtr getResults();
+            /** \brief Constructor.
+             * @param options See DLVSoftware::Options. */
+            Delegate(const Options& options);
+            /** \brief Destructor. */
+            virtual ~Delegate();
+            virtual void useASTInput(const OrdinaryASPProgram& program);
+            virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
+            virtual ASPSolverManager::ResultsPtr getResults();
 
-            protected:
-                struct ConcurrentQueueResultsImpl;
-                typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
-                    ConcurrentQueueResultsImplPtr;
-                ConcurrentQueueResultsImplPtr results;
+        protected:
+            struct ConcurrentQueueResultsImpl;
+            typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
+            ConcurrentQueueResultsImplPtr;
+            ConcurrentQueueResultsImplPtr results;
         };
     };
-   
 
-    #ifdef HAVE_LIBDLV
+
+#ifdef HAVE_LIBDLV
+
     /** \brief Interace to "DLV as a shared library" software. */
-    struct DLVHEX_EXPORT DLVLibSoftware:
-    public DLVSoftware
-    {
+    struct DLVHEX_EXPORT DLVLibSoftware :
+    public DLVSoftware {
         typedef ASPSolverManager::SoftwareConfiguration<DLVLibSoftware> Configuration;
 
         //typedef DLVSoftware::Options Options;
 
         /** \brief The delegate for "DLV as a shared library". */
-        class DLVHEX_EXPORT Delegate:
-        public ASPSolverManager::DelegateInterface
-        {
-            public:
-                typedef DLVSoftware::Options Options;
+        class DLVHEX_EXPORT Delegate :
+        public ASPSolverManager::DelegateInterface {
+        public:
+            typedef DLVSoftware::Options Options;
 
-                /** \brief Specific options for "DLV as a shared library". */
-                Delegate(const Options& options);
-                /** \brief Destructor. */
-                virtual ~Delegate();
-                virtual void useASTInput(const OrdinaryASPProgram& program);
-                virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
-                virtual ASPSolverManager::ResultsPtr getResults();
+            /** \brief Specific options for "DLV as a shared library". */
+            Delegate(const Options& options);
+            /** \brief Destructor. */
+            virtual ~Delegate();
+            virtual void useASTInput(const OrdinaryASPProgram& program);
+            virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
+            virtual ASPSolverManager::ResultsPtr getResults();
 
-            protected:
-                struct Impl;
-                boost::scoped_ptr<Impl> pimpl;
+        protected:
+            struct Impl;
+            boost::scoped_ptr<Impl> pimpl;
         };
     };
-    #endif
+#endif
 
-    #ifdef HAVE_LIBCLINGO
+#ifdef HAVE_LIBCLINGO
+
     /** \brief Interface to clingo=clasp+gringo software (very basic integration, involves parsing). */
-    struct DLVHEX_EXPORT ClingoSoftware:
-    public ASPSolverManager::SoftwareBase
-    {
+    struct DLVHEX_EXPORT ClingoSoftware :
+    public ASPSolverManager::SoftwareBase {
         typedef ASPSolverManager::SoftwareConfiguration<ClingoSoftware> Configuration;
 
         /** \brief Specific options for clingo. */
-        struct DLVHEX_EXPORT Options:
-        public ASPSolverManager::GenericOptions
-        {
+        struct DLVHEX_EXPORT Options :
+        public ASPSolverManager::GenericOptions {
             /** \brief Constructor. */
             Options();
             /** \brief Destructor. */
@@ -191,28 +194,30 @@ namespace ASPSolver
         };
 
         // the delegate for ClingoSoftware
-        class DLVHEX_EXPORT Delegate:
-        public ASPSolverManager::DelegateInterface
-        {
-            public:
-                typedef ClingoSoftware::Options Options;
 
-                /** \brief The delegate for clingo. */
-                Delegate(const Options& options);
-                /** \brief Destructor. */
-                virtual ~Delegate();
-                virtual void useASTInput(const OrdinaryASPProgram& program);
-                virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
-                virtual ASPSolverManager::ResultsPtr getResults();
+        class DLVHEX_EXPORT Delegate :
+        public ASPSolverManager::DelegateInterface {
+        public:
+            typedef ClingoSoftware::Options Options;
 
-            protected:
-                struct Impl;
-                boost::scoped_ptr<Impl> pimpl;
+            /** \brief The delegate for clingo. */
+            Delegate(const Options& options);
+            /** \brief Destructor. */
+            virtual ~Delegate();
+            virtual void useASTInput(const OrdinaryASPProgram& program);
+            virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
+            virtual ASPSolverManager::ResultsPtr getResults();
+
+        protected:
+            struct Impl;
+            boost::scoped_ptr<Impl> pimpl;
         };
     };
-    #endif
+#endif
 
-}                                // namespace ASPSolver
+
+
+} // namespace ASPSolver
 
 
 DLVHEX_NAMESPACE_END

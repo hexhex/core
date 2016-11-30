@@ -1060,6 +1060,7 @@ Config& config, ProgramCtx& pctx)
                             pctx.setASPSoftware(
                                 ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::AlphaSoftware::Configuration));
                             pctx.config.setOption("GenuineSolver", 0);
+                            pctx.config.setOption("AlphaSolver", 1);
                         #else
                             throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
                         #endif

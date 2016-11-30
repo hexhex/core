@@ -25,15 +25,14 @@
  */
 
 /**
- * @file ASPSolver_dlv.cpp
- * @author Thomas Krennwallner
- * @author Peter Schueller
+ * @file ASPSolver_alpha.cpp
+ * @author Tobias Kaminski
  *
- * @brief ASP Solvers dlv integration (thread + external DLV process)
+ * @brief Alpha ASP solver integration
  */
 
 #ifdef HAVE_CONFIG_H
-#  include "config.h"
+#include "config.h"
 #endif
 
 #ifdef HAVE_ALPHA
@@ -41,8 +40,6 @@
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/DLVProcess.h"
-#include "dlvhex2/DLVresultParserDriver.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -56,202 +53,164 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-namespace
-{
-
-    struct MaskedResultAdder
-    {
-        ConcurrentQueueResults& queue;
-        InterpretationConstPtr mask;
-
-        MaskedResultAdder(ConcurrentQueueResults& queue, InterpretationConstPtr mask):
-        queue(queue), mask(mask) {
-        }
-
-        void operator()(AnswerSetPtr as) {
-            if( mask )
-                as->interpretation->getStorage() -= mask->getStorage();
-            queue.enqueueAnswerset(as);
-            boost::this_thread::interruption_point();
-        }
-    };
-
-}                                // anonymous namespace
-
-
-namespace ASPSolver
-{
-
+namespace ASPSolver {
+    static std::vector<std::vector<std::string>> answerSets;
     //
-    // DLVSoftware
+    // AlphaSoftware
     //
 
-    AlphaSoftware::Options::Options():
+    AlphaSoftware::Options::Options() :
     ASPSolverManager::GenericOptions(),
     arguments() {
-        arguments.push_back("-silent");
+        //arguments.push_back("-silent");
+
+        DBGLOG(DBG, "starting java virtual machine");
+
+        JavaVMInitArgs vm_args;
+        JavaVMOption* jvm_options = new JavaVMOption[1];
+        static JNIEnv *env;
+
+        jvm_options[0].optionString = HAVE_ALPHA;
+        vm_args.version = JNI_VERSION_1_8;
+        vm_args.nOptions = 1;
+        vm_args.options = jvm_options;
+        vm_args.ignoreUnrecognized = JNI_TRUE;
+
+        status = JNI_CreateJavaVM(&jvm, (void**) &env, &vm_args);
+
+        if (status != JNI_ERR) {
+            DBGLOG(DBG, "started java virtual machine");
+        } else {
+            throw FatalError(" error when loading alpha in jvm, make sure path is correct");
+        }
+
+        cls = env->FindClass("at/ac/tuwien/kr/alpha/Main");
+        cls = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
+
+        JNINativeMethod methods[]{
+            { "sendResults", "([[Ljava/lang/String;)V", (void *) &sendResultsCPP}
+        };
+
+        if (env->RegisterNatives(cls, methods, 1) < 0) {
+            if (env->ExceptionOccurred())
+                throw FatalError(" exception when registering natives");
+            else
+                throw FatalError(" ERROR: problem when registering natives");
+        }
+
+        mid = env->GetStaticMethodID(cls, "main", "([Ljava/lang/String;)V");
+
+        arr = env->NewObjectArray(2,
+                env->FindClass("java/lang/String"),
+                env->NewStringUTF("str"));
+        env->SetObjectArrayElement(arr, 0, env->NewStringUTF("-str"));
+        
+        jvm->DetachCurrentThread();
     }
 
     AlphaSoftware::Options::~Options() {
+
     }
 
-    //
-    // ConcurrentQueueResultsImpl
-    //
+    struct AlphaSoftware::Delegate::PreparedResultsImpl :
+    public PreparedResults {
+    public:
+        Options options;
+        RegistryPtr reg;
+        InterpretationConstPtr mask;
+    public:
 
-    // Delegate::Impl is used to prepare the result
-    // this object would be destroyed long before the result will be destroyed
-    // therefore its ownership is passed to the results
-    struct AlphaSoftware::Delegate::ConcurrentQueueResultsImpl:
-    public ConcurrentQueueResults
-    {
-        public:
-            Options options;
-            DLVProcess proc;
-            RegistryPtr reg;
-            InterpretationConstPtr mask;
-            bool shouldTerminate;
-            boost::thread answerSetProcessingThread;
+        PreparedResultsImpl(const Options& options) :
+        PreparedResults(),
+        options(options) {
+            DBGLOG(DBG, "AlphaSoftware::Delegate::PreparedResultsImpl()" << this);
+        }
 
-        public:
-            ConcurrentQueueResultsImpl(const Options& options):
-            ConcurrentQueueResults(),
-                options(options),
-            shouldTerminate(false) {
-                DBGLOG(DBG,"DLVSoftware::Delegate::ConcurrentQueueResultsImpl()" << this);
-            }
+        virtual ~PreparedResultsImpl() {
+            DBGLOG(DBG, "AlphaSoftware::Delegate::~PreparedResultsImpl()" << this);
+        }
 
-            virtual ~ConcurrentQueueResultsImpl() {
-                DBGLOG(DBG,"DLVSoftware::Delegate::~ConcurrentQueueResultsImpl()" << this);
-                DBGLOG(DBG,"setting termination bool, emptying queue, and joining thread");
-                shouldTerminate = true;
-                queue->flush();
-                DBGLOG(DBG,"joining thread");
-                answerSetProcessingThread.join();
-                DBGLOG(DBG,"closing (probably killing) process");
-                proc.close(true);
-                DBGLOG(DBG,"done");
-            }
+        void answerSetProcessingFunc();
 
-            void setupProcess() {
-                proc.setPath(DLVPATH);
-                if( options.includeFacts )
-                    proc.addOption("-facts");
-                else
-                    proc.addOption("-nofacts");
-                BOOST_FOREACH(const std::string& arg, options.arguments) {
-                    proc.addOption(arg);
+        void getAnswerSets(std::string program_str) {
+            if (options.cls != 0) {
+
+                static JNIEnv *env;
+
+                int getEnvStat = options.jvm->GetEnv((void **) &env, JNI_VERSION_1_8);
+                if (getEnvStat == JNI_EDETACHED) {
+                    DBGLOG(DBG, "[" << this << "]" << "GetEnv: thread not attached to jvm");
+                    if (options.jvm->AttachCurrentThread((void **) &env, NULL) != 0) {
+                        throw FatalError("failed to attached thread to jvm");
+                    }
+                } else if (getEnvStat == JNI_EVERSION) {
+                    DBGLOG(DBG, "[" << this << "]" << "GetEnv: jvm version not supported");
+                }
+
+                if (options.mid == nullptr) {
+                    throw FatalError("ERROR: method not found!");
+                } else {
+                    jstring argument = env->NewStringUTF(program_str.c_str());
+                    env->SetObjectArrayElement(options.arr, 1, argument);
+                    env->CallStaticVoidMethod(options.cls, options.mid, options.arr);
+                    env->DeleteLocalRef(argument);
+                }
+                if (getEnvStat == JNI_EDETACHED) {
+                    options.jvm->DetachCurrentThread();
                 }
             }
-
-            void answerSetProcessingThreadFunc();
-
-            void startThread() {
-                DBGLOG(DBG,"starting dlv answer set processing thread");
-                answerSetProcessingThread = boost::thread(
-                    boost::bind(
-                    &ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc,
-                    boost::ref(*this)));
-                DBGLOG(DBG,"started dlv answer set processing thread");
-            }
-
-            void closeAndCheck() {
-                int retcode = proc.close();
-
-                // check for errors
-                if (retcode == 127) {
-                    throw FatalError("LP solver command `" + proc.path() + "\302\264 not found!");
-                }
-                                 // other problem
-                else if (retcode != 0) {
-                    std::stringstream errstr;
-
-                    errstr <<
-                        "LP solver `" << proc.path() << "\302\264 "
-                        "bailed out with exitcode " << retcode << ": "
-                        "re-run dlvhex with `strace -f\302\264.";
-
-                    throw FatalError(errstr.str());
-                }
-            }
+        }
     };
 
-    void AlphaSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc() {
-        WARNING("create multithreaded logger by using thread-local storage for logger indent")
-            DBGLOG(DBG,"[" << this << "]" " starting dlv answerSetProcessingThreadFunc");
-        try
-        {
-            // parse results and store them into the queue
+    void AlphaSoftware::Delegate::PreparedResultsImpl::answerSetProcessingFunc() {
+        DBGLOG(DBG, "[" << this << "]" " starting alpha answerSetProcessingFunc");
 
-            // parse result
-            assert(!!reg);
-            DLVResultParser parser(reg);
-            MaskedResultAdder adder(*this, mask);
-            std::istream& is = proc.getInput();
-            do {
-                // get next input line
-                DBGLOG(DBG,"[" << this << "]" "getting input from stream");
-                std::string input;   
-                std::getline(is, input);
-                std::cout << input << std::endl;
-                DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() <<
-                    " characters from input stream via getline");
-                if( input.empty() || is.bad() ) {
-                    DBGLOG(DBG,"[" << this << "]" "leaving loop because got input size " << input.size() <<
-                        ", stream bits fail " << is.fail() << ", bad " << is.bad() << ", eof " << is.eof());
-                    break;
-                }
+        for (std::vector<std::vector < std::string>>::iterator it1 = answerSets.begin(); it1 != answerSets.end(); ++it1) {
+            AnswerSet::Ptr as(new AnswerSet(reg));
+            for (std::vector<std::string>::iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+                const char* groundatom = it2->c_str();
 
-                // discard weak answer set cost lines
-                if( 0 == input.compare(0, 22, "Cost ([Weight:Level]):") ) {
-                    DBGLOG(DBG,"[" << this << "]" "discarding weak answer set cost line");
+                ID idga = reg->ogatoms.getIDByString(groundatom);
+                if (idga == ID_FAIL) {
+                    // parse groundatom, register and store
+                    DBGLOG(DBG, "parsing ground atom '" << groundatom << "'");
+                    OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+                    ogatom.text = groundatom;
+                    // create ogatom.tuple
+                    boost::char_separator<char> sep(",()");
+                    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+                    tokenizer tok(ogatom.text, sep);
+                    for (tokenizer::iterator it = tok.begin();
+                            it != tok.end(); ++it) {
+                        DBGLOG(DBG, "got token '" << *it << "'");
+                        Term term(ID::MAINKIND_TERM, *it);
+                        // the following takes care of int vs const/string
+                        ID id = reg->storeTerm(term);
+                        assert(id != ID_FAIL);
+                        assert(!id.isVariableTerm());
+                        if (id.isAuxiliary())
+                            ogatom.kind |= ID::PROPERTY_AUX;
+                        ogatom.tuple.push_back(id);
+                    }
+                    idga = reg->ogatoms.storeAndGetID(ogatom);
                 }
-                else {
-                    // parse line
-                    DBGLOG(DBG,"[" << this << "]" "parsing");
-                    //std::cout << this << "DLV MODEL" << std::endl << input << std::endl;
-                    std::istringstream iss(input);
-                    parser.parse(iss, adder);
-                }
+                assert(idga != ID_FAIL);
+                as->interpretation->setFact(idga.address);
             }
-            while(!shouldTerminate);
-            DBGLOG(DBG,"[" << this << "]" "after loop " << shouldTerminate);
+            if (mask)
+                as->interpretation->getStorage() -= mask->getStorage();
+            add(as);
+        }
 
-            // do clean shutdown if we were not terminated from outside
-            if( !shouldTerminate ) {
-                // closes process and throws on errors
-                // (all results have been parsed above)
-                closeAndCheck();
-                enqueueEnd();
-            }
-        }
-        catch(const GeneralError& e) {
-            int retcode = proc.close();
-            std::stringstream s;
-            s << proc.path() << " (exitcode = " << retcode << "): " << e.getErrorMsg();
-            LOG(ERROR, "[" << this << "]" + s.str());
-            enqueueException(s.str());
-        }
-        catch(const std::exception& e) {
-            std::stringstream s;
-            s << proc.path() + ": " + e.what();
-            LOG(ERROR, "[" << this << "]" + s.str());
-            enqueueException(s.str());
-        }
-        catch(...) {
-            std::stringstream s;
-            s << proc.path() + " other exception";
-            LOG(ERROR, "[" << this << "]" + s.str());
-            enqueueException(s.str());
-        }
-        DBGLOG(DBG,"[" << this << "]" "exiting answerSetProcessingThreadFunc");
+        DBGLOG(DBG, "[" << this << "]" "exiting answerSetProcessingThreadFunc");
     }
 
     /////////////////////////////////////
-    // DLVSoftware::Delegate::Delegate //
+    // AlphaSoftware::Delegate::Delegate //
     /////////////////////////////////////
-    AlphaSoftware::Delegate::Delegate(const Options& options):
-    results(new ConcurrentQueueResultsImpl(options)) {
+
+    AlphaSoftware::Delegate::Delegate(const Options& options) :
+    results(new PreparedResultsImpl(options)) {
     }
 
     AlphaSoftware::Delegate::~Delegate() {
@@ -259,163 +218,76 @@ namespace ASPSolver
 
     void
     AlphaSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg) {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useInputProvInp");
-
-        DLVProcess& proc = results->proc;
-        results->reg = reg;
-        assert(results->reg);
-        WARNING("TODO set results->mask?")
-
-            try
-        {
-            results->setupProcess();
-            // request stdin as last parameter
-            proc.addOption("--");
-            LOG(DBG,"external process was setup with path '" << proc.path() << "'");
-
-            // fork dlv process
-            proc.spawn();
-
-            std::ostream& programStream = proc.getOutput();
-
-            // copy stream
-            programStream << inp.getAsStream().rdbuf();
-            programStream.flush();
-
-            proc.endoffile();
-
-            // start thread
-            results->startThread();
-        }
-        catch(const GeneralError& e) {
-            std::stringstream errstr;
-            int retcode = results->proc.close();
-            errstr << results->proc.path() << " (exitcode = " << retcode <<
-                "): " << e.getErrorMsg();
-            throw FatalError(errstr.str());
-        }
-        catch(const std::exception& e) {
-            throw FatalError(results->proc.path() + ": " + e.what());
-        }
+        throw std::runtime_error("TODO implement AlphaSoftware::Delegate::useInputProviderInput(const InputProvider& inp, RegistryPtr reg)");
     }
 
     void
     AlphaSoftware::Delegate::useASTInput(const OrdinaryASPProgram& program) {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useASTInput");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid, "AlphaSoftw:Delegate:useASTInput");
 
-        DLVProcess& proc = results->proc;
         results->reg = program.registry;
         assert(results->reg);
         results->mask = program.mask;
 
-        try
-        {
-            results->setupProcess();
-            // handle maxint
-            if( program.maxint > 0 ) {
-                std::ostringstream os;
-                os << "-N=" << program.maxint;
-                proc.addOption(os.str());
-            }
-            // request stdin as last parameter
-            proc.addOption("--");
-            LOG(DBG,"external process was setup with path '" << proc.path() << "'");
+        std::string program_str;
 
-            // fork dlv process
-            proc.spawn();
+        std::ostringstream programStream;
+        // output program
+        RawPrinter printer(programStream, program.registry);
 
-            std::ostream& programStream = proc.getOutput();
-
-            // output program
-            RawPrinter printer(programStream, program.registry);
-
-            if( program.edb != 0 ) {
-                // print edb interpretation as facts
-                program.edb->printAsFacts(programStream);
-                programStream << "\n";
-                programStream.flush();
-            }
-
-            printer.printmany(program.idb, "\n");
+        if (program.edb != 0) {
+            // print edb interpretation as facts
+            program.edb->printAsFacts(programStream);
             programStream << "\n";
             programStream.flush();
-
-            proc.endoffile();
-            
-//            std::string str;
-//
-//            std::ostringstream programStream2;
-//            RawPrinter printer2(programStream2, program.registry);
-//
-//            if( program.edb != 0 ) {
-//                // print edb interpretation as facts
-//                program.edb->printAsFacts(programStream2);
-//                programStream2 << "\n";
-//            }
-//
-//            printer2.printmany(program.idb, "\n");
-//            programStream << std::endl;
-//            str = programStream2.str();
-            
-//            std::cout << str << std::endl;
-            
-            JavaVMOption options[1];
-            JNIEnv *env;
-            JavaVM *jvm;
-            JavaVMInitArgs vm_args;
-            long status;
-            
-            
-            options[0].optionString = "-Djava.class.path=.";
-            memset(&vm_args, 0, sizeof(vm_args));
-            vm_args.version = JNI_VERSION_1_2;
-            vm_args.nOptions = 1;
-            vm_args.options = options;
-            
-            status = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
-            
-            
-
-            #if 0
-            {
-                std::ostringstream oss;
-                RawPrinter printer(oss, program.registry);
-                if( program.edb != 0 ) {
-                    // print edb interpretation as facts
-                    program.edb->printAsFacts(oss);
-                }
-
-                printer.printmany(program.idb, "\n");
-                std::cout << this << "DLV PROGRAM" << std::endl << oss.str() << std::endl;
-            }
-            #endif
-
-            // start thread
-            results->startThread();
         }
-        catch(const GeneralError& e) {
-            std::stringstream errstr;
-            int retcode = results->proc.close();
-            errstr << results->proc.path() << " (exitcode = " << retcode <<
-                "): " << e.getErrorMsg();
-            throw FatalError(errstr.str());
-        }
-        catch(const std::exception& e) {
-            throw FatalError(results->proc.path() + ": " + e.what());
-        }
+
+        printer.printmany(program.idb, "\n");
+        programStream << std::endl;
+        programStream.flush();
+        program_str = programStream.str();
+
+        results->getAnswerSets(program_str);
+        results->answerSetProcessingFunc();
     }
 
     ASPSolverManager::ResultsPtr
     AlphaSoftware::Delegate::getResults() {
-        DBGLOG(DBG,"DLVSoftware::Delegate::getResults");
+        DBGLOG(DBG, "AlphaSoftware::Delegate::getResults");
         return results;
     }
 
-}                                // namespace ASPSolver
+    JNIEXPORT void JNICALL sendResultsCPP(JNIEnv *env, jclass o, jobjectArray resultsArray) {
+        int answerSetCount = env->GetArrayLength(resultsArray);
 
+        answerSets.clear();
+
+        for (int i = 0; i < answerSetCount; i++) {
+            jobjectArray answerSet = (jobjectArray) env->GetObjectArrayElement(resultsArray, i);
+
+            int answerSetSize = env->GetArrayLength(answerSet);
+
+            std::vector<std::string> answerSetVec;
+
+            for (int j = 0; j < answerSetSize; j++) {
+                jstring result = (jstring) (env->GetObjectArrayElement(answerSet, j));
+
+                const char *nativeResult = env->GetStringUTFChars(result, JNI_FALSE);
+
+                std::string answerSetAtom(nativeResult);
+                answerSetVec.push_back(answerSetAtom);
+
+                env->ReleaseStringUTFChars(result, nativeResult);
+            }
+
+            answerSets.push_back(answerSetVec);
+        }
+    }
+
+} // namespace ASPSolver
 
 DLVHEX_NAMESPACE_END
-#endif                           // HAVE_DLV
+#endif                           // HAVE_ALPHA
 
 
 // vim:expandtab:ts=4:sw=4:
