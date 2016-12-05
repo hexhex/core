@@ -36,6 +36,7 @@
 #if !defined(_DLVHEX_ASPSOLVER_H)
 #define _DLVHEX_ASPSOLVER_H
 
+#include "dlvhex2/AlphaModelGenerator.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/Error.h"
@@ -95,9 +96,14 @@ DLVHEX_NAMESPACE_BEGIN
             PreparedResultsImplPtr results;
         };
     };
-
+    
     extern "C" {
-        JNIEXPORT void JNICALL sendResultsCPP(JNIEnv*e, jclass o, jobjectArray resultsArray);
+        static std::vector<std::vector<std::string>> answerSets;
+        static AlphaSoftware::Delegate* delegatePointer;
+
+        JNIEXPORT jobjectArray JNICALL externalAtomsQuery(JNIEnv *env, jclass o, jobjectArray trueAtoms, jobjectArray falseAtoms);
+
+        JNIEXPORT void JNICALL sendResultsCPP(JNIEnv *env, jclass o, jobjectArray resultsArray);
     }
 #endif
 

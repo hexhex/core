@@ -48,7 +48,11 @@
 
 #include <boost/foreach.hpp>
 
+#include <jni.h>
+
 DLVHEX_NAMESPACE_BEGIN
+
+AlphaModelGenerator* amgPointer;
 
 AlphaModelGeneratorFactory::AlphaModelGeneratorFactory(
 ProgramCtx& ctx,
@@ -57,20 +61,12 @@ ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
 BaseModelGeneratorFactory(),
 externalEvalConfig(externalEvalConfig),
 ctx(ctx),
-eatoms(ci.outerEatoms),
+outerEatoms(ci.outerEatoms),
+innerEatoms(ci.innerEatoms),
 idb(),
 xidb()
 {
     RegistryPtr reg = ctx.registry();
-
-    // this model generator can handle:
-    // components with outer eatoms
-    // components with inner rules
-    // components with inner constraints
-    // this model generator CANNOT handle:
-    // components with inner eatoms
-
-    assert(ci.innerEatoms.empty());
 
     // copy rules and constraints to idb
     // TODO we do not need this except for debugging
@@ -113,8 +109,12 @@ std::ostream& o) const
 {
     RawPrinter printer(o, ctx.registry());
     o << "outer eatoms:" << std::endl;
-    if( !eatoms.empty() ) {
-        printer.printmany(eatoms,"\n");
+    if( !outerEatoms.empty() ) {
+        printer.printmany(outerEatoms,"\n");
+    }
+    o << "inner eatoms:" << std::endl;
+    if( !innerEatoms.empty() ) {
+        printer.printmany(innerEatoms,"\n");
     }
     o << "xidb:" << std::endl;
     if( !xidb.empty() ) {
@@ -130,6 +130,18 @@ InterpretationConstPtr input):
 BaseModelGenerator(input),
 factory(factory)
 {
+}
+
+bool AlphaModelGenerator::evaluateExternalAtomFacade(ProgramCtx& ctx,
+        ID eatomID,
+        InterpretationConstPtr inputi,
+        ExternalAnswerTupleCallback& cb,
+        NogoodContainerPtr nogoods,
+        InterpretationConstPtr assigned,
+        InterpretationConstPtr changed,
+        bool* fromCache) const
+{
+    return evaluateExternalAtom(ctx, eatomID, inputi, cb, nogoods, assigned, changed, fromCache);
 }
 
 
@@ -159,11 +171,11 @@ AlphaModelGenerator::generateNextModel()
             InterpretationConstPtr mask(new Interpretation(*newint));
 
             // manage outer external atoms
-            if( !factory.eatoms.empty() ) {
+            if( !factory.outerEatoms.empty() ) {
                 // augment input with result of external atom evaluation
                 // use newint as input and as output interpretation
                 IntegrateExternalAnswerIntoInterpretationCB cb(newint);
-                evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
+                evaluateExternalAtoms(factory.ctx, factory.outerEatoms, newint, cb);
                 DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
                     "outer eatom computations");
                 DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
@@ -189,6 +201,9 @@ AlphaModelGenerator::generateNextModel()
                 "initiating external solver");
             OrdinaryASPProgram program(reg,
                 factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
+            
+            // keep global reference for callback from jvm
+            amgPointer = this;
             ASPSolverManager mgr;
             currentResults = mgr.solve(*factory.externalEvalConfig, program);
             DLVHEX_BENCHMARK_STOP(sidaspsolve);
@@ -209,7 +224,6 @@ AlphaModelGenerator::generateNextModel()
 
     return ret->interpretation;
 }
-
 
 DLVHEX_NAMESPACE_END
 

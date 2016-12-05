@@ -37,6 +37,7 @@
 
 #ifdef HAVE_ALPHA
 
+#include "dlvhex2/AlphaModelGenerator.h"
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Benchmarking.h"
@@ -53,8 +54,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-namespace ASPSolver {
-    static std::vector<std::vector<std::string>> answerSets;
+        namespace ASPSolver {
     //
     // AlphaSoftware
     //
@@ -85,13 +85,14 @@ namespace ASPSolver {
         }
 
         cls = env->FindClass("at/ac/tuwien/kr/alpha/Main");
-        cls = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
+        cls = reinterpret_cast<jclass> (env->NewGlobalRef(cls));
 
         JNINativeMethod methods[]{
-            { "sendResults", "([[Ljava/lang/String;)V", (void *) &sendResultsCPP}
+            { "sendResults", "([[Ljava/lang/String;)V", (void *) &sendResultsCPP},
+            { "externalAtomsQuery", "([Ljava/lang/String;[Ljava/lang/String;)[[Ljava/lang/String;", (jobjectArray *) & externalAtomsQuery}
         };
 
-        if (env->RegisterNatives(cls, methods, 1) < 0) {
+        if (env->RegisterNatives(cls, methods, 2) < 0) {
             if (env->ExceptionOccurred())
                 throw FatalError(" exception when registering natives");
             else
@@ -104,7 +105,7 @@ namespace ASPSolver {
                 env->FindClass("java/lang/String"),
                 env->NewStringUTF("str"));
         env->SetObjectArrayElement(arr, 0, env->NewStringUTF("-str"));
-        
+
         jvm->DetachCurrentThread();
     }
 
@@ -211,6 +212,8 @@ namespace ASPSolver {
 
     AlphaSoftware::Delegate::Delegate(const Options& options) :
     results(new PreparedResultsImpl(options)) {
+        // keep global reference for callback from jvm
+        ASPSolver::delegatePointer = this;
     }
 
     AlphaSoftware::Delegate::~Delegate() {
@@ -255,6 +258,140 @@ namespace ASPSolver {
     AlphaSoftware::Delegate::getResults() {
         DBGLOG(DBG, "AlphaSoftware::Delegate::getResults");
         return results;
+    }
+
+    JNIEXPORT jobjectArray JNICALL externalAtomsQuery(JNIEnv *env, jclass o, jobjectArray trueAtoms, jobjectArray falseAtoms) {
+        InterpretationPtr currentIntr = InterpretationPtr(new Interpretation(ASPSolver::delegatePointer->results->reg));
+        InterpretationPtr currentAssigned = InterpretationPtr(new Interpretation(ASPSolver::delegatePointer->results->reg));
+
+        int trueLength = env->GetArrayLength(trueAtoms);
+        int falseLength = env->GetArrayLength(falseAtoms);
+
+        for (int i = 0; i < trueLength; i++) {
+            jstring result = (jstring) (env->GetObjectArrayElement(trueAtoms, i));
+
+            const char *nativeResult = env->GetStringUTFChars(result, JNI_FALSE);
+
+            std::string trueAtom(nativeResult);
+
+            const char* groundatom = trueAtom.c_str();
+
+            ID idga = ASPSolver::delegatePointer->results->reg->ogatoms.getIDByString(groundatom);
+            if (idga == ID_FAIL) {
+                OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+                ogatom.text = groundatom;
+                boost::char_separator<char> sep(",()");
+                typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+                tokenizer tok(ogatom.text, sep);
+                for (tokenizer::iterator it = tok.begin();
+                        it != tok.end(); ++it) {
+                    Term term(ID::MAINKIND_TERM, *it);
+                    ID id = ASPSolver::delegatePointer->results->reg->storeTerm(term);
+                    assert(id != ID_FAIL);
+                    assert(!id.isVariableTerm());
+                    if (id.isAuxiliary())
+                        ogatom.kind |= ID::PROPERTY_AUX;
+                    ogatom.tuple.push_back(id);
+                }
+                idga = ASPSolver::delegatePointer->results->reg->ogatoms.storeAndGetID(ogatom);
+            }
+            assert(idga != ID_FAIL);
+            currentIntr->setFact(idga.address);
+            currentAssigned->setFact(idga.address);
+
+            env->ReleaseStringUTFChars(result, nativeResult);
+        }
+
+        for (int i = 0; i < falseLength; i++) {
+            jstring result = (jstring) (env->GetObjectArrayElement(falseAtoms, i));
+
+            const char *nativeResult = env->GetStringUTFChars(result, JNI_FALSE);
+
+            std::string falseAtom(nativeResult);
+
+            const char* groundatom = falseAtom.c_str();
+
+            ID idga = ASPSolver::delegatePointer->results->reg->ogatoms.getIDByString(groundatom);
+            if (idga == ID_FAIL) {
+                OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+                ogatom.text = groundatom;
+                boost::char_separator<char> sep(",()");
+                typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+                tokenizer tok(ogatom.text, sep);
+                for (tokenizer::iterator it = tok.begin();
+                        it != tok.end(); ++it) {
+                    Term term(ID::MAINKIND_TERM, *it);
+                    ID id = ASPSolver::delegatePointer->results->reg->storeTerm(term);
+                    assert(id != ID_FAIL);
+                    assert(!id.isVariableTerm());
+                    if (id.isAuxiliary())
+                        ogatom.kind |= ID::PROPERTY_AUX;
+                    ogatom.tuple.push_back(id);
+                }
+                idga = ASPSolver::delegatePointer->results->reg->ogatoms.storeAndGetID(ogatom);
+            }
+            assert(idga != ID_FAIL);
+            currentAssigned->setFact(idga.address);
+
+            env->ReleaseStringUTFChars(result, nativeResult);
+        }
+
+
+        std::cout << *currentIntr << std::endl;
+        std::cout << *currentAssigned << std::endl;
+
+        SimpleNogoodContainerPtr nogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+        AlphaModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(currentIntr);
+
+        BOOST_FOREACH(ID eatomid, amgPointer->factory.innerEatoms) {
+            amgPointer->evaluateExternalAtomFacade(amgPointer->factory.ctx,
+                    eatomid, currentIntr, cb, nogoods, currentAssigned);
+        }
+
+        jobjectArray extResults = env->NewObjectArray(nogoods->getNogoodCount(),
+                env->FindClass("java/lang/Object"),
+                env->NewObjectArray(2,
+                env->FindClass("java/lang/String"),
+                env->NewStringUTF("str")));
+
+        int ngIndex = 0;
+
+        for (int k = 0; k < nogoods->getNogoodCount(); ++k) {
+            jobjectArray ioNogood = env->NewObjectArray(nogoods->getNogood(k).size(),
+                    env->FindClass("java/lang/String"),
+                    env->NewStringUTF("str"));
+
+            int arrIndex = 0;
+
+            BOOST_FOREACH(ID& iid, nogoods->getNogood(k)) {
+                if (amgPointer->factory.ctx.registry()->ogatoms.getIDByAddress(iid.address).isExternalAuxiliary()) {
+                    std::stringstream ss;
+                    RawPrinter printer(ss, amgPointer->factory.ctx.registry());
+                    ss << (iid.isNaf() ? "-" : "");
+                    printer.print(iid);
+
+                    env->SetObjectArrayElement(ioNogood, arrIndex, env->NewStringUTF(ss.str().c_str()));
+                    arrIndex++;
+                }
+            }
+
+            BOOST_FOREACH(ID& iid, nogoods->getNogood(k)) {
+                if (!amgPointer->factory.ctx.registry()->ogatoms.getIDByAddress(iid.address).isExternalAuxiliary()) {
+                    std::stringstream ss;
+                    RawPrinter printer(ss, amgPointer->factory.ctx.registry());
+                    ss << (iid.isNaf() ? "-" : "");
+                    printer.print(iid);
+
+                    env->SetObjectArrayElement(ioNogood, arrIndex, env->NewStringUTF(ss.str().c_str()));
+                    arrIndex++;
+                }
+            }
+
+            env->SetObjectArrayElement(extResults, ngIndex, ioNogood);
+            ngIndex++;
+        }
+
+        return extResults;
     }
 
     JNIEXPORT void JNICALL sendResultsCPP(JNIEnv *env, jclass o, jobjectArray resultsArray) {

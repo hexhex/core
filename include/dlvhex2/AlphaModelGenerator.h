@@ -62,11 +62,12 @@ public ostream_printable<AlphaModelGenerator>
     // types
     public:
         typedef AlphaModelGeneratorFactory Factory;
+        
+        /** \brief Reference to the factory which created this model generator. */
+        Factory& factory;
 
         // storage
     protected:
-        /** \brief Reference to the factory which created this model generator. */
-        Factory& factory;
 
         /** \brief EDB + original (input) interpretation plus auxiliary atoms for evaluated external atoms. */
         InterpretationConstPtr postprocessedInput;
@@ -89,7 +90,38 @@ public ostream_printable<AlphaModelGenerator>
 
         // generate and return next model, return null after last model
         virtual InterpretationPtr generateNextModel();
+             
+        /**
+         * \brief Evaluates an external atom.
+         *
+         * Projects input interpretation for predicate inputs
+         * calculates constant input tuples from auxiliary input predicates and from given constants
+         * calls eatom function with each input tuple
+         * reintegrates output tuples as auxiliary atoms into outputi
+         * (inputi and outputi may point to the same interpretation)
+         * fromCache may point to a boolean (or be 0) where the method stored whether the query was answered from cache
+         *
+         * @param eatomID The external atom to evaluate.
+         * @param inputi Interpretation to use as input to the external atom.
+         * @param cb Callback during evaluation of the external atom (see BaseModelGenerator::ExternalAnswerTupleCallback).
+         * @param nogoods Container to add learned nogoods to (if external learning is enabled), can be NULL.
+         * @param assigned Set of atoms currently assigned; can be used by the external atom to optimize evaluation; can be NULL to indicate that all atoms are assigned.
+         * @param changed Set of atoms which possibly changed since last evaluation under the same input; can be used by the external atom to optimize evaluation; can be NULL to indicate that all atoms might have changed.
+         * @param fromCache Pointer to a bool field which is is stored whether the query was answered from cache (true) or by actual evaluation (false); can be NULL.
+         * @return False if process was aborted by callback and true otherwise.
+         */
+        bool evaluateExternalAtomFacade(ProgramCtx& ctx,
+        ID eatomID,
+        InterpretationConstPtr inputi,
+        ExternalAnswerTupleCallback& cb,
+        NogoodContainerPtr nogoods = NogoodContainerPtr(),
+        InterpretationConstPtr assigned = InterpretationConstPtr(),
+        InterpretationConstPtr changed = InterpretationConstPtr(),
+        bool* fromCache = 0) const;
 };
+
+// global pointer to keep reference in jvm
+extern AlphaModelGenerator* amgPointer;
 
 /** \brief Factory for the AlphaModelGenerator. */
 class AlphaModelGeneratorFactory:
@@ -100,15 +132,16 @@ public ostream_printable<AlphaModelGeneratorFactory>
     public:
         friend class AlphaModelGenerator;
         typedef ComponentGraph::ComponentInfo ComponentInfo;
+        /** \brief ProgramCtx. */
+        ProgramCtx& ctx;
+        /** \brief All external atoms of the component. */
+        std::vector<ID> outerEatoms;
+        std::vector<ID> innerEatoms;
 
         // storage
     protected:
         /** \brief Defines the solver to be used for external evaluation. */
         ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-        /** \brief ProgramCtx. */
-        ProgramCtx& ctx;
-        /** \brief All external atoms of the component. */
-        std::vector<ID> eatoms;
         /** \brief Original IDB containing eatoms where all inputs are known.
          *
          * Auxiliary input rules of these eatoms must be in predecessor unit!
