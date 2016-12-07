@@ -285,7 +285,7 @@ UnfoundedSetVerificationStatus& ufsVerStatus
 
             const Nogood& ng = ngc->getNogood(i);
             if (ng.isGround()) {
-                DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
+                DBGLOG(DBG, "V: Processing learned nogood " << ng.getStringRepresentation(reg));
 
                 std::pair<bool, Nogood> transformed = nogoodTransformation(ng, compatibleSet);
                 if (transformed.first) {
@@ -1716,7 +1716,12 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
     // finally, instantiate the solver for the constructed search problem
     DBGLOG(DBG, "Unfounded Set Detection Problem: " << ufsDetectionProblem);
     solver = SATSolver::getInstance(ctx, ufsDetectionProblem, frozenInt);
-
+    
+    
+    if (ctx.config.getOption("UFSCheckPartial")) {
+        solver->addPropagator(this);
+    }
+                        
     // remember the number of rules respected to far to allow for incremental extension
     problemRuleCount = groundProgram.idb.size();
 }
@@ -1766,6 +1771,32 @@ void AssumptionBasedUnfoundedSetChecker::expandUFSDetectionProblemAndReinstantia
     solver->addNogoodSet(ufsDetectionProblem);
 }
 
+void AssumptionBasedUnfoundedSetChecker::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed) {
+    for (uint32_t eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex) {
+        ID eaID = agp.getIndexedEAtom(eaIndex);
+        
+        InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
+        BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
+        
+        if (!!ngc && !!solver) {
+            int oldNogoodCount = ngc->getNogoodCount();
+            mg->evaluateExternalAtom(ctx, eaID, partialInterpretation, cb, ngc, assigned, changed);
+            DBGLOG(DBG, "Adding new valid input-output relationships from nogood container");
+            for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i) {
+
+                const Nogood& ng = ngc->getNogood(i);
+                if (ng.isGround()) {
+                    DBGLOG(DBG, "P: Processing learned nogood" << ng.getStringRepresentation(reg));
+
+                    std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
+                    if (transformed.first) {
+                        solver->addNogood(transformed.second);
+                    }
+                }
+            }
+        }
+    }
+}
 
 void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr compatibleSet, const std::set<ID>& skipProgram)
 {
@@ -1959,7 +1990,7 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(bool reset)
         for (int i = learnedNogoodsFromMainSearch; i < ngc->getNogoodCount(); ++i) {
             const Nogood& ng = ngc->getNogood(i);
             if (ng.isGround()) {
-                DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
+                DBGLOG(DBG, "M: Processing learned nogood " << ng.getStringRepresentation(reg));
 
                 // this transformation must not depend on the compatible set!
                 std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());

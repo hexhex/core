@@ -304,6 +304,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         aufsm            : Use unfounded sets for minimality checking by exploiting assumptions;" << std::endl
         << "                                            do not decompose the program for UFS checking" << std::endl
         << "                         none             : Disable the check" << std::endl
+        << "     --ufslearnpartial" << std::endl
+        << "                      Enable learning during UFS check under partial input" << std::endl
+        << "                      (only useful with --flpcheck=aufs[m])." << std::endl
         << "     --flpcriterion=[all,head,e,em,emi,none]" << std::endl
         << "                      Defines the kind of cycles whose absence is exploited for skipping minimality checks." << std::endl
         << "                         all (default)    : Exploit head- and e-cycles for skipping minimality checks" << std::endl
@@ -872,6 +875,7 @@ Config& config, ProgramCtx& pctx)
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
+        { "ufslearnpartial", no_argument, 0, 68 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1701,6 +1705,7 @@ Config& config, ProgramCtx& pctx)
                     }
                 }
                 break;
+            case 68: pctx.config.setOption("UFSCheckPartial", 1); break;
         }
     }
 

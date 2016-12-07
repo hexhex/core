@@ -451,8 +451,22 @@ class EncodingBasedUnfoundedSetChecker : public UnfoundedSetChecker
             const std::set<ID>& skipProgram);
 };
 
-class AssumptionBasedUnfoundedSetChecker : public UnfoundedSetChecker
+class AssumptionBasedUnfoundedSetChecker :
+public UnfoundedSetChecker,
+public PropagatorCallback
 {
+    protected:
+        /**
+         * \brief Is called by the ASP solver in its propagation method to trigger fruther learning methods.
+         *
+         * This function can add additional (learned) nogoods to the solver to force implications or tell the solver that the current assignment is conflicting.
+         *
+         * @param partialInterpretation The current assignment.
+         * @param assigned Currently assigned atoms.
+         * @param changed The set of atoms with modified truth value since the last call.
+         */
+        void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+        
     private:
         /** \brief A special atom "a_i" for each atom "a" in the program, representing the truth value of "a" in the compatible set. */
         boost::unordered_map<IDAddress, IDAddress> interpretationShadow;
