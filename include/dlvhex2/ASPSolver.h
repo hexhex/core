@@ -63,6 +63,7 @@ DLVHEX_NAMESPACE_BEGIN
             JavaVM *jvm;
             long status;
             jclass cls;
+            jclass bridge_cls;
             jmethodID mid;
             jobjectArray arr;
 

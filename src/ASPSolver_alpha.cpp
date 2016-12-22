@@ -84,27 +84,32 @@ DLVHEX_NAMESPACE_BEGIN
             throw FatalError(" error when loading alpha in jvm, make sure path is correct");
         }
 
-        cls = env->FindClass("at/ac/tuwien/kr/alpha/Main");
-        cls = reinterpret_cast<jclass> (env->NewGlobalRef(cls));
+        bridge_cls = env->FindClass("at/ac/tuwien/kr/alpha/grounder/bridges/HexBridge");
+        bridge_cls = reinterpret_cast<jclass> (env->NewGlobalRef(bridge_cls));
 
         JNINativeMethod methods[]{
             { "sendResults", "([[Ljava/lang/String;)V", (void *) &sendResultsCPP},
             { "externalAtomsQuery", "([Ljava/lang/String;[Ljava/lang/String;)[[Ljava/lang/String;", (jobjectArray *) & externalAtomsQuery}
         };
 
-        if (env->RegisterNatives(cls, methods, 2) < 0) {
+        if (env->RegisterNatives(bridge_cls, methods, 2) < 0) {
             if (env->ExceptionOccurred())
                 throw FatalError(" exception when registering natives");
             else
                 throw FatalError(" ERROR: problem when registering natives");
         }
+        
+        cls = env->FindClass("at/ac/tuwien/kr/alpha/Main");
+        cls = reinterpret_cast<jclass> (env->NewGlobalRef(cls));
 
         mid = env->GetStaticMethodID(cls, "main", "([Ljava/lang/String;)V");
 
-        arr = env->NewObjectArray(2,
+        arr = env->NewObjectArray(4,
                 env->FindClass("java/lang/String"),
                 env->NewStringUTF("str"));
         env->SetObjectArrayElement(arr, 0, env->NewStringUTF("-str"));
+        env->SetObjectArrayElement(arr, 2, env->NewStringUTF("-x"));
+        env->SetObjectArrayElement(arr, 3, env->NewStringUTF("y"));
 
         jvm->DetachCurrentThread();
     }
@@ -147,6 +152,8 @@ DLVHEX_NAMESPACE_BEGIN
                 } else if (getEnvStat == JNI_EVERSION) {
                     DBGLOG(DBG, "[" << this << "]" << "GetEnv: jvm version not supported");
                 }
+                
+                //std::cout << program_str << std::endl;
 
                 if (options.mid == nullptr) {
                     throw FatalError("ERROR: method not found!");
@@ -336,10 +343,6 @@ DLVHEX_NAMESPACE_BEGIN
             env->ReleaseStringUTFChars(result, nativeResult);
         }
 
-
-        std::cout << *currentIntr << std::endl;
-        std::cout << *currentAssigned << std::endl;
-
         SimpleNogoodContainerPtr nogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
         AlphaModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(currentIntr);
 
@@ -368,7 +371,7 @@ DLVHEX_NAMESPACE_BEGIN
                     std::stringstream ss;
                     RawPrinter printer(ss, amgPointer->factory.ctx.registry());
                     ss << (iid.isNaf() ? "-" : "");
-                    printer.print(iid);
+                    printer.print(amgPointer->factory.ctx.registry()->ogatoms.getIDByAddress(iid.address));
 
                     env->SetObjectArrayElement(ioNogood, arrIndex, env->NewStringUTF(ss.str().c_str()));
                     arrIndex++;
@@ -380,7 +383,7 @@ DLVHEX_NAMESPACE_BEGIN
                     std::stringstream ss;
                     RawPrinter printer(ss, amgPointer->factory.ctx.registry());
                     ss << (iid.isNaf() ? "-" : "");
-                    printer.print(iid);
+                    printer.print(amgPointer->factory.ctx.registry()->ogatoms.getIDByAddress(iid.address));
 
                     env->SetObjectArrayElement(ioNogood, arrIndex, env->NewStringUTF(ss.str().c_str()));
                     arrIndex++;
