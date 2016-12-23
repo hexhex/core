@@ -490,6 +490,9 @@ public PropagatorCallback
 
         // stores how many nogoods in ngc we have already transformed and learned in the UFS search
         int learnedNogoodsFromMainSearch;
+        
+        /** \brief Compatible set for which the UFS check shall be performed. */
+        InterpretationConstPtr inputCompatibleSet;
 
         /** \brief Goes through EDB and IDB and sets all facts in domain. */
         void constructDomain();

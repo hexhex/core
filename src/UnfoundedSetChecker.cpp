@@ -1778,15 +1778,22 @@ void AssumptionBasedUnfoundedSetChecker::propagate(InterpretationConstPtr partia
         InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
         BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
         
+        InterpretationPtr eaInputIntrAssigned = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
+        eaInputIntrAssigned->getStorage() = ((inputCompatibleSet->getStorage() & assigned->getStorage()));
+        
+        InterpretationConstPtr partialInputSetWithoutAux = partialInterpretation->getInterpretationWithoutExternalAtomAuxiliaries();
+        InterpretationPtr eaInputIntr = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
+        eaInputIntr->getStorage() = ((inputCompatibleSet->getStorage() & assigned->getStorage()) - (partialInterpretation->getStorage() & partialInputSetWithoutAux->getStorage()));
+        
         if (!!ngc && !!solver) {
             int oldNogoodCount = ngc->getNogoodCount();
-            mg->evaluateExternalAtom(ctx, eaID, partialInterpretation, cb, ngc, assigned, changed);
+            mg->evaluateExternalAtom(ctx, eaID, eaInputIntr, cb, ngc, eaInputIntrAssigned, changed);
             DBGLOG(DBG, "Adding new valid input-output relationships from nogood container");
             for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i) {
 
                 const Nogood& ng = ngc->getNogood(i);
                 if (ng.isGround()) {
-                    DBGLOG(DBG, "P: Processing learned nogood" << ng.getStringRepresentation(reg));
+                    DBGLOG(DBG, "P: Processing learned nogood " << ng.getStringRepresentation(reg));
 
                     std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
                     if (transformed.first) {
@@ -2022,6 +2029,8 @@ std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(Inter
     else {
         DBGLOG(DBG, "Problem encoding does not need to be expanded");
     }
+    
+    inputCompatibleSet = compatibleSet;
 
     // learn from main search
     learnNogoodsFromMainSearch(true);
