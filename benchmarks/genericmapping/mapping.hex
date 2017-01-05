@@ -1,0 +1,17 @@
+% Generic mapping problem
+%
+% We are selecting a set S of elements from a domain D. A fixed function m: 2^D -> 2^T maps each such selection to a set of tags from a tag domain T.
+% We further have a set C of constraints C = { C_1, ..., C_n } with C_i = (C+_i, C-_i) for all 1 <= i <= n. A set of tags R satisfies a constraint C_i if one of C+_i is not in R or one of C-i is in R.
+% A solution is a selection S of elements from D, such that R = m(S) satisfies all constraints.
+%
+% The mapping is realized as an external atom, which is
+% (i) nonmonotonic
+% (ii) might depends only on parts of the input.
+% The constraint checks follow after the evaluation of the external atom. Without transunitpropagation, the checking part is completely separated from the guessing part.
+% The external source supports partial evaluation. For any partial selection S' and tag t, the external source returns T (F) if t is in M(S) for all completions S of S', and U otherwise.
+
+% guessing part
+select(X) v nselect(X) :- domain(X).
+
+% checking part is split from the guessing part due to the (possibly) non-monotonic external atom
+tags(T) :- &mapping[select,tagreq](T).

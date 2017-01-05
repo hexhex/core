@@ -810,24 +810,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
         if (!finalCompatibilityCheck(modelCandidate)) {
             LOG(DBG,"compatibility failed");
-
-/*
-            if (!!analysissolver){
-                InterpretationPtr rematoms(new Interpretation(factory.ctx.registry()));
-                InterpretationPtr relevantatoms(new Interpretation(*annotatedGroundProgram.getProgramMask()));
-                relevantatoms->getStorage() |= postprocessedInput->getStorage();
-                bm::bvector<>::enumerator en = relevantatoms->getStorage().first();
-                bm::bvector<>::enumerator en_end = relevantatoms->getStorage().end();
-                while (en < en_end) {
-                    if (factory.ctx.registry()->ogatoms.getIDByAddress(*en).isAuxiliary()) rematoms->setFact(*en);
-                    en++;
-                }
-                relevantatoms->getStorage() -= rematoms->getStorage();
-                Nogood ng(relevantatoms, modelCandidate);
-                DBGLOG(DBG, "Adding model candidate " << ng.getStringRepresentation(factory.ctx.registry()) << " to inconsistency analyzer");
-                analysissolver->addNogood(ng);
-            }
-*/
             continue;
         }
 
@@ -862,197 +844,8 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     DBGLOG(DBG, "[IR] identifyInconsistencyCause");
     DBGLOG(DBG, "[IR] Explanation atoms: " << *explAtoms << std::endl);
 
-
-
-
-
-
-
-
-#if 0
-
-
-
-
-// analysis
-InterpretationPtr nogoodAtoms(new Interpretation(factory.ctx.registry()));
-
-InterpretationPtr analysisProgramEdb(new Interpretation(factory.ctx.registry()));
-OrdinaryASPProgram analysisProgram(factory.ctx.registry(), std::vector<ID>(), analysisProgramEdb, factory.ctx.maxint);
-bm::bvector<>::enumerator en, en_end;
-int nextAtomID = 0;
-ID satAtom = getAuxiliaryAtom('x', ID::termFromInteger(nextAtomID++));
-
-// explanation guess
-DBGLOG(DBG, "[IR] Adding guessing rules for explanation atoms " << *explAtoms);
-InterpretationPtr negExplAtoms(new Interpretation(factory.ctx.registry()));
-en = explAtoms->getStorage().first();
-en_end = explAtoms->getStorage().end();
-while (en < en_end) {
-    Rule explanationGuess(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ);
-    ID eAtomID = factory.ctx.registry()->ogatoms.getIDByAddress(*en);
-    ID neAtomID = getAuxiliaryAtom('x', eAtomID);
-    negExplAtoms->setFact(neAtomID.address);
-    explanationGuess.head.push_back(eAtomID);                           // atom is in R+
-    explanationGuess.head.push_back(neAtomID);                          // atom is in R-
-    explanationGuess.head.push_back(getAuxiliaryAtom('y', eAtomID));    // atom is neither in R+ nor in R-
-    analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(explanationGuess));
-    en++;
-}
-
-// add nogoods as rules such that the saturation atom is derived if a nogood is violated
-const NogoodSet& nogoodStorage = analysissolver->getNogoodStorage();
-for (int i = 0; i < nogoodStorage.getNogoodCount(); ++i){
-    const Nogood& ng = nogoodStorage.getNogood(i);
-    Rule nogoodCheckingRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-    nogoodCheckingRule.head.push_back(satAtom);
-    BOOST_FOREACH (ID lit, ng) {
-        if (lit.isNaf()) {
-            nogoodCheckingRule.body.push_back(ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(lit.address)));
-        }else{
-            nogoodCheckingRule.body.push_back(ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(lit.address)));
-        }
-        nogoodAtoms->setFact(lit.address);
-    }
-    analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(nogoodCheckingRule));
-}
-
-// interpretation guess and saturation
-DBGLOG(DBG, "[IR] Adding guess of interpretation over " << *nogoodAtoms);
-en = nogoodAtoms->getStorage().first();
-en_end = nogoodAtoms->getStorage().end();
-while (en < en_end) {
-    // interpretation guess
-    Rule interpretationGuess(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ);
-    ID atomID = factory.ctx.registry()->ogatoms.getIDByAddress(*en);
-    interpretationGuess.head.push_back(getAuxiliaryAtom('p', atomID));    // atom in interpretation
-    interpretationGuess.head.push_back(getAuxiliaryAtom('n', atomID));    // -atom in interpretation
-    analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(interpretationGuess));
-
-    // saturation on discrepancy of interpretation guess from explanation guess
-    {
-        Rule discrepancy(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-        discrepancy.head.push_back(satAtom);
-        discrepancy.body.push_back(ID::posLiteralFromAtom(atomID));                                   // atom in positive explanation guess
-        discrepancy.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('n', atomID)));            // -atom in interpretation
-        analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(discrepancy));
-    }{
-        Rule discrepancy(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-        discrepancy.head.push_back(satAtom);
-        discrepancy.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('x', atomID)));            // atom in negative explanation guess
-        discrepancy.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('p', atomID)));            // atom in interpretation
-        analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(discrepancy));
-    }
-    {
-        Rule satInterpretation(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-        satInterpretation.head.push_back(getAuxiliaryAtom('p', atomID));                              // atom in interpretation if saturated
-        satInterpretation.body.push_back(ID::posLiteralFromAtom(satAtom));
-        analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(satInterpretation));
-    }{
-        Rule satInterpretation(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-        satInterpretation.head.push_back(getAuxiliaryAtom('n', atomID));                              // -atom in interpretation if saturated
-        satInterpretation.body.push_back(ID::posLiteralFromAtom(satAtom));
-        analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(satInterpretation));
-    }
-
-    en++;
-}
-
-/*
-// saturation for non-models
-en = gp.edb->getStorage().first();
-en_end = gp.edb->getStorage().end();
-while (en < en_end) {
-    // explanation atoms cannot be part of the EDB
-//	    if (!explAtoms->getFact(*en)) {
-            Rule satOnModelRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-        satOnModelRule.head.push_back(satAtom);
-        satOnModelRule.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('n', ctx.registry()->ogatoms.getIDByAddress(*en))));
-            analysisProgram.idb.push_back(ctx.registry()->storeRule(satOnModelRule));
-//	    }
-    en++;
-}
-BOOST_FOREACH (ID ruleID, gp.idb) {
-    DBGLOG(DBG, "Adding saturation rule for program rule " << printToString<RawPrinter>(ruleID, ctx.registry()));
-    const Rule& rule = ctx.registry()->rules.getByID(ruleID);
-    Rule satOnModelRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-    satOnModelRule.head.push_back(satAtom);
-    BOOST_FOREACH (ID h, rule.head) { satOnModelRule.body.push_back(getAuxiliaryAtom('n', h)); }
-    BOOST_FOREACH (ID b, rule.body) {
-        if (!b.isNaf()) {
-            satOnModelRule.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('p', ID::atomFromLiteral(b))));
-        }else{
-            satOnModelRule.body.push_back(ID::posLiteralFromAtom(getAuxiliaryAtom('n', ID::atomFromLiteral(b))));
-        }
-    }
-    analysisProgram.idb.push_back(ctx.registry()->storeRule(satOnModelRule));
-}
-*/
-
-// restrict search to models with atom sat
-{
-    DBGLOG(DBG, "[IR] Adding sat constraint");
-    Rule satConstraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-    satConstraint.body.push_back(ID::nafLiteralFromAtom(satAtom));
-    analysisProgram.idb.push_back(factory.ctx.registry()->storeRule(satConstraint));
-}
-
-#ifndef NDEBUG
-if (!!analysisProgram.edb) {
-    DBGLOG(DBG, "[IR] Analysis program:" << std::endl << *analysisProgramEdb << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n     ", factory.ctx.registry()));
-}else{
-    DBGLOG(DBG, "[IR] Analysis program:" << std::endl << printManyToString<RawPrinter>(analysisProgram.idb, "\n     ", factory.ctx.registry()));
-}
-#endif
-
-// solve the instance
-GenuineSolverPtr analysisSolver = GenuineSolver::getInstance(factory.ctx, analysisProgram);
-InterpretationConstPtr model;
-while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
-    DBGLOG(DBG, "[IR] Answer set of analysis program: " << *model);
-
-    // extract explanation
-    Nogood explanation;
-    en = model->getStorage().first();
-    en_end = model->getStorage().end();
-    while (en < en_end) {
-        if (explAtoms->getFact(*en)) {
-            explanation.insert(NogoodContainer::createLiteral(*en, true));
-        }else if (negExplAtoms->getFact(*en)) {
-            explanation.insert(NogoodContainer::createLiteral(factory.ctx.registry()->getIDByAuxiliaryConstantSymbol(factory.ctx.registry()->ogatoms.getByAddress(*en).tuple[0]).address, false));
-        }
-        en++;
-    }
-    DBGLOG(DBG, "[IR] Explanation: " << explanation.getStringRepresentation(factory.ctx.registry()));
-}
-
-
-
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // non-optimized grounding
-//        InterpretationPtr enrichedEdb(new Interpretation(factory.ctx.registry())); // add explanation atoms to EDB to make sure that the grounding is complete wrt. these atoms
-//        for (int i = 0; i < factory.ctx.registry()->ogatoms.getSize(); ++i) enrichedEdb->setFact(i);
-//        enrichedEdb->getStorage() |= program.edb->getStorage();
-//        enrichedEdb->getStorage() |= unitMask->mask()->getStorage();
-//        enrichedEdb->getStorage() |= explAtoms->getStorage();
-//        InterpretationConstPtr originalEdb = program.edb;
     OrdinaryASPProgram enrichedProgram = guessingProgram;
-//        enrichedProgram.edb = enrichedEdb;
     DBGLOG(DBG, "[IR] Grounding program for inconsistency analysis without optimizations:" << std::endl <<
                 "[IR]     " << *enrichedProgram.edb << std::endl <<
                 "[IR]     " << printManyToString<RawPrinter>(enrichedProgram.idb, "\n[IR]     ", factory.ctx.registry()));
@@ -1064,13 +857,7 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                 "[IR]     " << *nonoptgp.edb << std::endl <<
                 "[IR]     " << printManyToString<RawPrinter>(nonoptgp.idb, "\n[IR]     ", factory.ctx.registry()));
 
-
     std::vector<ID> assumptions;
-
-
-
-
-
 
     // compute maximum relevant predicate extensions
     std::vector<ID> mrpProgramIdb;
@@ -1119,22 +906,19 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
     assert (!!mrpModel && !mrpProgramSolver->getNextModel() && "mrpProgram does not have exactly one answer set");
     DBGLOG(DBG, "[IR] mrpProgram answer set: " << *mrpModel);
 
-    // make the program extensible
-    // Explanation atoms are all ground atoms from the registry which are not defined in this unit.
-    // This captures exactly the atoms which *could* be derivable in some predecessor unit.
+    // make the program extensible: add extension rules for atoms defined in this unit which might be underdefined
     PredicateMaskPtr extensionMask(new PredicateMask());
     extensionMask->setRegistry(factory.ctx.registry());
 
     BOOST_FOREACH (ID predInComp, factory.ci.predicatesOccurringInComponent) {
         if (factory.ci.predicatesDefinedInComponent.find(predInComp) != factory.ci.predicatesDefinedInComponent.end()) {
-            DBGLOG(DBG, "[IR] Unit input is defined by " << printToString<RawPrinter>(predInComp, factory.ctx.registry()));
+            DBGLOG(DBG, "[IR] Potentially underdefined prediate: " << printToString<RawPrinter>(predInComp, factory.ctx.registry()));
             extensionMask->addPredicate(predInComp);
         }
     }
     extensionMask->updateMask();
 
-    // for all atoms in the ground program
-    // (@TODO: can be further restricted to "underdefined" atoms, i.e., atoms which may be defined by instances of rules which are currently not in the ground program)
+    // for all potentially underdefined atoms in the ground program
     bm::bvector<>::enumerator en = extensionMask->mask()->getStorage().first();
     bm::bvector<>::enumerator en_end = extensionMask->mask()->getStorage().end();
 
@@ -1201,7 +985,7 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                     }
                     simplifiedRule.head.push_back(factory.ctx.registry()->storeOrdinaryAtom(variableExtractionAtom));
                     BOOST_FOREACH (ID b, rule.body) {
-                        if (!b.isNaf() && !b.isExternalAtom()) {
+                        if (!b.isNaf() && !b.isExternalAtom() && (!b.isAuxiliary() || factory.ctx.registry()->getTypeByAuxiliaryConstantSymbol(factory.ctx.registry()->ogatoms.getByID(b).tuple[0]) == 'd')) {
                             simplifiedRule.body.push_back(b);
                         }
                     }
@@ -1220,62 +1004,70 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
                     OrdinaryASPProgram currentRuleProgramGround = currentRuleProgramGrounder.getGroundProgram();
 
                     // iterate over ground rule instances, extract variable substitution and apply to full rule
-                    BOOST_FOREACH (ID id, currentRuleProgramGround.idb) {
-                        DBGLOG(DBG, "[IR] Found ground rule: " << printToString<RawPrinter>(id, factory.ctx.registry()));
-                        const OrdinaryAtom& variableExtractionAtom = factory.ctx.registry()->ogatoms.getByID(factory.ctx.registry()->rules.getByID(id).head[0]);
+                    std::vector<ID> edbAtoms;
+                    bm::bvector<>::enumerator en = currentRuleProgramGround.edb->getStorage().first();
+                    bm::bvector<>::enumerator en_end = currentRuleProgramGround.edb->getStorage().end();
+                    while (en < en_end) {
+                        if (factory.ctx.registry()->ogatoms.getByAddress(*en).tuple[0] == unknownValueTerm) edbAtoms.push_back(factory.ctx.registry()->ogatoms.getIDByAddress(*en));
+                        en++;
+                    }
+                    for (int i = 1; i <= 2; ++i) {
+                        std::vector<ID>& matches = (i == 1 ? currentRuleProgramGround.idb : edbAtoms);
+                        BOOST_FOREACH (ID id, matches) {
+                            DBGLOG(DBG, "[IR] Found ground rule: " << printToString<RawPrinter>(id, factory.ctx.registry()));
+                            const OrdinaryAtom& variableExtractionAtom = (i == 1 ? factory.ctx.registry()->ogatoms.getByID(factory.ctx.registry()->rules.getByID(id).head[0]) : factory.ctx.registry()->ogatoms.getByID(id));
 
-                        Unifier fullunifier;
-                        int varidx = 0;
-                        BOOST_FOREACH (ID var, ruleVars) {
-                            fullunifier[var] = variableExtractionAtom.tuple[++varidx];
-                            DBGLOG(DBG, "[IR] Substituting variable " << printToString<RawPrinter>(var, factory.ctx.registry()) << " by " << printToString<RawPrinter>(fullunifier[var], factory.ctx.registry()));
-                        }
+                            Unifier fullunifier;
+                            int varidx = 0;
+                            BOOST_FOREACH (ID var, ruleVars) {
+                                fullunifier[var] = variableExtractionAtom.tuple[++varidx];
+                                DBGLOG(DBG, "[IR] Substituting variable " << printToString<RawPrinter>(var, factory.ctx.registry()) << " by " << printToString<RawPrinter>(fullunifier[var], factory.ctx.registry()));
+                            }
 
-                        // apply to full rule
-                        Rule modRule = rule;
-                        modRule.kind = (modRule.head.size() > 1 ? ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ : ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-                        for (int h = 0; h < modRule.head.size(); ++h) {
-                            OrdinaryAtom oa =  factory.ctx.registry()->lookupOrdinaryAtom(modRule.head[h]);
-                            oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
-                            oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
-                            for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
-                            modRule.head[h] = factory.ctx.registry()->storeOrdinaryAtom(oa);
-                        }
-                        for (int b = 0; b < modRule.body.size(); ++b) {
-                            if (modRule.body[b].isOrdinaryAtom()) {
-                                OrdinaryAtom oa = factory.ctx.registry()->lookupOrdinaryAtom(modRule.body[b]);
+                            // apply to full rule
+                            Rule modRule = rule;
+                            modRule.kind = (modRule.head.size() > 1 ? ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ : ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+                            for (int h = 0; h < modRule.head.size(); ++h) {
+                                OrdinaryAtom oa =  factory.ctx.registry()->lookupOrdinaryAtom(modRule.head[h]);
                                 oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
                                 oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
                                 for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
-                                ID oaID = factory.ctx.registry()->storeOrdinaryAtom(oa);
-                                modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(oaID) : ID::posLiteralFromAtom(oaID));
+                                modRule.head[h] = factory.ctx.registry()->storeOrdinaryAtom(oa);
                             }
-                            if (modRule.body[b].isExternalAtom()) {
-                                const ExternalAtom& ea = factory.ctx.registry()->eatoms.getByID(modRule.body[b]);
-                                OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-                                oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
-                                oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
-                                oa.tuple.push_back(factory.ctx.registry()->getAuxiliaryConstantSymbol('r', ea.predicate));
-                                for (int v = 0; v < ea.inputs.size(); ++v) oa.tuple.push_back(ea.inputs[v].isVariableTerm() ? fullunifier[ea.inputs[v]] : ea.inputs[v]);
-                                for (int v = 0; v < ea.tuple.size(); ++v) oa.tuple.push_back(ea.tuple[v].isVariableTerm() ? fullunifier[ea.tuple[v]] : ea.tuple[v]);
-                                ID oaID = factory.ctx.registry()->storeOrdinaryAtom(oa);
-                                modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(oaID) : ID::posLiteralFromAtom(oaID));
+                            for (int b = 0; b < modRule.body.size(); ++b) {
+                                if (modRule.body[b].isOrdinaryAtom()) {
+                                    OrdinaryAtom oa = factory.ctx.registry()->lookupOrdinaryAtom(modRule.body[b]);
+                                    oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+                                    oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+                                    for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
+                                    ID oaID = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                                    modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(oaID) : ID::posLiteralFromAtom(oaID));
+                                }
+                                if (modRule.body[b].isExternalAtom()) {
+                                    const ExternalAtom& ea = factory.ctx.registry()->eatoms.getByID(modRule.body[b]);
+                                    OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
+                                    oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+                                    oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+                                    oa.tuple.push_back(factory.ctx.registry()->getAuxiliaryConstantSymbol('r', ea.predicate));
+                                    for (int v = 0; v < ea.inputs.size(); ++v) oa.tuple.push_back(ea.inputs[v].isVariableTerm() ? fullunifier[ea.inputs[v]] : ea.inputs[v]);
+                                    for (int v = 0; v < ea.tuple.size(); ++v) oa.tuple.push_back(ea.tuple[v].isVariableTerm() ? fullunifier[ea.tuple[v]] : ea.tuple[v]);
+                                    ID oaID = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                                    modRule.body[b] = (modRule.body[b].isNaf() ? ID::nafLiteralFromAtom(oaID) : ID::posLiteralFromAtom(oaID));
+                                }
                             }
-                        }
 
-                        ID modRuleID = factory.ctx.registry()->storeRule(modRule);
-                        DBGLOG(DBG, "[IR] Corresponds to ground instance " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()) << " of the full rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));
-                        // check if this rule is already in the grounding
-                        if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRuleID) == nonoptgp.idb.end()) {
-                            DBGLOG(DBG, "[IR] This rule is not in the unoptimized ground program");
+                            ID modRuleID = factory.ctx.registry()->storeRule(modRule);
+                            DBGLOG(DBG, "[IR] Corresponds to ground instance " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()) << " of the full rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));
+                            // check if this rule is already in the grounding
+                            if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRuleID) == nonoptgp.idb.end()) {
+                                DBGLOG(DBG, "[IR] This rule is not in the unoptimized ground program");
 
-                            underdefined = true;
-                        }else{
-                            DBGLOG(DBG, "[IR] This rule is in the unoptimized ground program");
+                                underdefined = true;
+                            }else{
+                                DBGLOG(DBG, "[IR] This rule is in the unoptimized ground program");
+                            }
+                            if (underdefined) break;
                         }
-//                        DBGLOG(DBG, "[IR]     " << *nonoptgp.edb << std::endl <<
-//                                    "[IR]     " << printManyToString<RawPrinter>(nonoptgp.idb, "\n[IR]     ", factory.ctx.registry()));
-                        if (underdefined) break;
                     }
                     if (underdefined) break;
                 }
@@ -1303,10 +1095,6 @@ while ( (model = analysisSolver->getNextModel()) != InterpretationConstPtr() ) {
         }
         en++;
     }
-
-
-
-
 
     // run analysis solver
     AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
@@ -1372,7 +1160,6 @@ void GenuineGuessAndCheckModelGenerator::addNogood(const Nogood* cause){
     DBGLOG(DBG, "[IR] Adding nogood to model generator: " << cause->getStringRepresentation(factory.ctx.registry()));
     if (factory.ctx.config.getOption("TransUnitLearning")){
         if (!!solver) solver->addNogood(*cause);
-//        if (!!analysissolver) analysissolver->addNogood(*cause);
     }
 }
 
