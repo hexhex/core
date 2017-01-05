@@ -911,6 +911,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
         DBGLOG(DBG, "[IR] mrpProgram answer set: " << *mrpModel);
     }
 
+    bm::bvector<>::enumerator en, en_end;
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause pud");
 
@@ -927,8 +928,8 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
         extensionMask->updateMask();
 
         // for all potentially underdefined atoms in the ground program
-        bm::bvector<>::enumerator en = extensionMask->mask()->getStorage().first();
-        bm::bvector<>::enumerator en_end = extensionMask->mask()->getStorage().end();
+        en = extensionMask->mask()->getStorage().first();
+        en_end = extensionMask->mask()->getStorage().end();
 
         ID atomID;
         bool underdefined;
