@@ -862,6 +862,8 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     std::vector<ID> assumptions;
 
     // compute maximum relevant predicate extensions
+    ID unknownValueTerm;
+    InterpretationConstPtr mrpModel;
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause envelope");
         std::vector<ID> mrpProgramIdb;
@@ -869,7 +871,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
         mrpProgramEdb->add(*guessingProgram.edb);
         mrpProgramEdb->add(*explAtoms);
         OrdinaryASPProgram mrpProgram(factory.ctx.registry(), mrpProgramIdb, mrpProgramEdb, factory.ctx.maxint);
-        ID unknownValueTerm = factory.ctx.registry()->getAuxiliaryConstantSymbol('x', ID::termFromInteger(0));
+        unknownValueTerm = factory.ctx.registry()->getAuxiliaryConstantSymbol('x', ID::termFromInteger(0));
         BOOST_FOREACH (ID ruleID, factory.idb) {
             const Rule& rule = factory.ctx.registry()->rules.getByID(ruleID);
 
@@ -906,7 +908,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
             }
         }
         GenuineSolverPtr mrpProgramSolver = GenuineSolver::getInstance(factory.ctx, mrpProgram);
-        InterpretationConstPtr mrpModel = mrpProgramSolver->getNextModel();
+        mrpModel = mrpProgramSolver->getNextModel();
         assert (!!mrpModel && !mrpProgramSolver->getNextModel() && "mrpProgram does not have exactly one answer set");
         DBGLOG(DBG, "[IR] mrpProgram answer set: " << *mrpModel);
     }
