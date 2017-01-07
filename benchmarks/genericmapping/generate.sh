@@ -7,6 +7,8 @@
 # $7: constraint probability
 # $8: constraint element probability
 
+# Example: ./generate.sh 10 2 10 50 10 100 50 5
+
 # domain
 for (( d=1; d <= $1; d++ ))
 do
@@ -25,21 +27,33 @@ do
 	for (( rc=1; rc <= $3; rc++ ))
 	do
 		if [[ $RANDOM -le $propReq ]]; then
-			echo -n "tagreq(t$rc,p"
+			first=1
 			for ((d=1; d<=$1; d++ ))
 			do
-				if [[ $RANDOM -le $propDep ]]; then 
+				if [[ $RANDOM -le $propDep ]]; then
+					if [[ $first == 1 ]]; then
+						echo -n "tagreq(t$t,p"
+						first=0
+					fi
 					echo -n ",d$d"
 				fi
 			done
-			echo -n ",n"
+			if [[ $first == 0 ]]; then
+				echo -n ",n"
+			fi
 			for ((d=1; d<=$1; d++ ))
 			do
 				if [[ $RANDOM -le $propDep ]]; then 
+					if [[ $first == 1 ]]; then
+						echo -n "tagreq(t$t,p,n"
+						first=0
+					fi
 					echo -n ",d$d"
 				fi
 			done
-			echo "). "
+			if [[ $first == 0 ]]; then
+				echo "). "
+			fi
 		fi
 	done
 done
@@ -49,7 +63,7 @@ for (( rc=1; rc <= $6; rc++ ))
 do
 	if [[ $RANDOM -le $propCons ]]; then
 		first=1
-		for ((t=1; t<=$1; t++ ))
+		for ((t=1; t<=$2; t++ ))
 		do
 #			if [[ $RANDOM -le 16384 ]]; then
 #				naf=" not"

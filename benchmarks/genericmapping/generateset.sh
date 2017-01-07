@@ -1,29 +1,26 @@
-# $1/$2: number of products min/max
-# $3: number of requirements
-# $4: maximum dependency sets per requirement
-# $5: requirements probability
-# $6: dependency probability
-# $7: number of instances
+# $1/$2: min/max instance size
+# $3: number of instances
 
-# Good results:
-# ./generateset.sh 20 20 2 14 30 10 10
-
-if [[ $# -lt 7 ]]; then
-	echo "Error: Script expects 7 parameters"
+if [[ $# -lt 3 ]]; then
+	echo "Error: Script expects 3 parameters"
 	exit 1;
 fi
 
 # create a directory for storing benchmark instances
 mkdir -p instances
-for (( cntProd=$1; cntProd <= $2; cntProd++ ))
+for (( size=$1; size <= $2; size++ ))
 do
-	for (( inst=0; inst < $7; inst++ ))
+	for (( inst=0; inst < $3; inst++ ))
 	do
-		cntReq=$3
-		cntDepSetsPerReq=$4
-		propReq=$5
-		propDep=$6
-		./generate.sh $cntProd $cntReq $cntDepSetsPerReq $propReq $propDep > "instances/inst_size_${cntProd}_inst_${inst}.hex"
+		domsize=$size
+		tagdomsize=$(expr $size / 5 + 1)
+		maxdepsets=$(expr $size + $size / 2)
+		tagprop=50
+		depprop=10
+		maxcons=$(expr $size \* 2)
+		consprop=50
+		conselemprop=30
+		./generate.sh $domsize $tagdomsize $maxdepsets $tagprop $depprop $maxcons $consprop $conselemprop > "instances/inst_size_${size}_inst_${inst}.hex"
 	done
 done
 
