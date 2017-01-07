@@ -278,6 +278,7 @@ guessingProgram(factory.reg)
 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
         InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms /*, true, factory.ctx.config.getOption("TransUnitLearning")*/);
         postprocInput->add(*domPredictaesExtension);
     }
@@ -286,9 +287,7 @@ guessingProgram(factory.reg)
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init guessprog");
         DBGLOG(DBG,"evaluating guessing program");
-
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder GuessPr GenGnCMG");
-        
+       
         grounder = GenuineGrounder::getInstance(factory.ctx, guessingProgram);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
@@ -311,6 +310,8 @@ guessingProgram(factory.reg)
     {
         // update nogoods learned from successor (add all ground atoms which have been added to the registry in the meantime in negative form) and add their atoms to the explanation atoms
         if (factory.ctx.config.getOption("TransUnitLearning")){
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtulearning, "genuine g&c init transunit learning");
+
             typedef std::pair<Nogood, int> NogoodIntegerPair;
             printUnitInfo("[IR] ");
             DBGLOG(DBG, "[IR] Solving program");
@@ -365,6 +366,7 @@ guessingProgram(factory.reg)
 
     // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
     if( factory.ctx.config.getOption("NoOuterExternalAtoms") && factory.ctx.config.getOption("ExternalLearning") ) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtulearning, "genuine g&c evaluate pseudo-inner external atoms");
         InterpretationPtr newint(new Interpretation(reg));
 	    IntegrateExternalAnswerIntoInterpretationCB cb(newint);
         BOOST_FOREACH (ID eatomID, factory.innerEatoms) {
