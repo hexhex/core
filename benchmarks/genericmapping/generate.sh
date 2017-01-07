@@ -51,11 +51,11 @@ do
 		first=1
 		for ((t=1; t<=$1; t++ ))
 		do
-			if [[ $RANDOM -le 16384 ]]; then
-				naf=" not"
-			else
-				naf=""
-			fi
+#			if [[ $RANDOM -le 16384 ]]; then
+#				naf=" not"
+#			else
+#				naf=""
+#			fi
 			if [[ $RANDOM -le $propConsElem ]]; then
 				if [[ $first == 1 ]]; then
 					echo -n ":-$naf tags(t$t)"

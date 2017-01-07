@@ -362,6 +362,23 @@ guessingProgram(factory.reg)
 
     initializeHeuristics();
     initializeVerificationWatchLists();
+
+    // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
+    if( factory.ctx.config.getOption("NoOuterExternalAtoms") && factory.ctx.config.getOption("ExternalLearning") ) {
+        InterpretationPtr newint(new Interpretation(reg));
+	    IntegrateExternalAnswerIntoInterpretationCB cb(newint);
+        BOOST_FOREACH (ID eatomID, factory.innerEatoms) {
+            const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
+            for (int i = 0; i < eatom.inputs.size(); ++i) {
+                if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+                    factory.ci.predicatesDefinedInComponent.find(eatom.inputs[i]) == factory.ci.predicatesDefinedInComponent.end()) {
+                    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidevalpseudoinnereatom, "Evaluated pseudo-inner eatoms", 1);
+                    evaluateExternalAtom(factory.ctx, eatomID, postprocInput, cb, learnedEANogoods);
+                    updateEANogoods(InterpretationConstPtr());
+                }
+            }
+        }
+    }
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()
@@ -840,7 +857,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause full");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic1, "iIC full");
 
     printUnitInfo("[IR] ");
     DBGLOG(DBG, "[IR] identifyInconsistencyCause");
@@ -865,7 +882,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     ID unknownValueTerm;
     InterpretationConstPtr mrpModel;
     {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause envelope");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic2, "iIC envelope");
         std::vector<ID> mrpProgramIdb;
         InterpretationPtr mrpProgramEdb(new Interpretation(factory.ctx.registry()));
         mrpProgramEdb->add(*guessingProgram.edb);
@@ -915,7 +932,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
     bm::bvector<>::enumerator en, en_end;
     {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause pud");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic3, "iIC pud");
 
         // make the program extensible: add extension rules for atoms defined in this unit which might be underdefined
         PredicateMaskPtr extensionMask(new PredicateMask());
@@ -1110,7 +1127,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
     // run analysis solver
     {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause analysis");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic4, "iIC analysis");
         AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
         analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, nonoptagp, explAtoms));
         en = explAtoms->getStorage().first();
@@ -1129,7 +1146,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
     // learn from successor units
     if (factory.ctx.config.getOption("TransUnitLearning")){
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause learnsucc");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic5, "iIC learnsucc");
         typedef std::pair<Nogood, int> NogoodIntegerPair;
         DBGLOG(DBG, "[IR] Adding nogoods from successor to inconsistency analyzer");
         BOOST_FOREACH (NogoodIntegerPair nip, factory.succNogoods){
@@ -1146,7 +1163,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 #endif
 
     {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic, "identifyInconsistencyCause ic");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic6, "iIC ic");
         inconsistencyCause = analysissolver->getInconsistencyCause(explAtoms);
     }
 
@@ -1162,6 +1179,10 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
         }
     }
     haveInconsistencyCause = true;
+    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidiic7, "iIC causes", 1);
+    if (inconsistencyCause.size() > 0) {
+        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidiic8, "iIC non-empty causes", 1);
+    }
     DBGLOG(DBG, "[IR] Inconsistency of program and real inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
     DBGLOG(DBG, "[IR] Explanation: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
 }
@@ -1310,7 +1331,7 @@ InterpretationConstPtr changed)
     }
 
     // instantiate nonground nogoods
-    if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) {
+    if (factory.ctx.config.getOption("NongroundNogoodInstantiation") && !!compatibleSet) {
         nogoodGrounder->update(compatibleSet, assigned, changed);
     }
 
