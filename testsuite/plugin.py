@@ -573,6 +573,12 @@ def tail(str):
 	else:
 		dlvhex.output(("\"\"", ))
 
+def cnt(p):
+	c = 0
+	for x in dlvhex.getTrueInputAtoms():
+		c = c + 1
+	dlvhex.output((c, ))
+
 def main():
 	h1 = dlvhex.storeAtom(("q", "X"))
 	h2 = dlvhex.storeAtom(("r", "X"))
@@ -685,3 +691,5 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.addWellorderingStrlen(0, 0)
 	dlvhex.addAtom("tail", (dlvhex.CONSTANT, ), 1, prop)
+
+	dlvhex.addAtom("cnt", (dlvhex.PREDICATE, ), 1)
