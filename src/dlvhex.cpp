@@ -1726,7 +1726,7 @@ Config& config, ProgramCtx& pctx)
         pctx.config.setOption("FLPCheck", 1);
         pctx.config.setOption("UFSCheck", 0);
     }
-    if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver")) {
+    if (pctx.config.getOption("LiberalSafety") && !pctx.config.getOption("GenuineSolver") && !pctx.config.getOption("AlphaSolver")) {
         // if solver was not set by user, disable it silently, otherwise print a warning
         if (!solverSet) {
             DBGLOG(WARNING, "Liberal safety is only supported for genuine solvers, will disable it");
