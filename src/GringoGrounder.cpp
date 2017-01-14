@@ -150,7 +150,7 @@ void GringoGrounder::Printer::printAggregate(ID id)
         // translate back to a conditional literal
         print(ID::atomFromLiteral(aatom.literals[aatom.literals.size() - 1]));
         out << " : ";
-        for (int i = 0; i < aatom.literals.size() - 1; ++i) { print(aatom.literals[i]); }
+        for (int i = 0; i < aatom.literals.size() - 1; ++i) { if (i > 0) out << ", "; print(aatom.literals[i]); }
         out << "; x=x";
         return;
     }
