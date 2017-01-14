@@ -174,7 +174,7 @@ struct sem<ConditionalParserModuleSemantics::conditionalLieral>
 
         // count instances of the conditional part which do not fulfill the derived part; this number must be 0
         DBGLOG(DBG, "Creating aggregate #count{ ... : naf derived(...), condition(...) }");
-        AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+        AggregateAtom cnt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE | ID::PROPERTY_AGGREGATE_CONDL );
         cnt.tuple[0] = ID::termFromInteger(0);
         cnt.tuple[1] = ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
         cnt.tuple[2] = ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT);
@@ -186,7 +186,7 @@ struct sem<ConditionalParserModuleSemantics::conditionalLieral>
         cnt.variables.insert(cnt.variables.end(), vars.begin(), vars.end());
         if (!!boost::fusion::at_c<1>(source)) cnt.literals = boost::fusion::at_c<1>(source).get();
         cnt.literals.push_back(ID::nafLiteralFromAtom(derivedAtomID));
-        cntID = reg->aatoms.storeAndGetID(cnt);
+        cntID = reg->aatoms.storeAndGetID(cnt) | ID(ID::PROPERTY_AGGREGATE_CONDL, 0);
         DBGLOG(DBG, "Result: " << printToString<RawPrinter>(cntID, reg));
 
         target = cntID;

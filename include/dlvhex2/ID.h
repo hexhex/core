@@ -165,7 +165,9 @@ private ostream_printable<ID>
     /** \brief See modular HEX. */
     static const IDKind PROPERTY_RULE_UNMODATOMS = 0xFFBFFFFF;
     /** \brief Marks term IDs as range terms of kind a..b (special kind of nested terms). */
-    static const IDKind PROPERTY_TERM_RANGE =     0x00010000;
+    static const IDKind PROPERTY_TERM_RANGE      = 0x00010000;
+    /* Marks that an aggregate was created from a conditional literal. */
+    static const IDKind PROPERTY_AGGREGATE_CONDL = 0x00010000;
 
     /**
      * \brief Encodes that an atom uses an auxiliary predicate.
@@ -531,6 +533,13 @@ private ostream_printable<ID>
      * @return True if the variable is anonymous.
      */
     inline bool isAnonymousVariable() const { assert(isVariableTerm()); return (kind & PROPERTY_VAR_ANONYMOUS) == PROPERTY_VAR_ANONYMOUS; }
+
+    /** \brief Checks for an aggregate atom if is was created from a conditional literal.
+     *
+     * The given ID must be a valid aggregate atom ID.
+     * @return True if the aggregate atom was created from a conditional literal.
+     */
+    inline bool wasCreatedFromConditionalLiteral() const { assert(isAggregateAtom()); return (kind & PROPERTY_AGGREGATE_CONDL) == PROPERTY_AGGREGATE_CONDL; }
 
     /** \brief Comparison of IDs.
      * @param id2 ID to compare to.
