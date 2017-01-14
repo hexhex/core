@@ -146,11 +146,12 @@ void GringoGrounder::Printer::printAggregate(ID id)
     // 4. #agg{...} <= u
     const AggregateAtom& aatom = registry->aatoms.getByID(id);
 
-   if ( (aatom.kind & ID::PROPERTY_AGGREGATE_CONDL) == ID::PROPERTY_AGGREGATE_CONDL) {
+   if ( id.wasCreatedFromConditionalLiteral() ){
         // translate back to a conditional literal
         print(ID::atomFromLiteral(aatom.literals[aatom.literals.size() - 1]));
         out << " : ";
         for (int i = 0; i < aatom.literals.size() - 1; ++i) { print(aatom.literals[i]); }
+        return;
     }
 
     // skipping the domain predicate is only possible when both bounds are specified and equal
