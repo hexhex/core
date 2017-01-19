@@ -1038,11 +1038,11 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
                             // iterate over ground rule instances, extract variable substitution and apply to full rule
                             std::vector<ID> edbAtoms;
-                            bm::bvector<>::enumerator en = currentRuleProgramGround.edb->getStorage().first();
-                            bm::bvector<>::enumerator en_end = currentRuleProgramGround.edb->getStorage().end();
-                            while (en < en_end) {
-                                if (factory.ctx.registry()->ogatoms.getByAddress(*en).tuple[0] == unknownValueTerm) edbAtoms.push_back(factory.ctx.registry()->ogatoms.getIDByAddress(*en));
-                                en++;
+                            bm::bvector<>::enumerator en2 = currentRuleProgramGround.edb->getStorage().first();
+                            bm::bvector<>::enumerator en_end2 = currentRuleProgramGround.edb->getStorage().end();
+                            while (en2 < en_end2) {
+                                if (factory.ctx.registry()->ogatoms.getByAddress(*en2).tuple[0] == unknownValueTerm) edbAtoms.push_back(factory.ctx.registry()->ogatoms.getIDByAddress(*en2));
+                                en2++;
                             }
                             for (int i = 1; i <= 2; ++i) {
                                 std::vector<ID>& matches = (i == 1 ? currentRuleProgramGround.idb : edbAtoms);
