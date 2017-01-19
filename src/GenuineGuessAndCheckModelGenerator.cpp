@@ -956,11 +956,11 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
         bool underdefined;
         while (en < en_end) {
             // next atom
+            atomID = factory.ctx.registry()->ogatoms.getIDByAddress(*en);
             if (!factory.ctx.config.getOption("TransUnitLearningPUD")){
                 underdefined = true;
             }else{
                 underdefined = false;
-                atomID = factory.ctx.registry()->ogatoms.getIDByAddress(*en);
                 DBGLOG(DBG, "[IR] Checking underdefinedness of atom " << printToString<RawPrinter>(atomID, factory.ctx.registry()));
                 const OrdinaryAtom& atom = factory.ctx.registry()->lookupOrdinaryAtom(atomID);
 
