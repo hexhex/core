@@ -869,6 +869,7 @@ Config& config, ProgramCtx& pctx)
         { "csvoutput", required_argument, 0, 61 },
         { "noouterexternalatoms", no_argument, 0, 62 },
         { "transunitlearning", no_argument, 0, 64 },
+        { "transunitlearningpud", no_argument, 0, 68 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
@@ -1678,6 +1679,16 @@ Config& config, ProgramCtx& pctx)
                     pctx.config.setOption("NoOuterExternalAtoms", 1);
                     pctx.config.setOption("LiberalSafety", 1);
                     pctx.config.setOption("TransUnitLearning", 1);
+                    pctx.config.setOption("TransUnitLearningPUD", 0);
+                }
+                break;
+            case 68:
+                {
+                    pctx.config.setOption("ForceGC", 1);
+                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+                    pctx.config.setOption("LiberalSafety", 1);
+                    pctx.config.setOption("TransUnitLearning", 1);
+                    pctx.config.setOption("TransUnitLearningPUD", 1);
                 }
                 break;
             case 65:

@@ -160,6 +160,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     // forces all external atoms to be treated as inner
     config.setOption("NoOuterExternalAtoms", 0);
     config.setOption("TransUnitLearning", 0);
+    config.setOption("TransUnitLearningPUD", 0);
     config.setOption("ExternalAtomVerificationFromLearnedNogoods", 0);
     config.setOption("WaitOnModel", 0);
 
