@@ -279,8 +279,37 @@ guessingProgram(factory.reg)
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
-        InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms /*, true, factory.ctx.config.getOption("TransUnitLearning")*/);
+
+        // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
+        std::vector<ID> pseudoInnerExternalAtoms;
+        if( factory.ctx.config.getOption("NoOuterExternalAtoms") && factory.ctx.config.getOption("ExternalLearning") ) {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtulearning, "genuine g&c evaluate pseudo-inner external atoms");
+            BOOST_FOREACH (ID eatomID, factory.innerEatoms) {
+                const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
+                bool isPseudoInner = true;
+                for (int i = 0; i < eatom.inputs.size(); ++i) {
+                    if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+                        factory.ci.predicatesDefinedInComponent.find(eatom.inputs[i]) != factory.ci.predicatesDefinedInComponent.end()) {
+                        isPseudoInner = false; // is actually an inner external atom
+                        break;
+                    }
+                }
+                if (isPseudoInner) {
+                    pseudoInnerExternalAtoms.push_back(eatomID);
+                }
+            }
+        }
+
+        InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms, pseudoInnerExternalAtoms);
         postprocInput->add(*domPredictaesExtension);
+
+        // evaluate pseudo-inner external atoms
+        BOOST_FOREACH (ID eatomID, pseudoInnerExternalAtoms) {
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidevalpseudoinnereatom, "Evaluated pseudo-inner eatoms", 1);
+            InterpretationPtr newint(new Interpretation(reg));
+            IntegrateExternalAnswerIntoInterpretationCB cb(newint);
+            evaluateExternalAtom(factory.ctx, eatomID, postprocInput, cb, learnedEANogoods);
+        }
     }
 
     // evaluate edb+xidb+gidb
@@ -304,7 +333,7 @@ guessingProgram(factory.reg)
 
         // run solver
         solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
-	    if (solverAssumptions.size() > 0) solver->restartWithAssumptions(solverAssumptions);
+        if (solverAssumptions.size() > 0) solver->restartWithAssumptions(solverAssumptions);
     }
 
     {
@@ -364,23 +393,7 @@ guessingProgram(factory.reg)
     initializeHeuristics();
     initializeVerificationWatchLists();
 
-    // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
-    if( factory.ctx.config.getOption("NoOuterExternalAtoms") && factory.ctx.config.getOption("ExternalLearning") ) {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidtulearning, "genuine g&c evaluate pseudo-inner external atoms");
-        InterpretationPtr newint(new Interpretation(reg));
-	    IntegrateExternalAnswerIntoInterpretationCB cb(newint);
-        BOOST_FOREACH (ID eatomID, factory.innerEatoms) {
-            const ExternalAtom& eatom = reg->eatoms.getByID(eatomID);
-            for (int i = 0; i < eatom.inputs.size(); ++i) {
-                if (eatom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
-                    factory.ci.predicatesDefinedInComponent.find(eatom.inputs[i]) == factory.ci.predicatesDefinedInComponent.end()) {
-                    DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidevalpseudoinnereatom, "Evaluated pseudo-inner eatoms", 1);
-                    evaluateExternalAtom(factory.ctx, eatomID, postprocInput, cb, learnedEANogoods);
-                    updateEANogoods(InterpretationConstPtr());
-                }
-            }
-        }
-    }
+    updateEANogoods(InterpretationConstPtr());
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator()

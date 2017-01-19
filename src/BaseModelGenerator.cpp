@@ -1110,7 +1110,7 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 }
 
 
-InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic)
+InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, std::vector<ID> pseudoInnerEatoms)
 {
 
     RegistryPtr reg = ctx.registry();
@@ -1213,11 +1213,10 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(Pr
             }
 
             typedef std::pair<IDAddress, bool> Pair;
-            if (!enumerateNonmonotonic) {
+            if (std::find(pseudoInnerEatoms.begin(), pseudoInnerEatoms.end(), ID::atomFromLiteral(eaid)) != pseudoInnerEatoms.end()) {
                 // evalute external atom
-                DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input << " (do not enumerate nonmonotonic input assignments due to user request)");
-                BOOST_FOREACH (Pair p, nonmonotonicinput) input->clearFact(p.first);
-                evaluateExternalAtom(ctx, eaid, input, cb);
+                DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *edb << " (do not enumerate nonmonotonic input assignments since it is only a pseudo-inner external atom)");
+                evaluateExternalAtom(ctx, eaid, edb, cb);
             }
             else {
                 DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
