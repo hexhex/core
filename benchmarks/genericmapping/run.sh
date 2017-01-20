@@ -15,6 +15,6 @@ else
 	# run single instance
 	confstr=";--heuristics=monolithic;--transunitlearning;--transunitlearning --transunitlearningpud"
 
-	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --silent mapping.hex --ngminimization=always --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
+	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --silent mapping.hex --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
 fi
 
