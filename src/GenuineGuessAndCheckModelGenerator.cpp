@@ -1120,14 +1120,12 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
                                     if (underdefined) break;
                                  }
                                  if (underdefined) break;
-                             }
-                             if (underdefined) break;
+                            }
                         }
                         if (underdefined) break;
                     }
                     if (underdefined) break;
                 }
-                if (underdefined) break;
             }
 
             if (underdefined) {
