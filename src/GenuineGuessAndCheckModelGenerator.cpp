@@ -276,6 +276,10 @@ guessingProgram(factory.reg)
 */
     }
 
+    // external learning related initialization
+     learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+    analysissolverNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+ 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
@@ -304,12 +308,15 @@ guessingProgram(factory.reg)
         postprocInput->add(*domPredictaesExtension);
 
         // evaluate pseudo-inner external atoms
+        int mnsetting = factory.ctx.config.getOption("MinimizeNogoods");
+        factory.ctx.config.setOption("MinimizeNogoods", 1);
         BOOST_FOREACH (ID eatomID, pseudoInnerExternalAtoms) {
             DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidevalpseudoinnereatom, "Evaluated pseudo-inner eatoms", 1);
             InterpretationPtr newint(new Interpretation(reg));
             IntegrateExternalAnswerIntoInterpretationCB cb(newint);
             evaluateExternalAtom(factory.ctx, eatomID, postprocInput, cb, learnedEANogoods);
         }
+        factory.ctx.config.setOption("MinimizeNogoods", mnsetting);
     }
 
     // evaluate edb+xidb+gidb
@@ -371,9 +378,7 @@ guessingProgram(factory.reg)
         }
     }
 
-    // external learning related initialization
-    learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-    analysissolverNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+    // support sets and nonground nogoods initialization
     learnedEANogoodsTransferredIndex = 0;
     nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
     if(factory.ctx.config.getOption("NoPropagator") == 0) {
