@@ -221,18 +221,43 @@ guessingProgram(factory.reg)
     // remember which facts we must remove
     mask.reset(new Interpretation(*postprocInput));
 
+    // external learning related initialization
+    learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+    analysissolverNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
+
     // manage outer external atoms
+    std::vector<ID> factGuessing;
     if( !factory.outerEatoms.empty() ) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder out EA GenGnCMG");
 
-        // augment input with result of external atom evaluation
-        // use newint as input and as output interpretation
-        IntegrateExternalAnswerIntoInterpretationCB cb(postprocInput);
-        evaluateExternalAtoms(factory.ctx,
-            factory.outerEatoms, postprocInput, cb);
-        DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
-            "outer eatom computations");
-        DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
+        // with trans-unit learning, outer external atoms must not be facts to make sure that inconsistency analysis finds the reasons for them being true
+        if (factory.ctx.config.getOption("TransUnitLearning")){
+            InterpretationPtr oea(new Interpretation(reg));
+            IntegrateExternalAnswerIntoInterpretationCB cb(oea);
+            evaluateExternalAtoms(factory.ctx, factory.outerEatoms, postprocInput, cb, learnedEANogoods);
+            DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps, "outer eatom computations");
+            DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
+
+            bm::bvector<>::enumerator en = oea->getStorage().first();
+            bm::bvector<>::enumerator en_end = oea->getStorage().end();
+            while (en < en_end) {
+                // add guessing rules
+                Rule oeaGuess(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ);
+                oeaGuess.head.push_back(reg->ogatoms.getIDByAddress(*en));
+                oeaGuess.head.push_back(reg->swapExternalAtomAuxiliaryAtom(oeaGuess.head[0]));
+                oeaGuess.head.push_back(reg->ogatoms.getIDByAddress(*en));
+                ID oeaGuessID = reg->storeRule(oeaGuess);
+                factGuessing.push_back(oeaGuessID);
+                en++;
+            }
+        }else{
+            // augment input with result of external atom evaluation
+            // use newint as input and as output interpretation
+            IntegrateExternalAnswerIntoInterpretationCB cb(postprocInput);
+            evaluateExternalAtoms(factory.ctx, factory.outerEatoms, postprocInput, cb);
+            DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps, "outer eatom computations");
+            DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
+        }
     }
 
     // assign to const member -> this value must stay the same from here on!
@@ -241,6 +266,7 @@ guessingProgram(factory.reg)
     // construct guessing program
     guessingProgram = OrdinaryASPProgram(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
     guessingProgram.idb.insert(guessingProgram.idb.end(), factory.gidb.begin(), factory.gidb.end());
+    guessingProgram.idb.insert(guessingProgram.idb.end(), factGuessing.begin(), factGuessing.end());
 
     // identify explanation atoms
 //    InterpretationPtr deinput(new Interpretation(reg));
@@ -276,14 +302,10 @@ guessingProgram(factory.reg)
 */
     }
 
-    // external learning related initialization
-     learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
-    analysissolverNogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
- 
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
-
+/*
         // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
         std::vector<ID> pseudoInnerExternalAtoms;
         if( factory.ctx.config.getOption("NoOuterExternalAtoms") && factory.ctx.config.getOption("ExternalLearning") ) {
@@ -303,13 +325,15 @@ guessingProgram(factory.reg)
                 }
             }
         }
+*/
 
-        InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms, pseudoInnerExternalAtoms);
+        InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocInput, factory.deidb, factory.deidbInnerEatoms /*, pseudoInnerExternalAtoms*/);
         postprocInput->add(*domPredictaesExtension);
 
+/*
         // evaluate pseudo-inner external atoms
         int mnsetting = factory.ctx.config.getOption("MinimizeNogoods");
-        factory.ctx.config.setOption("MinimizeNogoods", 1);
+//        factory.ctx.config.setOption("MinimizeNogoods", 1);
         BOOST_FOREACH (ID eatomID, pseudoInnerExternalAtoms) {
             DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidevalpseudoinnereatom, "Evaluated pseudo-inner eatoms", 1);
             InterpretationPtr newint(new Interpretation(reg));
@@ -317,6 +341,7 @@ guessingProgram(factory.reg)
             evaluateExternalAtom(factory.ctx, eatomID, postprocInput, cb, learnedEANogoods);
         }
         factory.ctx.config.setOption("MinimizeNogoods", mnsetting);
+*/
     }
 
     // evaluate edb+xidb+gidb
@@ -846,15 +871,19 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         LOG_SCOPE(DBG,"gM", false);
         LOG(DBG,"got guess model, will do compatibility check on " << *modelCandidate);
         if (!finalCompatibilityCheck(modelCandidate)) {
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfcc, "Failed final comp. checks", 1);
             LOG(DBG,"compatibility failed");
             continue;
         }
+        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidscc, "Succ. final comp. checks", 1);
 
         LOG(DBG, "Checking if model candidate is a model");
         if (!isModel(modelCandidate)) {
             LOG(DBG,"isModel failed");
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfmc, "Failed final min. checks", 1);
             continue;
         }
+        DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidsmc, "Succ. final min. checks", 1);
 
         // remove edb and the guess (from here we don't need the guess anymore)
         {

@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "instances/inst_*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
 else
 	# run single instance
-	confstr=";--heuristics=monolithic;--transunitlearning;--transunitlearning --transunitlearningpud"
+	confstr=";--heuristics=monolithic;--transunitlearning --ngminimization=always;--transunitlearning --transunitlearningpud --ngminimization=always"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --silent post.hex --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
 fi

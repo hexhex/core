@@ -1676,7 +1676,7 @@ Config& config, ProgramCtx& pctx)
             case 64:
                 {
                     pctx.config.setOption("ForceGC", 1);
-                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+//                    pctx.config.setOption("NoOuterExternalAtoms", 1);
                     pctx.config.setOption("LiberalSafety", 1);
                     pctx.config.setOption("TransUnitLearning", 1);
                     pctx.config.setOption("TransUnitLearningPUD", 0);
@@ -1685,7 +1685,7 @@ Config& config, ProgramCtx& pctx)
             case 68:
                 {
                     pctx.config.setOption("ForceGC", 1);
-                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+//                    pctx.config.setOption("NoOuterExternalAtoms", 1);
                     pctx.config.setOption("LiberalSafety", 1);
                     pctx.config.setOption("TransUnitLearning", 1);
                     pctx.config.setOption("TransUnitLearningPUD", 1);
