@@ -1,14 +1,17 @@
 % Post office problem
 %
 % A set of locations (towns, villages) L is to be partitioned into a number of postal regions R; each region is assigned a postal (zip) code and a post office. The number of available postal codes resp. offices is limited.
-% As side constraints, only adjacent locations can be assigned to the same region, and the number of locations belonging to the same region is limited due maximum capacities of post offices.
+% As side constraints, locations in a region must be connected, and the number of locations belonging to the same region is limited due maximum capacities of post offices.
 
 % assign each location to a post office
 assign(L, R) : region(R) :- location(L).
 
 % regions must be connected
 adjacent(L2, L1) :- adjacent(L1, L2).
-:- assign(L1, R), assign(L2, R), not adjacent(L1, L2).
+path(L1, L2) :- adjacent(L1, L2), assign(L1, R), assign(L2, R).
+path(L1, L3) :- path(L1, L2), path(L2, L3), assign(L1, R), assign(L2, R).
+:- assign(L1, R), assign(L2, R), L1 != L2, not path(L1, L2).
 
 % check capacities of post offices
-:- &getSize[assign](R, S), maxSize(R, M), S > M.
+%sizes(R, S) :- &getSizes[assign](R, S).
+:- &getSizes[assign](R, S), maxSize(R, M), S > M.

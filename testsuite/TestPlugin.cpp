@@ -2915,6 +2915,63 @@ public:
             }
     };
 
+    class GetSizesAtom : public PluginAtom
+    {
+        public:
+            GetSizesAtom() : PluginAtom("getSizes", false)
+            {
+                addInputPredicate();
+                setOutputArity(2);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+
+                // for all input atoms
+                std::vector<ID> keys;
+                typedef boost::unordered_map<ID, int> map;
+                map trueCount, unknownCount;
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+                    if (ogatom.tuple[0] == query.input[0]){
+                        if (ogatom.tuple.size() != 3) { throw PluginError("Input must be of arity 2"); }
+                        keys.push_back(ogatom.tuple[2]);
+                        if ( (!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en) ) {
+                            trueCount[ogatom.tuple[2]]++;
+                        }else if (!!query.assigned && !query.assigned->getFact(*en)){
+                            unknownCount[ogatom.tuple[2]]++;
+                        }
+                    }
+                    en++;
+                }
+
+                BOOST_FOREACH (ID k, keys) {
+                    int min = trueCount[k];
+                    int max = min + unknownCount[k];
+                    if (min == max) {
+                        Tuple t;
+                        t.push_back(k);
+                        t.push_back(ID::termFromInteger(min));
+                        answer.get().push_back(t);
+                    }else{
+                        for (int i = min; i <= max; i++) {
+                            Tuple t;
+                            t.push_back(k);
+                            t.push_back(ID::termFromInteger(i));
+                            answer.getUnknown().push_back(t);
+                        }
+                    }
+                }
+            }
+    };
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2978,6 +3035,7 @@ public:
     ret.push_back(PluginAtomPtr(new SumNonZeroAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new ProductionRequirementsAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new MappingAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new GetSizesAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

@@ -81,8 +81,8 @@ region(r2).
 region(r3).
 region(r4).
 
-maxSize(r1, 6).
-maxSize(r1, 6).
-maxSize(r2, 6).
-maxSize(r3, 6).
-maxSize(r4, 6).
+maxSize(r1, 8).
+maxSize(r1, 8).
+maxSize(r2, 8).
+maxSize(r3, 7).
+maxSize(r4, 7).
