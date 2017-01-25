@@ -1202,7 +1202,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
             assumptions.push_back((!!unitInput && unitInput->getFact(*en)) || factory.ctx.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
             en++;
         }
-        DBGLOG(DBG, "[IR] Adding assumptions " << printManyToString<RawPrinter>(assumptions, ",", factory.ctx.registry()) << " (unit input: " << *unitInput << ", explanation atoms: " << *explAtoms << ")");
+        DBGLOG(DBG, "[IR] Adding assumptions " << printManyToString<RawPrinter>(assumptions, ",", factory.ctx.registry()));
         analysissolver->restartWithAssumptions(assumptions);
         for (int i = 0; i < analysissolverNogoods->getNogoodCount(); ++i) {
             DBGLOG(DBG, "[IR] Adding learned nogood from to inconsistency analyzer: " << analysissolverNogoods->getNogood(i).getStringRepresentation(factory.ctx.registry()));
