@@ -975,7 +975,6 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
             }
             BOOST_FOREACH (ID b, rule.body) {
 	            if (b.isNaf() || b.isExternalAtom() || b.isExternalAuxiliary()) continue;
-DBGLOG(DBG, "-->" << b << ": " << printToString<RawPrinter>(b, factory.ctx.registry()));
                 OrdinaryAtom oatom = factory.ctx.registry()->lookupOrdinaryAtom(b);
                 for (int i = 0; i < oatom.tuple.size(); ++i) {
                     if (oatom.tuple[i].isVariableTerm() && bodyVars.find(oatom.tuple[i]) == bodyVars.end()) {
