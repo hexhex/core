@@ -4,13 +4,16 @@
 % As side constraints, locations in a region must be connected, and the number of locations belonging to the same region is limited due maximum capacities of post offices.
 
 % assign each location to a post office
-assign(L, R) : region(R) :- location(L).
+assign(L, R) v nassign(L, R) :- location(L), region(R).
+assigned(L) :- assign(L, R).
+:- location(L), not assigned(L).
+:- assign(L, R1), assign(L, R2), R1 != R2.
 
 % regions must be connected
 adjacent(L2, L1) :- adjacent(L1, L2).
 path(L1, L2) :- adjacent(L1, L2), assign(L1, R), assign(L2, R).
 path(L1, L3) :- path(L1, L2), path(L2, L3), assign(L1, R), assign(L2, R).
-:- assign(L1, R), assign(L2, R), L1 != L2, not path(L1, L2).
+%:- assign(L1, R), assign(L2, R), L1 != L2, not path(L1, L2).
 
 % check capacities of post offices
 %sizes(R, S) :- &getSizes[assign](R, S).

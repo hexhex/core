@@ -1,0 +1,16 @@
+% Product portfolio problem
+%
+% We want to acquire a set of companies which produce various products.
+% Notably, the set of offered products depends on the whole set of acquired companies and already produced products.
+% This is because of cooperations between companies and dependencies in the production plan: a certain product can only be produced if a combination of companies is in the selection.
+% On the other hand, buying an additional company or offering an additional product may cause other products to be not offered anymore because they may now be needed as intermediate goods in the production process.
+% Side constraints define produces which must resp. must not be offered.
+% A solution is a selection of companies to buy.
+
+% select companies to buy
+buy(C) v nbuy(C) :- company(C).
+
+% determine product portfolio
+in(C) :- buy(C).
+in(P) :- product(P).
+product(P) :- &mapping[in, productionplan](P)<finitedomain>.

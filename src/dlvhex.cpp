@@ -366,6 +366,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)." << std::endl
         << "     --constspace     Free partial models immediately after using them. This may cause some models." << std::endl
         << "                      to be computed multiple times. (Not with monolithic.)" << std::endl
+        << "     --transunitlearning" << std::endl
+        << "                      Analyze inconsistent units and propagate reasons to predecessor units." << std::endl
+        << "     --transunitlearningpud" << std::endl
+        << "                      Use more elaborated analysis method to determine possible more inconsistent reasons." << std::endl
+        << "     --transunitlearningonestep" << std::endl
+        << "                      Use unoptimized solver from the beginning (slower solving, but faster inconsistency analysis)." << std::endl
 
         << std::endl << "Debugging and General Options:" << std::endl
         << "     --dumpevalplan=F Dump evaluation plan (usable as manual heuristics) to file F." << std::endl
@@ -870,6 +876,8 @@ Config& config, ProgramCtx& pctx)
         { "noouterexternalatoms", no_argument, 0, 62 },
         { "transunitlearning", no_argument, 0, 64 },
         { "transunitlearningpud", no_argument, 0, 68 },
+        { "transunitlearningonestep", no_argument, 0, 69 },
+        { "transunitlearningdumpnogoods", no_argument, 0, 70 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
@@ -1684,11 +1692,17 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 68:
                 {
-                    pctx.config.setOption("ForceGC", 1);
-//                    pctx.config.setOption("NoOuterExternalAtoms", 1);
-                    pctx.config.setOption("LiberalSafety", 1);
-                    pctx.config.setOption("TransUnitLearning", 1);
                     pctx.config.setOption("TransUnitLearningPUD", 1);
+                }
+                break;
+            case 69:
+                {
+                    pctx.config.setOption("TransUnitLearningOS", 1);
+                }
+                break;
+            case 70:
+                {
+                    pctx.config.setOption("TransUnitLearningDN", 1);
                 }
                 break;
             case 65:

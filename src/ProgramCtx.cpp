@@ -161,6 +161,8 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("NoOuterExternalAtoms", 0);
     config.setOption("TransUnitLearning", 0);
     config.setOption("TransUnitLearningPUD", 0);
+    config.setOption("TransUnitLearningOS", 0);
+    config.setOption("TransUnitLearningDN", 0);
     config.setOption("ExternalAtomVerificationFromLearnedNogoods", 0);
     config.setOption("WaitOnModel", 0);
 

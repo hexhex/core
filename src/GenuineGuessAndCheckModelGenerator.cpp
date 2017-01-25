@@ -348,8 +348,13 @@ guessingProgram(factory.reg)
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"genuine g&c init guessprog");
         DBGLOG(DBG,"evaluating guessing program");
-       
-        grounder = GenuineGrounder::getInstance(factory.ctx, guessingProgram);
+
+        if (factory.ctx.config.getOption("TransUnitLearningOS")){
+            DBGLOG(DBG, "Using unoptimized grounder due to one-step trans-unit learning");
+            grounder.reset(new InternalGrounder(factory.ctx, guessingProgram, InternalGrounder::builtin));
+        }else{
+            grounder = GenuineGrounder::getInstance(factory.ctx, guessingProgram);
+        }
         OrdinaryASPProgram gp = grounder->getGroundProgram();
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
         if (!!gp.mask) mask->add(*gp.mask);
@@ -364,7 +369,11 @@ guessingProgram(factory.reg)
         }
 
         // run solver
+//        if (factory.ctx.config.getOption("TransUnitLearningOS")){
+//            DBGLOG(DBG, "Using unoptimized solver due to one-step trans-unit learning");
+//        }else{
         solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
+//        }
         if (solverAssumptions.size() > 0) solver->restartWithAssumptions(solverAssumptions);
     }
 
@@ -913,12 +922,15 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     DBGLOG(DBG, "[IR] Explanation atoms: " << *explAtoms << std::endl);
 
     // non-optimized grounding
-    OrdinaryASPProgram enrichedProgram = guessingProgram;
     DBGLOG(DBG, "[IR] Grounding program for inconsistency analysis without optimizations:" << std::endl <<
-                "[IR]     " << *enrichedProgram.edb << std::endl <<
-                "[IR]     " << printManyToString<RawPrinter>(enrichedProgram.idb, "\n[IR]     ", factory.ctx.registry()));
-    InternalGrounder nonOptimizedGrounder(factory.ctx, enrichedProgram, InternalGrounder::builtin);
-    OrdinaryASPProgram nonoptgp = nonOptimizedGrounder.getGroundProgram();
+                "[IR]     " << *guessingProgram.edb << std::endl <<
+                "[IR]     " << printManyToString<RawPrinter>(guessingProgram.idb, "\n[IR]     ", factory.ctx.registry()));
+    OrdinaryASPProgram nonoptgp = grounder->getGroundProgram();
+    if (!factory.ctx.config.getOption("TransUnitLearningOS")){
+        // we can reuse the existing grounding since it is unoptimized
+        InternalGrounder nonOptimizedGrounder(factory.ctx, guessingProgram, InternalGrounder::builtin);
+        nonoptgp = nonOptimizedGrounder.getGroundProgram();
+    }
     if (!!nonoptgp.mask) mask->add(*nonoptgp.mask);
     nonoptgp.mask = InterpretationConstPtr();
     DBGLOG(DBG, "[IR] Unoptimized ground program for inconsistency analysis:" << std::endl <<
@@ -1236,6 +1248,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     if (inconsistencyCause.size() > 0) {
         DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidiic8, "iIC non-empty causes", 1);
     }
+    if (factory.ctx.config.getOption("TransUnitLearningDN")) { std::cerr << "Learned inconsistency reason: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl; }
     DBGLOG(DBG, "[IR] Inconsistency of program and real inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
     DBGLOG(DBG, "[IR] Explanation: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
 }
