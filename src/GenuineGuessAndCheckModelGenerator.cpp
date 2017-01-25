@@ -958,7 +958,7 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
             rule2.head.push_back(ID_FAIL);
             std::set<ID> bodyVars;
 	        BOOST_FOREACH (ID b, rule.body) {
-	            if (!b.isNaf() && !b.isExternalAuxiliary()) rule2.body.push_back(b);
+	            if (!b.isNaf() && !b.isExternalAtom() && !b.isExternalAuxiliary()) rule2.body.push_back(b);
                 factory.ctx.registry()->getVariablesInID(b, bodyVars);
 	        }
 
@@ -974,7 +974,8 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
                 mrpProgramIdb.push_back(factory.ctx.registry()->storeRule(rule2));
             }
             BOOST_FOREACH (ID b, rule.body) {
-	            if (!b.isNaf() || b.isExternalAuxiliary()) continue;
+	            if (b.isNaf() || b.isExternalAtom() || b.isExternalAuxiliary()) continue;
+DBGLOG(DBG, "-->" << b << ": " << printToString<RawPrinter>(b, factory.ctx.registry()));
                 OrdinaryAtom oatom = factory.ctx.registry()->lookupOrdinaryAtom(b);
                 for (int i = 0; i < oatom.tuple.size(); ++i) {
                     if (oatom.tuple[i].isVariableTerm() && bodyVars.find(oatom.tuple[i]) == bodyVars.end()) {

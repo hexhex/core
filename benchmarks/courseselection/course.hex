@@ -1,0 +1,12 @@
+% Course selection problem
+%
+% A student must select courses from a set. Each selection is associated with a set of properties, which must be checked by the dean.
+
+% select courses
+select(C) v nselect(C) :- course(C).
+
+% get properties
+property(P) :- &mapping[select, courseProperties](P).
+
+% check by dean
+:- not &mapping[property, checkCriteria](ok).
