@@ -1195,10 +1195,11 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic4, "iIC analysis");
         AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
         analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, nonoptagp, explAtoms));
+        DBGLOG(DBG, "[ID] Defining assumptions");
         en = explAtoms->getStorage().first();
         en_end = explAtoms->getStorage().end();
         while (en < en_end) {
-            assumptions.push_back(unitInput->getFact(*en) || factory.ctx.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
+            assumptions.push_back((!!unitInput && unitInput->getFact(*en)) || factory.ctx.edb->getFact(*en) ? ID::posLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)) : ID::nafLiteralFromAtom(factory.ctx.registry()->ogatoms.getIDByAddress(*en)));
             en++;
         }
         DBGLOG(DBG, "[IR] Adding assumptions " << printManyToString<RawPrinter>(assumptions, ",", factory.ctx.registry()) << " (unit input: " << *unitInput << ", explanation atoms: " << *explAtoms << ")");

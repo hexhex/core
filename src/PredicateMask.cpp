@@ -208,7 +208,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     setRegistry(reg);
     outputAtoms.reset(new Interpretation(reg));
     auxInputMask.reset(new Interpretation(reg));
-
+DBGLOG(DBG, "1");
     // positive and negative replacement predicates for this eatom
     ID posreplacement = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
     ID negreplacement = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
@@ -219,7 +219,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
     ctx.config.getOption("IncludeAuxInputInAuxiliaries") ) {
         preparedTuple.push_back(eatom.auxInputPredicate);
     }
-
+DBGLOG(DBG, "2");
     //
     // inputs
     //
@@ -240,7 +240,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
         }
         i++;
     }
-
+DBGLOG(DBG, "3");
     //
     // outputs
     //
