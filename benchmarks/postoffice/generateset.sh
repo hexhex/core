@@ -15,8 +15,14 @@ do
 		locations=$size
                 regions=$(expr $size / 5 + 1)
 		adjprop=10
-		maxsize=$(expr $size / 3 + 1)
-		./generate.sh $locations $regions $adjprop $maxsize > "instances/inst_size_${size}_inst_${inst}.hex"
+                tagdomsize=$(expr $size / 5 + 1)
+                maxdepsets=$(expr $size + $size / 2)
+                tagprop=50
+                depprop=10
+                maxcons=$(expr $size \* 2)
+                consprop=50
+                conselemprop=30
+		./generate.sh $locations $regions $adjprop $tagdomsize $maxdepsets $tagprop $depprop $maxcons $consprop $conselemprop > "instances/inst_size_${size}_inst_${inst}.hex"
 	done
 done
 

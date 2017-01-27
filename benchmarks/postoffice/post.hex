@@ -15,6 +15,6 @@ path(L1, L2) :- adjacent(L1, L2), assign(L1, R), assign(L2, R).
 path(L1, L3) :- path(L1, L2), path(L2, L3), assign(L1, R), assign(L2, R).
 %:- assign(L1, R), assign(L2, R), L1 != L2, not path(L1, L2).
 
-% check capacities of post offices
-%sizes(R, S) :- &getSizes[assign](R, S).
-:- &getSizes[assign](R, S), maxSize(R, M), S > M.
+% check capacities of post offices (part of the instances)
+%assign_i(L) :- assign(L, R_i).
+%:- &mapping[assign_i,complexity](high).

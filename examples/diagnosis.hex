@@ -1,0 +1,16 @@
+% We consider the following diagnosis problem <P,H,O>:
+% P is a program, H is a set of atoms (hypotheses) and O is a set of atoms (observations).
+% A solution of <P,H,O> (diagnosis) is a set D \subseteq H, such that P \cup D \models_brave O.
+%
+% We are interested in the intersection of all diagnosis, which resembles a selection of hypotheses,
+% which are needed in any case to explain the observations.
+% To this end, &getDiagnoses computes this intersection as follows:
+% For every hypothesis atom h in H
+%  (h, 1) is in the output if h is in every diagnosis (and there exists at least one diagnosis),
+%  (h, 0) is in the output if h is not in every diagnosis (but there exists at least one diagnosis),
+%  (h, 2) is in the output if there is no diagnosis at all.
+hyp(a).
+hyp(b).
+obs(x). % v n.
+obs(z) v t.
+diagnoses(A,S) :- &getDiagnoses["obs(x) :- hyp(a).", hyp, obs](A,S).

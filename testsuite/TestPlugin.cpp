@@ -2972,6 +2972,160 @@ public:
             }
     };
 
+    class GetDiagnosesAtom : public PluginAtom
+    {
+        private:
+            ProgramCtx ctx;
+
+        public:
+            GetDiagnosesAtom(ProgramCtx& ctx) : PluginAtom("getDiagnoses", false), ctx(ctx)
+            {
+                addInputConstant();        // program
+                addInputPredicate();       // hypotheses
+                addInputPredicate();       // observation
+                setOutputArity(2);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                RegistryPtr reg = getRegistry();
+
+                // read the subprogram from the string constant
+                InputProviderPtr ip(new InputProvider());
+                ip->addStringInput(reg->terms.getByID(query.input[0]).getUnquotedString(), "program");
+
+                ProgramCtx pc = ctx;
+                pc.idb.clear();
+                pc.edb = InterpretationPtr(new Interpretation(reg));
+                pc.currentOptimum.clear();
+                pc.config.setOption("NumberOfModels",0);
+                pc.inputProvider = ip;
+                ip.reset();
+
+                bool allObsAssigned = true;
+
+                // add guesses over the hypotheses and constraints over the observations
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry->ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry->ogatoms.getByID(id);
+
+                    if (ogatom.tuple[0] == query.input[1]) {
+                        // hypotheses must be known, otherwise we cannot tell anything
+                        if (!!query.assigned && !query.assigned->getFact(*en)) return;
+
+                        // hypothesis
+                        if (query.interpretation->getFact(*en)) {
+                            Rule guess(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+                            guess.head.push_back(id);
+                            guess.head.push_back(registry->getAuxiliaryAtom('x', id));
+                            pc.idb.push_back(registry->storeRule(guess));
+                        }
+                    }
+                    if (ogatom.tuple[0] == query.input[2]) {
+                        // observation
+
+                        // already known?
+                        if (!query.assigned || query.assigned->getFact(*en)) {
+                            Rule cons(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+                            cons.body.push_back(query.interpretation->getFact(*en) ? ID::nafLiteralFromAtom(id) : ID::posLiteralFromAtom(id));
+                            pc.idb.push_back(registry->storeRule(cons));
+                        }else{
+                            // no: guess observation
+                            Rule guess(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+                            guess.head.push_back(id);
+                            guess.head.push_back(registry->getAuxiliaryAtom('x', id));
+                            pc.idb.push_back(registry->storeRule(guess));
+                            allObsAssigned = false;
+                        }
+                    }
+                    en++;
+                }
+
+                // compute all answer sets of P \cup F
+                std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
+
+                // get hypothesis which are true in all resp. at least one diagnoses
+                InterpretationPtr trueInAll(new Interpretation(reg));
+                InterpretationPtr trueInOne(new Interpretation(reg));
+                if (answersets.size() > 0) { trueInAll->getStorage() |= answersets[0]->getStorage(); }
+                BOOST_FOREACH (InterpretationPtr answerset, answersets) {
+                    trueInAll->getStorage() &= answerset->getStorage();
+                    trueInOne->getStorage() |= answerset->getStorage();
+                }
+
+                // for all hypotheses
+                en = query.predicateInputMask->getStorage().first();
+                en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry->ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry->ogatoms.getByID(id);
+                    if (ogatom.tuple[0] == query.input[1]) {
+                        // if it is true in all diagnoses, it is certainly true
+                        if (trueInAll->getFact(id.address)) {
+                            Tuple t;
+                            t.push_back(id);
+                            t.push_back(ID::termFromInteger(1));
+                            answer.get().push_back(t);
+                        }
+                        // otherwise, if it is true in at least one diagnosis, it can be true
+                        else if (trueInOne->getFact(id.address)) {
+                            // if all observations have been assigned, then different hypotheses have different opinions about id
+                            if (allObsAssigned) {
+                                Tuple t;
+                                t.push_back(id);
+                                t.push_back(ID::termFromInteger(answersets.size() == 0 ? 2 : 0));
+                                answer.get().push_back(t);
+                            }else{
+                                // otherwise we do not know yet
+                                Tuple t;
+                                t.push_back(id);
+                                t.push_back(ID::termFromInteger(1));
+                                answer.getUnknown().push_back(t);
+                                t[1] = ID::termFromInteger(0);
+                                answer.getUnknown().push_back(t);
+                                t[2] = ID::termFromInteger(0);
+                                answer.getUnknown().push_back(t);
+                            }
+                        }
+                        // otherwise, it is false in all diagnoses and therefore certainly false
+                        else {
+                            Tuple t;
+                            t.push_back(id);
+                            t.push_back(ID::termFromInteger(answersets.size() == 0 ? 2 : 0));
+                            answer.get().push_back(t);
+                        }
+                    }
+                    en++;
+                }
+
+#if 0
+                // extract intersection of diagnoses
+                int diagnosisNr = 0;
+                BOOST_FOREACH (InterpretationPtr answerset, answersets) {
+                    bm::bvector<>::enumerator en = answerset->getStorage().first();
+                    bm::bvector<>::enumerator en_end = answerset->getStorage().end();
+                    while (en < en_end) {
+                        ID id = registry->ogatoms.getIDByAddress(*en);
+                        const OrdinaryAtom& ogatom = registry->ogatoms.getByID(id);
+                        if (ogatom.tuple[0] == query.input[1]) {
+                            Tuple t;
+                            t.push_back(ID::termFromInteger(diagnosisNr));
+                            t.push_back(id);
+                            answer.get().push_back(t);
+                        }
+                        en++;
+                    }
+                    diagnosisNr++;
+                }
+#endif
+            }
+    };
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -3036,6 +3190,7 @@ public:
     ret.push_back(PluginAtomPtr(new ProductionRequirementsAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new MappingAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new GetSizesAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new GetDiagnosesAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
