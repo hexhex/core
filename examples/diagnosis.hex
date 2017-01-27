@@ -13,4 +13,4 @@ hyp(a).
 hyp(b).
 obs(x). % v n.
 obs(z) v t.
-diagnoses(A,S) :- &getDiagnoses["obs(x) :- hyp(a).", hyp, obs](A,S).
+diagnoses(A,S) :- &getDiagnoses["obs(x) :- hyp(a). obs(z) :- hyp(b).", hyp, obs](A,S).
