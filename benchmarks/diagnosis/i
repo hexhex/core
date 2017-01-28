@@ -1,0 +1,5 @@
+potobs(o6). potobs(o7). potobs(o9). potobs(o10). 
+program("hyp(h1) :- not tobs(o1). hyp(h1) :- tobs(o8), not tobs(o7). hyp(h1) :- tobs(o6), not tobs(o4), not tobs(o7). hyp(h1) :- not tobs(o7). hyp(h1) :- tobs(o5), not tobs(o5). hyp(h1) :- tobs(o4), not tobs(o5). hyp(h1) :- not tobs(o2). hyp(h1) :- tobs(o8), not tobs(o10). hyp(h2) :- tobs(o3), tobs(o9), not tobs(o3), not tobs(o4), not tobs(o9). hyp(h2) :- not tobs(o1). hyp(h2) :- tobs(o4), tobs(o8), not tobs(o1), not tobs(o10). hyp(h2) :- not tobs(o10). hyp(h2) :- tobs(o3). hyp(h2) :- tobs(o6), tobs(o9), not tobs(o4). hyp(h3) :- tobs(o3), tobs(o4). hyp(h3) :- not tobs(o5). hyp(h3) :- tobs(o7), not tobs(o3). ").
+:- hyp(h1), hyp(h2), hyp(h3). 
+:- hyp(h1), hyp(h2), hyp(h3). 
+:- hyp(h2), hyp(h3). 

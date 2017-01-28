@@ -1,0 +1,28 @@
+% Diagnosis Problem
+%
+% Consider the following diagnosis problem <P,H,O>,
+% where P is a program, H is a set of hypothesis atoms and O is a set of observation atoms.
+% A diagnosis of <P,H,O> is a set D \subseteq H, such that P \cup D \models_brave O.
+% We are interested in the intersection of all diagnosis, which resembles a selection of hypotheses,
+% which are needed in any case to explain the observations.
+%
+% We consider a generalization of this problem <P,H,C,O,O'>,
+% where P is a program, H is a set of hypothesis atoms, C is a collection of sets of hypothesis,
+% O is a set of observation atoms and O' is a set of potential observation atoms.
+% Here, the observations are only partially known: while O contains definite observations,
+% it is unknown if any atom(s) of O' belong to the observations.
+% Moreover, C forbids certain sets of hypotheses.
+% We are interested in the intersection of all diagnosis D wrt. to <P,H,O''> with O'' \subseteq O \cup O' with O \subseteq O'',
+% such that D \not\subseteq C0 for all C0 \in C.
+
+% To this end, &getDiagnoses computes this intersection as follows:
+% For every hypothesis atom h in H
+%  (h, 1) is in the output if h is in every diagnosis (and there exists at least one diagnosis),
+%  (h, 0) is in the output if h is not in every diagnosis (but there exists at least one diagnosis),
+%  (h, 2) is in the output if there is no diagnosis at all.
+hyp(a).
+hyp(b).
+tobs(X) :- obs(X).
+tobs(X) v ntobs(X) :- potobs(X).
+diagnoses(A, S) :- program(P), &getDiagnoses[P, hyp, tobs](A, S).
+
