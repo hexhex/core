@@ -3033,9 +3033,11 @@ public:
                         // already known?
                         if (!query.assigned || query.assigned->getFact(*en)) {
                             Rule cons(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-//                            cons.body.push_back(query.interpretation->getFact(*en) ? ID::nafLiteralFromAtom(id) : ID::posLiteralFromAtom(id));
-                            if (query.interpretation->getFact(*en)) { cons.body.push_back(ID::nafLiteralFromAtom(id)); }
-                            pc.idb.push_back(registry->storeRule(cons));
+                                if (query.interpretation->getFact(*en)) {
+//                                cons.body.push_back(query.interpretation->getFact(*en) ? ID::nafLiteralFromAtom(id) : ID::posLiteralFromAtom(id));
+                                cons.body.push_back(ID::nafLiteralFromAtom(id));
+                                pc.idb.push_back(registry->storeRule(cons));
+                            }
                         }else{
                             // no: guess observation
                             Rule guess(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
