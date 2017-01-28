@@ -3068,7 +3068,7 @@ public:
                         // if it is true in all diagnoses, it is certainly true
                         if (trueInAll->getFact(id.address)) {
                             Tuple t;
-                            t.push_back(id);
+                            t.push_back(ogatom.tuple[1]);
                             t.push_back(ID::termFromInteger(1));
                             answer.get().push_back(t);
                         }
@@ -3077,13 +3077,13 @@ public:
                             // if all observations have been assigned, then different hypotheses have different opinions about id
                             if (allObsAssigned) {
                                 Tuple t;
-                                t.push_back(id);
+                                t.push_back(ogatom.tuple[1]);
                                 t.push_back(ID::termFromInteger(answersets.size() == 0 ? 2 : 0));
                                 answer.get().push_back(t);
                             }else{
                                 // otherwise we do not know yet
                                 Tuple t;
-                                t.push_back(id);
+                                t.push_back(ogatom.tuple[1]);
                                 t.push_back(ID::termFromInteger(1));
                                 answer.getUnknown().push_back(t);
                                 t[1] = ID::termFromInteger(0);
@@ -3095,7 +3095,7 @@ public:
                         // otherwise, it is false in all diagnoses and therefore certainly false
                         else {
                             Tuple t;
-                            t.push_back(id);
+                            t.push_back(ogatom.tuple[1]);
                             t.push_back(ID::termFromInteger(answersets.size() == 0 ? 2 : 0));
                             answer.get().push_back(t);
                         }
