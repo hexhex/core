@@ -2975,7 +2975,7 @@ public:
     class GetDiagnosesAtom : public PluginAtom
     {
         private:
-            ProgramCtx ctx;
+            ProgramCtx& ctx;
 
         public:
             GetDiagnosesAtom(ProgramCtx& ctx) : PluginAtom("getDiagnoses", false), ctx(ctx)
