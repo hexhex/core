@@ -23,4 +23,4 @@
 tobs(X) :- obs(X).
 tobs(X) v ntobs(X) :- potobs(X).
 diagnoses(A, S) :- program(P), &getDiagnoses[P, hyp, tobs](A, S).
-
+:- diagnoses(A, 2).
