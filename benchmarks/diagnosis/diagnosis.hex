@@ -20,8 +20,6 @@
 %  (h, 1) is in the output if h is in every diagnosis (and there exists at least one diagnosis),
 %  (h, 0) is in the output if h is not in every diagnosis (but there exists at least one diagnosis),
 %  (h, 2) is in the output if there is no diagnosis at all.
-hyp(a).
-hyp(b).
 tobs(X) :- obs(X).
 tobs(X) v ntobs(X) :- potobs(X).
 diagnoses(A, S) :- program(P), &getDiagnoses[P, hyp, tobs](A, S).
