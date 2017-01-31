@@ -3037,16 +3037,9 @@ public:
                         if (!query.assigned || query.assigned->getFact(*en)) {
                             if (query.interpretation->getFact(*en)) {
                                 Rule cons(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-//                                cons.body.push_back(query.interpretation->getFact(*en) ? ID::nafLiteralFromAtom(id) : ID::posLiteralFromAtom(id));
                                 cons.body.push_back(ID::nafLiteralFromAtom(id));
                                 pc.idb.push_back(registry->storeRule(cons));
                             }
-                        }else{
-                            // no: guess observation
-//                            Rule guess(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
-//                            guess.head.push_back(id);
-//                            guess.head.push_back(registry->getAuxiliaryAtom('x', id));
-//                            pc.idb.push_back(registry->storeRule(guess));
                             allObsAssigned = false;
                         }
                     }
@@ -3080,60 +3073,71 @@ public:
                             answer.getUnknown().push_back(t);
                             t[1] = ID::termFromInteger(1);
                             answer.getUnknown().push_back(t);
-                            t[1] = ID::termFromInteger(2);
+                            t[2] = ID::termFromInteger(1);
                             answer.getUnknown().push_back(t);
                         }
-                        // if it is true in all diagnoses, it is certainly true
-                        else if (trueInAll->getFact(id.address)) {
-                            Tuple t;
-                            t.push_back(ogatom.tuple[1]);
-                            t.push_back(ID::termFromInteger(1));
-                            answer.get().push_back(t);
-
-                            if (!allObsAssigned && answersets.size() == 0) {
-                                t[1] = ID::termFromInteger(1);
-                                answer.getUnknown().push_back(t);
-                                t[1] = ID::termFromInteger(2);
-                                answer.getUnknown().push_back(t);
-                            }
-                        // otherwise, if it is true in at least one diagnosis, it can be true
-                        }else if (trueInOne->getFact(id.address)) {
-                            // if all observations have been assigned, then different hypotheses have different opinions about id
+                        else{
                             if (allObsAssigned) {
-                                Tuple t;
-                                t.push_back(ogatom.tuple[1]);
-                                t.push_back(ID::termFromInteger(0));
-                                answer.get().push_back(t);
-                                if (answersets.size() == 0) {
-                                    t[1] = ID::termFromInteger(1);
+                                // if it is true in all diagnoses, it is certainly true
+                                if (trueInAll->getFact(id.address) || answersets.size() == 0) {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(2));
                                     answer.get().push_back(t);
-                                    t[1] = ID::termFromInteger(2);
+
+                                    if (trueInOne->getFact(id.address)) {
+                                        t[1] = ID::termFromInteger(1);
+                                        answer.get().push_back(t);
+                                    }else{
+                                        t[1] = ID::termFromInteger(0);
+                                        answer.get().push_back(t);
+                                    }
+                                // otherwise, if it is true in at least one diagnosis, it can be true
+                                }else if (trueInOne->getFact(id.address)) {
+                                    // otherwise we do not know yet
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(1));
+                                    answer.get().push_back(t);
+                                }
+                                // otherwise, it is false in all diagnoses and therefore certainly false
+                                else {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(0));
                                     answer.get().push_back(t);
                                 }
                             }else{
-                                // otherwise we do not know yet
-                                Tuple t;
-                                t.push_back(ogatom.tuple[1]);
-                                t.push_back(ID::termFromInteger(0));
-                                answer.getUnknown().push_back(t);
-                                t[1] = ID::termFromInteger(1);
-                                answer.getUnknown().push_back(t);
-                                t[1] = ID::termFromInteger(2);
-                                answer.getUnknown().push_back(t);
-                            }
-                        }
-                        // otherwise, it is false in all diagnoses and therefore certainly false
-                        else {
-                            Tuple t;
-                            t.push_back(ogatom.tuple[1]);
-                            t.push_back(ID::termFromInteger(0));
-                            answer.get().push_back(t);
+                                // if it is true in all diagnoses, it is certainly true
+                                if (trueInAll->getFact(id.address) || answersets.size() == 0) {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(2));
+                                    answer.get().push_back(t);
 
-                            if (!allObsAssigned && answersets.size() == 0) {
-                                t[1] = ID::termFromInteger(1);
-                                answer.getUnknown().push_back(t);
-                                t[1] = ID::termFromInteger(2);
-                                answer.getUnknown().push_back(t);
+                                    t[1] = ID::termFromInteger(1);
+                                    answer.getUnknown().push_back(t);
+                                // otherwise, if it is true in at least one diagnosis, it can be true
+                                }else if (trueInOne->getFact(id.address)) {
+                                    // otherwise we do not know yet
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(1));
+                                    answer.getUnknown().push_back(t);
+
+                                    t[1] = ID::termFromInteger(2);
+                                    answer.getUnknown().push_back(t);
+                                }
+                                // otherwise, it is false in all diagnoses and therefore certainly false
+                                else {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(0));
+                                    answer.get().push_back(t);
+
+                                    t[1] = ID::termFromInteger(2);
+                                    answer.getUnknown().push_back(t);
+                                }
                             }
                         }
                     }

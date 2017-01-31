@@ -79,10 +79,12 @@ do
 		first=1
 		for ((t=1; t<=$3; t++ ))
 		do
-                        if [[ $RANDOM -le 16384 ]]; then
+                        if [[ $RANDOM -le 10934 ]]; then
                                 naf="0"
-                        else
+                        elif [[ $RANDOM -le 10923 ]]; then
                                 naf="1"
+                        else
+                                naf="2"
                         fi
 			if [[ $RANDOM -le $propConsElem ]]; then
 				if [[ $first == 1 ]]; then

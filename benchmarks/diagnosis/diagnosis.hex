@@ -15,6 +15,8 @@
 % We are interested in the intersection of all diagnosis D wrt. to <P,H,O''> with O'' \subseteq O \cup O' with O \subseteq O'',
 % such that D \not\subseteq C0 for all C0 \in C.
 
+hyp(incons).
+
 % To this end, &getDiagnoses computes this intersection as follows:
 % For every hypothesis atom h in H
 %  (h, 1) is in the output if h is in every diagnosis (and there exists at least one diagnosis),
@@ -23,4 +25,5 @@
 tobs(X) :- obs(X).
 tobs(X) v ntobs(X) :- potobs(X).
 diagnoses(A, S) :- program(P), &getDiagnoses[P, hyp, tobs](A, S).
-%:- diagnoses(A, 2).
+
+:- diagnoses(incons, X).
