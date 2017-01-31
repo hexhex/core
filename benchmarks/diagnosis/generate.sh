@@ -79,13 +79,18 @@ do
 		first=1
 		for ((t=1; t<=$3; t++ ))
 		do
-                        if [[ $RANDOM -le 10934 ]]; then
+                        if [[ $RANDOM -le 16384 ]]; then
                                 naf="0"
-                        elif [[ $RANDOM -le 10923 ]]; then
-                                naf="1"
                         else
                                 naf="2"
                         fi
+                        #if [[ $RANDOM -le 10934 ]]; then
+                        #        naf="0"
+                        #elif [[ $RANDOM -le 10923 ]]; then
+                        #        naf="1"
+                        #else
+                        #        naf="2"
+                        #fi
 			if [[ $RANDOM -le $propConsElem ]]; then
 				if [[ $first == 1 ]]; then
 					echo -n ":- diagnoses(h$t, $naf)"
@@ -93,6 +98,12 @@ do
 				else
 					echo -n ", diagnoses(h$t, $naf)"
 				fi
+                                #if [[ $first == 1 ]]; then
+                                #        echo -n ":- not diagnoses(h$t, 2)"
+                                #        first=0
+                                #else
+                                #        echo -n ", not diagnoses(h$t, 2)"
+                                #fi
 			fi
 		done
 		if [[ $first == 0 ]]; then

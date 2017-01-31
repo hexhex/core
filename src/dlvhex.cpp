@@ -372,6 +372,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                      Use more elaborated analysis method to determine possible more inconsistent reasons." << std::endl
         << "     --transunitlearningonestep" << std::endl
         << "                      Use unoptimized solver from the beginning (slower solving, but faster inconsistency analysis)." << std::endl
+        << "     --transunitlearningoneanalysistreshold" << std::endl
+        << "                      Analyze inconsistency only if percentage of unit evaluations with inconsistent result exceeds this value." << std::endl
+        << "     --transunitlearningoneminimizenogoods" << std::endl
+        << "                      Minimize nogoods for inconsistency analysis (does not activate nogood minimization otherwise)." << std::endl
 
         << std::endl << "Debugging and General Options:" << std::endl
         << "     --dumpevalplan=F Dump evaluation plan (usable as manual heuristics) to file F." << std::endl
@@ -878,6 +882,8 @@ Config& config, ProgramCtx& pctx)
         { "transunitlearningpud", no_argument, 0, 68 },
         { "transunitlearningonestep", no_argument, 0, 69 },
         { "transunitlearningdumpnogoods", no_argument, 0, 70 },
+        { "transunitlearninganalysistreshold", required_argument, 0, 71 },
+        { "transunitlearningoneminimizenogoods", no_argument, 0, 72 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
@@ -1703,6 +1709,27 @@ Config& config, ProgramCtx& pctx)
             case 70:
                 {
                     pctx.config.setOption("TransUnitLearningDN", 1);
+                }
+                break;
+            case 71:
+                {
+                    int treshold = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            treshold = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            treshold = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"analysis treshold '" << optarg << "' does not specify an integer value");
+                    }
+                    pctx.config.setOption("TransUnitLearningAT", treshold);
+                }
+                break;
+            case 72:
+                {
+                    pctx.config.setOption("TransUnitLearningMN", 1);
                 }
                 break;
             case 65:

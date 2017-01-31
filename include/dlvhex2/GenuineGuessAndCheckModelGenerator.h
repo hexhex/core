@@ -382,6 +382,12 @@ public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
 
         /** \brief Nogoods learned from successor units. */
         std::vector<std::pair<Nogood, int> > succNogoods;
+
+        /** \brief Counts how often this unit was evaluated (i.e., instantiated). */
+        int evaluationCnt;
+
+        /** \brief Counts hof often this unit was evaluated and the result was detected inconsistency. */
+        int inconsistentEvaluationCnt;
     public:
         /** \brief Constructor.
          *

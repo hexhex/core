@@ -3003,6 +3003,7 @@ public:
                 pc.currentOptimum.clear();
                 pc.config.setOption("NumberOfModels",0);
                 pc.config.setOption("TransUnitLEarning",0);
+                pc.config.setOption("ForceGC",0);
                 pc.inputProvider = ip;
                 ip.reset();
 

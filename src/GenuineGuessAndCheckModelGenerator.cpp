@@ -71,7 +71,9 @@ FLPModelGeneratorFactoryBase(ctx),
 externalEvalConfig(externalEvalConfig),
 ctx(ctx),
 ci(ci),
-outerEatoms(ci.outerEatoms)
+outerEatoms(ci.outerEatoms),
+evaluationCnt(0),
+inconsistentEvaluationCnt(0)
 {
     // this model generator can handle any components
     // (and there is quite some room for more optimization)
@@ -122,6 +124,7 @@ GenuineGuessAndCheckModelGeneratorFactory::ModelGeneratorPtr
 GenuineGuessAndCheckModelGeneratorFactory::createModelGenerator(
 InterpretationConstPtr input)
 {
+    evaluationCnt++;
     return ModelGeneratorPtr(new GenuineGuessAndCheckModelGenerator(*this, input));
 }
 
@@ -234,7 +237,10 @@ guessingProgram(factory.reg)
         if (factory.ctx.config.getOption("TransUnitLearning")){
             InterpretationPtr oea(new Interpretation(reg));
             IntegrateExternalAnswerIntoInterpretationCB cb(oea);
+            int mnsetting = factory.ctx.config.getOption("MinimizeNogoods");
+            if (factory.ctx.config.getOption("TransUnitLearningMN")) { factory.ctx.config.setOption("MinimizeNogoods", 1); }
             evaluateExternalAtoms(factory.ctx, factory.outerEatoms, postprocInput, cb, learnedEANogoods);
+            factory.ctx.config.setOption("MinimizeNogoods", mnsetting);
             DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps, "outer eatom computations");
             DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
@@ -869,7 +875,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
         if( !modelCandidate ) {
             // compute reasons
             if (factory.ctx.config.getOption("TransUnitLearning") && cmModelCount == 0) {
-                identifyInconsistencyCause();
+                factory.inconsistentEvaluationCnt++;
+                if ((float)factory.inconsistentEvaluationCnt * 100.0f / (float)factory.evaluationCnt > (float)factory.ctx.config.getOption("TransUnitLearningAT")) identifyInconsistencyCause();
             }
 
             LOG(DBG,"unsatisfiable -> returning no model");
