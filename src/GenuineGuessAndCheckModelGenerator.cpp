@@ -876,7 +876,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
             // compute reasons
             if (factory.ctx.config.getOption("TransUnitLearning") && cmModelCount == 0) {
                 factory.inconsistentEvaluationCnt++;
-                if ((float)factory.inconsistentEvaluationCnt * 100.0f / (float)factory.evaluationCnt > (float)factory.ctx.config.getOption("TransUnitLearningAT")) identifyInconsistencyCause();
+                if ((float)factory.inconsistentEvaluationCnt * 100.0f / (float)factory.evaluationCnt >= (float)factory.ctx.config.getOption("TransUnitLearningAT")) identifyInconsistencyCause();
             }
 
             LOG(DBG,"unsatisfiable -> returning no model");

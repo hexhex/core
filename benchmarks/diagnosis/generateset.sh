@@ -15,11 +15,11 @@ do
 		domsize=$size
 		potobsprop=50
 		tagdomsize=$(expr $size / 5 + 1)
-		maxdepsets=$(expr $size + $size / 2)
-		tagprop=50
+		maxdepsets=3 #$(expr $size + $size / 2)
+		tagprop=100
 		depprop=10
-		maxcons=$(expr $size \* 2)
-		consprop=50
+		maxcons=$(expr $size \* 10)
+		consprop=20
 		conselemprop=30
 		./generate.sh $domsize $potobsprop $tagdomsize $maxdepsets $tagprop $depprop $maxcons $consprop $conselemprop > "instances/inst_size_${size}_inst_${inst}.hex"
 	done

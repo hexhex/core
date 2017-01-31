@@ -92,18 +92,18 @@ do
                         #        naf="2"
                         #fi
 			if [[ $RANDOM -le $propConsElem ]]; then
-				if [[ $first == 1 ]]; then
-					echo -n ":- diagnoses(h$t, $naf)"
-					first=0
-				else
-					echo -n ", diagnoses(h$t, $naf)"
-				fi
-                                #if [[ $first == 1 ]]; then
-                                #        echo -n ":- not diagnoses(h$t, 2)"
-                                #        first=0
-                                #else
-                                #        echo -n ", not diagnoses(h$t, 2)"
-                                #fi
+				#if [[ $first == 1 ]]; then
+				#	echo -n ":- diagnoses(h$t, $naf)"
+				#	first=0
+				#else
+				#	echo -n ", diagnoses(h$t, $naf)"
+				#fi
+                                if [[ $first == 1 ]]; then
+                                        echo -n ":- not diagnoses(h$t, 2)"
+                                        first=0
+                                else
+                                        echo -n ", not diagnoses(h$t, 2)"
+                                fi
 			fi
 		done
 		if [[ $first == 0 ]]; then
