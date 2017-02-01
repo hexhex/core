@@ -374,7 +374,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                      Use unoptimized solver from the beginning (slower solving, but faster inconsistency analysis)." << std::endl
         << "     --transunitlearningoneanalysistreshold" << std::endl
         << "                      Analyze inconsistency only if percentage of unit evaluations with inconsistent result exceeds this value." << std::endl
-        << "     --transunitlearningoneminimizenogoods" << std::endl
+        << "     --transunitlearningminimizenogoods" << std::endl
         << "                      Minimize nogoods for inconsistency analysis (does not activate nogood minimization otherwise)." << std::endl
 
         << std::endl << "Debugging and General Options:" << std::endl
@@ -883,7 +883,7 @@ Config& config, ProgramCtx& pctx)
         { "transunitlearningonestep", no_argument, 0, 69 },
         { "transunitlearningdumpnogoods", no_argument, 0, 70 },
         { "transunitlearninganalysistreshold", required_argument, 0, 71 },
-        { "transunitlearningoneminimizenogoods", no_argument, 0, 72 },
+        { "transunitlearningminimizenogoods", no_argument, 0, 72 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },

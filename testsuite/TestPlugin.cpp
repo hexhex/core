@@ -3041,6 +3041,7 @@ public:
                                 cons.body.push_back(ID::nafLiteralFromAtom(id));
                                 pc.idb.push_back(registry->storeRule(cons));
                             }
+                        }else{
                             allObsAssigned = false;
                         }
                     }
@@ -3055,6 +3056,7 @@ public:
                 InterpretationPtr trueInOne(new Interpretation(reg));
                 if (answersets.size() > 0) { trueInAll->getStorage() |= answersets[0]->getStorage(); }
                 BOOST_FOREACH (InterpretationPtr answerset, answersets) {
+//                    std::cerr << "     D: " << *answerset << std::endl;
                     trueInAll->getStorage() &= answerset->getStorage();
                     trueInOne->getStorage() |= answerset->getStorage();
                 }
@@ -3074,7 +3076,7 @@ public:
                             answer.getUnknown().push_back(t);
                             t[1] = ID::termFromInteger(1);
                             answer.getUnknown().push_back(t);
-                            t[2] = ID::termFromInteger(1);
+                            t[1] = ID::termFromInteger(2);
                             answer.getUnknown().push_back(t);
                         }
                         else{
