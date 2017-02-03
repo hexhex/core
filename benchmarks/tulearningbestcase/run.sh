@@ -10,7 +10,7 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "{1..20}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
+	$bmscripts/runinsts.sh "{1..200}" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
 else
 	# run single instance
 	confstr=";--heuristics=monolithic;--transunitlearning;--transunitlearning --transunitlearningpud;--transunitlearning --transunitlearninganalysistreshold=75"
