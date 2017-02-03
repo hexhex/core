@@ -238,7 +238,10 @@ guessingProgram(factory.reg)
             InterpretationPtr oea(new Interpretation(reg));
             IntegrateExternalAnswerIntoInterpretationCB cb(oea);
             int mnsetting = factory.ctx.config.getOption("MinimizeNogoods");
-            if (factory.ctx.config.getOption("TransUnitLearningMN")) { factory.ctx.config.setOption("MinimizeNogoods", 1); }
+            if (factory.ctx.config.getOption("TransUnitLearningMN") &&
+                ((float)factory.inconsistentEvaluationCnt * 100.0f / (float)factory.evaluationCnt >= (float)factory.ctx.config.getOption("TransUnitLearningAT"))) {
+                    factory.ctx.config.setOption("MinimizeNogoods", 1);
+                }
             evaluateExternalAtoms(factory.ctx, factory.outerEatoms, postprocInput, cb, learnedEANogoods);
             factory.ctx.config.setOption("MinimizeNogoods", mnsetting);
             DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps, "outer eatom computations");
