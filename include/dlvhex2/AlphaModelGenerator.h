@@ -90,6 +90,7 @@ public ostream_printable<AlphaModelGenerator>
 
         // generate and return next model, return null after last model
         virtual InterpretationPtr generateNextModel();
+        InterpretationConstPtr computeRelevantDomain(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic = true);
              
         /**
          * \brief Evaluates an external atom.
@@ -137,6 +138,8 @@ public ostream_printable<AlphaModelGeneratorFactory>
         /** \brief All external atoms of the component. */
         std::vector<ID> outerEatoms;
         std::vector<ID> innerEatoms;
+        std::set<ID> relevantatomextensions;
+        std::set<ID> relevantguesses;
 
         // storage
     protected:
@@ -151,7 +154,13 @@ public ostream_printable<AlphaModelGeneratorFactory>
          *
          * x stands for transformed. */
         std::vector<ID> xidb;
-
+        
+        std::vector<ID> ridb;
+        
+        std::vector<ID> deidb;
+        std::vector<ID> deidbInnerEatoms;
+        std::set<ID> nonmonotonicinputs;
+        
         // methods
     public:
         /** \brief Constructor.

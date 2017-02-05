@@ -255,7 +255,33 @@ DLVHEX_NAMESPACE_BEGIN
         printer.printmany(program.idb, "\n");
         programStream << std::endl;
         programStream.flush();
+        
+        BOOST_FOREACH (ID p, amgPointer->factory.relevantatomextensions) {
+            programStream << "aux_ext_";
+            printer.print(p);
+            programStream << ".\n";
+        }
+        programStream.flush();
+        
+        BOOST_FOREACH (ID p, amgPointer->factory.relevantguesses) {
+            programStream << "aux_not_";
+            printer.print(p);
+            programStream << " :- aux_ext_";
+            printer.print(p);
+            programStream << ", not ";
+            printer.print(p);
+            programStream << ".\n";
+            programStream << ":- aux_not_";
+            printer.print(p);
+            programStream << ", ";
+            printer.print(p);
+            programStream << ".\n";
+        }
+        programStream.flush();
+        
         program_str = programStream.str();
+        
+        //std::cout << program_str << std::endl;
 
         results->getAnswerSets(program_str);
         results->answerSetProcessingFunc();
@@ -360,6 +386,7 @@ DLVHEX_NAMESPACE_BEGIN
         int ngIndex = 0;
 
         for (int k = 0; k < nogoods->getNogoodCount(); ++k) {
+            //std::cout << nogoods->getNogood(k).getStringRepresentation(amgPointer->factory.ctx.registry()) << std::endl;
             jobjectArray ioNogood = env->NewObjectArray(nogoods->getNogood(k).size(),
                     env->FindClass("java/lang/String"),
                     env->NewStringUTF("str"));
@@ -415,7 +442,9 @@ DLVHEX_NAMESPACE_BEGIN
                 const char *nativeResult = env->GetStringUTFChars(result, JNI_FALSE);
 
                 std::string answerSetAtom(nativeResult);
-                answerSetVec.push_back(answerSetAtom);
+                
+                if(answerSetAtom.substr(0,4) != "aux_")
+                    answerSetVec.push_back(answerSetAtom);
 
                 env->ReleaseStringUTFChars(result, nativeResult);
             }

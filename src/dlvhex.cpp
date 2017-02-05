@@ -1059,8 +1059,9 @@ Config& config, ProgramCtx& pctx)
                         #if defined(HAVE_ALPHA)
                             pctx.setASPSoftware(
                                 ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::AlphaSoftware::Configuration));
-                            pctx.config.setOption("GenuineSolver", 0);
+                            pctx.config.setOption("GenuineSolver", 2);
                             pctx.config.setOption("AlphaSolver", 1);
+                            pctx.config.setOption("ExternalLearningNeg", 0);
                         #else
                             throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
                         #endif
