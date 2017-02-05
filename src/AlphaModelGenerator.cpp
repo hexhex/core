@@ -147,8 +147,6 @@ nonmonotonicinputs()
                     itlit++;
                 }
                 
-
-                
                 if(inhead && !relevantpart.count(*itr)) {
                     changed = true;
                     relevantpart[*itr] = true;
@@ -295,16 +293,25 @@ AlphaModelGenerator::generateNextModel()
             
             if (factory.ctx.config.getOption("LiberalSafety")) {
                 InterpretationConstPtr relevantdomain = computeRelevantDomain(factory.ctx, postprocessedInput, factory.deidb, factory.deidbInnerEatoms);
+            }
             
-                typedef bm::bvector<> Storage;
-                Storage::enumerator it = (*relevantdomain).getStorage().first();
-                for(; it != (*relevantdomain).getStorage().end(); ++it) {
-                    const OrdinaryAtom& atom = reg->lookupOrdinaryAtom(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
-                    
-                    BOOST_FOREACH (ID p, factory.nonmonotonicinputs) {
-                        if(atom.tuple[0] == p)
-                            factory.relevantatomextensions.insert(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+            BOOST_FOREACH (ID eaid, factory.innerEatoms) {
+                const ExternalAtom& ea = reg->eatoms.getByID(eaid);
+                
+                ea.updatePredicateInputMask();
+                bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+                bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+                while (en < en_end) {
+                    const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+
+                    for (uint32_t i = 0; i < ea.inputs.size(); ++i) {
+                        if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+                            !ea.getExtSourceProperties().isMonotonic(i) &&
+                        ogatom.tuple[0] == ea.inputs[i]) {
+                            factory.relevantatomextensions.insert(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+                        }
                     }
+                    en++;
                 }
             }
             
