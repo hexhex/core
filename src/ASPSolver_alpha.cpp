@@ -104,13 +104,6 @@ DLVHEX_NAMESPACE_BEGIN
 
         mid = env->GetStaticMethodID(cls, "main", "([Ljava/lang/String;)V");
 
-        arr = env->NewObjectArray(4,
-                env->FindClass("java/lang/String"),
-                env->NewStringUTF("str"));
-        env->SetObjectArrayElement(arr, 0, env->NewStringUTF("-str"));
-        env->SetObjectArrayElement(arr, 2, env->NewStringUTF("-x"));
-        env->SetObjectArrayElement(arr, 3, env->NewStringUTF("y"));
-
         jvm->DetachCurrentThread();
     }
 
@@ -152,6 +145,13 @@ DLVHEX_NAMESPACE_BEGIN
                 } else if (getEnvStat == JNI_EVERSION) {
                     DBGLOG(DBG, "[" << this << "]" << "GetEnv: jvm version not supported");
                 }
+                
+                options.arr = env->NewObjectArray(4,
+                env->FindClass("java/lang/String"),
+                env->NewStringUTF("str"));
+                env->SetObjectArrayElement(options.arr, 0, env->NewStringUTF("-str"));
+                env->SetObjectArrayElement(options.arr, 2, env->NewStringUTF("-x"));
+                env->SetObjectArrayElement(options.arr, 3, env->NewStringUTF("y"));
                 
                 //std::cout << program_str << std::endl;
 
