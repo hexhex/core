@@ -2972,6 +2972,87 @@ public:
             }
     };
 
+    class GetSizesRestrAtom : public PluginAtom
+    {
+        public:
+            GetSizesRestrAtom() : PluginAtom("getSizesRestr", false)
+            {
+                addInputPredicate();
+								addInputPredicate();
+                setOutputArity(2);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+								
+								bool allPossibleAssigned = true;
+
+                // for all input atoms
+                std::vector<ID> keys;
+                typedef boost::unordered_map<ID, int> map;
+                map trueCount, unknownCount;
+								boost::unordered_map<ID, std::vector<ID>> possMap;
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+
+                    if (ogatom.tuple[0] == query.input[1]){
+                        if (ogatom.tuple.size() != 3) { throw PluginError("Input must be of arity 2"); }
+
+                        keys.push_back(ogatom.tuple[2]);
+                        if ( (!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en) ) {
+                            possMap[ogatom.tuple[2]].push_back(ogatom.tuple[1]);
+                        }else if (!!query.assigned && !query.assigned->getFact(*en)){
+                            allPossibleAssigned = false;
+                        }
+                    }
+                    en++;
+                }
+
+                en = query.predicateInputMask->getStorage().first();
+                en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+
+                    if (ogatom.tuple[0] == query.input[0]){
+                        if (ogatom.tuple.size() != 3) { throw PluginError("Input must be of arity 2"); }
+
+                        if ( (allPossibleAssigned && (!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)) ) {
+                            trueCount[ogatom.tuple[2]]++;
+                        }else if (!allPossibleAssigned || (!!query.assigned && !query.assigned->getFact(*en) && (std::find(possMap[ogatom.tuple[2]].begin(), possMap[ogatom.tuple[2]].end(), ogatom.tuple[1]) != possMap[ogatom.tuple[2]].end()) )){
+                            unknownCount[ogatom.tuple[2]]++;
+                        }
+                    }
+                    en++;
+                }
+
+                BOOST_FOREACH (ID k, keys) {
+                    int min = trueCount[k];
+                    int max = min + unknownCount[k];
+                    if (min == max) {
+                        Tuple t;
+                        t.push_back(k);
+                        t.push_back(ID::termFromInteger(min));
+                        answer.get().push_back(t);
+                    }else{
+                        for (int i = min; i <= max; i++) {
+                            Tuple t;
+                            t.push_back(k);
+                            t.push_back(ID::termFromInteger(i));
+                            answer.getUnknown().push_back(t);
+                        }
+                    }
+                }
+            }
+    };
+
     class GetDiagnosesAtom : public PluginAtom
     {
         private:
@@ -3213,6 +3294,7 @@ public:
     ret.push_back(PluginAtomPtr(new ProductionRequirementsAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new MappingAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new GetSizesAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new GetSizesRestrAtom, PluginPtrDeleter<PluginAtom>()));
     ret.push_back(PluginAtomPtr(new GetDiagnosesAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
