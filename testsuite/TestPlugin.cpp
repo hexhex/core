@@ -2981,6 +2981,7 @@ public:
 								addInputPredicate();
                 setOutputArity(2);
 
+								prop.monotonicInputPredicates.insert(0);
                 prop.setProvidesPartialAnswer(true);
             }
 
