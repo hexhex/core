@@ -11,7 +11,7 @@ assigned(L) :- assign(L, R).
 :- assign(L,R), not possible(L,R).
 
 % locations can only be assigned to regions that are not too far away
-possible(L,R) :- location(L), region(R), distance(L,R,D), maxSize(R, M), D < M.
+possible(L,R) :- location(L), region(R), distance(L,R,D), maxDist(R, M), D < M.
 
 % check capacities of post offices
 :- &getSizesRestr[assign,possible](R, S), maxSize(R, M), S > M.
