@@ -13,10 +13,10 @@ do
 	for (( inst=0; inst < $3; inst++ ))
 	do
 		locations=$size
-                regions=$(expr $size / 5 + 1)
+                regions=$(( ($size/3) + 1 ))
 		maxdist=10
-		maxsize=$(expr $size / $regions \* 2)
-		maxdistallowed=5
+		maxsize=$(( ($size/$regions)*2 ))
+		maxdistallowed=4
 		./generate.sh $locations $regions $maxdist $maxsize $maxdistallowed > "instances/inst_size_${size}_inst_${inst}.hex"
 	done
 done
