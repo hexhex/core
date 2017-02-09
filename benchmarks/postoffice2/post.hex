@@ -1,0 +1,17 @@
+% Post office problem
+%
+% A set of locations (towns, villages) L is to be partitioned into a number of postal regions R; each region is assigned a postal (zip) code and a post office. The number of available postal codes resp. offices is limited.
+% As side constraints, locations have a certain distance to each post office and the distance to the assigned post office may not be larger than a given value. Moreover, the number of locations belonging to the same region is limited due maximum capacities of post offices.
+
+% assign each location to a post office
+assign(L, R) v nassign(L, R) :- possible(L, R).
+assigned(L) :- assign(L, R).
+:- location(L), not assigned(L).
+:- assign(L, R1), assign(L, R2), R1 != R2.
+:- assign(L,R), not possible(L,R).
+
+% locations can only be assigned to regions that are not too far away
+possible(L,R) :- location(L), region(R), distance(L,R,D), maxSize(R, M), D < M.
+
+% check capacities of post offices
+:- &getSizesRestr[assign,possible](R, S), maxSize(R, M), S > M.
