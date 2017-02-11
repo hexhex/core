@@ -13,7 +13,7 @@ if [[ $all -eq 1 ]]; then
 	$bmscripts/runinsts.sh "instances/graph_*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
 else
 	# run single instance
-	confstr="--heuristics=trivial;--heuristics=monolithic;--heuristics=monolithic --solver=alpha;--transunitlearning --heuristics=trivial;--transunitlearning --transunitlearningpud --heuristics=trivial"
+	confstr="--heuristics=trivial;--heuristics=monolithic;--heuristics=monolithic --solver=alpha"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --silent  --ngminimization=always graphcut.hex CONF INST" "$confstr" "$instance" "$to"
 fi
