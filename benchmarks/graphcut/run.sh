@@ -10,7 +10,7 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "instances/inst_*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
+	$bmscripts/runinsts.sh "instances/graph_*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
 else
 	# run single instance
 	confstr=";--heuristics=monolithic;--heuristics=monolithic --solver=alpha;--transunitlearning;--transunitlearning --transunitlearningpud"
