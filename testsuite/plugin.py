@@ -494,6 +494,29 @@ def generalizedSubsetSum(x,y,b):
 	elif true != b.intValue() or unknown != 0:
 		dlvhex.outputUnknown(())
 
+def subgraph(vertices,edge):
+	trueVertices = []
+	unknownVertices = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == vertices and x.isTrue():
+			trueVertices.append(x.tuple()[1].value())
+		elif x.tuple()[0] == vertices and not x.isFalse():
+			unknownVertices.append(x.tuple()[1].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == edge and x.isTrue():
+			if x.tuple()[1].value() in trueVertices and x.tuple()[2].value() in trueVertices:
+				dlvhex.output( (x.tuple()[1].value(),x.tuple()[2].value()) )
+			elif x.tuple()[1].value() in unknownVertices or x.tuple()[2].value() in unknownVertices:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+		elif x.tuple()[0] == edge and not x.isFalse():
+			if x.tuple()[1].value() in trueVertices and x.tuple()[2].value() in trueVertices:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+			elif x.tuple()[1].value() in unknownVertices or x.tuple()[2].value() in unknownVertices:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+
+
 def strategicConflict(conflicting,strategic):
 	trueList = []
 	falseList = []
@@ -674,6 +697,12 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	dlvhex.addAtom("generalizedSubsetSum", (dlvhex.PREDICATE, dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("subgraph", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
