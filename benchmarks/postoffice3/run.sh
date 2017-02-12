@@ -15,6 +15,6 @@ else
 	# run single instance
 	confstr=";--heuristics=monolithic;--heuristics=monolithic --solver=alpha;--transunitlearning;--transunitlearning --transunitlearningpud"
 
-	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --ngminimization=always --silent post.hex CONF INST" "$confstr" "$instance" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --ngminimization=always --silent post.hex CONF INST" "$confstr" "$instance" "$to"
 fi
 

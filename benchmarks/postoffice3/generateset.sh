@@ -20,7 +20,7 @@ do
 	for (( inst=0; inst < $8; inst++ ))
 	do
 		locations=$(( $size*$4 ))
-		./generate.sh $size $locations $5 $6 $7 > "instances/inst_size_${size}_inst_${inst}.hex"
+		./generate.sh $size $locations $5 $6 $7 > "instances/inst_size_${size}_${5}_${6}_${7}_inst_${inst}.hex"
 	done
 done
 
