@@ -7,8 +7,8 @@ assigned(L) :- assign(L, R).
 
 size(R,S) :- &sizeDist[assign,distance,X](R, S), maxdist(X).
 
-:- size(_,1000).
+:- size(_,bad).
 
-:- size(R, S), maxsize(M), S > M.
+:- size(R, S), maxsize(M), &greater[S,M]().
 
 

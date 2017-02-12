@@ -4,8 +4,8 @@
 # $4: max allowed distance to region (max dist)
 # $5: max distance to region (range of distances of locations to regions: 0..$7)
 
-echo -n "maxsize($3)."
-echo -n "maxdist($4)."
+echo -n "maxsize(i$3)."
+echo -n "maxdist(i$4)."
 
 # domain
 for (( d=1; d <= $2; d++ ))
@@ -26,7 +26,7 @@ do
     for (( j=1; j <= $1; j++ ))
     do
 	dist=$(($RANDOM * $5 / 32768))
-        echo -n "distance(l$i,r$j,$dist). "
+        echo -n "distance(l$i,r$j,i$dist). "
     done
 done
 

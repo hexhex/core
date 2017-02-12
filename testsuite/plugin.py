@@ -537,10 +537,10 @@ def sizeDist(assign,distance,maxdist):
 
 	for x in dlvhex.getInputAtoms():
 		if x.tuple()[0] == distance:
-			if (x.tuple()[1].value(), x.tuple()[2].value()) in trueAssigned and x.tuple()[3].intValue() > maxdist.intValue():
-				dlvhex.output( (1000,1000) )
-			elif (x.tuple()[1].value(), x.tuple()[2].value()) not in falseAssigned and x.tuple()[3].intValue() > maxdist.intValue():
-				dlvhex.outputUnknown( (1000,1000) )
+			if (x.tuple()[1].value(), x.tuple()[2].value()) in trueAssigned and int(x.tuple()[3].value()[1:]) > int(maxdist.value()[1:]):
+				dlvhex.output( ("bad","bad") )
+			elif (x.tuple()[1].value(), x.tuple()[2].value()) not in falseAssigned and int(x.tuple()[3].value()[1:]) > int(maxdist.value()[1:]):
+				dlvhex.outputUnknown( ('bad','bad') )
 
 	for r in regions:
 		unknowncount = 0
@@ -555,10 +555,10 @@ def sizeDist(assign,distance,maxdist):
 				truecount += 1
 
 		if not unknown:
-			dlvhex.output( (r,unknowncount + truecount) )
+			dlvhex.output( ('i'+str(r),'i'+str(unknowncount + truecount)) )
 		else:
 			for i in range(truecount, unknowncount + truecount + 1):
-				dlvhex.outputUnknown( (r,i) )
+				dlvhex.outputUnknown( ('i'+str(r),'i'+str(i)) )
 
 
 def strategicConflict(conflicting,strategic):
@@ -628,6 +628,11 @@ def greaterOrEqual(p, idx, bound):
 			sum += x.tuple()[idx.intValue()].intValue()
 	if sum >= bound.intValue():
 		dlvhex.output(())
+
+def greater(a,b):
+	if a.value() != "bad" and b.value() != "bad":
+		if int(a.value()[1:]) > int(b.value()[1:]):
+			dlvhex.output(())
 
 def date():
 	from datetime import datetime
@@ -747,6 +752,9 @@ def register():
 	prop.addMonotonicInputPredicate(0)
 	prop.addMonotonicInputPredicate(1)
 	dlvhex.addAtom("subgraph", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	dlvhex.addAtom("greater", (dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
