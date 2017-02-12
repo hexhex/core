@@ -1,11 +1,9 @@
-# $1: min instance size (number of regions)
-# $2: max instance size (number of regions)
-# $3: step size (number of regions)
-# $4: location number factor (number of locations = regions*$4)
-# $5: max locations assigned to region factor (max size = regions*$5)
-# $6: max allowed distance to region (max dist)
-# $7: max distance to region (range of distances of locations to regions: 0..$7)
-# $8: number of instances
+# $1: min instance size (number of locations)
+# $2: max instance size (number of locations)
+# $3: step size (number of locations)
+# $4: max allowed distance to region (max dist)
+# $5: max distance to region (range of distances of locations to regions: 0..$7)
+# $6: number of instances
 
 
 if [[ $# -lt 8 ]]; then
@@ -17,11 +15,11 @@ fi
 mkdir -p instances
 for (( size=$1; size <= $2; size = size + $3 ))
 do
-	for (( inst=0; inst < $8; inst++ ))
+	for (( inst=0; inst < $6; inst++ ))
 	do
-		locations=$(( $size*$4 ))
-		maxsize=$(( $size*$5 ))
-		./generate.sh $size $locations $maxsize $6 $7 > "instances/inst_size_${size}_${5}_${6}_${7}_inst_${inst}.hex"
+		regions=2
+		maxsize=$(( ($size/2) +1 ))
+		./generate.sh $regions $size $maxsize $4 $5 > "instances/inst_size_${size}_${4}_${5}_inst_${inst}.hex"
 	done
 done
 
