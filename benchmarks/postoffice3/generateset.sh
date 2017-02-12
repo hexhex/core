@@ -16,7 +16,7 @@ fi
 mkdir -p instances
 for (( size=$1; size <= $2; size = size + $3 ))
 do
-	for (( inst=0; inst < $6; inst++ ))
+	for (( inst=0; inst < $7; inst++ ))
 	do
 		regions=$4
 		maxsize=$(( ($size/2) +1 ))
