@@ -146,12 +146,15 @@ DLVHEX_NAMESPACE_BEGIN
                     DBGLOG(DBG, "[" << this << "]" << "GetEnv: jvm version not supported");
                 }
                 
-                options.arr = env->NewObjectArray(4,
+                options.arr = env->NewObjectArray(6,
                 env->FindClass("java/lang/String"),
                 env->NewStringUTF("str"));
                 env->SetObjectArrayElement(options.arr, 0, env->NewStringUTF("-str"));
                 env->SetObjectArrayElement(options.arr, 2, env->NewStringUTF("-x"));
                 env->SetObjectArrayElement(options.arr, 3, env->NewStringUTF("y"));
+                env->SetObjectArrayElement(options.arr, 4, env->NewStringUTF("-n"));
+                env->SetObjectArrayElement(options.arr, 5, env->NewStringUTF(std::to_string(amgPointer->factory.ctx.config.getOption("NumberOfModels")).c_str()));
+
                 
                 //std::cout << program_str << std::endl;
 
