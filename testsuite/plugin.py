@@ -497,24 +497,68 @@ def generalizedSubsetSum(x,y,b):
 def subgraph(vertices,edge):
 	trueVertices = []
 	unknownVertices = []
+	falseVertices = []
 
 	for x in dlvhex.getInputAtoms():
 		if x.tuple()[0] == vertices and x.isTrue():
 			trueVertices.append(x.tuple()[1].value())
 		elif x.tuple()[0] == vertices and not x.isFalse():
 			unknownVertices.append(x.tuple()[1].value())
+		else:
+			falseVertices.append(x.tuple()[1].value())
 
 	for x in dlvhex.getInputAtoms():
 		if x.tuple()[0] == edge and x.isTrue():
 			if x.tuple()[1].value() in trueVertices and x.tuple()[2].value() in trueVertices:
 				dlvhex.output( (x.tuple()[1].value(),x.tuple()[2].value()) )
-			elif x.tuple()[1].value() in unknownVertices or x.tuple()[2].value() in unknownVertices:
+			elif x.tuple()[1].value() not in falseVertices and x.tuple()[2].value() not in falseVertices:
 				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
 		elif x.tuple()[0] == edge and not x.isFalse():
 			if x.tuple()[1].value() in trueVertices and x.tuple()[2].value() in trueVertices:
 				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
-			elif x.tuple()[1].value() in unknownVertices or x.tuple()[2].value() in unknownVertices:
+			elif x.tuple()[1].value() not in falseVertices and x.tuple()[2].value() not in falseVertices:
 				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+
+
+def sizeDist(assign,distance,maxdist):
+	trueAssigned = []
+	unknownAssigned = []
+	falseAssigned = []
+	regions = set()
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == assign and x.isTrue():
+			trueAssigned.append((x.tuple()[1].value(), x.tuple()[2].value()))
+		elif x.tuple()[0] == assign and not x.isFalse():
+			unknownAssigned.append((x.tuple()[1].value(), x.tuple()[2].value()))
+		else:
+			falseAssigned.append((x.tuple()[1].value(), x.tuple()[2].value()))
+		regions.add(x.tuple()[2].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == distance:
+			if (x.tuple()[1].value(), x.tuple()[2].value()) in trueAssigned and x.tuple()[3].intValue() > maxdist.intValue():
+				dlvhex.output( (1000,1000) )
+			elif (x.tuple()[1].value(), x.tuple()[2].value()) not in falseAssigned and x.tuple()[3].intValue() > maxdist.intValue():
+				dlvhex.outputUnknown( (1000,1000) )
+
+	for r in regions:
+		unknowncount = 0
+		truecount = 0
+		unknown = False
+		for x in unknownAssigned:
+			if x[1] == r:
+				unknowncount += 1
+				unknown = True
+		for x in trueAssigned:
+			if x[1] == r:
+				truecount += 1
+
+		if not unknown:
+			dlvhex.output( (r,unknowncount + truecount) )
+		else:
+			for i in range(truecount, unknowncount + truecount + 1):
+				dlvhex.outputUnknown( (r,i) )
 
 
 def strategicConflict(conflicting,strategic):
@@ -703,6 +747,11 @@ def register():
 	prop.addMonotonicInputPredicate(0)
 	prop.addMonotonicInputPredicate(1)
 	dlvhex.addAtom("subgraph", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("sizeDist", (dlvhex.PREDICATE, dlvhex.PREDICATE, dlvhex.CONSTANT), 2, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
