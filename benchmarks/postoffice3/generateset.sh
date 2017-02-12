@@ -6,8 +6,8 @@
 # $6: number of instances
 
 
-if [[ $# -lt 8 ]]; then
-	echo "Error: Script expects 8 parameters"
+if [[ $# -lt 6 ]]; then
+	echo "Error: Script expects 6 parameters"
 	exit 1;
 fi
 
