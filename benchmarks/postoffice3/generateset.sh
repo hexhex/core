@@ -7,7 +7,7 @@
 # $7: number of instances
 
 
-if [[ $# -lt 6 ]]; then
+if [[ $# -lt 7 ]]; then
 	echo "Error: Script expects 7 parameters"
 	exit 1;
 fi
