@@ -555,10 +555,10 @@ def sizeDist(assign,distance,maxdist):
 				truecount += 1
 
 		if not unknown:
-			dlvhex.output( ('i'+str(r),'i'+str(unknowncount + truecount)) )
+			dlvhex.output( (str(r),'i'+str(unknowncount + truecount)) )
 		else:
 			for i in range(truecount, unknowncount + truecount + 1):
-				dlvhex.outputUnknown( ('i'+str(r),'i'+str(i)) )
+				dlvhex.outputUnknown( (str(r),'i'+str(i)) )
 
 
 def strategicConflict(conflicting,strategic):
