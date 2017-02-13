@@ -2,6 +2,10 @@ assign(L, R) :- not nassign(L, R), location(L), region(R).
 nassign(L, R) :- not assign(L, R), location(L), region(R).
 assigned(L) :- assign(L, R).
 
+adjacent(L2, L1) :- adjacent(L1, L2).
+path(L1, L2) :- adjacent(L1, L2), assign(L1, R), assign(L2, R).
+path(L1, L3) :- path(L1, L2), path(L2, L3), assign(L1, R), assign(L2, R).
+
 :- location(L), not assigned(L).
 :- assign(L, R1), assign(L, R2), unequal(R1,R2).
 
@@ -10,5 +14,3 @@ size(R,S) :- &sizeDist[assign,distance,X](R, S), maxdist(X).
 :- size(_,bad).
 
 :- size(R, S), maxsize(M), &greater[S,M]().
-
-

@@ -3,6 +3,7 @@
 # $3: max locations assigned to region (max size)
 # $4: max allowed distance to region (max dist)
 # $5: max distance to region (range of distances of locations to regions: 0..$7)
+# $6: adjacency probability
 
 echo -n "maxsize(i$3)."
 echo -n "maxdist(i$4)."
@@ -38,5 +39,17 @@ do
 	if [[ $i != $j ]]; then
 		echo -n "unequal(r$i,r$j). "
 	fi
+    done
+done
+
+# edges
+prop=$((32768 * $6 / 100))
+for (( i=1; i <= $2; i++ ))
+do
+    for (( j=1; j <= $2; j++ ))
+    do
+        if [[ $RANDOM -le $prop ]]; then
+            echo -n "adjacent(l$i,l$j). "
+        fi
     done
 done
