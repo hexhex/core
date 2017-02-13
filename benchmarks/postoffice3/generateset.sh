@@ -4,8 +4,7 @@
 # $4: number of regions
 # $5: max allowed distance to region (max dist)
 # $6: max distance to region (range of distances of locations to regions: 0..$7)
-# $7: adjacency probability
-# $8: number of instances
+# $7: number of instances
 
 
 if [[ $# -lt 7 ]]; then
@@ -17,11 +16,11 @@ fi
 mkdir -p instances
 for (( size=$1; size <= $2; size = size + $3 ))
 do
-	for (( inst=0; inst < $8; inst++ ))
+	for (( inst=0; inst < $7; inst++ ))
 	do
 		regions=$4
 		maxsize=$(( ($size/$4) +1 ))
-		./generate.sh $regions $size $maxsize $5 $6 $7 > "instances/inst_size_${size}_regions_${4}_${5}_${6}_inst_${inst}.hex"
+		./generate.sh $regions $size $maxsize $5 $6 > "instances/inst_size_${size}_regions_${4}_${5}_${6}_inst_${inst}.hex"
 	done
 done
 
