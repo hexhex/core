@@ -15,11 +15,6 @@ do
 	echo "group(g$i)."
 done
 
-for (( i=1; i <= $2; i++ ))
-do
-	echo "item(i$i)."
-done
-
 prob=$((32768 * $3 / 100)) 
 for (( i=1; i <= $1; i++ ))
 do

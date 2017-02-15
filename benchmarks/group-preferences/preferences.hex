@@ -4,4 +4,4 @@ nselect(X) :- not select(X), group(X).
 transitive(X,Y) :- &preferences[select,p](X,Y).
 transitive(X,Y) :- transitive(X,Z), transitive(Z,Y).
 
-:- transitive(X,Y), item(X), item(Y).
+:- transitive(X,Y), X = Y.
