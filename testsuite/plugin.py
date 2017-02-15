@@ -519,6 +519,31 @@ def subgraph(vertices,edge):
 			elif x.tuple()[1].value() not in falseVertices and x.tuple()[2].value() not in falseVertices:
 				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
 
+def preferences(selected,p):
+	trueGroups = []
+	unknownGroups = []
+	falseGroups = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == selected and x.isTrue():
+			trueGroups.append(x.tuple()[1].value())
+		elif x.tuple()[0] == selected and not x.isFalse():
+			unknownGroups.append(x.tuple()[1].value())
+		elif x.tuple()[0] == selected:
+			falseGroups.append(x.tuple()[1].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == p and x.isTrue():
+			if x.tuple()[1].value() in trueGroups:
+				dlvhex.output( (x.tuple()[2].value(),x.tuple()[3].value()) )
+			elif x.tuple()[1].value() not in falseGroups:
+				dlvhex.outputUnknown( (x.tuple()[2].value(),x.tuple()[3].value()) )
+		elif x.tuple()[0] == p and not x.isFalse():
+			if x.tuple()[1].value() in trueGroups:
+				dlvhex.outputUnknown( (x.tuple()[2].value(),x.tuple()[3].value()) )
+			elif x.tuple()[1].value() not in falseGroups:
+				dlvhex.outputUnknown( (x.tuple()[2].value(),x.tuple()[3].value()) )
+
 
 def sizeDist(assign,distance,maxdist):
 	trueAssigned = []
@@ -754,7 +779,14 @@ def register():
 	dlvhex.addAtom("subgraph", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
 
 	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("preferences", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
 	dlvhex.addAtom("greater", (dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
+
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
