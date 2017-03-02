@@ -44,6 +44,8 @@ else
 		{ echo "gringo patching failed!"; exit -1; }
 	patch gringo/app/gringo/main.cc <$TOP_SRCDIR/buildclaspgringo/main.cc.patch ||
 		{ echo "gringo patching failed!"; exit -1; }
+	patch gringo/libgringo/src/term.cc <$TOP_SRCDIR/buildclaspgringo/gringo-patch-include-math.patch ||
+		{ echo "gringo patching failed!"; exit -1; }
 	mkdir -p gringo/build/release
 fi
 

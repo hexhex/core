@@ -968,15 +968,23 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
         (!getNextModel() && contradictoryNogoods.size() > 0)) {
         if (!explanationAtoms) return Nogood(); // explanation is trivial in this case
 
-        // start from the conflicting nogood
-        int conflictNogoodIndex = *(contradictoryNogoods.begin());
+        // start from a conflicting nogood
+        // heuristics: choose a conflicting nogood with minimal cardinality
+        int conflictNogoodIndex = contradictoryNogoods[0];
+        BOOST_FOREACH (int i, contradictoryNogoods) {
+            if (nogoodset.getNogood(i).size() < nogoodset.getNogood(conflictNogoodIndex).size()) conflictNogoodIndex = i;
+        }
         Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
+//        Nogood violatedNogood = nogoodset.getNogood(*(contradictoryNogoods.begin()));
 
 #ifndef NDEBUG
+        Nogood initiallyViolatedNogood = violatedNogood;
         std::stringstream debugoutput;
-        debugoutput << "getInconsistencyCause, current implication graph:" << std::endl << getImplicationGraphAsDotString() << std::endl;
-		debugoutput << "getInconsistencyCause, explanation atoms: " << *explanationAtoms << std::endl;
-		debugoutput << "getInconsistencyCause, starting from nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
+        DBGLOG(DBG, "[IR] getInconsistencyCause, last interpretation before detecting inconsistency: " << *interpretation);
+        DBGLOG(DBG, "[IR] getInconsistencyCause, current implication graph:" << std::endl << "[IR] " << getImplicationGraphAsDotString());
+		DBGLOG(DBG, "[IR] getInconsistencyCause, explanation atoms: " << *explanationAtoms);
+        std::string indent = "";
+		debugoutput << "[IR] getInconsistencyCause, computation:" << std::endl << "[IR:INIT] " << violatedNogood.getStringRepresentation(reg) << " (nr. " << conflictNogoodIndex << ")" << std::endl;   
 #endif
 
         // resolve back to explanationAtoms
@@ -1019,8 +1027,11 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
             if (resolveWithNogoodIndex != -1){
                 violatedNogood = resolve(newNogood, nogoodset.getNogood(resolveWithNogoodIndex), resolvedLiteral.address);
 #ifndef NDEBUG
-                debugoutput << "Removed facts other than explanation atoms: " << newNogood.getStringRepresentation(reg) << std::endl;
-				debugoutput << "Resolved with " << nogoodset.getNogood(resolveWithNogoodIndex).getStringRepresentation(reg) << ": " << violatedNogood.getStringRepresentation(reg) << std::endl;
+                debugoutput << "[IR:RNEX] " << indent << newNogood.getStringRepresentation(reg) << std::endl;
+				debugoutput << "[IR:RLIT] " << indent << (resolvedLiteral.isNaf() ? "-" : "") << printToString<RawPrinter>(ID::atomFromLiteral(resolvedLiteral), reg) << std::endl;
+				debugoutput << "[IR:IMPL] " << indent << nogoodset.getNogood(resolveWithNogoodIndex).getStringRepresentation(reg) << std::endl;
+                indent = indent + "     ";
+                debugoutput << "[IR:RSVT] " << indent << violatedNogood.getStringRepresentation(reg) << std::endl;
 #endif
 			}else{
                 violatedNogood = newNogood;
@@ -1029,8 +1040,18 @@ Nogood InternalGroundASPSolver::getInconsistencyCause(InterpretationConstPtr exp
 
         // the nogood contains now only literals which have not been implied and which are from explanationAtoms
 #ifndef NDEBUG
-        debugoutput << "Final explanation nogood: " << violatedNogood.getStringRepresentation(reg) << std::endl;
-        DBGLOG(DBG, debugoutput.str());
+        debugoutput << "[IR:FINL] " << indent << violatedNogood.getStringRepresentation(reg) << std::endl;
+        DBGLOG(DBG, debugoutput.str() << std::endl << "INIT ... Initially violated nogood" << std::endl << "RNEX ... Eliminated non-implied literals other than explanation atoms" << std::endl << "RLIT ... Resolved literal" << std::endl << "IMPL ... Implicant of the resolved literal" << std::endl << "RSVT ... Resolvent" << std::endl << "FINL ... Final explanation nogood");
+
+        // the assertion could already be checked above, but we want to trace the algorithm also in case of errors
+        BOOST_FOREACH (ID lit, violatedNogood) {
+            assert(interpretation->getFact(lit.address) != lit.isNaf() && "nogood supposed to be violated is not");
+        }
+
+        // check if the selected nogood is really violated
+		BOOST_FOREACH (ID lit, initiallyViolatedNogood) {
+            assert(interpretation->getFact(lit.address) != lit.isNaf() && "nogood supposed to be initially violated is not");
+        }
 #endif
         return violatedNogood;
     }
@@ -1224,6 +1245,9 @@ std::string InternalGroundASPSolver::getStatistics()
     #endif
 }
 
+const NogoodSet& InternalGroundASPSolver::getNogoodStorage(){
+    return nogoodset;
+}
 
 std::string InternalGroundASPSolver::getImplicationGraphAsDotString(){
 
@@ -1254,13 +1278,12 @@ std::string InternalGroundASPSolver::getImplicationGraphAsDotString(){
     }
 
     // add conflict nogood and edges if present
-    if (contradictoryNogoods.size() > 0) {
+    BOOST_FOREACH (int conflictNogoodIndex, contradictoryNogoods) {
         // start from the conflicting nogood
-        int conflictNogoodIndex = *(contradictoryNogoods.begin());
         Nogood violatedNogood = nogoodset.getNogood(conflictNogoodIndex);
-        dot << "c [label=\"conflict (" << violatedNogood.getStringRepresentation(reg) << ")\"]; ";
+        dot << "c" << conflictNogoodIndex << " [label=\"conflict (" << violatedNogood.getStringRepresentation(reg) << ")\"]; ";
         BOOST_FOREACH (ID id, violatedNogood) {
-            dot << id.address << " -> c; ";
+            dot << id.address << " -> c" << conflictNogoodIndex << "; ";
         }
     }
 

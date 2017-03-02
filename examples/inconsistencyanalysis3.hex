@@ -3,12 +3,12 @@ p(a). p(b). q(a). q(c).
 % the following rules let the greedy heuristics split before the main part (since monotonicity of &id is not known to the solver)
 pi(X) :- p(X).
 qi(X) :- q(X).
-po(X) :- &id[pi](X).
-qo(X) :- &id[qi](X).
+po(X) :- &id[pi](X)<tuplelevellinear>.
+qo(X) :- &id[qi](X)<tuplelevellinear>.
 y(X) v n(X) :- #int(X).
 someN :- n(X).
 
 % main part
-res(X) :- &testSetMinusNonComfort[po,qo](X). %<tuplelevellinear>.
+res(X) :- &testSetMinusNonComfort[po,qo](X)<tuplelevellinear>.
 :- res(X), someN.
 %:- po(X).

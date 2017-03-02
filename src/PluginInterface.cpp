@@ -269,7 +269,7 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
         bool subqueryFromCache;
         if (useCache) {
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieveCached");
-            subqueryFromCache = retrieveCached(atomicQuery, atomicAnswer, query.ctx->config.getOption("ExternalLearningUser") ? nogoods : NogoodContainerPtr());
+            subqueryFromCache = retrieveCached(atomicQuery, atomicAnswer, nogoods);
         }
         else {
             replacements->updateMask();
@@ -279,8 +279,8 @@ bool PluginAtom::retrieveFacade(const Query& query, Answer& answer, NogoodContai
             retrieve(atomicQuery, atomicAnswer, query.ctx->config.getOption("ExternalLearningUser") ? nogoods : NogoodContainerPtr());
         }
 
-        // learn only if the query was not answered from cache (otherwise also the nogoods come from the cache)
-        if (!subqueryFromCache) {
+        // if (!subqueryFromCache)
+        {
             DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"retrieveFacade Learning");
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningIOBehavior")) ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods);
             if (!!nogoods && query.ctx->config.getOption("ExternalLearningFunctionality") && prop.isFunctional()) ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
@@ -356,7 +356,7 @@ bool PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
     // (actually, comparing the sizes of predicateInputMask suffices as predicateInputMask can only increase but not decrease when the registry is expanded).
 
     boost::mutex::scoped_lock lock(cacheMutex);
-InterpretationPtr emp(new Interpretation(query.ctx->registry()));
+    InterpretationPtr emp(new Interpretation(query.ctx->registry()));
     typedef std::pair<Answer, SimpleNogoodContainerPtr> CacheEntryType;
 
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidcl,"PluginAtom cache lookup");
@@ -410,7 +410,7 @@ InterpretationPtr emp(new Interpretation(query.ctx->registry()));
                 assert(!ans.second);
 
                 ans.second.reset(new SimpleNogoodContainer());
-                retrieve(queryc, ans.first, ans.second);
+                retrieve(queryc, ans.first, query.ctx->config.getOption("ExternalLearningUser") ? ans.second : NogoodContainerPtr());
                 for (int i = 0; i < ans.second->getNogoodCount(); ++i) nogoods->addNogood(ans.second->getNogood(i));
                 answer = ans.first;
             }

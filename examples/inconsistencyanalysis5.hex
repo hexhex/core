@@ -8,5 +8,5 @@ in(X) v out(X) :- node(X).
 :- in(X), in(Y), edge(X,Y).
 
 % checking part is split from the guessing part due to the (possibly) non-monotonic external atom
-check(Z) :- &idp[in](Z).
+check(Z) :- &idp[in](Z)<tuplelevellinear>.
 :- check(Z), check(W), Z != W.

@@ -182,7 +182,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 
         // compute extensions of domain predicates and add it to the input
         if (factory.ctx.config.getOption("LiberalSafety")) {
-            InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ci, factory.ctx, postprocessedInput, factory.deidb, factory.deidbInnerEatoms);
+            InterpretationConstPtr domPredictaesExtension = computeExtensionOfDomainPredicates(factory.ctx, postprocessedInput, factory.deidb, factory.deidbInnerEatoms);
             postprocessedInput->add(*domPredictaesExtension);
         }
 

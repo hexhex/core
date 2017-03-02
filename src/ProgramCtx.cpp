@@ -159,12 +159,14 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("MinimizeNogoodsOnConflict", 0);
     // forces all external atoms to be treated as inner
     config.setOption("NoOuterExternalAtoms", 0);
-    config.setOption("UnitInconsistencyAnalysis", 0);
-    config.setOption("UnitInconsistencyAnalysisDebug", 0);  // analyze wrt. "explain" atoms
     config.setOption("TransUnitLearning", 0);
+    config.setOption("TransUnitLearningPUD", 0);
+    config.setOption("TransUnitLearningOS", 0);
+    config.setOption("TransUnitLearningDN", 0);
+    config.setOption("TransUnitLearningAT", 0);
+    config.setOption("TransUnitLearningMN", 0);
     config.setOption("ExternalAtomVerificationFromLearnedNogoods", 0);
     config.setOption("WaitOnModel", 0);
-    config.setOption("UserInconsistencyAnalysis", 0);
 
 
     WARNING("TODO cleanup the setASPSoftware vs nGenuineSolver thing")

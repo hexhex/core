@@ -39,6 +39,7 @@
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/Printer.h"
 
 #include <iostream>
 #include <sstream>
@@ -214,7 +215,14 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1)
 {
 
     if (c > -1) {
-        DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << nogoodset.getNogood(c));
+    #ifndef NDEBUG
+        BOOST_FOREACH (ID lit, nogoodset.getNogood(c)) {
+            if (assignedAtoms->getFact(lit.address)) {
+                DBGLOG(DBG, printToString<RawPrinter>(lit, ctx.registry()) << "=" << (interpretation->getFact(lit.address) ^ lit.isNaf()));
+            }
+        }
+    #endif
+        DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << c << " (" << nogoodset.getNogood(c) << ")");
     }
     else {
         DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl);

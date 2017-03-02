@@ -1,0 +1,10 @@
+assign(L, R) :- not nassign(L, R), location(L), region(R).
+nassign(L, R) :- not assign(L, R), location(L), region(R), assign(L, R2), unequal(R,R2).
+
+assigned(L) :- assign(L, R).
+:- location(L), not assigned(L).
+
+size(R,S) :- &sizeDist[assign,distance,X](R, S), maxdist(X).
+
+:- size(_,bad).
+:- size(R, S), maxsize(M), &greater[S,M]().

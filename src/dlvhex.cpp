@@ -366,6 +366,16 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "     --iauxinaux      Keep auxiliary input predicates in auxiliary external atom predicates (can increase or decrease efficiency)." << std::endl
         << "     --constspace     Free partial models immediately after using them. This may cause some models." << std::endl
         << "                      to be computed multiple times. (Not with monolithic.)" << std::endl
+        << "     --transunitlearning" << std::endl
+        << "                      Analyze inconsistent units and propagate reasons to predecessor units." << std::endl
+        << "     --transunitlearningpud" << std::endl
+        << "                      Use more elaborated analysis method to determine possible more inconsistent reasons." << std::endl
+        << "     --transunitlearningonestep" << std::endl
+        << "                      Use unoptimized solver from the beginning (slower solving, but faster inconsistency analysis)." << std::endl
+        << "     --transunitlearningoneanalysistreshold" << std::endl
+        << "                      Analyze inconsistency only if percentage of unit evaluations with inconsistent result exceeds this value." << std::endl
+        << "     --transunitlearningminimizenogoods" << std::endl
+        << "                      Minimize nogoods for inconsistency analysis (does not activate nogood minimization otherwise)." << std::endl
 
         << std::endl << "Debugging and General Options:" << std::endl
         << "     --dumpevalplan=F Dump evaluation plan (usable as manual heuristics) to file F." << std::endl
@@ -869,10 +879,14 @@ Config& config, ProgramCtx& pctx)
         { "csvoutput", required_argument, 0, 61 },
         { "noouterexternalatoms", no_argument, 0, 62 },
         { "transunitlearning", no_argument, 0, 64 },
+        { "transunitlearningpud", no_argument, 0, 68 },
+        { "transunitlearningonestep", no_argument, 0, 69 },
+        { "transunitlearningdumpnogoods", no_argument, 0, 70 },
+        { "transunitlearninganalysistreshold", required_argument, 0, 71 },
+        { "transunitlearningminimizenogoods", no_argument, 0, 72 },
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
-        { "explain", required_argument, 0, 68 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1675,11 +1689,47 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 64:
                 {
-                    pctx.config.setOption("UnitInconsistencyAnalysis", 1);
-                    pctx.config.setOption("TransUnitLearning", 1);
                     pctx.config.setOption("ForceGC", 1);
+//                    pctx.config.setOption("NoOuterExternalAtoms", 1);
                     pctx.config.setOption("LiberalSafety", 1);
-                    pctx.config.setOption("NoOuterExternalAtoms", 1);
+                    pctx.config.setOption("TransUnitLearning", 1);
+                    pctx.config.setOption("TransUnitLearningPUD", 0);
+                }
+                break;
+            case 68:
+                {
+                    pctx.config.setOption("TransUnitLearningPUD", 1);
+                }
+                break;
+            case 69:
+                {
+                    pctx.config.setOption("TransUnitLearningOS", 1);
+                }
+                break;
+            case 70:
+                {
+                    pctx.config.setOption("TransUnitLearningDN", 1);
+                }
+                break;
+            case 71:
+                {
+                    int treshold = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            treshold = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            treshold = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"analysis treshold '" << optarg << "' does not specify an integer value");
+                    }
+                    pctx.config.setOption("TransUnitLearningAT", treshold);
+                }
+                break;
+            case 72:
+                {
+                    pctx.config.setOption("TransUnitLearningMN", 1);
                 }
                 break;
             case 65:
@@ -1701,24 +1751,6 @@ Config& config, ProgramCtx& pctx)
                         if (mode == "re") pctx.config.setOption("ExternalSourceInlining", 2);
                         else if (mode != "post") throw GeneralError("Unknown inlining mode \"" + mode + "\"");
                     }
-                }
-                break;
-            case 68:
-                {
-                    pctx.evalHeuristic.reset(new EvalHeuristicMonolithic);
-                    heuristicMonolithic = true;
-                    pctx.config.setOption("ForceGC", 1);
-                    pctx.config.setOption("UnitInconsistencyAnalysis", 1);
-                    pctx.config.setOption("UserInconsistencyAnalysis", 1);
-
-                    boost::char_separator<char> sep(",");
-                                 // g++ 3.3 is unable to pass that at the ctor line below
-                    std::string oa(optarg);
-                    boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
-
-                    for(boost::tokenizer<boost::char_separator<char> >::const_iterator e = tok.begin();
-                        e != tok.end(); ++e)
-                    pctx.config.addExplanationAtom(*e);
                 }
                 break;
         }
