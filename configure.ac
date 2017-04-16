@@ -190,7 +190,6 @@ case "$dbgrelbench" in
 	# (we have an implicit DLVHEX_BENCHMARK definition in config.h)
 	AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
 	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
-  CPPFLAGS="$CPPFLAGS -DNDEBUG"
 	optlevel="-O3"
   AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
            ["$DISTCHECK_CONFIGURE_FLAGS --enable-benchmark"])
@@ -203,7 +202,6 @@ case "$dbgrelbench" in
      *,*,*,true,*)
 	# do stuff that must be done for --enable-profiling here
 	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
-  CPPFLAGS="$CPPFLAGS -DNDEBUG"
 	optlevel="-O3"
 	prof="-pg"
 
@@ -216,7 +214,6 @@ case "$dbgrelbench" in
      *,true,*,*,*)
 	# do stuff that must be done for --enable-release here
 	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
-  CPPFLAGS="$CPPFLAGS -DNDEBUG"
 	optlevel="-O3"
   AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
            ["$DISTCHECK_CONFIGURE_FLAGS --enable-release"])
