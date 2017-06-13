@@ -98,8 +98,8 @@ void GringoGrounder::Printer::printRule(ID id)
             if (b.isBuiltinAtom()) {
                 const BuiltinAtom& bi = registry->batoms.getByID(b);
                 if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())) {
-                    if (bi.tuple[0].address == ID::TERM_BUILTIN_EQ && bi.tuple[1] == bi.tuple[2] ||
-                    bi.tuple[0].address == ID::TERM_BUILTIN_NE && bi.tuple[1] != bi.tuple[2]) {
+                    if (((bi.tuple[0].address == ID::TERM_BUILTIN_EQ) && (bi.tuple[1] == bi.tuple[2])) ||
+                    ((bi.tuple[0].address == ID::TERM_BUILTIN_NE) && (bi.tuple[1] != bi.tuple[2]))) {
                         // skip
                         continue;
                     }

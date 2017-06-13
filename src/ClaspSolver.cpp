@@ -1663,6 +1663,9 @@ InterpretationPtr ClaspSolver::getNextModel()
                     DBGLOG(DBG, "Committing unsat (for optimization problems)");
                     optContinue = modelEnumerator->commitUnsat(solve->solver());
                 }
+                else {
+                  optContinue = false;
+                }
 
                 DBGLOG(DBG, "Updating enumerator");
                 modelEnumerator->update(solve->solver());
