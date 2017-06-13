@@ -157,11 +157,11 @@ class GringoGrounder: public GenuineGrounder
                     /** \brief Constructor.
                      * @param h Vector of head atoms, see LParseRule::head.
                      * @param v Vector of body atoms, see LParseRule::body. */
-                    LParseRule(const AtomVec& h, const LitVec& v) : head(h), body(v), bound(0), type(Regular){}
+                    LParseRule(const AtomVec& h, const LitVec& v) : type(Regular), head(h), body(v), bound(0){}
                     /** \brief Constructor.
                      * @param h Single head atom, see LParseRule::head.
                      * @param v Vector of body atoms, see LParseRule::body. */
-                    LParseRule(int h, const LitVec& v) : body(v), bound(0), type(Regular) {
+                    LParseRule(int h, const LitVec& v) :  type(Regular), body(v), bound(0) {
                         head.push_back(h);
                     }
                     /** \brief Constructor.
@@ -169,7 +169,7 @@ class GringoGrounder: public GenuineGrounder
                      * @param v Vector of body atoms, see LParseRule::body.
                      * @param w Weights of body atoms, see LParseRule::weights.
                      * @param bound Bound for weight rules, see LParseRule::bound. */
-                    LParseRule(int h, const LitVec& v, const WeightVec& w, int bound) : body(v), weights(w), bound(bound), type(Weight) {
+                    LParseRule(int h, const LitVec& v, const WeightVec& w, int bound) :  type(Weight), body(v), weights(w), bound(bound) {
                         head.push_back(h);
                     }
                     /** \brief Copy-constructor.

@@ -805,12 +805,13 @@ class DLVHEX_EXPORT PluginAtom
                 const InterpretationConstPtr changed = InterpretationConstPtr()):
             ctx(ctx),
                 interpretation(interpretation),
+                assigned(assigned),
+                changed(changed),
                 input(input),
                 pattern(pattern),
                 eatomID(eatomID),
-                predicateInputMask(predicateInputMask),
-                assigned(assigned),
-            changed(changed) {
+                predicateInputMask(predicateInputMask)
+             {
             }
             /**
              * \brief Assignes the query in depth (copy internal data structures rather than share).

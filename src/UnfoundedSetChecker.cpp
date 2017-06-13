@@ -2093,7 +2093,7 @@ ProgramCtx& ctx,
 const AnnotatedGroundProgram& agp,
 bool choiceRuleCompatible,
 SimpleNogoodContainerPtr ngc) :
-mg(&mg), ctx(ctx), agp(agp), lastAGPComponentCount(0), choiceRuleCompatible(choiceRuleCompatible), ngc(ngc)
+ctx(ctx), mg(&mg), agp(agp), lastAGPComponentCount(0), ngc(ngc), choiceRuleCompatible(choiceRuleCompatible)
 {
 
     computeChoiceRuleCompatibility(choiceRuleCompatible);
@@ -2158,7 +2158,7 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 ProgramCtx& ctx,
 const AnnotatedGroundProgram& agp,
 bool choiceRuleCompatible) :
-ctx(ctx), mg(0), agp(agp), choiceRuleCompatible(choiceRuleCompatible), lastAGPComponentCount(0)
+ctx(ctx), mg(0), agp(agp), lastAGPComponentCount(0), choiceRuleCompatible(choiceRuleCompatible)
 {
 
     computeChoiceRuleCompatibility(choiceRuleCompatible);

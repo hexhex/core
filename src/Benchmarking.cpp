@@ -218,9 +218,9 @@ namespace benchmark
 
         // init, display start of benchmarking
         NestingAwareController::NestingAwareController():
-        myID(0), maxID(0), instrumentations(), name2id(), current(), output(&(std::cerr)),
+        myID(0), maxID(0), instrumentations(), name2id(), current(),
                                  // print continuously all 10 seconds
-        printInterval(boost::posix_time::seconds(10.0)) {
+        printInterval(boost::posix_time::seconds(10.0)), output(&(std::cerr)) {
             myID = getInstrumentationID("BenchmarkController lifetime");
             start(myID);
         }

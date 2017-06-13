@@ -279,7 +279,7 @@ void GringoGrounder::Printer::print(ID id)
 
 
 GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, ID unsatPred, bool incAdd)
-: Gringo::Output::PlainLparseOutputter(emptyStream), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred), unsatPred(unsatPred)
+: Gringo::Output::PlainLparseOutputter(emptyStream), symbols_(1), ctx(ctx), groundProgram(groundProgram), intPred(intPred), anonymousPred(anonymousPred), unsatPred(unsatPred)
 {
 
     // Note: We do NOT use shifting but ground disjunctive rules as they are.
