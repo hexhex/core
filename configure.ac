@@ -44,7 +44,7 @@ CXXFLAGS="$CXXFLAGS $save_CFLAGS"
 # set default warning parameters for g++ compatible compilers
 # allow to disable certain warnings using custom CXXFLAGS
 if test "$GXX" = "yes"; then
-   CXXFLAGS="-W -Wall $CXXFLAGS"
+   CXXFLAGS="-W -Wall -Wno-unused-parameter -Wno-unused-local-typedefs -Wno-unused-function $CXXFLAGS"
 
    AC_MSG_CHECKING([for g++ >= 4.8 or clang++ >= 3.1])
    AC_LANG_PUSH([C++])
