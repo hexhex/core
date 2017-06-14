@@ -928,7 +928,7 @@ InterpretationPtr InternalGroundASPSolver::outputProjection(InterpretationConstP
 }
 
 
-InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0)
+InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen) : CDNLSolver(c, NogoodSet()), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), modelCount(0), program(p), cntDetectedUnfoundedSets(0) 
 {
     DBGLOG(DBG, "Internal Ground ASP Solver Init");
 

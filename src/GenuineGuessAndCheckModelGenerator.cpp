@@ -197,8 +197,8 @@ FLPModelGeneratorBase(factory, input),
 factory(factory),
 reg(factory.reg),
 cmModelCount(0),
-haveInconsistencyCause(false),
 unitInput(input),
+haveInconsistencyCause(false),
 guessingProgram(factory.reg)
 {
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidconstruct, "genuine g&c mg constructor");

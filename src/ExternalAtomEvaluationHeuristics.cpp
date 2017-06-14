@@ -116,8 +116,8 @@ bool ExternalAtomEvaluationHeuristicsInputComplete::doEvaluate(const ExternalAto
     }
 
     return !assigned ||
-        (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & assigned->getStorage()).count() == (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count() &&
-        aux;
+        (((eatom.getPredicateInputMask()->getStorage() & programMask->getStorage() & assigned->getStorage()).count() == (eatom.getPredicateInputMask()->getStorage() & programMask->getStorage()).count()) &&
+        aux);
 }
 
 

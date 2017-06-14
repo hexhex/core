@@ -219,8 +219,8 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
   //
   // The most efficient way would be:
   // * use cache for same inputSet + same *inputi + more specific pattern
-  // * store new cache for new inputSet/*inputi combination or unrelated (does not unify) pattern
-  // * replace cache for existing inputSet/*inputi combination and less specific (unifies in one direction) pattern
+  // * store new cache for new inputSet inputi combination or unrelated (does not unify) pattern
+  // * replace cache for existing inputSet inputi combination and less specific (unifies in one direction) pattern
   //
   // The currently implemented "poor (wo)man's version" is:
   // * store answers in cache with queries as keys, disregard relations between patterns
