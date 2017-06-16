@@ -1542,6 +1542,7 @@ InterpretationPtr ClaspSolver::getNextModel()
 
     // ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
     while (nextSolveStep != ReturnModel) {
+        bool optContinue = false;
         switch (nextSolveStep) {
             case Restart:
                 ENUMALGODBG("ini");
@@ -1657,14 +1658,9 @@ InterpretationPtr ClaspSolver::getNextModel()
 
             case Update:
                 ENUMALGODBG("upd");
-
-                bool optContinue;
                 if (modelEnumerator->optimize()) {
                     DBGLOG(DBG, "Committing unsat (for optimization problems)");
                     optContinue = modelEnumerator->commitUnsat(solve->solver());
-                }
-                else {
-                  optContinue = false;
                 }
 
                 DBGLOG(DBG, "Updating enumerator");
