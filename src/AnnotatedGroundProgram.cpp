@@ -449,7 +449,7 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
                             bool relevant = true;
                             for (int i = 0; i < ea.inputs.size(); ++i) {
                                 const bool antimonotonic =  (!b.isNaf() && prop.isAntimonotonic(i)) || (b.isNaf() && prop.isMonotonic(i));
-                                if ( (oatm.tuple[0] == ea.inputs[i]) && antimonotonic ) {
+                                if ( (oatom.tuple[0] == ea.inputs[i]) && antimonotonic ) {
                                     relevant = false;
                                     break;
                                 }
