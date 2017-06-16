@@ -143,8 +143,8 @@ BaseModelGenerator::
 IntegrateExternalAnswerIntoInterpretationCB::
 IntegrateExternalAnswerIntoInterpretationCB(
 InterpretationPtr outputi):
-outputi(outputi),
 reg(outputi->getRegistry()),
+outputi(outputi),
 replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX)
 {
 }
@@ -309,7 +309,7 @@ output(const Tuple& output)
 }
 
 
-BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX), falsified(ID_FAIL)
+BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX), guess(guess), remainingguess(), verified(true), falsified(ID_FAIL)
 {
 
     reg = eatom.pluginAtom->getRegistry();

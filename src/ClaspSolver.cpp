@@ -1130,7 +1130,7 @@ void ClaspSolver::outputProject(InterpretationPtr intr)
 
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, InterpretationConstPtr frozen)
-: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), projectionMask(p.getGroundProgram().mask), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
+: nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), ctx(ctx), projectionMask(p.getGroundProgram().mask), minc(0), sharedMinimizeData(0), solve(0), ep(0), modelCount(0)
 {
     reg = ctx.registry();
 
@@ -1174,7 +1174,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, Inter
 
 
 ClaspSolver::ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, InterpretationConstPtr frozen)
-: ctx(ctx), solve(0), ep(0), modelCount(0), nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), minc(0), sharedMinimizeData(0)
+: nextVar(2), noLiteral(Clasp::Literal::fromRep(~0x0)), ctx(ctx), minc(0), sharedMinimizeData(0), solve(0), ep(0), modelCount(0)
 {
     reg = ctx.registry();
 
@@ -1542,6 +1542,7 @@ InterpretationPtr ClaspSolver::getNextModel()
 
     // ReturnModel is the only step which allows for interrupting the algorithm, i.e., leaving this loop
     while (nextSolveStep != ReturnModel) {
+        bool optContinue = false;
         switch (nextSolveStep) {
             case Restart:
                 ENUMALGODBG("ini");
@@ -1657,8 +1658,6 @@ InterpretationPtr ClaspSolver::getNextModel()
 
             case Update:
                 ENUMALGODBG("upd");
-
-                bool optContinue;
                 if (modelEnumerator->optimize()) {
                     DBGLOG(DBG, "Committing unsat (for optimization problems)");
                     optContinue = modelEnumerator->commitUnsat(solve->solver());

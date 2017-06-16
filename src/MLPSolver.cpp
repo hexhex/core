@@ -1854,7 +1854,7 @@ bool MLPSolver::solve()
     ctrASFromDLV = 0;
 
     //recording time for comp
-    double compStartTime;
+    double compStartTime = 0;
     double compEndTime;
     if ( recordingTime ==1 ) {
         gettimeofday(&startTimeStruct, NULL);

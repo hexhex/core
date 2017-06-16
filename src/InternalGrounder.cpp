@@ -869,7 +869,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitu
     }
     else {
         // all values are fixed
-        bool cmp;
+        bool cmp = false;
         switch (atom.tuple[0].address) {
             case ID::TERM_BUILTIN_EQ: cmp = (atom.tuple[1].address == atom.tuple[2].address); break;
             case ID::TERM_BUILTIN_NE: cmp = (atom.tuple[1].address != atom.tuple[2].address); break;

@@ -42,7 +42,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 // ============================== Base ==============================
 
-UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) : groundProgram(groundProgram), reg(reg)
+UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(const AnnotatedGroundProgram& groundProgram, RegistryPtr reg) :  reg(reg), groundProgram(groundProgram)
 {
 
     // prepare data structures for maintaining the skip program

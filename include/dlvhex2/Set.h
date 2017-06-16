@@ -304,7 +304,7 @@ class Set
         /** \brief Constructor.
          * @param initialSize Internal size of the internal array.
          * @param inc Number of elements to add when the internal array needs to be resized. */
-        Set(int initialSize = 0, int inc = 10) : increase(inc), rsize(0) {
+        Set(int initialSize = 0, int inc = 10) : rsize(0), increase(inc) {
             if (initialSize == 0) {
                 data = 0;
             }

@@ -59,7 +59,7 @@ AnnotatedGroundProgram::AnnotatedGroundProgram() : ctx(0), groundProgram(Ordinar
 
 
 AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms, std::vector<ID> dependencyIDB) :
-ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true), dependencyIDB(dependencyIDB)
+ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), dependencyIDB(dependencyIDB), haveGrounding(true), indexedEatoms(indexedEatoms)
 {
 
     initialize();
@@ -67,7 +67,7 @@ ctx(&ctx), reg(ctx.registry()), groundProgram(groundProgram), indexedEatoms(inde
 
 
 AnnotatedGroundProgram::AnnotatedGroundProgram(ProgramCtx& ctx, std::vector<ID> indexedEatoms) :
-ctx(&ctx), reg(ctx.registry()), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), indexedEatoms(indexedEatoms), haveGrounding(false)
+ctx(&ctx), reg(ctx.registry()), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), haveGrounding(false), indexedEatoms(indexedEatoms)
 {
 
     initialize();
@@ -448,7 +448,8 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
                             const OrdinaryAtom& oatom = ctx->registry()->ogatoms.getByAddress(*en);
                             bool relevant = true;
                             for (int i = 0; i < ea.inputs.size(); ++i) {
-                                if (oatom.tuple[0] == ea.inputs[i] && (!b.isNaf() && prop.isAntimonotonic(i) || b.isNaf() && prop.isMonotonic(i))) {
+                                const bool antimonotonic =  (!b.isNaf() && prop.isAntimonotonic(i)) || (b.isNaf() && prop.isMonotonic(i));
+                                if ( (oatom.tuple[0] == ea.inputs[i]) && antimonotonic ) {
                                     relevant = false;
                                     break;
                                 }
@@ -530,7 +531,8 @@ void AnnotatedGroundProgram::computeAdditionalDependencies()
                 for (int i = 0; i < ea.inputs.size(); ++i) {
                     if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE) {
                         // polarity check
-                        if (ctx->config.getOption("FLPDecisionCriterionEM") && (!b.isNaf() && prop.isAntimonotonic(i) || b.isNaf() && prop.isMonotonic(i))) {
+                        const bool antimonotonic = (!b.isNaf() && prop.isAntimonotonic(i)) || (b.isNaf() && prop.isMonotonic(i));
+                        if (ctx->config.getOption("FLPDecisionCriterionEM") && antimonotonic) {
                             DLVHEX_BENCHMARK_REGISTER_AND_COUNT(siddc, "UFS decision c. for mon./antim. applies", 1);
                             continue;
                         }

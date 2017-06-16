@@ -1259,7 +1259,7 @@ void AssumptionBasedUnfoundedSetChecker::constructDomain()
         BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
         BOOST_FOREACH (ID b, rule.body) {
             domain->setFact(b.address);
-        
+
             if(mode == WithExt && b.isExternalAuxiliary()) {
                 assert(agp.mapsAux(b.address) && "mapping of auxiliary to EA not found");
                 const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
@@ -2093,7 +2093,7 @@ ProgramCtx& ctx,
 const AnnotatedGroundProgram& agp,
 bool choiceRuleCompatible,
 SimpleNogoodContainerPtr ngc) :
-mg(&mg), ctx(ctx), agp(agp), lastAGPComponentCount(0), choiceRuleCompatible(choiceRuleCompatible), ngc(ngc)
+ctx(ctx), mg(&mg), agp(agp), lastAGPComponentCount(0), ngc(ngc), choiceRuleCompatible(choiceRuleCompatible)
 {
 
     computeChoiceRuleCompatibility(choiceRuleCompatible);
@@ -2158,7 +2158,7 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 ProgramCtx& ctx,
 const AnnotatedGroundProgram& agp,
 bool choiceRuleCompatible) :
-ctx(ctx), mg(0), agp(agp), choiceRuleCompatible(choiceRuleCompatible), lastAGPComponentCount(0)
+ctx(ctx), mg(0), agp(agp), lastAGPComponentCount(0), choiceRuleCompatible(choiceRuleCompatible)
 {
 
     computeChoiceRuleCompatibility(choiceRuleCompatible);
@@ -2186,7 +2186,7 @@ void UnfoundedSetCheckerManager::initializeUnfoundedSetCheckers()
     }
     else {
         for (int comp = 0; comp < agp.getComponentCount(); ++comp) {
-            if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp) && flpdc_e)) {
+            if ((!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || (!agp.hasECycles(comp) && flpdc_e))) {
                 DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
                 continue;
             }
@@ -2322,7 +2322,7 @@ SimpleNogoodContainerPtr ngc)
 
     // in incremental mode we need to proceed as we can decide the FLP criterion only after checking each component for necessary extensions
     if (!ctx.config.getOption("IncrementalGrounding")) {
-        if ( (!agp.hasHeadCycles() && flpdc_head) && (!mg || flpdc_e && (!agp.hasECycles() || (flpdc_emi && !agp.hasECycles(interpretation)))) ) {
+        if ( (!agp.hasHeadCycles() && flpdc_head) && (!mg || (flpdc_e && (!agp.hasECycles() || (flpdc_emi && !agp.hasECycles(interpretation))))) ) {
             DBGLOG(DBG, "Skipping UFS check program it contains neither head-cycles nor e-cycles");
             return std::vector<IDAddress>();
         }
@@ -2373,7 +2373,7 @@ SimpleNogoodContainerPtr ngc)
         // search in each component for unfounded sets
         DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet component-wise");
         for (int comp = 0; comp < agp.getComponentCount(); ++comp) {
-            if ( (!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || flpdc_e && (!agp.hasECycles(comp) || (flpdc_emi && !agp.hasECycles(comp, interpretation)))) ) {
+            if ( (!agp.hasHeadCycles(comp) && flpdc_head) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || (flpdc_e && (!agp.hasECycles(comp) || (flpdc_emi && !agp.hasECycles(comp, interpretation))))) ) {
                 DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
                 continue;
             }
