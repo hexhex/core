@@ -256,7 +256,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "     --csvinput=PREDICATE,FILENAME" << std::endl
         << "                      Read from the given file in CSV format and add each line as fact" << std::endl
         << "                      in over the specified predicate (the original line number is added as first argument)." << std::endl
-        << "     --cvsoutput=PREDICATE" << std::endl
+        << "     --csvoutput=PREDICATE" << std::endl
         << "                      Print the extension of the specified predicate in CSV format." << std::endl
         << "                      They are sorted by their first argument (should be numeric)." << std::endl
         << "                      Answer Sets are separated by empty lines." << std::endl
