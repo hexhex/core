@@ -890,7 +890,7 @@ Config& config, ProgramCtx& pctx)
         { "verifyfromlearned", no_argument, 0, 65 },
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
-        { "ufslearnpartial", no_argument, 0, 68 },
+        { "ufslearnpartial", no_argument, 0, 73 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1757,7 +1757,7 @@ Config& config, ProgramCtx& pctx)
                     }
                 }
                 break;
-            case 68: pctx.config.setOption("UFSCheckPartial", 1); break;
+            case 73: pctx.config.setOption("UFSCheckPartial", 1); break;
         }
     }
 
