@@ -39,6 +39,7 @@
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/Printer.h"
 
 #include <iostream>
 #include <sstream>
@@ -214,7 +215,14 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1)
 {
 
     if (c > -1) {
-        DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << nogoodset.getNogood(c));
+    #ifndef NDEBUG
+        BOOST_FOREACH (ID lit, nogoodset.getNogood(c)) {
+            if (assignedAtoms->getFact(lit.address)) {
+                DBGLOG(DBG, printToString<RawPrinter>(lit, ctx.registry()) << "=" << (interpretation->getFact(lit.address) ^ lit.isNaf()));
+            }
+        }
+    #endif
+        DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl << " with cause " << c << " (" << nogoodset.getNogood(c) << ")");
     }
     else {
         DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl);
@@ -716,7 +724,7 @@ std::string CDNLSolver::getStatistics()
 }
 
 
-CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1)
+CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) :  nogoodset(ns), ctx(c), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1)
 {
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");

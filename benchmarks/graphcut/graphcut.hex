@@ -1,0 +1,8 @@
+keep(X) :- vertex(X), not delete(X).
+delete(X) :- vertex(X), not keep(X).
+:- delete(X), delete(Y), X != Y.
+
+reachable(X,Y) :- &subgraph[keep,edge](X,Y), vertex(X), vertex(Y).
+reachable(X,Z) :- reachable(X,Y), reachable(Y,Z).
+
+:- delete(D), &subgraph[vertex,edge](V1,D), &subgraph[vertex,edge](D,V2), not reachable(V1,V2), vertex(V1), vertex(V2).

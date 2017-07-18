@@ -494,6 +494,98 @@ def generalizedSubsetSum(x,y,b):
 	elif true != b.intValue() or unknown != 0:
 		dlvhex.outputUnknown(())
 
+def subgraph(vertices,edge):
+	trueVertices = []
+	unknownVertices = []
+	falseVertices = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == vertices and x.isTrue():
+			trueVertices.append(x.tuple()[1].value())
+		elif x.tuple()[0] == vertices and not x.isFalse():
+			unknownVertices.append(x.tuple()[1].value())
+		else:
+			falseVertices.append(x.tuple()[1].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == edge and x.isTrue():
+			if x.tuple()[1].value() in trueVertices and x.tuple()[2].value() in trueVertices:
+				dlvhex.output( (x.tuple()[1].value(),x.tuple()[2].value()) )
+			elif x.tuple()[1].value() not in falseVertices and x.tuple()[2].value() not in falseVertices:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+		elif x.tuple()[0] == edge and not x.isFalse():
+			if x.tuple()[1].value() in trueVertices and x.tuple()[2].value() in trueVertices:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+			elif x.tuple()[1].value() not in falseVertices and x.tuple()[2].value() not in falseVertices:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),x.tuple()[2].value()) )
+
+def preferences(selected,p):
+	trueGroups = []
+	unknownGroups = []
+	falseGroups = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == selected and x.isTrue():
+			trueGroups.append(x.tuple()[1].value())
+		elif x.tuple()[0] == selected and not x.isFalse():
+			unknownGroups.append(x.tuple()[1].value())
+		elif x.tuple()[0] == selected:
+			falseGroups.append(x.tuple()[1].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == p and x.isTrue():
+			if x.tuple()[1].value() in trueGroups:
+				dlvhex.output( (x.tuple()[2].value(),x.tuple()[3].value()) )
+			elif x.tuple()[1].value() not in falseGroups:
+				dlvhex.outputUnknown( (x.tuple()[2].value(),x.tuple()[3].value()) )
+		elif x.tuple()[0] == p and not x.isFalse():
+			if x.tuple()[1].value() in trueGroups:
+				dlvhex.outputUnknown( (x.tuple()[2].value(),x.tuple()[3].value()) )
+			elif x.tuple()[1].value() not in falseGroups:
+				dlvhex.outputUnknown( (x.tuple()[2].value(),x.tuple()[3].value()) )
+
+
+def sizeDist(assign,distance,maxdist):
+	trueAssigned = []
+	unknownAssigned = []
+	falseAssigned = []
+	regions = set()
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == assign and x.isTrue():
+			trueAssigned.append((x.tuple()[1].value(), x.tuple()[2].value()))
+		elif x.tuple()[0] == assign and not x.isFalse():
+			unknownAssigned.append((x.tuple()[1].value(), x.tuple()[2].value()))
+		else:
+			falseAssigned.append((x.tuple()[1].value(), x.tuple()[2].value()))
+		regions.add(x.tuple()[2].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == distance:
+			if (x.tuple()[1].value(), x.tuple()[2].value()) in trueAssigned and int(x.tuple()[3].value()[1:]) > int(maxdist.value()[1:]):
+				dlvhex.output( ("bad","bad") )
+			elif (x.tuple()[1].value(), x.tuple()[2].value()) not in falseAssigned and int(x.tuple()[3].value()[1:]) > int(maxdist.value()[1:]):
+				dlvhex.outputUnknown( ('bad','bad') )
+
+	for r in regions:
+		unknowncount = 0
+		truecount = 0
+		unknown = False
+		for x in unknownAssigned:
+			if x[1] == r:
+				unknowncount += 1
+				unknown = True
+		for x in trueAssigned:
+			if x[1] == r:
+				truecount += 1
+
+		if not unknown:
+			dlvhex.output( (str(r),'i'+str(unknowncount + truecount)) )
+		else:
+			for i in range(truecount, unknowncount + truecount + 1):
+				dlvhex.outputUnknown( (str(r),'i'+str(i)) )
+
+
 def strategicConflict(conflicting,strategic):
 	trueList = []
 	falseList = []
@@ -562,6 +654,11 @@ def greaterOrEqual(p, idx, bound):
 	if sum >= bound.intValue():
 		dlvhex.output(())
 
+def greater(a,b):
+	if a.value() != "bad" and b.value() != "bad":
+		if int(a.value()[1:]) > int(b.value()[1:]):
+			dlvhex.output(())
+
 def date():
 	from datetime import datetime
 	t = "\"" + datetime.now().strftime('%Y-%m-%d') + "\""
@@ -572,6 +669,12 @@ def tail(str):
 		dlvhex.output((str.value()[:-1], ))
 	else:
 		dlvhex.output(("\"\"", ))
+
+def cnt(p):
+	c = 0
+	for x in dlvhex.getTrueInputAtoms():
+		c = c + 1
+	dlvhex.output((c, ))
 
 def main():
 	h1 = dlvhex.storeAtom(("q", "X"))
@@ -673,6 +776,27 @@ def register():
 	prop.setProvidesPartialAnswer(True)
 	prop.addMonotonicInputPredicate(0)
 	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("subgraph", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("preferences", (dlvhex.PREDICATE, dlvhex.PREDICATE), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	dlvhex.addAtom("greater", (dlvhex.CONSTANT, dlvhex.CONSTANT), 0, prop)
+
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("sizeDist", (dlvhex.PREDICATE, dlvhex.PREDICATE, dlvhex.CONSTANT), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
 	dlvhex.addAtom("strategicConflict", (dlvhex.PREDICATE, dlvhex.PREDICATE), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
@@ -685,3 +809,5 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.addWellorderingStrlen(0, 0)
 	dlvhex.addAtom("tail", (dlvhex.CONSTANT, ), 1, prop)
+
+	dlvhex.addAtom("cnt", (dlvhex.PREDICATE, ), 1)

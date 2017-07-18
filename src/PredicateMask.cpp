@@ -240,7 +240,7 @@ void ExternalAtomMask::setEAtom(const ProgramCtx& ctx, const ExternalAtom& eatom
         }
         i++;
     }
-
+DBGLOG(DBG, "3");
     //
     // outputs
     //

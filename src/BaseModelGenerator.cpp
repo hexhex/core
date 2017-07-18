@@ -143,8 +143,8 @@ BaseModelGenerator::
 IntegrateExternalAnswerIntoInterpretationCB::
 IntegrateExternalAnswerIntoInterpretationCB(
 InterpretationPtr outputi):
-outputi(outputi),
 reg(outputi->getRegistry()),
+outputi(outputi),
 replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX)
 {
 }
@@ -309,7 +309,7 @@ output(const Tuple& output)
 }
 
 
-BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX), falsified(ID_FAIL)
+BaseModelGenerator::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX), guess(guess), remainingguess(), verified(true), falsified(ID_FAIL)
 {
 
     reg = eatom.pluginAtom->getRegistry();
@@ -1007,7 +1007,6 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 
                     // remember that this external atom was necessary for de-safety
                     DBGLOG(DBG, "External atom " << b << " is necessary for de-safety");
-                    deidbInnerEatoms.push_back(b);
 
                     if (isOuterEatom) {
                         const ExternalAtom& eatom = reg->eatoms.getByID(b);
@@ -1024,6 +1023,8 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
                         ruleExpl.body.push_back(ID::posLiteralFromAtom(reg->storeOrdinaryAtom(replacement)));
                     }
                     else {
+                        deidbInnerEatoms.push_back(b);
+
                         OrdinaryAtom domainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
                         OrdinaryAtom chosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
                         OrdinaryAtom notChosenDomainAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
@@ -1110,10 +1111,11 @@ void BaseModelGeneratorFactory::addDomainPredicatesAndCreateDomainExplorationPro
 }
 
 
-InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, bool enumerateNonmonotonic)
+InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb, std::vector<ID>& deidb, std::vector<ID>& deidbInnerEatoms, std::vector<ID> pseudoInnerEatoms)
 {
 
     RegistryPtr reg = ctx.registry();
+    if (deidbInnerEatoms.empty()) return InterpretationPtr(new Interpretation(reg));
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcedp,"computeExtensionOfDomainPreds");
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
@@ -1172,54 +1174,54 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(Pr
         BOOST_FOREACH (ID eaid, deidbInnerEatoms) {
             const ExternalAtom& ea = reg->eatoms.getByID(eaid);
 
-            // remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
-            // in order to maximize the output;
-            // for nonmonotonic input atoms, enumerate all (exponentially many) possible assignments
-            boost::unordered_map<IDAddress, bool> nonmonotonicinput;
-            InterpretationPtr input(new Interpretation(reg));
-            input->add(*herbrandBase);
-            ea.updatePredicateInputMask();
-            bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
-            bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
-            while (en < en_end) {
-                const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
 
-                for (uint32_t i = 0; i < ea.inputs.size(); ++i) {
-                    if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
-                        ea.getExtSourceProperties().isAntimonotonic(i) &&
-                    ogatom.tuple[0] == ea.inputs[i]) {
-                        DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
-                        input->clearFact(*en);
-                    }
-                    if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
-                        !ea.getExtSourceProperties().isAntimonotonic(i) &&
-                        !ea.getExtSourceProperties().isMonotonic(i) &&
-                    ogatom.tuple[0] == ea.inputs[i]) {
-                        // if the predicate is defined in this component, enumerate all possible assignments
-                        if (predicatesDefinedInComponent.count(ea.inputs[i]) > 0) {
-                            DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
-                            nonmonotonicinput[*en] = false;
+            typedef std::pair<IDAddress, bool> Pair;
+            if (std::find(pseudoInnerEatoms.begin(), pseudoInnerEatoms.end(), ID::atomFromLiteral(eaid)) != pseudoInnerEatoms.end()) {
+                // evalute external atom
+                DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *edb << " (do not enumerate nonmonotonic input assignments since it is only a pseudo-inner external atom)");
+                evaluateExternalAtom(ctx, eaid, edb, cb);
+            }else{
+
+                // remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
+                // in order to maximize the output;
+                // for nonmonotonic input atoms, enumerate all (exponentially many) possible assignments
+                boost::unordered_map<IDAddress, bool> nonmonotonicinput;
+                InterpretationPtr input(new Interpretation(reg));
+                input->add(*herbrandBase);
+                ea.updatePredicateInputMask();
+                bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+                bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+                while (en < en_end) {
+                    const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*en);
+
+                    for (uint32_t i = 0; i < ea.inputs.size(); ++i) {
+                        if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+                            ea.getExtSourceProperties().isAntimonotonic(i) &&
+                        ogatom.tuple[0] == ea.inputs[i]) {
+                            DBGLOG(DBG, "Setting " << *en << " to false because it is an antimonotonic input atom");
+                            input->clearFact(*en);
                         }
-                        // otherwise: take the truth value from the edb
-                        else {
-                            if (!edb->getFact(*en)) {
-                                DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
-                                input->clearFact(*en);
+                        if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+                            !ea.getExtSourceProperties().isAntimonotonic(i) &&
+                            !ea.getExtSourceProperties().isMonotonic(i) &&
+                        ogatom.tuple[0] == ea.inputs[i]) {
+                            // if the predicate is defined in this component, enumerate all possible assignments
+                            if (predicatesDefinedInComponent.count(ea.inputs[i]) > 0) {
+                                DBGLOG(DBG, "Must guess all assignments to " << *en << " because it is a nonmonotonic and unstratified input atom");
+                                nonmonotonicinput[*en] = false;
+                            }
+                            // otherwise: take the truth value from the edb
+                            else {
+                                if (!edb->getFact(*en)) {
+                                    DBGLOG(DBG, "Setting " << *en << " to false because it is stratified and false in the edb");
+                                    input->clearFact(*en);
+                                }
                             }
                         }
                     }
+                    en++;
                 }
-                en++;
-            }
 
-            typedef std::pair<IDAddress, bool> Pair;
-            if (!enumerateNonmonotonic) {
-                // evalute external atom
-                DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input << " (do not enumerate nonmonotonic input assignments due to user request)");
-                BOOST_FOREACH (Pair p, nonmonotonicinput) input->clearFact(p.first);
-                evaluateExternalAtom(ctx, eaid, input, cb);
-            }
-            else {
                 DBGLOG(DBG, "Enumerating nonmonotonic input assignments to " << eaid);
                 bool allOnes;
                 do {
@@ -1282,6 +1284,7 @@ InterpretationConstPtr BaseModelGenerator::computeExtensionOfDomainPredicates(Pr
             }
             en++;
         }
+
         herbrandBase->getStorage() |= domintr->getStorage();
         DBGLOG(DBG, "Domain extension interpretation (intermediate result, including EDB): " << *domintr);
     }while(herbrandBase->getStorage().count() != oldherbrandBase->getStorage().count());

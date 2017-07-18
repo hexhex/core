@@ -259,7 +259,7 @@ namespace
         DBGLOG(DBG, "Rewriting aggregate atoms in rule");
         int aggIndex = 0;
         BOOST_FOREACH (ID b, rule.body) {
-            if (b.isAggregateAtom()) {
+            if (b.isAggregateAtom() && (!b.wasCreatedFromConditionalLiteral() || ctxdata.mode == AggregatePlugin::CtxData::ExtRewrite || ctxdata.mode == AggregatePlugin::CtxData::ExtBlRewrite)) {
                 int symbolicSetSize = -1;
                 DBGLOG(DBG, "Rewriting aggregate atom " << printToString<RawPrinter>(b, reg));
                 const AggregateAtom& aatom = reg->aatoms.getByID(b);

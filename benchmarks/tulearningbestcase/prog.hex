@@ -1,0 +1,12 @@
+% monolithic: grounding problem because external atoms are evaluated under exponentially many interpretations
+% splitting: solving problem because constraint at the bottom cannot eliminate guesses
+
+dom(X) :- #int(X).
+
+% the following rules let the greedy heuristics split before the main part (since the external atom is nonmonotonic)
+in(X) v out(X) :- #int(X).
+someIn :- in(X).
+
+% main part
+res(X) :- &testSetMinusNogoodBasedLearning[dom,in](X)<tuplelevellinear>.
+:- res(X), someIn.

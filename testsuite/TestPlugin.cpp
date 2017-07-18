@@ -1436,6 +1436,7 @@ public:
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
+
 	// find relevant input
 	bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
 	bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
@@ -2830,6 +2831,406 @@ public:
             }
     };
 
+    class MappingAtom : public PluginAtom
+    {
+        public:
+            MappingAtom() : PluginAtom("mapping", false)
+            {
+                addInputPredicate();
+                addInputPredicate();
+                setOutputArity(1);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+
+                std::set<ID> selected;
+                std::set<ID> possiblyselected;
+                std::set<ID> alltags;
+
+                ID const_p = registry.storeConstantTerm("p");
+                ID const_n = registry.storeConstantTerm("n");
+
+                // extract requirements and production plan
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end){
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+                    if (ogatom.tuple[0] == query.input[0]){
+                        if (!query.assigned || query.assigned->getFact(*en)){
+                            if (query.interpretation->getFact(*en)) { selected.insert(ogatom.tuple[1]); }
+                        } else { possiblyselected.insert(ogatom.tuple[1]); }
+                    }
+                    if (ogatom.tuple[0] == query.input[1]){
+                        alltags.insert(ogatom.tuple[1]);
+                    }
+                    en++;
+                }
+
+                // decide for each requirement if it is true, false or unknown
+                BOOST_FOREACH (ID req, alltags) {
+                    en = query.predicateInputMask->getStorage().first();
+                    en_end = query.predicateInputMask->getStorage().end();
+                    while (en < en_end){
+                        const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+                        if (ogatom.tuple[0] == query.input[1] && ogatom.tuple[1] == req){
+                            if (ogatom.tuple[2] != const_p) throw PluginError("tags specification must be of form tags(t, p, ..., n, ...)");
+                            bool cursat = true;
+                            bool curviolated = false;
+                            bool pos = true;
+                            for (int i = 3; i < ogatom.tuple.size(); ++i) {
+                                // switch to negative requirements
+                                if (ogatom.tuple[i] == const_n) {
+                                    pos = false;
+                                    continue;
+                                }
+                                // check for satisfaction of the current product
+                                cursat &= (pos && selected.find(ogatom.tuple[i]) != selected.end()) || (!pos && selected.find(ogatom.tuple[i]) == selected.end() && possiblyselected.find(ogatom.tuple[i]) == possiblyselected.end());
+                                curviolated |= (pos && selected.find(ogatom.tuple[i]) == selected.end() && possiblyselected.find(ogatom.tuple[i]) == possiblyselected.end()) || (!pos && selected.find(ogatom.tuple[i]) != selected.end());
+                            }
+                            assert (!(cursat && curviolated) && "precondition for tag is satisfied and violated at the same time");
+                            // requirement is definitely true
+                            if (cursat) {
+                                Tuple out;
+                                out.push_back(req);
+                                answer.get().push_back(out);
+                                break;
+                            }
+                            // requirement could be true
+                            if (!curviolated) {
+                                Tuple out;
+                                out.push_back(req);
+                                answer.getUnknown().push_back(out);
+                                break;
+                            }
+                        }
+                        en++;
+                    }
+                }
+            }
+    };
+
+    class GetSizesAtom : public PluginAtom
+    {
+        public:
+            GetSizesAtom() : PluginAtom("getSizes", false)
+            {
+                addInputPredicate();
+                setOutputArity(2);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+
+                // for all input atoms
+                std::vector<ID> keys;
+                typedef boost::unordered_map<ID, int> map;
+                map trueCount, unknownCount;
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+                    if (ogatom.tuple[0] == query.input[0]){
+                        if (ogatom.tuple.size() != 3) { throw PluginError("Input must be of arity 2"); }
+                        keys.push_back(ogatom.tuple[2]);
+                        if ( (!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en) ) {
+                            trueCount[ogatom.tuple[2]]++;
+                        }else if (!!query.assigned && !query.assigned->getFact(*en)){
+                            unknownCount[ogatom.tuple[2]]++;
+                        }
+                    }
+                    en++;
+                }
+
+                BOOST_FOREACH (ID k, keys) {
+                    int min = trueCount[k];
+                    int max = min + unknownCount[k];
+                    if (min == max) {
+                        Tuple t;
+                        t.push_back(k);
+                        t.push_back(ID::termFromInteger(min));
+                        answer.get().push_back(t);
+                    }else{
+                        for (int i = min; i <= max; i++) {
+                            Tuple t;
+                            t.push_back(k);
+                            t.push_back(ID::termFromInteger(i));
+                            answer.getUnknown().push_back(t);
+                        }
+                    }
+                }
+            }
+    };
+
+    class GetSizesRestrAtom : public PluginAtom
+    {
+        public:
+            GetSizesRestrAtom() : PluginAtom("getSizesRestr", false)
+            {
+                addInputPredicate();
+								addInputPredicate();
+                setOutputArity(2);
+
+								prop.monotonicInputPredicates.insert(0);
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                Registry &registry = *getRegistry();
+								
+								bool allPossibleAssigned = true;
+
+                // for all input atoms
+                std::vector<ID> keys;
+                typedef boost::unordered_map<ID, int> map;
+                map trueCount, unknownCount;
+								boost::unordered_map<ID, std::vector<ID>> possMap;
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+
+                    if (ogatom.tuple[0] == query.input[1]){
+                        if (ogatom.tuple.size() != 3) { throw PluginError("Input must be of arity 2"); }
+
+                        keys.push_back(ogatom.tuple[2]);
+                        if ( (!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en) ) {
+                            possMap[ogatom.tuple[2]].push_back(ogatom.tuple[1]);
+                        }else if (!!query.assigned && !query.assigned->getFact(*en)){
+                            allPossibleAssigned = false;
+                        }
+                    }
+                    en++;
+                }
+
+                en = query.predicateInputMask->getStorage().first();
+                en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry.ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry.ogatoms.getByAddress(*en);
+
+                    if (ogatom.tuple[0] == query.input[0]){
+                        if (ogatom.tuple.size() != 3) { throw PluginError("Input must be of arity 2"); }
+
+                        if ( (allPossibleAssigned && (!query.assigned || query.assigned->getFact(*en)) && query.interpretation->getFact(*en)) ) {
+                            trueCount[ogatom.tuple[2]]++;
+                        }else if (!allPossibleAssigned || (!!query.assigned && !query.assigned->getFact(*en) && (std::find(possMap[ogatom.tuple[2]].begin(), possMap[ogatom.tuple[2]].end(), ogatom.tuple[1]) != possMap[ogatom.tuple[2]].end()) )){
+                            unknownCount[ogatom.tuple[2]]++;
+                        }
+                    }
+                    en++;
+                }
+
+                BOOST_FOREACH (ID k, keys) {
+                    int min = trueCount[k];
+                    int max = min + unknownCount[k];
+                    if (min == max) {
+                        Tuple t;
+                        t.push_back(k);
+                        t.push_back(ID::termFromInteger(min));
+                        answer.get().push_back(t);
+                    }else{
+                        for (int i = min; i <= max; i++) {
+                            Tuple t;
+                            t.push_back(k);
+                            t.push_back(ID::termFromInteger(i));
+                            answer.getUnknown().push_back(t);
+                        }
+                    }
+                }
+            }
+    };
+
+    class GetDiagnosesAtom : public PluginAtom
+    {
+        private:
+            ProgramCtx& ctx;
+
+        public:
+            GetDiagnosesAtom(ProgramCtx& ctx) : PluginAtom("getDiagnoses", false), ctx(ctx)
+            {
+                addInputConstant();        // program
+                addInputPredicate();       // hypotheses
+                addInputPredicate();       // observation
+                setOutputArity(2);
+
+                prop.setProvidesPartialAnswer(true);
+            }
+
+            virtual void
+            retrieve(const Query& query, Answer& answer) throw (PluginError)
+            {
+                RegistryPtr reg = getRegistry();
+
+                // read the subprogram from the string constant
+                InputProviderPtr ip(new InputProvider());
+                ip->addStringInput(reg->terms.getByID(query.input[0]).getUnquotedString(), "program");
+
+                ProgramCtx pc = ctx;
+                pc.idb.clear();
+                pc.edb = InterpretationPtr(new Interpretation(reg));
+                pc.currentOptimum.clear();
+                pc.config.setOption("NumberOfModels",0);
+                pc.config.setOption("TransUnitLEarning",0);
+                pc.config.setOption("ForceGC",0);
+                pc.inputProvider = ip;
+                ip.reset();
+
+                bool allHypAssigned = true;
+                bool allObsAssigned = true;
+
+                // add guesses over the hypotheses and constraints over the observations
+                bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry->ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry->ogatoms.getByID(id);
+
+                    if (ogatom.tuple[0] == query.input[1]) {
+                        // hypotheses must be known, otherwise we cannot tell anything
+                        if (!!query.assigned && !query.assigned->getFact(*en)) {
+                            allHypAssigned = false;
+                        }
+
+                        // hypothesis
+                        if (query.interpretation->getFact(*en)) {
+                            Rule guess(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+                            guess.head.push_back(id);
+                            guess.head.push_back(registry->getAuxiliaryAtom('x', id));
+                            pc.idb.push_back(registry->storeRule(guess));
+                        }
+                    }
+                    if (ogatom.tuple[0] == query.input[2]) {
+                        // observation
+
+                        // already known?
+                        if (!query.assigned || query.assigned->getFact(*en)) {
+                            if (query.interpretation->getFact(*en)) {
+                                Rule cons(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+                                cons.body.push_back(ID::nafLiteralFromAtom(id));
+                                pc.idb.push_back(registry->storeRule(cons));
+                            }
+                        }else{
+                            allObsAssigned = false;
+                        }
+                    }
+                    en++;
+                }
+
+                // compute all answer sets of P \cup F
+                std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
+
+                // get hypothesis which are true in all resp. at least one diagnoses
+                InterpretationPtr trueInAll(new Interpretation(reg));
+                InterpretationPtr trueInOne(new Interpretation(reg));
+                if (answersets.size() > 0) { trueInAll->getStorage() |= answersets[0]->getStorage(); }
+                BOOST_FOREACH (InterpretationPtr answerset, answersets) {
+//                    std::cerr << "     D: " << *answerset << std::endl;
+                    trueInAll->getStorage() &= answerset->getStorage();
+                    trueInOne->getStorage() |= answerset->getStorage();
+                }
+
+                // for all hypotheses
+                en = query.predicateInputMask->getStorage().first();
+                en_end = query.predicateInputMask->getStorage().end();
+                while (en < en_end) {
+                    ID id = registry->ogatoms.getIDByAddress(*en);
+                    const OrdinaryAtom& ogatom = registry->ogatoms.getByID(id);
+                    if (ogatom.tuple[0] == query.input[1]) {
+                        // without knowing all hypotheses, we cannot decide anything
+                        if (!allHypAssigned) {
+                            Tuple t;
+                            t.push_back(ogatom.tuple[1]);
+                            t.push_back(ID::termFromInteger(0));
+                            answer.getUnknown().push_back(t);
+                            t[1] = ID::termFromInteger(1);
+                            answer.getUnknown().push_back(t);
+                            t[1] = ID::termFromInteger(2);
+                            answer.getUnknown().push_back(t);
+                        }
+                        else{
+                            if (allObsAssigned) {
+                                // if it is true in all diagnoses, it is certainly true
+                                if (trueInAll->getFact(id.address) || answersets.size() == 0) {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(2));
+                                    answer.get().push_back(t);
+
+                                    if (trueInOne->getFact(id.address)) {
+                                        t[1] = ID::termFromInteger(1);
+                                        answer.get().push_back(t);
+                                    }else{
+                                        t[1] = ID::termFromInteger(0);
+                                        answer.get().push_back(t);
+                                    }
+                                // otherwise, if it is true in at least one diagnosis, it can be true
+                                }else if (trueInOne->getFact(id.address)) {
+                                    // otherwise we do not know yet
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(1));
+                                    answer.get().push_back(t);
+                                }
+                                // otherwise, it is false in all diagnoses and therefore certainly false
+                                else {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(0));
+                                    answer.get().push_back(t);
+                                }
+                            }else{
+                                // if it is true in all diagnoses, it is certainly true
+                                if (trueInAll->getFact(id.address) || answersets.size() == 0) {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(2));
+                                    answer.get().push_back(t);
+
+                                    t[1] = ID::termFromInteger(1);
+                                    answer.getUnknown().push_back(t);
+                                // otherwise, if it is true in at least one diagnosis, it can be true
+                                }else if (trueInOne->getFact(id.address)) {
+                                    // otherwise we do not know yet
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(1));
+                                    answer.getUnknown().push_back(t);
+
+                                    t[1] = ID::termFromInteger(2);
+                                    answer.getUnknown().push_back(t);
+                                }
+                                // otherwise, it is false in all diagnoses and therefore certainly false
+                                else {
+                                    Tuple t;
+                                    t.push_back(ogatom.tuple[1]);
+                                    t.push_back(ID::termFromInteger(0));
+                                    answer.get().push_back(t);
+
+                                    t[1] = ID::termFromInteger(2);
+                                    answer.getUnknown().push_back(t);
+                                }
+                            }
+                        }
+                    }
+                    en++;
+                }
+            }
+    };
+
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
@@ -2883,15 +3284,19 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestDLSimulatorAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestCautiousQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestBraveQueryAtom(ctx), PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen1", 1), PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen2", 2), PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestGen2Atom("gen3", 3), PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestIsEmpty, PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestNumberOfBalls, PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestNumberOfBallsSE, PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new TestNumberOfBallsGE, PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new SumNonZeroAtom, PluginPtrDeleter<PluginAtom>()));
-          ret.push_back(PluginAtomPtr(new ProductionRequirementsAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestGen2Atom("gen1", 1), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestGen2Atom("gen2", 2), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestGen2Atom("gen3", 3), PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestIsEmpty, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestNumberOfBalls, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestNumberOfBallsSE, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new TestNumberOfBallsGE, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new SumNonZeroAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new ProductionRequirementsAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new MappingAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new GetSizesAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new GetSizesRestrAtom, PluginPtrDeleter<PluginAtom>()));
+    ret.push_back(PluginAtomPtr(new GetDiagnosesAtom(ctx), PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

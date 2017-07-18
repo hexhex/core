@@ -79,7 +79,7 @@ private ostream_printable<Rule>
     /** \brief Constructor.
      * @param kind Specifies the type of the rule. */
     Rule(IDKind kind):
-    kind(kind), head(), headGuard(), body(), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
+    kind(kind), head(), body(), headGuard(), bound(ID_FAIL), weight(ID_FAIL), level(ID_FAIL)
         { assert(ID(kind,0).isRule()); }
 
     /**

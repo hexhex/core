@@ -98,8 +98,8 @@ void GringoGrounder::Printer::printRule(ID id)
             if (b.isBuiltinAtom()) {
                 const BuiltinAtom& bi = registry->batoms.getByID(b);
                 if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())) {
-                    if (bi.tuple[0].address == ID::TERM_BUILTIN_EQ && bi.tuple[1] == bi.tuple[2] ||
-                    bi.tuple[0].address == ID::TERM_BUILTIN_NE && bi.tuple[1] != bi.tuple[2]) {
+                    if (((bi.tuple[0].address == ID::TERM_BUILTIN_EQ) && (bi.tuple[1] == bi.tuple[2])) ||
+                    ((bi.tuple[0].address == ID::TERM_BUILTIN_NE) && (bi.tuple[1] != bi.tuple[2]))) {
                         // skip
                         continue;
                     }
@@ -145,6 +145,15 @@ void GringoGrounder::Printer::printAggregate(ID id)
     // 3. l <= #agg{...}
     // 4. #agg{...} <= u
     const AggregateAtom& aatom = registry->aatoms.getByID(id);
+
+   if ( id.wasCreatedFromConditionalLiteral() ){
+        // translate back to a conditional literal
+        print(ID::atomFromLiteral(aatom.literals[aatom.literals.size() - 1]));
+        out << " : ";
+        for (int i = 0; i < aatom.literals.size() - 1; ++i) { if (i > 0) out << ", "; print(aatom.literals[i]); }
+        out << "; x=x";
+        return;
+    }
 
     // skipping the domain predicate is only possible when both bounds are specified and equal
     bool assignment = ( aatom.tuple[0] != ID_FAIL && aatom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
@@ -270,7 +279,7 @@ void GringoGrounder::Printer::print(ID id)
 
 
 GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram, ID intPred, ID anonymousPred, ID unsatPred, bool incAdd)
-: Gringo::Output::PlainLparseOutputter(emptyStream), ctx(ctx), groundProgram(groundProgram), symbols_(1), intPred(intPred), anonymousPred(anonymousPred), unsatPred(unsatPred)
+: Gringo::Output::PlainLparseOutputter(emptyStream), symbols_(1), ctx(ctx), groundProgram(groundProgram), intPred(intPred), anonymousPred(anonymousPred), unsatPred(unsatPred)
 {
 
     // Note: We do NOT use shifting but ground disjunctive rules as they are.
