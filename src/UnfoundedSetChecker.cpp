@@ -1779,7 +1779,7 @@ void AssumptionBasedUnfoundedSetChecker::propagate(InterpretationConstPtr partia
         BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
         
         InterpretationPtr eaInputIntrAssigned = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
-        eaInputIntrAssigned->getStorage() = ((inputCompatibleSet->getStorage() & assigned->getStorage()));
+        eaInputIntrAssigned->getStorage() = assigned->getStorage();
         
         InterpretationConstPtr partialInputSetWithoutAux = partialInterpretation->getInterpretationWithoutExternalAtomAuxiliaries();
         InterpretationPtr eaInputIntr = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
