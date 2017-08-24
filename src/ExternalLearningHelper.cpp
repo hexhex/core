@@ -390,7 +390,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                         }
                     }
 
-                    if (query.interpretation->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
+                    if (query.inputi->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
                         DBGLOG(DBG, "Conflicting nogood");
 
                         testNg.erase(ansID);
@@ -716,7 +716,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                         }
                     }
 
-                    if (query.interpretation->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
+                    if (query.inputi->getFact(ansID.address) || !query.ctx->config.getOption("MinimizeNogoodsOnConflict")) {
                         DBGLOG(DBG, "Conflicting nogood");
 
                         testNg.erase(ansID);

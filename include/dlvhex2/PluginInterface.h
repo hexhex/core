@@ -723,6 +723,12 @@ class DLVHEX_EXPORT PluginAtom
              * \brief Reference to the active program context.
              */
             const ProgramCtx* ctx;
+            
+            /**
+             * \brief complete input interpretation
+             */
+            
+            InterpretationConstPtr inputi;
 
             /**
              * \brief Bitset of ground atoms representing current (partial) model
@@ -794,6 +800,7 @@ class DLVHEX_EXPORT PluginAtom
              * @param predicateInputMask Set of all (true and false) input atoms to the external source.
              * @param assigned Set of atoms which are currently assigned; if it is a NULL-pointer, then the assignment is complete.
              * @param changed Set of atoms which have possibly changed since last call for the same eatomID (can be used to optimize query answering); can be unknown.
+             * @param inputi complete input interpretation
              */
             Query(const ProgramCtx* ctx,
                 InterpretationConstPtr interpretation,
@@ -802,7 +809,8 @@ class DLVHEX_EXPORT PluginAtom
                 ID eatomID = ID_FAIL,
                 const InterpretationPtr predicateInputMask = InterpretationPtr(),
                 const InterpretationConstPtr assigned = InterpretationConstPtr(),
-                const InterpretationConstPtr changed = InterpretationConstPtr()):
+                const InterpretationConstPtr changed = InterpretationConstPtr(),
+                const InterpretationConstPtr inputi = InterpretationConstPtr()):
             ctx(ctx),
                 interpretation(interpretation),
                 assigned(assigned),
@@ -810,7 +818,8 @@ class DLVHEX_EXPORT PluginAtom
                 input(input),
                 pattern(pattern),
                 eatomID(eatomID),
-                predicateInputMask(predicateInputMask)
+                predicateInputMask(predicateInputMask),
+                inputi(inputi)
              {
             }
             /**

@@ -493,7 +493,7 @@ bool* fromCache) const
         }
 
         // XXX here we copy it, we should just reference it
-        PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged);
+        PluginAtom::Query query(&ctx, eatominp, eatom.inputs, eatom.tuple, eatomID, pim /*InterpretationPtr()*/, eatomassigned, eatomchanged, inputi);
         // XXX make this part of constructor
         return evaluateExternalAtomQuery(query, cb, nogoods, fromCache);
     }
