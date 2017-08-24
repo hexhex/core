@@ -162,6 +162,18 @@ class DLVHEX_EXPORT ExternalLearningHelper
          * @param ID of the generated learning rule in the registry.
          */
         static ID getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule);
+        
+        /**
+         * \brief Implements the QuickXplain algorithm for finding a minimal io-nogood using a divide-and-conquer strategy.
+         * @param t Output tuple which is missing w.r.t. a negative io-nogood.
+         * @param query Query.
+         * @param ansID Answer which is implied by a positive io-nogood.
+         * @param accNogood Recursively constructs smaller nogoods that are verified against the external source. 
+         * @param deltaSize Size of partial nogood added in the previous step.
+         * @param nogood Nogood to be minimized.
+         * @param neg Indicates whether a negative io-nogood should be minimized.
+         */
+        static Nogood getMinimalConflict(Tuple t, const PluginAtom::Query& query, ID ansID, Nogood accNogood, int deltaSize, Nogood nogood, bool neg);
 
         /**
          * \brief Learns nogoods which encode that the input from query implies the output in answer.
