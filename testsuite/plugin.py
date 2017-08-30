@@ -646,6 +646,35 @@ def controls(controlsStk):
 				if int(unknownControlDict[company1][company2]) > 50:
 					dlvhex.outputUnknown((company1,company2))
 
+def strategic(strategic, controlled_by):
+	trueStrategic = []
+	falseStrategic = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == strategic and x.isTrue():
+			trueStrategic.append(x.tuple()[1].value())
+		elif x.tuple()[0] == strategic and x.isFalse():
+			falseStrategic.append(x.tuple()[1].value())
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == controlled_by and x.isTrue():
+			if x.tuple()[2].value() in trueStrategic and x.tuple()[3].value() in trueStrategic and x.tuple()[4].value() in trueStrategic and x.tuple()[5].value() in trueStrategic:
+				dlvhex.output( (x.tuple()[1].value(),) )
+			elif x.tuple()[2].value() not in falseStrategic and x.tuple()[3].value() not in falseStrategic and x.tuple()[4].value() not in falseStrategic and x.tuple()[5].value() not in falseStrategic:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),) )
+		elif x.tuple()[0] == controlled_by and not x.isFalse():
+			if x.tuple()[2].value() in trueStrategic and x.tuple()[3].value() in trueStrategic and x.tuple()[4].value() in trueStrategic and x.tuple()[5].value() in trueStrategic:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),) )
+			elif x.tuple()[2].value() not in falseStrategic and x.tuple()[3].value() not in falseStrategic and x.tuple()[4].value() not in falseStrategic and x.tuple()[5].value() not in falseStrategic:
+				dlvhex.outputUnknown( (x.tuple()[1].value(),) )
+
+def idPartial(p):
+	for x in dlvhex.getInputAtoms():
+		if x.isTrue():
+			dlvhex.output( (x.tuple()[1].value(),) )
+		elif not x.isFalse():
+			dlvhex.outputUnknown( (x.tuple()[1].value(),) )
+
 def greaterOrEqual(p, idx, bound):
 	sum = 0
 	for x in dlvhex.getTrueInputAtoms():
@@ -803,6 +832,18 @@ def register():
 	prop.setProvidesPartialAnswer(True)
 	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("controls", (dlvhex.PREDICATE, ), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	#prop.addMonotonicInputPredicate(0)
+	#prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("strategic", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("idPartial", (dlvhex.PREDICATE,), 1, prop)
 
 	dlvhex.addAtom("greaterOrEqual", (dlvhex.PREDICATE, dlvhex.CONSTANT, dlvhex.CONSTANT), 0)
 
