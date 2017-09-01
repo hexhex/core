@@ -668,6 +668,40 @@ def strategic(strategic, controlled_by):
 			elif x.tuple()[2].value() not in falseStrategic and x.tuple()[3].value() not in falseStrategic and x.tuple()[4].value() not in falseStrategic and x.tuple()[5].value() not in falseStrategic:
 				dlvhex.outputUnknown( (x.tuple()[1].value(),) )
 
+
+def controlsMajority(strategic,owns):
+	controlDict = dict()
+	unknownControlDict = dict()
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == strategic and x.isTrue():
+			for y in dlvhex.getInputAtoms():
+				if y.tuple()[0] == owns and y.isTrue() and x.tuple()[1] == y.tuple()[1]:
+					if y.tuple()[2].value() in controlDict:
+						newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()))
+						controlDict[y.tuple()[2].value()] = newval
+					else:
+						controlDict[y.tuple()[2].value()] = y.tuple()[3].value()
+					if y.tuple()[2].value() in unknownControlDict:
+						newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()))
+						unknownControlDict[y.tuple()[2].value()] = newval
+					else:
+						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()
+		elif x.tuple()[0] == strategic and not x.isFalse():
+			for y in dlvhex.getInputAtoms():
+				if y.tuple()[0] == owns and not y.isFalse() and x.tuple()[1] == y.tuple()[1]:
+					if y.tuple()[2].value() in unknownControlDict:
+						newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()))
+						unknownControlDict[y.tuple()[2].value()] = newval
+					else:
+						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()
+
+		for c in unknownControlDict:
+			if c in controlDict and int(controlDict[c]) > 50:
+				dlvhex.output((c, ))
+			elif int(unknownControlDict[c]) > 50:
+				dlvhex.outputUnknown((c, ))
+
 def idPartial(p):
 	for x in dlvhex.getInputAtoms():
 		if x.isTrue():
@@ -832,6 +866,12 @@ def register():
 	prop.setProvidesPartialAnswer(True)
 	prop.addMonotonicInputPredicate(0)
 	dlvhex.addAtom("controls", (dlvhex.PREDICATE, ), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("controlsMajority", (dlvhex.PREDICATE, dlvhex.PREDICATE ), 1, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
