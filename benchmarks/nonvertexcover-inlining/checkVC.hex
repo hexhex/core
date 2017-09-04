@@ -1,0 +1,15 @@
+% graph is undirected
+edge(Y, X) :- edge(X, Y).
+
+% extract nodes
+node(X) :- edge(X, Y).
+node(Y) :- edge(X, Y).
+
+% guess all vertex covers
+vc(N) v nvc(N) :- node(N).
+
+% check vertex cover
+:- nvc(N1), nvc(N2), edge(N1, N2).
+
+% size restriction
+:- #count{ N : vc(N) } > S, size(S).

@@ -1,0 +1,21 @@
+node(X) :- edge(X, Y).
+node(Y) :- edge(X, Y).
+
+% static information
+uneq(X, Y) :- node(X), node(Y), X != Y.
+
+% graph is undirected
+edge(Y, X) :- edge(X, Y).
+
+% guess all vertex covers
+vc(N) v nvc(N) :- node(N).
+
+% check if the guessed vertex cover is invalid
+sat :- nvc(X), nvc(Y), edge(X, Y).
+
+% if yes, then saturate
+vc(N) :- sat, node(N).
+nvc(N) :- sat, node(N).
+
+% test if all guesses are invalid
+:- not sat.

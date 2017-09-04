@@ -10,11 +10,11 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "instances/graph_*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
+	$bmscripts/runinsts.sh "instances/size_*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req" # $mydir/myagg.sh
 else
 	# run single instance
-	confstr="--heuristics=trivial;--heuristics=monolithic;--heuristics=monolithic --solver=alpha;--heuristics=trivial -n=1;--heuristics=monolithic -n=1;--heuristics=monolithic --solver=alpha -n=1"
+	confstr=";--heuristics=monolithic;--transunitlearning;--transunitlearning --transunitlearningpud;--transunitlearning --transunitlearninganalysistreshold=75"
 
-	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --silent  --ngminimization=always preferences.hex CONF INST" "$confstr" "$instance" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --python-plugin=../../testsuite/plugin.py --silent --ngminimization=always preferences.hex --verbose=8 CONF INST" "$confstr" "$instance" "$to" "$bmscripts/gstimeoutputbuilder.sh"
 fi
 

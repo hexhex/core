@@ -1,0 +1,26 @@
+node(X) :- edge(X, Y).
+node(Y) :- edge(X, Y).
+
+% graph is undirected
+edge(Y, X) :- edge(X, Y).
+
+% static information
+input(uneq, X, Y) :- node(X), node(Y), X != Y.
+
+% guess all vertex covers
+vc(N) v nvc(N) :- node(N).
+
+% prepare input to external atom
+input(vc, N) :- vc(N).
+input(nvc, N) :- nvc(N).
+input(edge, X, Y) :- edge(X, Y).
+
+% check if the guessed vertex cover is invalid
+sat :- &testCautiousQuery["CHECKFILE", input, invalid]().
+
+% if yes, then saturate
+vc(N) :- sat, node(N).
+nvc(N) :- sat, node(N).
+
+% test if all guesses are invalid
+:- not sat.

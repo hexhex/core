@@ -1,0 +1,1 @@
+invalid :- input(nvc, X), input(nvc, Y), input(edge, X, Y).
