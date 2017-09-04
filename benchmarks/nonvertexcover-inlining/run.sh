@@ -10,13 +10,12 @@ source $runheader
 # run instances
 if [[ $all -eq 1 ]]; then
 	# run all instances using the benchmark script run insts
-	$bmscripts/runinsts.sh "instances/*.hex" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
+	$bmscripts/runinsts.sh "instances/*.graph" "$mydir/run.sh" "$mydir" "$to" "" "" "$req"
 else
         # write instance file
-        size=$((echo $instance | sed 's/.*\_nodecount\_\([0-9]*\).*/\1/'))
+        size=$(cat $instance | grep "size" | sed 's/.*size(\([0-9]*\)).*/\1/')
 
-        checkinststr=`printf "%03d" ${instance}`
-        checkinstfile=$(mktemp "checkInvalidVC_${checkinststr}_XXXXXXXXXX.hex")
+        checkinstfile=$(mktemp "checkInvalidVC_XXXXXXXXXX.hex")
         if [[ $? -gt 0 ]]; then
             echo "Error while creating temp file" >&2
             exit 1
@@ -24,24 +23,30 @@ else
         checkprog="invalid :- input(vc, X1)"
         for (( i = 2; i <= $size; i++ ))
         do
-            checkprog="$prog, input(vc, X$i), input(uneq, X$(($i-1)), $i)"
+            checkprog="$checkprog, input(vc, X$i)"
+            for (( j = 1; j < $i; j++ ))
+            do
+                checkprog="$checkprog, input(uneq, X$i, X$j)"
+            done
         done
-        checkprog="."
+        checkprog="$checkprog."
         echo $checkprog > $checkinstfile
         cat checkInvalidVC.hex >> $checkinstfile
 
-        overallinststr=`printf "%03d" ${instance}`
-        overallinstfile=$(mktemp "checkNonVC_${checkinststr}_XXXXXXXXXX.hex")
-        cat checkNonVC.hex | sed "s/CHECKFILE/$checkinstfile" >> $overallinstfile
+        overallinstfile=$(mktemp "checkNonVC_XXXXXXXXXX.hex")
+        cat checkNonVC.hex | sed "s/CHECKFILE/$checkinstfile/" > $overallinstfile
 
-        overallplaininststr=`printf "%03d" ${instance}`
-        overallplaininstfile=$(mktemp "checkNonVCPlain_${checkinststr}_XXXXXXXXXX.hex")
+        overallplaininstfile=$(mktemp "checkNonVCPlain_XXXXXXXXXX.hex")
         checkprog="sat :- vc(X1)"
         for (( i = 2; i <= $size; i++ ))
         do
-            checkprog="$prog, vc(X$i), uneq(X$(($i-1)), $i)"
+            checkprog="$checkprog, vc(X$i)"
+            for (( j = 1; j < $i; j++ ))
+            do
+                checkprog="$checkprog, input(uneq, X$i, X$j)"
+            done
         done
-        checkprog="."
+        checkprog="$checkprog."
         echo $checkprog > $overallplaininstfile
         cat checkNonVCPlain.hex >> $overallplaininstfile
 
