@@ -51,7 +51,7 @@ else
         cat checkNonVCPlain.hex >> $overallplaininstfile
 
 	# run single instance
-	confstr="$overallinstfile;$overallinstfile --supportsets;$overallinstfile --extinlining;checkNonVCPlain.hex"
+	confstr="$overallinstfile;$overallinstfile --supportsets;$overallinstfile --extinlining;checkNonVCPlain.hex;$overallinstfile -n=1;$overallinstfile --supportsets -n=1;$overallinstfile --extinlining -n=1;checkNonVCPlain.hex -n=1"
 
 	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to"
 
