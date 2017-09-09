@@ -43,7 +43,7 @@ else
             checkprog="$checkprog, vc(X$i)"
             for (( j = 1; j < $i; j++ ))
             do
-                checkprog="$checkprog, input(uneq, X$i, X$j)"
+                checkprog="$checkprog, uneq(X$i, X$j)"
             done
         done
         checkprog="$checkprog."
@@ -51,9 +51,9 @@ else
         cat checkNonVCPlain.hex >> $overallplaininstfile
 
 	# run single instance
-	confstr="$overallinstfile;$overallinstfile --supportsets;$overallinstfile --extinlining;checkNonVCPlain.hex;$overallinstfile -n=1;$overallinstfile --supportsets -n=1;$overallinstfile --extinlining -n=1;checkNonVCPlain.hex -n=1"
+	confstr="$overallinstfile;$overallinstfile --supportsets;$overallinstfile --extinlining;$overallplaininstfile;$overallinstfile -n=1;$overallinstfile --supportsets -n=1;$overallinstfile --extinlining -n=1;$overallplaininstfile -n=1"
 
-	$bmscripts/runconfigs.sh "dlvhex2 --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 --silent --plugindir=../../testsuite --verbose=8 CONF INST" "$confstr" "$instance" "$to"
 
         rm $checkinstfile
         rm $overallinstfile
