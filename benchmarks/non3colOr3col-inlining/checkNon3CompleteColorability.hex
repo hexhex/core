@@ -1,0 +1,33 @@
+node(X) :- edge(X, Y).
+node(Y) :- edge(X, Y).
+
+% define colors
+color(red).
+color(green).
+color(blue).
+
+% graph is undirected
+edge(Y, X) :- edge(X, Y).
+
+% guess all colorings
+coloring(N, C) : color(C) :- node(N).
+
+% prepare input to external atom
+input(coloring, N, C) :- coloring(N, C).
+input(edge, X, Y) :- edge(X, Y).
+input(color, C1, C2) :- color(C1), color(C2), C1 != C2.
+
+% check if the guessed complete coloring is invalid
+%sat :- &testCautiousQuery["checkInvalidCompleteColoring.hex", input, isInvalid]().
+%tCQ(C1, C2) :- color(C1), color(C2), C1 != C2, &testCautiousQuery["checkInvalidCompleteColoring.hex", input, isComplete](C1, C2).
+%sat :- color(C1), color(C2), C1 != C2, not tCQ(C1, C2).
+
+sat :- edge(X,Y), coloring(X,C), coloring(Y,C).
+tCQ(C1, C2) :- color(C1), color(C2), C1 != C2, edge(X,Y), coloring(X,C1), coloring(Y,C2).
+sat :- color(C1), color(C2), C1 != C2, not tCQ(C1, C2).
+
+% if yes, then saturate
+coloring(N, C) :- sat, node(N), color(C).
+
+% test if all guesses are invalid
+%:- not sat.
