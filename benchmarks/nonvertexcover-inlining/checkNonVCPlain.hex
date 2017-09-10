@@ -18,4 +18,4 @@ vc(N) :- sat, node(N).
 nvc(N) :- sat, node(N).
 
 % test if all guesses are invalid
-%:- not sat.
+:- not sat.
