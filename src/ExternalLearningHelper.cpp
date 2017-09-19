@@ -390,7 +390,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                         }
                     }
 
-                    if (!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || (query.inputi && query.inputi->getFact(ansID.address))) {
+                    if (!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || (!query.inputi || query.inputi->getFact(ansID.address))) {
                         DBGLOG(DBG, "Conflicting nogood");
 
                         testNg.erase(ansID);
@@ -471,7 +471,7 @@ void ExternalLearningHelper::learnFromInputOutputBehavior(const PluginAtom::Quer
                 std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
 
                 for (int i = 0; i < newNogoods.size(); ++i) {
-                    if ((!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || (query.inputi && query.inputi->getFact(newNogoods[i].second.address)))
+                    if ((!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || (!query.inputi || query.inputi->getFact(newNogoods[i].second.address)))
                             && (newNogoods[i].first.size() <= query.ctx->config.getOption("MinimizationSize"))) {
                         Nogood testNg = newNogoods[i].first;
 
@@ -716,7 +716,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                         }
                     }
 
-                    if (!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || (query.inputi && query.inputi->getFact(ansID.address))) {
+                    if (!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || (!query.inputi || query.inputi->getFact(ansID.address))) {
                         DBGLOG(DBG, "Conflicting nogood");
 
                         testNg.erase(ansID);
@@ -797,7 +797,7 @@ void ExternalLearningHelper::learnFromNegativeAtoms(const PluginAtom::Query& que
                 std::map<std::size_t, PluginAtom::Answer> externalEvaluationsCache;
 
                 for (int i = 0; i < newNogoods.size(); ++i) {
-                    if (!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || ((query.inputi && query.inputi->getFact(newNogoods[i].second.address)))
+                    if (!query.ctx->config.getOption("MinimizeNogoodsOnConflict") || ((!query.inputi || query.inputi->getFact(newNogoods[i].second.address)))
                             && (newNogoods[i].first.size() <= query.ctx->config.getOption("MinimizationSize"))) {
                         Nogood testNg = newNogoods[i].first;
 
