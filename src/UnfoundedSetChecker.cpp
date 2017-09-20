@@ -1772,32 +1772,34 @@ void AssumptionBasedUnfoundedSetChecker::expandUFSDetectionProblemAndReinstantia
 }
 
 void AssumptionBasedUnfoundedSetChecker::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr assigned, InterpretationConstPtr changed) {
-    for (uint32_t eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex) {
-        ID eaID = agp.getIndexedEAtom(eaIndex);
-        
-        InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
-        BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
-        
-        InterpretationPtr eaInputIntrAssigned = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
-        eaInputIntrAssigned->getStorage() = assigned->getStorage();
-        
-        InterpretationConstPtr partialInputSetWithoutAux = partialInterpretation->getInterpretationWithoutExternalAtomAuxiliaries();
-        InterpretationPtr eaInputIntr = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
-        eaInputIntr->getStorage() = ((inputCompatibleSet->getStorage() & assigned->getStorage()) - (partialInterpretation->getStorage() & partialInputSetWithoutAux->getStorage()));
-        
-        if (!!ngc && !!solver) {
-            int oldNogoodCount = ngc->getNogoodCount();
-            mg->evaluateExternalAtom(ctx, eaID, eaInputIntr, cb, ngc, eaInputIntrAssigned, changed);
-            DBGLOG(DBG, "Adding new valid input-output relationships from nogood container");
-            for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i) {
+    if (!(*partialInterpretation).isClear()) {
+        for (uint32_t eaIndex = 0; eaIndex < agp.getIndexedEAtoms().size(); ++eaIndex) {
+            ID eaID = agp.getIndexedEAtom(eaIndex);
 
-                const Nogood& ng = ngc->getNogood(i);
-                if (ng.isGround()) {
-                    DBGLOG(DBG, "P: Processing learned nogood " << ng.getStringRepresentation(reg));
+            InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
+            BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
 
-                    std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
-                    if (transformed.first) {
-                        solver->addNogood(transformed.second);
+            InterpretationPtr eaInputIntrAssigned = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
+            eaInputIntrAssigned->getStorage() = assigned->getStorage();
+
+            InterpretationConstPtr partialInputSetWithoutAux = partialInterpretation->getInterpretationWithoutExternalAtomAuxiliaries();
+            InterpretationPtr eaInputIntr = InterpretationPtr(new Interpretation(inputCompatibleSet->getRegistry()));
+            eaInputIntr->getStorage() = ((inputCompatibleSet->getStorage() & assigned->getStorage()) - (partialInterpretation->getStorage() & partialInputSetWithoutAux->getStorage()));
+
+            if (!!ngc && !!solver) {
+                int oldNogoodCount = ngc->getNogoodCount();
+                mg->evaluateExternalAtom(ctx, eaID, eaInputIntr, cb, ngc, eaInputIntrAssigned, changed);
+                DBGLOG(DBG, "Adding new valid input-output relationships from nogood container");
+                for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i) {
+
+                    const Nogood& ng = ngc->getNogood(i);
+                    if (ng.isGround()) {
+                        std::cout << "P: Processing learned nogood " << ng.getStringRepresentation(reg) << std::endl;
+
+                        std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
+                        if (transformed.first) {
+                            solver->addNogood(transformed.second);
+                        }
                     }
                 }
             }
