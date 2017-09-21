@@ -1794,7 +1794,7 @@ void AssumptionBasedUnfoundedSetChecker::propagate(InterpretationConstPtr partia
 
                     const Nogood& ng = ngc->getNogood(i);
                     if (ng.isGround()) {
-                        std::cout << "P: Processing learned nogood " << ng.getStringRepresentation(reg) << std::endl;
+                        DBGLOG(DBG, "P: Processing learned nogood " << ng.getStringRepresentation(reg));
 
                         std::pair<bool, Nogood> transformed = nogoodTransformation(ng, InterpretationConstPtr());
                         if (transformed.first) {
