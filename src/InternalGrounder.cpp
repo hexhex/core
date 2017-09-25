@@ -562,6 +562,7 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
     // ground head
     BOOST_FOREACH (ID headAtom, rule.head) {
         ID groundHeadAtom = applySubstitutionToAtom(s, headAtom);
+//if (groundHeadAtom.isNaf()) groundHeadAtom.kind &= (ID::ALL_ONES ^ ID::NAF_MASK);
         groundedHead.push_back(groundHeadAtom);
         newDerivableAtoms.insert(groundHeadAtom);
     }
@@ -975,7 +976,6 @@ void InternalGrounder::addDerivableAtom(ID atomID, std::vector<ID>& groundRules,
 
 ID InternalGrounder::applySubstitutionToAtom(Substitution s, ID atomID)
 {
-
     if (atomID.isOrdinaryAtom()) {
         return applySubstitutionToOrdinaryAtom(s, atomID);
     }
@@ -1009,6 +1009,7 @@ ID InternalGrounder::applySubstitutionToOrdinaryAtom(Substitution s, ID atomID)
     IDKind kind = atomID.kind;
     kind &= (ID::ALL_ONES ^ ID::MAINKIND_MASK);
     kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+    kind &= (ID::ALL_ONES ^ ID::NAF_MASK);
     kind |= ID::MAINKIND_ATOM;
     if (isGround) {
         kind |= ID::SUBKIND_ATOM_ORDINARYG;
@@ -1029,6 +1030,7 @@ ID InternalGrounder::applySubstitutionToOrdinaryAtom(Substitution s, ID atomID)
     // output: use kind of input, except for the subtype, which is according to groundness
     kind &= (ID::ALL_ONES ^ ID::MAINKIND_MASK);
     kind |= (atomID.kind & ID::MAINKIND_MASK);
+    if (atomID.isNaf()) kind |= ID::NAF_MASK;
     return ID(kind, id.address);
 }
 

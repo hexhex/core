@@ -1713,6 +1713,9 @@ Config& config, ProgramCtx& pctx)
                 break;
             case 68:
                 {
+                    pctx.config.setOption("ForceGC", 1);
+                    pctx.config.setOption("LiberalSafety", 1);
+                    pctx.config.setOption("TransUnitLearning", 1);
                     pctx.config.setOption("TransUnitLearningPUD", 1);
                 }
                 break;

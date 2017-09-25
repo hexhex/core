@@ -964,12 +964,12 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
             const Rule& rule = factory.ctx.registry()->rules.getByID(ruleID);
 
             // eliminate naf-atoms and external atoms
-	        Rule rule2(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+            Rule rule2(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
             rule2.head.push_back(ID_FAIL);
             std::set<ID> bodyVars;
 	        BOOST_FOREACH (ID b, rule.body) {
-	            if (!b.isNaf() && !b.isExternalAtom() && !b.isExternalAuxiliary()) rule2.body.push_back(b);
-                factory.ctx.registry()->getVariablesInID(b, bodyVars);
+                    if (!b.isNaf() && !b.isExternalAtom() && !b.isExternalAuxiliary()) rule2.body.push_back(b);
+                    factory.ctx.registry()->getVariablesInID(b, bodyVars);
 	        }
 
             // replace variables which have become unsafe by unknownValueTerm
@@ -1134,7 +1134,8 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
                                         oa.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
                                         oa.kind |= ID::SUBKIND_ATOM_ORDINARYG;
                                         for (int v = 1; v < oa.tuple.size(); ++v) if (oa.tuple[v].isVariableTerm()) oa.tuple[v] = fullunifier[oa.tuple[v]];
-                                        modRule.head[h] = factory.ctx.registry()->storeOrdinaryAtom(oa);
+                                        ID oaID = factory.ctx.registry()->storeOrdinaryGAtom(oa);
+                                        modRule.head[h] = oaID;
                                     }
                                     for (int b = 0; b < modRule.body.size(); ++b) {
                                         if (modRule.body[b].isOrdinaryAtom()) {
@@ -1159,8 +1160,24 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
                                     }
 
                                     ID modRuleID = factory.ctx.registry()->storeRule(modRule);
-                                    DBGLOG(DBG, "[IR] Corresponds to ground instance " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()) << " of the full rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));
-                                    // check if this rule is already in the grounding
+                                    DBGLOG(DBG, "[IR] Corresponds to ground instance " << printToString<RawPrinter>(modRuleID, factory.ctx.registry()) << " of the full rule " << printToString<RawPrinter>(ruleID, factory.ctx.registry()));                                    // check if this rule is already in the grounding
+/*
+std::cerr << "mod-> ";
+for (int i = 0; i < modRule.head.size(); ++i) std::cerr << modRule.head[i];
+std::cerr << " :- ";
+for (int i = 0; i < modRule.body.size(); ++i) std::cerr << modRule.body[i];
+std::cerr << std::endl;
+
+BOOST_FOREACH (ID ruleID, nonoptgp.idb){
+const Rule& rule = factory.ctx.registry()->rules.getByID(ruleID);
+
+std::cerr << "-> ";
+for (int i = 0; i < rule.head.size(); ++i) std::cerr << rule.head[i];
+std::cerr << " :- ";
+for (int i = 0; i < rule.body.size(); ++i) std::cerr << rule.body[i];
+std::cerr << std::endl;
+}
+*/
                                     if (std::find(nonoptgp.idb.begin(), nonoptgp.idb.end(), modRuleID) == nonoptgp.idb.end()) {
                                         DBGLOG(DBG, "[IR] This rule is not in the unoptimized ground program");
 
@@ -1202,6 +1219,8 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
 
     // run analysis solver
     {
+//std::cerr << "Analysis program:" << std::endl << "[IR] Atom " << printToString<RawPrinter>(atomID, factory.ctx.registry()) << " is possibly underdefined" << std::endl;
+//std::cerr << "Analysis program:" << std::endl << printManyToString<RawPrinter>(nonoptgp.idb, "\n", factory.ctx.registry()) << std::endl << *nonoptgp.edb << std::endl << "EX-Atoms:" << std::endl << *explAtoms << std::endl << std::endl;
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiic4, "iIC analysis");
         AnnotatedGroundProgram nonoptagp(factory.ctx, nonoptgp, factory.innerEatoms);
         analysissolver.reset(new InternalGroundDASPSolver(factory.ctx, nonoptagp, explAtoms));
