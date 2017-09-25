@@ -1234,7 +1234,7 @@ std::cerr << std::endl;
         DBGLOG(DBG, "[IR] Adding assumptions " << printManyToString<RawPrinter>(assumptions, ",", factory.ctx.registry()));
         analysissolver->restartWithAssumptions(assumptions);
         for (int i = 0; i < analysissolverNogoods->getNogoodCount(); ++i) {
-            DBGLOG(DBG, "[IR] Adding learned nogood from to inconsistency analyzer: " << analysissolverNogoods->getNogood(i).getStringRepresentation(factory.ctx.registry()));
+            DBGLOG(DBG, "[IR] Adding learned nogood to inconsistency analyzer: " << analysissolverNogoods->getNogood(i).getStringRepresentation(factory.ctx.registry()));
             analysissolver->addNogood(analysissolverNogoods->getNogood(i));
         }
     }
@@ -1267,6 +1267,8 @@ std::cerr << std::endl;
     BOOST_FOREACH (ID l, inconsistencyCause) {
         lID = factory.ctx.registry()->ogatoms.getIDByAddress(l.address);
         if (lID.isAuxiliary() && factory.ctx.registry()->getTypeByAuxiliaryConstantSymbol(factory.ctx.registry()->ogatoms.getByID(lID).tuple[0]) == 'x'){
+            DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidiic9, "Spurious inconsistency causes", 1);
+std::cerr << "Spurious inconsistency cause: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
             haveInconsistencyCause = false;
             DBGLOG(DBG, "[IR] Inconsistency of program and spurious inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
             DBGLOG(DBG, "[IR] No real inconsistency explanation found");
@@ -1281,6 +1283,7 @@ std::cerr << std::endl;
     if (factory.ctx.config.getOption("TransUnitLearningDN")) { std::cerr << "Learned inconsistency reason: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl; }
     DBGLOG(DBG, "[IR] Inconsistency of program and real inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
     DBGLOG(DBG, "[IR] Explanation: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
+std::cerr << "Inconsistency cause: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
 }
 
 const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){

@@ -1,0 +1,20 @@
+% monolithic: grounding problem because external atoms are evaluated under exponentially many interpretations
+% splitting: solving problem because constraint at the bottom cannot eliminate guesses
+
+% The pud-option allows for recognizing that for a certain x, the groun instances of the two rules with external atoms
+% suffice for computing inconsistency reasons as s(x) and n(x) cannot be derived by other rules, which leads to more inconsistency reasons.
+% In contrast, without pud-option only spurious inconsistency reasons are found.
+
+dom(X) :- #int(X).
+
+% the following rules let the greedy heuristics split before the main part (since the external atom is nonmonotonic)
+in(X) v out(X) :- dom(X).
+
+% main part
+s(X) :- &testSetMinusPartialNonmonotonic[in, n](X)<tuplelevellinear, finitedomain>.
+n(X) :- &testSetMinusPartialNonmonotonic[in, s](X)<tuplelevellinear, finitedomain>.
+
+:- dom(X), n(X), not s(X).
+:- dom(X), s(X), not n(X).
+
+:- dom(X), s(X), X < 2.

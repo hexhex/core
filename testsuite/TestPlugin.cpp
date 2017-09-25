@@ -929,6 +929,74 @@ public:
 
 };
 
+class TestSetMinusNonmonotonicAtom:
+  public ComfortPluginAtom
+{
+public:
+  TestSetMinusNonmonotonicAtom():
+    // this nonmonotonicity is very important,
+    // because this atom is definitively nonmonotonic
+    // and there are testcases that fail if this is set to true!
+    ComfortPluginAtom("testSetMinusNonmonotonic", false)
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(1);
+    prop.finiteOutputDomain.insert(0);
+  }
+
+  virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
+  {
+    assert(query.input.size() == 2);
+    if( !query.input[0].isConstant() || !query.input[1].isConstant() )
+      throw PluginError("need constant predicates as input to testSetMinusNonmonotonic!");
+
+    // extract predicates from input
+    std::vector<ComfortInterpretation> psets;
+    psets.resize(2); // allocate exactly two sets
+    query.interpretation.matchPredicate(query.input[0].strval, psets[0]);
+    query.interpretation.matchPredicate(query.input[1].strval, psets[1]);
+
+    // extract terms from predicate sets
+    std::vector<std::set<ComfortTerm> > tsets;
+    BOOST_FOREACH(const ComfortInterpretation& pset, psets)
+    {
+      // put result into termsets
+      tsets.push_back(std::set<ComfortTerm>());
+      std::set<ComfortTerm>& tset = tsets.back();
+
+      // extract (assume unary predicates)
+      BOOST_FOREACH(const ComfortAtom& pred, pset)
+      {
+        if( pred.tuple.size() != 2 )
+                                {
+                                        std::stringstream s;
+                                        s << "can only process atoms of arity 2 with testSetMinusNonmonotonic" <<
+                                                "(got " << printrange(pred.tuple) << ")";
+          throw PluginError(s.str());
+                                }
+        // simply insert the argument into the set
+        tset.insert(pred.tuple[1]);
+      }
+    }
+
+    // do set difference between tsets
+    std::set<ComfortTerm> result;
+    std::insert_iterator<std::set<ComfortTerm> >
+      iit(result, result.begin());
+    std::set_difference(
+        tsets[0].begin(), tsets[0].end(),
+        tsets[1].begin(), tsets[1].end(),
+        iit);
+    BOOST_FOREACH(const ComfortTerm& t, result)
+    {
+      ComfortTuple tu;
+      tu.push_back(t);
+      answer.insert(tu);
+    }
+  }
+};
+
 class TestSetMinusNonComfortAtom:	// tests user-defined external learning
   public PluginAtom
 {
@@ -1055,6 +1123,83 @@ public:
 		}
 	}
 	// false in the first predicate --> false in the result
+  }
+};
+
+class TestSetMinusPartialNonmonotonicAtom:  // tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestSetMinusPartialNonmonotonicAtom():
+    PluginAtom("testSetMinusPartialNonmonotonic", false) // monotonic, and no predicate inputs anyway
+  {
+    WARNING("TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning")
+    addInputPredicate();
+    addInputPredicate();
+    prop.setProvidesPartialAnswer(true);
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+        static std::map<std::string, ID> ruleIDs;
+
+        // find relevant input
+        bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+        bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+
+        std::vector<Tuple> tuples1true;
+        std::vector<Tuple> tuples1unknown;
+        std::vector<Tuple> tuples2true;
+        std::vector<Tuple> tuples2unknown;
+        while (en < en_end){
+                const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+                Tuple tu;
+                for (uint32_t i = 1; i < atom.tuple.size(); ++i){
+                        tu.push_back(atom.tuple[i]);
+                }
+                if (!query.assigned || query.assigned->getFact(*en) ) {
+                        // assigned
+                        if (query.interpretation->getFact(*en) ){
+                                // assigned to true?
+                                if (atom.tuple[0] == query.input[0]){
+                                        tuples1true.push_back(tu);
+                                }
+                                if (atom.tuple[0] == query.input[1]){
+                                        tuples2true.push_back(tu);
+                                }
+                        }
+                }else{
+                        // not assigned
+                        if (atom.tuple[0] == query.input[0]){
+                                tuples1unknown.push_back(tu);
+                        }
+                        if (atom.tuple[0] == query.input[1]){
+                                tuples2unknown.push_back(tu);
+                        }
+                }
+                en++;
+        }
+
+        // Learning of the nogoods
+        BOOST_FOREACH (Tuple t, tuples1true){
+                if (std::find(tuples2true.begin(), tuples2true.end(), t) != tuples2true.end()){
+                        // true in first predicate, true in second --> false in the result
+                }else if (std::find(tuples2unknown.begin(), tuples2unknown.end(), t) != tuples2unknown.end()){
+                        // true in first predicate, unknown in second --> unknown in the result
+                        answer.getUnknown().push_back(t);
+                }else{
+                        // true in first predicate, false in second --> true in the result
+                        answer.get().push_back(t);
+                }
+        }
+        BOOST_FOREACH (Tuple t, tuples1unknown){
+                if (std::find(tuples2true.begin(), tuples2true.end(), t) == tuples2true.end()){
+                        // unknown in first predicate, false or unknown in second --> unknown in the result
+                        answer.getUnknown().push_back(t);
+                }
+        }
+        // false in the first predicate --> false in the result
   }
 };
 
@@ -3256,12 +3401,14 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestMoveAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestStrlenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestSetMinusNonmonotonicAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNonComfortAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusPartialAtom, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestSetMinusPartialNonmonotonicAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNongroundNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
-    ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));
+          ret.push_back(PluginAtomPtr(new TestSetUnionAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
