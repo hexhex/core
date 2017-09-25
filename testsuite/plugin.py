@@ -729,8 +729,9 @@ def controlsMajorityNonmonotonic(strategic,owns):
 							newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
 							unknownControlDict[y.tuple()[2].value()] = newval
 						else:
-							newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
-							controlDict[y.tuple()[2].value()] = newval
+							if y.tuple()[2].value() in controlDict:
+								newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+								controlDict[y.tuple()[2].value()] = newval
 					else:
 						if int(y.tuple()[3].value()[1:-1]) > 0:
 							unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:-1]
