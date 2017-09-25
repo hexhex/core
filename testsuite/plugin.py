@@ -725,10 +725,15 @@ def controlsMajorityNonmonotonic(strategic,owns):
 			for y in dlvhex.getInputAtoms():
 				if y.tuple()[0] == owns and not y.isFalse() and x.tuple()[1] == y.tuple()[1]:
 					if y.tuple()[2].value() in unknownControlDict:
-						newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
-						unknownControlDict[y.tuple()[2].value()] = newval
+						if int(y.tuple()[3].value()[1:-1]) > 0:
+							newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+							unknownControlDict[y.tuple()[2].value()] = newval
+						else:
+							newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+							controlDict[y.tuple()[2].value()] = newval
 					else:
-						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:-1]
+						if int(y.tuple()[3].value()[1:-1]) > 0:
+							unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:-1]
 
 		for c in unknownControlDict:
 			if c in controlDict and int(controlDict[c]) > 50:
