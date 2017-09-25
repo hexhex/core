@@ -702,6 +702,47 @@ def controlsMajority(strategic,owns):
 			elif int(unknownControlDict[c]) > 50:
 				dlvhex.outputUnknown((c, ))
 
+
+def controlsMajorityNonmonotonic(strategic,owns):
+	controlDict = dict()
+	unknownControlDict = dict()
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == strategic and x.isTrue():
+			for y in dlvhex.getInputAtoms():
+				if y.tuple()[0] == owns and y.isTrue() and x.tuple()[1] == y.tuple()[1]:
+					if y.tuple()[2].value() in controlDict:
+						newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+						controlDict[y.tuple()[2].value()] = newval
+					else:
+						controlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:-1]
+					if y.tuple()[2].value() in unknownControlDict:
+						newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+						unknownControlDict[y.tuple()[2].value()] = newval
+					else:
+						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:-1]
+		elif x.tuple()[0] == strategic and not x.isFalse():
+			for y in dlvhex.getInputAtoms():
+				if y.tuple()[0] == owns and not y.isFalse() and x.tuple()[1] == y.tuple()[1]:
+					if y.tuple()[2].value() in unknownControlDict:
+						if int(y.tuple()[3].value()[1:-1]) > 0:
+							newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+							unknownControlDict[y.tuple()[2].value()] = newval
+						else:
+							if y.tuple()[2].value() in controlDict:
+								newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:-1]))
+								controlDict[y.tuple()[2].value()] = newval
+					else:
+						if int(y.tuple()[3].value()[1:-1]) > 0:
+							unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:-1]
+
+		for c in unknownControlDict:
+			if c in controlDict and int(controlDict[c]) > 50:
+				dlvhex.output((c, ))
+			elif int(unknownControlDict[c]) > 50:
+				dlvhex.outputUnknown((c, ))
+
+
 def idPartial(p):
 	for x in dlvhex.getInputAtoms():
 		if x.isTrue():
@@ -872,6 +913,10 @@ def register():
 	prop.addMonotonicInputPredicate(0)
 	prop.addMonotonicInputPredicate(1)
 	dlvhex.addAtom("controlsMajority", (dlvhex.PREDICATE, dlvhex.PREDICATE ), 1, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("controlsMajorityNonmonotonic", (dlvhex.PREDICATE, dlvhex.PREDICATE ), 1, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
