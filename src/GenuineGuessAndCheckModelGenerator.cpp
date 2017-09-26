@@ -231,7 +231,7 @@ guessingProgram(factory.reg)
     // manage outer external atoms
     std::vector<ID> factGuessing;
     if( !factory.outerEatoms.empty() ) {
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder out EA GenGnCMG");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 
         // with trans-unit learning, outer external atoms must not be facts to make sure that inconsistency analysis finds the reasons for them being true
         if (factory.ctx.config.getOption("TransUnitLearning")){
@@ -314,6 +314,7 @@ guessingProgram(factory.reg)
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 /*
         // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
         std::vector<ID> pseudoInnerExternalAtoms;
@@ -364,7 +365,9 @@ guessingProgram(factory.reg)
         }else{
             grounder = GenuineGrounder::getInstance(factory.ctx, guessingProgram);
         }
+        DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexground, "HEX grounder time");
         OrdinaryASPProgram gp = grounder->getGroundProgram();
+        DLVHEX_BENCHMARK_STOP(sidhexground);
         // do not project within the solver as auxiliaries might be relevant for UFS checking (projection is done in G&C mg)
         if (!!gp.mask) mask->add(*gp.mask);
         gp.mask = InterpretationConstPtr();
@@ -732,6 +735,7 @@ void GenuineGuessAndCheckModelGenerator::inlineExternalAtoms(OrdinaryASPProgram&
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidextregrounding, "Regrounding after inlining");
     // reground and reanalyze extended program
     if (groundAgain) {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
         grounder = GenuineGrounder::getInstance(factory.ctx, inlinedProgram);
         OrdinaryASPProgram gp = grounder->getGroundProgram();
 
@@ -775,6 +779,7 @@ void GenuineGuessAndCheckModelGenerator::initializeInconsistencyExplanationAtoms
 
     printUnitInfo("[IR] ");
     DBGLOG(DBG, "[IR] initializeInconsistencyExplanationAtoms");
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidiiea, "Initialize inconsistency explanation atoms");
     PredicateMaskPtr explAtomMask(new PredicateMask());
     PredicateMaskPtr unitMask(new PredicateMask());
     explAtoms.reset(new Interpretation(factory.ctx.registry()));
@@ -935,7 +940,9 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     DBGLOG(DBG, "[IR] Grounding program for inconsistency analysis without optimizations:" << std::endl <<
                 "[IR]     " << *guessingProgram.edb << std::endl <<
                 "[IR]     " << printManyToString<RawPrinter>(guessingProgram.idb, "\n[IR]     ", factory.ctx.registry()));
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexground, "HEX grounder time");
     OrdinaryASPProgram nonoptgp = grounder->getGroundProgram();
+    DLVHEX_BENCHMARK_STOP(sidhexground);
     if (!factory.ctx.config.getOption("TransUnitLearningOS")){
         // we can reuse the existing grounding since it is unoptimized
         InternalGrounder nonOptimizedGrounder(factory.ctx, guessingProgram, InternalGrounder::builtin);
@@ -1268,7 +1275,7 @@ std::cerr << std::endl;
         lID = factory.ctx.registry()->ogatoms.getIDByAddress(l.address);
         if (lID.isAuxiliary() && factory.ctx.registry()->getTypeByAuxiliaryConstantSymbol(factory.ctx.registry()->ogatoms.getByID(lID).tuple[0]) == 'x'){
             DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidiic9, "Spurious inconsistency causes", 1);
-std::cerr << "Spurious inconsistency cause: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
+//std::cerr << "Spurious inconsistency cause: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
             haveInconsistencyCause = false;
             DBGLOG(DBG, "[IR] Inconsistency of program and spurious inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
             DBGLOG(DBG, "[IR] No real inconsistency explanation found");
@@ -1283,7 +1290,7 @@ std::cerr << "Spurious inconsistency cause: " << inconsistencyCause.getStringRep
     if (factory.ctx.config.getOption("TransUnitLearningDN")) { std::cerr << "Learned inconsistency reason: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl; }
     DBGLOG(DBG, "[IR] Inconsistency of program and real inconsistence cause detected: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
     DBGLOG(DBG, "[IR] Explanation: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()));
-std::cerr << "Inconsistency cause: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
+//std::cerr << "Inconsistency cause: " << inconsistencyCause.getStringRepresentation(factory.ctx.registry()) << std::endl;
 }
 
 const Nogood* GenuineGuessAndCheckModelGenerator::getInconsistencyCause(){
