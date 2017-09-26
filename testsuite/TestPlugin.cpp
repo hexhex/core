@@ -2257,11 +2257,28 @@ public:
 		pc.edb = InterpretationPtr(new Interpretation(reg));
 		pc.currentOptimum.clear();
 		pc.config.setOption("NumberOfModels",0);
+                pc.config.setOption("TransUnitLearning",0);;
 		pc.inputProvider = ip;
 		ip.reset();
 
-		// add facts F to the EDB of P
-		pc.edb->getStorage() |= query.interpretation->getStorage();
+		// add already assigned facts F to the EDB of P
+                if (!query.assigned) pc.edb->getStorage() |= query.interpretation->getStorage();
+                else pc.edb->getStorage() |= (query.interpretation->getStorage() & query.assigned->getStorage());
+
+                // for yet unassigned facts, add a guess
+                if (!!query.assigned) {
+                    bm::bvector<>::enumerator en = query.predicateInputMask->getStorage().first();
+                    bm::bvector<>::enumerator en_end = query.predicateInputMask->getStorage().end();
+                    while (en < en_end) {
+                        if (!query.assigned->getFact(*en)) {
+                            Rule guess(ID::MAINKIND_RULE | ID::PROPERTY_RULE_DISJ);
+                            guess.head.push_back(registry->ogatoms.getIDByAddress(*en));
+                            guess.head.push_back(registry->getAuxiliaryAtom('x', guess.head[0]));
+                            pc.idb.push_back(registry->storeRule(guess));
+                        }
+                        en++;
+                    }
+                }
 
 		// compute all answer sets of P \cup F
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
@@ -2359,7 +2376,9 @@ class TestCautiousQueryAtom:
 public:
   TestCautiousQueryAtom(ProgramCtx& ctx):
     TestASPQueryAtom(ctx, "testCautiousQuery")
-  { }
+  {
+      prop.providesPartialAnswer = true;
+  }
 
 	// implement the specific part
 	void answerQuery(PredicateMaskPtr pm, std::vector<InterpretationPtr>& answersets, const Query& query, Answer& answer){
@@ -2376,23 +2395,41 @@ public:
 		}else{
 
 			InterpretationPtr out = InterpretationPtr(new Interpretation(reg));
+                        InterpretationPtr outU = InterpretationPtr(new Interpretation(reg));
 			out->add(*pm->mask());
 
 			// get the set of atoms over the query predicate which are true in all answer sets
-			BOOST_FOREACH (InterpretationPtr intr, answersets){
+			BOOST_FOREACH (InterpretationPtr intr, answersets) {
 				out->getStorage() &= intr->getStorage();
 			}
+
+                        // all other atoms, which are true in at least one answer set, might be true in all answer sets at the end
+                        if (!!query.assigned && query.assigned->getStorage().count() < query.predicateInputMask->getStorage().count()) {
+                            BOOST_FOREACH (InterpretationPtr intr, answersets) {
+                                outU->getStorage() |= (intr->getStorage() & pm->mask()->getStorage());
+                            }
+                        }
+                        outU->getStorage() -= out->getStorage();
 
 			// retrieve all output atoms oatom=q(c)
 			bm::bvector<>::enumerator en = out->getStorage().first();
 			bm::bvector<>::enumerator en_end = out->getStorage().end();
-			while (en < en_end){
+			while (en < en_end) {
 				const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
 
 				// add c to the output
 				answer.get().push_back(Tuple(oatom.tuple.begin() + 1, oatom.tuple.end()));
 				en++;
 			}
+                        en = outU->getStorage().first();
+                        en_end = outU->getStorage().end();
+                        while (en < en_end) {
+                                const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
+
+                                // add c to the output
+                                answer.getUnknown().push_back(Tuple(oatom.tuple.begin() + 1, oatom.tuple.end()));
+                                en++;
+                        }
 		}
 	}
 };

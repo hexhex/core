@@ -1,0 +1,23 @@
+node(X) :- inp(node, X, Y, C).
+edge(X, Y, C) :- inp(edge, X, Y, C).
+
+notsmallest(X) :- node(X), node(Y), X > Y.
+root(X) :- node(X), not notsmallest(X).
+edge(X, Y, C) :- edge(Y, X, C).
+
+%in(X,X) :- node(X).
+%in(X,Y) :- edge(X,Y).
+
+% guess spanning tree
+in(X, Y, C) v out(X, Y, C) :- edge(X, Y, C).
+
+% select root and compute reachable nodes
+reached(X) :- root(X).
+reached(Y) :- reached(X), in(X, Y, C).
+
+% connectedness
+:- node(X), not reached(X).
+
+% treeshaped
+:- root(X), in(_, X, C).
+:- in(X, Y, C), in(X1, Y, C), X != X1.

@@ -1,0 +1,9 @@
+%location(a). location(b). location(c). location(d). location(e).
+%edge(a, b, 2). edge(b, c, 1). edge(c, d, 1). edge(c, d, 1). edge(d, e, 2). edge(b, d, 1).
+
+choose(X) v nchoose(X) :- location(X).
+
+% compute edges which are in any spanning tree
+inp(node, X, empty, empty) :- choose(X).
+inp(edge, X, Y, C) :- edge(X, Y, C), choose(X), choose(Y).
+anyST(X, Y) :- &testCautiousQuery["spanningtree.hex", inp, in](X, Y, C).
