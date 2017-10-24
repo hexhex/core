@@ -940,9 +940,9 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     DBGLOG(DBG, "[IR] Grounding program for inconsistency analysis without optimizations:" << std::endl <<
                 "[IR]     " << *guessingProgram.edb << std::endl <<
                 "[IR]     " << printManyToString<RawPrinter>(guessingProgram.idb, "\n[IR]     ", factory.ctx.registry()));
-    DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexground, "HEX grounder time");
+//    DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexground, "HEX grounder time");
     OrdinaryASPProgram nonoptgp = grounder->getGroundProgram();
-    DLVHEX_BENCHMARK_STOP(sidhexground);
+//    DLVHEX_BENCHMARK_STOP(sidhexground);
     if (!factory.ctx.config.getOption("TransUnitLearningOS")){
         // we can reuse the existing grounding since it is unoptimized
         InternalGrounder nonOptimizedGrounder(factory.ctx, guessingProgram, InternalGrounder::builtin);
