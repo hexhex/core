@@ -172,13 +172,13 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPPr
     GenuineGrounderPtr grounder;
     {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time (GenuineSolver ctor)");
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground2, "HEX grounder time");
+//        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground2, "HEX grounder time");
         grounder = GenuineGrounder::getInstance(ctx, p, frozen);
         gprog = &grounder->getGroundProgram();
     }
 
     DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time (GenuineSolver ctor)");
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
+//    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve2, "HEX solver time");
     GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, *gprog, frozen, minCheck);
     return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }

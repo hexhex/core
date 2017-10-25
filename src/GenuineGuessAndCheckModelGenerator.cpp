@@ -314,7 +314,7 @@ guessingProgram(factory.reg)
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
-        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+//        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 /*
         // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
         std::vector<ID> pseudoInnerExternalAtoms;
@@ -384,7 +384,10 @@ guessingProgram(factory.reg)
 //        if (factory.ctx.config.getOption("TransUnitLearningOS")){
 //            DBGLOG(DBG, "Using unoptimized solver due to one-step trans-unit learning");
 //        }else{
-        solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
+        {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
+            solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
+        }
 //        }
         if (solverAssumptions.size() > 0) solver->restartWithAssumptions(solverAssumptions);
     }

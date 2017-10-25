@@ -167,7 +167,10 @@ factory(factory)
 
     OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
-    solver = GenuineSolver::getInstance(factory.ctx, program);
+    {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+        solver = GenuineSolver::getInstance(factory.ctx, program);
+    }
     #if 0
     {
         // Input: a :- fr. b v b2. fr :- b.
