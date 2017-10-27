@@ -585,7 +585,7 @@ int main(int argc, char *argv[])
             pctx.pluginContainer()->addInternalPlugin(_pythonPlugin);
             #endif
         }
-
+        
         // before anything else we dump the logo
         if( !pctx.config.getOption("Silent") )
             printLogo();

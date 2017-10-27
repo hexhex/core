@@ -51,6 +51,7 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
@@ -2281,7 +2282,9 @@ public:
                 }
 
 		// compute all answer sets of P \cup F
+                benchmark::BenchmarkController::Instance().suspend();
 		std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
+                benchmark::BenchmarkController::Instance().resume();
 
 		// learn support sets (only if --supportsets option is specified on the command line)
 		if (learnSupportSets && !!nogoods && query.ctx->config.getOption("SupportSets")){
@@ -3313,7 +3316,9 @@ public:
                 }
 
                 // compute all answer sets of P \cup F
+                benchmark::BenchmarkController::Instance().suspend();
                 std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
+                benchmark::BenchmarkController::Instance().resume();
 
                 // get hypothesis which are true in all resp. at least one diagnoses
                 InterpretationPtr trueInAll(new Interpretation(reg));

@@ -133,8 +133,10 @@ namespace benchmark
         }
 
         void BenchmarkController::resume() {
-            boost::mutex::scoped_lock lock(mutex);
-            sus--;
+            {
+                boost::mutex::scoped_lock lock(mutex);
+                sus--;
+            }
             if( sus == 0 ) {
                 myID = getInstrumentationID("BMController suspend");
                 stop(myID);
@@ -357,8 +359,10 @@ namespace benchmark
         }
 
         void NestingAwareController::resume() {
-            boost::mutex::scoped_lock lock(mutex);
-            sus--;
+            {
+                boost::mutex::scoped_lock lock(mutex);
+                sus--;
+            }
             if( sus == 0 ) {
                 myID = getInstrumentationID("BMController suspend");
                 stop(myID);
