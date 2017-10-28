@@ -52,6 +52,8 @@
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/ASPSolver.h"
 
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
@@ -3316,9 +3318,14 @@ public:
                 }
 
                 // compute all answer sets of P \cup F
-                benchmark::BenchmarkController::Instance().suspend();
+                #if defined(HAVE_DLV)
+                    pc.setASPSoftware(
+                        ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+                    pc.config.setOption("GenuineSolver", 0);
+                #endif
+//                benchmark::BenchmarkController::Instance().suspend();
                 std::vector<InterpretationPtr> answersets = ctx.evaluateSubprogram(pc, true);
-                benchmark::BenchmarkController::Instance().resume();
+//                benchmark::BenchmarkController::Instance().resume();
 
                 // get hypothesis which are true in all resp. at least one diagnoses
                 InterpretationPtr trueInAll(new Interpretation(reg));

@@ -732,8 +732,8 @@ namespace benchmark
         // inline for performance
         // start timer
         void NestingAwareController::start(ID id) {
-            if (sus) return;
             boost::mutex::scoped_lock lock(mutex);
+//            if (sus) return;
             Stat& st = instrumentations[id];
 
             Time now = boost::posix_time::microsec_clock::local_time();
@@ -756,8 +756,8 @@ namespace benchmark
         // inline for performance
         // stop and record elapsed time, print stats
         void NestingAwareController::stop(ID id, bool count) {
-            if (sus) return;
             boost::mutex::scoped_lock lock(mutex);
+//            if (sus) return;
             Stat& st = instrumentations[id];
 
             Time now = boost::posix_time::microsec_clock::local_time();
@@ -803,8 +803,8 @@ namespace benchmark
         // record count (no time), print stats
         // inline for performance
         void NestingAwareController::count(ID id, Count increment) {
-            if (sus) return;
             boost::mutex::scoped_lock lock(mutex);
+//            if (sus) return;
             Stat& s = instrumentations[id];
             s.count += increment;
             printInformationContinous(s,Duration());
