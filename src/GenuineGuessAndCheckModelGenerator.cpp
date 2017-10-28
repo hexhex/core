@@ -314,7 +314,7 @@ guessingProgram(factory.reg)
     // compute extensions of domain predicates and add it to the input
     if (factory.ctx.config.getOption("LiberalSafety")) {
         DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidliberalsafety, "genuine g&c init liberal safety");
-//        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
 /*
         // evaluate pseudo-inner external atoms (external atoms which are intentionally handled as inner although they depend only on predecessor units)
         std::vector<ID> pseudoInnerExternalAtoms;
@@ -384,10 +384,7 @@ guessingProgram(factory.reg)
 //        if (factory.ctx.config.getOption("TransUnitLearningOS")){
 //            DBGLOG(DBG, "Using unoptimized solver due to one-step trans-unit learning");
 //        }else{
-        {
-            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-            solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
-        }
+        solver = GenuineGroundSolver::getInstance(factory.ctx, annotatedGroundProgram);
 //        }
         if (solverAssumptions.size() > 0) solver->restartWithAssumptions(solverAssumptions);
     }
@@ -943,9 +940,9 @@ void GenuineGuessAndCheckModelGenerator::identifyInconsistencyCause() {
     DBGLOG(DBG, "[IR] Grounding program for inconsistency analysis without optimizations:" << std::endl <<
                 "[IR]     " << *guessingProgram.edb << std::endl <<
                 "[IR]     " << printManyToString<RawPrinter>(guessingProgram.idb, "\n[IR]     ", factory.ctx.registry()));
-//    DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexground, "HEX grounder time");
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexground, "HEX grounder time");
     OrdinaryASPProgram nonoptgp = grounder->getGroundProgram();
-//    DLVHEX_BENCHMARK_STOP(sidhexground);
+    DLVHEX_BENCHMARK_STOP(sidhexground);
     if (!factory.ctx.config.getOption("TransUnitLearningOS")){
         // we can reuse the existing grounding since it is unoptimized
         InternalGrounder nonOptimizedGrounder(factory.ctx, guessingProgram, InternalGrounder::builtin);

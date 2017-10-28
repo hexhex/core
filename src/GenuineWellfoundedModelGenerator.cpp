@@ -226,11 +226,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
                 // we don't use a mask here!
                 // -> we receive all facts
                 OrdinaryASPProgram program(reg, factory.xidb, dst, factory.ctx.maxint);
-                GenuineSolverPtr solver;
-                {
-                    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexground, "HEX grounder time");
-                    solver = GenuineSolver::getInstance(factory.ctx, program);
-                }
+                GenuineSolverPtr solver = GenuineSolver::getInstance(factory.ctx, program);
 
                 // Search space pruning: the idea is to set the current global optimum as upper limit in the solver instance (of this unit) to eliminate interpretations with higher costs.
                 // Note that this optimization is conservative such that the algorithm remains complete even when the program is split. Because costs can be only positive,
@@ -239,11 +235,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
                 if (factory.ctx.config.getOption("OptimizationByBackend")) solver->setOptimum(factory.ctx.currentOptimum);
 
                 // there must be either no or exactly one answer set
-                InterpretationConstPtr model;
-                {
-                    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidhexsolve, "HEX solver time");
-                    model = solver->getNextModel();
-                }
+                InterpretationConstPtr model = solver->getNextModel();
 
                 if( model == InterpretationPtr() ) {
                     LOG(DBG,"got no answer set -> inconsistent");
