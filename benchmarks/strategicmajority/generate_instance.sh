@@ -9,12 +9,25 @@ if [[ $# -lt 3 ]]; then
 	exit 1;
 fi
 
-for (( i=1; i <= $2; i++ ))
+
+
+for (( j=1; j <= $1; j++ ))
 do
-	j1=$(( ($RANDOM%$1)+1 ))
-	j2=$(( ($RANDOM%$1)+1 ))
-	j3=$(( ($RANDOM%50) ))
-	echo "owns(c$j1,c$j2,$j3)."
+	allpart=0
+	for (( i=1; i <= $2; i++ ))
+	do
+		PART[$i]=$(( ($RANDOM%10000) ))
+		allpart=$(($allpart + ${PART[$i]}))
+	done
+
+	n=$(( ($RANDOM%100) ))
+
+	for (( i=1; i <= $2; i++ ))
+	do
+		j2=$(( ($RANDOM%$1)+1 ))
+		j3=$(( (${PART[$i]} * 100000 / $allpart) * $n ))
+		echo "owns(c$j,c$j2,$j3)."
+	done
 done
 
 for (( i=1; i <= $3; i++ ))

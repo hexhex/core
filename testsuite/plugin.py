@@ -697,9 +697,9 @@ def controlsMajority(strategic,owns):
 						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()
 
 		for c in unknownControlDict:
-			if c in controlDict and int(controlDict[c]) > 50:
+			if c in controlDict and int(controlDict[c]) > 5000000:
 				dlvhex.output((c, ))
-			elif int(unknownControlDict[c]) > 50:
+			elif int(unknownControlDict[c]) > 5000000:
 				dlvhex.outputUnknown((c, ))
 
 
