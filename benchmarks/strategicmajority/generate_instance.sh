@@ -26,7 +26,7 @@ do
 	do
 		j2=$(( ($RANDOM%$1)+1 ))
 		j3=$(( (${PART[$i]} * 100000 / $allpart) * $n ))
-		echo "owns(c$j,c$j2,$j3)."
+		echo "owns(c$j,c$j2,s$j3)."
 	done
 done
 
