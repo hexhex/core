@@ -1,0 +1,5 @@
+strategic(X1) v strategic(X2) v strategic(X3) v strategic(X4) :- produced_by(X,X1,X2,X3,X4).
+strategic(X) :- &controlsMajorityWithMax[strategic,owns](X), company(X).
+
+
+
