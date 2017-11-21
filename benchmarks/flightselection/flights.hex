@@ -1,0 +1,12 @@
+% An airline must reduce its costs. There are multiple options, such as cancelling destinations, types of aircrafts, ticket classes, etc.
+%
+% Depending on the chosen options the set of flights which can be offered is different, where this dependency is nonmonotonic.
+% More reductions can decrease the set of available flights, but it can also increase as the loss of certain flights can release ressources which make the provision of other flights possible.
+%
+% Moreover, depending on the available flights, the required ressources are different.
+% Also this relation is nonmonotonic: obviously ressources can increase with additional flights, but they can also decrease as connection flights might allow the airline to share ressources between flights, send staff members as passengers, etc.
+% Finally, there are constraints on the ressources.
+
+choose(X) v nchoose(X) :- savings(X).
+flights(X) :- &mapping[choose, savingsToFlights](X).
+required(X) :- &mapping[flights, flightsToRessources](X).

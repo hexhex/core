@@ -1,0 +1,6 @@
+Universe = vanilla
+Requirements = machine == "lion.kr.tuwien.ac.at"
+# Requirements = machine == "node2.kr.tuwien.ac.at" || machine == "node3.kr.tuwien.ac.at"
+request_memory = 16384
+request_cpus = 1
+Notification = never
