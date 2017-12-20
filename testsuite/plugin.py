@@ -730,10 +730,14 @@ def controlsMajorityWithMax(strategic,owns):
 						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:]
 
 		for c in unknownControlDict:
-			if c in controlDict and int(controlDict[c]) > 5000000 and int(unknownControlDict[c]) < 10000000:
+			if c in controlDict and int(controlDict[c]) > 5000000 and int(unknownControlDict[c]) + 400 < 10000000:
 				dlvhex.output((c, ))
-			elif int(unknownControlDict[c]) > 5000000 and int(unknownControlDict[c]) < 10000000:
+				print(c)
+				print("a")
+			elif int(unknownControlDict[c]) > 5000000 and int(controlDict[c]) + 400 < 10000000:
 				dlvhex.outputUnknown((c, ))
+				print(c)
+				print("b")
 
 
 def controlsMajorityNonmonotonic(strategic,owns):
