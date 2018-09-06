@@ -322,6 +322,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
         << "                         none             : No learning" << std::endl
         << "                         reduct           : Learning is based on the FLP-reduct" << std::endl
         << "                         ufs (default)    : Learning is based on the unfounded set" << std::endl
+        << "     --useatomdependency" << std::endl
+        << "                      Enable pruning of dependency graph used for computing e-cycles based on specified dependencies." << std::endl
+        << "                      (only useful with --flpcriterion=[e,em,emi])." << std::endl
         << "     --eaevalheuristics=[always,periodic,inputcomplete,eacomplete,post,never]" << std::endl
         << "                      Selects the heuristic for external atom evaluation." << std::endl
         << "                         always           : Evaluate whenever possible" << std::endl
@@ -893,6 +896,7 @@ Config& config, ProgramCtx& pctx)
         { "waitonmodel", no_argument, 0, 66 },
         { "extinlining", optional_argument, 0, 67 },
         { "ufslearnpartial", no_argument, 0, 73 },
+        { "useatomdependency", no_argument, 0, 74 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1772,6 +1776,7 @@ Config& config, ProgramCtx& pctx)
                 }
                 break;
             case 73: pctx.config.setOption("UFSCheckPartial", 1); break;
+            case 74: pctx.config.setOption("UseAtomDependency", 1); break;
         }
     }
 
