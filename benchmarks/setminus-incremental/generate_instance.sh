@@ -9,5 +9,5 @@ fi
 
 for (( i=1; i <= $1; i++ ))
 do
-	echo "domain(c$i) v n_domain(c$i)."
+	echo "domain($i) v n_domain($i)."
 done

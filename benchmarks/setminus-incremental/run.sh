@@ -15,6 +15,6 @@ else
 	# run single instance
 	confstr=";--eaevalheuristics=always --claspdefernprop=0; --ufslearnpartial --claspdefernprop=10; --ufslearnpartial --claspdefernprop=0; --ufslearnpartial --eaevalheuristics=always --claspdefernprop=0; --ngminimization=qxponconflict;--useatomdependency;--eaevalheuristics=always --claspdefernprop=0 --useatomdependency; --ufslearnpartial --claspdefernprop=10 --useatomdependency; --ufslearnpartial --claspdefernprop=0 --useatomdependency; --ufslearnpartial --eaevalheuristics=always --claspdefernprop=0 --useatomdependency; --ngminimization=qxponconflict --useatomdependency"
 
-	$bmscripts/runconfigs.sh "dlvhex2 setminus.hex --python-plugin=../../testsuite/plugin.py INST CONF" "$confstr" "$instance" "$to"
+	$bmscripts/runconfigs.sh "dlvhex2 setminus.hex --flpcheck=aufsm --python-plugin=../../testsuite/plugin.py INST CONF" "$confstr" "$instance" "$to"
 fi
 

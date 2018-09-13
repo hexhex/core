@@ -15,5 +15,6 @@ fi
 
 for (( i=$1; i <= $2; i++ ))
 do
-	./generate_instance.sh $i > "instances/inst_${i}_1.hex"
+	in=`printf "%03d" ${i}`
+	./generate_instance.sh $i > "instances/inst_${in}_1.hex"
 done
