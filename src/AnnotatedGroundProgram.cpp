@@ -437,12 +437,34 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
                 BOOST_FOREACH (ID eaID, auxToEA[b.address]) {
                     const ExternalAtom& ea = reg->eatoms.getByID(eaID);
                     const ExtSourceProperties& prop = ea.getExtSourceProperties();
-
+                    
                     ea.updatePredicateInputMask();
                     bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
                     bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
                     while (en < en_end) {
                         if (depNodes.find(*en) == depNodes.end()) depNodes[*en] = boost::add_vertex(*en, depGraph);
+                        
+                        if (ctx->config.getOption("UseAtomDependency")) {
+                            bool relevant = true;
+                            const OrdinaryAtom& oatom = ctx->registry()->ogatoms.getByAddress(*en);
+                            const OrdinaryAtom& oatom_aux = ctx->registry()->ogatoms.getByAddress(b.address);
+                            for (int i = 0; i < ea.inputs.size(); ++i) {
+                                if (oatom.tuple[0] == ea.inputs[i]) {
+                                    for (int j = 1; j < oatom.tuple.size(); ++j) {
+                                        for (int k = ea.inputs.size() + 1; k < oatom_aux.tuple.size(); ++k) {
+                                            if (prop.hasAtomDependency(i,j-1,k-(ea.inputs.size()+1)) && oatom.tuple[j] != oatom_aux.tuple[k]) {
+                                                relevant = false;
+                                                break;
+                                            }
+                                        }   
+                                    }
+                                }
+                            }
+                            if(!relevant) {
+                                en++;
+                                continue;
+                            }
+                        }
 
                         if (ctx->config.getOption("FLPDecisionCriterionEM")) {
                             const OrdinaryAtom& oatom = ctx->registry()->ogatoms.getByAddress(*en);

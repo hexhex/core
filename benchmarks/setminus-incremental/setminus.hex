@@ -1,0 +1,6 @@
+keep(X) :- domain(X), &testSetMinusPartial[domain, remove](X).
+remove(X) :- keep(Y), Y > 0, X = Y - 1.
+
+:- domain(X), domain(Y), domain(Z), domain(Z1), domain(Z2), X != Y, Y != Z, Z != X, Z1 != Y, Z1 != Z, Z1 != X, Z2 != Y, Z2 != Z, Z2 != X.
+
+

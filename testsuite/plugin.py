@@ -676,7 +676,7 @@ def controlsMajority(strategic,owns):
 	for x in dlvhex.getInputAtoms():
 		if x.tuple()[0] == strategic and x.isTrue():
 			for y in dlvhex.getInputAtoms():
-				if y.tuple()[0] == owns and y.isTrue() and x.tuple()[1] == y.tuple()[1]:
+				if y.tuple()[0] == owns and x.tuple()[1] == y.tuple()[1]:
 					if y.tuple()[2].value() in controlDict:
 						newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:]))
 						controlDict[y.tuple()[2].value()] = newval
@@ -689,7 +689,7 @@ def controlsMajority(strategic,owns):
 						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:]
 		elif x.tuple()[0] == strategic and not x.isFalse():
 			for y in dlvhex.getInputAtoms():
-				if y.tuple()[0] == owns and not y.isFalse() and x.tuple()[1] == y.tuple()[1]:
+				if y.tuple()[0] == owns and x.tuple()[1] == y.tuple()[1]:
 					if y.tuple()[2].value() in unknownControlDict:
 						newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:]))
 						unknownControlDict[y.tuple()[2].value()] = newval
@@ -709,7 +709,7 @@ def controlsMajorityWithMax(strategic,owns):
 	for x in dlvhex.getInputAtoms():
 		if x.tuple()[0] == strategic and x.isTrue():
 			for y in dlvhex.getInputAtoms():
-				if y.tuple()[0] == owns and y.isTrue() and x.tuple()[1] == y.tuple()[1]:
+				if y.tuple()[0] == owns and x.tuple()[1] == y.tuple()[1]:
 					if y.tuple()[2].value() in controlDict:
 						newval = str(int(controlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:]))
 						controlDict[y.tuple()[2].value()] = newval
@@ -722,7 +722,7 @@ def controlsMajorityWithMax(strategic,owns):
 						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:]
 		elif x.tuple()[0] == strategic and not x.isFalse():
 			for y in dlvhex.getInputAtoms():
-				if y.tuple()[0] == owns and not y.isFalse() and x.tuple()[1] == y.tuple()[1]:
+				if y.tuple()[0] == owns and x.tuple()[1] == y.tuple()[1]:
 					if y.tuple()[2].value() in unknownControlDict:
 						newval = str(int(unknownControlDict[y.tuple()[2].value()]) + int(y.tuple()[3].value()[1:]))
 						unknownControlDict[y.tuple()[2].value()] = newval
@@ -730,9 +730,9 @@ def controlsMajorityWithMax(strategic,owns):
 						unknownControlDict[y.tuple()[2].value()] = y.tuple()[3].value()[1:]
 
 		for c in unknownControlDict:
-			if c in controlDict and int(controlDict[c]) > 5000000 and int(unknownControlDict[c]) < 10000000:
+			if c in controlDict and int(controlDict[c]) > 5000000 and int(unknownControlDict[c]) + 400 < 10000000:
 				dlvhex.output((c, ))
-			elif int(unknownControlDict[c]) > 5000000 and int(unknownControlDict[c]) < 10000000:
+			elif int(unknownControlDict[c]) > 5000000 and (c not in controlDict or int(controlDict[c]) + 400 < 10000000):
 				dlvhex.outputUnknown((c, ))
 
 

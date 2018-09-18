@@ -132,6 +132,8 @@ struct ExtSourceProperties
     std::set<std::pair<int, int> > wellorderingNatural;
     /** \brief See ExtSourceProperties::providesPartialAnswer. */
     bool providesPartialAnswer;
+    /** \brief See ExtSourceProperties::atomDependencies. */
+    std::set<std::tuple<int,int, int>> atomDependencies;
 
     /**
      * \brief Constructor.
@@ -200,8 +202,10 @@ struct ExtSourceProperties
     inline void addWellorderingStrlen(int index1, int index2) { wellorderingStrlen.insert(std::pair<int, int>(index1, index2)); }
     /** \brief See ExtSourceProperties::hasWellorderingNatural. */
     inline void addWellorderingNatural(int index1, int index2) { wellorderingNatural.insert(std::pair<int, int>(index1, index2)); }
-    /** \brief See ExtSourceProperties::hasWellorderingNatural. */
+    /** \brief See ExtSourceProperties::providesPartialAnswer. */
     inline void setProvidesPartialAnswer(bool value) { providesPartialAnswer = value; }
+    /** \brief See ExtSourceProperties::hasAtomDependency. */
+    inline void addAtomDependency(int index1, int index2, int index3) { atomDependencies.insert(std::tuple<int,int, int>(index1, index2, index3)); }
 
     /**
      * \brief Checks if the external source is monotonic.
@@ -407,6 +411,17 @@ struct ExtSourceProperties
      */
     bool doesProvidePartialAnswer() const
         { return providesPartialAnswer; }
+    
+    /**
+     * \brief Checks if some output position of external atom depends on a certain argument position of the input predicate.
+     *
+     * @param inputIndex Index of element in the input list of an external atom.
+     * @param argumentIndex Argument position of input predicate.
+     * @param outputIndex Output position of external atom.
+     * @return True if value at outputIndex depends on value at argumentIndex of predicate at inputIndex.
+     */
+    bool hasAtomDependency(int inputIndex, int argumentIndex, int outputIndex) const
+        { return atomDependencies.count(std::tuple<int, int, int>(inputIndex, argumentIndex, outputIndex)) > 0; }
 
     /**
      * \brief Parses external source properties given as vectors of terms and integrates them into the current instance of the class.

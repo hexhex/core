@@ -1052,7 +1052,8 @@ BOOST_PYTHON_MODULE(dlvhex)
         .def("setFiniteFiber", &dlvhex::ExtSourceProperties::setFiniteFiber)
         .def("addWellorderingStrlen", &dlvhex::ExtSourceProperties::addWellorderingStrlen)
         .def("addWellorderingNatural", &dlvhex::ExtSourceProperties::addWellorderingNatural)
-        .def("setProvidesPartialAnswer", &dlvhex::ExtSourceProperties::setProvidesPartialAnswer);
+        .def("setProvidesPartialAnswer", &dlvhex::ExtSourceProperties::setProvidesPartialAnswer)
+        .def("addAtomDependency", &dlvhex::ExtSourceProperties::addAtomDependency);
 
     boost::python::scope().attr("CONSTANT") = (int)PluginAtom::CONSTANT;
     boost::python::scope().attr("PREDICATE") = (int)PluginAtom::PREDICATE;
