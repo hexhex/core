@@ -132,8 +132,10 @@ struct ExtSourceProperties
     std::set<std::pair<int, int> > wellorderingNatural;
     /** \brief See ExtSourceProperties::providesPartialAnswer. */
     bool providesPartialAnswer;
-    /** \brief See ExtSourceProperties::atomDependencies. */
+    /** \brief See ExtSourceProperties::hasAtomDependency. */
     std::set<std::tuple<int,int, int>> atomDependencies;
+    /** \brief See ExtSourceProperties::getComplianceCheck. */
+    int complCheck;
 
     /**
      * \brief Constructor.
@@ -206,6 +208,8 @@ struct ExtSourceProperties
     inline void setProvidesPartialAnswer(bool value) { providesPartialAnswer = value; }
     /** \brief See ExtSourceProperties::hasAtomDependency. */
     inline void addAtomDependency(int index1, int index2, int index3) { atomDependencies.insert(std::tuple<int,int, int>(index1, index2, index3)); }
+    /** \brief See ExtSourceProperties::getComplianceCheck. */
+    inline void setComplianceCheck(int compcheck) { complCheck = compcheck;}
 
     /**
      * \brief Checks if the external source is monotonic.
@@ -422,6 +426,14 @@ struct ExtSourceProperties
      */
     bool hasAtomDependency(int inputIndex, int argumentIndex, int outputIndex) const
         { return atomDependencies.count(std::tuple<int, int, int>(inputIndex, argumentIndex, outputIndex)) > 0; }
+    
+    /**
+     * \brief Returns the id of the compliance check used for the respective external atom.
+     *
+     * @return Id of compliance check as provided in the external source implementation (see setComplianceCheck).
+     */
+    int getComplianceCheck() const
+        { return complCheck; }
 
     /**
      * \brief Parses external source properties given as vectors of terms and integrates them into the current instance of the class.

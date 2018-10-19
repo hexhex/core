@@ -439,6 +439,10 @@ void PluginAtom::retrieve(const Query& query, Answer& answer)
     DBGLOG(DBG, "Default implementation of PluginAtom::retrieve(const Query& query, Answer& answer): doing nothing");
 }
 
+bool PluginAtom::checkCompliance(int compcheck, int i, int j, int k, std::string inp, std::string outp, std::string data)
+{
+    return false;
+}
 
 void PluginAtom::learnSupportSets(const Query&, NogoodContainerPtr nogoods)
 {

@@ -831,6 +831,63 @@ def main():
 	for x in ans:
 		print("Answer set:", dlvhex.getValue(x))
 
+def complianceCheck1(path,i,j,k,inp,outp):
+	if i == 1:
+		edges = {}
+		nodes = []
+		file = open(path)
+
+		for node in file:
+			nodes.append(node)
+
+		for i in range(0,len(nodes)/2):
+			first = nodes.pop()
+			second = nodes.pop()
+			if first[:-1] not in edges:
+				edges[first[:-1]] = [second[:-1]]
+			else:
+				edges[first[:-1]].append(second[:-1])
+
+		if inp in edges and outp in edges[inp]:
+			return "0"
+		else:
+			return "1"
+	else:
+		return "0"
+
+def adjacent(path,nd):
+	edges = {}
+	nodes = []
+	file = open(path.value()[1:len(path.value())-1])
+
+	for node in file:
+		nodes.append(node)
+
+	for i in range(0,len(nodes)/2):
+		first = nodes.pop()
+		second = nodes.pop()
+		if first[:-1] not in edges:
+			edges[first[:-1]] = [second[:-1]]
+		else:
+			edges[first[:-1]].append(second[:-1])
+
+	true_nodes = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == nd and x.isTrue():
+			if x.tuple()[1].value() in edges:
+				for nd2 in edges[x.tuple()[1].value()]:
+					dlvhex.output( (nd2,) )
+					true_nodes.append(nd2)
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == nd and not x.isFalse() and not x.isTrue():
+			if x.tuple()[1].value() in edges:
+				for nd2 in edges[x.tuple()[1].value()]:
+					if nd2 not in true_nodes:
+						dlvhex.outputUnknown( (nd2,) )
+	
+
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)
 
@@ -870,7 +927,17 @@ def register():
 	prop.setProvidesPartialAnswer(True)
 #	prop.addMonotonicInputPredicate(0)
 #	prop.addAntimonotonicInputPredicate(1)
+	prop.addAtomDependency(0,0,0)
+	prop.addAtomDependency(1,0,0)
 	dlvhex.addAtom("testSetMinusPartial", (dlvhex.PREDICATE, dlvhex.PREDICATE), 1, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.setComplianceCheck(1)
+	prop.addFiniteOutputDomain(0)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("adjacent", (dlvhex.CONSTANT, dlvhex.PREDICATE), 1, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)

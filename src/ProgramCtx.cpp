@@ -69,6 +69,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setOption("UFSCheckAssumptionBased", 1);
     config.setOption("UFSCheckPartial", 0);
     config.setOption("UseAtomDependency", 0);
+    config.setOption("UseAtomCompliance", 0);
     config.setOption("GenuineSolver", 0);
     config.setOption("ExternalLearning", 1);
     config.setOption("UFSLearning", 1);

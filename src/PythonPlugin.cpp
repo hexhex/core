@@ -283,6 +283,15 @@ class PythonAtom : public PluginAtom
                 PyErr_Print();
             }
         }
+        
+        virtual bool checkCompliance(int compcheck, int i, int j, int k, std::string inp, std::string outp, std::string data)
+        {
+            std::stringstream ss;
+            ss << "complianceCheck" << std::to_string(compcheck) << "(" << data << "," << std::to_string(i) << "," << std::to_string(j) << "," << std::to_string(k) << ",\"" << inp << "\",\"" << outp << "\")";
+            std::string s = ss.str();
+            std::string res = boost::python::extract<std::string>(boost::python::eval(s.c_str(),PythonAPI::dict,PythonAPI::dict));
+            if (res == "1") return true; else return false;
+        }
 
         virtual void learnSupportSets(const Query& query, NogoodContainerPtr nogoods)
         {
@@ -1053,7 +1062,8 @@ BOOST_PYTHON_MODULE(dlvhex)
         .def("addWellorderingStrlen", &dlvhex::ExtSourceProperties::addWellorderingStrlen)
         .def("addWellorderingNatural", &dlvhex::ExtSourceProperties::addWellorderingNatural)
         .def("setProvidesPartialAnswer", &dlvhex::ExtSourceProperties::setProvidesPartialAnswer)
-        .def("addAtomDependency", &dlvhex::ExtSourceProperties::addAtomDependency);
+        .def("addAtomDependency", &dlvhex::ExtSourceProperties::addAtomDependency)
+        .def("setComplianceCheck", &dlvhex::ExtSourceProperties::setComplianceCheck);
 
     boost::python::scope().attr("CONSTANT") = (int)PluginAtom::CONSTANT;
     boost::python::scope().attr("PREDICATE") = (int)PluginAtom::PREDICATE;

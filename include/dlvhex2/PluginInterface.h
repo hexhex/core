@@ -1147,6 +1147,22 @@ class DLVHEX_EXPORT PluginAtom
          * @param answer Output of the external source.
          */
         virtual void retrieve(const Query& query, Answer& answer);
+        
+        /**
+         * \brief Is called for checking if an input atom of an external atom is compliant with the respective io-dependencies.
+         * The method is used in the method AnnotatedGroundProgram::computeAtomDependencyGraph() to prune the dependency graph for deciding the necessity of the UFS check.
+         *
+         * @param compcheck Compliance check that needs to be called for the respective external source.
+         * @param i Index of input predicate.
+         * @param j Index of argument position of input predicate.
+         * @param k Index of output argument.
+         * @param inp Input term at argument position j of an input atom with predicate name corresponding to the ith input predicate.
+         * @param outp Output term at the kth output position.
+         * @param data Additional string data that can be provided to the compliance check.
+         * 
+         * @return True if input atom is not compliant with the respective io-dependencies.
+         */
+        virtual bool checkCompliance(int compcheck, int i, int j, int k, std::string inp, std::string outp, std::string data);
 
         /**
          * \brief Is called for learning support sets. Needs to be implemented if PluginAtom::prop declares
