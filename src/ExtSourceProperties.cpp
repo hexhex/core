@@ -68,6 +68,7 @@ ExtSourceProperties& ExtSourceProperties::operator|=(const ExtSourceProperties& 
     caresAboutChanged |= prop2.caresAboutChanged;
     providesPartialAnswer |= prop2.providesPartialAnswer;
     atomDependencies.insert(prop2.atomDependencies.begin(), prop2.atomDependencies.end());
+    complCheck = prop2.complCheck;
     return *this;
 }
 
