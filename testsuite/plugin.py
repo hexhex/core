@@ -813,24 +813,6 @@ def cnt(p):
 		c = c + 1
 	dlvhex.output((c, ))
 
-def main():
-	h1 = dlvhex.storeAtom(("q", "X"))
-	h2 = dlvhex.storeAtom(("r", "X"))
-	b = dlvhex.storeExternalAtom("concat", ("a", "b"), ("X", ))
-	f = dlvhex.storeAtom(("p", "a"))
-	r = dlvhex.storeRule((h1, h2, ), (b, ), ());
-	a = dlvhex.evaluateSubprogram(((f, ), (r, )))
-
-	prog = dlvhex.loadSubprogram("examples/3col.hex")
-	print("Evaluating the program:")
-	print(dlvhex.getValue(prog[1]))
-	print("Facts:")
-	print(dlvhex.getValue(prog[0]))
-
-	ans = dlvhex.evaluateSubprogram(prog)
-	for x in ans:
-		print("Answer set:", dlvhex.getValue(x))
-
 def complianceCheck1(path,i,j,k,inp,outp):
 	if i == 1:
 		edges = {}
@@ -887,6 +869,23 @@ def adjacent(path,nd):
 					if nd2 not in true_nodes:
 						dlvhex.outputUnknown( (nd2,) )
 	
+def main():
+	h1 = dlvhex.storeAtom(("q", "X"))
+	h2 = dlvhex.storeAtom(("r", "X"))
+	b = dlvhex.storeExternalAtom("concat", ("a", "b"), ("X", ))
+	f = dlvhex.storeAtom(("p", "a"))
+	r = dlvhex.storeRule((h1, h2, ), (b, ), ());
+	a = dlvhex.evaluateSubprogram(((f, ), (r, )))
+
+	prog = dlvhex.loadSubprogram("examples/3col.hex")
+	print("Evaluating the program:")
+	print(dlvhex.getValue(prog[1]))
+	print("Facts:")
+	print(dlvhex.getValue(prog[0]))
+
+	ans = dlvhex.evaluateSubprogram(prog)
+	for x in ans:
+		print("Answer set:", dlvhex.getValue(x))
 
 def register():
 	dlvhex.addAtom("multiply", (dlvhex.CONSTANT, dlvhex.CONSTANT), 1)
