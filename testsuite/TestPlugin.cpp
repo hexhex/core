@@ -2444,7 +2444,7 @@ class TestBraveQueryAtom:
 {
 public:
   TestBraveQueryAtom(ProgramCtx& ctx):
-    TestASPQueryAtom(ctx, "testCautiousBrave")
+    TestASPQueryAtom(ctx, "testBraveQuery")
   { }
 
 	// implement the specific part
