@@ -1,7 +1,9 @@
 # $1: node count
-# $2: edge propability
 
-prop=$((32768 * $2 / 100))
+frac=$(((1 * 100) / $1))
+prop=$(((32768 * $frac)/100))
+
+echo $prop
 for (( i=1; i <= $1; i++ ))
 do
 	for (( j = 1; j <= $1; j++ ))
