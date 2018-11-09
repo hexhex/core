@@ -109,7 +109,7 @@ ExternalAtomEvaluationHeuristicsDynamic::ExternalAtomEvaluationHeuristicsDynamic
 bool ExternalAtomEvaluationHeuristicsDynamic::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
 {
     counter++;
-    if (counter > frequency){
+    if (counter >= frequency){
         counter = 0;
         return true;
     }else{
