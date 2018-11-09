@@ -98,6 +98,48 @@ ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsPeriodicFact
 }
 
 
+
+// ============================== Dynamic ==============================
+
+ExternalAtomEvaluationHeuristicsDynamic::ExternalAtomEvaluationHeuristicsDynamic(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg), counter(0), frequency(1)
+{
+}
+
+
+bool ExternalAtomEvaluationHeuristicsDynamic::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed)
+{
+    counter++;
+    if (counter > frequency){
+        counter = 0;
+        return true;
+    }else{
+        return false;
+    }
+}
+
+
+bool ExternalAtomEvaluationHeuristicsDynamic::frequent()
+{
+    return true;
+}
+
+
+void ExternalAtomEvaluationHeuristicsDynamic::decreaseFrequency(float factor)
+{
+    frequency = frequency * (factor / 1000);
+}
+
+void ExternalAtomEvaluationHeuristicsDynamic::resetFrequency()
+{
+    frequency = 1;
+}
+
+ExternalAtomEvaluationHeuristicsPtr ExternalAtomEvaluationHeuristicsDynamicFactory::createHeuristics(RegistryPtr reg)
+{
+    return ExternalAtomEvaluationHeuristicsPtr(new ExternalAtomEvaluationHeuristicsDynamic(reg));
+}
+
+
 // ============================== InputComplete ==============================
 
 ExternalAtomEvaluationHeuristicsInputComplete::ExternalAtomEvaluationHeuristicsInputComplete(RegistryPtr reg) : ExternalAtomEvaluationHeuristics(reg)

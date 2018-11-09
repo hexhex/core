@@ -91,6 +91,34 @@ class ExternalAtomEvaluationHeuristicsPeriodicFactory : public ExternalAtomEvalu
     virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
 };
 
+// ============================== Dynamic ==============================
+
+/**
+ * \brief Evaluates in dynamically adjusted intervals.
+ */
+class ExternalAtomEvaluationHeuristicsDynamic : public ExternalAtomEvaluationHeuristics
+{
+    private:
+        /** \brief Counts the number of calls to doEvaluate. */
+        int counter;
+        
+        float frequency;
+    public:
+        ExternalAtomEvaluationHeuristicsDynamic(RegistryPtr reg);
+        virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr eatomMask, InterpretationConstPtr programMask, InterpretationConstPtr partialAssignment, InterpretationConstPtr assigned, InterpretationConstPtr changed);
+        virtual bool frequent();
+        virtual void decreaseFrequency(float factor);
+        virtual void resetFrequency();
+};
+
+/**
+ * \brief Factory for ExternalAtomEvaluationHeuristicsPeriodicFactory.
+ */
+class ExternalAtomEvaluationHeuristicsDynamicFactory : public ExternalAtomEvaluationHeuristicsFactory
+{
+    virtual ExternalAtomEvaluationHeuristicsPtr createHeuristics(RegistryPtr reg);
+};
+
 // ============================== InputComplete ==============================
 
 /**

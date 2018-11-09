@@ -1903,9 +1903,37 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtomByEvaluation(int eaIn
         }else{
             DBGLOG(DBG, "Verifying external Atom " << activeInnerEatoms[eaIndex] << " under " << *evalIntr << " (assigned: all)");
         }
-        evaluateExternalAtom(factory.ctx, activeInnerEatoms[eaIndex], evalIntr, vcb,
+        
+        if (factory.ctx.config.getOption("EAEvalDebounce") != 1.0) {
+            int nogoodCount = learnedEANogoods->getNogoodCount();
+            evaluateExternalAtom(factory.ctx, activeInnerEatoms[eaIndex], evalIntr, vcb,
             factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed, answeredFromCache);
-        updateEANogoods(partialInterpretation, assigned, changed);
+            std::set<ID> answers;
+            
+            for (int i = nogoodCount; i < learnedEANogoods->getNogoodCount(); ++i) {
+                const Nogood& ng = learnedEANogoods->getNogood(i);
+                BOOST_FOREACH(ID iid, ng) {
+                    if (factory.ctx.registry()->ogatoms.getIDByAddress(iid.address).isExternalAuxiliary()) {
+                        answers.insert(iid);
+                    }
+                }
+            }
+            
+            if (prevEAEvalResults.find(activeInnerEatoms[eaIndex]) != prevEAEvalResults.end()) {
+                if (prevEAEvalResults[activeInnerEatoms[eaIndex]] == answers) {
+                    eaEvalHeuristics[eaIndex]->decreaseFrequency(factory.ctx.config.getOption("EAEvalDebounce"));
+                } else {
+                    eaEvalHeuristics[eaIndex]->resetFrequency();
+                }
+            }
+            
+            prevEAEvalResults[activeInnerEatoms[eaIndex]] = answers;
+            updateEANogoods(partialInterpretation, assigned, changed);
+        } else {
+            evaluateExternalAtom(factory.ctx, activeInnerEatoms[eaIndex], evalIntr, vcb,
+            factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr(), assigned, changed, answeredFromCache);
+            updateEANogoods(partialInterpretation, assigned, changed);
+        }
 
         // if the input to the external atom was complete, then remember the verification result;
         // for incomplete input we cannot yet decide this yet, evaluation is only done for learning purposes in this case

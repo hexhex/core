@@ -93,6 +93,17 @@ class DLVHEX_EXPORT ExternalAtomEvaluationHeuristics
          * @return True if the heuristics wants to be called more frequently, otherwise false.
          */
         virtual bool frequent() { return false; }
+
+        /**
+         * \brief Decreases the evaluation frequency of the respective external atom.
+         * @param factor Factor by which the frequency is multiplied when the method is called.
+         */
+        virtual void decreaseFrequency(float factor) { }
+
+        /**
+         * \brief Resets the evaluation frequency of the respective external atom.
+         */
+        virtual void resetFrequency() { }
 };
 
 typedef boost::shared_ptr<ExternalAtomEvaluationHeuristics> ExternalAtomEvaluationHeuristicsPtr;

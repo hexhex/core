@@ -88,6 +88,8 @@ public PropagatorCallback
         InterpretationPtr verifiedAuxes;
         /** \brief Stores for each inner external atom the cumulative atoms which potentially changes since last evaluation. */
         std::vector<InterpretationPtr> changedAtomsPerExternalAtom;
+        /** \brief Stores for each external atom the result of the previous evaluation. */
+        std::map<ID, std::set<ID>> prevEAEvalResults;
 
         // heuristics
         /** \brief Heuristics to be used for evaluating external atoms for which no dedicated heuristics is provided. */

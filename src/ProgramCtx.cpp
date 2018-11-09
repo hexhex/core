@@ -137,6 +137,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     config.setStringOption("PluginDirs", "");
     config.setOption("IncrementalGrounding", 0);
     config.setOption("MinimizationSize", 10000);
+    config.setOption("EAEvalDebounce", 1000);
 
     // options related to WeakConstraintPlugin (we need to support this in the core for efficiency)
                                  // whether we handle answer set weights
