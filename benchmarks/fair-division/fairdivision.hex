@@ -1,0 +1,10 @@
+turn(a0,Y) v turn(a1,Y) :- position(Y).
+
+picked(A,P,Z) :- &pick["void",F,A,P,picked](P,Z), turn(A,P), item(Z), pref_file(F).
+
+:- not &fair[F,picked](), pref_file(F).
+
+
+
+
+

@@ -154,6 +154,7 @@ struct ExtSourceProperties
         caresAboutAssigned = false;
         caresAboutChanged = false;
         providesPartialAnswer = false;
+        complCheck = 0;
     }
 
     /**

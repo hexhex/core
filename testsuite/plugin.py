@@ -868,6 +868,119 @@ def adjacent(path,nd):
 				for nd2 in edges[x.tuple()[1].value()]:
 					if nd2 not in true_nodes:
 						dlvhex.outputUnknown( (nd2,) )
+
+
+def complianceCheck2(path,i,j,k,inp,outp):
+	if i == 4 and j == 1 and k == 0:
+		if int(inp[1:]) < int(outp[1:]):
+			return "0"
+		else:
+			return "1"
+	else:
+		return "0"
+
+
+def pick(void,pref_file,ag,pos,picked):
+	f = open(pref_file.value()[1:-1],'r')
+
+	prefs = [[],[]]
+
+	goods_num = int(f.readline())
+
+	for i in range(0,goods_num):
+		prefs[0].append(int(f.readline()))
+
+	for i in range(0,goods_num):
+		prefs[1].append(int(f.readline()))
+	
+	agent = int(ag.value()[1:])
+	position = int(pos.value()[1:])
+
+	already_picked = []
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == picked and x.isTrue():
+			if int(x.tuple()[2].value()[1:]) < position:
+				already_picked.append(int(x.tuple()[3].value()[1:]))
+
+	agent_pick = 999
+
+	for i in prefs[agent]:
+		if i not in already_picked:
+			if len(already_picked) < position:
+				dlvhex.outputUnknown((pos.value(),'i' + str(i),))
+			agent_pick = i
+
+
+	if len(already_picked) >= position and agent_pick != 999:
+		dlvhex.output((pos.value(),'i' + str(agent_pick)))
+
+
+
+def fair(pref_file,picked):
+
+	f = open(pref_file.value()[1:-1],'r')
+
+	prefs = [[],[]]
+
+	goods_num = int(f.readline())
+
+	assigned = [[],[]]
+
+	for i in range(0,goods_num):
+		prefs[0].append(int(f.readline()))
+
+	for i in range(0,goods_num):
+		prefs[1].append(int(f.readline()))
+
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == picked and not x.isTrue() and not x.isFalse():
+			dlvhex.outputUnknown(())
+			return
+		if x.tuple()[0] == picked and x.isTrue():
+			assigned[int(x.tuple()[1].value()[1:])].append(int(x.tuple()[3].value()[1:]))
+
+
+	value_own1 = 0
+	for i in assigned[0]:
+		value_own1 += prefs[0].index(i)
+
+	value_own2 = 0
+	for i in assigned[1]:
+		value_own2 += prefs[1].index(i)
+
+	value_other2 = 0
+	for i in assigned[0]:
+		value_other2 += prefs[1].index(i)
+
+	value_other1 = 0
+	for i in assigned[1]:
+		value_other1 += prefs[0].index(i)
+
+	if value_own1 >= value_other1 and value_own2 >= value_other2:
+		dlvhex.output(())
+
+
+
+
+def contains(pred,elem):
+#	if False:
+#		dlvhex.output(())
+	outputFalse = False
+	outputTrue = False
+	for x in dlvhex.getInputAtoms():
+		if x.tuple()[0] == pred and x.tuple()[1].value() == elem.value() and x.isTrue():
+			print("true")
+			outputTrue = True	
+			dlvhex.output(())
+		elif x.tuple()[0] == pred and x.tuple()[1].value() == elem.value() and x.isFalse():
+			print("false")			
+			outputFalse = True
+
+	if not outputFalse and not outputTrue:
+		print("unknown")
+		dlvhex.outputUnknown(())
+
 	
 def main():
 	h1 = dlvhex.storeAtom(("q", "X"))
@@ -932,11 +1045,23 @@ def register():
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
+	dlvhex.addAtom("contains", (dlvhex.PREDICATE, dlvhex.CONSTANT), 0, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
 	prop.setComplianceCheck(1)
 	prop.addFiniteOutputDomain(0)
 	prop.addMonotonicInputPredicate(0)
 	prop.addMonotonicInputPredicate(1)
 	dlvhex.addAtom("adjacent", (dlvhex.CONSTANT, dlvhex.PREDICATE), 1, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.setComplianceCheck(2)
+	dlvhex.addAtom("pick", (dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.PREDICATE), 2, prop)
+
+	prop = dlvhex.ExtSourceProperties()
+	dlvhex.addAtom("fair", (dlvhex.CONSTANT, dlvhex.PREDICATE), 0, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
