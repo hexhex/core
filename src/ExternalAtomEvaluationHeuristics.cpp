@@ -127,7 +127,6 @@ bool ExternalAtomEvaluationHeuristicsDynamic::frequent()
 void ExternalAtomEvaluationHeuristicsDynamic::decreaseFrequency(float factor)
 {
     frequency = frequency * (factor / 1000);
-    std::cout << frequency;
 }
 
 void ExternalAtomEvaluationHeuristicsDynamic::resetFrequency()
