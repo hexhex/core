@@ -1,6 +1,11 @@
+agent(a0).
+agent(a1).
+
 turn(a0,Y) v turn(a1,Y) :- position(Y).
 
-picked(A,P,Z) :- &pick["void",F,A,picked](P,Z), turn(A,P), item(Z), pref_file(F).
+picked(A,P,I) :- &pick["void",F,already_picked](A,P,I), agent(A), position(P), item(I), pref_file(F).
+
+already_picked(A,P,I) :- before(P1,P), picked(_,P1,I), turn(A,P).
 
 :- not &fair[F,picked](), pref_file(F).
 

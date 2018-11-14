@@ -33,6 +33,11 @@ for goods_num in range(1,11):
 			f2.write('\n')
 
 		for i in range(0,goods_num):
+			for j in range(0,i):
+				f2.write('before(p' + str(j) + ',p' + str(i) + ').')
+				f2.write('\n')
+
+		for i in range(0,goods_num):
 			f2.write('item(i' + str(i) + ').')
 			f2.write('\n')
 

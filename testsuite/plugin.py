@@ -871,7 +871,7 @@ def adjacent(path,nd):
 
 
 def complianceCheck2(path,i,j,k,inp,outp):
-	if i == 3 and j == 1 and k == 0:
+	if i == 2 and j == 1 and k == 2:
 		if int(inp[1:]) < int(outp[1:]):
 			return "0"
 		else:
@@ -880,7 +880,7 @@ def complianceCheck2(path,i,j,k,inp,outp):
 		return "0"
 
 
-def pick(void,pref_file,ag,picked):
+def pick(void,pref_file,already_picked):
 	f = open(pref_file.value()[1:-1],'r')
 
 	prefs = [[],[]]
@@ -893,28 +893,28 @@ def pick(void,pref_file,ag,picked):
 	for i in range(0,goods_num):
 		prefs[1].append(int(f.readline()))
 	
-	agent = int(ag.value()[1:])
 
-	for position in range(0,goods_num):
-		already_picked = []
+	for agent in range(0,2):
+		for position in range(0,goods_num):
+			unknown = False
+			agent_limited = []
 
-		for x in dlvhex.getInputAtoms():
-			if x.tuple()[0] == picked and x.isTrue():
-				if int(x.tuple()[2].value()[1:]) < position:
-					already_picked.append(int(x.tuple()[3].value()[1:]))
+			for x in dlvhex.getInputAtoms():
+				if x.tuple()[0] == already_picked and int(x.tuple()[2].value()[1:]) == position and not x.isTrue() and not x.isFalse():
+					unknown = True
+				elif x.tuple()[0] == already_picked and int(x.tuple()[1].value()[1:]) == agent and int(x.tuple()[2].value()[1:]) == position and x.isTrue():
+					agent_limited.append(int(x.tuple()[3].value()[1:]))
 
-		agent_pick = 999
+			if unknown:
+				for item in range(0,goods_num):
+					dlvhex.outputUnknown(('a' + str(agent), 'p' + str(position),'i' + str(item)))
 
-		for i in prefs[agent]:
-			if i not in already_picked:
-				if len(already_picked) < position:
-					dlvhex.outputUnknown(('p' + str(position),'i' + str(i),))
-				agent_pick = i
-
-
-		if len(already_picked) >= position and agent_pick != 999:
-			dlvhex.output(('p' + str(position),'i' + str(agent_pick)))
-
+			elif len(agent_limited) < goods_num:
+				for pref in prefs[agent]:
+					if pref not in agent_limited:
+						agent_pick = pref
+					
+				dlvhex.output(('a' + str(agent), 'p' + str(position),'i' + str(agent_pick)))
 
 
 def fair(pref_file,picked):
@@ -1058,7 +1058,7 @@ def register():
 	prop = dlvhex.ExtSourceProperties()
 	prop.setProvidesPartialAnswer(True)
 	prop.setComplianceCheck(2)
-	dlvhex.addAtom("pick", (dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.PREDICATE), 2, prop)
+	dlvhex.addAtom("pick", (dlvhex.CONSTANT, dlvhex.CONSTANT, dlvhex.PREDICATE), 3, prop)
 
 	prop = dlvhex.ExtSourceProperties()
 	dlvhex.addAtom("fair", (dlvhex.CONSTANT, dlvhex.PREDICATE), 0, prop)

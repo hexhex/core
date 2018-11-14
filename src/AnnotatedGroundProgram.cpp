@@ -458,7 +458,7 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
                                                     break;
                                                 }
                                             } else {
-                                                if (ea.pluginAtom->checkCompliance(prop.getComplianceCheck(), i, j-1, k-(ea.inputs.size()+1), ctx->registry()->terms.getByID(oatom.tuple[j]).symbol, ctx->registry()->terms.getByID(oatom_aux.tuple[k-1]).symbol, ctx->registry()->terms.getByID(ea.inputs[0]).symbol)) {
+                                                if (ea.pluginAtom->checkCompliance(prop.getComplianceCheck(), i, j-1, k-(ea.inputs.size()+1), ctx->registry()->terms.getByID(oatom.tuple[j]).symbol, ctx->registry()->terms.getByID(oatom_aux.tuple[k]).symbol, ctx->registry()->terms.getByID(ea.inputs[0]).symbol)) {
                                                     relevant = false;
                                                     break;
                                                 }
