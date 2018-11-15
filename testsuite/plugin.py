@@ -871,8 +871,8 @@ def adjacent(path,nd):
 
 
 def complianceCheck2(path,i,j,k,inp,outp):
-	if i == 2 and j == 1 and k == 2:
-		if int(inp[1:]) < int(outp[1:]):
+	if i == 2 and j == 0 and k == 2:
+		if int(inp[1:]) == int(outp[1:]):
 			return "0"
 		else:
 			return "1"
@@ -894,47 +894,30 @@ def pick(void,pref_file,already_picked):
 		prefs[1].append(int(f.readline()))
 	
 
-	for agent in range(0,2):
-		for position in range(0,goods_num):
-			agent_limited = []
-			agent_false = False
-			agent_true = False
+	for position in range(0,goods_num):
+		for agent in range(0,2):
+
 			unknown = False
+			picked = []
 
 			for x in dlvhex.getInputAtoms():
-				if x.tuple()[0] == already_picked and int(x.tuple()[1].value()[1:]) == agent and int(x.tuple()[2].value()[1:]) == position:
+				if x.tuple()[0] == already_picked and int(x.tuple()[1].value()[1:]) == position:
+					if not x.isTrue() and not x.isFalse():
+						unknown = True
 					if x.isTrue():
-						agent_true = True
-					elif x.isFalse():
-						agent_false = True
-			
-			if agent_true:
-				for x in dlvhex.getInputAtoms():
-					if x.tuple()[0] == already_picked and int(x.tuple()[2].value()[1:]) == position:
-						if not x.isTrue() and not x.isFalse():
-							unknown = True
-						elif x.isTrue():
-							agent_limited.append(int(x.tuple()[3].value()[1:]))
+						picked.append(int(x.tuple()[2].value()[1:]))
 
-				if not unknown and len(agent_limited) < goods_num:
-					for pref in prefs[agent]:
-						if pref not in agent_limited:
-							agent_pick = pref
+			if not unknown:
+				for pref in prefs[agent]:
+					if pref not in picked:
+						agent_pick = pref
 						
-					dlvhex.output(('a' + str(agent), 'p' + str(position),'i' + str(agent_pick)))
+				dlvhex.output(('a' + str(agent), 'p' + str(position),'i' + str(agent_pick)))
 
 
-			elif not agent_false or unknown:
+			else:
 				for item in range(0,goods_num):
 					dlvhex.outputUnknown(('a' + str(agent), 'p' + str(position),'i' + str(item)))
-
-
-			for x in dlvhex.getInputAtoms():
-
-				if x.tuple()[0] == already_picked and int(x.tuple()[2].value()[1:]) == position and not x.isTrue() and not x.isFalse():
-					unknown = True
-				elif x.tuple()[0] == already_picked and int(x.tuple()[2].value()[1:]) == position and x.isTrue():
-					agent_limited.append(int(x.tuple()[3].value()[1:]))
 
 
 
