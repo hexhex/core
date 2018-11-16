@@ -124,6 +124,7 @@ maxint(0), currentOptimumRelevantLevels(0), terminationRequest(false)
     // propagate at least once per second, but also propagate all 10000 times we can propagate
     // TODO we should experiment with these
     config.setOption("ClaspDeferNPropagations", 10000);
+    config.setOption("ClaspSATDeferNPropagations", 10000);
     config.setOption("ClaspDeferMaxTMilliseconds",1000);
                                  // if 1, model generators will not register propagators for external atoms
     config.setOption("NoPropagator", 0);

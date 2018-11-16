@@ -871,7 +871,7 @@ def adjacent(path,nd):
 
 
 def complianceCheck2(path,i,j,k,inp,outp):
-	if i == 2 and j == 0 and k == 2:
+	if i == 2 and j == 0 and k == 1:
 		if int(inp[1:]) == int(outp[1:]):
 			return "0"
 		else:

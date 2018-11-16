@@ -84,6 +84,12 @@ ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs)
     skipMaxDuration = boost::posix_time::microseconds(deferMS * 1000);
 
     skipAmount = cs.ctx.config.getOption("ClaspDeferNPropagations");
+    
+    if(cs.problemType == cs.SAT) {
+        skipAmount = cs.ctx.config.getOption("ClaspSATDeferNPropagations");
+    }
+    
+    
     skipCounter = 0;
 }
 

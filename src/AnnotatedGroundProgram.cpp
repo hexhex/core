@@ -451,14 +451,14 @@ void AnnotatedGroundProgram::computeAtomDependencyGraph()
                             for (int i = 0; i < ea.inputs.size(); ++i) {
                                 if (oatom.tuple[0] == ea.inputs[i]) {
                                     for (int j = 1; j < oatom.tuple.size(); ++j) {
-                                        for (int k = ea.inputs.size() + 1; k < oatom_aux.tuple.size(); ++k) {
+                                        for (int k = ea.inputs.size() + 2; k < oatom_aux.tuple.size(); ++k) {
                                             if (ctx->config.getOption("UseAtomDependency")) {
-                                                if (prop.hasAtomDependency(i, j - 1, k - (ea.inputs.size() + 1)) && oatom.tuple[j] != oatom_aux.tuple[k]) {
+                                                if (prop.hasAtomDependency(i, j - 1, k - (ea.inputs.size() + 2)) && oatom.tuple[j] != oatom_aux.tuple[k]) {
                                                     relevant = false;
                                                     break;
                                                 }
                                             } else {
-                                                if (ea.pluginAtom->checkCompliance(prop.getComplianceCheck(), i, j-1, k-(ea.inputs.size()+1), ctx->registry()->terms.getByID(oatom.tuple[j]).symbol, ctx->registry()->terms.getByID(oatom_aux.tuple[k]).symbol, ctx->registry()->terms.getByID(ea.inputs[0]).symbol)) {
+                                                if (ea.pluginAtom->checkCompliance(prop.getComplianceCheck(), i, j-1, k-(ea.inputs.size()+2), ctx->registry()->terms.getByID(oatom.tuple[j]).symbol, ctx->registry()->terms.getByID(oatom_aux.tuple[k]).symbol, ctx->registry()->terms.getByID(ea.inputs[0]).symbol)) {
                                                     relevant = false;
                                                     break;
                                                 }

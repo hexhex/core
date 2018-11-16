@@ -884,9 +884,9 @@ Config& config, ProgramCtx& pctx)
         { "forcegc", no_argument, 0, 49 },
         { "incremental", no_argument, 0, 50 },
         { "strongsafety", no_argument, 0, 52 },
-		{ "optmode", required_argument, 0, 54 },
-		{ "claspdefernprop", required_argument, 0, 55 },
-		{ "claspdefermsec", required_argument, 0, 56 },
+        { "optmode", required_argument, 0, 54 },
+        { "claspdefernprop", required_argument, 0, 55 },
+        { "claspdefermsec", required_argument, 0, 56 },
         { "dumpeanogoods", required_argument, 0, 57 },
         { "ngminimization", required_argument, 0, 58 },
         { "ngminimizationlimit", required_argument, 0, 59 },
@@ -906,6 +906,7 @@ Config& config, ProgramCtx& pctx)
         { "useatomdependency", no_argument, 0, 74 },
         { "useatomcompliance", no_argument, 0, 75 },
         { "eaevaldebounce", required_argument, 0, 76 },
+        { "claspsatdefernprop", required_argument, 0, 77 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -1805,6 +1806,22 @@ Config& config, ProgramCtx& pctx)
                         LOG(ERROR,"eaevaldebounce '" << optarg << "' does not specify a floating point value");
                     }
                     pctx.config.setOption("EAEvalDebounce", minval);
+                }
+                break;
+            case 77:
+                {
+                    int deferval = 0;
+                    try
+                    {
+                        if( optarg[0] == '=' )
+                            deferval = boost::lexical_cast<unsigned>(&optarg[1]);
+                        else
+                            deferval = boost::lexical_cast<unsigned>(optarg);
+                    }
+                    catch(const boost::bad_lexical_cast&) {
+                        LOG(ERROR,"claspsatdefernprop '" << optarg << "' does not specify an integer value");
+                    }
+                    pctx.config.setOption("ClaspSATDeferNPropagations", deferval);
                 }
                 break;
         }

@@ -12,4 +12,3 @@ already_picked(P,I) :- before(P1,P), picked(_,P1,I).
 
 
 
-
