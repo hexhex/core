@@ -1,4 +1,5 @@
 import dlvhex
+import re
 
 def multiply(a, b):
 	dlvhex.output((a.intValue() * b.intValue(), ));
@@ -993,6 +994,50 @@ def contains(pred,elem):
 		print("unknown")
 		dlvhex.outputUnknown(())
 
+
+def owns(path,strat):
+	f = open(path.value()[1:-1], 'r')
+
+	ownsrel = dict()
+
+	for line in f:
+		m = re.search('owns\((.+),(.+)\)', line)
+		if m.group(1) in ownsrel:
+			ownsrel[m.group(1)].append(m.group(2))
+		else:
+			ownsrel[m.group(1)] = [m.group(2)]
+
+	for x in dlvhex.getInputAtoms():
+		 if x.tuple()[0] == strat and x.isTrue():
+			if x.tuple()[1].value() in ownsrel:
+				for el in ownsrel[x.tuple()[1].value()]:
+					dlvhex.output((el,))
+		 elif x.tuple()[0] == strat and not x.isFalse():
+			if x.tuple()[1].value() in ownsrel:
+				for el in ownsrel[x.tuple()[1].value()]:
+					dlvhex.outputUnknown((el,))
+
+
+def complianceCheck4(path,i,j,k,inp,outp):
+	if i == 1:
+		f = open(path, 'r')
+
+		ownsrel = dict()
+
+		for line in f:
+			m = re.search('owns\((.+),(.+)\)', line)
+			if m.group(1) in ownsrel:
+				ownsrel[m.group(1)].append(m.group(2))
+			else:
+				ownsrel[m.group(1)] = [m.group(2)]
+
+		if inp in ownsrel and outp in ownsrel[inp]:
+			return "0"
+		else:
+			return "1"
+	else:
+		return "0"
+
 	
 def main():
 	h1 = dlvhex.storeAtom(("q", "X"))
@@ -1178,3 +1223,11 @@ def register():
 	dlvhex.addAtom("tail", (dlvhex.CONSTANT, ), 1, prop)
 
 	dlvhex.addAtom("cnt", (dlvhex.PREDICATE, ), 1)
+
+	prop = dlvhex.ExtSourceProperties()
+	prop.setProvidesPartialAnswer(True)
+	prop.setComplianceCheck(4)
+	prop.addFiniteOutputDomain(0)
+	prop.addMonotonicInputPredicate(0)
+	prop.addMonotonicInputPredicate(1)
+	dlvhex.addAtom("owns", (dlvhex.CONSTANT, dlvhex.PREDICATE), 1, prop)
