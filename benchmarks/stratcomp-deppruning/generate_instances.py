@@ -19,10 +19,10 @@ owners_factor = 0.2
 
 for size in range(min_comp, max_comp + 1, step_comp):
 	for num in range(0, num_inst):
-		f = open('instances/inst_' + str(size) + '_' + str(num) + '.hex', 'w')
+		f = open('instances/inst_' + str(size).zfill(3) + '_' + str(num).zfill(3) + '.hex', 'w')
 
 		f.write('strat(X1) v strat(X2) :- prod(_,X1,X2).\n')
-		f.write('strat(X) :- &owns[\"instances/owners_' + str(size) + '_' + str(num) + '\",strat](X), comp(X).\n')
+		f.write('strat(X) :- &owns[\"instances/owners_' + str(size).zfill(3) + '_' + str(num).zfill(3) + '\",strat](X), comp(X).\n')
 
 		for comp in range(0,size):
 			f.write('comp(c' + str(comp) + ').\n')
@@ -33,7 +33,7 @@ for size in range(min_comp, max_comp + 1, step_comp):
 		f.close()
 
 
-		f = open('instances/owners_' + str(size) + '_' + str(num), 'w')
+		f = open('instances/owners_' + str(size).zfill(3) + '_' + str(num).zfill(3), 'w')
 
 		for owner in range(0,int(size * owners_factor)):
 			f.write('owns(c' + str(randint(0,size-1))  + ',c' + str(randint(0,size-1)) + ').\n')
