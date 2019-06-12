@@ -844,7 +844,6 @@ def adjacent(path,nd):
 
 	for node in file:
 		nodes.append(node)
-
 	for i in range(0,len(nodes)/2):
 		first = nodes.pop()
 		second = nodes.pop()
@@ -878,6 +877,15 @@ def complianceCheck2(path,i,j,k,inp,outp):
 			return "1"
 	else:
 		return "0"
+
+def complianceCheck3(path,i,j,k,inp,outp):
+        if i == 0 and j == 0 and k == 0:
+                if int(inp[1:]) > int(outp[1:]):
+                        return "0"
+                else:
+                        return "1"
+        else:
+                return "0"
 
 
 def pick(void,pref_file,already_picked):
@@ -1140,6 +1148,7 @@ def register():
 	prop.setProvidesPartialAnswer(True)
 	prop.addMonotonicInputPredicate(0)
 	prop.addMonotonicInputPredicate(1)
+	prop.setComplianceCheck(3)
 	dlvhex.addAtom("controlsMajority", (dlvhex.PREDICATE, dlvhex.PREDICATE ), 1, prop)
 
 	prop = dlvhex.ExtSourceProperties()
