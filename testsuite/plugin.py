@@ -1001,21 +1001,27 @@ def owns(path,strat):
 	ownsrel = dict()
 
 	for line in f:
-		m = re.search('owns\((.+),(.+)\)', line)
+		m = re.search('own\((.+),(.+),(.+),(.+)\)', line)
 		if m.group(1) in ownsrel:
-			ownsrel[m.group(1)].append(m.group(2))
+			ownsrel[m.group(1)].append((m.group(2),m.group(3),m.group(4)))
 		else:
-			ownsrel[m.group(1)] = [m.group(2)]
+			ownsrel[m.group(1)] = [(m.group(2),m.group(3),m.group(4))]
+
+	true_strat = []
+	false_strat = []
 
 	for x in dlvhex.getInputAtoms():
 		 if x.tuple()[0] == strat and x.isTrue():
-			if x.tuple()[1].value() in ownsrel:
-				for el in ownsrel[x.tuple()[1].value()]:
-					dlvhex.output((el,))
-		 elif x.tuple()[0] == strat and not x.isFalse():
-			if x.tuple()[1].value() in ownsrel:
-				for el in ownsrel[x.tuple()[1].value()]:
-					dlvhex.outputUnknown((el,))
+			true_strat.append(x.tuple()[1].value())
+		 if x.tuple()[0] == strat and x.isFalse():
+			false_strat.append(x.tuple()[1].value())
+
+	for key in ownsrel:
+		for el in ownsrel[key]:
+			if el[0] in true_strat and el[1] in true_strat and el[2] in true_strat:
+				dlvhex.output((key,))
+			if el[0] not in false_strat and el[1] not in false_strat and el[2] not in false_strat:
+				dlvhex.outputUnknown((key,))
 
 
 def complianceCheck4(path,i,j,k,inp,outp):
@@ -1025,13 +1031,13 @@ def complianceCheck4(path,i,j,k,inp,outp):
 		ownsrel = dict()
 
 		for line in f:
-			m = re.search('owns\((.+),(.+)\)', line)
+			m = re.search('own\((.+),(.+),(.+),(.+)\)', line)
 			if m.group(1) in ownsrel:
-				ownsrel[m.group(1)].append(m.group(2))
+				ownsrel[m.group(1)] += [m.group(2),m.group(3),m.group(4)]
 			else:
-				ownsrel[m.group(1)] = [m.group(2)]
+				ownsrel[m.group(1)] = [m.group(2),m.group(3),m.group(4)]
 
-		if inp in ownsrel and outp in ownsrel[inp]:
+		if outp in ownsrel and inp in ownsrel[outp]:
 			return "0"
 		else:
 			return "1"
